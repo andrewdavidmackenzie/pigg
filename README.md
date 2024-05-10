@@ -2,7 +2,7 @@
 
 A GUI for visualization/control of GPIO on Raspberry Pis.
 
-## Idea stage
+## Idea Stage
 
 This is just a proposal at the idea stage.
 
@@ -11,13 +11,14 @@ I posted the initial idea on reddit to see if any interest, and there seemed to 
 Later, when I actually write something and issues are clean-up, I will come back and edit this readme to 
 describe the actual plan!
 
-## Provide input!
+## Provide Input
 
 I will enable discussions on this repo, so feel free to raise something there.
 
 Please add issues for ideas for functionality.
 
-## Chosen tech
+
+## Chosen Tech
 
 For me to pursue this project, there are a few pieces of tech that I want to use, and are more or
 less "non-negotiable" (or I will lose interest)
@@ -25,8 +26,8 @@ less "non-negotiable" (or I will lose interest)
 * rust
 * iced for GUI (although I'm also using leptos for web, and a GUI framework in rust that also provides a web UI might be acceptable)
 
-
-For GPIO on Pi I have been using rpal. I'm open to others, providing it's in rust.
+For GPIO on Pi I have been using [rrpal](https://github.com/golemparts/rppal). 
+I'm open to others, providing it's in rust.
 
 ## Basic / Initial Functionality
 
@@ -39,7 +40,8 @@ For GPIO on Pi I have been using rpal. I'm open to others, providing it's in rus
 
 * Able to provide a time-view of inputs, so like an analyzer...
 
-## Further out ideas
+
+## Further out ideas
 
 * trigger a script or WebAssembly plugin on an input event (edge, level, etc)
 * able to have UI on different device to where GPIO is and connect remotely
