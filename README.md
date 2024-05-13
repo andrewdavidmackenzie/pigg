@@ -26,7 +26,7 @@ less "non-negotiable" (or I will lose interest)
 * rust
 * iced for GUI (although I'm also using leptos for web, and a GUI framework in rust that also provides a web UI might be acceptable)
 
-For GPIO on Pi I have been using [rrpal](https://github.com/golemparts/rppal). 
+For GPIO on Pi I have been using [rppal](https://github.com/golemparts/rppal). 
 I'm open to others, providing it's in rust.
 
 ## Basic / Initial Functionality
@@ -52,7 +52,7 @@ I'm open to others, providing it's in rust.
 ## Project Structure
 ### PIGGUI ("Piggy")
 A binary that shows a GUI using Iced.
-On Raspberry pi it will include GPIO 8via rrpal).
+On Raspberry pi it will include GPIO 8via rppal).
 On macOS and linux it will just have the UI, without GPIO.
 
 ### PIGLET ("Piglet)
