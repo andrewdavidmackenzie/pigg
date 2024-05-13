@@ -1,7 +1,13 @@
-/// When built with the "rppal" feature for interacting with GPIO - can only be built for RPi
-#[cfg(feature = "rppal")]
-use rppal;
+// This binary will only be built when the "rppal" feature for interacting with GPIO is enabled
+// so no need for conditional compilation here
+
+mod gpio;
 
 fn main() {
-    println!("Oink");
+    let config = gpio::GPIOConfig::new();
+    println!("Pin configs: {:?}", config);
+
+    let state = gpio::GPIOState::get(&config);
+
+    println!("Oink: {:?}", state);
 }

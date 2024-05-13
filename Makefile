@@ -24,12 +24,15 @@ clippy: piclippy
 	cargo clippy --features "iced" --tests --no-deps
 #-- --warn clippy::pedantic -D warnings
 
-# This will build all binaries on the current host, be it macos, linux or raspberry pi
-# Only enable the "iced" feature so we only build the "piggui" binary
-# To build both binaries, running this make on a Pi directly, we will need to modify this
+# Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
+# To build both binaries on a Pi directly, we will need to modify this
 .PHONY: build
 build:
 	cargo build --features "iced"
+
+.PHONY: run
+run:
+	cargo run --features "iced"
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
 .PHONY: release-build

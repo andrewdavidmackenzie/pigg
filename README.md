@@ -63,11 +63,13 @@ A headless binary that is only built on RaspberryPi and that has no UI.
 We use "cross" to cross compile for Raspberry Pi from Linux or macOS.
 Install docker or podman and "cross" for cross compiling rust on your host for the Raspberry Pi.
 
-### Building in general on host development machine
+### Building on host development machine
 Run `"make"` on macos or linux (or in fact RPi also) host to build these binaries:
 * `target/debug/piggui` - GUI version without GPIO, to enable UI development on a host
 * `target/aarch64-unknown-linux-gnu/release/piggui` - GUI version for Pi with GPIO, can be run natively from RPi command line
 * `target/aarch64-unknown-linux-gnu/release/piglet` - Headless version for Pi with GPIO, can be run natively from RPi command line
+
+Use `"make run"` to start `piggui` on the local machine - for GUI development.
 
 ### Building for Pi
 #### Helper Env vars
