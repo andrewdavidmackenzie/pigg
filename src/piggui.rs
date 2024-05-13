@@ -1,11 +1,9 @@
-/// When built with the "rppal" feature for interacting with GPIO - can only be built for RPi
+/// When built with the "rppal" feature include code for interacting with GPIO
 #[cfg(feature = "rppal")]
-use rppal;
+mod gpio;
 
-/// When built with the "iced" feature for GUI. This can be on Linux, Macos or RPi (linux)
-#[cfg(feature = "iced")]
-use iced;
-
+// This binary will only be built with the "iced" feature enabled, by use of "required-features"
+// in Cargo.toml so no need for the feature to be used here for conditional compiling
 use iced::widget::text;
 use iced::{window, Element, Sandbox, Settings};
 
@@ -14,6 +12,15 @@ fn main() -> Result<(), iced::Error> {
         resizable: false,
         ..Default::default()
     };
+
+    // TODO figure out how to connect config and state to the UI....
+    #[cfg(feature = "rppal")]
+    {
+    let config = gpio::GPIOConfig::new();
+    println!("Pin configs: {:?}", config);
+    let state = gpio::GPIOState::get(&config);
+    println!("OINK: {:?}", state);
+    }
 
     Gpio::run(Settings {
         window,
@@ -34,7 +41,7 @@ impl Sandbox for Gpio {
     }
 
     fn title(&self) -> String {
-        String::from("Pigg")
+        String::from("Piggui")
     }
 
     fn update(&mut self, message: Message) {
