@@ -5,12 +5,20 @@ use rppal;
 /// When built with the "iced" feature for GUI. This can be on Linux, Macos or RPi (linux)
 #[cfg(feature = "iced")]
 use iced;
-use iced::{Element, Sandbox, Settings};
-use iced::widget::text;
-use iced::border;
 
-fn main() -> iced::Result {
-    Gpio::run(Settings::default())
+use iced::widget::text;
+use iced::{window, Element, Sandbox, Settings};
+
+fn main() -> Result<(), iced::Error> {
+    let window = window::Settings {
+        resizable: false,
+        ..Default::default()
+    };
+
+    Gpio::run(Settings {
+        window,
+        ..Default::default()
+    })
 }
 
 struct Gpio;
@@ -36,3 +44,4 @@ impl Sandbox for Gpio {
         text("Hello iced").into()
     }
 }
+
