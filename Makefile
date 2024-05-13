@@ -19,6 +19,10 @@ release: release-build pibuild
 piclippy:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "rppal","iced" --target=aarch64-unknown-linux-gnu
 
+.PHONY: clippy
+clippy: piclippy
+	cargo clippy --features "iced" --tests --no-deps --all-features --all-targets -- --warn clippy::pedantic -D warnings
+
 # This will build all binaries on the current host, be it macos, linux or raspberry pi
 # Only enable the "iced" feature so we only build the "piggui" binary
 # To build both binaries, running this make on a Pi directly, we will need to modify this
@@ -38,6 +42,12 @@ release-build:
 .PHONY: pibuild
 pibuild:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "rppal","iced" --target=aarch64-unknown-linux-gnu
+
+# This will only test GUI tests in piggui on the local host, whatever that is
+# We'd need to think how to run tests on RPi, on piggui with GUI and GPIO functionality, and piglet with GPIO functionality
+.PHONY: test
+test:
+	cargo test --features "iced"
 
 .PHONY: copy
 copy: pibuild
