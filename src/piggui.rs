@@ -1,5 +1,3 @@
-/// When built with the "rppal" feature include code for interacting with GPIO
-#[cfg(feature = "rppal")]
 mod gpio;
 
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
@@ -13,14 +11,10 @@ fn main() -> Result<(), iced::Error> {
         ..Default::default()
     };
 
-    // TODO figure out how to connect config and state to the UI....
-    #[cfg(feature = "rppal")]
-    {
     let config = gpio::GPIOConfig::new();
     println!("Pin configs: {:?}", config);
     let state = gpio::GPIOState::get(&config);
     println!("OINK: {:?}", state);
-    }
 
     Gpio::run(Settings {
         window,

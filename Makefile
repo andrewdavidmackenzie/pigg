@@ -17,27 +17,27 @@ release: release-build pibuild
 
 .PHONY: piclippy
 piclippy:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "rppal","iced" --tests --no-deps --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "pi","gui" --tests --no-deps --target=aarch64-unknown-linux-gnu
 
 .PHONY: clippy
 clippy: piclippy
-	cargo clippy --features "iced" --tests --no-deps
+	cargo clippy --features "gui" --tests --no-deps
 #-- --warn clippy::pedantic -D warnings
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
 # To build both binaries on a Pi directly, we will need to modify this
 .PHONY: build
 build:
-	cargo build --features "iced"
+	cargo build --features "gui"
 
 .PHONY: run
 run:
-	cargo run --features "iced"
+	cargo run --features "gui"
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
 .PHONY: release-build
 release-build:
-	cargo build --release --features "iced"
+	cargo build --release --features "gui"
 
 # I'm currently building using release profile for Pi, as not debugging natively on it. If we want to do that then
 # we may need to add another make target
@@ -45,13 +45,13 @@ release-build:
 # That should build both the "piggui" and "piglet" binaries, with GUI and GPIO in "piggui" and GPIO in "piglet"
 .PHONY: pibuild
 pibuild:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "rppal","iced" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "pi","gui" --target=aarch64-unknown-linux-gnu
 
 # This will only test GUI tests in piggui on the local host, whatever that is
 # We'd need to think how to run tests on RPi, on piggui with GUI and GPIO functionality, and piglet with GPIO functionality
 .PHONY: test
 test:
-	cargo test --features "iced"
+	cargo test --features "gui"
 
 .PHONY: copy
 copy: pibuild

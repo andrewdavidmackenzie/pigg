@@ -1,6 +1,3 @@
-// This binary will only be built when the "rppal" feature for interacting with GPIO is enabled
-// so no need for conditional compilation here
-
 mod gpio;
 
 fn main() {

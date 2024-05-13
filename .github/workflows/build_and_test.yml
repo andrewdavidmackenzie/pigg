@@ -71,7 +71,9 @@ jobs:
       - name: test
         run: make test
 
-      - name: Upload code coverage
-        uses: codecov/codecov-action@v4.0.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: UploadCoverage
+        run: |
+          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          #lcov --remove lcov.info 'target/debug/build/**' '**/errors.rs' '*tests/*' -o lcov.info
+          bash <(curl -s https://codecov.io/bash) -f lcov.info
+          rm -f lcov.info
