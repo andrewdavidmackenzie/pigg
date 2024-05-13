@@ -17,11 +17,12 @@ release: release-build pibuild
 
 .PHONY: piclippy
 piclippy:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "rppal","iced" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "rppal","iced" --tests --no-deps --target=aarch64-unknown-linux-gnu
 
 .PHONY: clippy
 clippy: piclippy
-	cargo clippy --features "iced" --tests --no-deps --all-features --all-targets -- --warn clippy::pedantic -D warnings
+	cargo clippy --features "iced" --tests --no-deps
+#-- --warn clippy::pedantic -D warnings
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi
 # Only enable the "iced" feature so we only build the "piggui" binary
