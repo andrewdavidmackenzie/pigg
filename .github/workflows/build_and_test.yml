@@ -1,0 +1,77 @@
+name: Build and Test with Coverage
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule: # Build every day at 5PM UTC
+    - cron: '0 17 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: make clippy
+        run: make clippy
+
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-14, ubuntu-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: InstallLinuxDependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get -y install lcov
+
+      - name: InstallMacDependencies
+        if: runner.os == 'macOS'
+        run: brew install lcov
+
+      - name: ConfigureCoverage
+        run: |
+          cargo install grcov
+          rustup component add llvm-tools-preview
+          echo RUSTFLAGS="-C instrument-coverage" >> "$GITHUB_ENV"
+          echo LLVM_PROFILE_FILE="flow-%p-%m.profraw" >> "$GITHUB_ENV"
+
+      - name: install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: build
+        run: make build
+
+      - name: test
+        run: make test
+
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
