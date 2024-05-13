@@ -59,6 +59,9 @@ On macOS and linux it will just have the UI, without GPIO.
 A headless binary that is only built on RaspberryPi and that has no UI.
 
 ## Building and Running
+### Pre-requisites
+Install docker or podman and "cross" for cross compiling rust on your host for the Raspberry Pi.
+
 ### Building for Pi
 We use "cross" to cross compile for Raspberry Pi from Linux or macOS.
 Use "make pibuild" make target.

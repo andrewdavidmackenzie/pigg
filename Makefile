@@ -14,7 +14,7 @@ piclippy:
 
 .PHONY: build
 build:
-    cargo build
+	cargo build
 
 .PHONY: pibuild
 pibuild:
