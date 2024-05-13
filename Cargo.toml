@@ -1,0 +1,24 @@
+[package]
+name = "pigg"
+version = "0.1.0"
+edition = "2021"
+default-run = "piggui"
+authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>"]
+# Add other names above if they want ^^^^
+license = "Apache-2.0"
+documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
+#homepage = "http://andrewdavidmackenzie.github.io/flow/"
+repository = "https://github.com/andrewdavidmackenzie/pigg/"
+readme = "README.md"
+
+[[bin]]
+name = "piggui"
+path = "src/piggui.rs"
+
+[[bin]]
+name = "piglet"
+path = "src/piglet.rs"
+
+[dependencies]
+# for interacting with GPIO on the Raspberry Pi
+rppal = { version = "0.17.1", optional = true }
