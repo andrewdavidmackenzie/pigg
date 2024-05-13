@@ -48,3 +48,22 @@ I'm open to others, providing it's in rust.
 * hence able to connect the native UI to a remote device, where some "agent" is running
 * have an "agent" able to run on a Pi Pico
 * Have a web UI able to connect to an agent on a Pi or Pico
+
+## Project Structure
+### PIGGUI ("Piggy")
+A binary that shows a GUI using Iced.
+On Raspberry pi it will include GPIO 8via rrpal).
+On macOS and linux it will just have the UI, without GPIO.
+
+### PIGLET ("Piglet)
+A headless binary that is only built on RaspberryPi and that has no UI.
+
+## Building and Running
+### Building for Pi
+We use "cross" to cross compile for Raspberry Pi from Linux or macOS.
+Use "make pibuild" make target.
+Use "make picopy" to copy the built binary to your raspberry pi.
+Use "make ssh" to ssh into your Pi to be able to run it.
+
+### Building for Linux/macOS
+Use "make build"
