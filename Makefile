@@ -39,8 +39,8 @@ release-build:
 pibuild:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "rppal","iced" --target=aarch64-unknown-linux-gnu
 
-.PHONY: picopy
-picopy: pibuild
+.PHONY: copy
+copy: pibuild
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
