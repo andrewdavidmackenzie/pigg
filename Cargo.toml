@@ -14,12 +14,18 @@ readme = "README.md"
 [[bin]]
 name = "piggui"
 path = "src/piggui.rs"
-required-features = ["iced"]
+required-features = ["gui"]
 
 [[bin]]
 name = "piglet"
 path = "src/piglet.rs"
-required-features = ["rppal"]
+required-features = ["pi"]
+
+[features]
+default = []
+pi = ["rppal"]
+pico = [] #embassy
+gui = ["iced"]
 
 [dependencies]
 # for interacting with GPIO on the Raspberry Pi

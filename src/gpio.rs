@@ -1,15 +1,14 @@
-/// When built with the "rppal" feature for interacting with GPIO - can only be built for RPi
-#[cfg(feature = "rppal")]
-use rppal::gpio::{InputPin, Level, Trigger};
 
-// TODO will need to create a GPIOConfig and state that is NOT related to rrpal -
-// for use in the UI when not compiled for Pi
+#[cfg_attr(feature = "pi", path="gpio/pi.rs")]
+#[cfg_attr(feature = "pico", path="gpio/pico.rs")]
+#[cfg_attr(not(any(feature = "pico", feature = "pico")), path="gpio/none.rs")]
+pub(crate) mod gpio_sys;
 
-// TODO do this for real
+pub type PinLevel = bool;
+
 #[derive(Debug)]
-#[allow(dead_code)] // TODO remove later
 pub struct GPIOState {
-    pin_state: [Option<Level>; 40]
+    pin_state: [Option<PinLevel>; 40]
 }
 
 impl GPIOState {
@@ -21,13 +20,13 @@ impl GPIOState {
 }
 
 // TODO - add in here all the possible config options for GPIO
-#[derive(Debug)]
-#[allow(dead_code)] // TODO remove later
+#[derive(Debug, PartialEq)]
 pub enum PinConfig {
-    Input(InputPin, Option<Trigger>),
+    Input,
     Output
 }
 
+// Pin Names
 const SDA1: usize = 2;
 
 const NO_CONFIG: Option<PinConfig> = None;
@@ -35,7 +34,6 @@ const NO_CONFIG: Option<PinConfig> = None;
 // Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
 // If no specific config is set on a pin, it will have None
 #[derive(Debug)]
-#[allow(dead_code)] // TODO remove later
 pub struct GPIOConfig {
     pin_configs: [Option<PinConfig>; 40]
 }
@@ -49,5 +47,22 @@ impl GPIOConfig {
         GPIOConfig {
             pin_configs,
         }
+    }
+}
+
+// TODO placeholder until I figure out what this trait needs to implement
+pub trait GPIO {
+    fn apply_config(config: &GPIOConfig);
+    fn get_state() -> GPIOState;
+}
+
+#[cfg(test)]
+mod test {
+    use crate::gpio;
+
+    #[test]
+    fn create_a_config() {
+        let config = gpio::GPIOConfig::new();
+        assert_eq!(config.pin_configs[0], None);
     }
 }
