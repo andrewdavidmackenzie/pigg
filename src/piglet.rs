@@ -1,4 +1,5 @@
 mod gpio;
+mod hw;
 
 fn main() {
     let config = gpio::GPIOConfig::new();

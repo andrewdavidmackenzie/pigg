@@ -1,4 +1,5 @@
 mod gpio;
+mod hw;
 
 use gpio::PinConfig;
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
@@ -6,16 +7,22 @@ use gpio::PinConfig;
 use iced::widget::{button, container, row, Column, Text};
 use iced::{alignment, window, Element, Length, Sandbox, Settings};
 
-fn main() -> iced::Result {
+// Use Hardware via trait
+use hw::Hardware;
+
+fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
         ..Default::default()
     };
 
+    // Serde and load this from saved file, using command line option or later via UI
     let config = gpio::GPIOConfig::new();
     println!("Pin configs: {:?}", config);
-    let state = gpio::GPIOState::get(&config);
-    println!("OINK: {:?}", state);
+
+    let mut hw = hw::get();
+    hw.apply_config(&config);
+    println!("OINK: {:?}", hw.get_state());
 
     Gpio::run(Settings {
         window,
