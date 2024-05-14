@@ -35,7 +35,7 @@ const NO_CONFIG: Option<PinConfig> = None;
 // If no specific config is set on a pin, it will have None
 #[derive(Debug)]
 pub struct GPIOConfig {
-    pin_configs: [Option<PinConfig>; 40]
+    pub pin_configs: [Option<PinConfig>; 40]
 }
 
 impl GPIOConfig {
