@@ -1,21 +1,35 @@
 mod gpio;
+mod hw;
 
-use gpio::PinConfig;
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
 use iced::widget::{button, container, row, Column, Text};
 use iced::{alignment, window, Element, Length, Sandbox, Settings};
 
-fn main() -> iced::Result {
+// Use Hardware via trait
+use hw::Hardware;
+use crate::gpio::GPIOConfig;
+
+fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
         ..Default::default()
     };
 
+    // Serde and load this from saved file, using command line option or later via UI
     let config = gpio::GPIOConfig::new();
+
+    // TODO maybe this should be done async, or with a Command or something?
+    let mut hw = hw::get();
+    hw.apply_config(&config);
+
+    // TODO remove println!() and start using the Pin configs in the layout to show current
+    // Pin setup for each one
     println!("Pin configs: {:?}", config);
-    let state = gpio::GPIOState::get(&config);
-    println!("OINK: {:?}", state);
+    println!("Pin1 Config is: {:?}", config.pins[1]);
+
+    // TODO show the state of each pin in the layout, if an input pin and/or the state is not None
+    println!("OINK: {:?}", hw.get_state());
 
     Gpio::run(Settings {
         window,
@@ -24,7 +38,7 @@ fn main() -> iced::Result {
 }
 
 struct Gpio {
-    pins: [Option<PinConfig>; 40],
+    gpio_config: GPIOConfig,
     clicked: bool,
 }
 
@@ -38,9 +52,8 @@ impl Sandbox for Gpio {
     type Message = Message;
 
     fn new() -> Self {
-        let config = gpio::GPIOConfig::new();
         Self {
-            pins: config.pin_configs,
+            gpio_config: GPIOConfig::new(),
             clicked: false,
         }
     }
@@ -56,7 +69,7 @@ impl Sandbox for Gpio {
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
-        container(pin_view(&self.pins))
+        container(pin_view(&self.gpio_config))
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(alignment::Horizontal::Center)
@@ -73,18 +86,18 @@ impl Sandbox for Gpio {
     }
 }
 
-fn pin_view(pins: &[Option<PinConfig>; 40]) -> Element<'static, Message> {
+fn pin_view(config: &GPIOConfig) -> Element<'static, Message> {
     let mut column = Column::new()
         .spacing(20)
         .align_items(iced::Alignment::Center)
         .width(Length::Fill)
         .height(Length::Fill);
 
-    for _i in 0..pins.len() / 2 {
+    for pair in config.pins.chunks(2) {
         let row = row!(
             // add radio button
-            button(Text::new("pin1")).on_press(Message::Activate),
-            button(Text::new("pin2")).on_press(Message::Activate)
+            button(Text::new(pair[0].board_pin_number.to_string())).on_press(Message::Activate),
+            button(Text::new(pair[1].board_pin_number.to_string())).on_press(Message::Activate),
         )
         .spacing(10);
         column = column.push(row);
