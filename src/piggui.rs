@@ -3,8 +3,8 @@ mod gpio;
 use gpio::PinConfig;
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use iced::widget::{button, checkbox, column, container, row, text, Column, Radio, Row, Text};
-use iced::{window, Element, Length, Sandbox, Settings, alignment};
+use iced::widget::{button, container, row, Column, Text};
+use iced::{alignment, window, Element, Length, Sandbox, Settings};
 
 fn main() -> iced::Result {
     let window = window::Settings {
@@ -80,10 +80,8 @@ fn pin_view(pins: &[Option<PinConfig>; 40]) -> Element<'static, Message> {
         .width(Length::Fill)
         .height(Length::Fill);
 
-    for i in 0..pins.len() / 2 {
-        
+    for _i in 0..pins.len() / 2 {
         let row = row!(
-
             // add radio button
             button(Text::new("pin1")).on_press(Message::Activate),
             button(Text::new("pin2")).on_press(Message::Activate)
