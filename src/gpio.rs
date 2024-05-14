@@ -11,6 +11,7 @@ pub struct GPIOState {
 // All the possible functions a pin can be given
 #[derive(Debug, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum PinFunction {
     Power3V3,
     Power5V,
@@ -49,10 +50,20 @@ pub struct Pin {
 
 // Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
 // If no specific config is set on a pin, it will have None
+// I have made array of 41, so we can use pin number as index - and element 0
+// is not used
 #[derive(Debug, Clone)]
 pub struct GPIOConfig {
-    pins: [Pin; 40],
+    pub pins: [Pin; 41], // TODO make private later
 }
+
+const PIN_0: Pin = Pin {
+    board_pin_number: 0,
+    bcm_pin_number: None,
+    name: "Padding",
+    options: &[],
+    config: None,
+};
 
 const PIN_1: Pin = Pin {
     board_pin_number: 1,
@@ -378,7 +389,8 @@ const PIN_40: Pin = Pin {
 impl GPIOConfig {
     pub fn new() -> Self {
         GPIOConfig {
-            pins: [PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10,
+            pins: [PIN_0,
+                   PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10,
                    PIN_11, PIN_12, PIN_13, PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20,
                    PIN_21, PIN_22, PIN_23, PIN_24, PIN_25, PIN_26, PIN_27, PIN_28, PIN_29, PIN_30,
                    PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37, PIN_38, PIN_39, PIN_40],

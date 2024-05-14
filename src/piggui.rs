@@ -19,6 +19,7 @@ fn main() -> Result<(), iced::Error> {
     // Serde and load this from saved file, using command line option or later via UI
     let config = gpio::GPIOConfig::new();
     println!("Pin configs: {:?}", config);
+    println!("Pin1 Config is: {:?}", config.pins[1]);
 
     let mut hw = hw::get();
     hw.apply_config(&config);

@@ -3,13 +3,10 @@
 use super::Hardware;
 use crate::gpio::{GPIOState, GPIOConfig};
 
-pub struct NoneHW {
-}
+pub struct NoneHW;
 
-impl NoneHW {
-    pub fn get() -> impl Hardware {
-        NoneHW {}
-    }
+pub fn get() -> impl Hardware {
+    NoneHW {}
 }
 
 impl Hardware for NoneHW {

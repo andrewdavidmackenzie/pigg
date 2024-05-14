@@ -1,12 +1,12 @@
 use crate::gpio::{GPIOConfig, GPIOState};
 
-#[cfg_attr(feature = "pi", path="pi.rs")]
-#[cfg_attr(feature = "pico", path="pico.rs")]
-#[cfg_attr(not(any(feature = "pico", feature = "pico")), path="none.rs")]
-pub mod implementation;
+#[cfg_attr(feature="pico", path="pico.rs")]
+#[cfg_attr(feature="pi", path="pi.rs")]
+#[cfg_attr(not(any(feature="pico", feature="pi")), path="none.rs")]
+mod implementation;
 
 pub fn get() -> impl Hardware {
-    implementation::NoneHW::get()
+    implementation::get()
 }
 
 // TODO placeholder until I figure out what this trait needs to implement
