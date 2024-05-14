@@ -18,11 +18,17 @@ fn main() -> Result<(), iced::Error> {
 
     // Serde and load this from saved file, using command line option or later via UI
     let config = gpio::GPIOConfig::new();
+
+    // TODO maybe this should be done async, or with a Command or something?
+    let mut hw = hw::get();
+    hw.apply_config(&config);
+
+    // TODO remove println!() and start using the Pin configs in the layout to show current
+    // Pin setup for each one
     println!("Pin configs: {:?}", config);
     println!("Pin1 Config is: {:?}", config.pins[1]);
 
-    let mut hw = hw::get();
-    hw.apply_config(&config);
+    // TODO show the state of each pin in the layout, if an input pin and/or the state is not None
     println!("OINK: {:?}", hw.get_state());
 
     Gpio::run(Settings {
