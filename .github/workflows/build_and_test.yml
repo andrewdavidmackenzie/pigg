@@ -47,14 +47,6 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: InstallLinuxDependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get -y install lcov
-
-      - name: InstallMacDependencies
-        if: runner.os == 'macOS'
-        run: brew install lcov
-
       - name: ConfigureCoverage
         run: |
           cargo install grcov
@@ -74,6 +66,5 @@ jobs:
       - name: UploadCoverage
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-          #lcov --remove lcov.info 'target/debug/build/**' '**/errors.rs' '*tests/*' -o lcov.info
           bash <(curl -s https://codecov.io/bash) -f lcov.info
           rm -f lcov.info
