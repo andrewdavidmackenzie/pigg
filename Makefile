@@ -48,7 +48,7 @@ endif
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
 # To build both binaries on a Pi directly, we will need to modify this
 .PHONY: build
-build: pibuild
+build:
 	cargo build --features "gui"
 
 .PHONY: run
