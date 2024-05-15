@@ -14,22 +14,23 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build pibuild test
+all: clippy piclippy build pibuild test
 
 release: release-build pibuild
 
 .PHONY: piclippy
 piclippy:
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "pi","gui" --tests --no-deps --target=aarch64-unknown-linux-gnu
+
+.PHONY: clippy
+clippy:
 ifneq ($(PI),)
 	echo "Detected as running on Raspberry Pi"
 	cargo clippy --features "pi","gui" --tests --no-deps
 else
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "pi","gui" --tests --no-deps --target=aarch64-unknown-linux-gnu
+	cargo clippy --features "gui" --tests --no-deps
 endif
 
-.PHONY: clippy
-clippy: piclippy
-	cargo clippy --features "gui" --tests --no-deps
 #-- --warn clippy::pedantic -D warnings
 
 # I'm currently building using release profile for Pi, as not debugging natively on it. If we want to do that then
@@ -38,18 +39,18 @@ clippy: piclippy
 # That should build both the "piggui" and "piglet" binaries, with GUI and GPIO in "piggui" and GPIO in "piglet"
 .PHONY: pibuild
 pibuild:
-ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
-	cargo build --features "pi","gui"
-else
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "pi","gui" --target=aarch64-unknown-linux-gnu
-endif
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
 # To build both binaries on a Pi directly, we will need to modify this
 .PHONY: build
 build:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+	cargo build --features "pi","gui"
+else
 	cargo build --features "gui"
+endif
 
 .PHONY: run
 run:
