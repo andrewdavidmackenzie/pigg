@@ -25,9 +25,6 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
       - name: make clippy
         run: make clippy
 
