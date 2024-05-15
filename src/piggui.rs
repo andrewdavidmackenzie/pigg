@@ -5,10 +5,9 @@ mod hw;
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
 use iced::widget::{button, container, row, Column, Text};
 use iced::{alignment, window, Element, Length, Sandbox, Settings};
-
 // Use Hardware via trait
-use hw::Hardware;
 use crate::gpio::GPIOConfig;
+use hw::Hardware;
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
@@ -95,11 +94,17 @@ fn pin_view(config: &GPIOConfig) -> Element<'static, Message> {
 
     for pair in config.pins.chunks(2) {
         let row = row!(
-            // add radio button
-            button(Text::new(pair[0].board_pin_number.to_string())).on_press(Message::Activate),
-            button(Text::new(pair[1].board_pin_number.to_string())).on_press(Message::Activate),
+            Text::new(pair[0].name).size(20),
+            button(Text::new(pair[0].board_pin_number.to_string()))
+                .on_press(Message::Activate)
+                .width(Length::Fixed(50 as f32)),
+            button(Text::new(pair[1].board_pin_number.to_string()))
+                .on_press(Message::Activate)
+                .width(Length::Fixed(50 as f32)),
+            Text::new(pair[1].name).size(20),
         )
-        .spacing(10);
+        .spacing(10)
+        .align_items(iced::Alignment::Center);
         column = column.push(row);
     }
     container(column).height(2000).width(2000).into()
