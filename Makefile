@@ -20,7 +20,11 @@ release: release-build pibuild
 
 .PHONY: piclippy
 piclippy:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+else
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "pi","gui" --tests --no-deps --target=aarch64-unknown-linux-gnu
+endif
 
 .PHONY: clippy
 clippy:
@@ -39,7 +43,11 @@ endif
 # That should build both the "piggui" and "piglet" binaries, with GUI and GPIO in "piggui" and GPIO in "piglet"
 .PHONY: pibuild
 pibuild:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+else
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "pi","gui" --target=aarch64-unknown-linux-gnu
+endif
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
 # To build both binaries on a Pi directly, we will need to modify this
