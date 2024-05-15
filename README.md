@@ -71,22 +71,27 @@ Run `"make"` on macos or linux (or in fact RPi also) host to build these binarie
 
 Use `"make run"` to start `piggui` on the local machine - for GUI development.
 
-### Building for Pi
+### Building for Pi from macos or linus
+If you use `make` that builds for local host AND pi (using cross).
+
 #### Helper Env vars
 There are a couple of env vars that can be setup to help you interact with your pi.
 
-Set these up in your env, or set them on the command line when invoking `make`
+You can set these up in your env so you always have them, or set them on the command line when invoking `make`
 
 * `PI_TARGET` Which Pi to copy files to and ssh into
 `PI_TARGET := pizero2w0.local`
  
-* `PI_USER` The User name of your user on the pi, to be able to copy files and ssh into it
+* `PI_USER` The username of your user on the pi, to be able to copy files and ssh into it
 `PI_USER := andrew`
 
 #### Make targets
-* Use `"make pibuild"` to build only for the Pi. This will build both `piggui` (with GUI and GPIO) and `piglet` binary with GPIO only
-* Use `"make copy"` to copy the built binaries to your raspberry pi.
-* Use `"make ssh"` to ssh into your Pi to be able to run the binaries.
+* Use `make` to run `clippy`, build for the Pi using `cross`, build for the local machine using `cargo` and to run tests
+* Use `make pibuild` to build only for the Pi. This will build both `piggui` (with GUI and GPIO) and `piglet` binary with GPIO only
+* Use `make copy` to copy the built binaries to your raspberry pi.
+* Use `make ssh` to ssh into your Pi to be able to run the binaries.
 
+### Building for Pi on a Pi!
+You should be able to use `make build` or `make run` directly, and it will build `piggui` with a GUI 
 ### Building for Linux/macOS
 Use "make build"

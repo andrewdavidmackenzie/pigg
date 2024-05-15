@@ -16,7 +16,7 @@ fn main() -> Result<(), iced::Error> {
     };
 
     // Serde and load this from saved file, using command line option or later via UI
-    let config = gpio::GPIOConfig::new();
+    let config = GPIOConfig::new();
 
     // TODO maybe this should be done async, or with a Command or something?
     let mut hw = hw::get();
@@ -36,8 +36,8 @@ fn main() -> Result<(), iced::Error> {
     })
 }
 
-struct Gpio {
-    gpio_config: GPIOConfig,
+struct Gpio<'a> {
+    gpio_config: GPIOConfig<'a>,
     clicked: bool,
 }
 
@@ -47,12 +47,12 @@ enum Message {
     Activate,
 }
 
-impl Sandbox for Gpio {
+impl<'a> Sandbox for Gpio<'a> {
     type Message = Message;
 
     fn new() -> Self {
         Self {
-            gpio_config: GPIOConfig::new(),
+            gpio_config: GPIOConfig::default(),
             clicked: false,
         }
     }

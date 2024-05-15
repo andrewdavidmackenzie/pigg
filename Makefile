@@ -11,7 +11,7 @@
 # target/aarch64-unknown-linux-gnu/release/piglet - Headless version for Pi with GPIO, can be run natively from RPi command line
 
 .PHONY: all
-all: build pibuild
+all: clippy build pibuild test
 
 release: release-build pibuild
 
