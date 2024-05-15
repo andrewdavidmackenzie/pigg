@@ -10,6 +10,9 @@
 # target/aarch64-unknown-linux-gnu/release/piggui - GUI version for Pi with GPIO, can be run natively from RPi command line
 # target/aarch64-unknown-linux-gnu/release/piglet - Headless version for Pi with GPIO, can be run natively from RPi command line
 
+# Detect if on a Raspberry Pi
+$(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
+
 .PHONY: all
 all: clippy build pibuild test
 
@@ -17,27 +20,17 @@ release: release-build pibuild
 
 .PHONY: piclippy
 piclippy:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+	cargo clippy --features "pi","gui" --tests --no-deps
+else
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "pi","gui" --tests --no-deps --target=aarch64-unknown-linux-gnu
+endif
 
 .PHONY: clippy
 clippy: piclippy
 	cargo clippy --features "gui" --tests --no-deps
 #-- --warn clippy::pedantic -D warnings
-
-# Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
-# To build both binaries on a Pi directly, we will need to modify this
-.PHONY: build
-build:
-	cargo build --features "gui"
-
-.PHONY: run
-run:
-	cargo run --features "gui"
-
-# This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
-.PHONY: release-build
-release-build:
-	cargo build --release --features "gui"
 
 # I'm currently building using release profile for Pi, as not debugging natively on it. If we want to do that then
 # we may need to add another make target
@@ -45,13 +38,48 @@ release-build:
 # That should build both the "piggui" and "piglet" binaries, with GUI and GPIO in "piggui" and GPIO in "piglet"
 .PHONY: pibuild
 pibuild:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+	cargo build --features "pi","gui"
+else
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "pi","gui" --target=aarch64-unknown-linux-gnu
+endif
+
+# Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
+# To build both binaries on a Pi directly, we will need to modify this
+.PHONY: build
+build: pibuild
+	cargo build --features "gui"
+
+.PHONY: run
+run:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+	cargo run --features "pi","gui"
+else
+	cargo run --features "gui"
+endif
+
+# This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
+.PHONY: release-build
+release-build:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+	cargo build --release --features "pi","gui"
+else
+	cargo build --release --features "gui"
+endif
 
 # This will only test GUI tests in piggui on the local host, whatever that is
 # We'd need to think how to run tests on RPi, on piggui with GUI and GPIO functionality, and piglet with GPIO functionality
 .PHONY: test
 test:
+ifneq ($(PI),)
+	echo "Detected as running on Raspberry Pi"
+	cargo test --features "pi","gui"
+else
 	cargo test --features "gui"
+endif
 
 .PHONY: copy
 copy: pibuild
