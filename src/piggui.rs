@@ -7,7 +7,7 @@ use iced::widget::{button, container, row, Column, Text};
 use iced::{alignment, window, Element, Length, Sandbox, Settings};
 // Use Hardware via trait
 use crate::gpio::GPIOConfig;
-use hw::Hardware;
+//use hw::Hardware;
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
@@ -15,20 +15,9 @@ fn main() -> Result<(), iced::Error> {
         ..Default::default()
     };
 
-    // Serde and load this from saved file, using command line option or later via UI
-    let config = gpio::GPIOConfig::new();
-
-    // TODO maybe this should be done async, or with a Command or something?
-    let mut hw = hw::get();
-    hw.apply_config(&config);
-
-    // TODO remove println!() and start using the Pin configs in the layout to show current
-    // Pin setup for each one
-    println!("Pin configs: {:?}", config);
-    println!("Pin1 Config is: {:?}", config.pins[1]);
-
-    // TODO show the state of each pin in the layout, if an input pin and/or the state is not None
-    println!("OINK: {:?}", hw.get_state());
+    // Will need an "Apply" button in the UI to apply config changes to the HW, or apply on each change
+    //let mut hw = hw::get();
+    //hw.apply_config(&config);
 
     Gpio::run(Settings {
         window,
@@ -52,7 +41,7 @@ impl Sandbox for Gpio {
 
     fn new() -> Self {
         Self {
-            gpio_config: GPIOConfig::new(),
+            gpio_config: GPIOConfig::default(),
             clicked: false,
         }
     }
@@ -97,10 +86,10 @@ fn pin_view(config: &GPIOConfig) -> Element<'static, Message> {
             Text::new(pair[0].name).size(20),
             button(Text::new(pair[0].board_pin_number.to_string()))
                 .on_press(Message::Activate)
-                .width(Length::Fixed(50 as f32)),
+                .width(Length::Fixed( 50f32 )),
             button(Text::new(pair[1].board_pin_number.to_string()))
                 .on_press(Message::Activate)
-                .width(Length::Fixed(50 as f32)),
+                .width(Length::Fixed( 50f32 )),
             Text::new(pair[1].name).size(20),
         )
         .spacing(10)

@@ -25,9 +25,6 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
       - name: make clippy
         run: make clippy
 
@@ -47,23 +44,12 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: InstallLinuxDependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get -y install lcov
-
-      - name: InstallMacDependencies
-        if: runner.os == 'macOS'
-        run: brew install lcov
-
       - name: ConfigureCoverage
         run: |
           cargo install grcov
           rustup component add llvm-tools-preview
           echo RUSTFLAGS="-C instrument-coverage" >> "$GITHUB_ENV"
           echo LLVM_PROFILE_FILE="flow-%p-%m.profraw" >> "$GITHUB_ENV"
-
-      - name: install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: build
         run: make build
@@ -74,6 +60,5 @@ jobs:
       - name: UploadCoverage
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-          #lcov --remove lcov.info 'target/debug/build/**' '**/errors.rs' '*tests/*' -o lcov.info
           bash <(curl -s https://codecov.io/bash) -f lcov.info
           rm -f lcov.info
