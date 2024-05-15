@@ -43,7 +43,7 @@ pub enum PinFunction {
 pub struct PinConfig<'a> {
     pub board_pin_number: u8,
     bcm_pin_number: Option<u8>,
-    name: &'a str,
+    pub name: &'a str,
     options: &'a[PinFunction], // The set of functions the pin can have, chosen by user config
     config: Option<PinFunction>, // The currently selected function for the pin, if any selected
 }
@@ -90,7 +90,7 @@ const PIN_4: PinConfig = PinConfig {
 };
 
 const PIN_5: PinConfig = PinConfig {
-    board_pin_number: 2,
+    board_pin_number: 5,
     bcm_pin_number: Some(3),
     name: "GPIO3",
     options: &[PinFunction::Input, PinFunction::Output, PinFunction::SCL1, PinFunction::I2C],
