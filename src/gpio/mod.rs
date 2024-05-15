@@ -60,7 +60,7 @@ pub struct GPIOConfig {
     pub pins: [PinConfig; 40], // TODO make private later
 }
 
-impl<'a> Default for GPIOConfig {
+impl Default for GPIOConfig {
     fn default() -> Self {
         GPIOConfig {
             pins: [PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10,
@@ -77,7 +77,7 @@ mod test {
 
     #[test]
     fn create_a_config() {
-        let config = gpio::GPIOConfig::new();
+        let config = gpio::GPIOConfig::default();
         assert_eq!(config.pins[1].config, None);
     }
 }

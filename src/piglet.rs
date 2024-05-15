@@ -5,7 +5,7 @@ mod hw;
 use hw::Hardware;
 
 fn main() {
-    let config = gpio::GPIOConfig::new();
+    let config = gpio::GPIOConfig::default();
     println!("Pin configs: {:?}", config);
     println!("Pin1 Config is: {:?}", config.pins[1]);
 
