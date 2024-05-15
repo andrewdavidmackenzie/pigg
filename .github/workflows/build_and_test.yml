@@ -54,9 +54,6 @@ jobs:
           echo RUSTFLAGS="-C instrument-coverage" >> "$GITHUB_ENV"
           echo LLVM_PROFILE_FILE="flow-%p-%m.profraw" >> "$GITHUB_ENV"
 
-      - name: install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
       - name: build
         run: make build
 
