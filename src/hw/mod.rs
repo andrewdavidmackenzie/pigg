@@ -1,8 +1,8 @@
 use crate::gpio::{GPIOConfig, GPIOState};
 
-#[cfg_attr(feature="pico", path="pico.rs")]
-#[cfg_attr(feature="pi", path="pi.rs")]
-#[cfg_attr(not(any(feature="pico", feature="pi")), path="none.rs")]
+#[cfg_attr(all(feature = "pico", not(feature = "pi")), path = "pico.rs")]
+#[cfg_attr(all(feature = "pi", not(feature = "pico")), path = "pi.rs")]
+#[cfg_attr(not(any(feature = "pico", feature = "pi")), path = "none.rs")]
 mod implementation;
 
 pub fn get() -> impl Hardware {
