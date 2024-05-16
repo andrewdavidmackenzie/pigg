@@ -5,9 +5,10 @@ mod custom_widgets {
     pub mod line;
 }
 
+use std::env;
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{PinDescription, GPIO_DESCRIPTION};
+use crate::gpio::{PinDescription, GPIO_DESCRIPTION, GPIOConfig};
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 use iced::widget::{button, container, Column, Row, Text};
@@ -32,7 +33,11 @@ fn main() -> Result<(), iced::Error> {
 }
 
 struct Gpio {
-    gpio_config: [PinDescription; 40],
+    // TODO this filename will be used when we add a SAVE button or similar
+    #[allow(dead_code)]
+    config_file: Option<String>, // filename where to load and save config file to/from
+    gpio_description: [PinDescription; 40],
+    gpio_config: GPIOConfig,
     clicked: bool,
 }
 
@@ -46,8 +51,24 @@ impl Sandbox for Gpio {
     type Message = Message;
 
     fn new() -> Self {
+        // filename of config to load is an optional command line argument to piggui
+        // avoiding the extra overhead of clap or similar while we only have one possible argument
+        let config_file = env::args().nth(1);
+        let gpio_config = match &config_file {
+            None => GPIOConfig::default(),
+            Some(filename) => {
+                // TODO maybe do asynchronously, and send a message with the config when loaded?
+                match GPIOConfig::load(filename) {
+                    Ok(config) => config,
+                    _ => GPIOConfig::default()
+                }
+            }
+        };
+
         Self {
-            gpio_config: GPIO_DESCRIPTION,
+            config_file,
+            gpio_description: GPIO_DESCRIPTION,
+            gpio_config,
             clicked: false,
         }
     }
@@ -63,7 +84,7 @@ impl Sandbox for Gpio {
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
-        container(pin_view(&self.gpio_config))
+        container(pin_view(&self.gpio_description, &self.gpio_config))
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(alignment::Horizontal::Center)
@@ -80,8 +101,8 @@ impl Sandbox for Gpio {
     }
 }
 
-fn pin_view(pin_descriptions: &[PinDescription; 40]) -> Element<'static, Message> {
-
+fn pin_view(pin_descriptions: &[PinDescription; 40],
+            _pin_config: &GPIOConfig) -> Element<'static, Message> {
     // TODO: Align Layout
     let mut column = Column::new()
         .spacing(20)

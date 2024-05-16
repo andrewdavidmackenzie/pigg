@@ -8,6 +8,7 @@ use crate::gpio::GPIO_DESCRIPTION;
 fn main() {
     println!("Description: {:?}", GPIO_DESCRIPTION);
 
+    // When we write piglet for real - this will probably be sent over the network from a piggui
     let config = gpio::GPIOConfig::default();
     println!("Pin configs: {:?}", config);
 
