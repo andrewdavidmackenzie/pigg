@@ -51,6 +51,8 @@ impl Sandbox for Gpio {
     type Message = Message;
 
     fn new() -> Self {
+        // TODO factor this out into a function, once the UI update, async and error handling
+        // is done.
         // filename of config to load is an optional command line argument to piggui
         // avoiding the extra overhead of clap or similar while we only have one possible argument
         let config_file = env::args().nth(1);
@@ -64,7 +66,12 @@ impl Sandbox for Gpio {
                         println!("GPIO Config loaded from file: {filename}");
                         config
                     },
-                    _ => GPIOConfig::default()
+                    _ => {
+                        // TODO put this on the UI in some way
+                        println!("Failed to load GPIO Config from file: {filename}");
+                        println!("Default GPIO Config will be used instead");
+                        GPIOConfig::default()
+                    }
                 }
             }
         };
