@@ -2,32 +2,11 @@
 
 A GUI for visualization/control of GPIO on Raspberry Pis.
 
-## Idea Stage
-
-This is just a proposal at the idea stage.
-
-I posted the initial idea on reddit to see if any interest, and there seemed to be some, so I created this repo to help capture input.
-
-Later, when I actually write something and issues are clean-up, I will come back and edit this readme to 
-describe the actual plan!
-
-## Provide Input
-
-I will enable discussions on this repo, so feel free to raise something there.
-
-Please add issues for ideas for functionality.
-
-
 ## Chosen Tech
 
-For me to pursue this project, there are a few pieces of tech that I want to use, and are more or
-less "non-negotiable" (or I will lose interest)
-
 * rust
-* iced for GUI (although I'm also using leptos for web, and a GUI framework in rust that also provides a web UI might be acceptable)
-
-For GPIO on Pi I have been using [rppal](https://github.com/golemparts/rppal). 
-I'm open to others, providing it's in rust.
+* iced for GUI
+* [rppal](https://github.com/golemparts/rppal). for Raspbery Pi GPIO control
 
 ## Basic / Initial Functionality
 
@@ -35,6 +14,7 @@ I'm open to others, providing it's in rust.
 * able to config each pin (input, output, pulled up/down, pwm etc)
 * able to set status of outputs
 * able to see the status of inputs
+* Able to load a config from file, and save the config that is currently set in the GUI
 
 ## Next batch of functionality
 
@@ -95,3 +75,9 @@ You can set these up in your env so you always have them, or set them on the com
 You should be able to use `make build` or `make run` directly, and it will build `piggui` with a GUI 
 ### Building for Linux/macOS
 Use "make build"
+
+## Running it
+### Piggui
+
+Piggui takes an optional filename argument, to attempt to load the code from. If there is an error
+loading a config, the default config will be used.

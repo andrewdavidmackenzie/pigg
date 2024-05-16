@@ -1,5 +1,6 @@
 mod pin_descriptions;
 
+use std::io;
 use serde::{Deserialize, Serialize};
 use pin_descriptions::*;
 
@@ -52,6 +53,23 @@ pub const GPIO_DESCRIPTION : [PinDescription; 40] = [PIN_1, PIN_2, PIN_3, PIN_4,
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GPIOConfig {
     pub configured_pins: Vec<(u8, PinFunction)>,
+}
+
+impl GPIOConfig {
+    #[cfg(feature = "gui")]
+    #[allow(dead_code)] // "pi" build enables piglet which doesn't use this :-( TODO
+    pub fn load(_filename: &str)  -> io::Result<GPIOConfig> {
+        // TODO
+        Ok(GPIOConfig::default())
+    }
+
+    // TODO this will be used when we add a SAVE button or similar
+    #[cfg(feature = "gui")]
+    #[allow(dead_code)]
+    pub fn save(_filename: &str) -> io::Result<()> {
+        // TODO unimplemented
+        Ok(())
+    }
 }
 
 pub type PinLevel = bool;
