@@ -59,7 +59,11 @@ impl Sandbox for Gpio {
             Some(filename) => {
                 // TODO maybe do asynchronously, and send a message with the config when loaded?
                 match GPIOConfig::load(filename) {
-                    Ok(config) => config,
+                    Ok(config) => {
+                        // TODO put this on the UI in some way
+                        println!("GPIO Config loaded from file: {filename}");
+                        config
+                    },
                     _ => GPIOConfig::default()
                 }
             }
