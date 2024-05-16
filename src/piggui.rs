@@ -81,6 +81,8 @@ impl Sandbox for Gpio {
 }
 
 fn pin_view(pin_descriptions: &[PinDescription; 40]) -> Element<'static, Message> {
+
+    // TODO: Align Layout
     let mut column = Column::new()
         .spacing(20)
         .align_items(iced::Alignment::Center)
