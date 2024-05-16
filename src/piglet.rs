@@ -3,11 +3,13 @@ mod hw;
 
 // Use Hardware via trait
 use hw::Hardware;
+use crate::gpio::GPIO_DESCRIPTION;
 
 fn main() {
+    println!("Description: {:?}", GPIO_DESCRIPTION);
+
     let config = gpio::GPIOConfig::default();
     println!("Pin configs: {:?}", config);
-    println!("Pin1 Config is: {:?}", config.pins[1]);
 
     let mut hw = hw::get();
     hw.apply_config(&config);

@@ -5,8 +5,8 @@ mod hw;
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
 use iced::widget::{button, container, row, Column, Text};
 use iced::{alignment, window, Element, Length, Sandbox, Settings};
+use crate::gpio::{GPIO_DESCRIPTION, PinDescription};
 // Use Hardware via trait
-use crate::gpio::GPIODescription;
 //use hw::Hardware;
 
 fn main() -> Result<(), iced::Error> {
@@ -26,7 +26,7 @@ fn main() -> Result<(), iced::Error> {
 }
 
 struct Gpio {
-    gpio_config: GPIODescription,
+    gpio_config: [PinDescription; 40],
     clicked: bool,
 }
 
@@ -41,7 +41,7 @@ impl Sandbox for Gpio {
 
     fn new() -> Self {
         Self {
-            gpio_config: GPIODescription::default(),
+            gpio_config: GPIO_DESCRIPTION,
             clicked: false,
         }
     }
@@ -74,14 +74,14 @@ impl Sandbox for Gpio {
     }
 }
 
-fn pin_view(config: &GPIODescription) -> Element<'static, Message> {
+fn pin_view(pin_descriptions: &[PinDescription; 40]) -> Element<'static, Message> {
     let mut column = Column::new()
         .spacing(20)
         .align_items(iced::Alignment::Center)
         .width(Length::Fill)
         .height(Length::Fill);
 
-    for pair in config.pins.chunks(2) {
+    for pair in pin_descriptions.chunks(2) {
         let row = row!(
             Text::new(pair[0].name).size(20),
             button(Text::new(pair[0].board_pin_number.to_string()))

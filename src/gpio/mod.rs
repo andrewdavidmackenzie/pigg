@@ -1,18 +1,10 @@
 mod pin_descriptions;
 
-//use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use pin_descriptions::*;
 
-pub type PinLevel = bool;
-
-#[derive(Debug)]
-#[allow(dead_code)]
-pub struct GPIOState {
-    pub pin_state: [Option<PinLevel>; 40] // TODO make private later
-}
-
 // All the possible functions a pin can be given
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum PinFunction {
@@ -50,37 +42,26 @@ pub struct PinDescription {
     options: &'static[PinFunction], // The set of functions the pin can have, chosen by user config
 }
 
-impl Default for GPIODescription {
-    fn default() -> Self {
-        GPIODescription {
-            pins: [PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10,
-                PIN_11, PIN_12, PIN_13, PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20,
-                PIN_21, PIN_22, PIN_23, PIN_24, PIN_25, PIN_26, PIN_27, PIN_28, PIN_29, PIN_30,
-                PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37, PIN_38, PIN_39, PIN_40],
-        }
-    }
-}
-
 // Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
-#[derive(Debug, Clone)]
-pub struct GPIODescription {
-    pub pins: [PinDescription; 40],
-}
+pub const GPIO_DESCRIPTION : [PinDescription; 40] = [PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10,
+    PIN_11, PIN_12, PIN_13, PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20,
+    PIN_21, PIN_22, PIN_23, PIN_24, PIN_25, PIN_26, PIN_27, PIN_28, PIN_29, PIN_30,
+    PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37, PIN_38, PIN_39, PIN_40];
 
-// The currently selected function for each pin, if any selected.
-// If no specific config is set on a pin, it will have None.
-// NOTE: Array of 40, to the index is "of by one" compared to the [board_pin_number]
-#[derive(Debug, Clone)]
+// A vector of tuples of (board_pin_number, PinFunction)
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GPIOConfig {
-    pub config: [Option<PinFunction>; 40],
+    pub configured_pins: Vec<(u8, PinFunction)>,
 }
 
-impl Default for GPIOConfig {
-    fn default() -> Self {
-        GPIOConfig {
-            config: [None;40]
-        }
-    }
+pub type PinLevel = bool;
+
+// TBD whether we should merge state with config
+// on config load, for an output pin we would set the level...
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct GPIOState {
+    pub pin_state: [Option<PinLevel>; 40] // TODO make private later
 }
 
 #[cfg(test)]
@@ -90,6 +71,6 @@ mod test {
     #[test]
     fn create_a_config() {
         let config = gpio::GPIOConfig::default();
-        assert_eq!(config.config[1], None);
+        assert!(config.configured_pins.is_empty());
     }
 }
