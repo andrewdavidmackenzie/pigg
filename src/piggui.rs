@@ -1,11 +1,17 @@
 mod gpio;
 mod hw;
+mod custom_widgets {
+    pub mod circle;
+    pub mod line;
+}
 
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use iced::widget::{button, container, row, Column, Text};
-use iced::{alignment, window, Element, Length, Sandbox, Settings};
-use crate::gpio::{GPIO_DESCRIPTION, PinDescription};
+use crate::gpio::{PinDescription, GPIO_DESCRIPTION};
+// Using Custom Widgets
+use custom_widgets::{circle::circle, line::line};
+use iced::widget::{button, container, Column, Row, Text};
+use iced::{alignment, window, Alignment, Element, Length, Sandbox, Settings};
 // Use Hardware via trait
 //use hw::Hardware;
 
@@ -66,7 +72,7 @@ impl Sandbox for Gpio {
     }
 
     fn scale_factor(&self) -> f64 {
-        0.75
+        0.54
     }
 
     fn theme(&self) -> iced::Theme {
@@ -75,6 +81,8 @@ impl Sandbox for Gpio {
 }
 
 fn pin_view(pin_descriptions: &[PinDescription; 40]) -> Element<'static, Message> {
+
+    // TODO: Align Layout
     let mut column = Column::new()
         .spacing(20)
         .align_items(iced::Alignment::Center)
@@ -82,19 +90,37 @@ fn pin_view(pin_descriptions: &[PinDescription; 40]) -> Element<'static, Message
         .height(Length::Fill);
 
     for pair in pin_descriptions.chunks(2) {
-        let row = row!(
-            Text::new(pair[0].name).size(20),
+        let mut row = Row::new()
+            .padding(10)
+            .spacing(10)
+            .align_items(Alignment::Center);
+
+        row = row.push(Text::new(pair[0].name).size(20));
+
+        let mut r1 = Row::new().align_items(Alignment::Center);
+        r1 = r1.push(circle(5.0));
+        r1 = r1.push(line(50.0));
+        row = row.push(r1);
+
+        row = row.push(
             button(Text::new(pair[0].board_pin_number.to_string()))
                 .on_press(Message::Activate)
-                .width(Length::Fixed( 50f32 )),
+                .width(Length::Fixed(50f32)),
+        );
+        row = row.push(
             button(Text::new(pair[1].board_pin_number.to_string()))
                 .on_press(Message::Activate)
-                .width(Length::Fixed( 50f32 )),
-            Text::new(pair[1].name).size(20),
-        )
-        .spacing(10)
-        .align_items(iced::Alignment::Center);
+                .width(Length::Fixed(50f32)),
+        );
+        let mut r2 = Row::new().align_items(Alignment::Center);
+        r2 = r2.push(line(50.0));
+        r2 = r2.push(circle(5.0));
+        row = row.push(r2);
+
+        row = row.push(Text::new(pair[1].name).size(20));
+
         column = column.push(row);
     }
-    container(column).height(2000).width(2000).into()
+
+    container(column).into()
 }
