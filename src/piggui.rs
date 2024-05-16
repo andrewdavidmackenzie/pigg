@@ -6,7 +6,7 @@ mod hw;
 use iced::widget::{button, container, row, Column, Text};
 use iced::{alignment, window, Element, Length, Sandbox, Settings};
 // Use Hardware via trait
-use crate::gpio::GPIOConfig;
+use crate::gpio::GPIODescription;
 //use hw::Hardware;
 
 fn main() -> Result<(), iced::Error> {
@@ -26,7 +26,7 @@ fn main() -> Result<(), iced::Error> {
 }
 
 struct Gpio {
-    gpio_config: GPIOConfig,
+    gpio_config: GPIODescription,
     clicked: bool,
 }
 
@@ -41,7 +41,7 @@ impl Sandbox for Gpio {
 
     fn new() -> Self {
         Self {
-            gpio_config: GPIOConfig::default(),
+            gpio_config: GPIODescription::default(),
             clicked: false,
         }
     }
@@ -74,7 +74,7 @@ impl Sandbox for Gpio {
     }
 }
 
-fn pin_view(config: &GPIOConfig) -> Element<'static, Message> {
+fn pin_view(config: &GPIODescription) -> Element<'static, Message> {
     let mut column = Column::new()
         .spacing(20)
         .align_items(iced::Alignment::Center)
