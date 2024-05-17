@@ -14,7 +14,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy piclippy build pibuild test
+all: clippy build pibuild test
 
 release: release-build pibuild
 
@@ -34,8 +34,6 @@ ifneq ($(PI),)
 else
 	cargo clippy --features "gui" --tests --no-deps
 endif
-
-#-- --warn clippy::pedantic -D warnings
 
 # I'm currently building using release profile for Pi, as not debugging natively on it. If we want to do that then
 # we may need to add another make target
