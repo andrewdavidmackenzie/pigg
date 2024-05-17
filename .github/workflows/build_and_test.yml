@@ -13,22 +13,7 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-
-      - name: make clippy
-        run: make clippy
-
-  build-and-test:
+  clippy-build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -42,6 +27,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          components: clippy
           toolchain: stable
 
       - name: ConfigureCoverage
@@ -51,11 +37,8 @@ jobs:
           echo RUSTFLAGS="-C instrument-coverage" >> "$GITHUB_ENV"
           echo LLVM_PROFILE_FILE="flow-%p-%m.profraw" >> "$GITHUB_ENV"
 
-      - name: build
-        run: make build
-
-      - name: test
-        run: make test
+      - name: make
+        run: make clippy build test
 
       - name: UploadCoverage
         run: |

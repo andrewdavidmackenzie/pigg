@@ -40,8 +40,11 @@ A headless binary that is only built on RaspberryPi and that has no UI.
 
 ## Building and Running
 ### Pre-requisites
-We use "cross" to cross compile for Raspberry Pi from Linux or macOS.
-Install docker or podman and "cross" for cross compiling rust on your host for the Raspberry Pi.
+We use `"cross"` to cross compile for Raspberry Pi from Linux or macOS.
+Install docker or podman and `"cross"` for cross compiling rust on your host for the Raspberry Pi.
+
+If you run `"make"` on a Raspberry Pi, it will not use `"cross"` and just compile natively.
+So, to be clear `"cross"` is not a pre-requisite for Raspberry Pi native building.
 
 ### Building on host development machine
 Run `"make"` on macos or linux (or in fact RPi also) host to build these binaries:
@@ -51,7 +54,7 @@ Run `"make"` on macos or linux (or in fact RPi also) host to build these binarie
 
 Use `"make run"` to start `piggui` on the local machine - for GUI development.
 
-### Building for Pi from macos or linus
+### Building for Pi from macOS or Linux
 If you use `make` that builds for local host AND pi (using cross).
 
 #### Helper Env vars
@@ -72,12 +75,17 @@ You can set these up in your env so you always have them, or set them on the com
 * Use `make ssh` to ssh into your Pi to be able to run the binaries.
 
 ### Building for Pi on a Pi!
-You should be able to use `make build` or `make run` directly, and it will build `piggui` with a GUI 
-### Building for Linux/macOS
-Use "make build"
+You should be able to use `make` or `make run` directly, and it will build `piggui` with a GUI and
+also build `piglet`
 
 ## Running it
 ### Piggui
 
+Use `make run`.
+
 Piggui takes an optional filename argument, to attempt to load the code from. If there is an error
 loading a config, the default config will be used.
+
+To do this you can use the equivalent of what `make run` does, adding the filename:
+* On a Pi: `cargo run --features "pi","gui" -- <filename>`
+* On macOS and Linux: `cargo run --features "gui"  -- <filename>`
