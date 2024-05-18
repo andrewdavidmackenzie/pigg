@@ -12,7 +12,10 @@ use crate::gpio::{GPIOConfig, PinDescription, GPIO_DESCRIPTION};
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 use iced::widget::{button, container, Column, Row, Text};
-use iced::{alignment, window, Alignment, Element, Length, Sandbox, Settings};
+use iced::{
+    alignment, application, color, window, Alignment, Color, Element, Length, Sandbox, Settings,
+};
+
 // Use Hardware via trait
 //use hw::Hardware;
 
@@ -119,12 +122,8 @@ fn pin_view(
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for pair in pin_descriptions.chunks(2) {
-
-
-        // TODO: Style Button 
-
         let mut pin_name_left = Column::new()
-            .width(Length::Fixed(50f32))
+            .width(Length::Fixed(55f32))
             .align_items(Alignment::Center);
 
         let mut pin_name_left_row = Row::new().align_items(Alignment::Center);
@@ -133,7 +132,7 @@ fn pin_view(
         pin_name_left = pin_name_left.push(pin_name_left_row);
 
         let mut pin_name_right = Column::new()
-            .width(Length::Fixed(50f32))
+            .width(Length::Fixed(55f32))
             .align_items(Alignment::Center);
 
         let mut pin_name_right_row = Row::new().align_items(Alignment::Center);
@@ -164,13 +163,14 @@ fn pin_view(
         let mut left_pin = Column::new()
             .width(Length::Fixed(40f32))
             .height(Length::Shrink)
-            .spacing(20)
+            .spacing(10)
             .align_items(Alignment::Center);
 
         let mut left_pin_row = Row::new().align_items(Alignment::Center);
         left_pin_row = left_pin_row.push(
             button(Text::new(pair[0].board_pin_number.to_string()).size(20))
                 .padding(10)
+                .style(get_button_style())
                 .on_press(Message::Activate),
         );
 
@@ -179,13 +179,14 @@ fn pin_view(
         let mut right_pin = Column::new()
             .width(Length::Fixed(40f32))
             .height(Length::Shrink)
-            .spacing(20)
+            .spacing(10)
             .align_items(Alignment::Center);
 
         let mut right_pin_row = Row::new().align_items(Alignment::Center);
         right_pin_row = right_pin_row.push(
-            button(Text::new(pair[1].board_pin_number.to_string()).size(20))
+            iced::widget::Button::new(Text::new(pair[1].board_pin_number.to_string()).size(20))
                 .padding(10)
+                .style(get_button_style())
                 .on_press(Message::Activate),
         );
 
@@ -201,8 +202,33 @@ fn pin_view(
             .spacing(10)
             .align_items(Alignment::Center);
 
-        column = column.push(row);
+        column = column.push(row).push(iced::widget::Space::new(
+            Length::Fixed(1.0),
+            Length::Fixed(5.0),
+        ));
     }
 
     container(column).into()
+}
+
+pub struct CustomButton;
+
+impl button::StyleSheet for CustomButton {
+    type Style = iced::Theme;
+
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            background: Some(iced::Background::Color(Color::WHITE)),
+            border: iced::Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 50.0.into(),
+            },
+            ..Default::default()
+        }
+    }
+}
+
+pub fn get_button_style() -> iced::widget::theme::Button {
+    iced::widget::theme::Button::Custom(Box::new(CustomButton))
 }
