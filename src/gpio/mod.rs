@@ -1,6 +1,8 @@
 mod pin_descriptions;
 
+use std::fs::File;
 use std::io;
+use std::io::{BufReader, Write};
 use serde::{Deserialize, Serialize};
 use pin_descriptions::*;
 
@@ -58,17 +60,21 @@ pub struct GPIOConfig {
 impl GPIOConfig {
     #[cfg(feature = "gui")]
     #[allow(dead_code)] // "pi" build enables piglet which doesn't use this :-( TODO
-    pub fn load(_filename: &str)  -> io::Result<GPIOConfig> {
-        // TODO
-        Ok(GPIOConfig::default())
+    // TODO take AsPath/AsRef etc
+    pub fn load(filename: &str)  -> io::Result<GPIOConfig> {
+        let file = File::open(filename)?;
+        let reader = BufReader::new(file);
+        let config = serde_json::from_reader(reader)?;
+        Ok(config)
     }
 
     // TODO this will be used when we add a SAVE button or similar
     #[cfg(feature = "gui")]
     #[allow(dead_code)]
-    pub fn save(_filename: &str) -> io::Result<()> {
-        // TODO unimplemented
-        Ok(())
+    pub fn save(&self, filename: &str) -> io::Result<()> {
+        let mut file = File::create(filename)?;
+        let contents = serde_json::to_string(self)?;
+        file.write_all(contents.as_bytes())
     }
 }
 
@@ -84,11 +90,58 @@ pub struct GPIOState {
 
 #[cfg(test)]
 mod test {
-    use crate::gpio;
+    use std::fs;
+    use std::fs::File;
+    use std::io::Write;
+    use std::path::PathBuf;
+    use tempfile::tempdir;
+    use crate::gpio::{GPIOConfig, PinFunction};
 
     #[test]
     fn create_a_config() {
-        let config = gpio::GPIOConfig::default();
+        let config = GPIOConfig::default();
         assert!(config.configured_pins.is_empty());
+    }
+
+    #[test]
+    fn load_one_pin_config() {
+        let pin_config = r#"{"configured_pins":[[1,"Input"]]}"#;
+        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let test_file = output_dir.join("test.piggui");
+        let mut file = File::create(&test_file).expect("Could not create test file");
+        file.write_all(pin_config.as_bytes()).expect("Could not write to test file");
+        let config = GPIOConfig::load(test_file.to_str().unwrap()).unwrap();
+        assert_eq!(config.configured_pins.len(), 1);
+        assert_eq!(config.configured_pins[0].0, 1);
+        assert_eq!(config.configured_pins[0].1, PinFunction::Input);
+    }
+
+    #[test]
+    fn load_test_file() {
+        let root = std::env::var("CARGO_MANIFEST_DIR")
+            .expect("Could not get manifest dir");
+        let mut path = PathBuf::from(root);
+        path = path.join("tests/one_pin_config.piggui");
+        let config = GPIOConfig::load(path.to_str().unwrap()).unwrap();
+        assert_eq!(config.configured_pins.len(), 1);
+        assert_eq!(config.configured_pins[0].0, 1);
+        assert_eq!(config.configured_pins[0].1, PinFunction::Input);
+    }
+
+    #[test]
+    fn save_one_pin_config() {
+        let config = GPIOConfig {
+            configured_pins: vec!((1, PinFunction::Input))
+        };
+
+        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let test_file = output_dir.join("test.piggui");
+
+        config.save(test_file.to_str().unwrap()).unwrap();
+
+        let pin_config = r#"{"configured_pins":[[1,"Input"]]}"#;
+        let contents = fs::read_to_string(test_file)
+            .expect("Could not read test file");
+        assert_eq!(contents, pin_config);
     }
 }
