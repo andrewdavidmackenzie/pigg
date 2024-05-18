@@ -37,3 +37,7 @@ iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "ca
 iced_native = { version = "0.10.3", optional = true }
 tokio = { version = "1", features = ["sync"], optional = true }
 serde = { version = "1.0.202", features = ["derive"], optional = true }
+serde_json = "1.0.117"
+
+[dev-dependencies]
+tempfile = "3"

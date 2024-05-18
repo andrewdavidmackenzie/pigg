@@ -168,7 +168,7 @@ fn pin_view(
         left_pin_row = left_pin_row.push(
             button(Text::new(pair[0].board_pin_number.to_string()).size(20))
                 .padding(10)
-                .width(Length::Fixed(40 as f32))
+                .width(Length::Fixed(40f32))
                 .style(get_button_style())
                 .on_press(Message::Activate),
         );
@@ -185,7 +185,7 @@ fn pin_view(
         right_pin_row = right_pin_row.push(
             iced::widget::Button::new(Text::new(pair[1].board_pin_number.to_string()).size(20))
                 .padding(10)
-                .width(Length::Fixed(40 as f32))
+                .width(Length::Fixed(40f32))
                 .style(get_button_style())
                 .on_press(Message::Activate),
         );
