@@ -12,9 +12,7 @@ use crate::gpio::{GPIOConfig, PinDescription, GPIO_DESCRIPTION};
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 use iced::widget::{button, container, Column, Row, Text};
-use iced::{
-    alignment, application, color, window, Alignment, Color, Element, Length, Sandbox, Settings,
-};
+use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
 
 // Use Hardware via trait
 //use hw::Hardware;
@@ -170,6 +168,7 @@ fn pin_view(
         left_pin_row = left_pin_row.push(
             button(Text::new(pair[0].board_pin_number.to_string()).size(20))
                 .padding(10)
+                .width(Length::Fixed(40 as f32))
                 .style(get_button_style())
                 .on_press(Message::Activate),
         );
@@ -186,6 +185,7 @@ fn pin_view(
         right_pin_row = right_pin_row.push(
             iced::widget::Button::new(Text::new(pair[1].board_pin_number.to_string()).size(20))
                 .padding(10)
+                .width(Length::Fixed(40 as f32))
                 .style(get_button_style())
                 .on_press(Message::Activate),
         );
@@ -214,7 +214,7 @@ fn pin_view(
 pub struct CustomButton;
 
 impl button::StyleSheet for CustomButton {
-    type Style = iced::Theme;
+    type Style = Theme;
 
     fn active(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
