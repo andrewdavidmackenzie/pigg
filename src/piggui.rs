@@ -20,6 +20,7 @@ use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settin
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
+        decorations: true,
         ..Default::default()
     };
 
@@ -105,7 +106,7 @@ impl Sandbox for Gpio {
     }
 
     fn scale_factor(&self) -> f64 {
-        0.7
+        0.65
     }
 
     fn theme(&self) -> iced::Theme {
@@ -164,16 +165,102 @@ fn pin_view(
             .spacing(10)
             .align_items(Alignment::Center);
 
-        let mut left_pin_row = Row::new().align_items(Alignment::Center);
-        left_pin_row = left_pin_row.push(
-            button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                .padding(10)
-                .width(Length::Fixed(40f32))
-                .style(get_button_style())
-                .on_press(Message::Activate),
-        );
+        match pair[0].board_pin_number {
+            1 | 17 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(1.0, 0.92, 0.016, 1.0),
+                    text_color: Color::BLACK,
+                };
+                let mut left_pin_row = Row::new().align_items(Alignment::Center);
+                left_pin_row = left_pin_row.push(
+                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                left_pin = left_pin.push(left_pin_row);
+            }
+            3 | 5 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
+                    text_color: Color::BLACK,
+                };
+                let mut left_pin_row = Row::new().align_items(Alignment::Center);
+                left_pin_row = left_pin_row.push(
+                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                left_pin = left_pin.push(left_pin_row);
+            }
 
-        left_pin = left_pin.push(left_pin_row);
+            19 | 21 | 23 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(0.933, 0.510, 0.933, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut left_pin_row = Row::new().align_items(Alignment::Center);
+                left_pin_row = left_pin_row.push(
+                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                left_pin = left_pin.push(left_pin_row);
+            }
+
+            27 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(0.502, 0.502, 0.502, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut left_pin_row = Row::new().align_items(Alignment::Center);
+                left_pin_row = left_pin_row.push(
+                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                left_pin = left_pin.push(left_pin_row);
+            }
+
+            9 | 25 | 39 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::BLACK,
+                    text_color: Color::WHITE,
+                };
+                let mut left_pin_row = Row::new().align_items(Alignment::Center);
+                left_pin_row = left_pin_row.push(
+                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                left_pin = left_pin.push(left_pin_row);
+            }
+
+            _ => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut left_pin_row = Row::new().align_items(Alignment::Center);
+                left_pin_row = left_pin_row.push(
+                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                left_pin = left_pin.push(left_pin_row);
+            }
+        }
 
         let mut right_pin = Column::new()
             .width(Length::Fixed(40f32))
@@ -181,17 +268,111 @@ fn pin_view(
             .spacing(10)
             .align_items(Alignment::Center);
 
-        let mut right_pin_row = Row::new().align_items(Alignment::Center);
-        right_pin_row = right_pin_row.push(
-            iced::widget::Button::new(Text::new(pair[1].board_pin_number.to_string()).size(20))
-                .padding(10)
-                .width(Length::Fixed(40f32))
-                .style(get_button_style())
-                .on_press(Message::Activate),
-        );
+        match pair[1].board_pin_number {
+            2 | 4 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut right_pin_row = Row::new().align_items(Alignment::Center);
+                right_pin_row = right_pin_row.push(
+                    iced::widget::Button::new(
+                        Text::new(pair[1].board_pin_number.to_string()).size(20),
+                    )
+                    .padding(10)
+                    .width(Length::Fixed(40f32))
+                    .style(pin_color.get_button_style())
+                    .on_press(Message::Activate),
+                );
 
-        right_pin = right_pin.push(right_pin_row);
+                right_pin = right_pin.push(right_pin_row);
+            }
 
+            6 | 14 | 20 | 30 | 34 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::BLACK,
+                    text_color: Color::WHITE,
+                };
+                let mut right_pin_row = Row::new().align_items(Alignment::Center);
+                right_pin_row = right_pin_row.push(
+                    iced::widget::Button::new(
+                        Text::new(pair[1].board_pin_number.to_string()).size(20),
+                    )
+                    .padding(10)
+                    .width(Length::Fixed(40f32))
+                    .style(pin_color.get_button_style())
+                    .on_press(Message::Activate),
+                );
+
+                right_pin = right_pin.push(right_pin_row);
+            }
+
+            8 | 10 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut right_pin_row = Row::new().align_items(Alignment::Center);
+                right_pin_row = right_pin_row.push(
+                    iced::widget::Button::new(
+                        Text::new(pair[1].board_pin_number.to_string()).size(20),
+                    )
+                    .padding(10)
+                    .width(Length::Fixed(40f32))
+                    .style(pin_color.get_button_style())
+                    .on_press(Message::Activate),
+                );
+
+                right_pin = right_pin.push(right_pin_row);
+            }
+            24 | 26 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(0.933, 0.510, 0.933, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut right_pin_row = Row::new().align_items(Alignment::Center);
+                right_pin_row = right_pin_row.push(
+                    button(Text::new(pair[1].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                right_pin = right_pin.push(right_pin_row);
+            }
+
+            28 => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(0.502, 0.502, 0.502, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut right_pin_row = Row::new().align_items(Alignment::Center);
+                right_pin_row = right_pin_row.push(
+                    button(Text::new(pair[1].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                right_pin = right_pin.push(right_pin_row);
+            }
+
+            _ => {
+                let pin_color = CustomButton {
+                    bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
+                    text_color: Color::WHITE,
+                };
+                let mut right_pin_row = Row::new().align_items(Alignment::Center);
+                right_pin_row = right_pin_row.push(
+                    button(Text::new(pair[1].board_pin_number.to_string()).size(20))
+                        .padding(10)
+                        .width(Length::Fixed(40f32))
+                        .style(pin_color.get_button_style())
+                        .on_press(Message::Activate),
+                );
+                right_pin = right_pin.push(right_pin_row);
+            }
+        }
         let row = Row::new()
             .push(pin_name_left)
             .push(pin_arrow_left)
@@ -211,24 +392,33 @@ fn pin_view(
     container(column).into()
 }
 
-pub struct CustomButton;
+pub struct CustomButton {
+    bg_color: iced::Color,
+    text_color: iced::Color,
+}
 
 impl button::StyleSheet for CustomButton {
     type Style = Theme;
 
     fn active(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
-            background: Some(iced::Background::Color(Color::WHITE)),
+            background: Some(iced::Background::Color(self.bg_color)),
             border: iced::Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
                 radius: 50.0.into(),
             },
+            text_color: self.text_color,
             ..Default::default()
         }
     }
 }
 
-pub fn get_button_style() -> iced::widget::theme::Button {
-    iced::widget::theme::Button::Custom(Box::new(CustomButton))
+impl CustomButton {
+    pub fn get_button_style(&self) -> iced::widget::theme::Button {
+        iced::widget::theme::Button::Custom(Box::new(CustomButton {
+            bg_color: self.bg_color,
+            text_color: self.text_color,
+        }))
+    }
 }
