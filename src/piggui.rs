@@ -184,7 +184,7 @@ fn pin_view(
             3 | 5 => {
                 let pin_color = CustomButton {
                     bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
-                    text_color: Color::WHITE,
+                    text_color: Color::BLACK,
                 };
                 let mut left_pin_row = Row::new().align_items(Alignment::Center);
                 left_pin_row = left_pin_row.push(
