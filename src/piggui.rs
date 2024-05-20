@@ -11,7 +11,7 @@ use std::env;
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
-use iced::widget::{button, container, pick_list, Column, PickList, Row, Text};
+use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
 
 // Use Hardware via trait
@@ -34,19 +34,19 @@ fn main() -> Result<(), iced::Error> {
     })
 }
 
-struct Gpio {
+pub struct Gpio {
     // TODO this filename will be used when we add a SAVE button or similar
     #[allow(dead_code)]
     config_file: Option<String>, // filename where to load and save config file to/from
     gpio_description: [PinDescription; 40],
     gpio_config: GPIOConfig,
-    pin_function_selected: Vec<PinFunction>,
+    pub pin_function_selected: Vec<PinFunction>,
     clicked: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
 
-enum Message {
+pub enum Message {
     Activate,
     PinFunctionSelected(usize, PinFunction),
 }
