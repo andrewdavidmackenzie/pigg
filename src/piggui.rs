@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, io};
 
 use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
 use iced::widget::{button, Column, container, Row, Text};
@@ -48,26 +48,13 @@ struct Gpio {
 }
 
 impl Gpio {
-    fn get_config(config_filename: Option<String>) -> (Option<String>, GPIOConfig) {
+    fn get_config(config_filename: Option<String>) -> io::Result<(Option<String>, GPIOConfig)> {
         let gpio_config = match &config_filename {
             None => GPIOConfig::default(),
-            Some(filename) => {
-                // TODO maybe do asynchronously, and send a message with the config when loaded?
-                match GPIOConfig::load(filename) {
-                    Ok(config) => {
-                        // TODO put this on the UI in some way
-                        println!("GPIO Config loaded from file: {filename}");
-                        config
-                    }
-                    _ => {
-                        // TODO put this on the UI in some way
-                        println!("Failed to load GPIO Config from file: {filename}");
-                        println!("Default GPIO Config will be used instead");
-                        GPIOConfig::default()
-                    }
-                }
-            }
+            Some(filename) => GPIOConfig::load(filename)?,
         };
+
+        Ok((config_filename, gpio_config))
     }
 }
 
@@ -84,7 +71,8 @@ impl Sandbox for Gpio {
         // TODO Do this async Elm/Iced style by a Message, that contains a new config to apply
         // Read the (optional) filename of a config to load a config from
         // avoiding the extra overhead of clap or similar while we only have one possible argument
-        let (config_filename, gpio_config) = Self::get_config(env::args().nth(1));
+        let (config_filename, gpio_config) =
+            Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
 
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];
