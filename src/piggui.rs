@@ -81,6 +81,10 @@ impl Sandbox for Gpio {
         };
 
         let num_pins = GPIO_DESCRIPTION.len();
+
+        // TODO Fixing default PinFunction for each pin
+        // For now displaying Ground for each pin
+
         let pin_function_selected = vec![PinFunction::Ground; num_pins];
 
         Self {
@@ -131,19 +135,19 @@ pub fn pin_view(
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
-        let mut pin_option = Column::new()
+        let mut pin_option_left = Column::new()
             .width(Length::Fixed(100 as f32))
             .align_items(Alignment::Center);
 
-        let mut pin_options_row = Row::new().align_items(Alignment::Center);
+        let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
 
-        pin_options_row = pin_options_row.push(pick_list(
+        pin_options_row_left = pin_options_row_left.push(pick_list(
             pair[0].options,
             Some(gpio.pin_function_selected[idx * 2]),
             move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
         ));
 
-        pin_option = pin_option.push(pin_options_row);
+        pin_option_left = pin_option_left.push(pin_options_row_left);
 
         let mut pin_name_left = Column::new()
             .width(Length::Fixed(55f32))
@@ -412,7 +416,7 @@ pub fn pin_view(
         pin_option_right = pin_option_right.push(pin_options_row_right);
 
         let row = Row::new()
-            .push(pin_option)
+            .push(pin_option_left)
             .push(pin_name_left)
             .push(pin_arrow_left)
             .push(left_pin)
