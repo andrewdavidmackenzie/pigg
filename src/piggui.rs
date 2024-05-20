@@ -401,6 +401,7 @@ pub fn pin_view(
                 right_pin = right_pin.push(right_pin_row);
             }
         }
+
         let mut pin_option_right = Column::new()
             .width(Length::Fixed(100 as f32))
             .align_items(Alignment::Center);
