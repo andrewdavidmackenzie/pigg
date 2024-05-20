@@ -77,6 +77,9 @@ impl Sandbox for Gpio {
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];
 
+        let num_pins = GPIO_DESCRIPTION.len();
+        let pin_function_selected = vec![PinFunction::Ground; num_pins];
+
         Self {
             config_filename,
             gpio_description: GPIO_DESCRIPTION,
@@ -99,8 +102,8 @@ impl Sandbox for Gpio {
         }
     }
 
-    fn view(&self) -> Element<Self::Message> {
-        container(pin_view(&self.gpio_description, &self.gpio_config, self))
+    fn view(&self) -> iced::Element<Self::Message> {
+        container(pin_view(&self.gpio_description, &self.gpio_config, &self))
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(alignment::Horizontal::Center)
@@ -117,7 +120,7 @@ impl Sandbox for Gpio {
     }
 }
 
-fn pin_view(
+pub fn pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
     gpio: &Gpio,
@@ -125,21 +128,19 @@ fn pin_view(
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
-        let mut pin_option_left = Column::new()
-            .width(Length::Fixed(100f32))
+        let mut pin_option = Column::new()
+            .width(Length::Fixed(100 as f32))
             .align_items(Alignment::Center);
 
-        if pair[0].options.len() > 1 {
-            let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
+        let mut pin_options_row = Row::new().align_items(Alignment::Center);
 
-            pin_options_row_left = pin_options_row_left.push(pick_list(
-                pair[0].options,
-                gpio.pin_function_selected[idx * 2],
-                move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
-            ));
+        pin_options_row = pin_options_row.push(pick_list(
+            pair[0].options,
+            Some(gpio.pin_function_selected[idx * 2]),
+            move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
+        ));
 
-            pin_option_left = pin_option_left.push(pin_options_row_left);
-        }
+        pin_option = pin_option.push(pin_options_row);
 
         let mut pin_name_left = Column::new()
             .width(Length::Fixed(55f32))
