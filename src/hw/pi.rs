@@ -40,6 +40,7 @@ impl Hardware for PiHW {
                 }
                 PinFunction::Output => {
                     // TODO check if there are any options on Output pins
+                    // TODO consider config being able to "save" the output value to set?
                     let output = Gpio::new().unwrap().get(*pin_number).unwrap().into_output();
                     self.configured_pins
                         .push((*pin_number, Pin::Output(output)))
@@ -54,6 +55,8 @@ impl Hardware for PiHW {
                 PinFunction::ID_SD => {}
                 PinFunction::ID => {}
                 PinFunction::EEPROM => {}
+                // TODO think about how to handle UART output, maybe some sort of channel is created
+                // and text received on it is sent to the UART or similar.
                 PinFunction::UART0_TXD => {}
                 PinFunction::UART0_RXD => {}
                 PinFunction::PCM_CLK => {}
@@ -68,6 +71,10 @@ impl Hardware for PiHW {
         println!("GPIO Config has been applied to Pi hardware");
     }
 
+    // TODO might deprecate this in favor of some sort of message or callback when an input changes
+    // its value, to trigger a UI update...
+    // messages will need to be able to capture other types of input, Image (SPIO), value from ADC
+    // string of characters from a UART, etc
     fn get_state(&self) -> GPIOState {
         GPIOState {
             pin_state: [None; 40],
