@@ -1,14 +1,14 @@
 use std::env;
 
-use iced::widget::{button, container, pick_list, Column, Row, Text};
-use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
+use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
+use iced::widget::{button, Column, container, Row, Text};
 
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
 
 mod gpio;
 mod hw;
@@ -40,30 +40,16 @@ fn main() -> Result<(), iced::Error> {
 struct Gpio {
     // TODO this filename will be used when we add a SAVE button or similar
     #[allow(dead_code)]
-    config_file: Option<String>, // filename where to load and save config file to/from
+    config_filename: Option<String>, // filename where to load and save config file to/from
     gpio_description: [PinDescription; 40],
     gpio_config: GPIOConfig,
     pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
-
-enum Message {
-    Activate,
-    PinFunctionSelected(usize, PinFunction),
-}
-
-impl Sandbox for Gpio {
-    type Message = Message;
-
-    fn new() -> Self {
-        // TODO factor this out into a function, once the UI update, async and error handling
-        // is done.
-        // filename of config to load is an optional command line argument to piggui
-        // avoiding the extra overhead of clap or similar while we only have one possible argument
-        let config_file = env::args().nth(1);
-        let gpio_config = match &config_file {
+impl Gpio {
+    fn get_config(config_filename: Option<String>) -> (Option<String>, GPIOConfig) {
+        let gpio_config = match &config_filename {
             None => GPIOConfig::default(),
             Some(filename) => {
                 // TODO maybe do asynchronously, and send a message with the config when loaded?
@@ -82,12 +68,29 @@ impl Sandbox for Gpio {
                 }
             }
         };
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Message {
+    Activate,
+    PinFunctionSelected(usize, PinFunction),
+}
+
+impl Sandbox for Gpio {
+    type Message = Message;
+
+    fn new() -> Self {
+        // TODO Do this async Elm/Iced style by a Message, that contains a new config to apply
+        // Read the (optional) filename of a config to load a config from
+        // avoiding the extra overhead of clap or similar while we only have one possible argument
+        let (config_filename, gpio_config) = Self::get_config(env::args().nth(1));
 
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];
 
         Self {
-            config_file,
+            config_filename,
             gpio_description: GPIO_DESCRIPTION,
             gpio_config,
             pin_function_selected,

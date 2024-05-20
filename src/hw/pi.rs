@@ -27,9 +27,12 @@ pub fn get() -> impl Hardware {
     }
 }
 
-// TODO maybe change trait to allow errors
+/// Implement the [Hardware] trait for ordinary Pi hardware.
 // -> Result<(), Box<dyn Error>>
 impl Hardware for PiHW {
+    /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
+    /// configure the Pi GPIO hardware to correspond to it
+    // TODO maybe change trait to allow errors
     fn apply_config(&mut self, config: &GPIOConfig) {
         for (pin_number, pin_config) in &config.configured_pins {
             match pin_config {
@@ -71,6 +74,7 @@ impl Hardware for PiHW {
         println!("GPIO Config has been applied to Pi hardware");
     }
 
+    /// Return the state of the Input pins and other pins who's state is read from GPIO hardware
     // TODO might deprecate this in favor of some sort of message or callback when an input changes
     // its value, to trigger a UI update...
     // messages will need to be able to capture other types of input, Image (SPIO), value from ADC
