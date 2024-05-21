@@ -1,18 +1,21 @@
+use std::env;
+
+use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
+
+// Using Custom Widgets
+use custom_widgets::{circle::circle, line::line};
+
+// This binary will only be built with the "iced" feature enabled, by use of "required-features"
+// in Cargo.toml so no need for the feature to be used here for conditional compiling
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+
 mod gpio;
 mod hw;
 mod custom_widgets {
     pub mod circle;
     pub mod line;
 }
-
-use std::env;
-// This binary will only be built with the "iced" feature enabled, by use of "required-features"
-// in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, GPIO_DESCRIPTION};
-// Using Custom Widgets
-use custom_widgets::{circle::circle, line::line};
-use iced::widget::{button, container, Column, Row, Text};
-use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
 
 // Use Hardware via trait
 //use hw::Hardware;
@@ -40,6 +43,7 @@ struct Gpio {
     config_file: Option<String>, // filename where to load and save config file to/from
     gpio_description: [PinDescription; 40],
     gpio_config: GPIOConfig,
+    pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
 }
 
@@ -47,6 +51,7 @@ struct Gpio {
 
 enum Message {
     Activate,
+    PinFunctionSelected(usize, PinFunction),
 }
 
 impl Sandbox for Gpio {
@@ -78,10 +83,14 @@ impl Sandbox for Gpio {
             }
         };
 
+        let num_pins = GPIO_DESCRIPTION.len();
+        let pin_function_selected = vec![None; num_pins];
+
         Self {
             config_file,
             gpio_description: GPIO_DESCRIPTION,
             gpio_config,
+            pin_function_selected,
             clicked: false,
         }
     }
@@ -93,11 +102,14 @@ impl Sandbox for Gpio {
     fn update(&mut self, message: Message) {
         match message {
             Message::Activate => self.clicked = true,
+            Message::PinFunctionSelected(pin_index, pin_function) => {
+                self.pin_function_selected[pin_index] = Some(pin_function);
+            }
         }
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
-        container(pin_view(&self.gpio_description, &self.gpio_config))
+        container(pin_view(&self.gpio_description, &self.gpio_config, self))
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(alignment::Horizontal::Center)
@@ -117,10 +129,27 @@ impl Sandbox for Gpio {
 fn pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
+    gpio: &Gpio,
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-    for pair in pin_descriptions.chunks(2) {
+    for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
+        let mut pin_option_left = Column::new()
+            .width(Length::Fixed(100f32))
+            .align_items(Alignment::Center);
+
+        if pair[0].options.len() > 1 {
+            let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
+
+            pin_options_row_left = pin_options_row_left.push(pick_list(
+                pair[0].options,
+                gpio.pin_function_selected[idx * 2],
+                move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
+            ));
+
+            pin_option_left = pin_option_left.push(pin_options_row_left);
+        }
+
         let mut pin_name_left = Column::new()
             .width(Length::Fixed(55f32))
             .align_items(Alignment::Center);
@@ -373,13 +402,32 @@ fn pin_view(
                 right_pin = right_pin.push(right_pin_row);
             }
         }
+
+        let mut pin_option_right = Column::new()
+            .width(Length::Fixed(100f32))
+            .align_items(Alignment::Center);
+
+        if pair[1].options.len() > 1 {
+            let mut pin_options_row_right = Row::new().align_items(Alignment::Center);
+
+            pin_options_row_right = pin_options_row_right.push(pick_list(
+                pair[1].options,
+                gpio.pin_function_selected[idx * 2 + 1],
+                move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
+            ));
+
+            pin_option_right = pin_option_right.push(pin_options_row_right);
+        }
+
         let row = Row::new()
+            .push(pin_option_left)
             .push(pin_name_left)
             .push(pin_arrow_left)
             .push(left_pin)
             .push(right_pin)
             .push(pin_arrow_right)
             .push(pin_name_right)
+            .push(pin_option_right)
             .spacing(10)
             .align_items(Alignment::Center);
 

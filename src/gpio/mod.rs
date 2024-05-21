@@ -1,10 +1,10 @@
 mod pin_descriptions;
 
+use pin_descriptions::*;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
-use serde::{Deserialize, Serialize};
-use pin_descriptions::*;
 
 // All the possible functions a pin can be given
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
@@ -30,7 +30,7 @@ pub enum PinFunction {
     PCM_CLK,
     SPIO_CE0_N,
     SPIO_CE1_N,
-    ID_SC
+    ID_SC,
 }
 
 // [board_pin_number] refer to the pins by the number of the pin printed on the board
@@ -42,14 +42,21 @@ pub struct PinDescription {
     pub board_pin_number: u8,
     bcm_pin_number: Option<u8>,
     pub name: &'static str,
-    options: &'static[PinFunction], // The set of functions the pin can have, chosen by user config
+    pub options: &'static [PinFunction], // The set of functions the pin can have, chosen by user config
+}
+impl std::fmt::Display for PinFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 // Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
-pub const GPIO_DESCRIPTION : [PinDescription; 40] = [PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10,
-    PIN_11, PIN_12, PIN_13, PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20,
-    PIN_21, PIN_22, PIN_23, PIN_24, PIN_25, PIN_26, PIN_27, PIN_28, PIN_29, PIN_30,
-    PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37, PIN_38, PIN_39, PIN_40];
+pub const GPIO_DESCRIPTION: [PinDescription; 40] = [
+    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
+    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
+    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
+    PIN_38, PIN_39, PIN_40,
+];
 
 // A vector of tuples of (board_pin_number, PinFunction)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -60,8 +67,8 @@ pub struct GPIOConfig {
 impl GPIOConfig {
     #[cfg(feature = "gui")]
     #[allow(dead_code)] // "pi" build enables piglet which doesn't use this :-( TODO
-    // TODO take AsPath/AsRef etc
-    pub fn load(filename: &str)  -> io::Result<GPIOConfig> {
+                        // TODO take AsPath/AsRef etc
+    pub fn load(filename: &str) -> io::Result<GPIOConfig> {
         let file = File::open(filename)?;
         let reader = BufReader::new(file);
         let config = serde_json::from_reader(reader)?;
@@ -85,17 +92,17 @@ pub type PinLevel = bool;
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct GPIOState {
-    pub pin_state: [Option<PinLevel>; 40] // TODO make private later
+    pub pin_state: [Option<PinLevel>; 40], // TODO make private later
 }
 
 #[cfg(test)]
 mod test {
+    use crate::gpio::{GPIOConfig, PinFunction};
     use std::fs;
     use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;
     use tempfile::tempdir;
-    use crate::gpio::{GPIOConfig, PinFunction};
 
     #[test]
     fn create_a_config() {
@@ -109,7 +116,8 @@ mod test {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.piggui");
         let mut file = File::create(&test_file).expect("Could not create test file");
-        file.write_all(pin_config.as_bytes()).expect("Could not write to test file");
+        file.write_all(pin_config.as_bytes())
+            .expect("Could not write to test file");
         let config = GPIOConfig::load(test_file.to_str().unwrap()).unwrap();
         assert_eq!(config.configured_pins.len(), 1);
         assert_eq!(config.configured_pins[0].0, 1);
@@ -118,8 +126,7 @@ mod test {
 
     #[test]
     fn load_test_file() {
-        let root = std::env::var("CARGO_MANIFEST_DIR")
-            .expect("Could not get manifest dir");
+        let root = std::env::var("CARGO_MANIFEST_DIR").expect("Could not get manifest dir");
         let mut path = PathBuf::from(root);
         path = path.join("tests/one_pin_config.piggui");
         let config = GPIOConfig::load(path.to_str().unwrap()).unwrap();
@@ -131,7 +138,7 @@ mod test {
     #[test]
     fn save_one_pin_config() {
         let config = GPIOConfig {
-            configured_pins: vec!((1, PinFunction::Input))
+            configured_pins: vec![(1, PinFunction::Input)],
         };
 
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
@@ -140,8 +147,7 @@ mod test {
         config.save(test_file.to_str().unwrap()).unwrap();
 
         let pin_config = r#"{"configured_pins":[[1,"Input"]]}"#;
-        let contents = fs::read_to_string(test_file)
-            .expect("Could not read test file");
+        let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
 }
