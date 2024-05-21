@@ -1,14 +1,14 @@
 use std::env;
 
-use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
+use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
 
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
 
 mod gpio;
 mod hw;
@@ -43,11 +43,12 @@ struct Gpio {
     config_file: Option<String>, // filename where to load and save config file to/from
     gpio_description: [PinDescription; 40],
     gpio_config: GPIOConfig,
-    pub pin_function_selected: Vec<PinFunction>,
+    pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
+
 enum Message {
     Activate,
     PinFunctionSelected(usize, PinFunction),
@@ -83,11 +84,7 @@ impl Sandbox for Gpio {
         };
 
         let num_pins = GPIO_DESCRIPTION.len();
-
-        // TODO Fixing default PinFunction for each pin
-        // For now displaying Ground for each pin
-
-        let pin_function_selected = vec![PinFunction::Ground; num_pins];
+        let pin_function_selected = vec![None; num_pins];
 
         Self {
             config_file,
@@ -106,7 +103,7 @@ impl Sandbox for Gpio {
         match message {
             Message::Activate => self.clicked = true,
             Message::PinFunctionSelected(pin_index, pin_function) => {
-                self.pin_function_selected[pin_index] = pin_function;
+                self.pin_function_selected[pin_index] = Some(pin_function);
             }
         }
     }
@@ -145,7 +142,7 @@ fn pin_view(
 
         pin_options_row_left = pin_options_row_left.push(pick_list(
             pair[0].options,
-            Some(gpio.pin_function_selected[idx * 2]),
+            gpio.pin_function_selected[idx * 2],
             move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
         ));
 
@@ -412,7 +409,7 @@ fn pin_view(
 
         pin_options_row_right = pin_options_row_right.push(pick_list(
             pair[1].options,
-            Some(gpio.pin_function_selected[idx * 2 + 1]),
+            gpio.pin_function_selected[idx * 2 + 1],
             move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
         ));
 
