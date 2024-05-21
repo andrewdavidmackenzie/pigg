@@ -1,7 +1,7 @@
 use std::{env, io};
 
 use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
-use iced::widget::{button, Column, container, Row, Text};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
@@ -99,7 +99,7 @@ impl Sandbox for Gpio {
         }
     }
 
-    fn view(&self) -> iced::Element<Self::Message> {
+    fn view(&self) -> Element<Self::Message> {
         container(pin_view(&self.gpio_description, &self.gpio_config, self))
             .height(Length::Fill)
             .width(Length::Fill)
@@ -112,8 +112,8 @@ impl Sandbox for Gpio {
         0.65
     }
 
-    fn theme(&self) -> iced::Theme {
-        iced::Theme::Dark
+    fn theme(&self) -> Theme {
+        Theme::Dark
     }
 }
 
@@ -432,8 +432,8 @@ fn pin_view(
 }
 
 pub struct CustomButton {
-    bg_color: iced::Color,
-    text_color: iced::Color,
+    bg_color: Color,
+    text_color: Color,
 }
 
 impl button::StyleSheet for CustomButton {
