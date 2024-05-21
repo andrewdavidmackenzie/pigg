@@ -37,7 +37,7 @@ fn main() -> Result<(), iced::Error> {
     })
 }
 
-pub struct Gpio {
+struct Gpio {
     // TODO this filename will be used when we add a SAVE button or similar
     #[allow(dead_code)]
     config_file: Option<String>, // filename where to load and save config file to/from
@@ -48,8 +48,7 @@ pub struct Gpio {
 }
 
 #[derive(Debug, Clone, Copy)]
-
-pub enum Message {
+enum Message {
     Activate,
     PinFunctionSelected(usize, PinFunction),
 }
@@ -130,7 +129,7 @@ impl Sandbox for Gpio {
     }
 }
 
-pub fn pin_view(
+fn pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
     gpio: &Gpio,
