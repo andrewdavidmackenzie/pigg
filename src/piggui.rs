@@ -138,15 +138,17 @@ fn pin_view(
             .width(Length::Fixed(100f32))
             .align_items(Alignment::Center);
 
-        let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
+        if pair[0].options.len() > 1 {
+            let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
 
-        pin_options_row_left = pin_options_row_left.push(pick_list(
-            pair[0].options,
-            gpio.pin_function_selected[idx * 2],
-            move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
-        ));
+            pin_options_row_left = pin_options_row_left.push(pick_list(
+                pair[0].options,
+                gpio.pin_function_selected[idx * 2],
+                move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
+            ));
 
-        pin_option_left = pin_option_left.push(pin_options_row_left);
+            pin_option_left = pin_option_left.push(pin_options_row_left);
+        }
 
         let mut pin_name_left = Column::new()
             .width(Length::Fixed(55f32))
@@ -405,15 +407,17 @@ fn pin_view(
             .width(Length::Fixed(100f32))
             .align_items(Alignment::Center);
 
-        let mut pin_options_row_right = Row::new().align_items(Alignment::Center);
+        if pair[1].options.len() > 1 {
+            let mut pin_options_row_right = Row::new().align_items(Alignment::Center);
 
-        pin_options_row_right = pin_options_row_right.push(pick_list(
-            pair[1].options,
-            gpio.pin_function_selected[idx * 2 + 1],
-            move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
-        ));
+            pin_options_row_right = pin_options_row_right.push(pick_list(
+                pair[1].options,
+                gpio.pin_function_selected[idx * 2 + 1],
+                move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
+            ));
 
-        pin_option_right = pin_option_right.push(pin_options_row_right);
+            pin_option_right = pin_option_right.push(pin_options_row_right);
+        }
 
         let row = Row::new()
             .push(pin_option_left)
