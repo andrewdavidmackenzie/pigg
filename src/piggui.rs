@@ -1,14 +1,14 @@
-use std::env;
+use std::{env, io};
 
-use iced::widget::{button, container, pick_list, Column, Row, Text};
-use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
+use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
 
 mod gpio;
 mod hw;
@@ -40,15 +40,25 @@ fn main() -> Result<(), iced::Error> {
 struct Gpio {
     // TODO this filename will be used when we add a SAVE button or similar
     #[allow(dead_code)]
-    config_file: Option<String>, // filename where to load and save config file to/from
+    config_filename: Option<String>, // filename where to load and save config file to/from
     gpio_description: [PinDescription; 40],
     gpio_config: GPIOConfig,
     pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
+impl Gpio {
+    fn get_config(config_filename: Option<String>) -> io::Result<(Option<String>, GPIOConfig)> {
+        let gpio_config = match &config_filename {
+            None => GPIOConfig::default(),
+            Some(filename) => GPIOConfig::load(filename)?,
+        };
 
+        Ok((config_filename, gpio_config))
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 enum Message {
     Activate,
     PinFunctionSelected(usize, PinFunction),
@@ -58,36 +68,17 @@ impl Sandbox for Gpio {
     type Message = Message;
 
     fn new() -> Self {
-        // TODO factor this out into a function, once the UI update, async and error handling
-        // is done.
-        // filename of config to load is an optional command line argument to piggui
+        // TODO Do this async Elm/Iced style by a Message, that contains a new config to apply
+        // Read the (optional) filename of a config to load a config from
         // avoiding the extra overhead of clap or similar while we only have one possible argument
-        let config_file = env::args().nth(1);
-        let gpio_config = match &config_file {
-            None => GPIOConfig::default(),
-            Some(filename) => {
-                // TODO maybe do asynchronously, and send a message with the config when loaded?
-                match GPIOConfig::load(filename) {
-                    Ok(config) => {
-                        // TODO put this on the UI in some way
-                        println!("GPIO Config loaded from file: {filename}");
-                        config
-                    }
-                    _ => {
-                        // TODO put this on the UI in some way
-                        println!("Failed to load GPIO Config from file: {filename}");
-                        println!("Default GPIO Config will be used instead");
-                        GPIOConfig::default()
-                    }
-                }
-            }
-        };
+        let (config_filename, gpio_config) =
+            Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
 
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];
 
         Self {
-            config_file,
+            config_filename,
             gpio_description: GPIO_DESCRIPTION,
             gpio_config,
             pin_function_selected,
@@ -108,7 +99,7 @@ impl Sandbox for Gpio {
         }
     }
 
-    fn view(&self) -> iced::Element<Self::Message> {
+    fn view(&self) -> Element<Self::Message> {
         container(pin_view(&self.gpio_description, &self.gpio_config, self))
             .height(Length::Fill)
             .width(Length::Fill)
@@ -121,8 +112,8 @@ impl Sandbox for Gpio {
         0.65
     }
 
-    fn theme(&self) -> iced::Theme {
-        iced::Theme::Dark
+    fn theme(&self) -> Theme {
+        Theme::Dark
     }
 }
 
@@ -441,8 +432,8 @@ fn pin_view(
 }
 
 pub struct CustomButton {
-    bg_color: iced::Color,
-    text_color: iced::Color,
+    bg_color: Color,
+    text_color: Color,
 }
 
 impl button::StyleSheet for CustomButton {
