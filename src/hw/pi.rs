@@ -33,6 +33,9 @@ impl Hardware for PiHW {
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
     /// configure the Pi GPIO hardware to correspond to it
     // TODO maybe change trait to allow errors
+
+    // TODO FIXME looks like get() uses BCM pin numbering...
+
     fn apply_config(&mut self, config: &GPIOConfig) {
         for (pin_number, pin_config) in &config.configured_pins {
             match pin_config {
