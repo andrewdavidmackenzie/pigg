@@ -1,18 +1,21 @@
+use std::env;
+
+use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
+
+// Using Custom Widgets
+use custom_widgets::{circle::circle, line::line};
+
+// This binary will only be built with the "iced" feature enabled, by use of "required-features"
+// in Cargo.toml so no need for the feature to be used here for conditional compiling
+use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
+
 mod gpio;
 mod hw;
 mod custom_widgets {
     pub mod circle;
     pub mod line;
 }
-
-use std::env;
-// This binary will only be built with the "iced" feature enabled, by use of "required-features"
-// in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
-// Using Custom Widgets
-use custom_widgets::{circle::circle, line::line};
-use iced::widget::{button, container, pick_list, Column, Row, Text};
-use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
 
 // Use Hardware via trait
 //use hw::Hardware;
@@ -110,7 +113,7 @@ impl Sandbox for Gpio {
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
-        container(pin_view(&self.gpio_description, &self.gpio_config, &self))
+        container(pin_view(&self.gpio_description, &self.gpio_config, self))
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(alignment::Horizontal::Center)
@@ -136,7 +139,7 @@ pub fn pin_view(
 
     for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
         let mut pin_option_left = Column::new()
-            .width(Length::Fixed(100 as f32))
+            .width(Length::Fixed(100f32))
             .align_items(Alignment::Center);
 
         let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
@@ -403,7 +406,7 @@ pub fn pin_view(
         }
 
         let mut pin_option_right = Column::new()
-            .width(Length::Fixed(100 as f32))
+            .width(Length::Fixed(100f32))
             .align_items(Alignment::Center);
 
         let mut pin_options_row_right = Row::new().align_items(Alignment::Center);
