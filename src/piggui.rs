@@ -126,7 +126,7 @@ fn pin_view(
 
     for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
         let mut pin_option_left = Column::new()
-            .width(Length::Fixed(100f32))
+            .width(Length::Fixed(140f32))
             .align_items(Alignment::Center);
 
         if pair[0].options.len() > 1 {
@@ -395,7 +395,7 @@ fn pin_view(
         }
 
         let mut pin_option_right = Column::new()
-            .width(Length::Fixed(100f32))
+            .width(Length::Fixed(140f32))
             .align_items(Alignment::Center);
 
         if pair[1].options.len() > 1 {
