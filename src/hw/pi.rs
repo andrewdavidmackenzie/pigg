@@ -66,15 +66,21 @@ impl Hardware for PiHW {
                         .push((*bcm_pin_number, Pin::Output(output)))
                 }
                 // TODO implement all of these
-                PinFunction::SDA1 => {}
-                PinFunction::I2C => {}
-                PinFunction::SCL1 => {}
+                PinFunction::I2C1_SDA => {}
+                PinFunction::I2C1_SCL => {}
+                PinFunction::I2C3_SDA => {}
+                PinFunction::I2C3_SCL => {}
+                PinFunction::I2C4_SDA => {}
+                PinFunction::I2C4_SCL => {}
+                PinFunction::I2C5_SDA => {}
+                PinFunction::I2C5_SCL => {}
+                PinFunction::I2C6_SDA => {}
+                PinFunction::I2C6_SCL => {}
+                PinFunction::I2C_ID_EEPROM => {}
                 PinFunction::SPIO_MOSI => {}
                 PinFunction::SPIO_MISO => {}
                 PinFunction::SPIO_SCLK => {}
                 PinFunction::ID_SD => {}
-                PinFunction::ID => {}
-                PinFunction::EEPROM => {}
                 // TODO think about how to handle UART output, maybe some sort of channel is created
                 // and text received on it is sent to the UART or similar.
                 PinFunction::UART0_TXD => {}

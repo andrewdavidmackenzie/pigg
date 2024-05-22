@@ -23,8 +23,7 @@ pub const PIN_3: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
-        PinFunction::SDA1,
-        PinFunction::I2C,
+        PinFunction::I2C1_SDA,
     ],
 };
 
@@ -42,8 +41,7 @@ pub const PIN_5: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
-        PinFunction::SCL1,
-        PinFunction::I2C,
+        PinFunction::I2C1_SCL,
     ],
 };
 
@@ -58,7 +56,11 @@ pub const PIN_7: PinDescription = PinDescription {
     board_pin_number: 7,
     bcm_pin_number: Some(4),
     name: "GPIO4",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::I2C3_SDA,
+    ],
 };
 
 pub const PIN_8: PinDescription = PinDescription {
@@ -126,14 +128,22 @@ pub const PIN_15: PinDescription = PinDescription {
     board_pin_number: 15,
     bcm_pin_number: Some(22),
     name: "GPIO22",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::I2C6_SDA,
+    ],
 };
 
 pub const PIN_16: PinDescription = PinDescription {
     board_pin_number: 16,
     bcm_pin_number: Some(23),
     name: "GPIO23",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::I2C6_SCL,
+    ],
 };
 
 pub const PIN_17: PinDescription = PinDescription {
@@ -175,6 +185,7 @@ pub const PIN_21: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
+        PinFunction::I2C4_SCL,
         PinFunction::SPIO_MISO,
     ],
 };
@@ -204,6 +215,7 @@ pub const PIN_24: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
+        PinFunction::I2C4_SDA,
         PinFunction::SPIO_CE0_N,
     ],
 };
@@ -230,31 +242,25 @@ pub const PIN_27: PinDescription = PinDescription {
     board_pin_number: 27,
     bcm_pin_number: None,
     name: "ID_SD",
-    options: &[
-        PinFunction::ID_SD,
-        PinFunction::I2C,
-        PinFunction::ID,
-        PinFunction::EEPROM,
-    ],
+    options: &[PinFunction::ID_SD, PinFunction::I2C_ID_EEPROM],
 };
 
 pub const PIN_28: PinDescription = PinDescription {
     board_pin_number: 28,
     bcm_pin_number: None,
     name: "ID_SC",
-    options: &[
-        PinFunction::ID_SC,
-        PinFunction::I2C,
-        PinFunction::ID,
-        PinFunction::EEPROM,
-    ],
+    options: &[PinFunction::ID_SC, PinFunction::I2C_ID_EEPROM],
 };
 
 pub const PIN_29: PinDescription = PinDescription {
     board_pin_number: 29,
     bcm_pin_number: Some(5),
     name: "GPIO5",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::I2C3_SCL,
+    ],
 };
 
 pub const PIN_30: PinDescription = PinDescription {
@@ -275,14 +281,22 @@ pub const PIN_32: PinDescription = PinDescription {
     board_pin_number: 32,
     bcm_pin_number: Some(12),
     name: "GPIO12",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::I2C5_SDA,
+    ],
 };
 
 pub const PIN_33: PinDescription = PinDescription {
     board_pin_number: 33,
     bcm_pin_number: Some(13),
     name: "GPIO13",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::I2C5_SCL,
+    ],
 };
 
 pub const PIN_34: PinDescription = PinDescription {
