@@ -1,9 +1,10 @@
-mod gpio;
-mod hw;
+use hw::Hardware;
 
 // Use Hardware via trait
-use hw::Hardware;
 use crate::gpio::GPIO_DESCRIPTION;
+
+mod gpio;
+mod hw;
 
 fn main() {
     println!("Description: {:?}", GPIO_DESCRIPTION);
@@ -13,6 +14,6 @@ fn main() {
     println!("Pin configs: {:?}", config);
 
     let mut hw = hw::get();
-    hw.apply_config(&config);
+    let _ = hw.apply_config(&config); // TODO handle error
     println!("Oink: {:?}", hw.get_state());
 }

@@ -1,3 +1,3 @@
 {
-    "configured_pins":[[1,"Input"]]
+    "configured_pins":[[17,{"Output":true}]]
 }
