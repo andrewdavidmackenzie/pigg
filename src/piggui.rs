@@ -1,14 +1,15 @@
 use std::{env, io};
 
-use iced::widget::{button, container, pick_list, Column, Row, Text};
-use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
+use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
+use crate::hw::Hardware;
 
 mod gpio;
 mod hw;
@@ -19,6 +20,7 @@ mod custom_widgets {
 
 // Use Hardware via trait
 //use hw::Hardware;
+
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
