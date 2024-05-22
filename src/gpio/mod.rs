@@ -1,10 +1,12 @@
-mod pin_descriptions;
-
-use pin_descriptions::*;
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
+
+use serde::{Deserialize, Serialize};
+
+use pin_descriptions::*;
+
+mod pin_descriptions;
 
 // All the possible functions a pin can be given
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
@@ -15,7 +17,7 @@ pub enum PinFunction {
     Power5V,
     Ground,
     Input,
-    Output,
+    Output(Option<bool>),
     SDA1,
     I2C,
     SCL1,
@@ -97,12 +99,14 @@ pub struct GPIOState {
 
 #[cfg(test)]
 mod test {
-    use crate::gpio::{GPIOConfig, PinFunction};
     use std::fs;
     use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;
+
     use tempfile::tempdir;
+
+    use crate::gpio::{GPIOConfig, PinFunction};
 
     #[test]
     fn create_a_config() {
@@ -131,14 +135,14 @@ mod test {
         path = path.join("tests/one_pin_config.piggui");
         let config = GPIOConfig::load(path.to_str().unwrap()).unwrap();
         assert_eq!(config.configured_pins.len(), 1);
-        assert_eq!(config.configured_pins[0].0, 1);
-        assert_eq!(config.configured_pins[0].1, PinFunction::Input);
+        assert_eq!(config.configured_pins[0].0, 7); // GPIO7
+        assert_eq!(config.configured_pins[0].1, PinFunction::Output(Some(true)));
     }
 
     #[test]
-    fn save_one_pin_config() {
+    fn save_one_pin_config_with_level() {
         let config = GPIOConfig {
-            configured_pins: vec![(1, PinFunction::Input)],
+            configured_pins: vec![(7, PinFunction::Output(Some(true)))], // GPIO7 output set to 1
         };
 
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
@@ -146,7 +150,7 @@ mod test {
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
-        let pin_config = r#"{"configured_pins":[[1,"Input"]]}"#;
+        let pin_config = r#"{"configured_pins":[[7,{"Output":true}]]}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }

@@ -37,19 +37,31 @@ impl Hardware for PiHW {
     // TODO FIXME looks like get() uses BCM pin numbering...
 
     fn apply_config(&mut self, config: &GPIOConfig) {
-        for (pin_number, pin_config) in &config.configured_pins {
+        for (bcm_pin_number, pin_config) in &config.configured_pins {
             match pin_config {
                 PinFunction::Input => {
                     // TODO handle pull-up/down options
-                    let input = Gpio::new().unwrap().get(*pin_number).unwrap().into_input();
-                    self.configured_pins.push((*pin_number, Pin::Input(input)))
+                    let input = Gpio::new()
+                        .unwrap()
+                        .get(*bcm_pin_number)
+                        .unwrap()
+                        .into_input();
+                    self.configured_pins
+                        .push((*bcm_pin_number, Pin::Input(input)))
                 }
-                PinFunction::Output => {
+                PinFunction::Output(value) => {
                     // TODO check if there are any options on Output pins
                     // TODO consider config being able to "save" the output value to set?
-                    let output = Gpio::new().unwrap().get(*pin_number).unwrap().into_output();
+                    let mut output = Gpio::new()
+                        .unwrap()
+                        .get(*bcm_pin_number)
+                        .unwrap()
+                        .into_output();
+                    if let Some(level) = value {
+                        output.write(Level::from(*level));
+                    }
                     self.configured_pins
-                        .push((*pin_number, Pin::Output(output)))
+                        .push((*bcm_pin_number, Pin::Output(output)))
                 }
                 // TODO implement all of these
                 PinFunction::SDA1 => {}
