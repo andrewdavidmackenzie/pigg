@@ -3,7 +3,7 @@ use std::io;
 use crate::gpio::{GPIOConfig, GPIOState};
 
 /// There are three implementations of [`Hardware`] trait:
-/// * None - used on host (macos, Linux, etc) to show and develop GUI without real HW
+/// * None - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * Pi - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
 /// * Pico - Raspberry Pi Pico Microcontroller (To Be done)
 #[cfg_attr(all(feature = "pico", not(feature = "pi")), path = "pico.rs")]
