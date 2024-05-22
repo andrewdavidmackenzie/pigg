@@ -73,7 +73,7 @@ impl Sandbox for Gpio {
 
         // Will need an "Apply" button in the UI to apply config changes to the HW, or apply on each change
         let mut hw = hw::get();
-        let _ = hw.apply_config(&gpio_config); // TODO handle error
+        hw.apply_config(&gpio_config).unwrap(); // TODO handle error
 
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];
