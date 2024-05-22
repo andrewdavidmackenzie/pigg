@@ -29,10 +29,6 @@ fn main() -> Result<(), iced::Error> {
         ..Default::default()
     };
 
-    // Will need an "Apply" button in the UI to apply config changes to the HW, or apply on each change
-    //let mut hw = hw::get();
-    //hw.apply_config(&config);
-
     Gpio::run(Settings {
         window,
         ..Default::default()
@@ -75,6 +71,10 @@ impl Sandbox for Gpio {
         // avoiding the extra overhead of clap or similar while we only have one possible argument
         let (config_filename, gpio_config) =
             Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
+
+        // Will need an "Apply" button in the UI to apply config changes to the HW, or apply on each change
+        let mut hw = hw::get();
+        hw.apply_config(&gpio_config).unwrap(); // TODO handle error
 
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];
