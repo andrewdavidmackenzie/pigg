@@ -21,6 +21,7 @@ mod custom_widgets {
 // Use Hardware via trait
 //use hw::Hardware;
 
+
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
@@ -118,6 +119,47 @@ impl Sandbox for Gpio {
     }
 }
 
+fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
+    match pin_description.name {
+        "3V3" => CustomButton {
+            bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow 
+            text_color: Color::BLACK,
+        },
+        "5V" => CustomButton {
+            bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
+            text_color: Color::BLACK,
+        },
+        "Ground" => CustomButton {
+            bg_color: Color::BLACK,
+            text_color: Color::WHITE,
+        },
+
+        "GPIO2" | "GPIO3" => CustomButton {
+            bg_color: Color::new(0.678, 0.847, 0.902, 1.0), // Blue
+            text_color: Color::WHITE,
+        },
+
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => CustomButton {
+            bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
+            text_color: Color::WHITE,
+        },
+
+        "GPIO14" | "GPIO15" => CustomButton {
+            bg_color: Color::new(0.0, 0.502, 0.0, 1.0), // Green
+            text_color: Color::WHITE,
+        },
+
+        "ID_SD" | "ID_SC" => CustomButton {
+            bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
+            text_color: Color::WHITE,
+        },
+        _ => CustomButton {
+            bg_color: Color::new(1.0, 0.647, 0.0, 1.0), // Orange
+            text_color: Color::WHITE,
+        },
+    }
+}
+
 fn pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
@@ -127,7 +169,7 @@ fn pin_view(
 
     for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
         let mut pin_option_left = Column::new()
-            .width(Length::Fixed(100f32))
+            .width(Length::Fixed(140f32))
             .align_items(Alignment::Center);
 
         if pair[0].options.len() > 1 {
@@ -186,102 +228,16 @@ fn pin_view(
             .spacing(10)
             .align_items(Alignment::Center);
 
-        match pair[0].board_pin_number {
-            1 | 17 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(1.0, 0.92, 0.016, 1.0),
-                    text_color: Color::BLACK,
-                };
-                let mut left_pin_row = Row::new().align_items(Alignment::Center);
-                left_pin_row = left_pin_row.push(
-                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                left_pin = left_pin.push(left_pin_row);
-            }
-            3 | 5 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
-                    text_color: Color::BLACK,
-                };
-                let mut left_pin_row = Row::new().align_items(Alignment::Center);
-                left_pin_row = left_pin_row.push(
-                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                left_pin = left_pin.push(left_pin_row);
-            }
-
-            19 | 21 | 23 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(0.933, 0.510, 0.933, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut left_pin_row = Row::new().align_items(Alignment::Center);
-                left_pin_row = left_pin_row.push(
-                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                left_pin = left_pin.push(left_pin_row);
-            }
-
-            27 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(0.502, 0.502, 0.502, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut left_pin_row = Row::new().align_items(Alignment::Center);
-                left_pin_row = left_pin_row.push(
-                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                left_pin = left_pin.push(left_pin_row);
-            }
-
-            9 | 25 | 39 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::BLACK,
-                    text_color: Color::WHITE,
-                };
-                let mut left_pin_row = Row::new().align_items(Alignment::Center);
-                left_pin_row = left_pin_row.push(
-                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                left_pin = left_pin.push(left_pin_row);
-            }
-
-            _ => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut left_pin_row = Row::new().align_items(Alignment::Center);
-                left_pin_row = left_pin_row.push(
-                    button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                left_pin = left_pin.push(left_pin_row);
-            }
-        }
+        let pin_color_left = get_pin_color(&pair[0]);
+        let mut left_pin_row = Row::new().align_items(Alignment::Center);
+        left_pin_row = left_pin_row.push(
+            button(Text::new(pair[0].board_pin_number.to_string()).size(20))
+                .padding(10)
+                .width(Length::Fixed(40f32))
+                .style(pin_color_left.get_button_style())
+                .on_press(Message::Activate),
+        );
+        left_pin = left_pin.push(left_pin_row);
 
         let mut right_pin = Column::new()
             .width(Length::Fixed(40f32))
@@ -289,114 +245,19 @@ fn pin_view(
             .spacing(10)
             .align_items(Alignment::Center);
 
-        match pair[1].board_pin_number {
-            2 | 4 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut right_pin_row = Row::new().align_items(Alignment::Center);
-                right_pin_row = right_pin_row.push(
-                    iced::widget::Button::new(
-                        Text::new(pair[1].board_pin_number.to_string()).size(20),
-                    )
-                    .padding(10)
-                    .width(Length::Fixed(40f32))
-                    .style(pin_color.get_button_style())
-                    .on_press(Message::Activate),
-                );
-
-                right_pin = right_pin.push(right_pin_row);
-            }
-
-            6 | 14 | 20 | 30 | 34 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::BLACK,
-                    text_color: Color::WHITE,
-                };
-                let mut right_pin_row = Row::new().align_items(Alignment::Center);
-                right_pin_row = right_pin_row.push(
-                    iced::widget::Button::new(
-                        Text::new(pair[1].board_pin_number.to_string()).size(20),
-                    )
-                    .padding(10)
-                    .width(Length::Fixed(40f32))
-                    .style(pin_color.get_button_style())
-                    .on_press(Message::Activate),
-                );
-
-                right_pin = right_pin.push(right_pin_row);
-            }
-
-            8 | 10 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut right_pin_row = Row::new().align_items(Alignment::Center);
-                right_pin_row = right_pin_row.push(
-                    iced::widget::Button::new(
-                        Text::new(pair[1].board_pin_number.to_string()).size(20),
-                    )
-                    .padding(10)
-                    .width(Length::Fixed(40f32))
-                    .style(pin_color.get_button_style())
-                    .on_press(Message::Activate),
-                );
-
-                right_pin = right_pin.push(right_pin_row);
-            }
-            24 | 26 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(0.933, 0.510, 0.933, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut right_pin_row = Row::new().align_items(Alignment::Center);
-                right_pin_row = right_pin_row.push(
-                    button(Text::new(pair[1].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                right_pin = right_pin.push(right_pin_row);
-            }
-
-            28 => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(0.502, 0.502, 0.502, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut right_pin_row = Row::new().align_items(Alignment::Center);
-                right_pin_row = right_pin_row.push(
-                    button(Text::new(pair[1].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                right_pin = right_pin.push(right_pin_row);
-            }
-
-            _ => {
-                let pin_color = CustomButton {
-                    bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
-                    text_color: Color::WHITE,
-                };
-                let mut right_pin_row = Row::new().align_items(Alignment::Center);
-                right_pin_row = right_pin_row.push(
-                    button(Text::new(pair[1].board_pin_number.to_string()).size(20))
-                        .padding(10)
-                        .width(Length::Fixed(40f32))
-                        .style(pin_color.get_button_style())
-                        .on_press(Message::Activate),
-                );
-                right_pin = right_pin.push(right_pin_row);
-            }
-        }
+        let pin_color_right = get_pin_color(&pair[1]);
+        let mut right_pin_row = Row::new().align_items(Alignment::Center);
+        right_pin_row = right_pin_row.push(
+            button(Text::new(pair[1].board_pin_number.to_string()).size(20))
+                .padding(10)
+                .width(Length::Fixed(40f32))
+                .style(pin_color_right.get_button_style())
+                .on_press(Message::Activate),
+        );
+        right_pin = right_pin.push(right_pin_row);
 
         let mut pin_option_right = Column::new()
-            .width(Length::Fixed(100f32))
+            .width(Length::Fixed(140f32))
             .align_items(Alignment::Center);
 
         if pair[1].options.len() > 1 {
