@@ -158,7 +158,7 @@ mod test {
         path = path.join("tests/one_pin_config.piggui");
         let config = GPIOConfig::load(path.to_str().unwrap()).unwrap();
         assert_eq!(config.configured_pins.len(), 1);
-        assert_eq!(config.configured_pins[0].0, 7); // GPIO7
+        assert_eq!(config.configured_pins[0].0, 17); // GPIO17
         assert_eq!(config.configured_pins[0].1, PinFunction::Output(Some(true)));
     }
 
