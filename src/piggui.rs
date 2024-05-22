@@ -9,6 +9,7 @@ use custom_widgets::{circle::circle, line::line};
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
 use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
+use crate::hw::Hardware;
 
 mod gpio;
 mod hw;
@@ -26,10 +27,6 @@ fn main() -> Result<(), iced::Error> {
         decorations: true,
         ..Default::default()
     };
-
-    // Will need an "Apply" button in the UI to apply config changes to the HW, or apply on each change
-    //let mut hw = hw::get();
-    //hw.apply_config(&config);
 
     Gpio::run(Settings {
         window,
@@ -73,6 +70,10 @@ impl Sandbox for Gpio {
         // avoiding the extra overhead of clap or similar while we only have one possible argument
         let (config_filename, gpio_config) =
             Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
+
+        // Will need an "Apply" button in the UI to apply config changes to the HW, or apply on each change
+        let mut hw = hw::get();
+        let _ = hw.apply_config(&gpio_config); // TODO handle error
 
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];

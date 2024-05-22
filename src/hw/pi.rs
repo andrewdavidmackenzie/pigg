@@ -1,3 +1,5 @@
+use std::io;
+
 /// Implementation of GPIO for raspberry pi - uses rrpal
 #[allow(unused_imports)] // just checking builds work for now...
 use rppal::gpio::{InputPin, Level, Trigger};
@@ -18,6 +20,7 @@ enum Pin {
 
 // Tuples of pin board number and Pin
 pub struct PiHW {
+    // TODO not sure if this is useful/needed, if we can read the config from the pins via rppal
     configured_pins: Vec<(u8, Pin)>,
 }
 
@@ -32,13 +35,15 @@ pub fn get() -> impl Hardware {
 impl Hardware for PiHW {
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
     /// configure the Pi GPIO hardware to correspond to it
-    // TODO maybe change trait to allow errors
 
-    fn apply_config(&mut self, config: &GPIOConfig) {
+    fn apply_config(&mut self, config: &GPIOConfig) -> io::Result<()> {
         for (bcm_pin_number, pin_config) in &config.configured_pins {
             match pin_config {
                 PinFunction::Input(pull) => {
-                    let pin = Gpio::new().unwrap().get(*bcm_pin_number).unwrap();
+                    let pin = Gpio::new()
+                        .unwrap()
+                        .get(*bcm_pin_number)
+                        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
                     let input = match pull {
                         None => pin.into_input(),
                         Some(InputPull::PullUp) => pin.into_input_pullup(),
@@ -48,7 +53,10 @@ impl Hardware for PiHW {
                         .push((*bcm_pin_number, Pin::Input(input)))
                 }
                 PinFunction::Output(value) => {
-                    let pin = Gpio::new().unwrap().get(*bcm_pin_number).unwrap();
+                    let pin = Gpio::new()
+                        .unwrap()
+                        .get(*bcm_pin_number)
+                        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
                     let output = match value {
                         None => pin.into_output(),
                         Some(true) => pin.into_output_high(),
@@ -76,11 +84,16 @@ impl Hardware for PiHW {
                 PinFunction::SPIO_CE1_N => {}
                 PinFunction::ID_SC => {}
                 PinFunction::Ground | PinFunction::Power3V3 | PinFunction::Power5V => {
-                    eprintln!("Ground, 3V3 or 5V pins cannot be configured");
+                    return Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        "Ground, 3V3 or 5V pins cannot be configured",
+                    ));
                 }
             }
         }
+
         println!("GPIO Config has been applied to Pi hardware");
+        Ok(())
     }
 
     /// Return the state of the Input pins and other pins whose state is read from GPIO hardware
