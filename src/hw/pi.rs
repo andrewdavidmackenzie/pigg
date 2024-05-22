@@ -5,7 +5,7 @@ use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
 use crate::gpio::{GPIOConfig, GPIOState};
-use crate::gpio::PinFunction;
+use crate::gpio::{InputPull, PinFunction};
 
 use super::Hardware;
 
@@ -34,32 +34,26 @@ impl Hardware for PiHW {
     /// configure the Pi GPIO hardware to correspond to it
     // TODO maybe change trait to allow errors
 
-    // TODO FIXME looks like get() uses BCM pin numbering...
-
     fn apply_config(&mut self, config: &GPIOConfig) {
         for (bcm_pin_number, pin_config) in &config.configured_pins {
             match pin_config {
-                PinFunction::Input => {
-                    // TODO handle pull-up/down options
-                    let input = Gpio::new()
-                        .unwrap()
-                        .get(*bcm_pin_number)
-                        .unwrap()
-                        .into_input();
+                PinFunction::Input(pull) => {
+                    let pin = Gpio::new().unwrap().get(*bcm_pin_number).unwrap();
+                    let input = match pull {
+                        None => pin.into_input(),
+                        Some(InputPull::PullUp) => pin.into_input_pullup(),
+                        Some(InputPull::PullDown) => pin.into_input_pulldown(),
+                    };
                     self.configured_pins
                         .push((*bcm_pin_number, Pin::Input(input)))
                 }
                 PinFunction::Output(value) => {
-                    // TODO check if there are any options on Output pins
-                    // TODO consider config being able to "save" the output value to set?
-                    let mut output = Gpio::new()
-                        .unwrap()
-                        .get(*bcm_pin_number)
-                        .unwrap()
-                        .into_output();
-                    if let Some(level) = value {
-                        output.write(Level::from(*level));
-                    }
+                    let pin = Gpio::new().unwrap().get(*bcm_pin_number).unwrap();
+                    let output = match value {
+                        None => pin.into_output(),
+                        Some(true) => pin.into_output_high(),
+                        Some(false) => pin.into_output_low(),
+                    };
                     self.configured_pins
                         .push((*bcm_pin_number, Pin::Output(output)))
                 }
@@ -89,7 +83,7 @@ impl Hardware for PiHW {
         println!("GPIO Config has been applied to Pi hardware");
     }
 
-    /// Return the state of the Input pins and other pins who's state is read from GPIO hardware
+    /// Return the state of the Input pins and other pins whose state is read from GPIO hardware
     // TODO might deprecate this in favor of some sort of message or callback when an input changes
     // its value, to trigger a UI update...
     // messages will need to be able to capture other types of input, Image (SPIO), value from ADC

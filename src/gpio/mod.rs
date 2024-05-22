@@ -8,6 +8,13 @@ use pin_descriptions::*;
 
 mod pin_descriptions;
 
+// An input can be configured to have an optional pull-up or pull-down
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+pub enum InputPull {
+    PullUp,
+    PullDown,
+}
+
 // All the possible functions a pin can be given
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
@@ -16,7 +23,7 @@ pub enum PinFunction {
     Power3V3,
     Power5V,
     Ground,
-    Input,
+    Input(Option<InputPull>),
     Output(Option<bool>),
     SDA1,
     I2C,
@@ -115,8 +122,24 @@ mod test {
     }
 
     #[test]
-    fn load_one_pin_config() {
-        let pin_config = r#"{"configured_pins":[[1,"Input"]]}"#;
+    fn save_one_pin_config_input_no_pullup() {
+        let config = GPIOConfig {
+            configured_pins: vec![(1, PinFunction::Input(None))],
+        };
+
+        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let test_file = output_dir.join("test.piggui");
+
+        config.save(test_file.to_str().unwrap()).unwrap();
+
+        let pin_config = r#"{"configured_pins":[[1,{"Input":null}]]}"#;
+        let contents = fs::read_to_string(test_file).expect("Could not read test file");
+        assert_eq!(contents, pin_config);
+    }
+
+    #[test]
+    fn load_one_pin_config_input_no_pull() {
+        let pin_config = r#"{"configured_pins":[[1,{"Input":null}]]}"#;
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.piggui");
         let mut file = File::create(&test_file).expect("Could not create test file");
@@ -125,7 +148,7 @@ mod test {
         let config = GPIOConfig::load(test_file.to_str().unwrap()).unwrap();
         assert_eq!(config.configured_pins.len(), 1);
         assert_eq!(config.configured_pins[0].0, 1);
-        assert_eq!(config.configured_pins[0].1, PinFunction::Input);
+        assert_eq!(config.configured_pins[0].1, PinFunction::Input(None));
     }
 
     #[test]
@@ -140,7 +163,7 @@ mod test {
     }
 
     #[test]
-    fn save_one_pin_config_with_level() {
+    fn save_one_pin_config_output_with_level() {
         let config = GPIOConfig {
             configured_pins: vec![(7, PinFunction::Output(Some(true)))], // GPIO7 output set to 1
         };
