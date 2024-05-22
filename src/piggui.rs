@@ -120,11 +120,11 @@ impl Sandbox for Gpio {
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
         "3V3" => CustomButton {
-            bg_color: Color::new(1.0, 0.92, 0.016, 1.0),
+            bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow 
             text_color: Color::BLACK,
         },
         "5V" => CustomButton {
-            bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
+            bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
             text_color: Color::BLACK,
         },
         "Ground" => CustomButton {
@@ -133,26 +133,26 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
         },
 
         "GPIO2" | "GPIO3" => CustomButton {
-            bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
+            bg_color: Color::new(0.678, 0.847, 0.902, 1.0), // Blue
             text_color: Color::WHITE,
         },
 
         "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => CustomButton {
-            bg_color: Color::new(0.933, 0.510, 0.933, 1.0),
+            bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
             text_color: Color::WHITE,
         },
 
         "GPIO14" | "GPIO15" => CustomButton {
-            bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
+            bg_color: Color::new(0.0, 0.502, 0.0, 1.0), // Green
             text_color: Color::WHITE,
         },
 
         "ID_SD" | "ID_SC" => CustomButton {
-            bg_color: Color::new(0.502, 0.502, 0.502, 1.0),
+            bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
             text_color: Color::WHITE,
         },
         _ => CustomButton {
-            bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
+            bg_color: Color::new(1.0, 0.647, 0.0, 1.0), // Orange
             text_color: Color::WHITE,
         },
     }
