@@ -295,7 +295,7 @@ pub const PIN_33: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
-        PinFunction::I2C4_SCL,
+        PinFunction::I2C5_SCL,
     ],
 };
 
