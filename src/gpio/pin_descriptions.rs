@@ -1,6 +1,25 @@
-use crate::gpio::{PinDescription, PinFunction};
+use crate::gpio::{InputPull, PinDescription, PinFunction};
 
-// Valid Pin descriptions for Pi Model B+, Pi 2B, Pi Zero, Pi 3B, and Pi 4B:
+/// This module codifies the descriptions if the Raspberry Pi GPIO hardware
+/// exposed pins, including multiple options (functions) available for some pins
+/// via software configuration.
+///
+/// In general, it has been harvested from the
+/// [official Raspberry Pi docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio-and-the-40-pin-header)
+/// , although sometimes augmented with other sources.
+///
+/// These pin descriptions are valid for Raspberry Pi Models B+, 2B, Zero, 3B, 3B+,
+/// 4B, Zero W, Zero2 W, 5
+///
+/// For SPI interface description, see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
+/// "Raspberry Pi Zero, 1, 2 and 3 have three SPI controllers:"
+///
+/// TODO - Currently we don't support these additional SPI busses - an issue exists to implement
+/// support for it though.
+/// "Raspberry Pi 4, 400 and Compute Module 4 there are four additional SPI buses: SPI3 to SPI6,
+/// each with two hardware chip selects. These extra SPI buses are available via alternate function
+/// assignments on certain GPIO pins. For more information, see the BCM2711 Arm peripherals
+/// datasheet."
 
 pub const PIN_1: PinDescription = PinDescription {
     board_pin_number: 1,
@@ -16,12 +35,13 @@ pub const PIN_2: PinDescription = PinDescription {
     options: &[PinFunction::Power5V],
 };
 
+/// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
 pub const PIN_3: PinDescription = PinDescription {
     board_pin_number: 3,
     bcm_pin_number: Some(2),
     name: "GPIO2",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         PinFunction::I2C1_SDA,
     ],
@@ -34,12 +54,13 @@ pub const PIN_4: PinDescription = PinDescription {
     options: &[PinFunction::Power5V],
 };
 
+/// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
 pub const PIN_5: PinDescription = PinDescription {
     board_pin_number: 5,
     bcm_pin_number: Some(3),
     name: "GPIO3",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         PinFunction::I2C1_SCL,
     ],
@@ -60,6 +81,7 @@ pub const PIN_7: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C3_SDA,
+        PinFunction::GPCLK0,
     ],
 };
 
@@ -96,7 +118,11 @@ pub const PIN_11: PinDescription = PinDescription {
     board_pin_number: 11,
     bcm_pin_number: Some(17),
     name: "GPIO17",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::SPI1_CE1_N,
+    ],
 };
 
 pub const PIN_12: PinDescription = PinDescription {
@@ -106,6 +132,8 @@ pub const PIN_12: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
+        PinFunction::SPI1_CE0_N,
+        PinFunction::PWM0, // Can we be more specific as there are two PWM0 pins
         PinFunction::PCM_CLK,
     ],
 };
@@ -114,7 +142,11 @@ pub const PIN_13: PinDescription = PinDescription {
     board_pin_number: 13,
     bcm_pin_number: Some(27),
     name: "GPIO27",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::PWM1, // Can we be more specific as there are two PWM0 pins
+    ],
 };
 
 pub const PIN_14: PinDescription = PinDescription {
@@ -157,9 +189,14 @@ pub const PIN_18: PinDescription = PinDescription {
     board_pin_number: 18,
     bcm_pin_number: Some(24),
     name: "GPIO24",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::PWM0, // Can we be more specific as there are two PWM0 pins
+    ],
 };
 
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_19: PinDescription = PinDescription {
     board_pin_number: 19,
     bcm_pin_number: Some(10),
@@ -167,7 +204,8 @@ pub const PIN_19: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
-        PinFunction::SPIO_MOSI,
+        PinFunction::SPI0_MOSI,
+        PinFunction::PWM1, // Can we be more specific as there are two PWM0 pins
     ],
 };
 
@@ -178,6 +216,7 @@ pub const PIN_20: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_21: PinDescription = PinDescription {
     board_pin_number: 21,
     bcm_pin_number: Some(9),
@@ -186,7 +225,7 @@ pub const PIN_21: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C4_SCL,
-        PinFunction::SPIO_MISO,
+        PinFunction::SPI0_MISO,
     ],
 };
 
@@ -197,6 +236,7 @@ pub const PIN_22: PinDescription = PinDescription {
     options: &[PinFunction::Input(None), PinFunction::Output(None)],
 };
 
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_23: PinDescription = PinDescription {
     board_pin_number: 23,
     bcm_pin_number: Some(11),
@@ -204,10 +244,11 @@ pub const PIN_23: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
-        PinFunction::SPIO_SCLK,
+        PinFunction::SPI0_SCLK,
     ],
 };
 
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_24: PinDescription = PinDescription {
     board_pin_number: 24,
     bcm_pin_number: Some(8),
@@ -216,7 +257,7 @@ pub const PIN_24: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C4_SDA,
-        PinFunction::SPIO_CE0_N,
+        PinFunction::SPI0_CE0_N,
     ],
 };
 
@@ -227,6 +268,7 @@ pub const PIN_25: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_26: PinDescription = PinDescription {
     board_pin_number: 26,
     bcm_pin_number: Some(7),
@@ -234,7 +276,7 @@ pub const PIN_26: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(None),
         PinFunction::Output(None),
-        PinFunction::SPIO_CE1_N,
+        PinFunction::SPI0_CE1_N,
     ],
 };
 
@@ -242,14 +284,14 @@ pub const PIN_27: PinDescription = PinDescription {
     board_pin_number: 27,
     bcm_pin_number: None,
     name: "ID_SD",
-    options: &[PinFunction::ID_SD, PinFunction::I2C_ID_EEPROM],
+    options: &[PinFunction::I2C_EEPROM_ID_SD],
 };
 
 pub const PIN_28: PinDescription = PinDescription {
     board_pin_number: 28,
     bcm_pin_number: None,
     name: "ID_SC",
-    options: &[PinFunction::ID_SC, PinFunction::I2C_ID_EEPROM],
+    options: &[PinFunction::I2C_EEPROM_ID_SC],
 };
 
 pub const PIN_29: PinDescription = PinDescription {
@@ -260,6 +302,7 @@ pub const PIN_29: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C3_SCL,
+        PinFunction::GPCLK1,
     ],
 };
 
@@ -274,7 +317,11 @@ pub const PIN_31: PinDescription = PinDescription {
     board_pin_number: 31,
     bcm_pin_number: Some(6),
     name: "GPIO6",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::GPCLK2,
+    ],
 };
 
 pub const PIN_32: PinDescription = PinDescription {
@@ -285,6 +332,7 @@ pub const PIN_32: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C5_SDA,
+        PinFunction::PWM1,
     ],
 };
 
@@ -296,6 +344,7 @@ pub const PIN_33: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C5_SCL,
+        PinFunction::PWM1,
     ],
 };
 
@@ -310,14 +359,23 @@ pub const PIN_35: PinDescription = PinDescription {
     board_pin_number: 35,
     bcm_pin_number: Some(19),
     name: "GPIO19",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::SPI1_MISO,
+        PinFunction::PCM_FS,
+    ],
 };
 
 pub const PIN_36: PinDescription = PinDescription {
     board_pin_number: 36,
     bcm_pin_number: Some(16),
     name: "GPIO16",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::SPI1_CE2_N,
+    ],
 };
 
 pub const PIN_37: PinDescription = PinDescription {
@@ -331,7 +389,12 @@ pub const PIN_38: PinDescription = PinDescription {
     board_pin_number: 38,
     bcm_pin_number: Some(20),
     name: "GPIO20",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::SPI1_MOSI,
+        PinFunction::PCM_DIN,
+    ],
 };
 
 pub const PIN_39: PinDescription = PinDescription {
@@ -345,5 +408,10 @@ pub const PIN_40: PinDescription = PinDescription {
     board_pin_number: 40,
     bcm_pin_number: Some(21),
     name: "GPIO21",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::SPI1_SCLK,
+        PinFunction::PCM_DOUT,
+    ],
 };
