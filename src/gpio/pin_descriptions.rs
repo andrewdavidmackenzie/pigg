@@ -21,7 +21,7 @@ pub const PIN_3: PinDescription = PinDescription {
     bcm_pin_number: Some(2),
     name: "GPIO2",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         PinFunction::I2C1_SDA,
     ],
@@ -52,6 +52,7 @@ pub const PIN_6: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
+// TODO GPCLK0 ???
 pub const PIN_7: PinDescription = PinDescription {
     board_pin_number: 7,
     bcm_pin_number: Some(4),
@@ -238,6 +239,7 @@ pub const PIN_26: PinDescription = PinDescription {
     ],
 };
 
+// TODO Are ID_SD and I2C_ID_EEPROM the same?
 pub const PIN_27: PinDescription = PinDescription {
     board_pin_number: 27,
     bcm_pin_number: None,
@@ -245,6 +247,7 @@ pub const PIN_27: PinDescription = PinDescription {
     options: &[PinFunction::ID_SD, PinFunction::I2C_ID_EEPROM],
 };
 
+// TODO are ID_SC and I2C_ID_EEPROM the same
 pub const PIN_28: PinDescription = PinDescription {
     board_pin_number: 28,
     bcm_pin_number: None,
@@ -277,6 +280,7 @@ pub const PIN_31: PinDescription = PinDescription {
     options: &[PinFunction::Input(None), PinFunction::Output(None)],
 };
 
+// TODO what about PWM0 ??
 pub const PIN_32: PinDescription = PinDescription {
     board_pin_number: 32,
     bcm_pin_number: Some(12),
@@ -288,6 +292,7 @@ pub const PIN_32: PinDescription = PinDescription {
     ],
 };
 
+// TODO WHat about PWM1 ??
 pub const PIN_33: PinDescription = PinDescription {
     board_pin_number: 33,
     bcm_pin_number: Some(13),
@@ -306,6 +311,7 @@ pub const PIN_34: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
+// TODO what about PWM_FS ??
 pub const PIN_35: PinDescription = PinDescription {
     board_pin_number: 35,
     bcm_pin_number: Some(19),
@@ -324,12 +330,10 @@ pub const PIN_37: PinDescription = PinDescription {
     board_pin_number: 37,
     bcm_pin_number: Some(26),
     name: "GPIO26",
-    options: &[
-        PinFunction::Input(Some(InputPull::PullUp)),
-        PinFunction::Output(None),
-    ],
+    options: &[PinFunction::Input(None), PinFunction::Output(None)],
 };
 
+// TODO What about PCM_DIN ??
 pub const PIN_38: PinDescription = PinDescription {
     board_pin_number: 38,
     bcm_pin_number: Some(20),
@@ -344,6 +348,7 @@ pub const PIN_39: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
+// TODO What about PCM_DOUT
 pub const PIN_40: PinDescription = PinDescription {
     board_pin_number: 40,
     bcm_pin_number: Some(21),
