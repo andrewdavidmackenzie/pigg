@@ -16,21 +16,40 @@ pub enum InputPull {
 }
 
 /// For SPI interfaces see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
-// All the possible functions a pin can be given
+///
+/// Standard mode
+/// In Standard SPI mode the peripheral implements the standard three-wire serial protocol
+/// * SCLK - serial clock
+/// * CE   - chip enable (often called chip select)
+/// * MOSI - master out slave in
+/// * MISO - master in slave out
+///
+/// Bidirectional mode
+/// In bidirectional SPI mode the same SPI standard is implemented, except that a single wire
+/// is used for data (MOMI) instead of the two used in standard mode (MISO and MOSI).
+/// In this mode, the MOSI pin serves as MOMI pin.
+/// * SCLK - serial clock
+/// * CE   - chip enable (often called chip select)
+/// * MOMI - master out master in
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum PinFunction {
-    // Power and Ground functions
+    /// Power and Ground functions
     Power3V3,
     Power5V,
     Ground,
 
-    // GPIO functions
+    /// GPIO functions
     Input(Option<InputPull>),
     Output(Option<bool>),
 
-    // I2C bus functions
+    /// General Purpose CLock functions (from https://pinout.xyz/pinout/gpclk)
+    GPCLK0,
+    GPCLK1,
+    GPCLK2,
+
+    /// I2C bus functions
     I2C1_SDA,
     I2C1_SCL,
     I2C3_SDA,
@@ -42,8 +61,10 @@ pub enum PinFunction {
     I2C6_SDA,
     I2C6_SCL,
 
-    // SPI Interface #0
+    /// SPI Interface #0
     SPI0_MOSI,
+    /// Bi-directional mode
+    SPI0_MOMI,
     SPI0_MISO,
     SPI0_SCLK,
     SPI0_CE0_N,
@@ -51,6 +72,8 @@ pub enum PinFunction {
 
     // SPI Interface #0
     SPI1_MOSI,
+    /// Bi-directional mode
+    SPI1_MOMI,
     SPI1_MISO,
     SPI1_SCLK,
     SPI1_CE0_N,

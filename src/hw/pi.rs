@@ -77,17 +77,30 @@ impl Hardware for PiHW {
                 PinFunction::I2C6_SDA => {}
                 PinFunction::I2C6_SCL => {}
                 PinFunction::I2C_ID_EEPROM => {}
-                PinFunction::SPIO_MOSI => {}
-                PinFunction::SPIO_MISO => {}
-                PinFunction::SPIO_SCLK => {}
+
+                // SPI Interface #0
+                PinFunction::SPI0_MOSI => {}
+                PinFunction::SPI0_MISO => {}
+                PinFunction::SPI0_SCLK => {}
+                PinFunction::SPI0_CE0_N => {}
+                PinFunction::SPI0_CE1_N => {}
+                PinFunction::SPI0_MOMI => { /* bi di mode */ }
+
+                // SPI Interface #1
+                PinFunction::SPI1_MOSI => {}
+                PinFunction::SPI1_MISO => {}
+                PinFunction::SPI1_SCLK => {}
+                PinFunction::SPI1_CE0_N => {}
+                PinFunction::SPI1_CE1_N => {}
+                PinFunction::SPI1_CE2_N => {}
+                PinFunction::SPI1_MOMI => { /* bi di mode */ }
+
                 PinFunction::ID_SD => {}
                 // TODO think about how to handle UART output, maybe some sort of channel is created
                 // and text received on it is sent to the UART or similar.
                 PinFunction::UART0_TXD => {}
                 PinFunction::UART0_RXD => {}
                 PinFunction::PCM_CLK => {}
-                PinFunction::SPIO_CE0_N => {}
-                PinFunction::SPIO_CE1_N => {}
                 PinFunction::ID_SC => {}
                 PinFunction::Ground | PinFunction::Power3V3 | PinFunction::Power5V => {
                     return Err(io::Error::new(

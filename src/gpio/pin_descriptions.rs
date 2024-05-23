@@ -73,7 +73,6 @@ pub const PIN_6: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
-// TODO GPCLK0 ???
 pub const PIN_7: PinDescription = PinDescription {
     board_pin_number: 7,
     bcm_pin_number: Some(4),
@@ -82,6 +81,7 @@ pub const PIN_7: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C3_SDA,
+        PinFunction::GPCLK0,
     ],
 };
 
@@ -294,6 +294,7 @@ pub const PIN_29: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C3_SCL,
+        PinFunction::GPCLK1,
     ],
 };
 
@@ -308,7 +309,11 @@ pub const PIN_31: PinDescription = PinDescription {
     board_pin_number: 31,
     bcm_pin_number: Some(6),
     name: "GPIO6",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::GPCLK2,
+    ],
 };
 
 // TODO what about PWM0 ??
