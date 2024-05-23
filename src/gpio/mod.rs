@@ -90,10 +90,13 @@ pub enum PinFunction {
     /// UART0 - Receive
     UART0_RXD,
 
-    /// PCM functions
+    /// PCM functions - how uncompressed digital audio is encoded
     PCM_FS,
+    /// PCM Data In
     PCM_DIN,
+    /// PCM Data Out
     PCM_DOUT,
+    /// PCM CLock
     PCM_CLK,
 
     /// HAT ID related functions - two pins to talk to HAT EEPROM via I2C
