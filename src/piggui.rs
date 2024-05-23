@@ -1,18 +1,21 @@
 use std::{env, io};
 
-use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Settings, Theme, window};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
+use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::{alignment, window, Alignment, Color, Element, Length, Sandbox, Settings, Theme};
 
 // Using Custom Widgets
 use custom_widgets::{circle::circle, line::line};
 
+use crate::widget_style::CustomButton;
+
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
 use crate::hw::Hardware;
 
 mod gpio;
 mod hw;
+mod widget_style;
 mod custom_widgets {
     pub mod circle;
     pub mod line;
@@ -20,7 +23,6 @@ mod custom_widgets {
 
 // Use Hardware via trait
 //use hw::Hardware;
-
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
@@ -97,7 +99,9 @@ impl Sandbox for Gpio {
             Message::Activate => self.clicked = true,
             Message::PinFunctionSelected(pin_index, pin_function) => {
                 self.pin_function_selected[pin_index] = Some(pin_function);
-            }
+            } // Message::SubOptionSelected(index, InputPull) => {
+              //     self.pin_suboption_selected[index] = Some(InputPull);
+              // }
         }
     }
 
@@ -122,7 +126,7 @@ impl Sandbox for Gpio {
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
         "3V3" => CustomButton {
-            bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow 
+            bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
         },
         "5V" => CustomButton {
@@ -175,11 +179,14 @@ fn pin_view(
         if pair[0].options.len() > 1 {
             let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
 
-            pin_options_row_left = pin_options_row_left.push(pick_list(
-                pair[0].options,
-                gpio.pin_function_selected[idx * 2],
-                move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
-            ));
+            pin_options_row_left = pin_options_row_left.push(
+                pick_list(
+                    pair[0].options,
+                    gpio.pin_function_selected[idx * 2],
+                    move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
+                )
+                .placeholder("Choose a pin function"),
+            );
 
             pin_option_left = pin_option_left.push(pin_options_row_left);
         }
@@ -291,35 +298,4 @@ fn pin_view(
     }
 
     container(column).into()
-}
-
-pub struct CustomButton {
-    bg_color: Color,
-    text_color: Color,
-}
-
-impl button::StyleSheet for CustomButton {
-    type Style = Theme;
-
-    fn active(&self, _style: &Self::Style) -> button::Appearance {
-        button::Appearance {
-            background: Some(iced::Background::Color(self.bg_color)),
-            border: iced::Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: 50.0.into(),
-            },
-            text_color: self.text_color,
-            ..Default::default()
-        }
-    }
-}
-
-impl CustomButton {
-    pub fn get_button_style(&self) -> iced::widget::theme::Button {
-        iced::widget::theme::Button::Custom(Box::new(CustomButton {
-            bg_color: self.bg_color,
-            text_color: self.text_color,
-        }))
-    }
 }
