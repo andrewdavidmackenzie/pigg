@@ -76,9 +76,7 @@ impl Sandbox for Gpio {
             Message::Activate => self.clicked = true,
             Message::PinFunctionSelected(pin_index, pin_function) => {
                 self.pin_function_selected[pin_index] = Some(pin_function);
-            } // Message::SubOptionSelected(index, InputPull) => {
-              //     self.pin_suboption_selected[index] = Some(InputPull);
-              // }
+            }
         }
     }
 
@@ -156,11 +154,14 @@ fn pin_view(
         if pair[0].options.len() > 1 {
             let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
 
-            pin_options_row_left = pin_options_row_left.push(pick_list(
-                pair[0].options,
-                gpio.pin_function_selected[idx * 2],
-                move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
-            ));
+            pin_options_row_left = pin_options_row_left.push(
+                pick_list(
+                    pair[0].options,
+                    gpio.pin_function_selected[idx * 2],
+                    move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
+                )
+                .placeholder("Choose function"),
+            );
 
             pin_option_left = pin_option_left.push(pin_options_row_left);
         }
@@ -244,11 +245,14 @@ fn pin_view(
         if pair[1].options.len() > 1 {
             let mut pin_options_row_right = Row::new().align_items(Alignment::Center);
 
-            pin_options_row_right = pin_options_row_right.push(pick_list(
-                pair[1].options,
-                gpio.pin_function_selected[idx * 2 + 1],
-                move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
-            ));
+            pin_options_row_right = pin_options_row_right.push(
+                pick_list(
+                    pair[1].options,
+                    gpio.pin_function_selected[idx * 2 + 1],
+                    move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
+                )
+                .placeholder("Choose function"),
+            );
 
             pin_option_right = pin_option_right.push(pin_options_row_right);
         }
