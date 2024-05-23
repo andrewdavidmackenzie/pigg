@@ -133,6 +133,7 @@ pub const PIN_12: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::SPI1_CE0_N,
+        PinFunction::PWM0, // Can we be more specific as there are two PWM0 pins
         PinFunction::PCM_CLK,
     ],
 };
@@ -141,7 +142,11 @@ pub const PIN_13: PinDescription = PinDescription {
     board_pin_number: 13,
     bcm_pin_number: Some(27),
     name: "GPIO27",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::PWM1, // Can we be more specific as there are two PWM0 pins
+    ],
 };
 
 pub const PIN_14: PinDescription = PinDescription {
@@ -184,10 +189,14 @@ pub const PIN_18: PinDescription = PinDescription {
     board_pin_number: 18,
     bcm_pin_number: Some(24),
     name: "GPIO24",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(None),
+        PinFunction::Output(None),
+        PinFunction::PWM0, // Can we be more specific as there are two PWM0 pins
+    ],
 };
 
-/// See SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_19: PinDescription = PinDescription {
     board_pin_number: 19,
     bcm_pin_number: Some(10),
@@ -196,6 +205,7 @@ pub const PIN_19: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::SPI0_MOSI,
+        PinFunction::PWM1, // Can we be more specific as there are two PWM0 pins
     ],
 };
 
@@ -206,7 +216,7 @@ pub const PIN_20: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
-/// See SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_21: PinDescription = PinDescription {
     board_pin_number: 21,
     bcm_pin_number: Some(9),
@@ -226,7 +236,7 @@ pub const PIN_22: PinDescription = PinDescription {
     options: &[PinFunction::Input(None), PinFunction::Output(None)],
 };
 
-/// See SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_23: PinDescription = PinDescription {
     board_pin_number: 23,
     bcm_pin_number: Some(11),
@@ -238,7 +248,7 @@ pub const PIN_23: PinDescription = PinDescription {
     ],
 };
 
-/// See SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_24: PinDescription = PinDescription {
     board_pin_number: 24,
     bcm_pin_number: Some(8),
@@ -258,7 +268,7 @@ pub const PIN_25: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
-/// See SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
+/// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub const PIN_26: PinDescription = PinDescription {
     board_pin_number: 26,
     bcm_pin_number: Some(7),
@@ -270,20 +280,18 @@ pub const PIN_26: PinDescription = PinDescription {
     ],
 };
 
-// TODO Are ID_SD and I2C_ID_EEPROM the same?
 pub const PIN_27: PinDescription = PinDescription {
     board_pin_number: 27,
     bcm_pin_number: None,
     name: "ID_SD",
-    options: &[PinFunction::ID_SD, PinFunction::I2C_ID_EEPROM],
+    options: &[PinFunction::I2C_EEPROM_ID_SD],
 };
 
-// TODO are ID_SC and I2C_ID_EEPROM the same
 pub const PIN_28: PinDescription = PinDescription {
     board_pin_number: 28,
     bcm_pin_number: None,
     name: "ID_SC",
-    options: &[PinFunction::ID_SC, PinFunction::I2C_ID_EEPROM],
+    options: &[PinFunction::I2C_EEPROM_ID_SC],
 };
 
 pub const PIN_29: PinDescription = PinDescription {
@@ -316,7 +324,6 @@ pub const PIN_31: PinDescription = PinDescription {
     ],
 };
 
-// TODO what about PWM0 ??
 pub const PIN_32: PinDescription = PinDescription {
     board_pin_number: 32,
     bcm_pin_number: Some(12),
@@ -325,10 +332,10 @@ pub const PIN_32: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C5_SDA,
+        PinFunction::PWM1,
     ],
 };
 
-// TODO WHat about PWM1 ??
 pub const PIN_33: PinDescription = PinDescription {
     board_pin_number: 33,
     bcm_pin_number: Some(13),
@@ -337,6 +344,7 @@ pub const PIN_33: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::I2C5_SCL,
+        PinFunction::PWM1,
     ],
 };
 
@@ -347,7 +355,6 @@ pub const PIN_34: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
-// TODO what about PWM_FS ??
 pub const PIN_35: PinDescription = PinDescription {
     board_pin_number: 35,
     bcm_pin_number: Some(19),
@@ -356,6 +363,7 @@ pub const PIN_35: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::SPI1_MISO,
+        PinFunction::PCM_FS,
     ],
 };
 
@@ -386,6 +394,7 @@ pub const PIN_38: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::SPI1_MOSI,
+        PinFunction::PCM_DIN,
     ],
 };
 
@@ -396,7 +405,6 @@ pub const PIN_39: PinDescription = PinDescription {
     options: &[PinFunction::Ground],
 };
 
-// TODO What about PCM_DOUT
 pub const PIN_40: PinDescription = PinDescription {
     board_pin_number: 40,
     bcm_pin_number: Some(21),
@@ -405,5 +413,6 @@ pub const PIN_40: PinDescription = PinDescription {
         PinFunction::Input(None),
         PinFunction::Output(None),
         PinFunction::SPI1_SCLK,
+        PinFunction::PCM_DOUT,
     ],
 };

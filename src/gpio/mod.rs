@@ -80,12 +80,25 @@ pub enum PinFunction {
     SPI1_CE1_N,
     SPI1_CE2_N,
 
-    I2C_ID_EEPROM,
-    ID_SD,
+    /// PWM functions - two pins each use these
+    PWM0,
+    PWM1,
+
+    /// UART functions
+    /// UART0 - Transmit
     UART0_TXD,
+    /// UART0 - Receive
     UART0_RXD,
+
+    /// PCM functions
+    PCM_FS,
+    PCM_DIN,
+    PCM_DOUT,
     PCM_CLK,
-    ID_SC,
+
+    /// HAT ID related functions - two pins to talk to HAT EEPROM via I2C
+    I2C_EEPROM_ID_SD,
+    I2C_EEPROM_ID_SC,
 }
 
 // [board_pin_number] refer to the pins by the number of the pin printed on the board
