@@ -362,7 +362,7 @@ pub const PIN_26: PinDescription = PinDescription {
 pub const PIN_27: PinDescription = PinDescription {
     board_pin_number: 27,
     bcm_pin_number: None,
-    name: "GPIO0 (EEPROM ID SCL)",
+    name: "GPIO0", // EEPROM ID SCL
     options: &[
         PinFunction::I2C_EEPROM_ID_SD, // Is this ALT0 or the main function?
                                        // TODO ALT0: I2C0 SDA (I suspect is the main function for talking to EEPROM)
@@ -376,7 +376,7 @@ pub const PIN_27: PinDescription = PinDescription {
 pub const PIN_28: PinDescription = PinDescription {
     board_pin_number: 28,
     bcm_pin_number: None,
-    name: "GPIO1 (EEPROM ID SCL)",
+    name: "GPIO1", // EEPROM ID SCL
     options: &[
         PinFunction::I2C_EEPROM_ID_SC, // Is this ALT0 or the main function?
                                        // TODO ALT0: I2C0 SDL (I suspect is the main function for talking to EEPROM)
