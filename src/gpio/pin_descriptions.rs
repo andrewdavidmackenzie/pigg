@@ -385,7 +385,6 @@ pub const PIN_37: PinDescription = PinDescription {
     options: &[PinFunction::Input(None), PinFunction::Output(None)],
 };
 
-// TODO What about PCM_DIN ??
 pub const PIN_38: PinDescription = PinDescription {
     board_pin_number: 38,
     bcm_pin_number: Some(20),
