@@ -1,4 +1,4 @@
-use crate::gpio::{PinDescription, PinFunction};
+use crate::gpio::{InputPull, PinDescription, PinFunction};
 
 // Valid Pin descriptions for Pi Model B+, Pi 2B, Pi Zero, Pi 3B, and Pi 4B:
 
@@ -39,7 +39,7 @@ pub const PIN_5: PinDescription = PinDescription {
     bcm_pin_number: Some(3),
     name: "GPIO3",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         PinFunction::I2C1_SCL,
     ],
@@ -324,7 +324,10 @@ pub const PIN_37: PinDescription = PinDescription {
     board_pin_number: 37,
     bcm_pin_number: Some(26),
     name: "GPIO26",
-    options: &[PinFunction::Input(None), PinFunction::Output(None)],
+    options: &[
+        PinFunction::Input(Some(InputPull::PullUp)),
+        PinFunction::Output(None),
+    ],
 };
 
 pub const PIN_38: PinDescription = PinDescription {
