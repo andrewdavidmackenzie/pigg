@@ -15,16 +15,22 @@ pub enum InputPull {
     PullDown,
 }
 
+/// For SPI interfaces see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 // All the possible functions a pin can be given
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum PinFunction {
+    // Power and Ground functions
     Power3V3,
     Power5V,
     Ground,
+
+    // GPIO functions
     Input(Option<InputPull>),
     Output(Option<bool>),
+
+    // I2C bus functions
     I2C1_SDA,
     I2C1_SCL,
     I2C3_SDA,
@@ -35,16 +41,27 @@ pub enum PinFunction {
     I2C5_SCL,
     I2C6_SDA,
     I2C6_SCL,
+
+    // SPI Interface #0
+    SPI0_MOSI,
+    SPI0_MISO,
+    SPI0_SCLK,
+    SPI0_CE0_N,
+    SPI0_CE1_N,
+
+    // SPI Interface #0
+    SPI1_MOSI,
+    SPI1_MISO,
+    SPI1_SCLK,
+    SPI1_CE0_N,
+    SPI1_CE1_N,
+    SPI1_CE2_N,
+
     I2C_ID_EEPROM,
-    SPIO_MOSI,
-    SPIO_MISO,
-    SPIO_SCLK,
     ID_SD,
     UART0_TXD,
     UART0_RXD,
     PCM_CLK,
-    SPIO_CE0_N,
-    SPIO_CE1_N,
     ID_SC,
 }
 
