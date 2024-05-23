@@ -45,7 +45,7 @@ pub const PIN_3: PinDescription = PinDescription {
         PinFunction::Output(None),
         PinFunction::I2C1_SDA,
         // TODO ALT1: SMI SA3
-        // TODO ALT2: DPI VSYBC
+        // TODO ALT2: DPI VSYNC
         // TODO ALT3: AVEOUT_VSYNC
         // TODO ALT4: AVEIN_VSYNC
     ],
