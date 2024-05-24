@@ -13,7 +13,10 @@ use crate::style::CustomButton;
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+
 pub enum Layout {
     Physical,
     Logical,
@@ -23,6 +26,7 @@ impl Layout {
     const ALL: [Layout; 2] = [Layout::Physical, Layout::Logical];
 }
 
+// Implementing format for Layout 
 impl std::fmt::Display for Layout {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -117,7 +121,7 @@ impl Sandbox for Gpio {
         .placeholder("Choose Layout");
 
         let pin_layout = match self.choose_layout {
-            Layout::Physical => pin_view(&self.gpio_description, &self.gpio_config, self),
+            Layout::Physical => physical_pin_view(&self.gpio_description, &self.gpio_config, self),
             Layout::Logical => logical_pin_view(&self.gpio_description, &self.gpio_config, self),
         };
 
@@ -202,6 +206,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     }
 }
 
+// Logical view layout
 fn logical_pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
@@ -232,7 +237,8 @@ fn logical_pin_view(
     container(column).into()
 }
 
-fn pin_view(
+// Physical pin layout
+fn physical_pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
     gpio: &Gpio,
