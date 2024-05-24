@@ -1,6 +1,6 @@
 use std::{env, io};
 
-use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::widget::{button, container, pick_list, text, Column, Row, Text};
 use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Theme};
 
 // Using Custom Widgets
@@ -13,6 +13,28 @@ use crate::style::CustomButton;
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Layout {
+    Physical,
+    Logical,
+}
+
+impl Layout {
+    const ALL: [Layout; 2] = [Layout::Physical, Layout::Logical];
+}
+
+impl std::fmt::Display for Layout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Layout::Physical => "Physical Layout",
+                Layout::Logical => "Logical Layout",
+            }
+        )
+    }
+}
 
 pub struct Gpio {
     // TODO this filename will be used when we add a SAVE button or similar
@@ -22,6 +44,7 @@ pub struct Gpio {
     gpio_config: GPIOConfig,
     pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
+    choose_layout: Layout,
 }
 
 impl Gpio {
@@ -39,6 +62,7 @@ impl Gpio {
 pub enum Message {
     Activate,
     PinFunctionSelected(usize, PinFunction),
+    LayoutChanged(Layout),
 }
 
 impl Sandbox for Gpio {
@@ -64,6 +88,7 @@ impl Sandbox for Gpio {
             gpio_config,
             pin_function_selected,
             clicked: false,
+            choose_layout: Layout::Physical,
         }
     }
 
@@ -77,16 +102,38 @@ impl Sandbox for Gpio {
             Message::PinFunctionSelected(pin_index, pin_function) => {
                 self.pin_function_selected[pin_index] = Some(pin_function);
             }
+            Message::LayoutChanged(layout) => {
+                self.choose_layout = layout;
+            }
         }
     }
 
     fn view(&self) -> Element<Self::Message> {
-        container(pin_view(&self.gpio_description, &self.gpio_config, self))
-            .height(Length::Fill)
-            .width(Length::Fill)
-            .align_x(alignment::Horizontal::Center)
-            .align_y(alignment::Vertical::Center)
-            .into()
+        let layout_selector = pick_list(
+            &Layout::ALL[..],
+            Some(self.choose_layout),
+            Message::LayoutChanged,
+        )
+        .placeholder("Choose Layout");
+
+        let pin_layout = match self.choose_layout {
+            Layout::Physical => pin_view(&self.gpio_description, &self.gpio_config, self),
+            Layout::Logical => logical_pin_view(&self.gpio_description, &self.gpio_config, self),
+        };
+
+        container(
+            Column::new()
+                .push(layout_selector)
+                .push(pin_layout)
+                .height(Length::Fill)
+                .width(Length::Fill)
+                .align_items(Alignment::Center),
+        )
+        .height(Length::Fill)
+        .width(Length::Fill)
+        .align_x(alignment::Horizontal::Center)
+        .align_y(alignment::Vertical::Center)
+        .into()
     }
 
     fn scale_factor(&self) -> f64 {
@@ -139,6 +186,13 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     }
 }
 
+fn logical_pin_view(
+    pin_descriptions: &[PinDescription; 40],
+    _pin_config: &GPIOConfig,
+    gpio: &Gpio,
+) -> Element<'static, Message> {
+    text("hello").into()
+}
 fn pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
