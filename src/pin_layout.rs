@@ -211,57 +211,8 @@ fn logical_pin_view(
 
     for (idx, pin) in pin_descriptions.iter().enumerate() {
         if pin.options.len() > 1 {
-            let mut pin_option = Column::new().align_items(Alignment::Center);
-
-            let mut pin_options_row = Row::new().align_items(Alignment::Center);
-
-            pin_options_row = pin_options_row.push(
-                pick_list(
-                    pin.options,
-                    gpio.pin_function_selected[idx],
-                    move |pin_function| Message::PinFunctionSelected(idx, pin_function),
-                )
-                .width(Length::Fixed(140f32))
-                .placeholder("Select function"),
-            );
-
-            pin_option = pin_option.push(pin_options_row);
-
-            let mut pin_name = Column::new()
-                .width(Length::Fixed(55f32))
-                .align_items(Alignment::Center);
-
-            let mut pin_name_row = Row::new().align_items(Alignment::Center);
-            pin_name_row = pin_name_row.push(Text::new(pin.name));
-
-            pin_name = pin_name.push(pin_name_row);
-
-            let mut pin_arrow = Column::new()
-                .width(Length::Fixed(60f32))
-                .align_items(Alignment::Center);
-
-            let mut pin_arrow_row = Row::new().align_items(Alignment::Center);
-            pin_arrow_row = pin_arrow_row.push(line(50.0));
-            pin_arrow_row = pin_arrow_row.push(circle(5.0));
-
-            pin_arrow = pin_arrow.push(pin_arrow_row);
-
-            let mut pin_button = Column::new()
-                .width(Length::Fixed(40f32))
-                .height(Length::Shrink)
-                .spacing(10)
-                .align_items(Alignment::Center);
-
-            let pin_color = get_pin_color(pin);
-            let mut pin_button_row = Row::new().align_items(Alignment::Center);
-            pin_button_row = pin_button_row.push(
-                button(Text::new(pin.board_pin_number.to_string()).size(20))
-                    .padding(10)
-                    .width(Length::Fixed(40f32))
-                    .style(pin_color.get_button_style())
-                    .on_press(Message::Activate),
-            );
-            pin_button = pin_button.push(pin_button_row);
+            let (pin_option, pin_name, pin_arrow, pin_button) =
+                create_pin_view_side(pin, gpio.pin_function_selected[idx], idx, true);
 
             let pin_row = Row::new()
                 .push(pin_option)
@@ -289,125 +240,25 @@ fn pin_view(
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
-        let mut pin_option_left = Column::new()
-            .width(Length::Fixed(140f32))
-            .align_items(Alignment::Center);
+        let left_view =
+            create_pin_view_side(&pair[0], gpio.pin_function_selected[idx * 2], idx * 2, true);
 
-        if pair[0].options.len() > 1 {
-            let mut pin_options_row_left = Row::new().align_items(Alignment::Center);
-
-            pin_options_row_left = pin_options_row_left.push(
-                pick_list(
-                    pair[0].options,
-                    gpio.pin_function_selected[idx * 2],
-                    move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
-                )
-                .placeholder("Select function"),
-            );
-
-            pin_option_left = pin_option_left.push(pin_options_row_left);
-        }
-
-        let mut pin_name_left = Column::new()
-            .width(Length::Fixed(55f32))
-            .align_items(Alignment::Center);
-
-        let mut pin_name_left_row = Row::new().align_items(Alignment::Center);
-        pin_name_left_row = pin_name_left_row.push(Text::new(pair[0].name));
-
-        pin_name_left = pin_name_left.push(pin_name_left_row);
-
-        let mut pin_name_right = Column::new()
-            .width(Length::Fixed(55f32))
-            .align_items(Alignment::Center);
-
-        let mut pin_name_right_row = Row::new().align_items(Alignment::Center);
-        pin_name_right_row = pin_name_right_row.push(Text::new(pair[1].name));
-
-        pin_name_right = pin_name_right.push(pin_name_right_row);
-
-        let mut pin_arrow_left = Column::new()
-            .width(Length::Fixed(60f32))
-            .align_items(Alignment::Center);
-
-        let mut pin_arrow_left_row = Row::new().align_items(Alignment::Center);
-        pin_arrow_left_row = pin_arrow_left_row.push(circle(5.0));
-        pin_arrow_left_row = pin_arrow_left_row.push(line(50.0));
-
-        pin_arrow_left = pin_arrow_left.push(pin_arrow_left_row);
-
-        let mut pin_arrow_right = Column::new()
-            .width(Length::Fixed(60f32))
-            .align_items(Alignment::Center);
-
-        let mut pin_arrow_right_row = Row::new().align_items(Alignment::Center);
-        pin_arrow_right_row = pin_arrow_right_row.push(line(50.0));
-        pin_arrow_right_row = pin_arrow_right_row.push(circle(5.0));
-
-        pin_arrow_right = pin_arrow_right.push(pin_arrow_right_row);
-
-        let mut left_pin = Column::new()
-            .width(Length::Fixed(40f32))
-            .height(Length::Shrink)
-            .spacing(10)
-            .align_items(Alignment::Center);
-
-        let pin_color_left = get_pin_color(&pair[0]);
-        let mut left_pin_row = Row::new().align_items(Alignment::Center);
-        left_pin_row = left_pin_row.push(
-            button(Text::new(pair[0].board_pin_number.to_string()).size(20))
-                .padding(10)
-                .width(Length::Fixed(40f32))
-                .style(pin_color_left.get_button_style())
-                .on_press(Message::Activate),
+        let right_view = create_pin_view_side(
+            &pair[1],
+            gpio.pin_function_selected[idx * 2 + 1],
+            idx * 2 + 1,
+            false,
         );
-        left_pin = left_pin.push(left_pin_row);
-
-        let mut right_pin = Column::new()
-            .width(Length::Fixed(40f32))
-            .height(Length::Shrink)
-            .spacing(10)
-            .align_items(Alignment::Center);
-
-        let pin_color_right = get_pin_color(&pair[1]);
-        let mut right_pin_row = Row::new().align_items(Alignment::Center);
-        right_pin_row = right_pin_row.push(
-            button(Text::new(pair[1].board_pin_number.to_string()).size(20))
-                .padding(10)
-                .width(Length::Fixed(40f32))
-                .style(pin_color_right.get_button_style())
-                .on_press(Message::Activate),
-        );
-        right_pin = right_pin.push(right_pin_row);
-
-        let mut pin_option_right = Column::new()
-            .width(Length::Fixed(140f32))
-            .align_items(Alignment::Center);
-
-        if pair[1].options.len() > 1 {
-            let mut pin_options_row_right = Row::new().align_items(Alignment::Center);
-
-            pin_options_row_right = pin_options_row_right.push(
-                pick_list(
-                    pair[1].options,
-                    gpio.pin_function_selected[idx * 2 + 1],
-                    move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
-                )
-                .placeholder("Select function"),
-            );
-
-            pin_option_right = pin_option_right.push(pin_options_row_right);
-        }
 
         let row = Row::new()
-            .push(pin_option_left)
-            .push(pin_name_left)
-            .push(pin_arrow_left)
-            .push(left_pin)
-            .push(right_pin)
-            .push(pin_arrow_right)
-            .push(pin_name_right)
-            .push(pin_option_right)
+            .push(left_view.0)
+            .push(left_view.1)
+            .push(left_view.2)
+            .push(left_view.3)
+            .push(right_view.3)
+            .push(right_view.2)
+            .push(right_view.1)
+            .push(right_view.0)
             .spacing(10)
             .align_items(Alignment::Center);
 
@@ -418,4 +269,78 @@ fn pin_view(
     }
 
     container(column).into()
+}
+
+fn create_pin_view_side(
+    pin: &PinDescription,
+    selected_function: Option<PinFunction>,
+    idx: usize,
+    is_left: bool,
+) -> (
+    Column<'static, Message>,
+    Column<'static, Message>,
+    Column<'static, Message>,
+    Column<'static, Message>,
+) {
+    let mut pin_option = Column::new()
+        .width(Length::Fixed(140f32))
+        .align_items(Alignment::Center);
+
+    if pin.options.len() > 1 {
+        let mut pin_options_row = Row::new()
+            .align_items(Alignment::Center)
+            .width(Length::Fixed(140f32));
+
+        pin_options_row = pin_options_row.push(
+            pick_list(pin.options, selected_function, move |pin_function| {
+                Message::PinFunctionSelected(idx, pin_function)
+            })
+            .placeholder("Select function"),
+        );
+
+        pin_option = pin_option.push(pin_options_row);
+    }
+
+    let mut pin_name = Column::new()
+        .width(Length::Fixed(55f32))
+        .align_items(Alignment::Center);
+
+    let mut pin_name_row = Row::new().align_items(Alignment::Center);
+    pin_name_row = pin_name_row.push(Text::new(pin.name));
+
+    pin_name = pin_name.push(pin_name_row);
+
+    let mut pin_arrow = Column::new()
+        .width(Length::Fixed(60f32))
+        .align_items(Alignment::Center);
+
+    let mut pin_arrow_row = Row::new().align_items(Alignment::Center);
+    if is_left {
+        pin_arrow_row = pin_arrow_row.push(circle(5.0));
+        pin_arrow_row = pin_arrow_row.push(line(50.0));
+    } else {
+        pin_arrow_row = pin_arrow_row.push(line(50.0));
+        pin_arrow_row = pin_arrow_row.push(circle(5.0));
+    }
+
+    pin_arrow = pin_arrow.push(pin_arrow_row);
+
+    let mut pin_button = Column::new()
+        .width(Length::Fixed(40f32))
+        .height(Length::Shrink)
+        .spacing(10)
+        .align_items(Alignment::Center);
+
+    let pin_color = get_pin_color(&pin);
+    let mut pin_button_row = Row::new().align_items(Alignment::Center);
+    pin_button_row = pin_button_row.push(
+        button(Text::new(pin.board_pin_number.to_string()).size(20))
+            .padding(10)
+            .width(Length::Fixed(40f32))
+            .style(pin_color.get_button_style())
+            .on_press(Message::Activate),
+    );
+    pin_button = pin_button.push(pin_button_row);
+
+    (pin_option, pin_name, pin_arrow, pin_button)
 }
