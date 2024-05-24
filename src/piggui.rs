@@ -1,4 +1,4 @@
-use iced::{Sandbox, Settings, window};
+use iced::{window, Sandbox, Settings};
 
 mod gpio;
 mod hw;
@@ -15,6 +15,7 @@ fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
         decorations: true,
+        size: iced::Size::new(800.0, 1000.0),
         ..Default::default()
     };
 
