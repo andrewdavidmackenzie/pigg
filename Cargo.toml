@@ -2,6 +2,7 @@
 name = "pigg"
 version = "0.1.0"
 edition = "2021"
+description = "A Graphical User Interface for interacting with local and remote Raspberry Pi Hardware"
 default-run = "piggui"
 authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>"]
 license = "Apache-2.0"
