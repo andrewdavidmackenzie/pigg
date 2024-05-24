@@ -7,7 +7,6 @@ authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>"]
 # Add other names above if they want ^^^^
 license = "Apache-2.0"
 documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
-#homepage = "http://andrewdavidmackenzie.github.io/flow/"
 repository = "https://github.com/andrewdavidmackenzie/pigg/"
 readme = "README.md"
 
@@ -33,7 +32,7 @@ rppal = { version = "0.18.0", optional = true }
 
 # for GUI
 iced = { version = "0.12.1", features = ["tokio", "debug", "canvas", "advanced"], optional = true }
-iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal",] , optional = true }
+iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", ], optional = true }
 iced_native = { version = "0.10.3", optional = true }
 tokio = { version = "1", features = ["sync"], optional = true }
 serde = { version = "1.0.202", features = ["derive"], optional = true }
