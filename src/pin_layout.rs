@@ -1,6 +1,6 @@
 use std::{env, io};
 
-use iced::widget::{button, container, pick_list, text, Column, Row, Text};
+use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Theme};
 
 // Using Custom Widgets
@@ -121,23 +121,39 @@ impl Sandbox for Gpio {
             Layout::Logical => logical_pin_view(&self.gpio_description, &self.gpio_config, self),
         };
 
-        container(
-            Column::new()
-                .push(layout_selector)
-                .push(pin_layout)
-                .height(Length::Fill)
-                .width(Length::Fill)
-                .align_items(Alignment::Center),
-        )
-        .height(Length::Fill)
-        .width(Length::Fill)
-        .align_x(alignment::Horizontal::Center)
-        .align_y(alignment::Vertical::Center)
-        .into()
+        let main_column = Column::new()
+            .push(
+                Column::new()
+                    .push(layout_selector)
+                    .align_items(Alignment::Center)
+                    .width(Length::Fill)
+                    .padding(10),
+            )
+            .push(iced::widget::Space::new(
+                Length::Fixed(1.0),
+                Length::Fixed(20.0),
+            ))
+            .push(
+                Column::new()
+                    .push(pin_layout)
+                    .align_items(Alignment::Center)
+                    .width(Length::Fill)
+                    .height(Length::Fill),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_items(Alignment::Start);
+
+        container(main_column)
+            .height(Length::Fill)
+            .width(Length::Fill)
+            .align_x(alignment::Horizontal::Center)
+            .align_y(alignment::Vertical::Top)
+            .into()
     }
 
     fn scale_factor(&self) -> f64 {
-        0.65
+        0.68
     }
 
     fn theme(&self) -> Theme {
@@ -191,8 +207,80 @@ fn logical_pin_view(
     _pin_config: &GPIOConfig,
     gpio: &Gpio,
 ) -> Element<'static, Message> {
-    text("hello").into()
+    let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
+
+    for (idx, pin) in pin_descriptions.iter().enumerate() {
+        if pin.options.len() > 1 {
+            let mut pin_option = Column::new().align_items(Alignment::Center);
+
+            let mut pin_options_row = Row::new().align_items(Alignment::Center);
+
+            pin_options_row = pin_options_row.push(
+                pick_list(
+                    pin.options,
+                    gpio.pin_function_selected[idx],
+                    move |pin_function| Message::PinFunctionSelected(idx, pin_function),
+                )
+                .width(Length::Fixed(140f32))
+                .placeholder("Select function"),
+            );
+
+            pin_option = pin_option.push(pin_options_row);
+
+            let mut pin_name = Column::new()
+                .width(Length::Fixed(55f32))
+                .align_items(Alignment::Center);
+
+            let mut pin_name_row = Row::new().align_items(Alignment::Center);
+            pin_name_row = pin_name_row.push(Text::new(pin.name));
+
+            pin_name = pin_name.push(pin_name_row);
+
+            let mut pin_arrow = Column::new()
+                .width(Length::Fixed(60f32))
+                .align_items(Alignment::Center);
+
+            let mut pin_arrow_row = Row::new().align_items(Alignment::Center);
+            pin_arrow_row = pin_arrow_row.push(line(50.0));
+            pin_arrow_row = pin_arrow_row.push(circle(5.0));
+
+            pin_arrow = pin_arrow.push(pin_arrow_row);
+
+            let mut pin_button = Column::new()
+                .width(Length::Fixed(40f32))
+                .height(Length::Shrink)
+                .spacing(10)
+                .align_items(Alignment::Center);
+
+            let pin_color = get_pin_color(pin);
+            let mut pin_button_row = Row::new().align_items(Alignment::Center);
+            pin_button_row = pin_button_row.push(
+                button(Text::new(pin.board_pin_number.to_string()).size(20))
+                    .padding(10)
+                    .width(Length::Fixed(40f32))
+                    .style(pin_color.get_button_style())
+                    .on_press(Message::Activate),
+            );
+            pin_button = pin_button.push(pin_button_row);
+
+            let pin_row = Row::new()
+                .push(pin_option)
+                .push(pin_button)
+                .push(pin_arrow)
+                .push(pin_name)
+                .spacing(10)
+                .align_items(Alignment::Center);
+
+            column = column.push(pin_row).push(iced::widget::Space::new(
+                Length::Fixed(1.0),
+                Length::Fixed(5.0),
+            ));
+        }
+    }
+
+    container(column).into()
 }
+
 fn pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
@@ -214,7 +302,7 @@ fn pin_view(
                     gpio.pin_function_selected[idx * 2],
                     move |pin_function| Message::PinFunctionSelected(idx * 2, pin_function),
                 )
-                .placeholder("Choose function"),
+                .placeholder("Select function"),
             );
 
             pin_option_left = pin_option_left.push(pin_options_row_left);
@@ -305,7 +393,7 @@ fn pin_view(
                     gpio.pin_function_selected[idx * 2 + 1],
                     move |pin_function| Message::PinFunctionSelected(idx * 2 + 1, pin_function),
                 )
-                .placeholder("Choose function"),
+                .placeholder("Select function"),
             );
 
             pin_option_right = pin_option_right.push(pin_options_row_right);
