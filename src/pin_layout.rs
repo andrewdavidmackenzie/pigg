@@ -217,11 +217,15 @@ fn logical_pin_view(
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-    for pin in pin_descriptions
+    let mut gpio_pins = pin_descriptions
         .iter()
         .filter(|pin| pin.options.len() > 1)
         .filter(|pin| pin.bcm_pin_number.is_some())
-    {
+        .collect::<Vec<&PinDescription>>();
+    let pins_slice = gpio_pins.as_mut_slice();
+    pins_slice.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
+
+    for pin in pins_slice {
         let (pin_option, pin_name, pin_arrow, pin_button) = create_pin_view_side(
             pin,
             gpio.pin_function_selected[pin.board_pin_number as usize - 1],
