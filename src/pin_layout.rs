@@ -77,6 +77,7 @@ impl Application for Gpio {
             Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
 
         let mut hw = hw::get();
+        println!("Hardware detected: {:?}", hw.descriptor().unwrap());
         hw.apply_config(&gpio_config).unwrap();
 
         let num_pins = GPIO_DESCRIPTION.len();
