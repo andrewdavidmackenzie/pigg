@@ -211,14 +211,17 @@ fn logical_pin_view(
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-    for (idx, pin) in pin_descriptions
+    for pin in pin_descriptions
         .iter()
         .filter(|pin| pin.options.len() > 1)
         .filter(|pin| pin.bcm_pin_number.is_some())
-        .enumerate()
     {
-        let (pin_option, pin_name, pin_arrow, pin_button) =
-            create_pin_view_side(pin, gpio.pin_function_selected[idx], idx, true);
+        let (pin_option, pin_name, pin_arrow, pin_button) = create_pin_view_side(
+            pin,
+            gpio.pin_function_selected[pin.board_pin_number as usize - 1],
+            pin.board_pin_number as usize,
+            true,
+        );
 
         let pin_row = Row::new()
             .push(pin_option)
@@ -245,14 +248,18 @@ fn physical_pin_view(
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-    for (idx, pair) in pin_descriptions.chunks(2).enumerate() {
-        let left_view =
-            create_pin_view_side(&pair[0], gpio.pin_function_selected[idx * 2], idx * 2, true);
+    for pair in pin_descriptions.chunks(2) {
+        let left_view = create_pin_view_side(
+            &pair[0],
+            gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
+            pair[0].board_pin_number as usize,
+            true,
+        );
 
         let right_view = create_pin_view_side(
             &pair[1],
-            gpio.pin_function_selected[idx * 2 + 1],
-            idx * 2 + 1,
+            gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
+            pair[1].board_pin_number as usize,
             false,
         );
 
