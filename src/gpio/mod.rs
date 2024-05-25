@@ -111,7 +111,7 @@ pub enum PinFunction {
 #[allow(dead_code)] // TODO remove later
 pub struct PinDescription {
     pub board_pin_number: u8,
-    bcm_pin_number: Option<u8>,
+    pub bcm_pin_number: Option<u8>,
     pub name: &'static str,
     pub options: &'static [PinFunction], // The set of functions the pin can have, chosen by user config
 }
