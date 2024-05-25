@@ -1,19 +1,16 @@
 use std::{env, io};
 
-use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Theme};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 // Using Custom Widgets
 use crate::custom_widgets::{circle::circle, line::line};
-
+// This binary will only be built with the "iced" feature enabled, by use of "required-features"
+// in Cargo.toml so no need for the feature to be used here for conditional compiling
+use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
 use crate::hw;
 use crate::hw::Hardware;
 use crate::style::CustomButton;
-
-// This binary will only be built with the "iced" feature enabled, by use of "required-features"
-// in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 
@@ -26,7 +23,7 @@ impl Layout {
     const ALL: [Layout; 2] = [Layout::Physical, Layout::Logical];
 }
 
-// Implementing format for Layout 
+// Implementing format for Layout
 impl std::fmt::Display for Layout {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -214,24 +211,27 @@ fn logical_pin_view(
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-    for (idx, pin) in pin_descriptions.iter().enumerate() {
-        if pin.options.len() > 1 {
-            let (pin_option, pin_name, pin_arrow, pin_button) =
-                create_pin_view_side(pin, gpio.pin_function_selected[idx], idx, true);
+    for (idx, pin) in pin_descriptions
+        .iter()
+        .filter(|pin| pin.options.len() > 1)
+        .filter(|pin| pin.bcm_pin_number.is_some())
+        .enumerate()
+    {
+        let (pin_option, pin_name, pin_arrow, pin_button) =
+            create_pin_view_side(pin, gpio.pin_function_selected[idx], idx, true);
 
-            let pin_row = Row::new()
-                .push(pin_option)
-                .push(pin_button)
-                .push(pin_arrow)
-                .push(pin_name)
-                .spacing(10)
-                .align_items(Alignment::Center);
+        let pin_row = Row::new()
+            .push(pin_option)
+            .push(pin_button)
+            .push(pin_arrow)
+            .push(pin_name)
+            .spacing(10)
+            .align_items(Alignment::Center);
 
-            column = column.push(pin_row).push(iced::widget::Space::new(
-                Length::Fixed(1.0),
-                Length::Fixed(5.0),
-            ));
-        }
+        column = column.push(pin_row).push(iced::widget::Space::new(
+            Length::Fixed(1.0),
+            Length::Fixed(5.0),
+        ));
     }
 
     container(column).into()
