@@ -1,13 +1,13 @@
 use std::{env, io};
 
-use iced::{alignment, Alignment, Color, Element, Length, Sandbox, Theme};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
+use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::{alignment, executor, Alignment, Application, Color, Command, Element, Length, Theme};
 
 // Using Custom Widgets
 use crate::custom_widgets::{circle::circle, line::line};
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
 use crate::hw;
 use crate::hw::Hardware;
 use crate::style::CustomButton;
@@ -66,38 +66,43 @@ pub enum Message {
     LayoutChanged(Layout),
 }
 
-impl Sandbox for Gpio {
+impl Application for Gpio {
+    type Executor = executor::Default;
     type Message = Message;
+    type Theme = Theme;
+    type Flags = ();
 
-    fn new() -> Self {
-        // TODO Do this async Elm/Iced style by a Message, that contains a new config to apply
-        // Read the (optional) filename of a config to load a config from
-        // avoiding the extra overhead of clap or similar while we only have one possible argument
+    fn new(_flags: ()) -> (Gpio, Command<Self::Message>) {
         let (config_filename, gpio_config) =
             Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
 
-        // Will need an "Apply" button in the UI to apply config changes to the HW, or apply on each change
         let mut hw = hw::get();
-        hw.apply_config(&gpio_config).unwrap(); // TODO handle error
+        hw.apply_config(&gpio_config).unwrap();
 
         let num_pins = GPIO_DESCRIPTION.len();
         let pin_function_selected = vec![None; num_pins];
 
-        Self {
-            config_filename,
-            gpio_description: GPIO_DESCRIPTION,
-            gpio_config,
-            pin_function_selected,
-            clicked: false,
-            chosen_layout: Layout::Physical,
-        }
+        (
+            Self {
+                config_filename,
+                gpio_description: GPIO_DESCRIPTION,
+                gpio_config,
+                pin_function_selected,
+                clicked: false,
+                chosen_layout: Layout::Physical,
+            },
+            Command::none()
+
+            // TODO Add Toggle button for full screen
+            // iced::window::change_mode(iced::window::Id::MAIN, iced::window::Mode::Fullscreen),
+        )
     }
 
     fn title(&self) -> String {
         String::from("Piggui")
     }
 
-    fn update(&mut self, message: Message) {
+    fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
             Message::Activate => self.clicked = true,
             Message::PinFunctionSelected(pin_index, pin_function) => {
@@ -107,6 +112,7 @@ impl Sandbox for Gpio {
                 self.chosen_layout = layout;
             }
         }
+        Command::none()
     }
 
     fn view(&self) -> Element<Self::Message> {
@@ -154,7 +160,7 @@ impl Sandbox for Gpio {
     }
 
     fn scale_factor(&self) -> f64 {
-        0.68
+        0.63
     }
 
     fn theme(&self) -> Theme {
