@@ -2,8 +2,9 @@
 name = "pigg"
 version = "0.1.0"
 edition = "2021"
+description = "A Graphical User Interface for interacting with local and remote Raspberry Pi Hardware"
 default-run = "piggui"
-authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>"]
+authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>", "Sundaram Krishnan <krishnsundaram@gmail.com>"]
 license = "Apache-2.0"
 documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
 repository = "https://github.com/andrewdavidmackenzie/pigg/"
@@ -30,8 +31,8 @@ gui = ["iced", "tokio", "serde"]
 rppal = { version = "0.18.0", optional = true }
 
 # for GUI
-iced = { version = "0.12.1", features = ["tokio", "debug", "canvas", "advanced"], optional = true }
-iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", ], optional = true }
+iced = { version = "0.12.1", default-features= false, features = ["tokio", "debug", "canvas", "advanced"], optional = true }
+iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal",] , optional = true }
 iced_native = { version = "0.10.3", optional = true }
 tokio = { version = "1", features = ["sync"], optional = true }
 serde = { version = "1.0.202", features = ["derive"], optional = true }
