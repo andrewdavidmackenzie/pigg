@@ -1,13 +1,13 @@
 use std::{env, io};
 
-use iced::widget::{button, container, pick_list, Column, Row, Text};
-use iced::{alignment, executor, Alignment, Application, Color, Command, Element, Length, Theme};
+use iced::{alignment, Alignment, Application, Color, Command, Element, executor, Length, Theme};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 // Using Custom Widgets
 use crate::custom_widgets::{circle::circle, line::line};
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+use crate::gpio::{GPIO_DESCRIPTION, GPIOConfig, PinDescription, PinFunction};
 use crate::hw;
 use crate::hw::Hardware;
 use crate::style::CustomButton;
@@ -91,10 +91,8 @@ impl Application for Gpio {
                 clicked: false,
                 chosen_layout: Layout::Physical,
             },
-            Command::none()
-
-            // TODO Add Toggle button for full screen
-            // iced::window::change_mode(iced::window::Id::MAIN, iced::window::Mode::Fullscreen),
+            Command::none(), // TODO Add Toggle button for full screen
+                             // iced::window::change_mode(iced::window::Id::MAIN, iced::window::Mode::Fullscreen),
         )
     }
 
@@ -229,7 +227,6 @@ fn logical_pin_view(
         let (pin_option, pin_name, pin_arrow, pin_button) = create_pin_view_side(
             pin,
             gpio.pin_function_selected[pin.board_pin_number as usize - 1],
-            pin.board_pin_number as usize,
             true,
         );
 
@@ -262,14 +259,12 @@ fn physical_pin_view(
         let left_view = create_pin_view_side(
             &pair[0],
             gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
-            pair[0].board_pin_number as usize,
             true,
         );
 
         let right_view = create_pin_view_side(
             &pair[1],
             gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
-            pair[1].board_pin_number as usize,
             false,
         );
 
@@ -297,7 +292,6 @@ fn physical_pin_view(
 fn create_pin_view_side(
     pin: &PinDescription,
     selected_function: Option<PinFunction>,
-    idx: usize,
     is_left: bool,
 ) -> (
     Column<'static, Message>,
@@ -308,6 +302,7 @@ fn create_pin_view_side(
     let mut pin_option = Column::new()
         .width(Length::Fixed(140f32))
         .align_items(Alignment::Center);
+    let pin_number = pin.board_pin_number as usize;
 
     if pin.options.len() > 1 {
         let mut pin_options_row = Row::new()
@@ -316,7 +311,7 @@ fn create_pin_view_side(
 
         pin_options_row = pin_options_row.push(
             pick_list(pin.options, selected_function, move |pin_function| {
-                Message::PinFunctionSelected(idx, pin_function)
+                Message::PinFunctionSelected(pin_number, pin_function)
             })
             .placeholder("Select function"),
         );
