@@ -37,18 +37,14 @@ pub fn get() -> impl Hardware {
 impl Hardware for PiHW {
     /// Find the Pi hardware description
     fn descriptor(&self) -> io::Result<HardwareDescriptor> {
-        let cpu_info = fs::read_to_string("/proc/cpuinfo")?;
-
-        println!("cpuinfo = {:?}", cpu_info);
-
         let mut descriptor = HardwareDescriptor {
             hardware: "Raspberry Pi".to_string(),
             revision: "Unknown".to_string(),
             serial: "Unknown".to_string(),
-            model: "Raspberry Pi Pico (stub)".to_string(),
+            model: "Raspberry Pi".to_string(),
         };
 
-        for line in cpu_info.lines() {
+        for line in fs::read_to_string("/proc/cpuinfo")?.lines() {
             match line
                 .split_once(":")
                 .map(|(key, value)| (key.trim(), value.trim()))
