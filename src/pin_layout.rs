@@ -48,7 +48,7 @@ pub struct Gpio {
     gpio_config: GPIOConfig,
     pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
-    choose_layout: Layout,
+    chosen_layout: Layout,
 }
 
 impl Gpio {
@@ -92,7 +92,7 @@ impl Sandbox for Gpio {
             gpio_config,
             pin_function_selected,
             clicked: false,
-            choose_layout: Layout::Physical,
+            chosen_layout: Layout::Physical,
         }
     }
 
@@ -107,7 +107,7 @@ impl Sandbox for Gpio {
                 self.pin_function_selected[pin_index] = Some(pin_function);
             }
             Message::LayoutChanged(layout) => {
-                self.choose_layout = layout;
+                self.chosen_layout = layout;
             }
         }
     }
@@ -115,12 +115,12 @@ impl Sandbox for Gpio {
     fn view(&self) -> Element<Self::Message> {
         let layout_selector = pick_list(
             &Layout::ALL[..],
-            Some(self.choose_layout),
+            Some(self.chosen_layout),
             Message::LayoutChanged,
         )
         .placeholder("Choose Layout");
 
-        let pin_layout = match self.choose_layout {
+        let pin_layout = match self.chosen_layout {
             Layout::Physical => physical_pin_view(&self.gpio_description, &self.gpio_config, self),
             Layout::Logical => logical_pin_view(&self.gpio_description, &self.gpio_config, self),
         };
