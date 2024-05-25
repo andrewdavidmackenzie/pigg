@@ -15,10 +15,19 @@ pub fn get() -> impl Hardware {
     implementation::get()
 }
 
+#[derive(Debug)]
+pub struct HardwareDescriptor {
+    pub hardware: String,
+    pub revision: String,
+    pub serial: String,
+    pub model: String,
+}
+
 /// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
 /// interact with any possible GPIO hardware on the device to set config and get state
 #[must_use]
 pub trait Hardware {
+    fn descriptor(&self) -> io::Result<HardwareDescriptor>;
     fn apply_config(&mut self, config: &GPIOConfig) -> io::Result<()>;
     #[allow(dead_code)] // TODO remove later when used
     fn get_state(&self) -> GPIOState;

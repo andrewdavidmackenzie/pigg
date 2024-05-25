@@ -1,3 +1,4 @@
+use std::fs;
 use std::io;
 
 /// Implementation of GPIO for raspberry pi - uses rrpal
@@ -10,6 +11,7 @@ use crate::gpio::{GPIOConfig, GPIOState};
 use crate::gpio::{InputPull, PinFunction};
 
 use super::Hardware;
+use super::HardwareDescriptor;
 
 // TODO state will be used at some point I imagine, if not remove it. When used remove the next line
 #[allow(dead_code)]
@@ -33,9 +35,37 @@ pub fn get() -> impl Hardware {
 /// Implement the [Hardware] trait for ordinary Pi hardware.
 // -> Result<(), Box<dyn Error>>
 impl Hardware for PiHW {
+    /// Find the Pi hardware description
+    fn descriptor(&self) -> io::Result<HardwareDescriptor> {
+        let cpu_info = fs::read_to_string("/proc/cpuinfo")?;
+
+        println!("cpuinfo = {:?}", cpu_info);
+
+        let mut descriptor = HardwareDescriptor {
+            hardware: "Raspberry Pi".to_string(),
+            revision: "Unknown".to_string(),
+            serial: "Unknown".to_string(),
+            model: "Raspberry Pi Pico (stub)".to_string(),
+        };
+
+        for line in cpu_info.lines() {
+            match line
+                .split_once(":")
+                .map(|(key, value)| (key.trim(), value.trim()))
+            {
+                Some(("Hardware", hw)) => descriptor.hardware = hw.to_string(),
+                Some(("Revision", revision)) => descriptor.revision = revision.to_string(),
+                Some(("Serial", serial)) => descriptor.serial = serial.to_string(),
+                Some(("Model", model)) => descriptor.model = model.to_string(),
+                _ => {}
+            }
+        }
+
+        Ok(descriptor)
+    }
+
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
     /// configure the Pi GPIO hardware to correspond to it
-
     fn apply_config(&mut self, config: &GPIOConfig) -> io::Result<()> {
         for (bcm_pin_number, pin_config) in &config.configured_pins {
             match pin_config {
