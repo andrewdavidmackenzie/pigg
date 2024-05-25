@@ -77,6 +77,7 @@ impl Application for Gpio {
             Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
 
         let mut hw = hw::get();
+        println!("Hardware detected: {:?}", hw.descriptor().unwrap());
         hw.apply_config(&gpio_config).unwrap();
 
         let num_pins = GPIO_DESCRIPTION.len();
@@ -349,7 +350,7 @@ fn create_pin_view_side(
         .spacing(10)
         .align_items(Alignment::Center);
 
-    let pin_color = get_pin_color(&pin);
+    let pin_color = get_pin_color(pin);
     let mut pin_button_row = Row::new().align_items(Alignment::Center);
     pin_button_row = pin_button_row.push(
         button(Text::new(pin.board_pin_number.to_string()).size(20))
