@@ -15,7 +15,7 @@ fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
         decorations: true,
-        size: iced::Size::new(800.0, 900.0),
+        size: iced::Size::new(850.0, 900.0),
         ..Default::default()
     };
 
