@@ -148,7 +148,7 @@ impl Application for Gpio {
                     .push(layout_row)
                     .push(hardware_desc_row)
                     .align_items(Alignment::Center)
-                    .width(Length::Fixed(350.0))
+                    .width(Length::Fixed(400.0))
                     .spacing(10),
             )
             .push(
