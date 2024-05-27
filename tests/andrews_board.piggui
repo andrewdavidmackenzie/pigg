@@ -1,0 +1,6 @@
+{
+    "configured_pins":[
+    [17,{"Output":true}],
+    [26,{"Input":"Pullup"}]
+    ]
+}
