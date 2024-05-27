@@ -127,10 +127,10 @@ impl Application for Gpio {
     fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
             Message::Activate => self.clicked = true,
-            Message::PinFunctionSelected(pin_index, pin_function) => {
-                self.pin_function_selected[pin_index] = Some(pin_function);
+            Message::PinFunctionSelected(pin_number, pin_function) => {
+                self.pin_function_selected[pin_number - 1] = Some(pin_function);
                 if let Some(bcm_pin_number) =
-                    self.connected_hardware.pin_descriptions()[pin_index].bcm_pin_number
+                    self.connected_hardware.pin_descriptions()[pin_number - 1].bcm_pin_number
                 {
                     // TODO error reporting if config cannot be applied
                     let _ = self
