@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::gpio::{GPIOConfig, GPIOState, PinDescription};
+use crate::gpio::{GPIOConfig, GPIOState, PinDescription, PinFunction};
 use crate::hw::pin_descriptions::*;
 
 /// There are three implementations of [`Hardware`] trait:
@@ -35,6 +35,12 @@ pub trait Hardware {
     fn pin_descriptions(&self) -> [PinDescription; 40];
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config(&mut self, config: &GPIOConfig) -> io::Result<()>;
+    /// Apply a new config to one specific pin
+    fn apply_pin_config(
+        &mut self,
+        board_pin_number: u8,
+        pin_function: &PinFunction,
+    ) -> io::Result<()>;
     #[allow(dead_code)] // TODO remove later when used
     /// Get the state of the input pins
     fn get_state(&self) -> GPIOState;

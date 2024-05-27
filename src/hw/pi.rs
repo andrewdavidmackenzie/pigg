@@ -166,6 +166,15 @@ impl Hardware for PiHW {
         Ok(())
     }
 
+    fn apply_pin_config(
+        &mut self,
+        board_pin_number: u8,
+        pin_function: &PinFunction,
+    ) -> io::Result<()> {
+        println!("Pin {board_pin_number} config changed");
+        Ok(())
+    }
+
     /// Return the state of the Input pins and other pins whose state is read from GPIO hardware
     // TODO might deprecate this in favor of some sort of message or callback when an input changes
     // its value, to trigger a UI update...
