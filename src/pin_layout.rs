@@ -1,190 +1,11 @@
-use std::{env, io};
+use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::{Alignment, Color, Element, Length};
 
-use iced::{alignment, Alignment, Application, Color, Command, Element, executor, Length, Theme};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
-
-// Using Custom Widgets
 use crate::custom_widgets::{circle::circle, line::line};
-// This binary will only be built with the "iced" feature enabled, by use of "required-features"
-// in Cargo.toml so no need for the feature to be used here for conditional compiling
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
-use crate::hw;
-use crate::hw::Hardware;
 use crate::style::CustomButton;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-
-pub enum Layout {
-    Physical,
-    Logical,
-}
-
-impl Layout {
-    const ALL: [Layout; 2] = [Layout::Physical, Layout::Logical];
-}
-
-// Implementing format for Layout
-impl std::fmt::Display for Layout {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Layout::Physical => "Physical Layout",
-                Layout::Logical => "Logical Layout",
-            }
-        )
-    }
-}
-
-pub struct Gpio {
-    // TODO this filename will be used when we add a SAVE button or similar
-    #[allow(dead_code)]
-    config_filename: Option<String>, // filename where to load and save config file to/from
-    gpio_config: GPIOConfig,
-    connected_hardware: Box<dyn Hardware>,
-    pub pin_function_selected: Vec<Option<PinFunction>>,
-    clicked: bool,
-    chosen_layout: Layout,
-}
-
-impl Gpio {
-    /// Asynchronously load a GPIOConfig from a file, and return a Future to a Message which
-    /// will be sent to the UI to update to reflect the new config.
-    /// This can be used for initial load from a Command Line filename, or interactively
-    /// by the GUI by navigating to a file etc.
-    /// Returns
-    /// * io::Result with an optional tuple with filename from where was loaded and the config
-    async fn load(filename: Option<String>) -> io::Result<Option<(String, GPIOConfig)>> {
-        match filename {
-            Some(config_filename) => {
-                let config = GPIOConfig::load(&config_filename)?;
-                Ok(Some((config_filename, config)))
-            }
-            None => Ok(None),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Message {
-    Activate,
-    PinFunctionSelected(usize, PinFunction),
-    LayoutChanged(Layout),
-    ConfigLoaded((String, GPIOConfig)),
-    None,
-}
-
-impl Application for Gpio {
-    type Executor = executor::Default;
-    type Message = Message;
-    type Theme = Theme;
-    type Flags = ();
-
-    fn new(_flags: ()) -> (Gpio, Command<Self::Message>) {
-        let hw = hw::get();
-        let num_pins = hw.pin_descriptions().len();
-        let pin_function_selected = vec![None; num_pins];
-
-        (
-            Self {
-                config_filename: None,
-                gpio_config: GPIOConfig::default(),
-                pin_function_selected,
-                clicked: false,
-                chosen_layout: Layout::Physical,
-                connected_hardware: Box::new(hw),
-            },
-            Command::perform(Self::load(env::args().nth(1)), |result| match result {
-                Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
-                _ => Message::None,
-            }),
-        )
-    }
-
-    fn title(&self) -> String {
-        String::from("Piggui")
-    }
-
-    fn update(&mut self, message: Message) -> Command<Self::Message> {
-        match message {
-            Message::Activate => self.clicked = true,
-            Message::PinFunctionSelected(pin_index, pin_function) => {
-                self.pin_function_selected[pin_index] = Some(pin_function);
-            }
-            Message::LayoutChanged(layout) => {
-                self.chosen_layout = layout;
-            }
-            Message::ConfigLoaded((filename, config)) => {
-                self.config_filename = Some(filename);
-                self.connected_hardware.apply_config(&config).unwrap();
-                // TODO refresh the UI as a new config was loaded
-            }
-            Message::None => {}
-        }
-        Command::none()
-    }
-
-    fn view(&self) -> Element<Self::Message> {
-        let layout_selector = pick_list(
-            &Layout::ALL[..],
-            Some(self.chosen_layout),
-            Message::LayoutChanged,
-        )
-        .placeholder("Choose Layout");
-
-        let pin_layout = match self.chosen_layout {
-            Layout::Physical => physical_pin_view(
-                &self.connected_hardware.pin_descriptions(),
-                &self.gpio_config,
-                self,
-            ),
-            Layout::Logical => logical_pin_view(
-                &self.connected_hardware.pin_descriptions(),
-                &self.gpio_config,
-                self,
-            ),
-        };
-
-        let main_column = Column::new()
-            .push(
-                Column::new()
-                    .push(layout_selector)
-                    .align_items(Alignment::Center)
-                    .width(Length::Fill)
-                    .padding(10),
-            )
-            .push(iced::widget::Space::new(
-                Length::Fixed(1.0),
-                Length::Fixed(20.0),
-            ))
-            .push(
-                Column::new()
-                    .push(pin_layout)
-                    .align_items(Alignment::Center)
-                    .width(Length::Fill)
-                    .height(Length::Fill),
-            )
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .align_items(Alignment::Start);
-
-        container(main_column)
-            .height(Length::Fill)
-            .width(Length::Fill)
-            .align_x(alignment::Horizontal::Center)
-            .align_y(alignment::Vertical::Top)
-            .into()
-    }
-
-    fn scale_factor(&self) -> f64 {
-        0.63
-    }
-
-    fn theme(&self) -> Theme {
-        Theme::Dark
-    }
-}
+use crate::Gpio;
+use crate::Message;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -228,7 +49,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
 }
 
 // Logical view layout
-fn logical_pin_view(
+pub fn logical_pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
     gpio: &Gpio,
@@ -268,7 +89,7 @@ fn logical_pin_view(
 }
 
 // Physical pin layout
-fn physical_pin_view(
+pub fn physical_pin_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
     gpio: &Gpio,
