@@ -1,7 +1,9 @@
+# Contributing to `pigg`
 We welcome your contributions to "pigg"!
 
 You should read and agree to the contributor covent, to make sure you are able to comply with how we'd like this community to run and behave (no matter how small it may be!).
 
+## Ways to Contribute
 Ways you can contribute are:
 * Clone the repo and build from source (`make`) or `cargo install pigg` (once we have it published)
 * Feedback and comments via Discussions in GitHub, or reddit or other methods when we have them setup
@@ -11,6 +13,20 @@ Ways you can contribute are:
 * Commenting on existing issues for bugs, enhacements, new features roadmap, etc.
 * Code contributions via a PR, that describes what the PR brings
 
+## Raspberry Pi Expertise
+We started this project, mainly as a learning exercise related to using rust, iced and rppal on Raspberry Pi hardware. 
+
+We are not Raspberry Pi hardware experts, and we still have a lot to learn about the many advanced uses of GPIO on Raspberry Pi, 
+functionality such as I2C buses, SPI, UART, DPI etc.
+
+We are particularly interested in contributions from experts in the Pi hardware and how to configure and use those hardware functionalities,
+and how to connect them to a GUI experience in interesting and useful ways.
+
+So, if you are knowledgeable in use of specific Pi hardware features beyond simple Input/Output, please give `pigg` a try,
+be patient with us as the first releases will be very simple and limited in functionality, and help us improve it, in any of the ways of
+contributing listed above!
+
+## Code Contribution Workflow
 The code contribution workflow is just standard:
 * Fork the repo
 * Modify or add to the code
