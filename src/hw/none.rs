@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::gpio::{GPIOConfig, GPIOState, PinDescription};
+use crate::gpio::{GPIOConfig, GPIOState, PinDescription, PinFunction};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -29,6 +29,15 @@ impl Hardware for NoneHW {
 
     fn apply_config(&mut self, _config: &GPIOConfig) -> io::Result<()> {
         println!("GPIO Config has been applied to fake hardware");
+        Ok(())
+    }
+
+    fn apply_pin_config(
+        &mut self,
+        bcm_pin_number: u8,
+        _pin_function: &PinFunction,
+    ) -> io::Result<()> {
+        println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
     }
 
