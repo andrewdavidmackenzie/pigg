@@ -10,7 +10,6 @@ use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::hw;
 use crate::hw::Hardware;
-use crate::hw::HardwareDescriptor;
 use crate::style::CustomButton;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,7 +46,6 @@ pub struct Gpio {
     pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
     chosen_layout: Layout,
-    hardware_description: HardwareDescriptor,
 }
 
 impl Gpio {
@@ -133,7 +131,6 @@ impl Application for Gpio {
             Some(self.chosen_layout),
             Message::LayoutChanged,
         )
-        .text_size(25)
         .placeholder("Choose Layout");
 
         let pin_layout = match self.chosen_layout {
@@ -149,44 +146,37 @@ impl Application for Gpio {
             ),
         };
 
-        let layout_row = Row::new()
-            .push(layout_selector)
-            .align_items(Alignment::Center)
-            .spacing(10);
-
-        let hardware_desc_row = Row::new()
-            .push(hardware_view(self))
-            .align_items(Alignment::Start);
-
-        let main_column = Row::new()
+        let main_column = Column::new()
             .push(
                 Column::new()
-                    .push(layout_row)
-                    .push(hardware_desc_row)
+                    .push(layout_selector)
                     .align_items(Alignment::Center)
-                    .width(Length::Fixed(400.0))
-                    .spacing(10),
+                    .width(Length::Fill)
+                    .padding(10),
             )
+            .push(iced::widget::Space::new(
+                Length::Fixed(1.0),
+                Length::Fixed(20.0),
+            ))
             .push(
                 Column::new()
                     .push(pin_layout)
-                    .spacing(10)
                     .align_items(Alignment::Center)
-                    .width(Length::Fixed(700.0))
+                    .width(Length::Fill)
                     .height(Length::Fill),
             )
-            .align_items(Alignment::Start)
             .width(Length::Fill)
-            .height(Length::Fill);
+            .height(Length::Fill)
+            .align_items(Alignment::Start);
 
         container(main_column)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(30)
             .align_x(alignment::Horizontal::Center)
             .align_y(alignment::Vertical::Top)
             .into()
     }
+
     fn scale_factor(&self) -> f64 {
         0.63
     }
@@ -391,20 +381,4 @@ fn create_pin_view_side(
     pin_button = pin_button.push(pin_button_row);
 
     (pin_option, pin_name, pin_arrow, pin_button)
-}
-
-fn hardware_view(gpio: &Gpio) -> Element<'static, Message> {
-    let hardware_info = Column::new()
-        .push(Text::new(format!("Hardware: {}", gpio.hardware_description.hardware)).size(25))
-        .push(Text::new(format!("Revision: {}", gpio.hardware_description.revision)).size(25))
-        .push(Text::new(format!("Serial: {}", gpio.hardware_description.serial)).size(25))
-        .push(Text::new(format!("Model: {}", gpio.hardware_description.model)).size(25))
-        .spacing(10)
-        .align_items(Alignment::Center);
-
-    container(hardware_info)
-        .padding(10)
-        .width(Length::Fill)
-        .align_x(alignment::Horizontal::Center)
-        .into()
 }
