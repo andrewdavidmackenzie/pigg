@@ -36,10 +36,10 @@ impl Hardware for PicoHW {
 
     fn apply_pin_config(
         &mut self,
-        board_pin_number: u8,
+        bcm_pin_number: u8,
         _pin_function: &PinFunction,
     ) -> io::Result<()> {
-        println!("Pin {board_pin_number} config changed");
+        println!("Pin (BCM#) {_pin_number} config changed");
         Ok(())
     }
 

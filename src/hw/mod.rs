@@ -38,7 +38,7 @@ pub trait Hardware {
     /// Apply a new config to one specific pin
     fn apply_pin_config(
         &mut self,
-        board_pin_number: u8,
+        bcm_pin_number: u8,
         pin_function: &PinFunction,
     ) -> io::Result<()>;
     #[allow(dead_code)] // TODO remove later when used
