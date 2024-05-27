@@ -1,6 +1,6 @@
 {
     "configured_pins":[
     [17,{"Output":true}],
-    [26,{"Input":"Pullup"}]
+    [26,{"Input":"PullUp"}]
     ]
 }
