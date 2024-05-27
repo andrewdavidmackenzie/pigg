@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::gpio::{GPIOConfig, GPIOState};
+use crate::gpio::{GPIOConfig, GPIOState, PinDescription};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -21,6 +21,10 @@ impl Hardware for NoneHW {
             serial: "Unknown".to_string(),
             model: "Fake Hardware".to_string(),
         })
+    }
+
+    fn pin_descriptions(&self) -> [PinDescription; 40] {
+        super::GPIO_PIN_DESCRIPTIONS
     }
 
     fn apply_config(&mut self, _config: &GPIOConfig) -> io::Result<()> {

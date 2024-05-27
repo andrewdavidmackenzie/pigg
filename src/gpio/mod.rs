@@ -4,10 +4,6 @@ use std::io::{BufReader, Write};
 
 use serde::{Deserialize, Serialize};
 
-use pin_descriptions::*;
-
-mod pin_descriptions;
-
 // An input can be configured to have an optional pull-up or pull-down
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum InputPull {
@@ -120,14 +116,6 @@ impl std::fmt::Display for PinFunction {
         write!(f, "{:?}", self)
     }
 }
-
-// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
-pub const GPIO_DESCRIPTION: [PinDescription; 40] = [
-    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
-    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
-    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
-    PIN_38, PIN_39, PIN_40,
-];
 
 // A vector of tuples of (board_pin_number, PinFunction)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

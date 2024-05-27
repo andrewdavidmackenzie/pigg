@@ -7,7 +7,7 @@ use iced::{alignment, executor, Alignment, Application, Color, Command, Element,
 use crate::custom_widgets::{circle::circle, line::line};
 // This binary will only be built with the "iced" feature enabled, by use of "required-features"
 // in Cargo.toml so no need for the feature to be used here for conditional compiling
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, GPIO_DESCRIPTION};
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::hw;
 use crate::hw::Hardware;
 use crate::hw::HardwareDescriptor;
@@ -42,8 +42,8 @@ pub struct Gpio {
     // TODO this filename will be used when we add a SAVE button or similar
     #[allow(dead_code)]
     config_filename: Option<String>, // filename where to load and save config file to/from
-    gpio_description: [PinDescription; 40],
     gpio_config: GPIOConfig,
+    connected_hardware: Box<dyn Hardware>,
     pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
     chosen_layout: Layout,
@@ -51,21 +51,30 @@ pub struct Gpio {
 }
 
 impl Gpio {
-    fn get_config(config_filename: Option<String>) -> io::Result<(Option<String>, GPIOConfig)> {
-        let gpio_config = match &config_filename {
-            None => GPIOConfig::default(),
-            Some(filename) => GPIOConfig::load(filename)?,
-        };
-
-        Ok((config_filename, gpio_config))
+    /// Asynchronously load a GPIOConfig from a file, and return a Future to a Message which
+    /// will be sent to the UI to update to reflect the new config.
+    /// This can be used for initial load from a Command Line filename, or interactively
+    /// by the GUI by navigating to a file etc.
+    /// Returns
+    /// * io::Result with an optional tuple with filename from where was loaded and the config
+    async fn load(filename: Option<String>) -> io::Result<Option<(String, GPIOConfig)>> {
+        match filename {
+            Some(config_filename) => {
+                let config = GPIOConfig::load(&config_filename)?;
+                Ok(Some((config_filename, config)))
+            }
+            None => Ok(None),
+        }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum Message {
     Activate,
     PinFunctionSelected(usize, PinFunction),
     LayoutChanged(Layout),
+    ConfigLoaded((String, GPIOConfig)),
+    None,
 }
 
 impl Application for Gpio {
@@ -75,30 +84,23 @@ impl Application for Gpio {
     type Flags = ();
 
     fn new(_flags: ()) -> (Gpio, Command<Self::Message>) {
-        let (config_filename, gpio_config) =
-            Self::get_config(env::args().nth(1)).unwrap_or((None, GPIOConfig::default()));
-
-        let mut hw = hw::get();
-        println!("Hardware detected: {:?}", hw.descriptor().unwrap());
-        hw.apply_config(&gpio_config).unwrap();
-
-        let hardware_description = hw.descriptor().unwrap();
-
-        let num_pins = GPIO_DESCRIPTION.len();
+        let hw = hw::get();
+        let num_pins = hw.pin_descriptions().len();
         let pin_function_selected = vec![None; num_pins];
 
         (
             Self {
-                config_filename,
-                gpio_description: GPIO_DESCRIPTION,
-                gpio_config,
+                config_filename: None,
+                gpio_config: GPIOConfig::default(),
                 pin_function_selected,
                 clicked: false,
                 chosen_layout: Layout::Physical,
-                hardware_description,
+                connected_hardware: Box::new(hw),
             },
-            Command::none(), // TODO Add Toggle button for full screen
-                             // iced::window::change_mode(iced::window::Id::MAIN, iced::window::Mode::Fullscreen),
+            Command::perform(Self::load(env::args().nth(1)), |result| match result {
+                Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
+                _ => Message::None,
+            }),
         )
     }
 
@@ -115,6 +117,12 @@ impl Application for Gpio {
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
             }
+            Message::ConfigLoaded((filename, config)) => {
+                self.config_filename = Some(filename);
+                self.connected_hardware.apply_config(&config).unwrap();
+                // TODO refresh the UI as a new config was loaded
+            }
+            Message::None => {}
         }
         Command::none()
     }
@@ -129,8 +137,16 @@ impl Application for Gpio {
         .placeholder("Choose Layout");
 
         let pin_layout = match self.chosen_layout {
-            Layout::Physical => physical_pin_view(&self.gpio_description, &self.gpio_config, self),
-            Layout::Logical => logical_pin_view(&self.gpio_description, &self.gpio_config, self),
+            Layout::Physical => physical_pin_view(
+                &self.connected_hardware.pin_descriptions(),
+                &self.gpio_config,
+                self,
+            ),
+            Layout::Logical => logical_pin_view(
+                &self.connected_hardware.pin_descriptions(),
+                &self.gpio_config,
+                self,
+            ),
         };
 
         let layout_row = Row::new()
