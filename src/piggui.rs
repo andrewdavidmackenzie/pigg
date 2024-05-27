@@ -1,15 +1,14 @@
 use std::{env, io};
 
-use iced::widget::{container, pick_list, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings, Theme,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Theme, window,
 };
+use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
 use crate::gpio::{GPIOConfig, PinFunction};
 use crate::hw::Hardware;
 use crate::hw::HardwareDescriptor;
-
 // Importing pin layout views
 use crate::pin_layout::{logical_pin_view, physical_pin_view};
 
@@ -130,12 +129,21 @@ impl Application for Gpio {
             Message::Activate => self.clicked = true,
             Message::PinFunctionSelected(pin_index, pin_function) => {
                 self.pin_function_selected[pin_index] = Some(pin_function);
+                if let Some(bcm_pin_number) =
+                    self.connected_hardware.pin_descriptions()[pin_index].bcm_pin_number
+                {
+                    // TODO error reporting if config cannot be applied
+                    let _ = self
+                        .connected_hardware
+                        .apply_pin_config(bcm_pin_number, &pin_function);
+                }
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
+                // TODO error reporting if config cannot be applied
                 self.connected_hardware.apply_config(&config).unwrap();
                 // TODO refresh the UI as a new config was loaded
             }
