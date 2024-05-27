@@ -1,7 +1,8 @@
 use std::{env, io};
 
 use iced::{
-    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Theme, window,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
 use iced::widget::{Column, container, pick_list, Row, Text};
 
@@ -9,6 +10,7 @@ use iced::widget::{Column, container, pick_list, Row, Text};
 use crate::gpio::{GPIOConfig, PinFunction};
 use crate::hw::Hardware;
 use crate::hw::HardwareDescriptor;
+use crate::input_listener::InputChange;
 // Importing pin layout views
 use crate::pin_layout::{logical_pin_view, physical_pin_view};
 
@@ -20,6 +22,7 @@ mod custom_widgets {
     pub mod circle;
     pub mod line;
 }
+mod input_listener;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -89,6 +92,7 @@ pub enum Message {
     LayoutChanged(Layout),
     ConfigLoaded((String, GPIOConfig)),
     None,
+    InputMessage(InputChange),
 }
 
 impl Application for Gpio {
@@ -148,6 +152,7 @@ impl Application for Gpio {
                 // TODO refresh the UI as a new config was loaded
             }
             Message::None => {}
+            Message::InputMessage(message) => println!("Input Message: {:?}", message),
         }
         Command::none()
     }
@@ -218,6 +223,10 @@ impl Application for Gpio {
 
     fn theme(&self) -> Theme {
         Theme::Dark
+    }
+
+    fn subscription(&self) -> Subscription<Message> {
+        input_listener::subscribe().map(Message::InputMessage)
     }
 }
 
