@@ -7,7 +7,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::gpio::{GPIOConfig, GPIOState};
+use crate::gpio::{GPIOConfig, GPIOState, PinDescription};
 use crate::gpio::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -58,6 +58,10 @@ impl Hardware for PiHW {
         }
 
         Ok(descriptor)
+    }
+
+    fn pin_descriptions(&self) -> [PinDescription; 40] {
+        super::GPIO_PIN_DESCRIPTIONS
     }
 
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to

@@ -25,6 +25,10 @@ impl Hardware for PicoHW {
         })
     }
 
+    fn pin_descriptions(&self) -> [PinDescription; 40] {
+        super::GPIO_PIN_DESCRIPTIONS
+    }
+
     fn apply_config(&mut self, _config: &GPIOConfig) -> io::Result<()> {
         println!("GPIO Config has been applied to Pico hardware");
         Ok(())
