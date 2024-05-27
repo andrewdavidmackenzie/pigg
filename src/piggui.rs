@@ -213,6 +213,7 @@ impl Application for Gpio {
     }
 }
 
+// Hardware Configuration Display
 fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, Message> {
     let hardware_info = Column::new()
         .push(Text::new(format!("Hardware: {}", hardware_description.hardware)).size(20))
