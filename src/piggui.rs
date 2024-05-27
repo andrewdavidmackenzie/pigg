@@ -1,17 +1,14 @@
 use std::{env, io};
 
-use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::widget::{container, pick_list, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
-    Theme,
+    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings, Theme,
 };
 
 // Custom Widgets
-use crate::custom_widgets::{circle::circle, line::line};
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{GPIOConfig, PinFunction};
 use crate::hw::Hardware;
 use crate::hw::HardwareDescriptor;
-use crate::style::CustomButton;
 
 // Importing pin layout views
 use crate::pin_layout::{logical_pin_view, physical_pin_view};
