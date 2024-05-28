@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::io;
 
@@ -23,7 +24,7 @@ enum Pin {
 // Tuples of pin board number and Pin
 pub struct PiHW {
     // TODO not sure if this is useful/needed, if we can read the config from the pins via rppal
-    configured_pins: Vec<(u8, Pin)>,
+    configured_pins: HashMap<u8, Pin>,
 }
 
 pub fn get() -> impl Hardware {
@@ -93,7 +94,7 @@ impl Hardware for PiHW {
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
                 self.configured_pins
-                    .push((bcm_pin_number, Pin::Input(input)))
+                    .insert(bcm_pin_number, Pin::Input(input));
             }
             PinFunction::Output(value) => {
                 let pin = Gpio::new()
@@ -106,7 +107,7 @@ impl Hardware for PiHW {
                     Some(false) => pin.into_output_low(),
                 };
                 self.configured_pins
-                    .push((bcm_pin_number, Pin::Output(output)))
+                    .insert(bcm_pin_number, Pin::Output(output));
             }
             // TODO implement all of these IC2 channel configs
             PinFunction::I2C1_SDA => {
@@ -186,6 +187,17 @@ impl Hardware for PiHW {
     fn get_state(&self) -> GPIOState {
         GPIOState {
             pin_state: [None; 40],
+        }
+    }
+
+    /// Read the input level of an input using the bcm pin number
+    fn get_input_level(&self, bcm_pin_number: u8) -> io::Result<bool> {
+        match self.configured_pins.get(&bcm_pin_number) {
+            Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
+            _ => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Could not find a configured input pin",
+            )),
         }
     }
 }

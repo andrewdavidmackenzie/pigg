@@ -164,6 +164,7 @@ mod test {
     use tempfile::tempdir;
 
     use crate::gpio::{GPIOConfig, PinFunction};
+    use crate::gpio::InputPull::PullUp;
 
     #[test]
     fn create_a_config() {
@@ -205,11 +206,20 @@ mod test {
     fn load_test_file() {
         let root = std::env::var("CARGO_MANIFEST_DIR").expect("Could not get manifest dir");
         let mut path = PathBuf::from(root);
-        path = path.join("tests/one_pin_config.piggui");
-        let config = GPIOConfig::load(path.to_str().unwrap()).unwrap();
-        assert_eq!(config.configured_pins.len(), 1);
-        assert_eq!(config.configured_pins[0].0, 17); // GPIO17
+        path = path.join("tests/andrews_board.piggui");
+        let config = GPIOConfig::load(path.to_str().expect("Could not get Path as str"))
+            .expect("Could not load GPIOConfig from path");
+        assert_eq!(config.configured_pins.len(), 2);
+        // GPIO17 configured as an Output - set to true (high) level
+        assert_eq!(config.configured_pins[0].0, 17);
         assert_eq!(config.configured_pins[0].1, PinFunction::Output(Some(true)));
+
+        // GPIO26 configured as an Input - with an internal PullUp
+        assert_eq!(config.configured_pins[1].0, 26);
+        assert_eq!(
+            config.configured_pins[1].1,
+            PinFunction::Input(Some(PullUp))
+        );
     }
 
     #[test]

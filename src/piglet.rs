@@ -6,6 +6,7 @@ mod hw;
 fn main() {
     let mut hw = hw::get();
     println!("Pin Descriptions: {:?}", hw.pin_descriptions());
+    println!("Hardware: {:?}", hw.descriptor());
 
     // When we write piglet for real - this will probably be sent over the network from a piggui
     let config = gpio::GPIOConfig::default();

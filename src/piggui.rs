@@ -1,14 +1,17 @@
 use std::{env, io};
 
 use iced::{
-    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Theme, window,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
 use crate::gpio::{GPIOConfig, PinFunction};
 use crate::hw::Hardware;
 use crate::hw::HardwareDescriptor;
+use crate::hw_listener::{HardwareEvent, ListenerEvent};
 // Importing pin layout views
 use crate::pin_layout::{logical_pin_view, physical_pin_view};
 
@@ -20,6 +23,7 @@ mod custom_widgets {
     pub mod circle;
     pub mod line;
 }
+mod hw_listener;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -59,15 +63,27 @@ fn main() -> Result<(), iced::Error> {
     })
 }
 
+#[derive(Debug, Clone)]
+pub enum Message {
+    Activate,
+    PinFunctionSelected(usize, PinFunction),
+    LayoutChanged(Layout),
+    ConfigLoaded((String, GPIOConfig)),
+    None,
+    HardwareListener(ListenerEvent),
+}
+
 pub struct Gpio {
     #[allow(dead_code)]
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
+    config_changed: bool,
     connected_hardware: Box<dyn Hardware>,
     pub pin_function_selected: Vec<Option<PinFunction>>,
     clicked: bool,
     chosen_layout: Layout,
     hardware_description: HardwareDescriptor,
+    listener_sender: Option<Sender<HardwareEvent>>,
 }
 
 impl Gpio {
@@ -80,15 +96,21 @@ impl Gpio {
             None => Ok(None),
         }
     }
-}
 
-#[derive(Debug, Clone)]
-pub enum Message {
-    Activate,
-    PinFunctionSelected(usize, PinFunction),
-    LayoutChanged(Layout),
-    ConfigLoaded((String, GPIOConfig)),
-    None,
+    fn update_hw_listener_config(&mut self) {
+        // Since config loading and hardware listener setup can occur out of order
+        // track if there has been a config change made that is pending to send to
+        // the hw_listener, and if so, send it
+        if self.config_changed {
+            if let Some(ref mut listener) = &mut self.listener_sender {
+                let _ = listener.try_send(HardwareEvent::HardwareConfigured(
+                    self.gpio_config.clone(),
+                    Box::new(self.connected_hardware.pin_descriptions()),
+                ));
+                self.config_changed = false;
+            }
+        }
+    }
 }
 
 impl Application for Gpio {
@@ -107,11 +129,13 @@ impl Application for Gpio {
             Self {
                 config_filename: None,
                 gpio_config: GPIOConfig::default(),
+                config_changed: false,
                 pin_function_selected,
                 clicked: false,
                 chosen_layout: Layout::Physical,
                 connected_hardware: Box::new(hw),
                 hardware_description,
+                listener_sender: None,
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -128,6 +152,7 @@ impl Application for Gpio {
         match message {
             Message::Activate => self.clicked = true,
             Message::PinFunctionSelected(pin_number, pin_function) => {
+                let previous_function = self.pin_function_selected[pin_number - 1];
                 self.pin_function_selected[pin_number - 1] = Some(pin_function);
                 if let Some(bcm_pin_number) =
                     self.connected_hardware.pin_descriptions()[pin_number - 1].bcm_pin_number
@@ -136,6 +161,31 @@ impl Application for Gpio {
                     let _ = self
                         .connected_hardware
                         .apply_pin_config(bcm_pin_number, &pin_function);
+                    self.config_changed = true;
+
+                    // Report config changes to the hardware listener
+                    // Since config loading and hardware listener setup can occur out of order
+                    // mark the config as changed. If we send to the listener, then mark as done
+                    match (previous_function, pin_function) {
+                        (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
+                        (Some(PinFunction::Input(_)), _) => {
+                            // was an input, not anymore
+                            if let Some(ref mut listener) = &mut self.listener_sender {
+                                let _ = listener
+                                    .try_send(HardwareEvent::InputPinRemoved(bcm_pin_number));
+                                self.config_changed = false;
+                            }
+                        }
+                        (_, PinFunction::Input(_)) => {
+                            // was not an input, is now
+                            if let Some(ref mut listener) = &mut self.listener_sender {
+                                let _ =
+                                    listener.try_send(HardwareEvent::InputPinAdded(bcm_pin_number));
+                                self.config_changed = false;
+                            }
+                        }
+                        (_, _) => { /* Don't care! */ }
+                    }
                 }
             }
             Message::LayoutChanged(layout) => {
@@ -145,9 +195,22 @@ impl Application for Gpio {
                 self.config_filename = Some(filename);
                 // TODO error reporting if config cannot be applied
                 self.connected_hardware.apply_config(&config).unwrap();
+                self.gpio_config = config;
+                self.config_changed = true;
                 // TODO refresh the UI as a new config was loaded
+
+                self.update_hw_listener_config();
             }
             Message::None => {}
+            Message::HardwareListener(event) => match event {
+                ListenerEvent::Ready(config_change_sender) => {
+                    self.listener_sender = Some(config_change_sender);
+                    self.update_hw_listener_config();
+                }
+                ListenerEvent::InputChange(level_change) => {
+                    println!("Input changed: {:?}", level_change);
+                }
+            },
         }
         Command::none()
     }
@@ -218,6 +281,10 @@ impl Application for Gpio {
 
     fn theme(&self) -> Theme {
         Theme::Dark
+    }
+
+    fn subscription(&self) -> Subscription<Message> {
+        hw_listener::subscribe().map(Message::HardwareListener)
     }
 }
 
