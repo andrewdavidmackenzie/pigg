@@ -150,6 +150,8 @@ impl Application for Gpio {
                     self.config_changed = true;
 
                     // Report config changes to the hardware listener
+                    // Since config loading and hardware listener setup can occur out of order
+                    // mark the config as changed. If we send to the listener, then mark as done
                     match (previous_function, pin_function) {
                         (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
                         (Some(PinFunction::Input(_)), _) => {
@@ -182,6 +184,9 @@ impl Application for Gpio {
                 self.gpio_config = config.clone();
                 self.config_changed = true;
                 // TODO refresh the UI as a new config was loaded
+
+                // Since config loading and hardware listener setup can occur out of order
+                // track if there is already a hw_listener that needs to get this config change
                 if let Some(ref mut listener) = &mut self.listener_sender {
                     println!("Informing listener of config change");
                     let _ = listener.send(ConfigEvent::HardwareConfigured(
@@ -196,6 +201,9 @@ impl Application for Gpio {
                 ListenerEvent::Ready(config_change_sender) => {
                     println!("GUI got listener sender to use on config changes");
                     self.listener_sender = Some(config_change_sender);
+                    // Since config loading and hardware listener setup can occur out of order
+                    // track if there has been a config change made that is pending to send to
+                    // the hw_listener, and if so, send it
                     if self.config_changed {
                         if let Some(ref mut listener) = &mut self.listener_sender {
                             println!("Informing listener of config change");
