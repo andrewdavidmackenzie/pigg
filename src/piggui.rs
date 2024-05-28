@@ -1,11 +1,13 @@
+use std::process::Output;
 use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
+use gpio::PinDescription;
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Column, Row, Text};
+use iced::{
+    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 
 // Custom Widgets
 use crate::gpio::{GPIOConfig, PinFunction};
@@ -195,12 +197,17 @@ impl Application for Gpio {
                 self.config_filename = Some(filename);
                 // TODO error reporting if config cannot be applied
                 self.connected_hardware.apply_config(&config).unwrap();
-                self.gpio_config = config;
+                self.gpio_config = config.clone();
+
                 self.config_changed = true;
-                // TODO refresh the UI as a new config was loaded
+
+                for (pin_number, pin_function) in config.configured_pins.iter() {
+                    self.pin_function_selected[*pin_number as usize - 1] = Some(*pin_function);
+                }
 
                 self.update_hw_listener_config();
             }
+
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 ListenerEvent::Ready(config_change_sender) => {
