@@ -2,7 +2,7 @@ use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
 
 use crate::custom_widgets::{circle::circle, line::line};
-use crate::gpio::{self, GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::style::CustomButton;
 use crate::Gpio;
 use crate::Message;

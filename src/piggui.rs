@@ -1,7 +1,5 @@
-use std::process::Output;
 use std::{env, io};
 
-use gpio::PinDescription;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{container, pick_list, Column, Row, Text};
 use iced::{
