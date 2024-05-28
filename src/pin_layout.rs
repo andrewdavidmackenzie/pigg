@@ -1,11 +1,11 @@
-use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
-use crate::style::CustomButton;
 use crate::Gpio;
 use crate::Message;
+use crate::style::CustomButton;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -241,7 +241,7 @@ fn create_pin_view_side(
             .padding(10)
             .width(Length::Fixed(40f32))
             .style(pin_color.get_button_style())
-            .on_press(Message::Activate),
+            .on_press(Message::Activate(pin.board_pin_number)),
     );
     pin_button = pin_button.push(pin_button_row);
 
