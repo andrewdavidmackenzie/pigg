@@ -103,15 +103,18 @@ pub fn physical_pin_view(
                 .configured_pins
                 .iter()
                 .find_map(|(pin_number, pin_function)| {
+                    // Check if the pin has a BCM number
                     if let Some(bcm_pin_number) = pair[0].bcm_pin_number {
+                        // If the pin number matches the BCM number, use the configured pin function
                         if *pin_number == bcm_pin_number {
-                            println!("{:?}", pin_function);
                             Some(pin_function.clone())
                         } else {
+                            // If not, then use the pin function selected from the UI
                             gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
                                 .clone()
                         }
                     } else {
+                        // If the pin does not have a BCM number, use the pin function selected from the UI
                         gpio.pin_function_selected[pair[0].board_pin_number as usize - 1].clone()
                     }
                 })
@@ -127,19 +130,22 @@ pub fn physical_pin_view(
                 .configured_pins
                 .iter()
                 .find_map(|(pin_number, pin_function)| {
+                    // Check if the pin has a BCM number
                     if let Some(bcm_pin_number) = pair[1].bcm_pin_number {
+                        // If the pin number matches the BCM number, use the configured pin function
                         if *pin_number == bcm_pin_number {
-                            println!("{:?}", pin_function);
-
                             Some(pin_function.clone())
                         } else {
+                            // If not, then use the pin function selected from the UI
                             gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
                                 .clone()
                         }
                     } else {
+                        // If the pin does not have a BCM number, use the pin function selected from the UI
                         gpio.pin_function_selected[pair[1].board_pin_number as usize - 1].clone()
                     }
                 })
+                // If no configured pin function found, fallback to the pin function selected from the UI
                 .or_else(|| {
                     gpio.pin_function_selected[pair[1].board_pin_number as usize - 1].clone()
                 }),
