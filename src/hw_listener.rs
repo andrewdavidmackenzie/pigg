@@ -123,13 +123,10 @@ pub fn subscribe() -> Subscription<ListenerEvent> {
 
                         // We are ready to receive ConfigEvent messages from the GUI
                         state = State::Ready(config_event_receiver);
-                        println!("Listener transitioning to Ready state");
                     }
 
                     State::Ready(config_event_receiver) => {
-                        println!("Listener transitioned to Ready state");
-                        println!("Listener waiting for next config event");
-                        // Read next input sent from `GUI`
+                        println!("Listener in Ready state, waiting for next config event");
                         let config_event = config_event_receiver.select_next_some().await;
                         println!("Listener got config event");
 
