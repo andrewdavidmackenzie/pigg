@@ -5,14 +5,13 @@ use iced::{
     Theme, window,
 };
 use iced::futures::channel::mpsc::Sender;
-use iced::futures::SinkExt;
 use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
 use crate::gpio::{GPIOConfig, PinFunction};
 use crate::hw::Hardware;
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{ConfigEvent, ListenerEvent};
+use crate::hw_listener::{HardwareEvent, ListenerEvent};
 // Importing pin layout views
 use crate::pin_layout::{logical_pin_view, physical_pin_view};
 
@@ -84,7 +83,7 @@ pub struct Gpio {
     clicked: bool,
     chosen_layout: Layout,
     hardware_description: HardwareDescriptor,
-    listener_sender: Option<Sender<ConfigEvent>>,
+    listener_sender: Option<Sender<HardwareEvent>>,
 }
 
 impl Gpio {
@@ -95,6 +94,21 @@ impl Gpio {
                 Ok(Some((config_filename, config)))
             }
             None => Ok(None),
+        }
+    }
+
+    fn update_hw_listener_config(&mut self) {
+        // Since config loading and hardware listener setup can occur out of order
+        // track if there has been a config change made that is pending to send to
+        // the hw_listener, and if so, send it
+        if self.config_changed {
+            if let Some(ref mut listener) = &mut self.listener_sender {
+                let _ = listener.try_send(HardwareEvent::HardwareConfigured(
+                    self.gpio_config.clone(),
+                    Box::new(self.connected_hardware.pin_descriptions()),
+                ));
+                self.config_changed = false;
+            }
         }
     }
 }
@@ -157,16 +171,16 @@ impl Application for Gpio {
                         (Some(PinFunction::Input(_)), _) => {
                             // was an input, not anymore
                             if let Some(ref mut listener) = &mut self.listener_sender {
-                                println!("Informing listener of InputPin removal");
-                                let _ = listener.send(ConfigEvent::InputPinRemoved(bcm_pin_number));
+                                let _ = listener
+                                    .try_send(HardwareEvent::InputPinRemoved(bcm_pin_number));
                                 self.config_changed = false;
                             }
                         }
                         (_, PinFunction::Input(_)) => {
                             // was not an input, is now
                             if let Some(ref mut listener) = &mut self.listener_sender {
-                                println!("Informing listener of InputPin addition");
-                                let _ = listener.send(ConfigEvent::InputPinAdded(bcm_pin_number));
+                                let _ =
+                                    listener.try_send(HardwareEvent::InputPinAdded(bcm_pin_number));
                                 self.config_changed = false;
                             }
                         }
@@ -181,39 +195,17 @@ impl Application for Gpio {
                 self.config_filename = Some(filename);
                 // TODO error reporting if config cannot be applied
                 self.connected_hardware.apply_config(&config).unwrap();
-                self.gpio_config = config.clone();
+                self.gpio_config = config;
                 self.config_changed = true;
                 // TODO refresh the UI as a new config was loaded
 
-                // Since config loading and hardware listener setup can occur out of order
-                // track if there is already a hw_listener that needs to get this config change
-                if let Some(ref mut listener) = &mut self.listener_sender {
-                    println!("Informing listener of config change");
-                    let _ = listener.send(ConfigEvent::HardwareConfigured(
-                        config,
-                        Box::new(self.connected_hardware.pin_descriptions()),
-                    ));
-                    self.config_changed = false;
-                }
+                self.update_hw_listener_config();
             }
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 ListenerEvent::Ready(config_change_sender) => {
-                    println!("GUI got listener sender to use on config changes");
                     self.listener_sender = Some(config_change_sender);
-                    // Since config loading and hardware listener setup can occur out of order
-                    // track if there has been a config change made that is pending to send to
-                    // the hw_listener, and if so, send it
-                    if self.config_changed {
-                        if let Some(ref mut listener) = &mut self.listener_sender {
-                            println!("Informing listener of config change");
-                            let _ = listener.send(ConfigEvent::HardwareConfigured(
-                                self.gpio_config.clone(),
-                                Box::new(self.connected_hardware.pin_descriptions()),
-                            ));
-                            self.config_changed = false;
-                        }
-                    }
+                    self.update_hw_listener_config();
                 }
                 ListenerEvent::InputChange(level_change) => {
                     println!("Input changed: {:?}", level_change);

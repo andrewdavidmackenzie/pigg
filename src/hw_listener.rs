@@ -1,19 +1,23 @@
-use std::{io, thread};
+use std::thread;
 use std::time::{Duration, SystemTime};
 
 use iced::{subscription, Subscription};
 use iced::futures::channel::mpsc;
+use iced::futures::channel::mpsc::Sender;
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::gpio::{GPIOConfig, PinDescription};
+use crate::hw_listener::HardwareEvent::{
+    HardwareConfigured, InputLevelChanged, InputPinAdded, InputPinRemoved,
+};
 
 /// This enum is for events created by this listener, sent to the Gui
 #[derive(Clone, Debug)]
 pub enum ListenerEvent {
     /// This listener event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
-    Ready(mpsc::Sender<ConfigEvent>),
+    Ready(mpsc::Sender<HardwareEvent>),
     InputChange(LevelChange),
 }
 
@@ -38,7 +42,7 @@ impl LevelChange {
 
 /// This enum is for config changes done in the GUI to be sent to this listener to setup pin
 /// // level monitoring correctly based on the config
-pub enum ConfigEvent {
+pub enum HardwareEvent {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains
     HardwareConfigured(GPIOConfig, Box<[PinDescription; 40]>),
@@ -46,6 +50,8 @@ pub enum ConfigEvent {
     InputPinAdded(u8),
     /// A pin re-configured to no longer be an input pin, and should no longer be listened to
     InputPinRemoved(u8),
+    /// A level change detected by the Hardware
+    InputLevelChanged(LevelChange),
 }
 
 /// This enum describes the states of the listener
@@ -53,15 +59,14 @@ enum State {
     /// Just starting up, we have not yet setup a channel between GUI and Listener
     Starting,
     /// The listener is ready and will listen for config events on the channel contained
-    Ready(mpsc::Receiver<ConfigEvent>),
+    Ready(mpsc::Receiver<HardwareEvent>, Sender<HardwareEvent>),
 }
 
 fn setup_hardware_event_source(
+    mut tx: Sender<HardwareEvent>,
     _config: GPIOConfig,
     _pin_descriptions: &[PinDescription; 40],
-) -> io::Result<mpsc::Receiver<LevelChange>> {
-    let (mut tx, rx) = mpsc::channel::<LevelChange>(100);
-
+) {
     /*
     println!("Scanning for input pins");
     // Send initial levels
@@ -90,14 +95,14 @@ fn setup_hardware_event_source(
     thread::spawn(move || {
         loop {
             // Fake
-            let _ = tx.send(LevelChange::new(26, true));
-            thread::sleep(Duration::from_millis(500));
-            let _ = tx.send(crate::hw_listener::LevelChange::new(26, false));
-            thread::sleep(Duration::from_millis(500));
+            let _ = tx.try_send(InputLevelChanged(LevelChange::new(26, true)));
+            thread::sleep(Duration::from_millis(1000));
+            let _ = tx.try_send(InputLevelChanged(crate::hw_listener::LevelChange::new(
+                26, false,
+            )));
+            thread::sleep(Duration::from_millis(1000));
         }
     });
-
-    Ok(rx)
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
@@ -109,56 +114,45 @@ pub fn subscribe() -> Subscription<ListenerEvent> {
         100,
         move |mut gui_sender| async move {
             let mut state = State::Starting;
-            println!("Listener in Starting state, entering loop");
             loop {
                 match &mut state {
                     State::Starting => {
                         // Create channel
-                        let (config_event_sender, config_event_receiver) = mpsc::channel(100);
+                        let (hardware_event_sender, config_event_receiver) = mpsc::channel(100);
 
                         // Send the sender back to the application
                         let _ = gui_sender
-                            .send(ListenerEvent::Ready(config_event_sender))
+                            .send(ListenerEvent::Ready(hardware_event_sender.clone()))
                             .await;
 
                         // We are ready to receive ConfigEvent messages from the GUI
-                        state = State::Ready(config_event_receiver);
+                        state = State::Ready(config_event_receiver, hardware_event_sender);
                     }
 
-                    State::Ready(config_event_receiver) => {
-                        println!("Listener in Ready state, waiting for next config event");
-                        let config_event = config_event_receiver.select_next_some().await;
-                        println!("Listener got config event");
+                    State::Ready(hardware_event_receiver, hardware_event_sender) => {
+                        let hardware_event = hardware_event_receiver.select_next_some().await;
 
-                        match config_event {
-                            ConfigEvent::HardwareConfigured(config, pin_descriptions) => {
-                                println!("Listener got HardwareConfigured event");
-                                //let mut _tx =
-                                //    setup_hardware_event_source(config, &pin_descriptions).unwrap();
-                                println!(
-                                    "Listener has configured hw event source and is entering loop"
+                        match hardware_event {
+                            HardwareConfigured(config, pin_descriptions) => {
+                                // TODO handle more than one update, multiple threads etc
+                                setup_hardware_event_source(
+                                    hardware_event_sender.clone(),
+                                    config,
+                                    &pin_descriptions,
                                 );
-                                /*
-                                loop {
-                                    let level_event = tx.select_next_some().await;
-                                    println!(
-                                        "Listener has received hw event and is forwarding to GUI"
-                                    );
-                                    let _ = gui_sender
-                                        .send(ListenerEvent::InputChange(level_event))
-                                        .await;
-                                    println!("Listener has forwarded hw event to GUI to GUI");
-                                }
-
-                                 */
                             }
-                            ConfigEvent::InputPinAdded(bcm_pin_number) => {
+                            InputPinAdded(bcm_pin_number) => {
                                 println!(
                                     "Listener informed of InputPin addition: {bcm_pin_number}"
                                 );
                             }
-                            ConfigEvent::InputPinRemoved(bcm_pin_number) => {
+                            InputPinRemoved(bcm_pin_number) => {
                                 println!("Listener informed of InputPin removal: {bcm_pin_number}");
+                            }
+                            InputLevelChanged(level_change) => {
+                                let _ = gui_sender
+                                    .send(ListenerEvent::InputChange(level_change))
+                                    .await;
                             }
                         }
                     }
