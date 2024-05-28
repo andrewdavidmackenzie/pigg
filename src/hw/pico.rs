@@ -48,4 +48,9 @@ impl Hardware for PicoHW {
             pin_state: [None; 40],
         }
     }
+
+    /// Read the input level of an input using the bcm pin number
+    fn get_input_level(&self, bcm_pin_number: u8) -> io::Result<bool> {
+        Ok(true)
+    }
 }

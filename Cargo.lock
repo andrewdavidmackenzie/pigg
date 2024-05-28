@@ -1959,6 +1959,7 @@ version = "0.1.0"
 dependencies = [
  "iced",
  "iced_aw",
+ "iced_futures 0.12.0",
  "iced_native",
  "rppal",
  "serde",
