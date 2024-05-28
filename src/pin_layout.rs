@@ -91,7 +91,7 @@ pub fn logical_pin_view(
 // Physical pin layout
 pub fn physical_pin_view(
     pin_descriptions: &[PinDescription; 40],
-    _pin_config: &GPIOConfig,
+    pin_config: &GPIOConfig,
     gpio: &Gpio,
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
@@ -99,13 +99,56 @@ pub fn physical_pin_view(
     for pair in pin_descriptions.chunks(2) {
         let left_view = create_pin_view_side(
             &pair[0],
-            gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
+            pin_config
+                .configured_pins
+                .iter()
+                .find_map(|(pin_number, pin_function)| {
+                    // Check if the pin has a BCM number
+                    if let Some(bcm_pin_number) = pair[0].bcm_pin_number {
+                        // If the pin number matches the BCM number, use the configured pin function
+                        if *pin_number == bcm_pin_number {
+                            Some(pin_function.clone())
+                        } else {
+                            // If not, then use the pin function selected from the UI
+                            gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
+                                .clone()
+                        }
+                    } else {
+                        // If the pin does not have a BCM number, use the pin function selected from the UI
+                        gpio.pin_function_selected[pair[0].board_pin_number as usize - 1].clone()
+                    }
+                })
+                .or_else(|| {
+                    gpio.pin_function_selected[pair[0].board_pin_number as usize - 1].clone()
+                }),
             true,
         );
 
         let right_view = create_pin_view_side(
             &pair[1],
-            gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
+            pin_config
+                .configured_pins
+                .iter()
+                .find_map(|(pin_number, pin_function)| {
+                    // Check if the pin has a BCM number
+                    if let Some(bcm_pin_number) = pair[1].bcm_pin_number {
+                        // If the pin number matches the BCM number, use the configured pin function
+                        if *pin_number == bcm_pin_number {
+                            Some(pin_function.clone())
+                        } else {
+                            // If not, then use the pin function selected from the UI
+                            gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
+                                .clone()
+                        }
+                    } else {
+                        // If the pin does not have a BCM number, use the pin function selected from the UI
+                        gpio.pin_function_selected[pair[1].board_pin_number as usize - 1].clone()
+                    }
+                })
+                // If no configured pin function found, fallback to the pin function selected from the UI
+                .or_else(|| {
+                    gpio.pin_function_selected[pair[1].board_pin_number as usize - 1].clone()
+                }),
             false,
         );
 
@@ -152,6 +195,7 @@ fn create_pin_view_side(
 
         pin_options_row = pin_options_row.push(
             pick_list(pin.options, selected_function, move |pin_function| {
+                println!("{}", pin_number);
                 Message::PinFunctionSelected(pin_number, pin_function)
             })
             .placeholder("Select function"),
