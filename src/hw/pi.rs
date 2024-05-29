@@ -67,9 +67,12 @@ impl Hardware for PiHW {
 
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
     /// configure the Pi GPIO hardware to correspond to it
-    fn apply_config(&mut self, config: &GPIOConfig) -> io::Result<()> {
+    fn apply_config<C>(&mut self, config: &GPIOConfig, _callback: C) -> io::Result<()>
+    where
+        C: FnOnce(bool),
+    {
         for (bcm_pin_number, pin_config) in &config.configured_pins {
-            self.apply_pin_config(*bcm_pin_number, pin_config)?;
+            self.apply_pin_config(*bcm_pin_number, pin_config, |_| {})?; // TODO
         }
 
         println!("GPIO Config has been applied to Pi hardware");
@@ -77,11 +80,15 @@ impl Hardware for PiHW {
     }
 
     /// Apply the requested config to one pin, using bcm_pin_number
-    fn apply_pin_config(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: u8,
         pin_function: &PinFunction,
-    ) -> io::Result<()> {
+        _callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnOnce(bool),
+    {
         match pin_function {
             PinFunction::Input(pull) => {
                 let pin = Gpio::new()

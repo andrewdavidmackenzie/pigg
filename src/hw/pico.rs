@@ -29,7 +29,10 @@ impl Hardware for PicoHW {
         super::GPIO_PIN_DESCRIPTIONS
     }
 
-    fn apply_config(&mut self, _config: &GPIOConfig) -> io::Result<()> {
+    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
+    where
+        C: FnOnce(bool),
+    {
         println!("GPIO Config has been applied to Pico hardware");
         Ok(())
     }

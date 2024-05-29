@@ -34,13 +34,18 @@ pub trait Hardware {
     /// Return a set of pin descriptions for the connected hardware
     fn pin_descriptions(&self) -> [PinDescription; 40];
     /// Apply a complete set of pin configurations to the connected hardware
-    fn apply_config(&mut self, config: &GPIOConfig) -> io::Result<()>;
+    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
+    where
+        C: FnOnce(bool);
     /// Apply a new config to one specific pin
-    fn apply_pin_config(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: u8,
         pin_function: &PinFunction,
-    ) -> io::Result<()>;
+        callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnOnce(bool);
     #[allow(dead_code)] // TODO remove later when used
     /// Get the state of the input pins
     fn get_state(&self) -> GPIOState;

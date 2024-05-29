@@ -1,5 +1,4 @@
-use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use iced::{subscription, Subscription};
 use iced::futures::channel::mpsc;
@@ -74,7 +73,7 @@ fn send_current_input_states(
     mut tx: Sender<HardwareEvent>,
     config: &GPIOConfig,
     pin_descriptions: &[PinDescription; 40],
-    connected_hardware: &dyn Hardware,
+    connected_hardware: &impl Hardware,
 ) {
     // Send initial levels
     for (board_pin_number, pin_function) in &config.configured_pins {
@@ -92,25 +91,6 @@ fn send_current_input_states(
             }
         }
     }
-}
-
-fn monitor_inputs(
-    mut tx: Sender<HardwareEvent>,
-    _config: &GPIOConfig,
-    _pin_descriptions: &[PinDescription; 40],
-    _connected_hardware: &dyn Hardware,
-) {
-    // Spawn a background thread that gathers hardware events and forwards them to the
-    // GUI subscriber via a channel
-    thread::spawn(move || {
-        loop {
-            // Fake
-            let _ = tx.try_send(InputLevelChanged(LevelChange::new(26, true)));
-            thread::sleep(Duration::from_millis(1000));
-            let _ = tx.try_send(InputLevelChanged(LevelChange::new(26, false)));
-            thread::sleep(Duration::from_millis(1000));
-        }
-    });
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
@@ -151,16 +131,9 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                         match hardware_event {
                             // TODO handle more than one update, multiple threads etc
                             NewConfig(config) => {
-                                connected_hardware.apply_config(&config).unwrap();
+                                connected_hardware.apply_config(&config, |_| {}).unwrap();
 
                                 send_current_input_states(
-                                    hardware_event_sender.clone(),
-                                    &config,
-                                    &pin_descriptions,
-                                    &connected_hardware,
-                                );
-
-                                monitor_inputs(
                                     hardware_event_sender.clone(),
                                     &config,
                                     &pin_descriptions,
@@ -173,8 +146,11 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                 println!(
                                     "Listener informed of InputPin addition: {bcm_pin_number}"
                                 );
-                                let _ = connected_hardware
-                                    .apply_pin_config(bcm_pin_number, &new_function);
+                                let _ = connected_hardware.apply_pin_config(
+                                    bcm_pin_number,
+                                    &new_function,
+                                    |_| {},
+                                );
                             }
                             InputPinRemoved(bcm_pin_number, _new_function) => {
                                 println!("Listener informed of InputPin removal: {bcm_pin_number}");
