@@ -12,5 +12,5 @@ fn main() {
     // When we write piglet for real - this will probably be sent over the network from a piggui
     let config = gpio::GPIOConfig::default();
     println!("Pin configs: {:?}", config);
-    let _ = hw.apply_config(&config, |_| {}); // TODO handle error
+    let _ = hw.apply_config(&config, |_, _| {}); // TODO handle error
 }

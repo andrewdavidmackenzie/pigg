@@ -36,7 +36,7 @@ pub trait Hardware {
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnOnce(bool);
+        C: FnMut(u8, bool) + Send + Sync + Clone + 'static;
     /// Apply a new config to one specific pin
     fn apply_pin_config<C>(
         &mut self,
@@ -45,7 +45,7 @@ pub trait Hardware {
         callback: C,
     ) -> io::Result<()>
     where
-        C: FnOnce(bool);
+        C: FnMut(u8, bool) + Send + Sync + 'static;
     #[allow(dead_code)] // TODO remove later when used
     /// Get the state of the input pins
     fn get_state(&self) -> GPIOState;

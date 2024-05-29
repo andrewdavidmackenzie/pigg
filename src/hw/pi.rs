@@ -67,12 +67,16 @@ impl Hardware for PiHW {
 
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
     /// configure the Pi GPIO hardware to correspond to it
-    fn apply_config<C>(&mut self, config: &GPIOConfig, _callback: C) -> io::Result<()>
+    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnOnce(bool),
+        C: FnMut(u8, bool) + Send + Sync + Clone + 'static,
     {
         for (bcm_pin_number, pin_config) in &config.configured_pins {
-            self.apply_pin_config(*bcm_pin_number, pin_config, |_| {})?; // TODO
+            let mut callback_clone = callback.clone();
+            let callback_wrapper = move |pin_number, level| {
+                callback_clone(pin_number, level);
+            };
+            self.apply_pin_config(*bcm_pin_number, pin_config, callback_wrapper)?;
         }
 
         println!("GPIO Config has been applied to Pi hardware");
@@ -84,10 +88,10 @@ impl Hardware for PiHW {
         &mut self,
         bcm_pin_number: u8,
         pin_function: &PinFunction,
-        _callback: C,
+        mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnOnce(bool),
+        C: FnMut(u8, bool) + Send + Sync + 'static,
     {
         match pin_function {
             PinFunction::Input(pull) => {
@@ -95,11 +99,16 @@ impl Hardware for PiHW {
                     .unwrap()
                     .get(bcm_pin_number)
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-                let input = match pull {
+                let mut input = match pull {
                     None => pin.into_input(),
                     Some(InputPull::PullUp) => pin.into_input_pullup(),
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
+                input
+                    .set_async_interrupt(Trigger::Both, move |level| {
+                        callback(bcm_pin_number, level == Level::High)
+                    })
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Input(input));
             }

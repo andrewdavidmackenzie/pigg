@@ -12,6 +12,7 @@ use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{
     InputLevelChanged, InputPinAdded, InputPinRemoved, NewConfig,
 };
+use crate::hw_listener::HWListenerEvent::InputChange;
 
 /// This enum is for events created by this listener, sent to the Gui
 // TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
@@ -107,13 +108,14 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
             let pin_descriptions = connected_hardware.pin_descriptions();
 
             loop {
+                let mut sender_clone = gui_sender.clone();
                 match &mut state {
                     State::Starting => {
                         // Create channel
                         let (hardware_event_sender, config_event_receiver) = mpsc::channel(100);
 
-                        // Send the sender back to the application
-                        let _ = gui_sender
+                        // Send the sender back to the GUI
+                        let _ = sender_clone
                             .send(HWListenerEvent::Ready(
                                 hardware_event_sender.clone(),
                                 hardware_description.clone(),
@@ -131,7 +133,15 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                         match hardware_event {
                             // TODO handle more than one update, multiple threads etc
                             NewConfig(config) => {
-                                connected_hardware.apply_config(&config, |_| {}).unwrap();
+                                connected_hardware
+                                    .apply_config(&config, move |pin_number, level| {
+                                        sender_clone
+                                            .try_send(InputChange(LevelChange::new(
+                                                pin_number, level,
+                                            )))
+                                            .unwrap();
+                                    })
+                                    .unwrap();
 
                                 send_current_input_states(
                                     hardware_event_sender.clone(),
@@ -149,7 +159,13 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                 let _ = connected_hardware.apply_pin_config(
                                     bcm_pin_number,
                                     &new_function,
-                                    |_| {},
+                                    move |pin_number, level| {
+                                        sender_clone
+                                            .try_send(InputChange(LevelChange::new(
+                                                pin_number, level,
+                                            )))
+                                            .unwrap();
+                                    },
                                 );
                             }
                             InputPinRemoved(bcm_pin_number, _new_function) => {
@@ -157,9 +173,7 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                 // TODO remove old config? apply other configs?
                             }
                             InputLevelChanged(level_change) => {
-                                let _ = gui_sender
-                                    .send(HWListenerEvent::InputChange(level_change))
-                                    .await;
+                                let _ = gui_sender.send(InputChange(level_change)).await;
                             }
                         }
                     }
