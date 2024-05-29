@@ -1,11 +1,11 @@
 use std::{env, io};
 
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
-    Subscription, Theme,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
@@ -94,12 +94,49 @@ impl Gpio {
         }
     }
 
+    // Send the Config from the GUI to the hardware to have it applied
+    fn update_hw_config(&mut self) {
+        if let Some(ref mut listener) = &mut self.listener_sender {
+            let _ = listener.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
+        }
+    }
+
     // A new function has been selected for a pin via the UI
-    fn new_pin_function(&mut self, pin_number: usize, pin_function: PinFunction) {
-        // TODO let previous_function = self.pin_function_selected[pin_number - 1];
-        self.pin_function_selected[pin_number - 1] = Some(pin_function);
-        // TODO send this as a message to hw listener
-        // TODO        self.new_hw_pin_function(pin_number, previous_function, pin_function);
+    // TODO generalize this to ANY change of function
+    // TODO doesn't seem to cater for the case where pin is changed back to unconfigured/unused
+    fn new_pin_function(&mut self, pin_number: usize, new_function: PinFunction) {
+        let previous_function = self.pin_function_selected[pin_number - 1];
+        self.pin_function_selected[pin_number - 1] = Some(new_function);
+
+        if let Some(pins) = &self.pin_descriptions {
+            if let Some(bcm_pin_number) = pins[pin_number - 1].bcm_pin_number {
+                // Report config changes to the hardware listener
+                // Since config loading and hardware listener setup can occur out of order
+                // mark the config as changed. If we send to the listener, then mark as done
+                match (previous_function, new_function) {
+                    (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
+                    (Some(PinFunction::Input(_)), _) => {
+                        // was an input, not anymore
+                        if let Some(ref mut listener) = &mut self.listener_sender {
+                            let _ = listener.try_send(HardwareEvent::InputPinRemoved(
+                                bcm_pin_number,
+                                Some(new_function),
+                            ));
+                        }
+                    }
+                    (_, PinFunction::Input(_)) => {
+                        // was not an input, is now
+                        if let Some(ref mut listener) = &mut self.listener_sender {
+                            let _ = listener.try_send(HardwareEvent::InputPinAdded(
+                                bcm_pin_number,
+                                new_function,
+                            ));
+                        }
+                    }
+                    (_, _) => { /* Don't care! */ }
+                }
+            }
+        }
     }
 }
 
@@ -142,14 +179,13 @@ impl Application for Gpio {
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
-                // TODO error reporting if config cannot be applied
                 self.gpio_config = config.clone();
 
                 for (pin_number, pin_function) in config.configured_pins.iter() {
                     self.pin_function_selected[*pin_number as usize - 1] = Some(*pin_function);
                 }
 
-                self.update_hw_listener_config();
+                self.update_hw_config();
             }
 
             Message::None => {}
@@ -158,8 +194,7 @@ impl Application for Gpio {
                     self.listener_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.pin_descriptions = Some(pins);
-                    // TODO send as a message to hw listener
-                    // TODO                self.update_hw_listener_config();
+                    self.update_hw_config();
                 }
                 HWListenerEvent::InputChange(level_change) => {
                     println!("Input changed: {:?}", level_change);
