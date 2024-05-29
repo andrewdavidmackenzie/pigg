@@ -68,9 +68,9 @@ enum State {
     Ready(mpsc::Receiver<HardwareEvent>, Sender<HardwareEvent>),
 }
 
-fn setup_hardware(
+fn send_current_input_states(
     mut tx: Sender<HardwareEvent>,
-    config: GPIOConfig,
+    config: &GPIOConfig,
     pin_descriptions: &[PinDescription; 40],
     connected_hardware: &dyn Hardware,
 ) {
@@ -97,7 +97,14 @@ fn setup_hardware(
             }
         }
     }
+}
 
+fn monitor_inputs(
+    mut tx: Sender<HardwareEvent>,
+    _config: &GPIOConfig,
+    _pin_descriptions: &[PinDescription; 40],
+    _connected_hardware: &dyn Hardware,
+) {
     // Spawn a background thread that gathers hardware events and forwards them to the
     // GUI subscriber via a channel
     thread::spawn(move || {
@@ -147,13 +154,20 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                         let hardware_event = hardware_event_receiver.select_next_some().await;
 
                         match hardware_event {
+                            // TODO handle more than one update, multiple threads etc
                             NewConfig(config) => {
                                 connected_hardware.apply_config(&config).unwrap();
 
-                                // TODO handle more than one update, multiple threads etc
-                                setup_hardware(
+                                send_current_input_states(
                                     hardware_event_sender.clone(),
-                                    config,
+                                    &config,
+                                    &pin_descriptions,
+                                    &connected_hardware,
+                                );
+
+                                monitor_inputs(
+                                    hardware_event_sender.clone(),
+                                    &config,
                                     &pin_descriptions,
                                     &connected_hardware,
                                 );
