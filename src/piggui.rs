@@ -1,17 +1,16 @@
 use std::{env, io};
 
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
-    Subscription, Theme,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
-use crate::gpio::{GPIOConfig, PinFunction};
-use crate::hw::Hardware;
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HardwareEvent, ListenerEvent};
+use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
 use crate::pin_layout::{logical_pin_view, physical_pin_view};
 
@@ -65,25 +64,23 @@ fn main() -> Result<(), iced::Error> {
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Activate,
+    Activate(u8),
     PinFunctionSelected(usize, PinFunction),
     LayoutChanged(Layout),
     ConfigLoaded((String, GPIOConfig)),
     None,
-    HardwareListener(ListenerEvent),
+    HardwareListener(HWListenerEvent),
 }
 
 pub struct Gpio {
     #[allow(dead_code)]
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
-    config_changed: bool,
-    connected_hardware: Box<dyn Hardware>,
-    pub pin_function_selected: Vec<Option<PinFunction>>,
-    clicked: bool,
+    pub pin_function_selected: [Option<PinFunction>; 40],
     chosen_layout: Layout,
-    hardware_description: HardwareDescriptor,
+    hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
+    pin_descriptions: Option<[PinDescription; 40]>,
 }
 
 impl Gpio {
@@ -97,17 +94,47 @@ impl Gpio {
         }
     }
 
-    fn update_hw_listener_config(&mut self) {
-        // Since config loading and hardware listener setup can occur out of order
-        // track if there has been a config change made that is pending to send to
-        // the hw_listener, and if so, send it
-        if self.config_changed {
-            if let Some(ref mut listener) = &mut self.listener_sender {
-                let _ = listener.try_send(HardwareEvent::HardwareConfigured(
-                    self.gpio_config.clone(),
-                    Box::new(self.connected_hardware.pin_descriptions()),
-                ));
-                self.config_changed = false;
+    // Send the Config from the GUI to the hardware to have it applied
+    fn update_hw_config(&mut self) {
+        if let Some(ref mut listener) = &mut self.listener_sender {
+            let _ = listener.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
+        }
+    }
+
+    // A new function has been selected for a pin via the UI
+    // TODO generalize this to ANY change of function
+    // TODO doesn't seem to cater for the case where pin is changed back to unconfigured/unused
+    fn new_pin_function(&mut self, pin_number: usize, new_function: PinFunction) {
+        let previous_function = self.pin_function_selected[pin_number - 1];
+        self.pin_function_selected[pin_number - 1] = Some(new_function);
+
+        if let Some(pins) = &self.pin_descriptions {
+            if let Some(bcm_pin_number) = pins[pin_number - 1].bcm_pin_number {
+                // Report config changes to the hardware listener
+                // Since config loading and hardware listener setup can occur out of order
+                // mark the config as changed. If we send to the listener, then mark as done
+                match (previous_function, new_function) {
+                    (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
+                    (Some(PinFunction::Input(_)), _) => {
+                        // was an input, not anymore
+                        if let Some(ref mut listener) = &mut self.listener_sender {
+                            let _ = listener.try_send(HardwareEvent::InputPinRemoved(
+                                bcm_pin_number,
+                                Some(new_function),
+                            ));
+                        }
+                    }
+                    (_, PinFunction::Input(_)) => {
+                        // was not an input, is now
+                        if let Some(ref mut listener) = &mut self.listener_sender {
+                            let _ = listener.try_send(HardwareEvent::InputPinAdded(
+                                bcm_pin_number,
+                                new_function,
+                            ));
+                        }
+                    }
+                    (_, _) => { /* Don't care! */ }
+                }
             }
         }
     }
@@ -120,22 +147,15 @@ impl Application for Gpio {
     type Flags = ();
 
     fn new(_flags: ()) -> (Gpio, Command<Self::Message>) {
-        let hw = hw::get();
-        let num_pins = hw.pin_descriptions().len();
-        let pin_function_selected = vec![None; num_pins];
-        let hardware_description = hw.descriptor().unwrap();
-
         (
             Self {
                 config_filename: None,
                 gpio_config: GPIOConfig::default(),
-                config_changed: false,
-                pin_function_selected,
-                clicked: false,
+                pin_function_selected: [None; 40],
                 chosen_layout: Layout::Physical,
-                connected_hardware: Box::new(hw),
-                hardware_description,
-                listener_sender: None,
+                hardware_description: None, // Until listener is ready
+                listener_sender: None,      // Until listener is ready
+                pin_descriptions: None,     // Until listener is ready
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -150,69 +170,33 @@ impl Application for Gpio {
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
-            Message::Activate => self.clicked = true,
+            Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(pin_number, pin_function) => {
-                let previous_function = self.pin_function_selected[pin_number - 1];
-                self.pin_function_selected[pin_number - 1] = Some(pin_function);
-                if let Some(bcm_pin_number) =
-                    self.connected_hardware.pin_descriptions()[pin_number - 1].bcm_pin_number
-                {
-                    // TODO error reporting if config cannot be applied
-                    let _ = self
-                        .connected_hardware
-                        .apply_pin_config(bcm_pin_number, &pin_function);
-                    self.config_changed = true;
-
-                    // Report config changes to the hardware listener
-                    // Since config loading and hardware listener setup can occur out of order
-                    // mark the config as changed. If we send to the listener, then mark as done
-                    match (previous_function, pin_function) {
-                        (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
-                        (Some(PinFunction::Input(_)), _) => {
-                            // was an input, not anymore
-                            if let Some(ref mut listener) = &mut self.listener_sender {
-                                let _ = listener
-                                    .try_send(HardwareEvent::InputPinRemoved(bcm_pin_number));
-                                self.config_changed = false;
-                            }
-                        }
-                        (_, PinFunction::Input(_)) => {
-                            // was not an input, is now
-                            if let Some(ref mut listener) = &mut self.listener_sender {
-                                let _ =
-                                    listener.try_send(HardwareEvent::InputPinAdded(bcm_pin_number));
-                                self.config_changed = false;
-                            }
-                        }
-                        (_, _) => { /* Don't care! */ }
-                    }
-                }
+                self.new_pin_function(pin_number, pin_function);
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
-                // TODO error reporting if config cannot be applied
-                self.connected_hardware.apply_config(&config).unwrap();
                 self.gpio_config = config.clone();
-
-                self.config_changed = true;
 
                 for (pin_number, pin_function) in config.configured_pins.iter() {
                     self.pin_function_selected[*pin_number as usize - 1] = Some(*pin_function);
                 }
 
-                self.update_hw_listener_config();
+                self.update_hw_config();
             }
 
             Message::None => {}
             Message::HardwareListener(event) => match event {
-                ListenerEvent::Ready(config_change_sender) => {
+                HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
                     self.listener_sender = Some(config_change_sender);
-                    self.update_hw_listener_config();
+                    self.hardware_description = Some(hw_desc);
+                    self.pin_descriptions = Some(pins);
+                    self.update_hw_config();
                 }
-                ListenerEvent::InputChange(level_change) => {
+                HWListenerEvent::InputChange(level_change) => {
                     println!("Input changed: {:?}", level_change);
                 }
             },
@@ -229,49 +213,49 @@ impl Application for Gpio {
         .text_size(25)
         .placeholder("Choose Layout");
 
-        let pin_layout = match self.chosen_layout {
-            Layout::Physical => physical_pin_view(
-                &self.connected_hardware.pin_descriptions(),
-                &self.gpio_config,
-                self,
-            ),
-            Layout::Logical => logical_pin_view(
-                &self.connected_hardware.pin_descriptions(),
-                &self.gpio_config,
-                self,
-            ),
-        };
-        let layout_row = Row::new()
-            .push(layout_selector)
-            .align_items(Alignment::Center)
-            .spacing(10);
+        let mut main_row = Row::new();
 
-        let hardware_desc_row = Row::new()
-            .push(hardware_view(&self.hardware_description))
-            .align_items(Alignment::Start);
+        if let Some(hw_desc) = &self.hardware_description {
+            let layout_row = Row::new()
+                .push(layout_selector)
+                .align_items(Alignment::Center)
+                .spacing(10);
 
-        let main_column = Row::new()
-            .push(
+            let hardware_desc_row = Row::new()
+                .push(hardware_view(hw_desc))
+                .align_items(Alignment::Start);
+
+            main_row = main_row.push(
                 Column::new()
                     .push(layout_row)
                     .push(hardware_desc_row)
                     .align_items(Alignment::Center)
                     .width(Length::Fixed(400.0))
                     .spacing(10),
-            )
-            .push(
-                Column::new()
-                    .push(pin_layout)
-                    .spacing(10)
-                    .align_items(Alignment::Center)
-                    .width(Length::Fixed(700.0))
-                    .height(Length::Fill),
-            )
-            .align_items(Alignment::Start)
-            .width(Length::Fill)
-            .height(Length::Fill);
+            );
+        }
 
-        container(main_column)
+        if let Some(pins) = &self.pin_descriptions {
+            let pin_layout = match self.chosen_layout {
+                Layout::Physical => physical_pin_view(pins, &self.gpio_config, self),
+                Layout::Logical => logical_pin_view(pins, &self.gpio_config, self),
+            };
+
+            main_row = main_row
+                .push(
+                    Column::new()
+                        .push(pin_layout)
+                        .spacing(10)
+                        .align_items(Alignment::Center)
+                        .width(Length::Fixed(700.0))
+                        .height(Length::Fill),
+                )
+                .align_items(Alignment::Start)
+                .width(Length::Fill)
+                .height(Length::Fill);
+        }
+
+        container(main_row)
             .height(Length::Fill)
             .width(Length::Fill)
             .padding(30)

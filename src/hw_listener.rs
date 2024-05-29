@@ -7,17 +7,25 @@ use iced::futures::channel::mpsc::Sender;
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
-use crate::gpio::{GPIOConfig, PinDescription};
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::hw;
+use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{
-    HardwareConfigured, InputLevelChanged, InputPinAdded, InputPinRemoved,
+    InputLevelChanged, InputPinAdded, InputPinRemoved, NewConfig,
 };
 
 /// This enum is for events created by this listener, sent to the Gui
+// TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
+#[allow(clippy::large_enum_variant)] // remove when fix todo above
 #[derive(Clone, Debug)]
-pub enum ListenerEvent {
+pub enum HWListenerEvent {
     /// This listener event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
-    Ready(mpsc::Sender<HardwareEvent>),
+    Ready(
+        Sender<HardwareEvent>,
+        HardwareDescriptor,
+        [PinDescription; 40],
+    ),
     InputChange(LevelChange),
 }
 
@@ -40,56 +48,58 @@ impl LevelChange {
     }
 }
 
-/// This enum is for config changes done in the GUI to be sent to this listener to setup pin
+/// This enum is for config changes done in the GUI to be sent to this listener to set up pin
 /// // level monitoring correctly based on the config
 pub enum HardwareEvent {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains
-    HardwareConfigured(GPIOConfig, Box<[PinDescription; 40]>),
+    NewConfig(GPIOConfig),
     /// A new pin has been configured as an input pin and should be listened to
-    InputPinAdded(u8),
+    InputPinAdded(u8, PinFunction),
     /// A pin re-configured to no longer be an input pin, and should no longer be listened to
-    InputPinRemoved(u8),
-    /// A level change detected by the Hardware
+    InputPinRemoved(u8, Option<PinFunction>),
+    /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
     InputLevelChanged(LevelChange),
 }
 
 /// This enum describes the states of the listener
 enum State {
-    /// Just starting up, we have not yet setup a channel between GUI and Listener
+    /// Just starting up, we have not yet set up a channel between GUI and Listener
     Starting,
     /// The listener is ready and will listen for config events on the channel contained
     Ready(mpsc::Receiver<HardwareEvent>, Sender<HardwareEvent>),
 }
 
-fn setup_hardware_event_source(
+fn send_current_input_states(
     mut tx: Sender<HardwareEvent>,
-    _config: GPIOConfig,
-    _pin_descriptions: &[PinDescription; 40],
+    config: &GPIOConfig,
+    pin_descriptions: &[PinDescription; 40],
+    connected_hardware: &dyn Hardware,
 ) {
-    /*
-    println!("Scanning for input pins");
     // Send initial levels
-    for (board_pin_number, pin_function) in &self.gpio_config.configured_pins {
+    for (board_pin_number, pin_function) in &config.configured_pins {
         if let PinFunction::Input(_pullup) = pin_function {
-            println!("Found input pin #{}", board_pin_number);
             if let Some(bcm_pin_number) =
                 pin_descriptions[*board_pin_number as usize - 1].bcm_pin_number
             {
-                println!("Pin has bcm number: {}", bcm_pin_number);
                 // Update UI with initial state
-                if let Ok(initial_level) = self.connected_hardware.get_input_level(bcm_pin_number) {
-                    println!(
-                        "Read initial level: {} and sending to listener",
-                        initial_level
-                    );
-                    let _ = tx.send(Level(bcm_pin_number, initial_level, SystemTime::now()));
+                if let Ok(initial_level) = connected_hardware.get_input_level(bcm_pin_number) {
+                    let _ = tx.try_send(InputLevelChanged(LevelChange::new(
+                        bcm_pin_number,
+                        initial_level,
+                    )));
                 }
             }
         }
     }
-     */
+}
 
+fn monitor_inputs(
+    mut tx: Sender<HardwareEvent>,
+    _config: &GPIOConfig,
+    _pin_descriptions: &[PinDescription; 40],
+    _connected_hardware: &dyn Hardware,
+) {
     // Spawn a background thread that gathers hardware events and forwards them to the
     // GUI subscriber via a channel
     thread::spawn(move || {
@@ -97,9 +107,7 @@ fn setup_hardware_event_source(
             // Fake
             let _ = tx.try_send(InputLevelChanged(LevelChange::new(26, true)));
             thread::sleep(Duration::from_millis(1000));
-            let _ = tx.try_send(InputLevelChanged(crate::hw_listener::LevelChange::new(
-                26, false,
-            )));
+            let _ = tx.try_send(InputLevelChanged(LevelChange::new(26, false)));
             thread::sleep(Duration::from_millis(1000));
         }
     });
@@ -107,13 +115,17 @@ fn setup_hardware_event_source(
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe() -> Subscription<ListenerEvent> {
+pub fn subscribe() -> Subscription<HWListenerEvent> {
     struct Connect;
     subscription::channel(
         std::any::TypeId::of::<Connect>(),
         100,
         move |mut gui_sender| async move {
             let mut state = State::Starting;
+            let mut connected_hardware = hw::get();
+            let hardware_description = connected_hardware.descriptor().unwrap();
+            let pin_descriptions = connected_hardware.pin_descriptions();
+
             loop {
                 match &mut state {
                     State::Starting => {
@@ -122,7 +134,11 @@ pub fn subscribe() -> Subscription<ListenerEvent> {
 
                         // Send the sender back to the application
                         let _ = gui_sender
-                            .send(ListenerEvent::Ready(hardware_event_sender.clone()))
+                            .send(HWListenerEvent::Ready(
+                                hardware_event_sender.clone(),
+                                hardware_description.clone(),
+                                pin_descriptions.clone(),
+                            ))
                             .await;
 
                         // We are ready to receive ConfigEvent messages from the GUI
@@ -133,25 +149,40 @@ pub fn subscribe() -> Subscription<ListenerEvent> {
                         let hardware_event = hardware_event_receiver.select_next_some().await;
 
                         match hardware_event {
-                            HardwareConfigured(config, pin_descriptions) => {
-                                // TODO handle more than one update, multiple threads etc
-                                setup_hardware_event_source(
+                            // TODO handle more than one update, multiple threads etc
+                            NewConfig(config) => {
+                                connected_hardware.apply_config(&config).unwrap();
+
+                                send_current_input_states(
                                     hardware_event_sender.clone(),
-                                    config,
+                                    &config,
                                     &pin_descriptions,
+                                    &connected_hardware,
+                                );
+
+                                monitor_inputs(
+                                    hardware_event_sender.clone(),
+                                    &config,
+                                    &pin_descriptions,
+                                    &connected_hardware,
                                 );
                             }
-                            InputPinAdded(bcm_pin_number) => {
+                            // TODO maybe combine all of these into a "pin config change"
+                            // TODO that covers all cases, including back to unused?
+                            InputPinAdded(bcm_pin_number, new_function) => {
                                 println!(
                                     "Listener informed of InputPin addition: {bcm_pin_number}"
                                 );
+                                let _ = connected_hardware
+                                    .apply_pin_config(bcm_pin_number, &new_function);
                             }
-                            InputPinRemoved(bcm_pin_number) => {
+                            InputPinRemoved(bcm_pin_number, _new_function) => {
                                 println!("Listener informed of InputPin removal: {bcm_pin_number}");
+                                // TODO remove old config? apply other configs?
                             }
                             InputLevelChanged(level_change) => {
                                 let _ = gui_sender
-                                    .send(ListenerEvent::InputChange(level_change))
+                                    .send(HWListenerEvent::InputChange(level_change))
                                     .await;
                             }
                         }

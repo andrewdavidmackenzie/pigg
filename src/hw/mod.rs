@@ -17,7 +17,7 @@ pub fn get() -> impl Hardware {
     implementation::get()
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct HardwareDescriptor {
     pub hardware: String,
     pub revision: String,

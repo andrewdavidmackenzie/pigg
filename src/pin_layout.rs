@@ -1,11 +1,11 @@
-use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
-use crate::style::CustomButton;
 use crate::Gpio;
 use crate::Message;
+use crate::style::CustomButton;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -107,20 +107,17 @@ pub fn physical_pin_view(
                     if let Some(bcm_pin_number) = pair[0].bcm_pin_number {
                         // If the pin number matches the BCM number, use the configured pin function
                         if *pin_number == bcm_pin_number {
-                            Some(pin_function.clone())
+                            Some(*pin_function)
                         } else {
                             // If not, then use the pin function selected from the UI
                             gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
-                                .clone()
                         }
                     } else {
                         // If the pin does not have a BCM number, use the pin function selected from the UI
-                        gpio.pin_function_selected[pair[0].board_pin_number as usize - 1].clone()
+                        gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
                     }
                 })
-                .or_else(|| {
-                    gpio.pin_function_selected[pair[0].board_pin_number as usize - 1].clone()
-                }),
+                .or_else(|| gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]),
             true,
         );
 
@@ -134,21 +131,18 @@ pub fn physical_pin_view(
                     if let Some(bcm_pin_number) = pair[1].bcm_pin_number {
                         // If the pin number matches the BCM number, use the configured pin function
                         if *pin_number == bcm_pin_number {
-                            Some(pin_function.clone())
+                            Some(*pin_function)
                         } else {
                             // If not, then use the pin function selected from the UI
                             gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
-                                .clone()
                         }
                     } else {
                         // If the pin does not have a BCM number, use the pin function selected from the UI
-                        gpio.pin_function_selected[pair[1].board_pin_number as usize - 1].clone()
+                        gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
                     }
                 })
                 // If no configured pin function found, fallback to the pin function selected from the UI
-                .or_else(|| {
-                    gpio.pin_function_selected[pair[1].board_pin_number as usize - 1].clone()
-                }),
+                .or_else(|| gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]),
             false,
         );
 
@@ -241,7 +235,7 @@ fn create_pin_view_side(
             .padding(10)
             .width(Length::Fixed(40f32))
             .style(pin_color.get_button_style())
-            .on_press(Message::Activate),
+            .on_press(Message::Activate(pin.board_pin_number)),
     );
     pin_button = pin_button.push(pin_button_row);
 

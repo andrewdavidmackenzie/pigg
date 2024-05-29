@@ -1,6 +1,7 @@
 use hw::Hardware;
 
 mod gpio;
+#[allow(dead_code)]
 mod hw;
 
 fn main() {
