@@ -15,6 +15,8 @@ use crate::hw_listener::HardwareEvent::{
 };
 
 /// This enum is for events created by this listener, sent to the Gui
+// TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
+#[allow(clippy::large_enum_variant)] // remove when fix todo above
 #[derive(Clone, Debug)]
 pub enum HWListenerEvent {
     /// This listener event indicates that the listener is ready. It conveys a sender to the GUI
@@ -22,7 +24,7 @@ pub enum HWListenerEvent {
     Ready(
         Sender<HardwareEvent>,
         HardwareDescriptor,
-        [PinDescription; 40], // TODO pass as a reference and handle lifetimes - clone on reception
+        [PinDescription; 40],
     ),
     InputChange(LevelChange),
 }
