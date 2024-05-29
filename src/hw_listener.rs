@@ -76,21 +76,14 @@ fn send_current_input_states(
     pin_descriptions: &[PinDescription; 40],
     connected_hardware: &dyn Hardware,
 ) {
-    println!("Scanning for input pins");
     // Send initial levels
     for (board_pin_number, pin_function) in &config.configured_pins {
         if let PinFunction::Input(_pullup) = pin_function {
-            println!("Found input pin #{}", board_pin_number);
             if let Some(bcm_pin_number) =
                 pin_descriptions[*board_pin_number as usize - 1].bcm_pin_number
             {
-                println!("Pin has bcm number: {}", bcm_pin_number);
                 // Update UI with initial state
                 if let Ok(initial_level) = connected_hardware.get_input_level(bcm_pin_number) {
-                    println!(
-                        "Read initial level: {} and sending to listener",
-                        initial_level
-                    );
                     let _ = tx.try_send(InputLevelChanged(LevelChange::new(
                         bcm_pin_number,
                         initial_level,
