@@ -29,7 +29,7 @@ impl Hardware for NoneHW {
 
     fn apply_config<C>(&mut self, _config: &GPIOConfig, _callback: C) -> io::Result<()>
     where
-        C: FnOnce(bool),
+        C: FnMut(u8, bool),
     {
         println!("GPIO Config has been applied to fake hardware");
         Ok(())
@@ -42,7 +42,7 @@ impl Hardware for NoneHW {
         _callback: C,
     ) -> io::Result<()>
     where
-        C: FnOnce(bool),
+        C: FnMut(u8, bool),
     {
         println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())

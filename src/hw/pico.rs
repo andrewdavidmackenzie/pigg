@@ -31,17 +31,21 @@ impl Hardware for PicoHW {
 
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnOnce(bool),
+        C: FnMut(bool),
     {
         println!("GPIO Config has been applied to Pico hardware");
         Ok(())
     }
 
-    fn apply_pin_config(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: u8,
-        _pin_function: &PinFunction,
-    ) -> io::Result<()> {
+        pin_function: &PinFunction,
+        mut _callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnMut(u8, bool) + Send + Sync + 'static,
+    {
         println!("Pin (BCM#) {_pin_number} config changed");
         Ok(())
     }
