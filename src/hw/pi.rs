@@ -21,7 +21,7 @@ enum Pin {
     Output(OutputPin),
 }
 
-// Tuples of pin board number and Pin
+// Tuples of bcm_pin_number and Pin
 pub struct PiHW {
     // TODO not sure if this is useful/needed, if we can read the config from the pins via rppal
     configured_pins: HashMap<u8, Pin>,
