@@ -9,9 +9,7 @@ use iced_futures::futures::StreamExt;
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::hw;
 use crate::hw::{Hardware, HardwareDescriptor};
-use crate::hw_listener::HardwareEvent::{
-    InputLevelChanged, InputPinAdded, InputPinRemoved, NewConfig,
-};
+use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw_listener::HWListenerEvent::InputChange;
 
 /// This enum is for events created by this listener, sent to the Gui
@@ -54,10 +52,8 @@ pub enum HardwareEvent {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains
     NewConfig(GPIOConfig),
-    /// A new pin has been configured as an input pin and should be listened to
-    InputPinAdded(u8, PinFunction),
-    /// A pin re-configured to no longer be an input pin, and should no longer be listened to
-    InputPinRemoved(u8, Option<PinFunction>),
+    /// A pin has had its config changed
+    NewPinConfig(u8, Option<PinFunction>),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
     InputLevelChanged(LevelChange),
 }
@@ -150,27 +146,22 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                     &connected_hardware,
                                 );
                             }
-                            // TODO maybe combine all of these into a "pin config change"
-                            // TODO that covers all cases, including back to unused?
-                            InputPinAdded(bcm_pin_number, new_function) => {
+                            NewPinConfig(bcm_pin_number, new_function) => {
                                 println!(
-                                    "Listener informed of InputPin addition: {bcm_pin_number}"
+                                    "Listener informed of Pin config change: {bcm_pin_number}"
                                 );
                                 let _ = connected_hardware.apply_pin_config(
                                     bcm_pin_number,
                                     &new_function,
-                                    move |pin_number, level| {
+                                    move |bcm_pin_number, level| {
                                         sender_clone
                                             .try_send(InputChange(LevelChange::new(
-                                                pin_number, level,
+                                                bcm_pin_number,
+                                                level,
                                             )))
                                             .unwrap();
                                     },
                                 );
-                            }
-                            InputPinRemoved(bcm_pin_number, _new_function) => {
-                                println!("Listener informed of InputPin removal: {bcm_pin_number}");
-                                // TODO remove old config? apply other configs?
                             }
                             InputLevelChanged(level_change) => {
                                 let _ = gui_sender.send(InputChange(level_change)).await;
