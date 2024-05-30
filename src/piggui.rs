@@ -191,6 +191,8 @@ impl Application for Gpio {
             }
             Message::None => {}
             Message::Save => {
+
+                // Synchronous file handling
                 if let Some(path) = FileDialog::new().set_title("Choose files").save_file() {
                     let path_str = path.to_str().unwrap();
 
