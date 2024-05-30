@@ -147,9 +147,6 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                 );
                             }
                             NewPinConfig(bcm_pin_number, new_function) => {
-                                println!(
-                                    "Listener informed of Pin config change: {bcm_pin_number}"
-                                );
                                 let _ = connected_hardware.apply_pin_config(
                                     bcm_pin_number,
                                     &new_function,
