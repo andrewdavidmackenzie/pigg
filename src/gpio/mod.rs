@@ -104,7 +104,6 @@ pub enum PinFunction {
 // [bcm_pin_number] refer to the pins by the "Broadcom SOC channel" number,
 // these are the numbers after "GPIO"
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // TODO remove later
 pub struct PinDescription {
     pub board_pin_number: u8,
     pub bcm_pin_number: Option<u8>,
@@ -125,8 +124,8 @@ pub struct GPIOConfig {
 
 impl GPIOConfig {
     #[cfg(feature = "gui")]
-    #[allow(dead_code)] // "pi" build enables piglet which doesn't use this :-( TODO
-                        // TODO take AsPath/AsRef etc
+    #[cfg_attr(feature = "gui", allow(dead_code))]
+    // TODO take AsPath/AsRef etc
     pub fn load(filename: &str) -> io::Result<GPIOConfig> {
         let file = File::open(filename)?;
         let reader = BufReader::new(file);
@@ -134,9 +133,8 @@ impl GPIOConfig {
         Ok(config)
     }
 
-    // TODO this will be used when we add a SAVE button or similar
     #[cfg(feature = "gui")]
-    #[allow(dead_code)]
+    #[cfg_attr(feature = "gui", allow(dead_code))]
     pub fn save(&self, filename: &str) -> io::Result<()> {
         let mut file = File::create(filename)?;
         let contents = serde_json::to_string(self)?;
@@ -149,7 +147,6 @@ pub type PinLevel = bool;
 // TBD whether we should merge state with config
 // on config load, for an output pin we would set the level...
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct GPIOState {
     pub pin_state: [Option<PinLevel>; 40], // TODO make private later
 }
