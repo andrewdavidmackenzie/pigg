@@ -27,16 +27,23 @@ impl Hardware for NoneHW {
         super::GPIO_PIN_DESCRIPTIONS
     }
 
-    fn apply_config(&mut self, _config: &GPIOConfig) -> io::Result<()> {
+    fn apply_config<C>(&mut self, _config: &GPIOConfig, _callback: C) -> io::Result<()>
+    where
+        C: FnMut(u8, bool),
+    {
         println!("GPIO Config has been applied to fake hardware");
         Ok(())
     }
 
-    fn apply_pin_config(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: u8,
-        _pin_function: &PinFunction,
-    ) -> io::Result<()> {
+        _pin_function: &Option<PinFunction>,
+        _callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnMut(u8, bool),
+    {
         println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
     }

@@ -102,38 +102,19 @@ impl Gpio {
     }
 
     // A new function has been selected for a pin via the UI
-    // TODO generalize this to ANY change of function
-    // TODO doesn't seem to cater for the case where pin is changed back to unconfigured/unused
-    fn new_pin_function(&mut self, pin_number: usize, new_function: PinFunction) {
-        let previous_function = self.pin_function_selected[pin_number - 1];
-        self.pin_function_selected[pin_number - 1] = Some(new_function);
-
-        if let Some(pins) = &self.pin_descriptions {
-            if let Some(bcm_pin_number) = pins[pin_number - 1].bcm_pin_number {
-                // Report config changes to the hardware listener
-                // Since config loading and hardware listener setup can occur out of order
-                // mark the config as changed. If we send to the listener, then mark as done
-                match (previous_function, new_function) {
-                    (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
-                    (Some(PinFunction::Input(_)), _) => {
-                        // was an input, not anymore
-                        if let Some(ref mut listener) = &mut self.listener_sender {
-                            let _ = listener.try_send(HardwareEvent::InputPinRemoved(
-                                bcm_pin_number,
-                                Some(new_function),
-                            ));
-                        }
+    fn new_pin_function(&mut self, board_pin_number: usize, new_function: Option<PinFunction>) {
+        let previous_function = self.pin_function_selected[board_pin_number - 1];
+        if new_function != previous_function {
+            self.pin_function_selected[board_pin_number - 1] = new_function;
+            if let Some(pins) = &self.pin_descriptions {
+                if let Some(bcm_pin_number) = pins[board_pin_number - 1].bcm_pin_number {
+                    // Report config changes to the hardware listener
+                    // Since config loading and hardware listener setup can occur out of order
+                    // mark the config as changed. If we send to the listener, then mark as done
+                    if let Some(ref mut listener) = &mut self.listener_sender {
+                        let _ = listener
+                            .try_send(HardwareEvent::NewPinConfig(bcm_pin_number, new_function));
                     }
-                    (_, PinFunction::Input(_)) => {
-                        // was not an input, is now
-                        if let Some(ref mut listener) = &mut self.listener_sender {
-                            let _ = listener.try_send(HardwareEvent::InputPinAdded(
-                                bcm_pin_number,
-                                new_function,
-                            ));
-                        }
-                    }
-                    (_, _) => { /* Don't care! */ }
                 }
             }
         }
@@ -171,8 +152,9 @@ impl Application for Gpio {
     fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
-            Message::PinFunctionSelected(pin_number, pin_function) => {
-                self.new_pin_function(pin_number, pin_function);
+            Message::PinFunctionSelected(board_pin_number, pin_function) => {
+                // TODO currently there is no way in UI to un-configure a pin!
+                self.new_pin_function(board_pin_number, Some(pin_function));
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;

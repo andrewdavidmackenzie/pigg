@@ -67,9 +67,17 @@ impl Hardware for PiHW {
 
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
     /// configure the Pi GPIO hardware to correspond to it
-    fn apply_config(&mut self, config: &GPIOConfig) -> io::Result<()> {
+    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
+    where
+        C: FnMut(u8, bool) + Send + Sync + Clone + 'static,
+    {
+        // Config only has pins that are configured
         for (bcm_pin_number, pin_config) in &config.configured_pins {
-            self.apply_pin_config(*bcm_pin_number, pin_config)?;
+            let mut callback_clone = callback.clone();
+            let callback_wrapper = move |pin_number, level| {
+                callback_clone(pin_number, level);
+            };
+            self.apply_pin_config(*bcm_pin_number, &Some(*pin_config), callback_wrapper)?;
         }
 
         println!("GPIO Config has been applied to Pi hardware");
@@ -77,26 +85,56 @@ impl Hardware for PiHW {
     }
 
     /// Apply the requested config to one pin, using bcm_pin_number
-    fn apply_pin_config(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: u8,
-        pin_function: &PinFunction,
-    ) -> io::Result<()> {
+        pin_function: &Option<PinFunction>,
+        mut callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnMut(u8, bool) + Send + Sync + 'static,
+    {
+        /* TODO check for an actual change
+        match (previous_function, new_function) {
+            (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
+            (Some(PinFunction::Input(_)), _) => {
+                // was an input, not anymore
+            }
+            (_, PinFunction::Input(_)) => {
+                // was not an input, is now
+                if let Some(ref mut listener) = &mut self.listener_sender {
+                    let _ = listener
+                        .try_send(HardwareEvent::InputPinAdded(bcm_pin_number, new_function));
+                }
+            }
+            (_, _) => { /* Don't care! */ }
+        }
+         */
+
+        // If it was already configured, remove it
+        self.configured_pins.remove(&bcm_pin_number);
+
         match pin_function {
-            PinFunction::Input(pull) => {
+            &Some(PinFunction::Input(pull)) => {
                 let pin = Gpio::new()
                     .unwrap()
                     .get(bcm_pin_number)
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-                let input = match pull {
+
+                let mut input = match pull {
                     None => pin.into_input(),
                     Some(InputPull::PullUp) => pin.into_input_pullup(),
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
+                input
+                    .set_async_interrupt(Trigger::Both, move |level| {
+                        callback(bcm_pin_number, level == Level::High)
+                    })
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Input(input));
             }
-            PinFunction::Output(value) => {
+            &Some(PinFunction::Output(value)) => {
                 let pin = Gpio::new()
                     .unwrap()
                     .get(bcm_pin_number)
@@ -110,72 +148,75 @@ impl Hardware for PiHW {
                     .insert(bcm_pin_number, Pin::Output(output));
             }
             // TODO implement all of these IC2 channel configs
-            PinFunction::I2C1_SDA => {
+            &Some(PinFunction::I2C1_SDA) => {
                 todo!()
             }
-            PinFunction::I2C1_SCL => {}
-            PinFunction::I2C3_SDA => {}
-            PinFunction::I2C3_SCL => {}
-            PinFunction::I2C4_SDA => {}
-            PinFunction::I2C4_SCL => {}
-            PinFunction::I2C5_SDA => {}
-            PinFunction::I2C5_SCL => {}
-            PinFunction::I2C6_SDA => {}
-            PinFunction::I2C6_SCL => {}
+            &Some(PinFunction::I2C1_SCL) => {}
+            &Some(PinFunction::I2C3_SDA) => {}
+            &Some(PinFunction::I2C3_SCL) => {}
+            &Some(PinFunction::I2C4_SDA) => {}
+            &Some(PinFunction::I2C4_SCL) => {}
+            &Some(PinFunction::I2C5_SDA) => {}
+            &Some(PinFunction::I2C5_SCL) => {}
+            &Some(PinFunction::I2C6_SDA) => {}
+            &Some(PinFunction::I2C6_SCL) => {}
 
             // SPI Interface #0
-            PinFunction::SPI0_MOSI => {}
-            PinFunction::SPI0_MISO => {}
-            PinFunction::SPI0_SCLK => {}
-            PinFunction::SPI0_CE0_N => {}
-            PinFunction::SPI0_CE1_N => {}
-            PinFunction::SPI0_MOMI => { /* bi di mode */ }
+            &Some(PinFunction::SPI0_MOSI) => {}
+            &Some(PinFunction::SPI0_MISO) => {}
+            &Some(PinFunction::SPI0_SCLK) => {}
+            &Some(PinFunction::SPI0_CE0_N) => {}
+            &Some(PinFunction::SPI0_CE1_N) => {}
+            &Some(PinFunction::SPI0_MOMI) => { /* bi di mode */ }
 
             // SPI Interface #1
-            PinFunction::SPI1_MOSI => {}
-            PinFunction::SPI1_MISO => {}
-            PinFunction::SPI1_SCLK => {}
-            PinFunction::SPI1_CE0_N => {}
-            PinFunction::SPI1_CE1_N => {}
-            PinFunction::SPI1_CE2_N => {}
-            PinFunction::SPI1_MOMI => { /* bi di mode */ }
+            &Some(PinFunction::SPI1_MOSI) => {}
+            &Some(PinFunction::SPI1_MISO) => {}
+            &Some(PinFunction::SPI1_SCLK) => {}
+            &Some(PinFunction::SPI1_CE0_N) => {}
+            &Some(PinFunction::SPI1_CE1_N) => {}
+            &Some(PinFunction::SPI1_CE2_N) => {}
+            &Some(PinFunction::SPI1_MOMI) => { /* bi di mode */ }
 
             // General Purpose CLock functions
-            PinFunction::GPCLK0 => {}
-            PinFunction::GPCLK1 => {}
-            PinFunction::GPCLK2 => {}
+            &Some(PinFunction::GPCLK0) => {}
+            &Some(PinFunction::GPCLK1) => {}
+            &Some(PinFunction::GPCLK2) => {}
 
             // TODO think about how to handle UART output, maybe some sort of channel is created
             // and text received on it is sent to the UART or similar.
-            PinFunction::UART0_TXD => {}
-            PinFunction::UART0_RXD => {}
+            &Some(PinFunction::UART0_TXD) => {}
+            &Some(PinFunction::UART0_RXD) => {}
 
             // PCM (Pulse Width Modulation) functions
-            PinFunction::PWM0 => {}
-            PinFunction::PWM1 => {}
+            &Some(PinFunction::PWM0) => {}
+            &Some(PinFunction::PWM1) => {}
 
-            PinFunction::PCM_DIN => {}
-            PinFunction::PCM_DOUT => {}
-            PinFunction::PCM_FS => {}
-            PinFunction::PCM_CLK => {}
+            &Some(PinFunction::PCM_DIN) => {}
+            &Some(PinFunction::PCM_DOUT) => {}
+            &Some(PinFunction::PCM_FS) => {}
+            &Some(PinFunction::PCM_CLK) => {}
 
             // HAT EEPROM ID functions, only used at boot and not configurable
-            PinFunction::I2C_EEPROM_ID_SD | PinFunction::I2C_EEPROM_ID_SC => {
+            &Some(PinFunction::I2C_EEPROM_ID_SD | PinFunction::I2C_EEPROM_ID_SC) => {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
                     "I2C_EEPROM_ID_SD and SC pins cannot be configured",
                 ));
             }
 
-            PinFunction::Ground | PinFunction::Power3V3 | PinFunction::Power5V => {
+            &Some(PinFunction::Ground | PinFunction::Power3V3 | PinFunction::Power5V) => {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
                     "Ground, 3V3 or 5V pins cannot be configured",
                 ));
             }
+            &None => {
+                // TODO Back to none
+            }
         }
 
-        println!("Pin {bcm_pin_number} config changed");
+        println!("Pin BCM# {bcm_pin_number} config changed");
         Ok(())
     }
 

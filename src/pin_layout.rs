@@ -189,7 +189,6 @@ fn create_pin_view_side(
 
         pin_options_row = pin_options_row.push(
             pick_list(pin.options, selected_function, move |pin_function| {
-                println!("{}", pin_number);
                 Message::PinFunctionSelected(pin_number, pin_function)
             })
             .placeholder("Select function"),
