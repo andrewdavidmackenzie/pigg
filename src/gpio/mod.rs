@@ -117,7 +117,7 @@ impl std::fmt::Display for PinFunction {
     }
 }
 
-// A vector of tuples of (board_pin_number, PinFunction)
+/// A vector of tuples of (bcm_pin_number, PinFunction)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GPIOConfig {
     pub configured_pins: Vec<(u8, PinFunction)>,
