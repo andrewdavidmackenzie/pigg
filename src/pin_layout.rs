@@ -1,11 +1,11 @@
+use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::style::CustomButton;
 use crate::Gpio;
 use crate::Message;
-use crate::style::CustomButton;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -109,12 +109,10 @@ pub fn physical_pin_view(
                         if *pin_number == bcm_pin_number {
                             Some(*pin_function)
                         } else {
-                            // If not, then use the pin function selected from the UI
-                            gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
+                            None
                         }
                     } else {
-                        // If the pin does not have a BCM number, use the pin function selected from the UI
-                        gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
+                        None
                     }
                 })
                 .or_else(|| gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]),
@@ -133,12 +131,10 @@ pub fn physical_pin_view(
                         if *pin_number == bcm_pin_number {
                             Some(*pin_function)
                         } else {
-                            // If not, then use the pin function selected from the UI
-                            gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
+                            None
                         }
                     } else {
-                        // If the pin does not have a BCM number, use the pin function selected from the UI
-                        gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
+                        None
                     }
                 })
                 // If no configured pin function found, fallback to the pin function selected from the UI
