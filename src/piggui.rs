@@ -165,15 +165,10 @@ impl Application for Gpio {
                 self.config_filename = Some(filename.clone());
                 self.gpio_config = config.clone();
 
-                for (pin_number, pin_function) in config.configured_pins.iter() {
-                    self.pin_function_selected[*pin_number as usize - 1] = Some(*pin_function);
-                }
-
                 self.update_hw_config();
             }
             Message::None => {}
             Message::Save => {
-
                 // Synchronous file handling
                 if let Some(path) = FileDialog::new().set_title("Choose files").save_file() {
                     let path_str = path.to_str().unwrap();
