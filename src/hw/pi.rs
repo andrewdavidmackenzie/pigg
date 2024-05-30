@@ -8,23 +8,21 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::gpio::{GPIOConfig, GPIOState, PinDescription};
+use crate::gpio::{BCMPinNumber, GPIOConfig, GPIOState, PinDescription};
 use crate::gpio::{InputPull, PinFunction};
 
 use super::Hardware;
 use super::HardwareDescriptor;
 
-// TODO state will be used at some point I imagine, if not remove it. When used remove the next line
-#[allow(dead_code)]
 enum Pin {
     Input(InputPin),
+    #[allow(dead_code)] // TODO
     Output(OutputPin),
 }
 
 // Tuples of bcm_pin_number and Pin
 pub struct PiHW {
-    // TODO not sure if this is useful/needed, if we can read the config from the pins via rppal
-    configured_pins: HashMap<u8, Pin>,
+    configured_pins: HashMap<BCMPinNumber, Pin>,
 }
 
 pub fn get() -> impl Hardware {
@@ -69,7 +67,7 @@ impl Hardware for PiHW {
     /// configure the Pi GPIO hardware to correspond to it
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(u8, bool) + Send + Sync + Clone + 'static,
+        C: FnMut(BCMPinNumber, bool) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_config) in &config.configured_pins {
@@ -87,30 +85,13 @@ impl Hardware for PiHW {
     /// Apply the requested config to one pin, using bcm_pin_number
     fn apply_pin_config<C>(
         &mut self,
-        bcm_pin_number: u8,
+        bcm_pin_number: BCMPinNumber,
         pin_function: &Option<PinFunction>,
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(u8, bool) + Send + Sync + 'static,
+        C: FnMut(BCMPinNumber, bool) + Send + Sync + 'static,
     {
-        /* TODO check for an actual change
-        match (previous_function, new_function) {
-            (Some(PinFunction::Input(_)), PinFunction::Input(_)) => { /* No change */ }
-            (Some(PinFunction::Input(_)), _) => {
-                // was an input, not anymore
-            }
-            (_, PinFunction::Input(_)) => {
-                // was not an input, is now
-                if let Some(ref mut listener) = &mut self.listener_sender {
-                    let _ = listener
-                        .try_send(HardwareEvent::InputPinAdded(bcm_pin_number, new_function));
-                }
-            }
-            (_, _) => { /* Don't care! */ }
-        }
-         */
-
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
 
@@ -232,7 +213,7 @@ impl Hardware for PiHW {
     }
 
     /// Read the input level of an input using the bcm pin number
-    fn get_input_level(&self, bcm_pin_number: u8) -> io::Result<bool> {
+    fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         match self.configured_pins.get(&bcm_pin_number) {
             Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
             _ => Err(io::Error::new(

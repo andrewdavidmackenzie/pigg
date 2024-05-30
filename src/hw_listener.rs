@@ -6,7 +6,7 @@ use iced::futures::channel::mpsc::Sender;
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction};
 use crate::hw;
 use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
@@ -17,27 +17,28 @@ use crate::hw_listener::HWListenerEvent::InputChange;
 #[allow(clippy::large_enum_variant)] // remove when fix todo above
 #[derive(Clone, Debug)]
 pub enum HWListenerEvent {
-    /// This listener event indicates that the listener is ready. It conveys a sender to the GUI
+    /// This event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
     Ready(
         Sender<HardwareEvent>,
         HardwareDescriptor,
         [PinDescription; 40],
     ),
+    /// This event indicates that the logic level of an input has just changed
     InputChange(LevelChange),
 }
 
 /// LevelChange describes the change in level of an input (bcm_pin_number, level, timestamp)
 #[derive(Clone, Debug)]
 pub struct LevelChange {
-    pub bcm_pin_number: u8,
+    pub bcm_pin_number: BCMPinNumber,
     pub new_level: bool,
     pub timestamp: SystemTime,
 }
 
 impl LevelChange {
     /// Create a new LevelChange event with the timestamp for now
-    fn new(bcm_pin_number: u8, new_level: bool) -> Self {
+    fn new(bcm_pin_number: BCMPinNumber, new_level: bool) -> Self {
         Self {
             bcm_pin_number,
             new_level,

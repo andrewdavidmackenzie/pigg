@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::gpio::{GPIOConfig, GPIOState, PinDescription, PinFunction};
+use crate::gpio::{BCMPinNumber, GPIOConfig, GPIOState, PinDescription, PinFunction};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -29,7 +29,7 @@ impl Hardware for NoneHW {
 
     fn apply_config<C>(&mut self, _config: &GPIOConfig, _callback: C) -> io::Result<()>
     where
-        C: FnMut(u8, bool),
+        C: FnMut(BCMPinNumber, bool),
     {
         println!("GPIO Config has been applied to fake hardware");
         Ok(())
@@ -37,12 +37,12 @@ impl Hardware for NoneHW {
 
     fn apply_pin_config<C>(
         &mut self,
-        bcm_pin_number: u8,
+        bcm_pin_number: BCMPinNumber,
         _pin_function: &Option<PinFunction>,
         _callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(u8, bool),
+        C: FnMut(BCMPinNumber, bool),
     {
         println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
@@ -55,7 +55,7 @@ impl Hardware for NoneHW {
     }
 
     /// Read the input level of an input using the bcm pin number
-    fn get_input_level(&self, _bcm_pin_number: u8) -> io::Result<bool> {
+    fn get_input_level(&self, _bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         Ok(true)
     }
 }
