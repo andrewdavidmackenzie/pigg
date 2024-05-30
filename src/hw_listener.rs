@@ -69,22 +69,17 @@ enum State {
 fn send_current_input_states(
     mut tx: Sender<HardwareEvent>,
     config: &GPIOConfig,
-    pin_descriptions: &[PinDescription; 40],
     connected_hardware: &impl Hardware,
 ) {
     // Send initial levels
-    for (board_pin_number, pin_function) in &config.configured_pins {
+    for (bcm_pin_number, pin_function) in &config.configured_pins {
         if let PinFunction::Input(_pullup) = pin_function {
-            if let Some(bcm_pin_number) =
-                pin_descriptions[*board_pin_number as usize - 1].bcm_pin_number
-            {
-                // Update UI with initial state
-                if let Ok(initial_level) = connected_hardware.get_input_level(bcm_pin_number) {
-                    let _ = tx.try_send(InputLevelChanged(LevelChange::new(
-                        bcm_pin_number,
-                        initial_level,
-                    )));
-                }
+            // Update UI with initial state
+            if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
+                let _ = tx.try_send(InputLevelChanged(LevelChange::new(
+                    *bcm_pin_number,
+                    initial_level,
+                )));
             }
         }
     }
@@ -142,7 +137,6 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                 send_current_input_states(
                                     hardware_event_sender.clone(),
                                     &config,
-                                    &pin_descriptions,
                                     &connected_hardware,
                                 );
                             }
