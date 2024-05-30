@@ -40,7 +40,7 @@ impl Hardware for PicoHW {
     fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: u8,
-        pin_function: &PinFunction,
+        _pin_function: &Option<PinFunction>,
         mut _callback: C,
     ) -> io::Result<()>
     where
