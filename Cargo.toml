@@ -38,6 +38,6 @@ iced_native = { version = "0.10.3", optional = true }
 tokio = { version = "1", features = ["sync"], optional = true }
 serde = { version = "1.0.203", features = ["derive"], optional = true }
 serde_json = "1.0.117"
-
+rfd = "0.14"
 [dev-dependencies]
 tempfile = "3"

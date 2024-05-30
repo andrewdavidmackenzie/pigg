@@ -1,16 +1,17 @@
+use rfd::FileDialog;
 use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Column, container, pick_list, Row, Text};
+use iced::widget::{button, container, pick_list, Column, Row, Text};
+use iced::{
+    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 
 // Custom Widgets
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HardwareEvent, HWListenerEvent};
+use crate::hw_listener::{HWListenerEvent, HardwareEvent};
 // Importing pin layout views
 use crate::pin_layout::{logical_pin_view, physical_pin_view};
 
@@ -70,6 +71,7 @@ pub enum Message {
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
+    Save,
 }
 
 pub struct Gpio {
@@ -178,7 +180,7 @@ impl Application for Gpio {
                 self.chosen_layout = layout;
             }
             Message::ConfigLoaded((filename, config)) => {
-                self.config_filename = Some(filename);
+                self.config_filename = Some(filename.clone());
                 self.gpio_config = config.clone();
 
                 for (pin_number, pin_function) in config.configured_pins.iter() {
@@ -187,8 +189,22 @@ impl Application for Gpio {
 
                 self.update_hw_config();
             }
-
             Message::None => {}
+            Message::Save => {
+                if let Some(path) = FileDialog::new().set_title("Choose files").save_file() {
+                    let path_str = path.to_str().unwrap();
+
+                    if let Err(err) = self.gpio_config.save(path_str) {
+                        eprintln!("Error saving configuration to {}: {}", path.display(), err);
+                    } else {
+                        println!("Configuration saved to {}", path.display());
+                    }
+                    println!("{:?}", self.gpio_config);
+                } else {
+                    println!("No file selected for saving configuration.");
+                }
+            }
+
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
                     self.listener_sender = Some(config_change_sender);
@@ -229,6 +245,7 @@ impl Application for Gpio {
                 Column::new()
                     .push(layout_row)
                     .push(hardware_desc_row)
+                    .push(button("save config").on_press(Message::Save))
                     .align_items(Alignment::Center)
                     .width(Length::Fixed(400.0))
                     .spacing(10),
