@@ -65,7 +65,7 @@ pub fn bcm_pin_layout_view(
     pins_slice.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
 
     for pin in pins_slice {
-        let pin_row = create_pin_view_side(pin, select_pin_function(pin, pin_config, &gpio), true);
+        let pin_row = create_pin_view_side(pin, select_pin_function(pin, pin_config, gpio), true);
 
         column = column.push(pin_row).push(iced::widget::Space::new(
             Length::Fixed(1.0),
