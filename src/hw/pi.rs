@@ -120,13 +120,13 @@ impl Hardware for PiHW {
                     .unwrap()
                     .get(bcm_pin_number)
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-                let output = match value {
-                    None => pin.into_output(),
+                let output_pin = match value {
                     Some(true) => pin.into_output_high(),
                     Some(false) => pin.into_output_low(),
+                    None => pin.into_output(),
                 };
                 self.configured_pins
-                    .insert(bcm_pin_number, Pin::Output(output));
+                    .insert(bcm_pin_number, Pin::Output(output_pin));
             }
             // TODO implement all of these IC2 channel configs
             &Some(PinFunction::I2C1_SDA) => {
