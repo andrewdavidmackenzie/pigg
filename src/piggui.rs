@@ -162,11 +162,7 @@ impl Application for Gpio {
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
                 self.gpio_config = config.clone();
-
-                for (pin_number, pin_function) in config.configured_pins.iter() {
-                    self.pin_function_selected[*pin_number as usize - 1] = Some(*pin_function);
-                }
-
+                
                 self.update_hw_config();
             }
 
