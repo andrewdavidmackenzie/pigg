@@ -8,7 +8,9 @@ use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
-use crate::gpio::{BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use crate::gpio::{
+    BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
+};
 use crate::hw::HardwareDescriptor;
 use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
@@ -71,8 +73,7 @@ pub enum Message {
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
-    ChangeOutputLevel(bool),
-    // TODO ChangeOutputLevel(BCMPinNumber, bool),
+    ChangeOutputLevel(BCMPinNumber, bool),
 }
 
 pub struct Gpio {
@@ -184,10 +185,9 @@ impl Application for Gpio {
                     println!("Input changed: {:?}", level_change);
                 }
             },
-            // TODO Message::ChangeOutputLevel(bcm_pin_number, new_level) => {
-            Message::ChangeOutputLevel(new_level) => {
-                // TODO self.pin_states[bcm_pin_number as usize] = Some(new_level);
-                println!("Change of output BCM pin to {new_level}");
+            Message::ChangeOutputLevel(bcm_pin_number, new_level) => {
+                self.pin_states[bcm_pin_number as usize] = Some(new_level);
+                println!("Change of output BCM pin #{bcm_pin_number} to {new_level}");
             }
         }
         Command::none()

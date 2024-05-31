@@ -3,7 +3,7 @@ use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::led::led;
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction, PinLevel};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
 use crate::Gpio;
 use crate::Message;
 use crate::style::CustomButton;
@@ -127,22 +127,19 @@ pub fn board_pin_layout_view(
 /// Create the widget that either shows an input pin's state,
 /// or allows the user to control the state of an output pin
 fn get_pin_widget(
-    _pin: &PinDescription,
+    bcm_pin_number: Option<BCMPinNumber>,
     pin_function: &Option<PinFunction>,
     pin_state: Option<PinLevel>,
 ) -> Row<'static, Message> {
-    let mut row = Row::new();
-    row = match pin_function {
-        Some(PinFunction::Input(_)) => row.push(led(12.0, pin_state)),
+    let row = match pin_function {
+        Some(PinFunction::Input(_)) => Row::new().push(led(12.0, pin_state)),
         Some(PinFunction::Output(level)) => {
-            let toggler = toggler(
-                None,
-                level.unwrap_or(false),
-                Message::ChangeOutputLevel, // TODO pin.bcm_pin_number.unwrap()
-            );
-            row.push(toggler)
+            let toggler = toggler(None, level.unwrap_or(false), move |b| {
+                Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
+            });
+            Row::new().push(toggler)
         }
-        _ => row,
+        _ => Row::new(),
     };
     row.width(Length::Fixed(50f32))
         .align_items(Alignment::Center)
@@ -161,7 +158,7 @@ fn create_pin_view_side(
         None => None,
         Some(bcm) => pin_states[bcm as usize],
     };
-    let pin_widget = get_pin_widget(pin, pin_function, pin_state);
+    let pin_widget = get_pin_widget(pin.bcm_pin_number, pin_function, pin_state);
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
