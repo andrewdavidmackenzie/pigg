@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, GPIOState, PinDescription, PinFunction};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction};
 use crate::hw::pin_descriptions::*;
 
 /// There are three implementations of [`Hardware`] trait:
@@ -46,9 +46,6 @@ pub trait Hardware {
     ) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, bool) + Send + Sync + 'static;
-    #[allow(dead_code)] // TODO remove later when used
-    /// Get the state of the input pins
-    fn get_state(&self) -> GPIOState;
     /// Read the input level of an input using the bcm pin number
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool>;
 }

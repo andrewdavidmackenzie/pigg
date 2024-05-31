@@ -8,7 +8,7 @@ use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
-use crate::gpio::{BoardPinNumber, GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
 use crate::hw::HardwareDescriptor;
 use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
@@ -83,7 +83,7 @@ pub struct Gpio {
     chosen_layout: Layout,
     hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
-    pin_states: [Option<bool>; 40],
+    pin_states: [Option<PinLevel>; 40],
     /// Either desired state or output, or detected state of input. Note BCMPinNumber, that starts
     /// at 0 (GPIO0)
     pin_descriptions: Option<[PinDescription; 40]>,

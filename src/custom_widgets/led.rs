@@ -4,18 +4,20 @@ use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
 use iced::mouse;
 
+use crate::gpio::PinLevel;
+
 pub struct Led {
     radius: f32,
-    state: bool,
+    state: Option<PinLevel>,
 }
 
 impl Led {
-    pub fn new(radius: f32, state: bool) -> Self {
+    pub fn new(radius: f32, state: Option<PinLevel>) -> Self {
         Self { radius, state }
     }
 }
 
-pub fn led(radius: f32, state: bool) -> Led {
+pub fn led(radius: f32, state: Option<PinLevel>) -> Led {
     Led::new(radius, state)
 }
 
@@ -50,8 +52,9 @@ where
         _viewport: &Rectangle,
     ) {
         let color = match self.state {
-            false => Color::new(0.0, 0.502, 0.0, 1.0),
-            true => Color::new(1.0, 0.0, 0.0, 1.0),
+            None => Color::BLACK,
+            Some(false) => Color::new(0.0, 0.502, 0.0, 1.0),
+            Some(true) => Color::new(1.0, 0.0, 0.0, 1.0),
         };
 
         renderer.fill_quad(

@@ -41,7 +41,7 @@ pub enum PinFunction {
 
     /// GPIO functions
     Input(Option<InputPull>),
-    Output(Option<bool>),
+    Output(Option<PinLevel>),
 
     /// General Purpose CLock functions (from https://pinout.xyz/pinout/gpclk)
     GPCLK0,
@@ -148,13 +148,6 @@ impl GPIOConfig {
 }
 
 pub type PinLevel = bool;
-
-// TBD whether we should merge state with config
-// on config load, for an output pin we would set the level...
-#[derive(Debug)]
-pub struct GPIOState {
-    pub pin_state: [Option<PinLevel>; 40], // TODO make private later
-}
 
 #[cfg(test)]
 mod test {

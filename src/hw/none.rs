@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, GPIOState, PinDescription, PinFunction};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -46,12 +46,6 @@ impl Hardware for NoneHW {
     {
         println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
-    }
-
-    fn get_state(&self) -> GPIOState {
-        GPIOState {
-            pin_state: [None; 40],
-        }
     }
 
     /// Read the input level of an input using the bcm pin number

@@ -8,7 +8,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, GPIOState, PinDescription};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription};
 use crate::gpio::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -199,17 +199,6 @@ impl Hardware for PiHW {
 
         println!("Pin BCM# {bcm_pin_number} config changed");
         Ok(())
-    }
-
-    /// Return the state of the Input pins and other pins whose state is read from GPIO hardware
-    // TODO might deprecate this in favor of some sort of message or callback when an input changes
-    // its value, to trigger a UI update...
-    // messages will need to be able to capture other types of input, Image (SPIO), value from ADC
-    // string of characters from a UART, etc
-    fn get_state(&self) -> GPIOState {
-        GPIOState {
-            pin_state: [None; 40],
-        }
     }
 
     /// Read the input level of an input using the bcm pin number

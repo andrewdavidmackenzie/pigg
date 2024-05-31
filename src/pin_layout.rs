@@ -3,7 +3,7 @@ use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::led::led;
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{GPIOConfig, PinDescription, PinFunction, PinLevel};
 use crate::Gpio;
 use crate::Message;
 use crate::style::CustomButton;
@@ -71,6 +71,7 @@ pub fn bcm_pin_layout_view(
             select_pin_function(pin, pin_config, gpio),
             true,
             &gpio.pin_function_selected[pin.board_pin_number as usize - 1],
+            gpio.pin_states[pin.bcm_pin_number.unwrap() as usize],
         );
 
         column = column.push(pin_row).push(iced::widget::Space::new(
@@ -97,6 +98,7 @@ pub fn board_pin_layout_view(
             select_pin_function(&pair[0], pin_config, gpio),
             true,
             &gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
+            gpio.pin_states[pair[0].bcm_pin_number.unwrap() as usize],
         );
 
         let right_row = create_pin_view_side(
@@ -104,6 +106,7 @@ pub fn board_pin_layout_view(
             select_pin_function(&pair[1], pin_config, gpio),
             false,
             &gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
+            gpio.pin_states[pair[1].bcm_pin_number.unwrap() as usize],
         );
 
         let row = Row::new()
@@ -126,10 +129,11 @@ pub fn board_pin_layout_view(
 fn get_pin_widget(
     _pin: &PinDescription,
     pin_function: &Option<PinFunction>,
+    pin_state: Option<PinLevel>,
 ) -> Row<'static, Message> {
     let mut row = Row::new();
     row = match pin_function {
-        Some(PinFunction::Input(_)) => row.push(led(12.0, false)),
+        Some(PinFunction::Input(_)) => row.push(led(12.0, pin_state)),
         Some(PinFunction::Output(level)) => {
             let toggler = toggler(
                 None,
@@ -150,9 +154,10 @@ fn create_pin_view_side(
     selected_function: Option<PinFunction>,
     is_left: bool,
     pin_function: &Option<PinFunction>,
+    pin_state: Option<PinLevel>,
 ) -> Row<'static, Message> {
     // Create a widget that is either used to visualize an input or control an output
-    let pin_widget = get_pin_widget(pin, pin_function);
+    let pin_widget = get_pin_widget(pin, pin_function, pin_state);
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
