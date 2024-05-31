@@ -170,7 +170,6 @@ impl Application for Gpio {
                 self.gpio_config = config.clone();
                 self.update_hw_config();
             }
-
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
