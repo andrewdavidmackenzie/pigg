@@ -143,6 +143,15 @@ impl Gpio {
             for pin in gpio_pins {
                 if let Some(function) = select_pin_function(pin, &self.gpio_config, self) {
                     self.pin_function_selected[pin.board_pin_number as usize - 1] = Some(function);
+
+                    // For output pins, if there is an initial state set then set that in pin state
+                    // so the toggler will be drawn correctly on first draw
+                    if let PinFunction::Output(level) = function {
+                        match pin.bcm_pin_number {
+                            None => {}
+                            Some(bcm) => self.pin_states[bcm as usize] = level,
+                        };
+                    }
                 }
             }
         }
@@ -199,6 +208,7 @@ impl Application for Gpio {
                     self.listener_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.pin_descriptions = Some(pins);
+                    self.set_pin_functions_after_load();
                     self.update_hw_config();
                 }
                 HWListenerEvent::InputChange(level_change) => {

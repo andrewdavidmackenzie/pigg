@@ -45,7 +45,7 @@ impl Hardware for PiHW {
 
         for line in fs::read_to_string("/proc/cpuinfo")?.lines() {
             match line
-                .split_once(":")
+                .split_once(':')
                 .map(|(key, value)| (key.trim(), value.trim()))
             {
                 Some(("Hardware", hw)) => descriptor.hardware = hw.to_string(),
@@ -96,7 +96,7 @@ impl Hardware for PiHW {
         self.configured_pins.remove(&bcm_pin_number);
 
         match pin_function {
-            &Some(PinFunction::Input(pull)) => {
+            Some(PinFunction::Input(pull)) => {
                 let pin = Gpio::new()
                     .unwrap()
                     .get(bcm_pin_number)
@@ -115,7 +115,7 @@ impl Hardware for PiHW {
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Input(input));
             }
-            &Some(PinFunction::Output(value)) => {
+            Some(PinFunction::Output(value)) => {
                 let pin = Gpio::new()
                     .unwrap()
                     .get(bcm_pin_number)
@@ -129,70 +129,70 @@ impl Hardware for PiHW {
                     .insert(bcm_pin_number, Pin::Output(output_pin));
             }
             // TODO implement all of these IC2 channel configs
-            &Some(PinFunction::I2C1_SDA) => {
+            Some(PinFunction::I2C1_SDA) => {
                 todo!()
             }
-            &Some(PinFunction::I2C1_SCL) => {}
-            &Some(PinFunction::I2C3_SDA) => {}
-            &Some(PinFunction::I2C3_SCL) => {}
-            &Some(PinFunction::I2C4_SDA) => {}
-            &Some(PinFunction::I2C4_SCL) => {}
-            &Some(PinFunction::I2C5_SDA) => {}
-            &Some(PinFunction::I2C5_SCL) => {}
-            &Some(PinFunction::I2C6_SDA) => {}
-            &Some(PinFunction::I2C6_SCL) => {}
+            Some(PinFunction::I2C1_SCL) => {}
+            Some(PinFunction::I2C3_SDA) => {}
+            Some(PinFunction::I2C3_SCL) => {}
+            Some(PinFunction::I2C4_SDA) => {}
+            Some(PinFunction::I2C4_SCL) => {}
+            Some(PinFunction::I2C5_SDA) => {}
+            Some(PinFunction::I2C5_SCL) => {}
+            Some(PinFunction::I2C6_SDA) => {}
+            Some(PinFunction::I2C6_SCL) => {}
 
             // SPI Interface #0
-            &Some(PinFunction::SPI0_MOSI) => {}
-            &Some(PinFunction::SPI0_MISO) => {}
-            &Some(PinFunction::SPI0_SCLK) => {}
-            &Some(PinFunction::SPI0_CE0_N) => {}
-            &Some(PinFunction::SPI0_CE1_N) => {}
-            &Some(PinFunction::SPI0_MOMI) => { /* bi di mode */ }
+            Some(PinFunction::SPI0_MOSI) => {}
+            Some(PinFunction::SPI0_MISO) => {}
+            Some(PinFunction::SPI0_SCLK) => {}
+            Some(PinFunction::SPI0_CE0_N) => {}
+            Some(PinFunction::SPI0_CE1_N) => {}
+            Some(PinFunction::SPI0_MOMI) => { /* bi di mode */ }
 
             // SPI Interface #1
-            &Some(PinFunction::SPI1_MOSI) => {}
-            &Some(PinFunction::SPI1_MISO) => {}
-            &Some(PinFunction::SPI1_SCLK) => {}
-            &Some(PinFunction::SPI1_CE0_N) => {}
-            &Some(PinFunction::SPI1_CE1_N) => {}
-            &Some(PinFunction::SPI1_CE2_N) => {}
-            &Some(PinFunction::SPI1_MOMI) => { /* bi di mode */ }
+            Some(PinFunction::SPI1_MOSI) => {}
+            Some(PinFunction::SPI1_MISO) => {}
+            Some(PinFunction::SPI1_SCLK) => {}
+            Some(PinFunction::SPI1_CE0_N) => {}
+            Some(PinFunction::SPI1_CE1_N) => {}
+            Some(PinFunction::SPI1_CE2_N) => {}
+            Some(PinFunction::SPI1_MOMI) => { /* bi di mode */ }
 
             // General Purpose CLock functions
-            &Some(PinFunction::GPCLK0) => {}
-            &Some(PinFunction::GPCLK1) => {}
-            &Some(PinFunction::GPCLK2) => {}
+            Some(PinFunction::GPCLK0) => {}
+            Some(PinFunction::GPCLK1) => {}
+            Some(PinFunction::GPCLK2) => {}
 
             // TODO think about how to handle UART output, maybe some sort of channel is created
             // and text received on it is sent to the UART or similar.
-            &Some(PinFunction::UART0_TXD) => {}
-            &Some(PinFunction::UART0_RXD) => {}
+            Some(PinFunction::UART0_TXD) => {}
+            Some(PinFunction::UART0_RXD) => {}
 
             // PCM (Pulse Width Modulation) functions
-            &Some(PinFunction::PWM0) => {}
-            &Some(PinFunction::PWM1) => {}
+            Some(PinFunction::PWM0) => {}
+            Some(PinFunction::PWM1) => {}
 
-            &Some(PinFunction::PCM_DIN) => {}
-            &Some(PinFunction::PCM_DOUT) => {}
-            &Some(PinFunction::PCM_FS) => {}
-            &Some(PinFunction::PCM_CLK) => {}
+            Some(PinFunction::PCM_DIN) => {}
+            Some(PinFunction::PCM_DOUT) => {}
+            Some(PinFunction::PCM_FS) => {}
+            Some(PinFunction::PCM_CLK) => {}
 
             // HAT EEPROM ID functions, only used at boot and not configurable
-            &Some(PinFunction::I2C_EEPROM_ID_SD | PinFunction::I2C_EEPROM_ID_SC) => {
+            Some(PinFunction::I2C_EEPROM_ID_SD | PinFunction::I2C_EEPROM_ID_SC) => {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
                     "I2C_EEPROM_ID_SD and SC pins cannot be configured",
                 ));
             }
 
-            &Some(PinFunction::Ground | PinFunction::Power3V3 | PinFunction::Power5V) => {
+            Some(PinFunction::Ground | PinFunction::Power3V3 | PinFunction::Power5V) => {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
                     "Ground, 3V3 or 5V pins cannot be configured",
                 ));
             }
-            &None => {
+            None => {
                 // TODO Back to none
             }
         }
