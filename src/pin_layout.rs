@@ -118,16 +118,18 @@ fn create_pin_view_side(
     selected_function: Option<PinFunction>,
     is_left: bool,
 ) -> Row<'static, Message> {
+    // Create a widget that is either used to visualize an input or control an output
+    let pin_widget = Row::new().align_items(Alignment::Center);
+
+    // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
         .width(Length::Fixed(140f32))
         .align_items(Alignment::Center);
-    let pin_number = pin.board_pin_number as usize;
-
     if pin.options.len() > 1 {
+        let pin_number = pin.board_pin_number as usize;
         let mut pin_options_row = Row::new()
             .align_items(Alignment::Center)
             .width(Length::Fixed(140f32));
-
         pin_options_row = pin_options_row.push(
             pick_list(pin.options, selected_function, move |pin_function| {
                 Message::PinFunctionSelected(pin_number, pin_function)
@@ -138,13 +140,12 @@ fn create_pin_view_side(
         pin_option = pin_option.push(pin_options_row);
     }
 
+    // Create the Pin name
     let mut pin_name = Column::new()
         .width(Length::Fixed(55f32))
         .align_items(Alignment::Center);
-
     let mut pin_name_row = Row::new().align_items(Alignment::Center);
     pin_name_row = pin_name_row.push(Text::new(pin.name));
-
     pin_name = pin_name.push(pin_name_row);
 
     let mut pin_arrow = Column::new()
@@ -160,14 +161,15 @@ fn create_pin_view_side(
         pin_arrow_row = pin_arrow_row.push(circle(5.0));
     }
 
+    // Create the "pin arrow" a small drawing to illustrate the pin
     pin_arrow = pin_arrow.push(pin_arrow_row);
 
+    // Create the pin itself, with number and as a button
     let mut pin_button = Column::new()
         .width(Length::Fixed(40f32))
         .height(Length::Shrink)
         .spacing(10)
         .align_items(Alignment::Center);
-
     let pin_color = get_pin_color(pin);
     let mut pin_button_row = Row::new().align_items(Alignment::Center);
     pin_button_row = pin_button_row.push(
@@ -179,11 +181,7 @@ fn create_pin_view_side(
     );
     pin_button = pin_button.push(pin_button_row);
 
-    // Create a widget that is either used to visualize an input or control an output
-    let pin_widget = Row::new()
-        .push(Text::new("Widget"))
-        .align_items(Alignment::Center);
-
+    // Create the row of widgets that represent the pin, inverted order if left or right
     if is_left {
         Row::new()
             .push(pin_widget)
