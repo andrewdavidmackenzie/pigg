@@ -1,11 +1,11 @@
+use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::style::CustomButton;
 use crate::Gpio;
 use crate::Message;
-use crate::style::CustomButton;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -51,7 +51,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
 /// View that lays out the pins in a single column ordered by BCM pin number
 pub fn bcm_pin_layout_view(
     pin_descriptions: &[PinDescription; 40],
-    _pin_config: &GPIOConfig,
+    pin_config: &GPIOConfig,
     gpio: &Gpio,
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
@@ -65,11 +65,8 @@ pub fn bcm_pin_layout_view(
     pins_slice.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
 
     for pin in pins_slice {
-        let (pin_option, pin_name, pin_arrow, pin_button) = create_pin_view_side(
-            pin,
-            gpio.pin_function_selected[pin.board_pin_number as usize - 1],
-            true,
-        );
+        let (pin_option, pin_name, pin_arrow, pin_button) =
+            create_pin_view_side(pin, select_pin_function(pin, pin_config, &gpio), true);
 
         let pin_row = Row::new()
             .push(pin_option)
@@ -100,50 +97,13 @@ pub fn board_pin_layout_view(
     for pair in pin_descriptions.chunks(2) {
         let left_view = create_pin_view_side(
             &pair[0],
-            pin_config
-                .configured_pins
-                .iter()
-                .find_map(|(pin_number, pin_function)| {
-                    // Check if the pin has a BCM number
-                    if let Some(bcm_pin_number) = pair[0].bcm_pin_number {
-                        // If the pin number matches the BCM number, use the configured pin function
-                        if *pin_number == bcm_pin_number {
-                            Some(*pin_function)
-                        } else {
-                            // If not, then use the pin function selected from the UI
-                            gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
-                        }
-                    } else {
-                        // If the pin does not have a BCM number, use the pin function selected from the UI
-                        gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]
-                    }
-                })
-                .or_else(|| gpio.pin_function_selected[pair[0].board_pin_number as usize - 1]),
+            select_pin_function(&pair[0], pin_config, &gpio),
             true,
         );
 
         let right_view = create_pin_view_side(
             &pair[1],
-            pin_config
-                .configured_pins
-                .iter()
-                .find_map(|(pin_number, pin_function)| {
-                    // Check if the pin has a BCM number
-                    if let Some(bcm_pin_number) = pair[1].bcm_pin_number {
-                        // If the pin number matches the BCM number, use the configured pin function
-                        if *pin_number == bcm_pin_number {
-                            Some(*pin_function)
-                        } else {
-                            // If not, then use the pin function selected from the UI
-                            gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
-                        }
-                    } else {
-                        // If the pin does not have a BCM number, use the pin function selected from the UI
-                        gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]
-                    }
-                })
-                // If no configured pin function found, fallback to the pin function selected from the UI
-                .or_else(|| gpio.pin_function_selected[pair[1].board_pin_number as usize - 1]),
+            select_pin_function(&pair[1], pin_config, &gpio),
             false,
         );
 
@@ -240,4 +200,29 @@ fn create_pin_view_side(
     pin_button = pin_button.push(pin_button_row);
 
     (pin_option, pin_name, pin_arrow, pin_button)
+}
+
+fn select_pin_function(
+    pin: &PinDescription,
+    pin_config: &GPIOConfig,
+    gpio: &Gpio,
+) -> Option<PinFunction> {
+    pin_config
+        .configured_pins
+        .iter()
+        .find_map(|(pin_number, pin_function)| {
+            // Check if the pin has a BCM number
+            if let Some(bcm_pin_number) = pin.bcm_pin_number {
+                // If the pin number matches the BCM number, use the configured pin function
+                if *pin_number == bcm_pin_number {
+                    Some(*pin_function)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        // Else Select from the UI
+        .or_else(|| gpio.pin_function_selected[pin.board_pin_number as usize - 1])
 }
