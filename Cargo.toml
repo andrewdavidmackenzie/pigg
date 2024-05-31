@@ -24,7 +24,7 @@ required-features = ["pi"]
 default = []
 pi = ["rppal"]
 pico = [] #embassy
-gui = ["iced", "tokio", "serde", "iced_futures"]
+gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd"]
 
 [dependencies]
 # for interacting with GPIO on the Raspberry Pi
@@ -37,8 +37,8 @@ iced_futures = { version = "0.12.0", default-features = false, optional = true }
 iced_native = { version = "0.10.3", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
 serde = { version = "1.0.203", features = ["derive"], optional = true }
-serde_json = "1.0.117"
-rfd = "0.14.1"
+serde_json = { version = "1.0.117", optional = true }
+rfd = { version = "0.14.1", optional = true }
 
 [dev-dependencies]
 tempfile = "3"
