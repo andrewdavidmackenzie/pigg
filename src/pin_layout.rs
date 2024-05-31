@@ -1,11 +1,11 @@
-use iced::widget::{button, container, pick_list, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
+use iced::widget::{button, Column, container, pick_list, Row, Text};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
-use crate::style::CustomButton;
 use crate::Gpio;
 use crate::Message;
+use crate::style::CustomButton;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -66,7 +66,7 @@ pub fn bcm_pin_layout_view(
 
     for pin in pins_slice {
         let (pin_option, pin_name, pin_arrow, pin_button) =
-            create_pin_view_side(pin, select_pin_function(pin, pin_config, &gpio), true);
+            create_pin_view_side(pin, select_pin_function(pin, pin_config, gpio), true);
 
         let pin_row = Row::new()
             .push(pin_option)
@@ -97,13 +97,13 @@ pub fn board_pin_layout_view(
     for pair in pin_descriptions.chunks(2) {
         let left_view = create_pin_view_side(
             &pair[0],
-            select_pin_function(&pair[0], pin_config, &gpio),
+            select_pin_function(&pair[0], pin_config, gpio),
             true,
         );
 
         let right_view = create_pin_view_side(
             &pair[1],
-            select_pin_function(&pair[1], pin_config, &gpio),
+            select_pin_function(&pair[1], pin_config, gpio),
             false,
         );
 
