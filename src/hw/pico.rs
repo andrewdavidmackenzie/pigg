@@ -4,7 +4,7 @@ use std::io;
 #[cfg(feature = "rppal")]
 use rppal::gpio::{InputPin, Level, Trigger};
 
-use crate::gpio::{GPIOConfig, GPIOState};
+use crate::gpio::{BCMPinNumber, GPIOConfig, GPIOState};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -31,7 +31,7 @@ impl Hardware for PicoHW {
 
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(bool),
+        C: FnMut(BCMPinNumber, bool) + Send + Sync + Clone + 'static,
     {
         println!("GPIO Config has been applied to Pico hardware");
         Ok(())
@@ -39,12 +39,12 @@ impl Hardware for PicoHW {
 
     fn apply_pin_config<C>(
         &mut self,
-        bcm_pin_number: u8,
+        _bcm_pin_number: BCMPinNumber,
         _pin_function: &Option<PinFunction>,
         mut _callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(u8, bool) + Send + Sync + 'static,
+        C: FnMut(BCMPinNumber, bool) + Send + Sync + 'static,
     {
         println!("Pin (BCM#) {_pin_number} config changed");
         Ok(())
@@ -57,7 +57,13 @@ impl Hardware for PicoHW {
     }
 
     /// Read the input level of an input using the bcm pin number
-    fn get_input_level(&self, bcm_pin_number: u8) -> io::Result<bool> {
+    fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         Ok(true)
+    }
+
+    /// Write the output level of an output using the bcm pin number
+    fn set_output_level(&mut self, bcm_pin_number: BCMPinNumber, level: PinLevel) -> io::Result {
+        println!("Output with BCM Pin #{bcm_pin_number} set to {level}");
+        Ok()
     }
 }

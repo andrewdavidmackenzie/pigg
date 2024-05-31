@@ -6,7 +6,7 @@ use iced::futures::channel::mpsc::Sender;
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
 use crate::hw;
 use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
@@ -17,27 +17,28 @@ use crate::hw_listener::HWListenerEvent::InputChange;
 #[allow(clippy::large_enum_variant)] // remove when fix todo above
 #[derive(Clone, Debug)]
 pub enum HWListenerEvent {
-    /// This listener event indicates that the listener is ready. It conveys a sender to the GUI
+    /// This event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
     Ready(
         Sender<HardwareEvent>,
         HardwareDescriptor,
         [PinDescription; 40],
     ),
+    /// This event indicates that the logic level of an input has just changed
     InputChange(LevelChange),
 }
 
 /// LevelChange describes the change in level of an input (bcm_pin_number, level, timestamp)
 #[derive(Clone, Debug)]
 pub struct LevelChange {
-    pub bcm_pin_number: u8,
+    pub bcm_pin_number: BCMPinNumber,
     pub new_level: bool,
     pub timestamp: SystemTime,
 }
 
 impl LevelChange {
     /// Create a new LevelChange event with the timestamp for now
-    fn new(bcm_pin_number: u8, new_level: bool) -> Self {
+    fn new(bcm_pin_number: BCMPinNumber, new_level: bool) -> Self {
         Self {
             bcm_pin_number,
             new_level,
@@ -56,6 +57,8 @@ pub enum HardwareEvent {
     NewPinConfig(u8, Option<PinFunction>),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
     InputLevelChanged(LevelChange),
+    /// The level of an output pin has been set to a new value
+    OutputLevelChanged(BCMPinNumber, PinLevel),
 }
 
 /// This enum describes the states of the listener
@@ -156,6 +159,10 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                             }
                             InputLevelChanged(level_change) => {
                                 let _ = gui_sender.send(InputChange(level_change)).await;
+                            }
+                            HardwareEvent::OutputLevelChanged(bcm_pin_number, new_level) => {
+                                let _ =
+                                    connected_hardware.set_output_level(bcm_pin_number, new_level);
                             }
                         }
                     }

@@ -1,18 +1,20 @@
 use std::{env, io};
 
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
-    Subscription, Theme,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
 // Custom Widgets
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{
+    BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
+};
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HWListenerEvent, HardwareEvent};
+use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
-use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
+use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
 
 mod gpio;
 mod hw;
@@ -20,6 +22,7 @@ mod pin_layout;
 mod style;
 mod custom_widgets {
     pub mod circle;
+    pub mod led;
     pub mod line;
 }
 mod hw_listener;
@@ -64,12 +67,13 @@ fn main() -> Result<(), iced::Error> {
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Activate(u8),
+    Activate(BoardPinNumber),
     PinFunctionSelected(usize, PinFunction),
     LayoutChanged(Layout),
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
+    ChangeOutputLevel(BCMPinNumber, bool),
     Save,
 }
 
@@ -81,6 +85,9 @@ pub struct Gpio {
     chosen_layout: Layout,
     hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
+    /// Either desired state or output, or detected state of input. Note BCMPinNumber, that starts
+    /// at 0 (GPIO0)
+    pin_states: [Option<PinLevel>; 40],
     pin_descriptions: Option<[PinDescription; 40]>,
 }
 
@@ -134,6 +141,36 @@ impl Gpio {
             }
         }
     }
+
+    /// Go through all the pins in the loaded GPIOConfig and set its function in the
+    /// pin_function_selected array, which is what is used for drawing the UI correctly.
+    // TODO this has a lot in common with bcm_pin_layout_view() in pin_layout.rs see if we can merge
+    // TODO or factor out a function - maybe improve data structures as we have a bit of
+    // TODO repitition - use a map to find by BCM pin number or something
+    fn set_pin_functions_after_load(&mut self) {
+        if let Some(pins) = &self.pin_descriptions {
+            let gpio_pins = pins
+                .iter()
+                .filter(|pin| pin.options.len() > 1)
+                .filter(|pin| pin.bcm_pin_number.is_some())
+                .collect::<Vec<&PinDescription>>();
+
+            for pin in gpio_pins {
+                if let Some(function) = select_pin_function(pin, &self.gpio_config, self) {
+                    self.pin_function_selected[pin.board_pin_number as usize - 1] = Some(function);
+
+                    // For output pins, if there is an initial state set then set that in pin state
+                    // so the toggler will be drawn correctly on first draw
+                    if let PinFunction::Output(level) = function {
+                        match pin.bcm_pin_number {
+                            None => {}
+                            Some(bcm) => self.pin_states[bcm as usize] = level,
+                        };
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl Application for Gpio {
@@ -152,6 +189,7 @@ impl Application for Gpio {
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
                 pin_descriptions: None,     // Until listener is ready
+                pin_states: [None; 40],
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -166,11 +204,8 @@ impl Application for Gpio {
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
-            Message::Activate(pin_number) => {
-                println!("Pin {pin_number} clicked");
-            }
+            Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(board_pin_number, pin_function) => {
-                // TODO currently there is no way in UI to un-configure a pin!
                 self.new_pin_function(board_pin_number, Some(pin_function));
             }
             Message::LayoutChanged(layout) => {
@@ -179,7 +214,7 @@ impl Application for Gpio {
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
                 self.gpio_config = config.clone();
-
+                self.set_pin_functions_after_load();
                 self.update_hw_config();
             }
             Message::Save => {
@@ -206,7 +241,7 @@ impl Application for Gpio {
                 };
 
                 // Await the future and handle any messages from the async block
-                return iced::Command::perform(save_future, |_| Message::None);
+                return Command::perform(save_future, |_| Message::None);
             }
             Message::None => {}
             Message::HardwareListener(event) => match event {
@@ -214,14 +249,22 @@ impl Application for Gpio {
                     self.listener_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.pin_descriptions = Some(pins);
+                    self.set_pin_functions_after_load();
                     self.update_hw_config();
                 }
                 HWListenerEvent::InputChange(level_change) => {
-                    println!("Input changed: {:?}", level_change);
+                    self.pin_states[level_change.bcm_pin_number as usize] =
+                        Some(level_change.new_level);
                 }
             },
+            Message::ChangeOutputLevel(bcm_pin_number, new_level) => {
+                self.pin_states[bcm_pin_number as usize] = Some(new_level);
+                if let Some(ref mut listener) = &mut self.listener_sender {
+                    let _ = listener
+                        .try_send(HardwareEvent::OutputLevelChanged(bcm_pin_number, new_level));
+                }
+            }
         }
-
         Command::none()
     }
 

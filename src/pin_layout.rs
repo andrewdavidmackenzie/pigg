@@ -1,8 +1,9 @@
 use iced::{Alignment, Color, Element, Length};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
+use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
 use crate::custom_widgets::{circle::circle, line::line};
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::custom_widgets::led::led;
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
 use crate::Gpio;
 use crate::Message;
 use crate::style::CustomButton;
@@ -65,16 +66,13 @@ pub fn bcm_pin_layout_view(
     pins_slice.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
 
     for pin in pins_slice {
-        let (pin_option, pin_name, pin_arrow, pin_button) =
-            create_pin_view_side(pin, select_pin_function(pin, pin_config, gpio), true);
-
-        let pin_row = Row::new()
-            .push(pin_option)
-            .push(pin_button)
-            .push(pin_arrow)
-            .push(pin_name)
-            .spacing(10)
-            .align_items(Alignment::Center);
+        let pin_row = create_pin_view_side(
+            pin,
+            select_pin_function(pin, pin_config, gpio),
+            true,
+            &gpio.pin_function_selected[pin.board_pin_number as usize - 1],
+            &gpio.pin_states,
+        );
 
         column = column.push(pin_row).push(iced::widget::Space::new(
             Length::Fixed(1.0),
@@ -95,27 +93,25 @@ pub fn board_pin_layout_view(
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for pair in pin_descriptions.chunks(2) {
-        let left_view = create_pin_view_side(
+        let left_row = create_pin_view_side(
             &pair[0],
             select_pin_function(&pair[0], pin_config, gpio),
             true,
+            &gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
+            &gpio.pin_states,
         );
 
-        let right_view = create_pin_view_side(
+        let right_row = create_pin_view_side(
             &pair[1],
             select_pin_function(&pair[1], pin_config, gpio),
             false,
+            &gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
+            &gpio.pin_states,
         );
 
         let row = Row::new()
-            .push(left_view.0)
-            .push(left_view.1)
-            .push(left_view.2)
-            .push(left_view.3)
-            .push(right_view.3)
-            .push(right_view.2)
-            .push(right_view.1)
-            .push(right_view.0)
+            .push(left_row)
+            .push(right_row)
             .spacing(10)
             .align_items(Alignment::Center);
 
@@ -128,26 +124,51 @@ pub fn board_pin_layout_view(
     container(column).into()
 }
 
+/// Create the widget that either shows an input pin's state,
+/// or allows the user to control the state of an output pin
+fn get_pin_widget(
+    bcm_pin_number: Option<BCMPinNumber>,
+    pin_function: &Option<PinFunction>,
+    pin_state: Option<PinLevel>,
+) -> Row<'static, Message> {
+    let row = match pin_function {
+        Some(PinFunction::Input(_)) => Row::new().push(led(12.0, pin_state)),
+        Some(PinFunction::Output(_)) => {
+            let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
+                Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
+            });
+            Row::new().push(toggler)
+        }
+        _ => Row::new(),
+    };
+    row.width(Length::Fixed(50f32))
+        .align_items(Alignment::Center)
+}
+
+/// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side(
     pin: &PinDescription,
     selected_function: Option<PinFunction>,
     is_left: bool,
-) -> (
-    Column<'static, Message>,
-    Column<'static, Message>,
-    Column<'static, Message>,
-    Column<'static, Message>,
-) {
+    pin_function: &Option<PinFunction>,
+    pin_states: &[Option<PinLevel>; 40],
+) -> Row<'static, Message> {
+    // Create a widget that is either used to visualize an input or control an output
+    let pin_state = match pin.bcm_pin_number {
+        None => None,
+        Some(bcm) => pin_states[bcm as usize],
+    };
+    let pin_widget = get_pin_widget(pin.bcm_pin_number, pin_function, pin_state);
+
+    // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
         .width(Length::Fixed(140f32))
         .align_items(Alignment::Center);
-    let pin_number = pin.board_pin_number as usize;
-
     if pin.options.len() > 1 {
+        let pin_number = pin.board_pin_number as usize;
         let mut pin_options_row = Row::new()
             .align_items(Alignment::Center)
             .width(Length::Fixed(140f32));
-
         pin_options_row = pin_options_row.push(
             pick_list(pin.options, selected_function, move |pin_function| {
                 Message::PinFunctionSelected(pin_number, pin_function)
@@ -158,13 +179,12 @@ fn create_pin_view_side(
         pin_option = pin_option.push(pin_options_row);
     }
 
+    // Create the Pin name
     let mut pin_name = Column::new()
         .width(Length::Fixed(55f32))
         .align_items(Alignment::Center);
-
     let mut pin_name_row = Row::new().align_items(Alignment::Center);
     pin_name_row = pin_name_row.push(Text::new(pin.name));
-
     pin_name = pin_name.push(pin_name_row);
 
     let mut pin_arrow = Column::new()
@@ -180,14 +200,15 @@ fn create_pin_view_side(
         pin_arrow_row = pin_arrow_row.push(circle(5.0));
     }
 
+    // Create the "pin arrow" a small drawing to illustrate the pin
     pin_arrow = pin_arrow.push(pin_arrow_row);
 
+    // Create the pin itself, with number and as a button
     let mut pin_button = Column::new()
         .width(Length::Fixed(40f32))
         .height(Length::Shrink)
         .spacing(10)
         .align_items(Alignment::Center);
-
     let pin_color = get_pin_color(pin);
     let mut pin_button_row = Row::new().align_items(Alignment::Center);
     pin_button_row = pin_button_row.push(
@@ -199,10 +220,29 @@ fn create_pin_view_side(
     );
     pin_button = pin_button.push(pin_button_row);
 
-    (pin_option, pin_name, pin_arrow, pin_button)
+    // Create the row of widgets that represent the pin, inverted order if left or right
+    if is_left {
+        Row::new()
+            .push(pin_widget)
+            .push(pin_option)
+            .push(pin_name)
+            .push(pin_arrow)
+            .push(pin_button)
+            .spacing(10)
+            .align_items(Alignment::Center)
+    } else {
+        Row::new()
+            .push(pin_button)
+            .push(pin_arrow)
+            .push(pin_name)
+            .push(pin_option)
+            .push(pin_widget)
+            .spacing(10)
+            .align_items(Alignment::Center)
+    }
 }
 
-fn select_pin_function(
+pub(crate) fn select_pin_function(
     pin: &PinDescription,
     pin_config: &GPIOConfig,
     gpio: &Gpio,

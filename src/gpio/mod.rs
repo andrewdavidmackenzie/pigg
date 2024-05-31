@@ -4,7 +4,10 @@ use std::io::{BufReader, Write};
 
 use serde::{Deserialize, Serialize};
 
-// An input can be configured to have an optional pull-up or pull-down
+pub type BCMPinNumber = u8;
+pub type BoardPinNumber = u8;
+
+/// An input can be configured to have an optional pull-up or pull-down
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum InputPull {
     PullUp,
@@ -38,7 +41,7 @@ pub enum PinFunction {
 
     /// GPIO functions
     Input(Option<InputPull>),
-    Output(Option<bool>),
+    Output(Option<PinLevel>),
 
     /// General Purpose CLock functions (from https://pinout.xyz/pinout/gpclk)
     GPCLK0,
@@ -105,8 +108,8 @@ pub enum PinFunction {
 // these are the numbers after "GPIO"
 #[derive(Debug, Clone)]
 pub struct PinDescription {
-    pub board_pin_number: u8,
-    pub bcm_pin_number: Option<u8>,
+    pub board_pin_number: BoardPinNumber,
+    pub bcm_pin_number: Option<BCMPinNumber>,
     pub name: &'static str,
     pub options: &'static [PinFunction], // The set of functions the pin can have, chosen by user config
 }
@@ -119,10 +122,11 @@ impl std::fmt::Display for PinFunction {
 /// A vector of tuples of (bcm_pin_number, PinFunction)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GPIOConfig {
-    pub configured_pins: Vec<(u8, PinFunction)>,
+    pub configured_pins: Vec<(BCMPinNumber, PinFunction)>,
 }
 
 impl GPIOConfig {
+    /// Load a new GPIOConfig from the file named `filename`
     #[cfg(feature = "gui")]
     #[cfg_attr(feature = "gui", allow(dead_code))]
     // TODO take AsPath/AsRef etc
@@ -133,6 +137,7 @@ impl GPIOConfig {
         Ok(config)
     }
 
+    /// Save this GPIOConfig to the file named `filename`
     #[cfg(feature = "gui")]
     #[cfg_attr(feature = "gui", allow(dead_code))]
     pub fn save(&self, filename: &str) -> io::Result<()> {
@@ -143,13 +148,6 @@ impl GPIOConfig {
 }
 
 pub type PinLevel = bool;
-
-// TBD whether we should merge state with config
-// on config load, for an output pin we would set the level...
-#[derive(Debug)]
-pub struct GPIOState {
-    pub pin_state: [Option<PinLevel>; 40], // TODO make private later
-}
 
 #[cfg(test)]
 mod test {
