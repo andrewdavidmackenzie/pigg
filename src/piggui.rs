@@ -1,16 +1,16 @@
 use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::{
+    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 
 // Custom Widgets
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HardwareEvent, HWListenerEvent};
+use crate::hw_listener::{HWListenerEvent, HardwareEvent};
 // Importing pin layout views
 use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
@@ -70,6 +70,7 @@ pub enum Message {
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
+    Save,
 }
 
 pub struct Gpio {
@@ -108,6 +109,20 @@ impl Gpio {
             self.pin_function_selected[board_pin_number - 1] = new_function;
             if let Some(pins) = &self.pin_descriptions {
                 if let Some(bcm_pin_number) = pins[board_pin_number - 1].bcm_pin_number {
+                    // Pushing selected pin to the Pin Config
+                    if let Some(pin_config) = self
+                        .gpio_config
+                        .configured_pins
+                        .iter_mut()
+                        .find(|(pin, _)| *pin == bcm_pin_number)
+                    {
+                        *pin_config = (bcm_pin_number, new_function.unwrap());
+                    } else {
+                        // Add a new configuration entry if it doesn't exist
+                        self.gpio_config
+                            .configured_pins
+                            .push((bcm_pin_number, new_function.unwrap()));
+                    }
                     // Report config changes to the hardware listener
                     // Since config loading and hardware listener setup can occur out of order
                     // mark the config as changed. If we send to the listener, then mark as done
@@ -151,7 +166,9 @@ impl Application for Gpio {
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
-            Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
+            Message::Activate(pin_number) => {
+                println!("Pin {pin_number} clicked");
+            }
             Message::PinFunctionSelected(board_pin_number, pin_function) => {
                 // TODO currently there is no way in UI to un-configure a pin!
                 self.new_pin_function(board_pin_number, Some(pin_function));
@@ -162,10 +179,35 @@ impl Application for Gpio {
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
                 self.gpio_config = config.clone();
-                
+
                 self.update_hw_config();
             }
+            Message::Save => {
+                let gpio_config = self.gpio_config.clone();
 
+                let save_future = async move {
+                    if let Some(handle) = rfd::AsyncFileDialog::new()
+                        .set_title("Choose file")
+                        .save_file()
+                        .await
+                    {
+                        let path: std::path::PathBuf = handle.path().to_owned();
+
+                        let path_str = path.display().to_string();
+                        // TODO Improve error handling
+                        if let Err(err) = gpio_config.save(&path_str) {
+                            eprintln!("Error saving configuration to {}: {}", path_str, err);
+                        } else {
+                            println!("Configuration saved to {}", path_str);
+                        }
+                    } else {
+                        println!("No file selected for saving configuration.");
+                    }
+                };
+
+                // Await the future and handle any messages from the async block
+                return iced::Command::perform(save_future, |_| Message::None);
+            }
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
@@ -179,6 +221,7 @@ impl Application for Gpio {
                 }
             },
         }
+
         Command::none()
     }
 
@@ -207,6 +250,7 @@ impl Application for Gpio {
                 Column::new()
                     .push(layout_row)
                     .push(hardware_desc_row)
+                    .push(Button::new(Text::new("Save Configuration")).on_press(Message::Save))
                     .align_items(Alignment::Center)
                     .width(Length::Fixed(400.0))
                     .spacing(10),
