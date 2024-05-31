@@ -250,7 +250,11 @@ impl Application for Gpio {
                 Column::new()
                     .push(layout_row)
                     .push(hardware_desc_row)
-                    .push(Button::new(Text::new("Save Configuration")).on_press(Message::Save))
+                    .push(
+                        Button::new(Text::new("Save Configuration").size(20))
+                            .padding(10)
+                            .on_press(Message::Save),
+                    )
                     .align_items(Alignment::Center)
                     .width(Length::Fixed(400.0))
                     .spacing(10),
