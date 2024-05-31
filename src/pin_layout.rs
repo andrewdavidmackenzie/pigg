@@ -65,16 +65,7 @@ pub fn bcm_pin_layout_view(
     pins_slice.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
 
     for pin in pins_slice {
-        let (pin_option, pin_name, pin_arrow, pin_button) =
-            create_pin_view_side(pin, select_pin_function(pin, pin_config, gpio), true);
-
-        let pin_row = Row::new()
-            .push(pin_option)
-            .push(pin_button)
-            .push(pin_arrow)
-            .push(pin_name)
-            .spacing(10)
-            .align_items(Alignment::Center);
+        let pin_row = create_pin_view_side(pin, select_pin_function(pin, pin_config, &gpio), true);
 
         column = column.push(pin_row).push(iced::widget::Space::new(
             Length::Fixed(1.0),
@@ -95,27 +86,21 @@ pub fn board_pin_layout_view(
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for pair in pin_descriptions.chunks(2) {
-        let left_view = create_pin_view_side(
+        let left_row = create_pin_view_side(
             &pair[0],
             select_pin_function(&pair[0], pin_config, gpio),
             true,
         );
 
-        let right_view = create_pin_view_side(
+        let right_row = create_pin_view_side(
             &pair[1],
             select_pin_function(&pair[1], pin_config, gpio),
             false,
         );
 
         let row = Row::new()
-            .push(left_view.0)
-            .push(left_view.1)
-            .push(left_view.2)
-            .push(left_view.3)
-            .push(right_view.3)
-            .push(right_view.2)
-            .push(right_view.1)
-            .push(right_view.0)
+            .push(left_row)
+            .push(right_row)
             .spacing(10)
             .align_items(Alignment::Center);
 
@@ -132,12 +117,7 @@ fn create_pin_view_side(
     pin: &PinDescription,
     selected_function: Option<PinFunction>,
     is_left: bool,
-) -> (
-    Column<'static, Message>,
-    Column<'static, Message>,
-    Column<'static, Message>,
-    Column<'static, Message>,
-) {
+) -> Row<'static, Message> {
     let mut pin_option = Column::new()
         .width(Length::Fixed(140f32))
         .align_items(Alignment::Center);
@@ -199,7 +179,23 @@ fn create_pin_view_side(
     );
     pin_button = pin_button.push(pin_button_row);
 
-    (pin_option, pin_name, pin_arrow, pin_button)
+    if is_left {
+        Row::new()
+            .push(pin_option)
+            .push(pin_name)
+            .push(pin_arrow)
+            .push(pin_button)
+            .spacing(10)
+            .align_items(Alignment::Center)
+    } else {
+        Row::new()
+            .push(pin_button)
+            .push(pin_arrow)
+            .push(pin_name)
+            .push(pin_option)
+            .spacing(10)
+            .align_items(Alignment::Center)
+    }
 }
 
 fn select_pin_function(
