@@ -179,8 +179,14 @@ fn create_pin_view_side(
     );
     pin_button = pin_button.push(pin_button_row);
 
+    // Create a widget that is either used to visualize an input or control an output
+    let pin_widget = Row::new()
+        .push(Text::new("Widget"))
+        .align_items(Alignment::Center);
+
     if is_left {
         Row::new()
+            .push(pin_widget)
             .push(pin_option)
             .push(pin_name)
             .push(pin_arrow)
@@ -193,6 +199,7 @@ fn create_pin_view_side(
             .push(pin_arrow)
             .push(pin_name)
             .push(pin_option)
+            .push(pin_widget)
             .spacing(10)
             .align_items(Alignment::Center)
     }
