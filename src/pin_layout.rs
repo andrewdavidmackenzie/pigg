@@ -133,8 +133,8 @@ fn get_pin_widget(
 ) -> Row<'static, Message> {
     let row = match pin_function {
         Some(PinFunction::Input(_)) => Row::new().push(led(12.0, pin_state)),
-        Some(PinFunction::Output(level)) => {
-            let toggler = toggler(None, level.unwrap_or(false), move |b| {
+        Some(PinFunction::Output(_)) => {
+            let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
                 Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
             });
             Row::new().push(toggler)
