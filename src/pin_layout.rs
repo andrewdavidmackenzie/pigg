@@ -242,7 +242,7 @@ fn create_pin_view_side(
     }
 }
 
-fn select_pin_function(
+pub(crate) fn select_pin_function(
     pin: &PinDescription,
     pin_config: &GPIOConfig,
     gpio: &Gpio,

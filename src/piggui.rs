@@ -14,7 +14,7 @@ use crate::gpio::{
 use crate::hw::HardwareDescriptor;
 use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
-use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
+use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
 
 mod gpio;
 mod hw;
@@ -126,6 +126,27 @@ impl Gpio {
             }
         }
     }
+
+    /// Go through all the pins in the loaded GPIOConfig and set its function in the
+    /// pin_function_selected array, which is what is used for drawing the UI correctly.
+    // TODO this has a lot in common with bcm_pin_layout_view() in pin_layout.rs see if we can merge
+    // TODO or factor out a function - maybe improve data structures as we have a bit of
+    // TODO repitition - use a map to find by BCM pin number or something
+    fn set_pin_functions_after_load(&mut self) {
+        if let Some(pins) = &self.pin_descriptions {
+            let gpio_pins = pins
+                .iter()
+                .filter(|pin| pin.options.len() > 1)
+                .filter(|pin| pin.bcm_pin_number.is_some())
+                .collect::<Vec<&PinDescription>>();
+
+            for pin in gpio_pins {
+                if let Some(function) = select_pin_function(pin, &self.gpio_config, self) {
+                    self.pin_function_selected[pin.board_pin_number as usize - 1] = Some(function);
+                }
+            }
+        }
+    }
 }
 
 impl Application for Gpio {
@@ -169,6 +190,7 @@ impl Application for Gpio {
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
                 self.gpio_config = config.clone();
+                self.set_pin_functions_after_load();
                 self.update_hw_config();
             }
             Message::None => {}
