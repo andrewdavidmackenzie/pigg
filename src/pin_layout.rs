@@ -71,7 +71,7 @@ pub fn bcm_pin_layout_view(
             select_pin_function(pin, pin_config, gpio),
             true,
             &gpio.pin_function_selected[pin.board_pin_number as usize - 1],
-            gpio.pin_states[pin.bcm_pin_number.unwrap() as usize],
+            &gpio.pin_states,
         );
 
         column = column.push(pin_row).push(iced::widget::Space::new(
@@ -98,7 +98,7 @@ pub fn board_pin_layout_view(
             select_pin_function(&pair[0], pin_config, gpio),
             true,
             &gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
-            gpio.pin_states[pair[0].bcm_pin_number.unwrap() as usize],
+            &gpio.pin_states,
         );
 
         let right_row = create_pin_view_side(
@@ -106,7 +106,7 @@ pub fn board_pin_layout_view(
             select_pin_function(&pair[1], pin_config, gpio),
             false,
             &gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
-            gpio.pin_states[pair[1].bcm_pin_number.unwrap() as usize],
+            &gpio.pin_states,
         );
 
         let row = Row::new()
@@ -154,9 +154,13 @@ fn create_pin_view_side(
     selected_function: Option<PinFunction>,
     is_left: bool,
     pin_function: &Option<PinFunction>,
-    pin_state: Option<PinLevel>,
+    pin_states: &[Option<PinLevel>; 40],
 ) -> Row<'static, Message> {
     // Create a widget that is either used to visualize an input or control an output
+    let pin_state = match pin.bcm_pin_number {
+        None => None,
+        Some(bcm) => pin_states[bcm as usize],
+    };
     let pin_widget = get_pin_widget(pin, pin_function, pin_state);
 
     // Create the drop-down selector of pin function
