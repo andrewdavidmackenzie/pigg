@@ -5,7 +5,7 @@ use iced::{
     Theme, window,
 };
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Column, container, pick_list, Row, Text};
+use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
 // Custom Widgets
 use crate::gpio::{
@@ -74,6 +74,7 @@ pub enum Message {
     None,
     HardwareListener(HWListenerEvent),
     ChangeOutputLevel(BCMPinNumber, bool),
+    Save,
 }
 
 pub struct Gpio {
@@ -84,9 +85,9 @@ pub struct Gpio {
     chosen_layout: Layout,
     hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
-    pin_states: [Option<PinLevel>; 40],
     /// Either desired state or output, or detected state of input. Note BCMPinNumber, that starts
     /// at 0 (GPIO0)
+    pin_states: [Option<PinLevel>; 40],
     pin_descriptions: Option<[PinDescription; 40]>,
 }
 
@@ -115,6 +116,20 @@ impl Gpio {
             self.pin_function_selected[board_pin_number - 1] = new_function;
             if let Some(pins) = &self.pin_descriptions {
                 if let Some(bcm_pin_number) = pins[board_pin_number - 1].bcm_pin_number {
+                    // Pushing selected pin to the Pin Config
+                    if let Some(pin_config) = self
+                        .gpio_config
+                        .configured_pins
+                        .iter_mut()
+                        .find(|(pin, _)| *pin == bcm_pin_number)
+                    {
+                        *pin_config = (bcm_pin_number, new_function.unwrap());
+                    } else {
+                        // Add a new configuration entry if it doesn't exist
+                        self.gpio_config
+                            .configured_pins
+                            .push((bcm_pin_number, new_function.unwrap()));
+                    }
                     // Report config changes to the hardware listener
                     // Since config loading and hardware listener setup can occur out of order
                     // mark the config as changed. If we send to the listener, then mark as done
@@ -202,6 +217,32 @@ impl Application for Gpio {
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
             }
+            Message::Save => {
+                let gpio_config = self.gpio_config.clone();
+
+                let save_future = async move {
+                    if let Some(handle) = rfd::AsyncFileDialog::new()
+                        .set_title("Choose file")
+                        .save_file()
+                        .await
+                    {
+                        let path: std::path::PathBuf = handle.path().to_owned();
+
+                        let path_str = path.display().to_string();
+                        // TODO Improve error handling
+                        if let Err(err) = gpio_config.save(&path_str) {
+                            eprintln!("Error saving configuration to {}: {}", path_str, err);
+                        } else {
+                            println!("Configuration saved to {}", path_str);
+                        }
+                    } else {
+                        println!("No file selected for saving configuration.");
+                    }
+                };
+
+                // Await the future and handle any messages from the async block
+                return Command::perform(save_future, |_| Message::None);
+            }
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
@@ -252,6 +293,11 @@ impl Application for Gpio {
                 Column::new()
                     .push(layout_row)
                     .push(hardware_desc_row)
+                    .push(
+                        Button::new(Text::new("Save Configuration").size(20))
+                            .padding(10)
+                            .on_press(Message::Save),
+                    )
                     .align_items(Alignment::Center)
                     .width(Length::Fixed(400.0))
                     .spacing(10),
