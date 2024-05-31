@@ -48,8 +48,8 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     }
 }
 
-// Logical view layout
-pub fn logical_pin_view(
+/// View that lays out the pins in a single column ordered by BCM pin number
+pub fn bcm_pin_layout_view(
     pin_descriptions: &[PinDescription; 40],
     _pin_config: &GPIOConfig,
     gpio: &Gpio,
@@ -88,8 +88,9 @@ pub fn logical_pin_view(
     container(column).into()
 }
 
-// Physical pin layout
-pub fn physical_pin_view(
+/// View that draws the pins laid out as they are on the physical Pi board
+/// View that draws the pins laid out as they are on the physical Pi board
+pub fn board_pin_layout_view(
     pin_descriptions: &[PinDescription; 40],
     pin_config: &GPIOConfig,
     gpio: &Gpio,
