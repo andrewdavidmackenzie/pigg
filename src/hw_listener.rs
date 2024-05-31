@@ -6,7 +6,7 @@ use iced::futures::channel::mpsc::Sender;
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
 use crate::hw;
 use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
@@ -57,6 +57,8 @@ pub enum HardwareEvent {
     NewPinConfig(u8, Option<PinFunction>),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
     InputLevelChanged(LevelChange),
+    /// The level of an output pin has been set to a new value
+    OutputLevelChanged(BCMPinNumber, PinLevel),
 }
 
 /// This enum describes the states of the listener
@@ -157,6 +159,10 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                             }
                             InputLevelChanged(level_change) => {
                                 let _ = gui_sender.send(InputChange(level_change)).await;
+                            }
+                            HardwareEvent::OutputLevelChanged(bcm_pin_number, new_level) => {
+                                let _ =
+                                    connected_hardware.set_output_level(bcm_pin_number, new_level);
                             }
                         }
                     }

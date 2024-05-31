@@ -186,7 +186,10 @@ impl Application for Gpio {
             },
             Message::ChangeOutputLevel(bcm_pin_number, new_level) => {
                 self.pin_states[bcm_pin_number as usize] = Some(new_level);
-                println!("Change of output BCM pin #{bcm_pin_number} to {new_level}");
+                if let Some(ref mut listener) = &mut self.listener_sender {
+                    let _ = listener
+                        .try_send(HardwareEvent::OutputLevelChanged(bcm_pin_number, new_level));
+                }
             }
         }
         Command::none()

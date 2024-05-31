@@ -8,7 +8,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinLevel};
 use crate::gpio::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -210,5 +210,26 @@ impl Hardware for PiHW {
                 "Could not find a configured input pin",
             )),
         }
+    }
+
+    /// Write the output level of an output using the bcm pin number
+    fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level: PinLevel,
+    ) -> io::Result<()> {
+        match self.configured_pins.get_mut(&bcm_pin_number) {
+            Some(Pin::Output(output_pin)) => match level {
+                true => output_pin.write(Level::High),
+                false => output_pin.write(Level::Low),
+            },
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Could not find a configured output pin",
+                ))
+            }
+        }
+        Ok(())
     }
 }

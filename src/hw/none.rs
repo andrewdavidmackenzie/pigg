@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -49,7 +49,17 @@ impl Hardware for NoneHW {
     }
 
     /// Read the input level of an input using the bcm pin number
-    fn get_input_level(&self, _bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
+    fn get_input_level(&self, _bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel> {
         Ok(true)
+    }
+
+    /// Write the output level of an output using the bcm pin number
+    fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level: PinLevel,
+    ) -> io::Result<()> {
+        println!("Output with BCM Pin #{bcm_pin_number} set to {level}");
+        Ok(())
     }
 }

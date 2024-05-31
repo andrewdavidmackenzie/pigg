@@ -60,4 +60,10 @@ impl Hardware for PicoHW {
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         Ok(true)
     }
+
+    /// Write the output level of an output using the bcm pin number
+    fn set_output_level(&mut self, bcm_pin_number: BCMPinNumber, level: PinLevel) -> io::Result {
+        println!("Output with BCM Pin #{bcm_pin_number} set to {level}");
+        Ok()
+    }
 }
