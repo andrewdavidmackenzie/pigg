@@ -1,16 +1,16 @@
 use std::{env, io};
 
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
-    Subscription, Theme,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Column, container, pick_list, Row, Text};
 
 // Custom Widgets
-use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
+use crate::gpio::{BoardPinNumber, GPIOConfig, PinDescription, PinFunction};
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HWListenerEvent, HardwareEvent};
+use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
 use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
@@ -20,6 +20,7 @@ mod pin_layout;
 mod style;
 mod custom_widgets {
     pub mod circle;
+    pub mod led;
     pub mod line;
 }
 mod hw_listener;
@@ -64,13 +65,14 @@ fn main() -> Result<(), iced::Error> {
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Activate(u8),
+    Activate(BoardPinNumber),
     PinFunctionSelected(usize, PinFunction),
     LayoutChanged(Layout),
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
-    Save,
+    ChangeOutputLevel(bool),
+    // TODO ChangeOutputLevel(BCMPinNumber, bool),
 }
 
 pub struct Gpio {
@@ -81,6 +83,9 @@ pub struct Gpio {
     chosen_layout: Layout,
     hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
+    pin_states: [Option<bool>; 40],
+    /// Either desired state or output, or detected state of input. Note BCMPinNumber, that starts
+    /// at 0 (GPIO0)
     pin_descriptions: Option<[PinDescription; 40]>,
 }
 
@@ -109,20 +114,6 @@ impl Gpio {
             self.pin_function_selected[board_pin_number - 1] = new_function;
             if let Some(pins) = &self.pin_descriptions {
                 if let Some(bcm_pin_number) = pins[board_pin_number - 1].bcm_pin_number {
-                    // Pushing selected pin to the Pin Config
-                    if let Some(pin_config) = self
-                        .gpio_config
-                        .configured_pins
-                        .iter_mut()
-                        .find(|(pin, _)| *pin == bcm_pin_number)
-                    {
-                        *pin_config = (bcm_pin_number, new_function.unwrap());
-                    } else {
-                        // Add a new configuration entry if it doesn't exist
-                        self.gpio_config
-                            .configured_pins
-                            .push((bcm_pin_number, new_function.unwrap()));
-                    }
                     // Report config changes to the hardware listener
                     // Since config loading and hardware listener setup can occur out of order
                     // mark the config as changed. If we send to the listener, then mark as done
@@ -152,6 +143,7 @@ impl Application for Gpio {
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
                 pin_descriptions: None,     // Until listener is ready
+                pin_states: [None; 40],
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -166,11 +158,8 @@ impl Application for Gpio {
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
-            Message::Activate(pin_number) => {
-                println!("Pin {pin_number} clicked");
-            }
+            Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(board_pin_number, pin_function) => {
-                // TODO currently there is no way in UI to un-configure a pin!
                 self.new_pin_function(board_pin_number, Some(pin_function));
             }
             Message::LayoutChanged(layout) => {
@@ -179,35 +168,9 @@ impl Application for Gpio {
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
                 self.gpio_config = config.clone();
-
                 self.update_hw_config();
             }
-            Message::Save => {
-                let gpio_config = self.gpio_config.clone();
 
-                let save_future = async move {
-                    if let Some(handle) = rfd::AsyncFileDialog::new()
-                        .set_title("Choose file")
-                        .save_file()
-                        .await
-                    {
-                        let path: std::path::PathBuf = handle.path().to_owned();
-
-                        let path_str = path.display().to_string();
-                        // TODO Improve error handling
-                        if let Err(err) = gpio_config.save(&path_str) {
-                            eprintln!("Error saving configuration to {}: {}", path_str, err);
-                        } else {
-                            println!("Configuration saved to {}", path_str);
-                        }
-                    } else {
-                        println!("No file selected for saving configuration.");
-                    }
-                };
-
-                // Await the future and handle any messages from the async block
-                return iced::Command::perform(save_future, |_| Message::None);
-            }
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
@@ -217,11 +180,17 @@ impl Application for Gpio {
                     self.update_hw_config();
                 }
                 HWListenerEvent::InputChange(level_change) => {
+                    self.pin_states[level_change.bcm_pin_number as usize] =
+                        Some(level_change.new_level);
                     println!("Input changed: {:?}", level_change);
                 }
             },
+            // TODO Message::ChangeOutputLevel(bcm_pin_number, new_level) => {
+            Message::ChangeOutputLevel(new_level) => {
+                // TODO self.pin_states[bcm_pin_number as usize] = Some(new_level);
+                println!("Change of output BCM pin to {new_level}");
+            }
         }
-
         Command::none()
     }
 
@@ -250,11 +219,6 @@ impl Application for Gpio {
                 Column::new()
                     .push(layout_row)
                     .push(hardware_desc_row)
-                    .push(
-                        Button::new(Text::new("Save Configuration").size(20))
-                            .padding(10)
-                            .on_press(Message::Save),
-                    )
                     .align_items(Alignment::Center)
                     .width(Length::Fixed(400.0))
                     .spacing(10),

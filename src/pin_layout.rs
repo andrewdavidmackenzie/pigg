@@ -1,7 +1,8 @@
 use iced::{Alignment, Color, Element, Length};
-use iced::widget::{button, Column, container, pick_list, Row, Text};
+use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
 use crate::custom_widgets::{circle::circle, line::line};
+use crate::custom_widgets::led::led;
 use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::Gpio;
 use crate::Message;
@@ -65,7 +66,12 @@ pub fn bcm_pin_layout_view(
     pins_slice.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
 
     for pin in pins_slice {
-        let pin_row = create_pin_view_side(pin, select_pin_function(pin, pin_config, gpio), true);
+        let pin_row = create_pin_view_side(
+            pin,
+            select_pin_function(pin, pin_config, gpio),
+            true,
+            &gpio.pin_function_selected[pin.board_pin_number as usize - 1],
+        );
 
         column = column.push(pin_row).push(iced::widget::Space::new(
             Length::Fixed(1.0),
@@ -90,12 +96,14 @@ pub fn board_pin_layout_view(
             &pair[0],
             select_pin_function(&pair[0], pin_config, gpio),
             true,
+            &gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
         );
 
         let right_row = create_pin_view_side(
             &pair[1],
             select_pin_function(&pair[1], pin_config, gpio),
             false,
+            &gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
         );
 
         let row = Row::new()
@@ -113,13 +121,38 @@ pub fn board_pin_layout_view(
     container(column).into()
 }
 
+/// Create the widget that either shows an input pin's state,
+/// or allows the user to control the state of an output pin
+fn get_pin_widget(
+    _pin: &PinDescription,
+    pin_function: &Option<PinFunction>,
+) -> Row<'static, Message> {
+    let mut row = Row::new();
+    row = match pin_function {
+        Some(PinFunction::Input(_)) => row.push(led(12.0, false)),
+        Some(PinFunction::Output(level)) => {
+            let toggler = toggler(
+                None,
+                level.unwrap_or(false),
+                Message::ChangeOutputLevel, // TODO pin.bcm_pin_number.unwrap()
+            );
+            row.push(toggler)
+        }
+        _ => row,
+    };
+    row.width(Length::Fixed(50f32))
+        .align_items(Alignment::Center)
+}
+
+/// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side(
     pin: &PinDescription,
     selected_function: Option<PinFunction>,
     is_left: bool,
+    pin_function: &Option<PinFunction>,
 ) -> Row<'static, Message> {
     // Create a widget that is either used to visualize an input or control an output
-    let pin_widget = Row::new().align_items(Alignment::Center);
+    let pin_widget = get_pin_widget(pin, pin_function);
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
