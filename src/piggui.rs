@@ -182,7 +182,6 @@ impl Application for Gpio {
                 HWListenerEvent::InputChange(level_change) => {
                     self.pin_states[level_change.bcm_pin_number as usize] =
                         Some(level_change.new_level);
-                    println!("Input changed: {:?}", level_change);
                 }
             },
             Message::ChangeOutputLevel(bcm_pin_number, new_level) => {
