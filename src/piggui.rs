@@ -12,7 +12,7 @@ use crate::gpio::{GPIOConfig, PinDescription, PinFunction};
 use crate::hw::HardwareDescriptor;
 use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
-use crate::pin_layout::{logical_pin_view, physical_pin_view};
+use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
 mod gpio;
 mod hw;
@@ -26,12 +26,12 @@ mod hw_listener;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
-    Physical,
-    Logical,
+    BoardLayout,
+    BCMLayout,
 }
 
 impl Layout {
-    const ALL: [Layout; 2] = [Layout::Physical, Layout::Logical];
+    const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
 }
 
 // Implementing format for Layout
@@ -41,8 +41,8 @@ impl std::fmt::Display for Layout {
             f,
             "{}",
             match self {
-                Layout::Physical => "Physical Layout",
-                Layout::Logical => "Logical Layout",
+                Layout::BoardLayout => "Board Pin Layout",
+                Layout::BCMLayout => "BCM Pin Layout",
             }
         )
     }
@@ -133,7 +133,7 @@ impl Application for Gpio {
                 config_filename: None,
                 gpio_config: GPIOConfig::default(),
                 pin_function_selected: [None; 40],
-                chosen_layout: Layout::Physical,
+                chosen_layout: Layout::BoardLayout,
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
                 pin_descriptions: None,     // Until listener is ready
@@ -219,8 +219,8 @@ impl Application for Gpio {
 
         if let Some(pins) = &self.pin_descriptions {
             let pin_layout = match self.chosen_layout {
-                Layout::Physical => physical_pin_view(pins, &self.gpio_config, self),
-                Layout::Logical => logical_pin_view(pins, &self.gpio_config, self),
+                Layout::BoardLayout => board_pin_layout_view(pins, &self.gpio_config, self),
+                Layout::BCMLayout => bcm_pin_layout_view(pins, &self.gpio_config, self),
             };
 
             main_row = main_row
