@@ -1,18 +1,19 @@
 use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
+use gpio::InputPull;
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Button, Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::{
+    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 
 // Custom Widgets
 use crate::gpio::{
     BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
 };
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HardwareEvent, HWListenerEvent};
+use crate::hw_listener::{HWListenerEvent, HardwareEvent};
 // Importing pin layout views
 use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
 
@@ -55,7 +56,7 @@ fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
         decorations: true,
-        size: iced::Size::new(800.0, 900.0),
+        size: iced::Size::new(1000.0, 900.0),
         ..Default::default()
     };
 
@@ -74,6 +75,7 @@ pub enum Message {
     None,
     HardwareListener(HWListenerEvent),
     ChangeOutputLevel(BCMPinNumber, bool),
+    ChangeInputPull(BCMPinNumber, InputPull),
     Save,
 }
 
@@ -211,6 +213,18 @@ impl Application for Gpio {
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
             }
+            Message::ChangeInputPull(bcm_pin_number, selected_pull) => {
+                // Update the pin configuration with the new pull value
+                if let Some(pin_config) = self
+                    .gpio_config
+                    .configured_pins
+                    .iter_mut()
+                    .find(|(pin, _)| *pin == bcm_pin_number)
+                {
+                    pin_config.1 = PinFunction::Input(Some(selected_pull));
+                }
+                self.update_hw_config();
+            }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
                 self.gpio_config = config.clone();
@@ -316,7 +330,7 @@ impl Application for Gpio {
                         .push(pin_layout)
                         .spacing(10)
                         .align_items(Alignment::Center)
-                        .width(Length::Fixed(700.0))
+                        .width(Length::Fixed(900.0))
                         .height(Length::Fill),
                 )
                 .align_items(Alignment::Start)
