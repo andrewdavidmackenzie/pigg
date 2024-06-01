@@ -1,12 +1,13 @@
+use iced::widget::{button, container, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
-use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
-use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::led::led;
+use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
-use crate::Gpio;
-use crate::Message;
 use crate::style::CustomButton;
+use crate::Gpio;
+use crate::InputPull;
+use crate::Message;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -132,7 +133,21 @@ fn get_pin_widget(
     pin_state: Option<PinLevel>,
 ) -> Row<'static, Message> {
     let row = match pin_function {
-        Some(PinFunction::Input(_)) => Row::new().push(led(12.0, pin_state)),
+        Some(PinFunction::Input(_)) => {
+            let led_widget = led(12.0, pin_state);
+            let sub_options = vec![InputPull::PullUp, InputPull::PullDown];
+            let pull = match pin_function {
+                Some(PinFunction::Input(Some(pull))) => Some(pull.clone()),
+                _ => None,
+            };
+
+            Row::new().push(led_widget).push(
+                pick_list(sub_options, pull, move |selected_pull| {
+                    Message::ChangeInputPull(bcm_pin_number.unwrap(), selected_pull)
+                })
+                .placeholder("Select Input"),
+            )
+        }
         Some(PinFunction::Output(_)) => {
             let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
                 Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
@@ -141,9 +156,28 @@ fn get_pin_widget(
         }
         _ => Row::new(),
     };
-    row.width(Length::Fixed(50f32))
+    row.width(Length::Fixed(150f32))
         .align_items(Alignment::Center)
 }
+
+// fn get_pin_widget(
+//     bcm_pin_number: Option<BCMPinNumber>,
+//     pin_function: &Option<PinFunction>,
+//     pin_state: Option<PinLevel>,
+// ) -> Row<'static, Message> {
+//     let row = match pin_function {
+//         Some(PinFunction::Input(_)) => Row::new().push(led(12.0, pin_state)),
+//         Some(PinFunction::Output(_)) => {
+//             let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
+//                 Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
+//             });
+//             Row::new().push(toggler)
+//         }
+//         _ => Row::new(),
+//     };
+//     row.width(Length::Fixed(50f32))
+//         .align_items(Alignment::Center)
+// }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side(
@@ -173,6 +207,7 @@ fn create_pin_view_side(
             pick_list(pin.options, selected_function, move |pin_function| {
                 Message::PinFunctionSelected(pin_number, pin_function)
             })
+            .width(Length::Fixed(200f32))
             .placeholder("Select function"),
         );
 
