@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, write};
 use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
@@ -13,6 +13,7 @@ pub type BoardPinNumber = u8;
 pub enum InputPull {
     PullUp,
     PullDown,
+    None,
 }
 
 impl fmt::Display for InputPull {
@@ -20,6 +21,7 @@ impl fmt::Display for InputPull {
         match self {
             InputPull::PullUp => write!(f, "Pull Up"),
             InputPull::PullDown => write!(f, "Pull Down"),
+            InputPull::None => write!(f, "None"),
         }
     }
 }
