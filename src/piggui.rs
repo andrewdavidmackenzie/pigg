@@ -215,15 +215,18 @@ impl Application for Gpio {
             }
             Message::ChangeInputPull(bcm_pin_number, selected_pull) => {
                 // Update the pin configuration with the new pull value
+                let new_pin_function = match selected_pull {
+                    InputPull::None => PinFunction::Input(None),
+                    _ => PinFunction::Input(Some(selected_pull)),
+                };
                 if let Some(pin_config) = self
                     .gpio_config
                     .configured_pins
                     .iter_mut()
                     .find(|(pin, _)| *pin == bcm_pin_number)
                 {
-                    pin_config.1 = PinFunction::Input(Some(selected_pull));
+                    pin_config.1 = new_pin_function;
                 }
-                self.update_hw_config();
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
