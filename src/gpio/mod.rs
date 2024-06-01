@@ -46,6 +46,8 @@ impl fmt::Display for InputPull {
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum PinFunction {
+    None,
+
     /// Power and Ground functions
     Power3V3,
     Power5V,

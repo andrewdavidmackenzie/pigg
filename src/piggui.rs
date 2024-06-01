@@ -85,7 +85,7 @@ pub struct Gpio {
     #[allow(dead_code)]
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
-    pub pin_function_selected: [Option<PinFunction>; 40],
+    pub pin_function_selected: [PinFunction; 40],
     chosen_layout: Layout,
     hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
@@ -148,7 +148,7 @@ impl Gpio {
         &mut self,
         board_pin_number: BoardPinNumber,
         bcm_pin_number: BCMPinNumber,
-        new_function: Option<PinFunction>,
+        new_function: PinFunction,
     ) {
         let pin_index = board_pin_number as usize - 1;
         let previous_function = self.pin_function_selected[pin_index];
@@ -161,12 +161,12 @@ impl Gpio {
                 .iter_mut()
                 .find(|(pin, _)| *pin == bcm_pin_number)
             {
-                *pin_config = (bcm_pin_number, new_function.unwrap());
+                *pin_config = (bcm_pin_number, new_function);
             } else {
                 // Add a new configuration entry if it doesn't exist
                 self.gpio_config
                     .configured_pins
-                    .push((bcm_pin_number, new_function.unwrap()));
+                    .push((bcm_pin_number, new_function));
             }
             // Report config changes to the hardware listener
             // Since config loading and hardware listener setup can occur out of order
@@ -193,7 +193,7 @@ impl Gpio {
 
             for pin in gpio_pins {
                 if let Some(function) = select_pin_function(pin, &self.gpio_config, self) {
-                    self.pin_function_selected[pin.board_pin_number as usize - 1] = Some(function);
+                    self.pin_function_selected[pin.board_pin_number as usize - 1] = function;
 
                     // For output pins, if there is an initial state set then set that in pin state
                     // so the toggler will be drawn correctly on first draw
@@ -220,7 +220,7 @@ impl Application for Gpio {
             Self {
                 config_filename: None,
                 gpio_config: GPIOConfig::default(),
-                pin_function_selected: [None; 40],
+                pin_function_selected: [PinFunction::None; 40],
                 chosen_layout: Layout::BoardLayout,
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
@@ -242,7 +242,7 @@ impl Application for Gpio {
         match message {
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
-                self.new_pin_function(board_pin_number, bcm_pin_number, Some(pin_function));
+                self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;

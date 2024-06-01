@@ -54,7 +54,7 @@ pub enum HardwareEvent {
     /// start listening for level changes on each of the input pins it contains
     NewConfig(GPIOConfig),
     /// A pin has had its config changed
-    NewPinConfig(u8, Option<PinFunction>),
+    NewPinConfig(u8, PinFunction),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
     InputLevelChanged(LevelChange),
     /// The level of an output pin has been set to a new value
