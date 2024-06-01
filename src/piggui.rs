@@ -106,6 +106,7 @@ impl Gpio {
     async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .set_title("Choose config file to load")
+            .set_directory(std::env::current_dir().unwrap())
             .pick_file()
             .await
         {
@@ -120,6 +121,7 @@ impl Gpio {
     async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<()> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .set_title("Choose file")
+            .set_directory(std::env::current_dir().unwrap())
             .save_file()
             .await
         {
