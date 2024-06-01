@@ -1,4 +1,4 @@
-![GH Action Build and Test](https://github.com/github/docs/actions/workflows/build_and_test.yml/badge.svg)
+![GH Action](https://github.com/andrewdavidmackenzie/pigg/actions/workflows/build_and_test.yml/badge.svg)
 [![codecov](https://codecov.io/gh/andrewdavidmackenzie/pigg/graph/badge.svg?token=Lv5SstEMGO)](https://codecov.io/gh/andrewdavidmackenzie/pigg)
 
 # pigg - Raspberry Pi GPIO GUI
