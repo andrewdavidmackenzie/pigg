@@ -1,13 +1,13 @@
-use iced::widget::{button, container, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
+use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
-use crate::custom_widgets::led::led;
 use crate::custom_widgets::{circle::circle, line::line};
+use crate::custom_widgets::led::led;
 use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
-use crate::style::CustomButton;
 use crate::Gpio;
 use crate::InputPull;
 use crate::Message;
+use crate::style::CustomButton;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -135,6 +135,7 @@ fn get_pin_widget(
     pin_function: &Option<PinFunction>,
     pin_state: Option<PinLevel>,
     pin_config: &GPIOConfig,
+    is_left: bool,
 ) -> Row<'static, Message> {
     let row = match pin_function {
         Some(PinFunction::Input(_)) => {
@@ -158,15 +159,27 @@ fn get_pin_widget(
                 sub_options.retain(|&option| option != selected_pull);
             }
 
-            Row::new()
-                .push(led(12.0, pin_state))
-                .push(
-                    pick_list(sub_options, pull, move |selected_pull| {
-                        Message::ChangeInputPull(bcm_pin_number.unwrap(), selected_pull)
-                    })
-                    .placeholder("Select Input"),
-                )
-                .spacing(10)
+            if is_left {
+                Row::new()
+                    .push(led(12.0, pin_state))
+                    .push(
+                        pick_list(sub_options, pull, move |selected_pull| {
+                            Message::ChangeInputPull(bcm_pin_number.unwrap(), selected_pull)
+                        })
+                        .placeholder("Select Input"),
+                    )
+                    .spacing(10)
+            } else {
+                Row::new()
+                    .push(
+                        pick_list(sub_options, pull, move |selected_pull| {
+                            Message::ChangeInputPull(bcm_pin_number.unwrap(), selected_pull)
+                        })
+                        .placeholder("Select Input"),
+                    )
+                    .push(led(12.0, pin_state))
+                    .spacing(10)
+            }
         }
 
         // TODO Fix Output Width
@@ -196,7 +209,13 @@ fn create_pin_view_side(
         None => None,
         Some(bcm) => pin_states[bcm as usize],
     };
-    let pin_widget = get_pin_widget(pin.bcm_pin_number, pin_function, pin_state, pin_config);
+    let pin_widget = get_pin_widget(
+        pin.bcm_pin_number,
+        pin_function,
+        pin_state,
+        pin_config,
+        is_left,
+    );
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
