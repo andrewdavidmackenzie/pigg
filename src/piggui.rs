@@ -75,6 +75,7 @@ pub enum Message {
     HardwareListener(HWListenerEvent),
     ChangeOutputLevel(BCMPinNumber, bool),
     Save,
+    Load,
 }
 
 pub struct Gpio {
@@ -99,6 +100,36 @@ impl Gpio {
                 Ok(Some((config_filename, config)))
             }
             None => Ok(None),
+        }
+    }
+
+    async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
+        if let Some(handle) = rfd::AsyncFileDialog::new()
+            .set_title("Choose config file to load")
+            .pick_file()
+            .await
+        {
+            let path: std::path::PathBuf = handle.path().to_owned();
+            let path_str = path.display().to_string();
+            Self::load(Some(path_str)).await
+        } else {
+            println!("No file selected for loading configuration.");
+            Ok(None)
+        }
+    }
+
+    async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<()> {
+        if let Some(handle) = rfd::AsyncFileDialog::new()
+            .set_title("Choose file")
+            .save_file()
+            .await
+        {
+            let path: std::path::PathBuf = handle.path().to_owned();
+            let path_str = path.display().to_string();
+            gpio_config.save(&path_str)
+        } else {
+            println!("No file selected for saving configuration.");
+            Ok(())
         }
     }
 
@@ -202,7 +233,7 @@ impl Application for Gpio {
         String::from("Piggui")
     }
 
-    fn update(&mut self, message: Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(board_pin_number, pin_function) => {
@@ -219,29 +250,19 @@ impl Application for Gpio {
             }
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
-
-                let save_future = async move {
-                    if let Some(handle) = rfd::AsyncFileDialog::new()
-                        .set_title("Choose file")
-                        .save_file()
-                        .await
-                    {
-                        let path: std::path::PathBuf = handle.path().to_owned();
-
-                        let path_str = path.display().to_string();
-                        // TODO Improve error handling
-                        if let Err(err) = gpio_config.save(&path_str) {
-                            eprintln!("Error saving configuration to {}: {}", path_str, err);
-                        } else {
-                            println!("Configuration saved to {}", path_str);
-                        }
-                    } else {
-                        println!("No file selected for saving configuration.");
-                    }
-                };
-
-                // Await the future and handle any messages from the async block
-                return Command::perform(save_future, |_| Message::None);
+                return Command::perform(
+                    Self::save_via_picker(gpio_config),
+                    |result| match result {
+                        Ok(_) => Message::None,
+                        _ => Message::None, // eprintln ! ("Error saving configuration to {}: {}", path_str, err);
+                    },
+                );
+            }
+            Message::Load => {
+                return Command::perform(Self::load_via_picker(), |result| match result {
+                    Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
+                    _ => Message::None,
+                })
             }
             Message::None => {}
             Message::HardwareListener(event) => match event {
@@ -297,6 +318,11 @@ impl Application for Gpio {
                         Button::new(Text::new("Save Configuration").size(20))
                             .padding(10)
                             .on_press(Message::Save),
+                    )
+                    .push(
+                        Button::new(Text::new("Load Configuration").size(20))
+                            .padding(10)
+                            .on_press(Message::Load),
                     )
                     .align_items(Alignment::Center)
                     .width(Length::Fixed(400.0))
