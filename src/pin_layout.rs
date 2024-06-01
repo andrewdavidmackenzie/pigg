@@ -1,12 +1,13 @@
+use iced::widget::{button, container, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
-use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
-use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::led::led;
+use crate::custom_widgets::{circle::circle, line::line};
 use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
-use crate::Gpio;
-use crate::Message;
 use crate::style::CustomButton;
+use crate::Gpio;
+use crate::InputPull;
+use crate::Message;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -72,6 +73,7 @@ pub fn bcm_pin_layout_view(
             true,
             &gpio.pin_function_selected[pin.board_pin_number as usize - 1],
             &gpio.pin_states,
+            pin_config,
         );
 
         column = column.push(pin_row).push(iced::widget::Space::new(
@@ -99,6 +101,7 @@ pub fn board_pin_layout_view(
             true,
             &gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
             &gpio.pin_states,
+            pin_config,
         );
 
         let right_row = create_pin_view_side(
@@ -107,6 +110,7 @@ pub fn board_pin_layout_view(
             false,
             &gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
             &gpio.pin_states,
+            pin_config,
         );
 
         let row = Row::new()
@@ -130,9 +134,42 @@ fn get_pin_widget(
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: &Option<PinFunction>,
     pin_state: Option<PinLevel>,
+    pin_config: &GPIOConfig,
 ) -> Row<'static, Message> {
     let row = match pin_function {
-        Some(PinFunction::Input(_)) => Row::new().push(led(12.0, pin_state)),
+        Some(PinFunction::Input(_)) => {
+            let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
+
+            // Find the current pull configuration for the pin
+            let pull = pin_config
+                .configured_pins
+                .iter()
+                .find(|(pin, _)| *pin == bcm_pin_number.unwrap())
+                .and_then(|(_, function)| {
+                    if let PinFunction::Input(Some(pull)) = function {
+                        Some(*pull)
+                    } else {
+                        None
+                    }
+                });
+
+            // Filter out the currently selected pull option
+            if let Some(selected_pull) = pull {
+                sub_options.retain(|&option| option != selected_pull);
+            }
+
+            Row::new()
+                .push(led(12.0, pin_state))
+                .push(
+                    pick_list(sub_options, pull, move |selected_pull| {
+                        Message::ChangeInputPull(bcm_pin_number.unwrap(), selected_pull)
+                    })
+                    .placeholder("Select Input"),
+                )
+                .spacing(10)
+        }
+
+        // TODO Fix Output Width
         Some(PinFunction::Output(_)) => {
             let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
                 Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
@@ -141,7 +178,7 @@ fn get_pin_widget(
         }
         _ => Row::new(),
     };
-    row.width(Length::Fixed(50f32))
+    row.width(Length::Fixed(150f32))
         .align_items(Alignment::Center)
 }
 
@@ -152,13 +189,14 @@ fn create_pin_view_side(
     is_left: bool,
     pin_function: &Option<PinFunction>,
     pin_states: &[Option<PinLevel>; 40],
+    pin_config: &GPIOConfig,
 ) -> Row<'static, Message> {
     // Create a widget that is either used to visualize an input or control an output
     let pin_state = match pin.bcm_pin_number {
         None => None,
         Some(bcm) => pin_states[bcm as usize],
     };
-    let pin_widget = get_pin_widget(pin.bcm_pin_number, pin_function, pin_state);
+    let pin_widget = get_pin_widget(pin.bcm_pin_number, pin_function, pin_state, pin_config);
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
@@ -173,6 +211,7 @@ fn create_pin_view_side(
             pick_list(pin.options, selected_function, move |pin_function| {
                 Message::PinFunctionSelected(pin_number, pin_function)
             })
+            .width(Length::Fixed(200f32))
             .placeholder("Select function"),
         );
 

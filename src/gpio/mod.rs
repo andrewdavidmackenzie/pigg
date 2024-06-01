@@ -1,3 +1,4 @@
+use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
@@ -12,6 +13,17 @@ pub type BoardPinNumber = u8;
 pub enum InputPull {
     PullUp,
     PullDown,
+    None,
+}
+
+impl fmt::Display for InputPull {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            InputPull::PullUp => write!(f, "Pull Up"),
+            InputPull::PullDown => write!(f, "Pull Down"),
+            InputPull::None => write!(f, "None"),
+        }
+    }
 }
 
 /// For SPI interfaces see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
@@ -158,8 +170,8 @@ mod test {
 
     use tempfile::tempdir;
 
-    use crate::gpio::{GPIOConfig, PinFunction};
     use crate::gpio::InputPull::PullUp;
+    use crate::gpio::{GPIOConfig, PinFunction};
 
     #[test]
     fn create_a_config() {
