@@ -1,4 +1,5 @@
 use iced::{Alignment, Color, Element, Length};
+use iced::alignment::Horizontal;
 use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 
 use crate::custom_widgets::{circle::circle, line::line};
@@ -266,16 +267,15 @@ fn create_pin_view_side(
     pin_arrow = pin_arrow.push(pin_arrow_row);
 
     // Create the pin itself, with number and as a button
-    let pin_color = get_pin_color(pin);
-    let pin_button_row = Row::new()
-        .push(
-            button(Text::new(pin.board_pin_number.to_string()).size(20))
-                .padding(10)
-                .width(Length::Fixed(40f32))
-                .style(pin_color.get_button_style())
-                .on_press(Message::Activate(pin.board_pin_number)),
-        )
-        .align_items(Alignment::Center);
+    let pin_button = button(
+        Text::new(pin.board_pin_number.to_string())
+            .size(20)
+            .horizontal_alignment(Horizontal::Center),
+    )
+    .padding(10)
+    .width(Length::Fixed(40f32))
+    .style(get_pin_color(pin).get_button_style())
+    .on_press(Message::Activate(pin.board_pin_number));
 
     // Create the row of widgets that represent the pin, inverted order if left or right
     if is_left {
@@ -284,12 +284,12 @@ fn create_pin_view_side(
             .push(pin_option)
             .push(pin_name)
             .push(pin_arrow)
-            .push(pin_button_row)
+            .push(pin_button)
             .spacing(10)
             .align_items(Alignment::Center)
     } else {
         Row::new()
-            .push(pin_button_row)
+            .push(pin_button)
             .push(pin_arrow)
             .push(pin_name)
             .push(pin_option)
