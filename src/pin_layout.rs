@@ -266,21 +266,16 @@ fn create_pin_view_side(
     pin_arrow = pin_arrow.push(pin_arrow_row);
 
     // Create the pin itself, with number and as a button
-    let mut pin_button = Column::new()
-        .width(Length::Fixed(40f32))
-        .height(Length::Shrink)
-        .spacing(10)
-        .align_items(Alignment::Center);
     let pin_color = get_pin_color(pin);
-    let mut pin_button_row = Row::new().align_items(Alignment::Center);
-    pin_button_row = pin_button_row.push(
-        button(Text::new(pin.board_pin_number.to_string()).size(20))
-            .padding(10)
-            .width(Length::Fixed(40f32))
-            .style(pin_color.get_button_style())
-            .on_press(Message::Activate(pin.board_pin_number)),
-    );
-    pin_button = pin_button.push(pin_button_row);
+    let pin_button_row = Row::new()
+        .push(
+            button(Text::new(pin.board_pin_number.to_string()).size(20))
+                .padding(10)
+                .width(Length::Fixed(40f32))
+                .style(pin_color.get_button_style())
+                .on_press(Message::Activate(pin.board_pin_number)),
+        )
+        .align_items(Alignment::Center);
 
     // Create the row of widgets that represent the pin, inverted order if left or right
     if is_left {
@@ -289,12 +284,12 @@ fn create_pin_view_side(
             .push(pin_option)
             .push(pin_name)
             .push(pin_arrow)
-            .push(pin_button)
+            .push(pin_button_row)
             .spacing(10)
             .align_items(Alignment::Center)
     } else {
         Row::new()
-            .push(pin_button)
+            .push(pin_button_row)
             .push(pin_arrow)
             .push(pin_name)
             .push(pin_option)
