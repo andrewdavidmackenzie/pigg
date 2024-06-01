@@ -113,7 +113,6 @@ impl Gpio {
             let path_str = path.display().to_string();
             Self::load(Some(path_str)).await
         } else {
-            println!("No file selected for loading configuration.");
             Ok(None)
         }
     }
@@ -128,7 +127,6 @@ impl Gpio {
             let path_str = path.display().to_string();
             gpio_config.save(&path_str)
         } else {
-            println!("No file selected for saving configuration.");
             Ok(())
         }
     }
