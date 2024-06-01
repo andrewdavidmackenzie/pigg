@@ -333,7 +333,6 @@ impl Application for Gpio {
                         .push(pin_layout)
                         .spacing(10)
                         .align_items(Alignment::Center)
-                        .width(Length::Fixed(900.0))
                         .height(Length::Fill),
                 )
                 .align_items(Alignment::Start)
