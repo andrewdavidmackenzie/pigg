@@ -55,7 +55,7 @@ pub enum PinFunction {
     Input(Option<InputPull>),
     Output(Option<PinLevel>),
 
-    /// General Purpose CLock functions (from https://pinout.xyz/pinout/gpclk)
+    /// General Purpose Clock functions (from https://pinout.xyz/pinout/gpclk)
     GPCLK0,
     GPCLK1,
     GPCLK2,
@@ -127,7 +127,9 @@ pub struct PinDescription {
 }
 impl std::fmt::Display for PinFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        // Remove anything after the first "(" of debug output
+        let full = format!("{:?}", self);
+        write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
     }
 }
 
@@ -170,8 +172,8 @@ mod test {
 
     use tempfile::tempdir;
 
-    use crate::gpio::InputPull::PullUp;
     use crate::gpio::{GPIOConfig, PinFunction};
+    use crate::gpio::InputPull::PullUp;
 
     #[test]
     fn create_a_config() {

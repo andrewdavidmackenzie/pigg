@@ -103,7 +103,7 @@ impl Hardware for PiHW {
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
                 let mut input = match pull {
-                    None => pin.into_input(),
+                    None | Some(InputPull::None) => pin.into_input(),
                     Some(InputPull::PullUp) => pin.into_input_pullup(),
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
