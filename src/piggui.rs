@@ -1,19 +1,20 @@
 use std::{env, io};
 
-use gpio::InputPull;
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Command, Element, Length, Settings,
-    Subscription, Theme,
+    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Button, Column, container, pick_list, Row, Text};
+
+use gpio::InputPull;
 
 // Custom Widgets
 use crate::gpio::{
     BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
 };
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HWListenerEvent, HardwareEvent};
+use crate::hw_listener::{HardwareEvent, HWListenerEvent};
 // Importing pin layout views
 use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
 
@@ -39,6 +40,7 @@ impl Layout {
 }
 
 // Implementing format for Layout
+// TODO could maybe put the Name as a &str inside the enum elements above?
 impl std::fmt::Display for Layout {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -69,13 +71,12 @@ fn main() -> Result<(), iced::Error> {
 #[derive(Debug, Clone)]
 pub enum Message {
     Activate(BoardPinNumber),
-    PinFunctionSelected(usize, PinFunction),
+    PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
     LayoutChanged(Layout),
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
-    ChangeOutputLevel(BCMPinNumber, bool),
-    ChangeInputPull(BCMPinNumber, InputPull),
+    ChangeOutputLevel(BCMPinNumber, PinLevel),
     Save,
     Load,
 }
@@ -143,34 +144,36 @@ impl Gpio {
     }
 
     // A new function has been selected for a pin via the UI
-    fn new_pin_function(&mut self, board_pin_number: usize, new_function: Option<PinFunction>) {
-        let previous_function = self.pin_function_selected[board_pin_number - 1];
+    fn new_pin_function(
+        &mut self,
+        board_pin_number: BoardPinNumber,
+        bcm_pin_number: BCMPinNumber,
+        new_function: Option<PinFunction>,
+    ) {
+        let pin_index = board_pin_number as usize - 1;
+        let previous_function = self.pin_function_selected[pin_index];
         if new_function != previous_function {
-            self.pin_function_selected[board_pin_number - 1] = new_function;
-            if let Some(pins) = &self.pin_descriptions {
-                if let Some(bcm_pin_number) = pins[board_pin_number - 1].bcm_pin_number {
-                    // Pushing selected pin to the Pin Config
-                    if let Some(pin_config) = self
-                        .gpio_config
-                        .configured_pins
-                        .iter_mut()
-                        .find(|(pin, _)| *pin == bcm_pin_number)
-                    {
-                        *pin_config = (bcm_pin_number, new_function.unwrap());
-                    } else {
-                        // Add a new configuration entry if it doesn't exist
-                        self.gpio_config
-                            .configured_pins
-                            .push((bcm_pin_number, new_function.unwrap()));
-                    }
-                    // Report config changes to the hardware listener
-                    // Since config loading and hardware listener setup can occur out of order
-                    // mark the config as changed. If we send to the listener, then mark as done
-                    if let Some(ref mut listener) = &mut self.listener_sender {
-                        let _ = listener
-                            .try_send(HardwareEvent::NewPinConfig(bcm_pin_number, new_function));
-                    }
-                }
+            self.pin_function_selected[pin_index] = new_function;
+            // Pushing selected pin to the Pin Config
+            if let Some(pin_config) = self
+                .gpio_config
+                .configured_pins
+                .iter_mut()
+                .find(|(pin, _)| *pin == bcm_pin_number)
+            {
+                *pin_config = (bcm_pin_number, new_function.unwrap());
+            } else {
+                // Add a new configuration entry if it doesn't exist
+                self.gpio_config
+                    .configured_pins
+                    .push((bcm_pin_number, new_function.unwrap()));
+            }
+            // Report config changes to the hardware listener
+            // Since config loading and hardware listener setup can occur out of order
+            // mark the config as changed. If we send to the listener, then mark as done
+            if let Some(ref mut listener) = &mut self.listener_sender {
+                let _ =
+                    listener.try_send(HardwareEvent::NewPinConfig(bcm_pin_number, new_function));
             }
         }
     }
@@ -238,26 +241,11 @@ impl Application for Gpio {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
-            Message::PinFunctionSelected(board_pin_number, pin_function) => {
-                self.new_pin_function(board_pin_number, Some(pin_function));
+            Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
+                self.new_pin_function(board_pin_number, bcm_pin_number, Some(pin_function));
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
-            }
-            Message::ChangeInputPull(bcm_pin_number, selected_pull) => {
-                // Update the pin configuration with the new pull value
-                let new_pin_function = match selected_pull {
-                    InputPull::None => PinFunction::Input(None),
-                    _ => PinFunction::Input(Some(selected_pull)),
-                };
-                if let Some(pin_config) = self
-                    .gpio_config
-                    .configured_pins
-                    .iter_mut()
-                    .find(|(pin, _)| *pin == bcm_pin_number)
-                {
-                    pin_config.1 = new_pin_function;
-                }
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);

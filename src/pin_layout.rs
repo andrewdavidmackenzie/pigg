@@ -3,8 +3,11 @@ use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::led::led;
-use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use crate::gpio::{
+    BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
+};
 use crate::Gpio;
+use crate::gpio::PinFunction::Input;
 use crate::InputPull;
 use crate::Message;
 use crate::style::CustomButton;
@@ -131,40 +134,32 @@ pub fn board_pin_layout_view(
 /// Create the widget that either shows an input pin's state,
 /// or allows the user to control the state of an output pin
 fn get_pin_widget(
+    board_pin_number: BoardPinNumber,
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: &Option<PinFunction>,
     pin_state: Option<PinLevel>,
-    pin_config: &GPIOConfig,
+    _pin_config: &GPIOConfig,
     is_left: bool,
 ) -> Row<'static, Message> {
     let row = match pin_function {
-        Some(PinFunction::Input(_)) => {
+        Some(PinFunction::Input(pull)) => {
             let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
-
-            // Find the current pull configuration for the pin
-            let pull = pin_config
-                .configured_pins
-                .iter()
-                .find(|(pin, _)| *pin == bcm_pin_number.unwrap())
-                .and_then(|(_, function)| {
-                    if let PinFunction::Input(Some(pull)) = function {
-                        Some(*pull)
-                    } else {
-                        None
-                    }
-                });
 
             // Filter out the currently selected pull option
             if let Some(selected_pull) = pull {
-                sub_options.retain(|&option| option != selected_pull);
+                sub_options.retain(|&option| &option != selected_pull);
             }
 
             if is_left {
                 Row::new()
                     .push(led(12.0, pin_state))
                     .push(
-                        pick_list(sub_options, pull, move |selected_pull| {
-                            Message::ChangeInputPull(bcm_pin_number.unwrap(), selected_pull)
+                        pick_list(sub_options, *pull, move |selected_pull| {
+                            Message::PinFunctionSelected(
+                                board_pin_number,
+                                bcm_pin_number.unwrap(),
+                                Input(Some(selected_pull)),
+                            )
                         })
                         .placeholder("Select Input"),
                     )
@@ -172,8 +167,12 @@ fn get_pin_widget(
             } else {
                 Row::new()
                     .push(
-                        pick_list(sub_options, pull, move |selected_pull| {
-                            Message::ChangeInputPull(bcm_pin_number.unwrap(), selected_pull)
+                        pick_list(sub_options, *pull, move |selected_pull| {
+                            Message::PinFunctionSelected(
+                                board_pin_number,
+                                bcm_pin_number.unwrap(),
+                                Input(Some(selected_pull)),
+                            )
                         })
                         .placeholder("Select Input"),
                     )
@@ -210,6 +209,7 @@ fn create_pin_view_side(
         Some(bcm) => pin_states[bcm as usize],
     };
     let pin_widget = get_pin_widget(
+        pin.board_pin_number,
         pin.bcm_pin_number,
         pin_function,
         pin_state,
@@ -222,13 +222,14 @@ fn create_pin_view_side(
         .width(Length::Fixed(140f32))
         .align_items(Alignment::Center);
     if pin.options.len() > 1 {
-        let pin_number = pin.board_pin_number as usize;
+        let board_pin_number = pin.board_pin_number;
+        let bcm_pin_number = pin.bcm_pin_number.unwrap();
         let mut pin_options_row = Row::new()
             .align_items(Alignment::Center)
             .width(Length::Fixed(140f32));
         pin_options_row = pin_options_row.push(
             pick_list(pin.options, selected_function, move |pin_function| {
-                Message::PinFunctionSelected(pin_number, pin_function)
+                Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function)
             })
             .width(Length::Fixed(200f32))
             .placeholder("Select function"),
