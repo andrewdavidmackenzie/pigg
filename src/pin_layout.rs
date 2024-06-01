@@ -186,12 +186,15 @@ fn get_pin_widget(
             let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
                 Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
             });
-            Row::new().push(toggler)
+            if is_left {
+                Row::new().push(Column::new().push(toggler).align_items(Alignment::End))
+            } else {
+                Row::new().push(Column::new().push(toggler).align_items(Alignment::Start))
+            }
         }
         _ => Row::new(),
     };
     row.width(Length::Fixed(150f32))
-        .align_items(Alignment::Center)
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
