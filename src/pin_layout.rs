@@ -73,7 +73,7 @@ pub fn bcm_pin_layout_view(
     for pin in pins_slice {
         let pin_row = create_pin_view_side(
             pin,
-            select_pin_function(pin, pin_config, gpio),
+            select_pin_function(pin, pin_config, gpio).unwrap(),
             true,
             &gpio.pin_function_selected[pin.board_pin_number as usize - 1],
             &gpio.pin_states,
@@ -101,7 +101,7 @@ pub fn board_pin_layout_view(
     for pair in pin_descriptions.chunks(2) {
         let left_row = create_pin_view_side(
             &pair[0],
-            select_pin_function(&pair[0], pin_config, gpio),
+            select_pin_function(&pair[0], pin_config, gpio).unwrap(),
             true,
             &gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
             &gpio.pin_states,
@@ -110,7 +110,7 @@ pub fn board_pin_layout_view(
 
         let right_row = create_pin_view_side(
             &pair[1],
-            select_pin_function(&pair[1], pin_config, gpio),
+            select_pin_function(&pair[1], pin_config, gpio).unwrap(),
             false,
             &gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
             &gpio.pin_states,
@@ -137,13 +137,13 @@ pub fn board_pin_layout_view(
 fn get_pin_widget(
     board_pin_number: BoardPinNumber,
     bcm_pin_number: Option<BCMPinNumber>,
-    pin_function: &Option<PinFunction>,
+    pin_function: &PinFunction,
     pin_state: Option<PinLevel>,
     _pin_config: &GPIOConfig,
     is_left: bool,
 ) -> Row<'static, Message> {
     let row = match pin_function {
-        Some(PinFunction::Input(pull)) => {
+        PinFunction::Input(pull) => {
             let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
 
             // Filter out the currently selected pull option
@@ -182,8 +182,7 @@ fn get_pin_widget(
             }
         }
 
-        // TODO Fix Output Width
-        Some(PinFunction::Output(_)) => {
+        PinFunction::Output(_) => {
             let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
                 Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
             });
@@ -193,6 +192,7 @@ fn get_pin_widget(
                 Row::new().push(Column::new().push(toggler).align_items(Alignment::Start))
             }
         }
+
         _ => Row::new(),
     };
     row.width(Length::Fixed(150f32))
@@ -201,9 +201,9 @@ fn get_pin_widget(
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side(
     pin: &PinDescription,
-    selected_function: Option<PinFunction>,
+    selected_function: PinFunction,
     is_left: bool,
-    pin_function: &Option<PinFunction>,
+    pin_function: &PinFunction,
     pin_states: &[Option<PinLevel>; 40],
     pin_config: &GPIOConfig,
 ) -> Row<'static, Message> {
@@ -231,8 +231,16 @@ fn create_pin_view_side(
         let mut pin_options_row = Row::new()
             .align_items(Alignment::Center)
             .width(Length::Fixed(140f32));
+        let mut config_options = pin.options.to_vec();
+        let selected = match selected_function {
+            PinFunction::None => None,
+            other => {
+                config_options.push(PinFunction::None);
+                Some(other)
+            }
+        };
         pin_options_row = pin_options_row.push(
-            pick_list(pin.options, selected_function, move |pin_function| {
+            pick_list(config_options, selected, move |pin_function| {
                 Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function)
             })
             .width(Length::Fixed(200f32))
@@ -321,5 +329,5 @@ pub(crate) fn select_pin_function(
             }
         })
         // Else Select from the UI
-        .or_else(|| gpio.pin_function_selected[pin.board_pin_number as usize - 1])
+        .or_else(|| Some(gpio.pin_function_selected[pin.board_pin_number as usize - 1]))
 }

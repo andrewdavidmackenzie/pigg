@@ -41,7 +41,7 @@ pub trait Hardware {
     fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        pin_function: &Option<PinFunction>,
+        pin_function: &PinFunction,
         callback: C,
     ) -> io::Result<()>
     where

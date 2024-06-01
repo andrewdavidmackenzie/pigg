@@ -38,7 +38,7 @@ impl Hardware for NoneHW {
     fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        _pin_function: &Option<PinFunction>,
+        _pin_function: &PinFunction,
         _callback: C,
     ) -> io::Result<()>
     where
