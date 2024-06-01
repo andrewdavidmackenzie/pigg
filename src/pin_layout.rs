@@ -1,5 +1,5 @@
 use iced::{Alignment, Color, Element, Length};
-use iced::widget::{button, Column, container, pick_list, Row, Text, toggler};
+use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::led::led;
@@ -85,7 +85,7 @@ pub fn bcm_pin_layout_view(
         ));
     }
 
-    container(column).into()
+    column.into()
 }
 
 /// View that draws the pins laid out as they are on the physical Pi board
@@ -128,7 +128,7 @@ pub fn board_pin_layout_view(
         ));
     }
 
-    container(column).into()
+    column.into()
 }
 
 /// Create the widget that either shows an input pin's state,
