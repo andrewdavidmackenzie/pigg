@@ -14,7 +14,7 @@ level of the outputs and see the level of the inputs, from the GUI.
 
 We have many ideas for how to improve it though, so please read on and send us your ideas also!
 
-<img alt="Board Pin Layout Screenshot" src="images/board_pin_layout.png" width="300" /> <img alt="BCN Pin Layout Screenshot" src="images/bcm_pin_layout.png" width="300" />
+<img alt="Board Pin Layout Screenshot" src="images/board_pin_layout.png" width="400" /><img alt="BCN Pin Layout Screenshot" src="images/bcm_pin_layout.png" width="400" />
 
 ## Motivation
 
