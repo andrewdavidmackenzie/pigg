@@ -90,9 +90,10 @@ many have GH issues.
 
 ### PIGGUI ("Piggy")
 
-A binary that shows a GUI using Iced.
-On Raspberry pi it will include a real GPIO hardware backend (via rppal).
-On macOS and linux it will just have the UI, without GPIO.
+A binary that shows a GUI for configuring pins, observing input levels and controlling output
+levels.
+On Raspberry Pi it has a real GPIO hardware backend (via rppal).
+On macOS and linux it uses a fake GPIO hardware backend.
 
 ### PIGLET ("Piglet) - TODO
 
