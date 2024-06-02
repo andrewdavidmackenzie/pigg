@@ -41,8 +41,7 @@ jobs:
         run: |
           make clippy build test
           ls
-          grcov . --binary-path target/debug/ -s . -t lcov --branch \
-          --ignore-not-existing --ignore "/*" -o lcov.info
+          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
 
       - name: UploadCoverage
         uses: codecov/codecov-action@v4
