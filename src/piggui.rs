@@ -1,20 +1,21 @@
 use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Button, Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::{
+    alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 
 use gpio::InputPull;
+use style::CustomButton;
 
 // Custom Widgets
 use crate::gpio::{
     BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
 };
 use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HardwareEvent, HWListenerEvent};
+use crate::hw_listener::{HWListenerEvent, HardwareEvent};
 // Importing pin layout views
 use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
 
@@ -315,6 +316,14 @@ impl Application for Gpio {
                 .push(hardware_view(hw_desc))
                 .align_items(Alignment::Start);
 
+            let file_button_style = CustomButton {
+                bg_color: Color::new(0.0, 1.0, 1.0, 1.0), 
+                text_color: Color::BLACK,
+                hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0), 
+                hovered_text_color: Color::WHITE,                 
+                border_radius: 2.0,
+            };
+
             main_row = main_row.push(
                 Column::new()
                     .push(layout_row)
@@ -322,11 +331,13 @@ impl Application for Gpio {
                     .push(
                         Button::new(Text::new("Save Configuration").size(20))
                             .padding(10)
+                            .style(file_button_style.get_button_style())
                             .on_press(Message::Save),
                     )
                     .push(
                         Button::new(Text::new("Load Configuration").size(20))
                             .padding(10)
+                            .style(file_button_style.get_button_style())
                             .on_press(Message::Load),
                     )
                     .align_items(Alignment::Center)
