@@ -9,7 +9,7 @@ GUI and [rppal](https://github.com/golemparts/rppal) for Raspberry Pi GPIO contr
 
 The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
 
-<table cellspacing="0" cellpadding="0">
+<table cellspacing="0" cellpadding="0" border="0">
   <tr>
     <td valign="top">
       <img src="images/bcm_pin_layout.png" width="400" align="top" />
