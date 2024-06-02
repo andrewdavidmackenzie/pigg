@@ -35,19 +35,19 @@ jobs:
           cargo install grcov
           rustup component add llvm-tools-preview
           echo RUSTFLAGS="-C instrument-coverage" >> "$GITHUB_ENV"
-          echo LLVM_PROFILE_FILE="flow-%p-%m.profraw" >> "$GITHUB_ENV"
+          echo LLVM_PROFILE_FILE="pigg-%p-%m.profraw" >> "$GITHUB_ENV"
 
       - name: make
         run: |
           make clippy build test
-          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          grcov $(find . -name "pigg-*-*.profraw" -print) --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
 
       - name: UploadCoverage
         uses: codecov/codecov-action@v4
         with:
-          fail_ci_if_error: true # optional (default = false)
-          files: ./lcov.info
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          token: ${{ secrets.CODECOV_TOKEN }} # required
-          verbose: true # optional (default = false)
+          fail_ci_if_error: true
+          file: ./lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
