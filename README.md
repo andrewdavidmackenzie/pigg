@@ -3,33 +3,85 @@
 
 # pigg - Raspberry Pi GPIO GUI
 
-A GUI for visualization/control of GPIO on Raspberry Pis.
+A GUI for visualization/control of GPIO on Raspberry Pis, written in [rust](https://www.rust-lang.org/)
+using [Iced](https://github.com/iced-rs/iced) for the
+GUI and [rppal](https://github.com/golemparts/rppal) for Raspberry Pi GPIO control.
 
-## Chosen Tech
+The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
 
-* [rust](https://www.rust-lang.org/)
-* [Iced](https://github.com/iced-rs/iced) for GUI
-* [rppal](https://github.com/golemparts/rppal) for Raspberry Pi GPIO control
+This first versions allows you to set up a GPIO hardware with Inputs or Outputs, and to control the
+level of the outputs and see the level of the inputs, from the GUI.
 
-## Basic / Initial Functionality
+We have many ideas for how to improve it though, so please read on and send us your ideas also!
 
-* visual representation of the GPIO connector/header with pins with numbers and names
-* able to config each pin (input, output, pulled up/down, pwm etc.)
-* able to set status of outputs
-* able to see the status of inputs
-* Able to load a config from file, and save the config that is currently set in the GUI
+<img alt="Board Pin Layout Screenshot" src="images/board_pin_layout.png" width="300" /> <img alt="BCN Pin Layout Screenshot" src="images/bcm_pin_layout.png" width="300" />
 
-## Next batch of functionality
+## Motivation
 
-* Able to provide a time-view of inputs, so like an analyzer...
+We started this project mainly to continue our learnings in rust, Iced-based GUIs and Raspberry
+Pi GPIO Hardware control.
+
+So, it's possible you might think "I can already this with 'XYZ'", but we wanted to do a native GUI in rust
+around the Pi and GPIO.
+
+Please let us know what you think, and suggestions, via GitHub discussions or GH issues, or in threads where we
+communicate its existence (discord, reddit, etc.).
+
+## Current Functionality
+
+* visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
+  physical layout of the Pi's GPIO connector/header, or a "BCM Pin Layout" with only the programmable
+  GPIO pins, ordered by BCM pin number
+* Each pin has its board pin number, name and function.
+* Drop down selector to config each pin (Currently as an Input with or without pull-up/pull-down, or
+  as an Output)
+* Inputs have a visualization like an LED to show its current level (Black is unknown, Red is off, Green is on)
+* Outputs have a toggle switch that can be used to change the value at the output
+* GPIO configurations can be loaded at startup with a command line filename option, or loaded via
+  file-picker from the UI or saves to file via file picker.
+
+## Help wanted, Raspberry Pi experts!
+
+We would like help and/or input from Raspberry Pi users in the following areas:
+
+* Pin definitions and their alternative functions. We have done an initial definition for GPIO (Input/Output)
+  functionality, gathering data from multiple sources, but we have found a number of contradictions in pin
+  definitions that we need to get to the bottom of before we extend the functionality further. The problems
+  detected can be found described in detail
+  in [GitHub issue #102](https://github.com/andrewdavidmackenzie/pigg/issues/102)
+* Deciding the order of things to work on in the future based on interest from others.
+* Ideas for how to integrate newer functionalities (e.g. I2C buses, SPI, UART, etc.)
+
+## Short-term Roadmap
+
+We have identified a number of areas we would like to work on after this initial release,
+but would really appreciate your input on what could be most useful or just the coolest,
+many have GH issues.
+
+* Review pin descriptions [Issue #102](https://github.com/andrewdavidmackenzie/pigg/issues/102)
+* Code cleanup and refactor [Issue #101](https://github.com/andrewdavidmackenzie/pigg/issues/101)
+* Add tests for UI and get coverage up [Issue #19](https://github.com/andrewdavidmackenzie/pigg/issues/19)
+* Better error handling [Issue #89](https://github.com/andrewdavidmackenzie/pigg/issues/89)
+* Automation of release process and publishing
+  packages [Issue #85](https://github.com/andrewdavidmackenzie/pigg/issues/85)
+* Improvements to Load/Save functionality [Issue #103](https://github.com/andrewdavidmackenzie/pigg/issues/103)
+* Pre-built binaries for install on Raspberry Pi [Issue #112](https://github.com/andrewdavidmackenzie/pigg/issues/112)
+  and easier install [Issue #111](https://github.com/andrewdavidmackenzie/pigg/issues/111)
+* Improve visualizations of inputs [Issue #116](https://github.com/andrewdavidmackenzie/pigg/issues/116)
+* Expand support beyond GPIO ( e.g. Clocks, PWM, I2C, UART, SPI etc.) with GUI support for config of pins in groups
+  Issues [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
+  [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
+* True logical layout, grouping pins by function [Issue #94](https://github.com/andrewdavidmackenzie/pigg/issues/94)
 
 ## Further out ideas
 
-* trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
-* able to have UI on different device to where GPIO is and connect remotely
-* hence able to connect the native UI to a remote device, where some "agent" is running
-* have an "agent" able to run on a Pi Pico
-* Have a web UI able to connect to an agent on a Pi or Pico
+* Allow connections between pins [Issue #95](https://github.com/andrewdavidmackenzie/pigg/issues/95)
+* Able to have UI on different device to where GPIO is and connect
+  remotely
+  Issues [#106](https://github.com/andrewdavidmackenzie/pigg/issues/106),
+  [#3](https://github.com/andrewdavidmackenzie/pigg/issues/3)
+* Pico support for a headless hardware backend
+* Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 
 ## Project Structure
 
@@ -39,7 +91,7 @@ A binary that shows a GUI using Iced.
 On Raspberry pi it will include a real GPIO hardware backend (via rppal).
 On macOS and linux it will just have the UI, without GPIO.
 
-### PIGLET ("Piglet)
+### PIGLET ("Piglet) - TODO
 
 A headless binary that is only built on RaspberryPi and that has no UI.
 
@@ -134,3 +186,19 @@ To do this you can use the equivalent of what `make run` does, adding the filena
 
 * On a Pi: `cargo run --features "pi","gui" -- <filename>`
 * On macOS and Linux: `cargo run --features "gui"  -- <filename>`
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## License
+
+See [LICENSE](LICENSE)
+
+## Code of Conduct
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## Security
+
+See [SECURITY.md](SECURITY.md)
