@@ -53,18 +53,18 @@ endif
 build:
 ifneq ($(PI),)
 	echo "Detected as running on Raspberry Pi"
-	cargo build --features "pi","gui"
+	cargo build --features "pi"
 else
-	cargo build --features "gui"
+	cargo build
 endif
 
 .PHONY: run
 run:
 ifneq ($(PI),)
 	echo "Detected as running on Raspberry Pi"
-	cargo run --features "pi","gui"
+	cargo run --features "pi"
 else
-	cargo run --features "gui"
+	cargo run
 endif
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
@@ -72,9 +72,9 @@ endif
 release-build:
 ifneq ($(PI),)
 	echo "Detected as running on Raspberry Pi"
-	cargo build --release --features "pi","gui"
+	cargo build --release --features "pi"
 else
-	cargo build --release --features "gui"
+	cargo build --release
 endif
 
 # This will only test GUI tests in piggui on the local host, whatever that is
@@ -83,9 +83,9 @@ endif
 test:
 ifneq ($(PI),)
 	echo "Detected as running on Raspberry Pi"
-	cargo test --features "pi","gui"
+	cargo test --features "pi"
 else
-	cargo test --features "gui"
+	cargo test
 endif
 
 .PHONY: copy

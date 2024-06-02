@@ -21,7 +21,7 @@ path = "src/piglet.rs"
 required-features = ["pi"]
 
 [features]
-default = []
+default = ["gui"]
 pi = ["rppal"]
 pico = [] #embassy
 gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd"]
