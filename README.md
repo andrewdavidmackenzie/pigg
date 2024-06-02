@@ -120,7 +120,7 @@ you will get a version of `piggui` with fake hardware backing it, not real Pi GP
 
 To be able to interact with real Pi GPIO hardware you have two options:
 
-- Run `cargo install --features "gui","pi"` on your Pi
+- Run `cargo install --features "pi"` on your Pi
 - Follow the instructions before for Building from Source
     - Directly on your Raspberry Pi.
     - Use `make` to build on your machine for your Pi, but you will need `Docker`/`Podman` and `cross`
@@ -195,8 +195,8 @@ loading a config, the default config will be used.
 
 To do this you can use the equivalent of what `make run` does, adding the filename:
 
-- On a Pi: `cargo run --features "pi","gui" -- <filename>`
-- On macOS, linux or Windows: `cargo run --features "gui"  -- <filename>`
+- On a Pi: `cargo run --features "pi" -- <filename>`
+- On macOS, linux or Windows: `cargo run -- <filename>`
 
 ## Contributing
 
