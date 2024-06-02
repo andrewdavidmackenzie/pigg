@@ -9,15 +9,15 @@ GUI and [rppal](https://github.com/golemparts/rppal) for Raspberry Pi GPIO contr
 
 The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
 
-This first versions allows you to set up a GPIO hardware with Inputs or Outputs, and to control the
-level of the outputs and see the level of the inputs, from the GUI.
-
-We have many ideas for how to improve it though, so please read on and send us your ideas also!
-
 <p float="left">
 <img alt="Board Pin Layout Screenshot" src="images/board_pin_layout.png" width="400"/>
 <img alt="BCN Pin Layout Screenshot" src="images/bcm_pin_layout.png" width="400"/>
 </p>
+
+This first versions allows you to set up a GPIO hardware with Inputs or Outputs, and to control the
+level of the outputs and see the level of the inputs, from the GUI.
+
+We have many ideas for how to improve it though, so please read on and send us your ideas also!
 
 ## Motivation
 
