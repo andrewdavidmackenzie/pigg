@@ -34,7 +34,7 @@ jobs:
         run: |
           cargo install grcov
           rustup component add llvm-tools-preview
-          echo RUSTFLAGS="-C instrument-coverage" >> "$GITHUB_ENV"
+          echo RUSTFLAGS=-Cinstrument-coverage >> "$GITHUB_ENV"
           echo LLVM_PROFILE_FILE=pigg-%p-%m.profraw >> "$GITHUB_ENV"
 
       - name: make
