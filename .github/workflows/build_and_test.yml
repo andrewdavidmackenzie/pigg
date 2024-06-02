@@ -40,7 +40,9 @@ jobs:
       - name: make
         run: |
           make clippy build test
-          grcov $(find . -name "pigg-*-*.profraw" -print) --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          ls
+          grcov . --binary-path target/debug/ -s . -t lcov --branch \
+          --ignore-not-existing --ignore "/*" -o lcov.info
 
       - name: UploadCoverage
         uses: codecov/codecov-action@v4
