@@ -1,17 +1,15 @@
-use iced::alignment::Horizontal;
-use iced::widget::{button, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
+use iced::alignment::Horizontal;
+use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 
-use crate::custom_widgets::led::led;
 use crate::custom_widgets::{circle::circle, line::line};
-use crate::gpio::PinFunction::Input;
-use crate::gpio::{
-    BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
-};
-use crate::style::CustomButton;
+use crate::custom_widgets::led::led;
 use crate::Gpio;
+use crate::hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use crate::hw::PinFunction::Input;
 use crate::InputPull;
 use crate::Message;
+use crate::style::CustomButton;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -19,29 +17,29 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
             border_radius: 50.0,
-            hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0), 
+            hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
         "5V" => CustomButton {
             bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
             text_color: Color::BLACK,
             border_radius: 50.0,
-            hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0), 
+            hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
         "Ground" => CustomButton {
             bg_color: Color::BLACK,
             text_color: Color::WHITE,
             border_radius: 50.0,
-            hovered_bg_color: Color::WHITE, 
+            hovered_bg_color: Color::WHITE,
             hovered_text_color: Color::BLACK,
         },
 
         "GPIO2" | "GPIO3" => CustomButton {
-            bg_color: Color::new(0.678, 0.847, 0.902, 1.0), 
+            bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
-            hovered_bg_color: Color::WHITE, 
+            hovered_bg_color: Color::WHITE,
             hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
         },
 
@@ -49,31 +47,31 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
             text_color: Color::WHITE,
             border_radius: 50.0,
-            hovered_bg_color: Color::WHITE, 
+            hovered_bg_color: Color::WHITE,
             hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
         },
 
         "GPIO14" | "GPIO15" => CustomButton {
-            bg_color: Color::new(0.0, 0.502, 0.0, 1.0), 
+            bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
-            hovered_bg_color: Color::WHITE, 
-            hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0), 
+            hovered_bg_color: Color::WHITE,
+            hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
         },
 
         "ID_SD" | "ID_SC" => CustomButton {
             bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
             text_color: Color::WHITE,
             border_radius: 50.0,
-            hovered_bg_color: Color::WHITE, 
+            hovered_bg_color: Color::WHITE,
             hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
         },
         _ => CustomButton {
-            bg_color: Color::new(1.0, 0.647, 0.0, 1.0), 
+            bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
-            hovered_bg_color: Color::WHITE, 
-            hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0), 
+            hovered_bg_color: Color::WHITE,
+            hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
         },
     }
 }

@@ -2,9 +2,9 @@ use std::io;
 
 /// Implementation of GPIO for pi pico targets
 #[cfg(feature = "rppal")]
-use rppal::gpio::{InputPin, Level, Trigger};
+use rppal::hw::{InputPin, Level, Trigger};
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, GPIOState};
+use crate::hw::{BCMPinNumber, GPIOConfig, GPIOState};
 
 use super::Hardware;
 use super::HardwareDescriptor;

@@ -4,7 +4,7 @@ use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
 use iced::mouse;
 
-use crate::gpio::PinLevel;
+use crate::hw::PinLevel;
 
 pub struct Led {
     radius: f32,

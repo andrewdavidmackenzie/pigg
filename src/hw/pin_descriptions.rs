@@ -1,4 +1,4 @@
-use crate::gpio::{InputPull, PinDescription, PinFunction};
+use crate::hw::{InputPull, PinDescription, PinFunction};
 
 /// This module codifies the descriptions if the Raspberry Pi GPIO hardware
 /// exposed pins, including multiple options (functions) available for some pins
