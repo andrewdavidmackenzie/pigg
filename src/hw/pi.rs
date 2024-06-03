@@ -250,9 +250,9 @@ mod test {
         let hw_descriptor = hw
             .get_descriptor()
             .expect("Could not read Hardware description");
-        assert!(hw_descripton.hardware != "Unknown");
-        assert!(hw_descripton.revision != "Unknown");
-        assert!(hw_descripton.serial != "Unknown");
-        assert!(hw_descripton.model != "Unknown");
+        assert!(hw_descriptor.hardware != "Unknown");
+        assert!(hw_descriptor.revision != "Unknown");
+        assert!(hw_descriptor.serial != "Unknown");
+        assert!(hw_descriptor.model != "Unknown");
     }
 }
