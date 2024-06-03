@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use crate::hw::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
 
 use super::Hardware;
 use super::HardwareDescriptor;

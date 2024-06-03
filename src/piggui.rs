@@ -1,25 +1,20 @@
 use std::{env, io};
 
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
-    Subscription, Theme,
+    alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
-use gpio::InputPull;
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use hw::HardwareDescriptor;
+use hw::InputPull;
+// Importing pin layout views
+use hw_listener::{HardwareEvent, HWListenerEvent};
+use pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
 use style::CustomButton;
 
-// Custom Widgets
-use crate::gpio::{
-    BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel,
-};
-use crate::hw::HardwareDescriptor;
-use crate::hw_listener::{HWListenerEvent, HardwareEvent};
-// Importing pin layout views
-use crate::pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
-
-mod gpio;
 mod hw;
 mod pin_layout;
 mod style;
@@ -317,10 +312,10 @@ impl Application for Gpio {
                 .align_items(Alignment::Start);
 
             let file_button_style = CustomButton {
-                bg_color: Color::new(0.0, 1.0, 1.0, 1.0), 
+                bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
                 text_color: Color::BLACK,
-                hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0), 
-                hovered_text_color: Color::WHITE,                 
+                hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
+                hovered_text_color: Color::WHITE,
                 border_radius: 2.0,
             };
 

@@ -1,10 +1,7 @@
 use std::env;
 
-use hw::Hardware;
+use hw::{GPIOConfig, Hardware};
 
-use crate::gpio::GPIOConfig;
-
-mod gpio;
 #[allow(dead_code)]
 mod hw;
 

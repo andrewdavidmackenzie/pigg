@@ -8,8 +8,8 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinLevel};
-use crate::gpio::{InputPull, PinFunction};
+use crate::hw::{BCMPinNumber, GPIOConfig, PinDescription, PinLevel};
+use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -275,7 +275,7 @@ mod test {
                     hw.apply_pin_config(bcm, pin_function, |_, _| {})
                         .expect("Failed to apply pin config")
                 }
+            }
         }
-    }
     }
 }
