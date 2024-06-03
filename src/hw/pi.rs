@@ -248,7 +248,7 @@ mod test {
     fn pi_hardware_descriptor() {
         let hw = super::get();
         let hw_descriptor = hw
-            .get_descriptor()
+            .descriptor()
             .expect("Could not read Hardware description");
         assert!(hw_descriptor.hardware != "Unknown");
         assert!(hw_descriptor.revision != "Unknown");
