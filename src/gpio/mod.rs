@@ -217,7 +217,7 @@ mod test {
     fn load_test_file() {
         let root = std::env::var("CARGO_MANIFEST_DIR").expect("Could not get manifest dir");
         let mut path = PathBuf::from(root);
-        path = path.join("tests/andrews_board.piggui");
+        path = path.join("configs/andrews_board.piggui");
         let config = GPIOConfig::load(path.to_str().expect("Could not get Path as str"))
             .expect("Could not load GPIOConfig from path");
         assert_eq!(config.configured_pins.len(), 2);
