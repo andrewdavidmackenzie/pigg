@@ -20,11 +20,11 @@ enum Pin {
     Output(OutputPin),
 }
 
-// Tuples of bcm_pin_number and Pin
-pub struct PiHW {
+struct PiHW {
     configured_pins: HashMap<BCMPinNumber, Pin>,
 }
 
+/// This method is used to get a "handle" onto the Hardware implementation
 pub fn get() -> impl Hardware {
     PiHW {
         configured_pins: Default::default(),
@@ -37,10 +37,10 @@ impl Hardware for PiHW {
     /// Find the Pi hardware description
     fn descriptor(&self) -> io::Result<HardwareDescriptor> {
         let mut descriptor = HardwareDescriptor {
-            hardware: "Raspberry Pi".to_string(),
+            hardware: "Unknown".to_string(),
             revision: "Unknown".to_string(),
             serial: "Unknown".to_string(),
-            model: "Raspberry Pi".to_string(),
+            model: "Unknown".to_string(),
         };
 
         for line in fs::read_to_string("/proc/cpuinfo")?.lines() {
@@ -231,5 +231,26 @@ impl Hardware for PiHW {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn get_hardware() {
+        let hw = super::get();
+        assert_eq!(hw.pin_descriptions().len(), 40);
+    }
+
+    #[test]
+    fn pi_hardware_descriptor() {
+        let hw = super::get();
+        let hw_descriptor = hw
+            .get_descriptor()
+            .expect("Could not read Hardware description");
+        assert!(hw_descripton.hardware != "Unknown");
+        assert!(hw_descripton.revision != "Unknown");
+        assert!(hw_descripton.serial != "Unknown");
+        assert!(hw_descripton.model != "Unknown");
     }
 }
