@@ -29,13 +29,12 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: clippy
+          components: clippy,llvm-tools-preview
           toolchain: stable
 
       - name: InstallCoverageTools
         run: |
           cargo install grcov
-          rustup component add llvm-tools-preview
 
       - name: make
         run: |
