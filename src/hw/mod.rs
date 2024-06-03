@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::io;
 
 use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
@@ -25,13 +26,23 @@ pub struct HardwareDescriptor {
     pub model: String,
 }
 
+impl Display for HardwareDescriptor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Hardware: {}", self.hardware)?;
+        writeln!(f, "Revision: {}", self.revision)?;
+        writeln!(f, "Serial: {}", self.serial)?;
+        write!(f, "Model: {}", self.model)
+    }
+}
+
 /// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
 /// interact with any possible GPIO hardware on the device to set config and get state
 #[must_use]
 pub trait Hardware {
     /// Return a struct describing the hardware that we are connected to
     fn descriptor(&self) -> io::Result<HardwareDescriptor>;
-    /// Return a set of pin descriptions for the connected hardware
+    /// Return an array of 40 pin descriptions for the connected hardware.
+    /// Array index = board_pin_number -1, as pin numbering start at 1
     fn pin_descriptions(&self) -> [PinDescription; 40];
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>

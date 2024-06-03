@@ -117,6 +117,14 @@ pub enum PinFunction {
     I2C_EEPROM_ID_SC,
 }
 
+impl fmt::Display for PinFunction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Remove anything after the first '(' of debug output
+        let full = format!("{:?}", self);
+        write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
+    }
+}
+
 // [board_pin_number] refer to the pins by the number of the pin printed on the board
 // [bcm_pin_number] refer to the pins by the "Broadcom SOC channel" number,
 // these are the numbers after "GPIO"
@@ -127,11 +135,13 @@ pub struct PinDescription {
     pub name: &'static str,
     pub options: &'static [PinFunction], // The set of functions the pin can have, chosen by user config
 }
-impl std::fmt::Display for PinFunction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Remove anything after the first "(" of debug output
-        let full = format!("{:?}", self);
-        write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
+
+impl fmt::Display for PinDescription {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Board Pin #: {}", self.board_pin_number)?;
+        writeln!(f, "\tBCM Pin #: {:?}", self.bcm_pin_number)?;
+        writeln!(f, "\tName Pin #: {}", self.name)?;
+        writeln!(f, "\tFunctions #: {:?}", self.options)
     }
 }
 
@@ -139,6 +149,20 @@ impl std::fmt::Display for PinFunction {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GPIOConfig {
     pub configured_pins: Vec<(BCMPinNumber, PinFunction)>,
+}
+
+impl fmt::Display for GPIOConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.configured_pins.is_empty() {
+            writeln!(f, "No Pins are Configured")
+        } else {
+            writeln!(f, "Configured Pins:")?;
+            for (bcm_pin_number, pin_function) in &self.configured_pins {
+                writeln!(f, "\tBCM Pin #: {bcm_pin_number} - {}", pin_function)?;
+            }
+            Ok(())
+        }
+    }
 }
 
 impl GPIOConfig {
