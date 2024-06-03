@@ -1,4 +1,8 @@
+use std::env;
+
 use hw::Hardware;
+
+use crate::gpio::GPIOConfig;
 
 mod gpio;
 #[allow(dead_code)]
@@ -10,10 +14,26 @@ mod hw;
 fn main() {
     let mut hw = hw::get();
     println!("{}", hw.descriptor().unwrap());
-    println!("Pin Descriptions: {:?}", hw.pin_descriptions());
+    println!("Pin Descriptions:");
+    for pin_description in hw.pin_descriptions() {
+        println!("{pin_description}")
+    }
 
-    // When we write piglet for real - this will probably be sent over the network from a piggui
-    let config = gpio::GPIOConfig::default();
-    println!("Pin configs: {:?}", config);
-    let _ = hw.apply_config(&config, |_, _| {}); // TODO handle error
+    // Load config from file or default
+    let (filename, config) = match env::args().nth(1) {
+        Some(config_filename) => {
+            let config = GPIOConfig::load(&config_filename).unwrap();
+            (Some(config_filename), config)
+        }
+        None => (None, GPIOConfig::default()),
+    };
+
+    match filename {
+        Some(file) => {
+            println!("Config loaded from file: {file}");
+            println!("{config}");
+        }
+        None => println!("Default Config set"),
+    }
+    hw.apply_config(&config, |_, _| {}).unwrap();
 }
