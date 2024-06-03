@@ -255,4 +255,25 @@ mod test {
         assert!(hw_descriptor.serial != "Unknown");
         assert!(hw_descriptor.model != "Unknown");
     }
+
+    #[test]
+    fn pin_descriptions() {
+        let hw = super::get();
+        let pins = hw.pin_descriptions();
+        assert_eq!(pins.len(), 40);
+        assert!(pins[0].name, "3V3")
+    }
+
+    #[test]
+    fn try_all_pin_configs() {
+        let hw = super::get();
+        let pins = hw.pin_descriptions();
+
+        for pin in &pins {
+            for Pin_function in &pin.options {
+                hw.apply_pin_config(pin.bcm_pin_number, pin_function, |_| {})
+                    .expect("Failed to apply pin config")
+            }
+        }
+    }
 }

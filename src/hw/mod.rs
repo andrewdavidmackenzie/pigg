@@ -41,7 +41,8 @@ impl Display for HardwareDescriptor {
 pub trait Hardware {
     /// Return a struct describing the hardware that we are connected to
     fn descriptor(&self) -> io::Result<HardwareDescriptor>;
-    /// Return a set of pin descriptions for the connected hardware
+    /// Return an array of 40 pin descriptions for the connected hardware.
+    /// Array index = board_pin_number -1, as pin numbering start at 1
     fn pin_descriptions(&self) -> [PinDescription; 40];
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
