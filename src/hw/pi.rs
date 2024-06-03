@@ -236,6 +236,8 @@ impl Hardware for PiHW {
 
 #[cfg(test)]
 mod test {
+    use crate::hw::Hardware;
+
     #[test]
     fn get_hardware() {
         let hw = super::get();
