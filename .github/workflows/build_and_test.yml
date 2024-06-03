@@ -11,13 +11,15 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
+  RUSTFLAGS: -C instrument-coverage
+  LLVM_PROFILE_FILE: pigg-%p-%m.profraw
 
 jobs:
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-14, ubuntu-latest ]
+        os: [ macos-14, ubuntu-latest, windows-latest ]
 
     steps:
       - name: Checkout
@@ -27,21 +29,24 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: clippy
+          components: clippy,llvm-tools-preview
           toolchain: stable
 
-      - name: ConfigureCoverage
+      - name: InstallCoverageTools
         run: |
           cargo install grcov
-          rustup component add llvm-tools-preview
-          echo RUSTFLAGS="-C instrument-coverage" >> "$GITHUB_ENV"
-          echo LLVM_PROFILE_FILE="flow-%p-%m.profraw" >> "$GITHUB_ENV"
 
       - name: make
-        run: make clippy build test
+        run: |
+          make clippy build test
+          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
 
       - name: UploadCoverage
-        run: |
-          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-          bash <(curl -s https://codecov.io/bash) -f lcov.info
-          rm -f lcov.info
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          file: lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
