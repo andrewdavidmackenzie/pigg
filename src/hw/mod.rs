@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::io;
 
 use crate::gpio::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
@@ -23,6 +24,15 @@ pub struct HardwareDescriptor {
     pub revision: String,
     pub serial: String,
     pub model: String,
+}
+
+impl Display for HardwareDescriptor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Hardware: {}", self.hardware)?;
+        writeln!(f, "Revision: {}", self.revision)?;
+        writeln!(f, "Serial: {}", self.serial)?;
+        write!(f, "Model: {}", self.model)
+    }
 }
 
 /// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
