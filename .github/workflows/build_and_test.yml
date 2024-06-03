@@ -40,7 +40,6 @@ jobs:
       - name: make
         run: |
           make clippy build test
-          tree
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
 
       - name: UploadCoverage
