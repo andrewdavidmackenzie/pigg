@@ -7,13 +7,15 @@ use iced::{
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
 use hw::InputPull;
-// Importing pin layout views
 use hw_listener::{HardwareEvent, HWListenerEvent};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
 use style::CustomButton;
+
+// Importing pin layout views
+use crate::hw::PinDescriptionSet;
 
 mod hw;
 mod pin_layout;
@@ -88,7 +90,7 @@ pub struct Gpio {
     /// Either desired state or output, or detected state of input. Note BCMPinNumber, that starts
     /// at 0 (GPIO0)
     pin_states: [Option<PinLevel>; 40],
-    pin_descriptions: Option<[PinDescription; 40]>,
+    pin_descriptions: Option<PinDescriptionSet>,
 }
 
 impl Gpio {
@@ -105,7 +107,7 @@ impl Gpio {
     async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .set_title("Choose config file to load")
-            .set_directory(std::env::current_dir().unwrap())
+            .set_directory(env::current_dir().unwrap())
             .pick_file()
             .await
         {
@@ -120,7 +122,7 @@ impl Gpio {
     async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<()> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .set_title("Choose file")
-            .set_directory(std::env::current_dir().unwrap())
+            .set_directory(env::current_dir().unwrap())
             .save_file()
             .await
         {
@@ -180,14 +182,8 @@ impl Gpio {
     // TODO or factor out a function - maybe improve data structures as we have a bit of
     // TODO repitition - use a map to find by BCM pin number or something
     fn set_pin_functions_after_load(&mut self) {
-        if let Some(pins) = &self.pin_descriptions {
-            let gpio_pins = pins
-                .iter()
-                .filter(|pin| pin.options.len() > 1)
-                .filter(|pin| pin.bcm_pin_number.is_some())
-                .collect::<Vec<&PinDescription>>();
-
-            for pin in gpio_pins {
+        if let Some(pin_set) = &self.pin_descriptions {
+            for pin in pin_set.bcm_pins() {
                 if let Some(function) = select_pin_function(pin, &self.gpio_config, self) {
                     self.pin_function_selected[pin.board_pin_number as usize - 1] = function;
 
