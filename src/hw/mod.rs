@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
+use std::slice::Iter;
 
 use serde::{Deserialize, Serialize};
 
@@ -217,6 +218,10 @@ pub struct PinDescriptionSet {
 impl PinDescriptionSet {
     pub const fn new(pins: [PinDescription; 40]) -> PinDescriptionSet {
         PinDescriptionSet { pins }
+    }
+
+    pub fn iter(&self) -> Iter<PinDescription> {
+        self.pins.iter()
     }
 
     pub fn pins(&self) -> &[PinDescription] {
