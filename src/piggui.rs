@@ -1,17 +1,17 @@
 use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Button, Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::{
+    alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
 use hw::InputPull;
-use hw_listener::{HardwareEvent, HWListenerEvent};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
+use hw_listener::{HWListenerEvent, HardwareEvent};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use style::CustomButton;
 
@@ -23,6 +23,16 @@ mod hw;
 mod hw_listener;
 mod pin_layout;
 mod style;
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const NAME: &str = env!("CARGO_PKG_NAME");
+const LICENSE: &str = env!("CARGO_PKG_LICENSE");
+const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+
+// ANSI escape sequences for text formatting
+const BOLD: &str = "\x1b[1m";
+const GREEN: &str = "\x1b[32m";
+const RESET: &str = "\x1b[0m";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -77,7 +87,35 @@ impl std::fmt::Display for Layout {
     }
 }
 
+#[must_use]
+pub fn version() -> String {
+    format!(
+        "{name} {version}\n\
+        {highlight}Copyright (C) 2024 The {name} Developers{reset}\n\
+        License {license}: <https://www.gnu.org/licenses/{license_lower}.html>\n\
+        This is free software: you are free to change and redistribute it.\n\
+        There is NO WARRANTY, to the extent permitted by law.\n\
+        \n\
+        Written by the {name} Contributors.\n\
+        Full source available at: {repository}",
+        name = NAME,
+        version = VERSION,
+        license = LICENSE,
+        license_lower = LICENSE.to_lowercase(),
+        repository = REPOSITORY,
+        highlight = format!("{}{}", BOLD, GREEN),
+        reset = RESET,
+    )
+}
+
 fn main() -> Result<(), iced::Error> {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 1 && (args[1] == "--version" || args[1] == "-V") {
+        println!("{}", version());
+        return Ok(());
+    }
+
     let window = window::Settings {
         resizable: false,
         decorations: true,
