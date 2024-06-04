@@ -12,10 +12,10 @@ The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
     <td valign="top">
-      <img src="images/bcm_pin_layout.png" width="400" align="top" />
+      <img alt="BCM Pin Layout Screenshot" src="images/bcm_pin_layout.png" width="400" align="top" />
     </td>
     <td valign="top">
-      <img src="images/board_pin_layout.png" width="400" align="top" />
+      <img alt="Board Pin Layout Screenshot" src="images/board_pin_layout.png" width="400" align="top" />
     </td>
   </tr>
 </table>
@@ -101,39 +101,45 @@ levels.
 On Raspberry Pi it has a real GPIO hardware backend (via rppal).
 On macOS, linux and windows it uses a fake GPIO hardware backend.
 
-### PIGLET ("Piglet) - TODO
+### PIGLET ("Piglet)
 
-A headless binary that is only built on RaspberryPi and that has no UI.
+A "GUI-less" binary. Currently, it has minimal functionality. It can be built on any platform and will use the fake
+Hardware backend (but not be very useful!).
+
+If built on the Pi (with the "pi" feature), then it has a real GPIO hardware backend.
+
+It takes a file command line option. It will load the GPIO configuration from the file (like "piggui" can) and
+it will apply it to the hardware. But currently there is no way to interact with it after that.
 
 ## Installing
 
-Use
+### macOS/linux/Windows or Pi (with a fake Hardware backend)
 
 ```
 cargo install pigg
 ```
 
-to build and install.
+NOTE: `cargo` will build for the machine where you are running it, so you will get a version of `piggui`
+with a fake hardware backend, not real Pi GPIO hardware, but you can play with the GUI.
 
-NOTE: `cargo` will build it for the machine where you are running it, so if you run it on macOS, linux or Windows
-you will get a version of `piggui` with fake hardware backing it, not real Pi GPIO hardware.
+### On Pi with real GPIO hardware backend
 
 To be able to interact with real Pi GPIO hardware you have two options:
 
 - Run `cargo install --features "pi"` on your Pi
-- Follow the instructions before for Building from Source
-    - Directly on your Raspberry Pi.
-    - Use `make` to build on your machine for your Pi, but you will need `Docker`/`Podman` and `cross`
+- Follow the instructions before for Building from Source on your Pi
+    - Use `make` to build on macOS/linux/Windows and cross-compile for your Pi, but you will need `Docker`/`Podman`
+      and `cross`
       installed
 
-Soon, we will add support for `cargo binstall` to allow you to get a binary
+Soon, we will add support for `cargo binstall` to allow you to get a binary for Pi directly.
 
 ## Building from Source
 
 ### Pre-requisites
 
-We use `"cross"` to cross compile for Raspberry Pi from Linux or macOS.
-None of the developers currently has a Windows machine so we have been unable to test this on Windows.
+We use `"cross"` to cross compile for Raspberry Pi from Linux or macOS or Windows.
+None of the developers currently has a Windows machine, so we have been unable to test this on Windows.
 Install docker or podman and `"cross"` for cross compiling rust on your host for the Raspberry Pi.
 
 If you run `"make"` on a Raspberry Pi, it will not use `"cross"` and just compile natively.

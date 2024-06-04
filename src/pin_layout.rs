@@ -174,19 +174,16 @@ fn get_pin_widget(
             }
 
             if is_left {
-                Row::new()
-                    .push(led(12.0, pin_state))
-                    .push(
-                        pick_list(sub_options, *pull, move |selected_pull| {
-                            Message::PinFunctionSelected(
-                                board_pin_number,
-                                bcm_pin_number.unwrap(),
-                                Input(Some(selected_pull)),
-                            )
-                        })
-                        .placeholder("Select Input"),
-                    )
-                    .spacing(10)
+                Row::new().push(led(12.0, pin_state)).push(
+                    pick_list(sub_options, *pull, move |selected_pull| {
+                        Message::PinFunctionSelected(
+                            board_pin_number,
+                            bcm_pin_number.unwrap(),
+                            Input(Some(selected_pull)),
+                        )
+                    })
+                    .placeholder("Select Pullup"),
+                )
             } else {
                 Row::new()
                     .push(
@@ -197,10 +194,9 @@ fn get_pin_widget(
                                 Input(Some(selected_pull)),
                             )
                         })
-                        .placeholder("Select Input"),
+                        .placeholder("Select Pullup"),
                     )
                     .push(led(12.0, pin_state))
-                    .spacing(10)
             }
         }
 
@@ -218,6 +214,8 @@ fn get_pin_widget(
         _ => Row::new(),
     };
     row.width(Length::Fixed(150f32))
+        .spacing(10)
+        .align_items(Alignment::Center)
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
