@@ -213,7 +213,9 @@ fn get_pin_widget(
 
         _ => Row::new(),
     };
-    row.width(Length::Fixed(150f32)).spacing(10)
+    row.width(Length::Fixed(150f32))
+        .spacing(10)
+        .align_items(Alignment::Center)
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
