@@ -134,7 +134,7 @@ impl Gpio {
         }
     }
 
-    // Send the Config from the GUI to the hardware to have it applied
+    /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut listener) = &mut self.listener_sender {
             let _ = listener.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
@@ -178,9 +178,6 @@ impl Gpio {
 
     /// Go through all the pins in the loaded GPIOConfig and set its function in the
     /// pin_function_selected array, which is what is used for drawing the UI correctly.
-    // TODO this has a lot in common with bcm_pin_layout_view() in pin_layout.rs see if we can merge
-    // TODO or factor out a function - maybe improve data structures as we have a bit of
-    // TODO repitition - use a map to find by BCM pin number or something
     fn set_pin_functions_after_load(&mut self) {
         if let Some(pin_set) = &self.pin_descriptions {
             for (bcm_pin_number, function) in &self.gpio_config.configured_pins {
@@ -238,7 +235,7 @@ impl Application for Gpio {
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
-                self.gpio_config = config.clone();
+                self.gpio_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
             }
