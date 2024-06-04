@@ -215,7 +215,9 @@ pub struct PinDescriptionSet {
     pins: [PinDescription; 40],
 }
 
+/// `PinDescriptionSet` describes a set of Pins on a device, using `PinDescription`s
 impl PinDescriptionSet {
+    /// Create a new PinDescriptionSet, from a const array of PinDescriptions
     pub const fn new(pins: [PinDescription; 40]) -> PinDescriptionSet {
         PinDescriptionSet { pins }
     }
@@ -224,10 +226,22 @@ impl PinDescriptionSet {
         self.pins.iter()
     }
 
+    /// Find a possible pin's board_pin_number using a BCMPinNumber
+    pub fn bcm_to_board(&self, bcm_pin_number: BCMPinNumber) -> Option<BoardPinNumber> {
+        for pin in &self.pins {
+            if pin.bcm_pin_number == Some(bcm_pin_number) {
+                return Some(pin.board_pin_number);
+            }
+        }
+        None
+    }
+
+    /// Return a slice of PinDescriptions
     pub fn pins(&self) -> &[PinDescription] {
         &self.pins
     }
 
+    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering
     pub fn bcm_pins(&self) -> Vec<&PinDescription> {
         self.pins
             .iter()
@@ -236,6 +250,8 @@ impl PinDescriptionSet {
             .collect::<Vec<&PinDescription>>()
     }
 
+    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
+    /// ascending order of BCM pin number
     pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
         let mut pins = self.bcm_pins();
         pins.sort_by_key(|pin| pin.bcm_pin_number.unwrap());

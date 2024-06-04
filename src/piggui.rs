@@ -11,7 +11,7 @@ use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
 use hw::InputPull;
 use hw_listener::{HardwareEvent, HWListenerEvent};
-use pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
+use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use style::CustomButton;
 
 // Importing pin layout views
@@ -183,17 +183,14 @@ impl Gpio {
     // TODO repitition - use a map to find by BCM pin number or something
     fn set_pin_functions_after_load(&mut self) {
         if let Some(pin_set) = &self.pin_descriptions {
-            for pin in pin_set.bcm_pins() {
-                if let Some(function) = select_pin_function(pin, &self.gpio_config, self) {
-                    self.pin_function_selected[pin.board_pin_number as usize - 1] = function;
+            for (bcm_pin_number, function) in &self.gpio_config.configured_pins {
+                if let Some(board_pin_number) = pin_set.bcm_to_board(*bcm_pin_number) {
+                    self.pin_function_selected[board_pin_number as usize - 1] = *function;
 
                     // For output pins, if there is an initial state set then set that in pin state
                     // so the toggler will be drawn correctly on first draw
                     if let PinFunction::Output(level) = function {
-                        match pin.bcm_pin_number {
-                            None => {}
-                            Some(bcm) => self.pin_states[bcm as usize] = level,
-                        };
+                        self.pin_states[*bcm_pin_number as usize] = *level;
                     }
                 }
             }
@@ -339,8 +336,8 @@ impl Application for Gpio {
 
         if let Some(pins) = &self.pin_descriptions {
             let pin_layout = match self.chosen_layout {
-                Layout::BoardLayout => board_pin_layout_view(pins, &self.gpio_config, self),
-                Layout::BCMLayout => bcm_pin_layout_view(pins, &self.gpio_config, self),
+                Layout::BoardLayout => board_pin_layout_view(pins, self),
+                Layout::BCMLayout => bcm_pin_layout_view(pins, self),
             };
 
             main_row = main_row
