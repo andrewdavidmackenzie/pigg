@@ -141,7 +141,10 @@ impl Gpio {
         }
     }
 
-    // A new function has been selected for a pin via the UI
+    /// A new function has been selected for a pin via the UI, this function:
+    /// - updates the pin_selected_function array for the UI
+    /// - saves it in the gpio_config, so when we save later it's there
+    /// - sends the update to the hardware to have it applied
     fn new_pin_function(
         &mut self,
         board_pin_number: BoardPinNumber,
@@ -161,6 +164,7 @@ impl Gpio {
             {
                 *pin_config = (bcm_pin_number, new_function);
             } else {
+                // TODO this could just be adding to the config, not replacing existing ones, no?
                 // Add a new configuration entry if it doesn't exist
                 self.gpio_config
                     .configured_pins
