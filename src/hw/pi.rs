@@ -8,7 +8,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::hw::{BCMPinNumber, GPIOConfig, PinDescription, PinLevel};
+use crate::hw::{BCMPinNumber, GPIOConfig, PinDescriptionSet, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -59,7 +59,7 @@ impl Hardware for PiHW {
         Ok(descriptor)
     }
 
-    fn pin_descriptions(&self) -> [PinDescription; 40] {
+    fn pin_descriptions(&self) -> PinDescriptionSet {
         super::GPIO_PIN_DESCRIPTIONS
     }
 

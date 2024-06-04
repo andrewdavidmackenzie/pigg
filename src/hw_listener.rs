@@ -7,7 +7,9 @@ use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hw;
-use crate::hw::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use crate::hw::{
+    BCMPinNumber, GPIOConfig, PinDescriptionSet, PinFunction, PinLevel,
+};
 use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw_listener::HWListenerEvent::InputChange;
@@ -19,11 +21,7 @@ use crate::hw_listener::HWListenerEvent::InputChange;
 pub enum HWListenerEvent {
     /// This event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
-    Ready(
-        Sender<HardwareEvent>,
-        HardwareDescriptor,
-        [PinDescription; 40],
-    ),
+    Ready(Sender<HardwareEvent>, HardwareDescriptor, PinDescriptionSet),
     /// This event indicates that the logic level of an input has just changed
     InputChange(LevelChange),
 }

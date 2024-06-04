@@ -5,8 +5,11 @@ use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::led::led;
 use crate::Gpio;
-use crate::hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
-use crate::hw::PinFunction::Input;
+use crate::hw::{
+    BCMPinNumber, BoardPinNumber, PinDescription, PinDescriptionSet, PinFunction,
+    PinLevel,
+};
+use crate::hw::PinFunction::{Input, Output};
 use crate::InputPull;
 use crate::Message;
 use crate::style::CustomButton;
@@ -77,29 +80,15 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
 }
 
 /// View that lays out the pins in a single column ordered by BCM pin number
-pub fn bcm_pin_layout_view(
-    pin_descriptions: &[PinDescription; 40],
-    pin_config: &GPIOConfig,
-    gpio: &Gpio,
-) -> Element<'static, Message> {
+pub fn bcm_pin_layout_view(pin_set: &PinDescriptionSet, gpio: &Gpio) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-    let mut gpio_pins = pin_descriptions
-        .iter()
-        .filter(|pin| pin.options.len() > 1)
-        .filter(|pin| pin.bcm_pin_number.is_some())
-        .collect::<Vec<&PinDescription>>();
-    let pins_slice = gpio_pins.as_mut_slice();
-    pins_slice.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
-
-    for pin in pins_slice {
+    for pin in pin_set.bcm_pins_sorted() {
         let pin_row = create_pin_view_side(
             pin,
-            select_pin_function(pin, pin_config, gpio).unwrap(),
+            gpio.pin_function_selected[pin.board_pin_number as usize - 1],
             true,
-            &gpio.pin_function_selected[pin.board_pin_number as usize - 1],
             &gpio.pin_states,
-            pin_config,
         );
 
         column = column.push(pin_row).push(iced::widget::Space::new(
@@ -114,29 +103,25 @@ pub fn bcm_pin_layout_view(
 /// View that draws the pins laid out as they are on the physical Pi board
 /// View that draws the pins laid out as they are on the physical Pi board
 pub fn board_pin_layout_view(
-    pin_descriptions: &[PinDescription; 40],
-    pin_config: &GPIOConfig,
+    pin_descriptions: &PinDescriptionSet,
     gpio: &Gpio,
 ) -> Element<'static, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-    for pair in pin_descriptions.chunks(2) {
+    // Draw all pins, those with and without BCM pin numbers
+    for pair in pin_descriptions.pins().chunks(2) {
         let left_row = create_pin_view_side(
             &pair[0],
-            select_pin_function(&pair[0], pin_config, gpio).unwrap(),
+            gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
             true,
-            &gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
             &gpio.pin_states,
-            pin_config,
         );
 
         let right_row = create_pin_view_side(
             &pair[1],
-            select_pin_function(&pair[1], pin_config, gpio).unwrap(),
+            gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
             false,
-            &gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
             &gpio.pin_states,
-            pin_config,
         );
 
         let row = Row::new()
@@ -161,11 +146,10 @@ fn get_pin_widget(
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: &PinFunction,
     pin_state: Option<PinLevel>,
-    _pin_config: &GPIOConfig,
     is_left: bool,
 ) -> Row<'static, Message> {
     let row = match pin_function {
-        PinFunction::Input(pull) => {
+        Input(pull) => {
             let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
 
             // Filter out the currently selected pull option
@@ -200,7 +184,7 @@ fn get_pin_widget(
             }
         }
 
-        PinFunction::Output(_) => {
+        Output(_) => {
             let toggler = toggler(None, pin_state.unwrap_or(false), move |b| {
                 Message::ChangeOutputLevel(bcm_pin_number.unwrap(), b)
             });
@@ -223,9 +207,7 @@ fn create_pin_view_side(
     pin: &PinDescription,
     selected_function: PinFunction,
     is_left: bool,
-    pin_function: &PinFunction,
     pin_states: &[Option<PinLevel>; 40],
-    pin_config: &GPIOConfig,
 ) -> Row<'static, Message> {
     // Create a widget that is either used to visualize an input or control an output
     let pin_state = match pin.bcm_pin_number {
@@ -235,9 +217,8 @@ fn create_pin_view_side(
     let pin_widget = get_pin_widget(
         pin.board_pin_number,
         pin.bcm_pin_number,
-        pin_function,
+        &selected_function,
         pin_state,
-        pin_config,
         is_left,
     );
 
@@ -325,29 +306,4 @@ fn create_pin_view_side(
             .spacing(10)
             .align_items(Alignment::Center)
     }
-}
-
-pub(crate) fn select_pin_function(
-    pin: &PinDescription,
-    pin_config: &GPIOConfig,
-    gpio: &Gpio,
-) -> Option<PinFunction> {
-    pin_config
-        .configured_pins
-        .iter()
-        .find_map(|(pin_number, pin_function)| {
-            // Check if the pin has a BCM number
-            if let Some(bcm_pin_number) = pin.bcm_pin_number {
-                // If the pin number matches the BCM number, use the configured pin function
-                if *pin_number == bcm_pin_number {
-                    Some(*pin_function)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        // Else Select from the UI
-        .or_else(|| Some(gpio.pin_function_selected[pin.board_pin_number as usize - 1]))
 }

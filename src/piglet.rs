@@ -12,7 +12,7 @@ fn main() {
     let mut hw = hw::get();
     println!("{}", hw.descriptor().unwrap());
     println!("Pin Descriptions:");
-    for pin_description in hw.pin_descriptions() {
+    for pin_description in hw.pin_descriptions().iter() {
         println!("{pin_description}")
     }
 

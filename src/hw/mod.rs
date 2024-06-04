@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
+use std::slice::Iter;
 
 use serde::{Deserialize, Serialize};
 
@@ -47,7 +48,7 @@ pub trait Hardware {
     fn descriptor(&self) -> io::Result<HardwareDescriptor>;
     /// Return an array of 40 pin descriptions for the connected hardware.
     /// Array index = board_pin_number -1, as pin numbering start at 1
-    fn pin_descriptions(&self) -> [PinDescription; 40];
+    fn pin_descriptions(&self) -> PinDescriptionSet;
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
@@ -70,12 +71,12 @@ pub trait Hardware {
 
 /// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
 /// For now, we will use the same descriptions for all hardware
-const GPIO_PIN_DESCRIPTIONS: [PinDescription; 40] = [
+const GPIO_PIN_DESCRIPTIONS: PinDescriptionSet = PinDescriptionSet::new([
     PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
     PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
     PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
     PIN_38, PIN_39, PIN_40,
-];
+]);
 
 pub type BCMPinNumber = u8;
 pub type BoardPinNumber = u8;
@@ -207,6 +208,55 @@ pub struct PinDescription {
     pub bcm_pin_number: Option<BCMPinNumber>,
     pub name: &'static str,
     pub options: &'static [PinFunction], // The set of functions the pin can have, chosen by user config
+}
+
+#[derive(Debug, Clone)]
+pub struct PinDescriptionSet {
+    pins: [PinDescription; 40],
+}
+
+/// `PinDescriptionSet` describes a set of Pins on a device, using `PinDescription`s
+impl PinDescriptionSet {
+    /// Create a new PinDescriptionSet, from a const array of PinDescriptions
+    pub const fn new(pins: [PinDescription; 40]) -> PinDescriptionSet {
+        PinDescriptionSet { pins }
+    }
+
+    pub fn iter(&self) -> Iter<PinDescription> {
+        self.pins.iter()
+    }
+
+    /// Find a possible pin's board_pin_number using a BCMPinNumber
+    pub fn bcm_to_board(&self, bcm_pin_number: BCMPinNumber) -> Option<BoardPinNumber> {
+        for pin in &self.pins {
+            if pin.bcm_pin_number == Some(bcm_pin_number) {
+                return Some(pin.board_pin_number);
+            }
+        }
+        None
+    }
+
+    /// Return a slice of PinDescriptions
+    pub fn pins(&self) -> &[PinDescription] {
+        &self.pins
+    }
+
+    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering
+    pub fn bcm_pins(&self) -> Vec<&PinDescription> {
+        self.pins
+            .iter()
+            .filter(|pin| pin.options.len() > 1)
+            .filter(|pin| pin.bcm_pin_number.is_some())
+            .collect::<Vec<&PinDescription>>()
+    }
+
+    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
+    /// ascending order of BCM pin number
+    pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
+        let mut pins = self.bcm_pins();
+        pins.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
+        pins
+    }
 }
 
 impl fmt::Display for PinDescription {

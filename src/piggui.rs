@@ -7,13 +7,15 @@ use iced::{
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
 use hw::InputPull;
-// Importing pin layout views
 use hw_listener::{HardwareEvent, HWListenerEvent};
-use pin_layout::{bcm_pin_layout_view, board_pin_layout_view, select_pin_function};
+use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use style::CustomButton;
+
+// Importing pin layout views
+use crate::hw::PinDescriptionSet;
 
 mod hw;
 mod pin_layout;
@@ -88,7 +90,7 @@ pub struct Gpio {
     /// Either desired state or output, or detected state of input. Note BCMPinNumber, that starts
     /// at 0 (GPIO0)
     pin_states: [Option<PinLevel>; 40],
-    pin_descriptions: Option<[PinDescription; 40]>,
+    pin_descriptions: Option<PinDescriptionSet>,
 }
 
 impl Gpio {
@@ -105,7 +107,7 @@ impl Gpio {
     async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .set_title("Choose config file to load")
-            .set_directory(std::env::current_dir().unwrap())
+            .set_directory(env::current_dir().unwrap())
             .pick_file()
             .await
         {
@@ -120,7 +122,7 @@ impl Gpio {
     async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<()> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .set_title("Choose file")
-            .set_directory(std::env::current_dir().unwrap())
+            .set_directory(env::current_dir().unwrap())
             .save_file()
             .await
         {
@@ -132,14 +134,17 @@ impl Gpio {
         }
     }
 
-    // Send the Config from the GUI to the hardware to have it applied
+    /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut listener) = &mut self.listener_sender {
             let _ = listener.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
         }
     }
 
-    // A new function has been selected for a pin via the UI
+    /// A new function has been selected for a pin via the UI, this function:
+    /// - updates the pin_selected_function array for the UI
+    /// - saves it in the gpio_config, so when we save later it's there
+    /// - sends the update to the hardware to have it applied
     fn new_pin_function(
         &mut self,
         board_pin_number: BoardPinNumber,
@@ -159,6 +164,7 @@ impl Gpio {
             {
                 *pin_config = (bcm_pin_number, new_function);
             } else {
+                // TODO this could just be adding to the config, not replacing existing ones, no?
                 // Add a new configuration entry if it doesn't exist
                 self.gpio_config
                     .configured_pins
@@ -176,28 +182,16 @@ impl Gpio {
 
     /// Go through all the pins in the loaded GPIOConfig and set its function in the
     /// pin_function_selected array, which is what is used for drawing the UI correctly.
-    // TODO this has a lot in common with bcm_pin_layout_view() in pin_layout.rs see if we can merge
-    // TODO or factor out a function - maybe improve data structures as we have a bit of
-    // TODO repitition - use a map to find by BCM pin number or something
     fn set_pin_functions_after_load(&mut self) {
-        if let Some(pins) = &self.pin_descriptions {
-            let gpio_pins = pins
-                .iter()
-                .filter(|pin| pin.options.len() > 1)
-                .filter(|pin| pin.bcm_pin_number.is_some())
-                .collect::<Vec<&PinDescription>>();
-
-            for pin in gpio_pins {
-                if let Some(function) = select_pin_function(pin, &self.gpio_config, self) {
-                    self.pin_function_selected[pin.board_pin_number as usize - 1] = function;
+        if let Some(pin_set) = &self.pin_descriptions {
+            for (bcm_pin_number, function) in &self.gpio_config.configured_pins {
+                if let Some(board_pin_number) = pin_set.bcm_to_board(*bcm_pin_number) {
+                    self.pin_function_selected[board_pin_number as usize - 1] = *function;
 
                     // For output pins, if there is an initial state set then set that in pin state
                     // so the toggler will be drawn correctly on first draw
                     if let PinFunction::Output(level) = function {
-                        match pin.bcm_pin_number {
-                            None => {}
-                            Some(bcm) => self.pin_states[bcm as usize] = level,
-                        };
+                        self.pin_states[*bcm_pin_number as usize] = *level;
                     }
                 }
             }
@@ -245,7 +239,7 @@ impl Application for Gpio {
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
-                self.gpio_config = config.clone();
+                self.gpio_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
             }
@@ -343,8 +337,8 @@ impl Application for Gpio {
 
         if let Some(pins) = &self.pin_descriptions {
             let pin_layout = match self.chosen_layout {
-                Layout::BoardLayout => board_pin_layout_view(pins, &self.gpio_config, self),
-                Layout::BCMLayout => bcm_pin_layout_view(pins, &self.gpio_config, self),
+                Layout::BoardLayout => board_pin_layout_view(pins, self),
+                Layout::BCMLayout => bcm_pin_layout_view(pins, self),
             };
 
             main_row = main_row

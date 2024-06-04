@@ -2,7 +2,7 @@
 
 use std::io;
 
-use crate::hw::{BCMPinNumber, GPIOConfig, PinDescription, PinFunction, PinLevel};
+use crate::hw::{BCMPinNumber, GPIOConfig, PinDescriptionSet, PinFunction, PinLevel};
 
 use super::Hardware;
 use super::HardwareDescriptor;
@@ -23,7 +23,7 @@ impl Hardware for NoneHW {
         })
     }
 
-    fn pin_descriptions(&self) -> [PinDescription; 40] {
+    fn pin_descriptions(&self) -> PinDescriptionSet {
         super::GPIO_PIN_DESCRIPTIONS
     }
 
