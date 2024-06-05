@@ -52,7 +52,7 @@ impl PinState {
     pub fn get_level(&self) -> Option<PinLevel> {
         self.history
             .back()
-            .map(|level_change| level_change.new_level);
+            .map(|level_change| level_change.new_level)
     }
 
     /// Add a LevelChange to the history of this pin's state
