@@ -7,9 +7,7 @@ use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hw;
-use crate::hw::{
-    BCMPinNumber, GPIOConfig, PinDescriptionSet, PinFunction, PinLevel,
-};
+use crate::hw::{BCMPinNumber, GPIOConfig, PinDescriptionSet, PinFunction, PinLevel};
 use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw_listener::HWListenerEvent::InputChange;
@@ -123,7 +121,6 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                         let hardware_event = hardware_event_receiver.select_next_some().await;
 
                         match hardware_event {
-                            // TODO handle more than one update, multiple threads etc
                             NewConfig(config) => {
                                 connected_hardware
                                     .apply_config(&config, move |pin_number, level| {
