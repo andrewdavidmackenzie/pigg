@@ -1,4 +1,4 @@
-use iced::{Color, Length, Rectangle, Size};
+use iced::{Color, Element, Length, Rectangle, Size};
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
@@ -77,5 +77,14 @@ where
             },
             color,
         );
+    }
+}
+
+impl<'a, Message, Theme, Renderer> From<Waveform> for Element<'a, Message, Theme, Renderer>
+where
+    Renderer: renderer::Renderer,
+{
+    fn from(wf: Waveform) -> Self {
+        Self::new(wf)
     }
 }
