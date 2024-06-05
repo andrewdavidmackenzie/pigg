@@ -4,7 +4,7 @@ use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 
 use crate::{Gpio, PinState};
 use crate::custom_widgets::{circle::circle, line::line};
-use crate::custom_widgets::led::led;
+use crate::custom_widgets::waveform::waveform;
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
@@ -159,8 +159,8 @@ fn get_pin_widget(
             }
 
             if is_left {
-                // TODO Row::new().push(waveform(16.0, 256.0, pin_state)).push(
-                Row::new().push(led(16.0, pin_state)).push(
+                Row::new().push(waveform(16.0, 256.0, pin_state)).push(
+                    // TODO switcher Row::new().push(led(16.0, pin_state)).push(
                     pick_list(sub_options, *pull, move |selected_pull| {
                         Message::PinFunctionSelected(
                             board_pin_number,
@@ -182,8 +182,8 @@ fn get_pin_widget(
                         })
                         .placeholder("Select Pullup"),
                     )
-                    // TODO     .push(waveform(16.0, 256.0, pin_state))
-                    .push(led(16.0, pin_state))
+                    .push(waveform(16.0, 256.0, pin_state))
+                // TODO switcher .push(led(16.0, pin_state))
             }
         }
 
@@ -204,8 +204,8 @@ fn get_pin_widget(
     };
 
     row.spacing(10)
-        // TODO .width(256.0 + 120.0)
-        .width(16.0 + 120.0)
+        .width(256.0 + 120.0)
+        // TODO switcher .width(16.0 + 120.0)
         .align_items(Alignment::Center)
 }
 
