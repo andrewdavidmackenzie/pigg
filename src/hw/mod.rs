@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
 use std::slice::Iter;
+use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 
@@ -32,7 +33,7 @@ pub struct HardwareDescriptor {
 }
 
 impl Display for HardwareDescriptor {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Hardware: {}", self.hardware)?;
         writeln!(f, "Revision: {}", self.revision)?;
         writeln!(f, "Serial: {}", self.serial)?;
@@ -65,8 +66,7 @@ pub trait Hardware {
     /// Read the input level of an input using the bcm pin number
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
     /// Write the output level of an output using the bcm pin number
-    fn set_output_level(&mut self, bcm_pin_number: BCMPinNumber, level: PinLevel)
-        -> io::Result<()>;
+    fn set_output_level(&mut self, level_change: LevelChange) -> io::Result<()>;
 }
 
 /// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
@@ -82,6 +82,26 @@ pub type BCMPinNumber = u8;
 pub type BoardPinNumber = u8;
 pub type PinLevel = bool;
 
+/// LevelChange describes the change in level of an input (bcm_pin_number, level, timestamp)
+/// or an Output
+#[derive(Clone, Debug)]
+pub struct LevelChange {
+    pub bcm_pin_number: BCMPinNumber, // TODO remove this I think, as pin_states has pin number
+    pub new_level: PinLevel,
+    pub timestamp: SystemTime,
+}
+
+impl LevelChange {
+    /// Create a new LevelChange event with the timestamp for now
+    pub fn new(bcm_pin_number: BCMPinNumber, new_level: PinLevel) -> Self {
+        Self {
+            bcm_pin_number,
+            new_level,
+            timestamp: SystemTime::now(),
+        }
+    }
+}
+
 /// An input can be configured to have an optional pull-up or pull-down
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum InputPull {
@@ -90,8 +110,8 @@ pub enum InputPull {
     None,
 }
 
-impl fmt::Display for InputPull {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for InputPull {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             InputPull::PullUp => write!(f, "Pull Up"),
             InputPull::PullDown => write!(f, "Pull Down"),
@@ -191,8 +211,8 @@ pub enum PinFunction {
     I2C_EEPROM_ID_SC,
 }
 
-impl fmt::Display for PinFunction {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for PinFunction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // Remove anything after the first '(' of debug output
         let full = format!("{:?}", self);
         write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
@@ -259,8 +279,8 @@ impl PinDescriptionSet {
     }
 }
 
-impl fmt::Display for PinDescription {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for PinDescription {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Board Pin #: {}", self.board_pin_number)?;
         writeln!(f, "\tBCM Pin #: {:?}", self.bcm_pin_number)?;
         writeln!(f, "\tName Pin #: {}", self.name)?;
@@ -274,8 +294,8 @@ pub struct GPIOConfig {
     pub configured_pins: Vec<(BCMPinNumber, PinFunction)>,
 }
 
-impl fmt::Display for GPIOConfig {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for GPIOConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.configured_pins.is_empty() {
             writeln!(f, "No Pins are Configured")
         } else {

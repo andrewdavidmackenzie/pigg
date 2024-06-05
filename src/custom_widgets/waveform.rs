@@ -3,28 +3,39 @@ use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
 use iced::mouse;
+use plotters_iced::{Chart, ChartBuilder, DrawingBackend};
 
-use crate::PinState;
+use crate::{Message, PinState};
 
-pub struct Led {
+// TODO see if we can do with references to avoid duplicating all the pin's history
+pub struct Waveform {
     height: f32,
-    state: PinState,
+    width: f32,
+    pin_state: PinState,
 }
 
-impl Led {
-    pub fn new(height: f32, state: &PinState) -> Self {
+impl Waveform {
+    pub fn new(height: f32, width: f32, pin_state: &PinState) -> Self {
         Self {
             height,
-            state: state.clone(),
+            width,
+            pin_state: pin_state.clone(),
         }
     }
 }
 
-pub fn led(height: f32, state: &PinState) -> Led {
-    Led::new(height, state)
+impl Chart<Message> for Waveform {
+    type State = ();
+    fn build_chart<DB: DrawingBackend>(&self, _state: &Self::State, _builder: ChartBuilder<DB>) {
+        //build your chart here, please refer to plotters for more details
+    }
 }
 
-impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Led
+pub fn waveform(height: f32, width: f32, pin_state: &PinState) -> Waveform {
+    Waveform::new(height, width, pin_state)
+}
+
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Waveform
 where
     Renderer: renderer::Renderer,
 {
@@ -41,7 +52,7 @@ where
         _renderer: &Renderer,
         _limits: &layout::Limits,
     ) -> layout::Node {
-        layout::Node::new(Size::new(self.height * 2.0, self.height * 2.0))
+        layout::Node::new(Size::new(self.width, self.height * 2.0))
     }
 
     fn draw(
@@ -54,7 +65,7 @@ where
         _cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
-        let color = match self.state.get_level() {
+        let color = match self.pin_state.get_level() {
             None => Color::BLACK,
             Some(false) => Color::new(0.0, 0.502, 0.0, 1.0),
             Some(true) => Color::new(1.0, 0.0, 0.0, 1.0),
@@ -74,11 +85,11 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Led> for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<Waveform> for Element<'a, Message, Theme, Renderer>
 where
     Renderer: renderer::Renderer,
 {
-    fn from(circle: Led) -> Self {
-        Self::new(circle)
+    fn from(wf: Waveform) -> Self {
+        Self::new(wf)
     }
 }
