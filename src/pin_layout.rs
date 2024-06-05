@@ -86,7 +86,7 @@ pub fn bcm_pin_layout_view(pin_set: &PinDescriptionSet, gpio: &Gpio) -> Element<
         let pin_row = create_pin_view_side(
             pin,
             gpio.pin_function_selected[pin.board_pin_number as usize - 1],
-            true,
+            false,
             &gpio.pin_states[pin.board_pin_number as usize - 1],
         );
 
