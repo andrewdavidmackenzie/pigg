@@ -34,6 +34,7 @@ impl Layout {
     const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
 }
 
+#[derive(Clone)]
 /// PinState captures the state of a pin, including a history of previous states set/read
 pub struct PinState {
     history: AllocRingBuffer<LevelChange>,

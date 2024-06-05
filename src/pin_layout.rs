@@ -158,7 +158,7 @@ fn get_pin_widget(
             }
 
             if is_left {
-                Row::new().push(waveform(12.0, pin_state.get_level())).push(
+                Row::new().push(waveform(16.0, 256.0, pin_state)).push(
                     pick_list(sub_options, *pull, move |selected_pull| {
                         Message::PinFunctionSelected(
                             board_pin_number,
@@ -180,7 +180,7 @@ fn get_pin_widget(
                         })
                         .placeholder("Select Pullup"),
                     )
-                    .push(waveform(12.0, pin_state.get_level()))
+                    .push(waveform(16.0, 256.0, pin_state))
             }
         }
 
@@ -200,8 +200,8 @@ fn get_pin_widget(
         _ => Row::new(),
     };
 
-    row.width(Length::Fixed(150f32))
-        .spacing(10)
+    row.spacing(10)
+        .width(256.0 + 50.0)
         .align_items(Alignment::Center)
 }
 
@@ -251,28 +251,21 @@ fn create_pin_view_side(
     }
 
     // Create the Pin name
-    let mut pin_name = Column::new()
+    let pin_name = Row::new()
         .width(Length::Fixed(55f32))
+        .push(Text::new(pin_description.name))
         .align_items(Alignment::Center);
-    let mut pin_name_row = Row::new().align_items(Alignment::Center);
-    pin_name_row = pin_name_row.push(Text::new(pin_description.name));
-    pin_name = pin_name.push(pin_name_row);
 
-    let mut pin_arrow = Column::new()
+    let mut pin_arrow = Row::new()
         .width(Length::Fixed(60f32))
         .align_items(Alignment::Center);
-
-    let mut pin_arrow_row = Row::new().align_items(Alignment::Center);
     if is_left {
-        pin_arrow_row = pin_arrow_row.push(circle(5.0));
-        pin_arrow_row = pin_arrow_row.push(line(50.0));
+        pin_arrow = pin_arrow.push(circle(5.0));
+        pin_arrow = pin_arrow.push(line(50.0));
     } else {
-        pin_arrow_row = pin_arrow_row.push(line(50.0));
-        pin_arrow_row = pin_arrow_row.push(circle(5.0));
+        pin_arrow = pin_arrow.push(line(50.0));
+        pin_arrow = pin_arrow.push(circle(5.0));
     }
-
-    // Create the "pin arrow" a small drawing to illustrate the pin
-    pin_arrow = pin_arrow.push(pin_arrow_row);
 
     // Create the pin itself, with number and as a button
     let pin_button = button(

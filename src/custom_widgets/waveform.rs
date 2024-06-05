@@ -10,12 +10,17 @@ use crate::{Message, PinState};
 // TODO see if we can do with references to avoid duplicating all the pin's history
 pub struct Waveform {
     height: f32,
+    width: f32,
     pin_state: PinState,
 }
 
 impl Waveform {
-    pub fn new(height: f32, pin_state: PinState) -> Self {
-        Self { height, pin_state }
+    pub fn new(height: f32, width: f32, pin_state: &PinState) -> Self {
+        Self {
+            height,
+            width,
+            pin_state: pin_state.clone(),
+        }
     }
 }
 
@@ -26,8 +31,8 @@ impl Chart<Message> for Waveform {
     }
 }
 
-pub fn waveform(height: f32, pin_state: PinState) -> Waveform {
-    Waveform::new(height, pin_state)
+pub fn waveform(height: f32, width: f32, pin_state: &PinState) -> Waveform {
+    Waveform::new(height, width, pin_state)
 }
 
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Waveform
