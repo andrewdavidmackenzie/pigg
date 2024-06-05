@@ -6,6 +6,7 @@ use iced::{
 };
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
+use ringbuffer::{AllocRingBuffer, RingBuffer};
 
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
@@ -33,27 +34,30 @@ impl Layout {
     const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
 }
 
+/// PinState captures the state of a pin, including a history of previous states set/read
 pub struct PinState {
-    history: Vec<LevelChange>,
+    history: AllocRingBuffer<LevelChange>,
 }
+
 impl PinState {
     /// Create a new PinState with an empty history of states
     fn new() -> Self {
-        PinState { history: vec![] }
+        PinState {
+            history: AllocRingBuffer::with_capacity_power_of_2(7),
+        }
     }
 
     /// Try and get the last reported level of the pin, which could be considered "current level"
     /// if everything is working correctly.
     pub fn get_level(&self) -> Option<PinLevel> {
         self.history
-            .last()
-            .map(|level_change| level_change.new_level)
+            .back()
+            .map(|level_change| level_change.new_level);
     }
 
     /// Add a LevelChange to the history of this pin's state
     pub fn set_level(&mut self, level_change: LevelChange) {
         self.history.push(level_change);
-        // TODO trim the size of the Vec...
     }
 }
 
@@ -294,7 +298,7 @@ impl Application for Gpio {
                         if let Some(board_pin_number) =
                             pins.bcm_to_board(level_change.bcm_pin_number)
                         {
-                            self.pin_states[board_pin_number as usize].set_level(level_change);
+                            self.pin_states[board_pin_number as usize - 1].set_level(level_change);
                         }
                     }
                 }
@@ -302,7 +306,8 @@ impl Application for Gpio {
             Message::ChangeOutputLevel(level_change) => {
                 if let Some(pins) = &self.pin_descriptions {
                     if let Some(board_pin_number) = pins.bcm_to_board(level_change.bcm_pin_number) {
-                        self.pin_states[board_pin_number as usize].set_level(level_change.clone());
+                        self.pin_states[board_pin_number as usize - 1]
+                            .set_level(level_change.clone());
                     }
                     if let Some(ref mut listener) = &mut self.listener_sender {
                         let _ = listener.try_send(HardwareEvent::OutputLevelChanged(level_change));
