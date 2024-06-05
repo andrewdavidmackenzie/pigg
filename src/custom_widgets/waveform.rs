@@ -52,7 +52,7 @@ where
         _renderer: &Renderer,
         _limits: &layout::Limits,
     ) -> layout::Node {
-        layout::Node::new(Size::new(self.height * 2.0, self.height * 2.0))
+        layout::Node::new(Size::new(self.width, self.height * 2.0))
     }
 
     fn draw(
