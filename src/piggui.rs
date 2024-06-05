@@ -29,11 +29,6 @@ const NAME: &str = env!("CARGO_PKG_NAME");
 const LICENSE: &str = env!("CARGO_PKG_LICENSE");
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
-// ANSI escape sequences for text formatting
-const BOLD: &str = "\x1b[1m";
-const GREEN: &str = "\x1b[32m";
-const RESET: &str = "\x1b[0m";
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
     BoardLayout,
@@ -91,7 +86,7 @@ impl std::fmt::Display for Layout {
 pub fn version() -> String {
     format!(
         "{name} {version}\n\
-        {highlight}Copyright (C) 2024 The {name} Developers{reset}\n\
+        Copyright (C) 2024 The {name} Developers \n\
         License {license}: <https://www.gnu.org/licenses/{license_lower}.html>\n\
         This is free software: you are free to change and redistribute it.\n\
         There is NO WARRANTY, to the extent permitted by law.\n\
@@ -103,8 +98,6 @@ pub fn version() -> String {
         license = LICENSE,
         license_lower = LICENSE.to_lowercase(),
         repository = REPOSITORY,
-        highlight = format!("{}{}", BOLD, GREEN),
-        reset = RESET,
     )
 }
 
@@ -426,6 +419,16 @@ impl Application for Gpio {
                 .width(Length::Fill)
                 .height(Length::Fill);
         }
+
+        let version_text = Text::new(version()).size(16);
+
+        let version_row = Row::new()
+            .push(version_text)
+            .align_items(Alignment::End) // Adjust alignment as per your UI design
+            .padding(10)
+            .width(Length::Fill);
+
+        main_row = main_row.push(version_row);
 
         container(main_row)
             .height(Length::Fill)
