@@ -161,6 +161,8 @@ Use `"make run"` to start `piggui` on the local machine - for GUI development.
 
 If you use `make` that builds for local host AND pi (using cross).
 
+If you get strange build errors from `cross`, check first that your Docker daemon is running.
+
 #### Helper Env vars
 
 There are a couple of env vars that can be setup to help you interact with your pi.
