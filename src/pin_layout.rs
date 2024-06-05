@@ -143,7 +143,7 @@ pub fn board_pin_layout_view(
 /// This should only be called for pins that have a valid BCMPinNumber
 fn get_pin_widget(
     board_pin_number: BoardPinNumber,
-    bcm_pin_number: BCMPinNumber,
+    bcm_pin_number: Option<BCMPinNumber>,
     pin_function: &PinFunction,
     pin_state: &PinState,
     is_left: bool,
@@ -162,7 +162,7 @@ fn get_pin_widget(
                     pick_list(sub_options, *pull, move |selected_pull| {
                         Message::PinFunctionSelected(
                             board_pin_number,
-                            bcm_pin_number,
+                            bcm_pin_number.unwrap(),
                             Input(Some(selected_pull)),
                         )
                     })
@@ -174,7 +174,7 @@ fn get_pin_widget(
                         pick_list(sub_options, *pull, move |selected_pull| {
                             Message::PinFunctionSelected(
                                 board_pin_number,
-                                bcm_pin_number,
+                                bcm_pin_number.unwrap(),
                                 Input(Some(selected_pull)),
                             )
                         })
@@ -188,7 +188,7 @@ fn get_pin_widget(
             let toggler = toggler(
                 None,
                 pin_state.get_level().unwrap_or(false as PinLevel),
-                move |b| Message::ChangeOutputLevel(LevelChange::new(bcm_pin_number, b)),
+                move |b| Message::ChangeOutputLevel(LevelChange::new(bcm_pin_number.unwrap(), b)),
             );
             if is_left {
                 Row::new().push(Column::new().push(toggler).align_items(Alignment::End))
@@ -199,6 +199,7 @@ fn get_pin_widget(
 
         _ => Row::new(),
     };
+
     row.width(Length::Fixed(150f32))
         .spacing(10)
         .align_items(Alignment::Center)
@@ -212,16 +213,13 @@ fn create_pin_view_side(
     pin_state: &PinState,
 ) -> Row<'static, Message> {
     // Create a widget that is either used to visualize an input or control an output
-    let pin_widget = match pin_description.bcm_pin_number {
-        None => Row::new(),
-        Some(bcm) => get_pin_widget(
-            pin_description.board_pin_number,
-            bcm,
-            &selected_function,
-            pin_state,
-            is_left,
-        ),
-    };
+    let pin_widget = get_pin_widget(
+        pin_description.board_pin_number,
+        pin_description.bcm_pin_number,
+        &selected_function,
+        pin_state,
+        is_left,
+    );
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
