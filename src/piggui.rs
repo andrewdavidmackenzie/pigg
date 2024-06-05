@@ -381,6 +381,7 @@ impl Application for Gpio {
 
             let version_text = Text::new(version());
 
+            // TODO Implement Dialog box 
             let version_row = Row::new().push(version_text).align_items(Alignment::Start);
 
             let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
