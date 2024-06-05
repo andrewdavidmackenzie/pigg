@@ -112,7 +112,7 @@ fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
         decorations: true,
-        size: iced::Size::new(1000.0, 900.0),
+        size: iced::Size::new(900.0, 900.0),
         ..Default::default()
     };
 
@@ -364,12 +364,12 @@ impl Application for Gpio {
         if let Some(hw_desc) = &self.hardware_description {
             let layout_row = Row::new()
                 .push(layout_selector)
-                .align_items(Alignment::Center)
+                .align_items(Alignment::Start)
                 .spacing(10);
 
             let hardware_desc_row = Row::new()
                 .push(hardware_view(hw_desc))
-                .align_items(Alignment::Start);
+                .align_items(Alignment::Center);
 
             let file_button_style = CustomButton {
                 bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
@@ -379,25 +379,34 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
+            let version_text = Text::new(version());
+
+            let version_row = Row::new().push(version_text).align_items(Alignment::Start);
+
+            let mut first_left = Column::new().align_items(Alignment::Start).spacing(10);
+            first_left = first_left.push(layout_row);
+            first_left = first_left.push(hardware_desc_row);
+            first_left = first_left.push(
+                Button::new(Text::new("Save Configuration").size(20))
+                    .padding(10)
+                    .style(file_button_style.get_button_style())
+                    .on_press(Message::Save),
+            );
+            first_left = first_left.push(
+                Button::new(Text::new("Load Configuration").size(20))
+                    .padding(10)
+                    .style(file_button_style.get_button_style())
+                    .on_press(Message::Load),
+            );
+
             main_row = main_row.push(
                 Column::new()
-                    .push(layout_row)
-                    .push(hardware_desc_row)
-                    .push(
-                        Button::new(Text::new("Save Configuration").size(20))
-                            .padding(10)
-                            .style(file_button_style.get_button_style())
-                            .on_press(Message::Save),
-                    )
-                    .push(
-                        Button::new(Text::new("Load Configuration").size(20))
-                            .padding(10)
-                            .style(file_button_style.get_button_style())
-                            .on_press(Message::Load),
-                    )
-                    .align_items(Alignment::Center)
+                    .push(first_left)
+                    .push(version_row)
+                    .align_items(Alignment::Start)
                     .width(Length::Fixed(400.0))
-                    .spacing(10),
+                    .height(Length::Shrink)
+                    .spacing(800),
             );
         }
 
@@ -411,7 +420,6 @@ impl Application for Gpio {
                 .push(
                     Column::new()
                         .push(pin_layout)
-                        .spacing(10)
                         .align_items(Alignment::Center)
                         .height(Length::Fill),
                 )
@@ -419,16 +427,6 @@ impl Application for Gpio {
                 .width(Length::Fill)
                 .height(Length::Fill);
         }
-
-        let version_text = Text::new(version()).size(16);
-
-        let version_row = Row::new()
-            .push(version_text)
-            .align_items(Alignment::End) // Adjust alignment as per your UI design
-            .padding(10)
-            .width(Length::Fill);
-
-        main_row = main_row.push(version_row);
 
         container(main_row)
             .height(Length::Fill)
@@ -440,7 +438,7 @@ impl Application for Gpio {
     }
 
     fn scale_factor(&self) -> f64 {
-        0.63
+        0.64
     }
 
     fn theme(&self) -> Theme {
@@ -451,7 +449,6 @@ impl Application for Gpio {
         hw_listener::subscribe().map(Message::HardwareListener)
     }
 }
-
 // Hardware Configuration Display
 fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, Message> {
     let hardware_info = Column::new()
@@ -460,7 +457,8 @@ fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, 
         .push(Text::new(format!("Serial: {}", hardware_description.serial)).size(20))
         .push(Text::new(format!("Model: {}", hardware_description.model)).size(20))
         .spacing(10)
-        .align_items(Alignment::Center);
+        .width(Length::Fill)
+        .align_items(Alignment::Start);
 
     container(hardware_info)
         .padding(10)
