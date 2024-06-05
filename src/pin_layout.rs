@@ -204,7 +204,8 @@ fn get_pin_widget(
     };
 
     row.spacing(10)
-        .width(256.0 + 50.0)
+        // TODO .width(256.0 + 120.0)
+        .width(16.0 + 120.0)
         .align_items(Alignment::Center)
 }
 
