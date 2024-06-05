@@ -383,16 +383,16 @@ impl Application for Gpio {
 
             let version_row = Row::new().push(version_text).align_items(Alignment::Start);
 
-            let mut first_left = Column::new().align_items(Alignment::Start).spacing(10);
-            first_left = first_left.push(layout_row);
-            first_left = first_left.push(hardware_desc_row);
-            first_left = first_left.push(
+            let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
+            configuration_column = configuration_column.push(layout_row);
+            configuration_column = configuration_column.push(hardware_desc_row);
+            configuration_column = configuration_column.push(
                 Button::new(Text::new("Save Configuration").size(20))
                     .padding(10)
                     .style(file_button_style.get_button_style())
                     .on_press(Message::Save),
             );
-            first_left = first_left.push(
+            configuration_column = configuration_column.push(
                 Button::new(Text::new("Load Configuration").size(20))
                     .padding(10)
                     .style(file_button_style.get_button_style())
@@ -401,12 +401,12 @@ impl Application for Gpio {
 
             main_row = main_row.push(
                 Column::new()
-                    .push(first_left)
+                    .push(configuration_column)
                     .push(version_row)
                     .align_items(Alignment::Start)
                     .width(Length::Fixed(400.0))
                     .height(Length::Shrink)
-                    .spacing(800),
+                    .spacing(750),
             );
         }
 
