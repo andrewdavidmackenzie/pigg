@@ -15,17 +15,13 @@ use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use style::CustomButton;
 
 // Importing pin layout views
-use crate::hw::PinDescriptionSet;
+use crate::hw::{LevelChange, PinDescriptionSet};
 
+mod custom_widgets;
 mod hw;
+mod hw_listener;
 mod pin_layout;
 mod style;
-mod custom_widgets {
-    pub mod circle;
-    pub mod led;
-    pub mod line;
-}
-mod hw_listener;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -35,6 +31,30 @@ pub enum Layout {
 
 impl Layout {
     const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
+}
+
+pub struct PinState {
+    history: Vec<LevelChange>,
+}
+impl PinState {
+    /// Create a new PinState with an empty history of states
+    fn new() -> Self {
+        PinState { history: vec![] }
+    }
+
+    /// Try and get the last reported level of the pin, which could be considered "current level"
+    /// if everything is working correctly.
+    pub fn get_level(&self) -> Option<PinLevel> {
+        self.history
+            .last()
+            .map(|level_change| level_change.new_level)
+    }
+
+    /// Add a LevelChange to the history of this pin's state
+    pub fn set_level(&mut self, level_change: LevelChange) {
+        self.history.push(level_change);
+        // TODO trim the size of the Vec...
+    }
 }
 
 // Implementing format for Layout
@@ -74,7 +94,7 @@ pub enum Message {
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
-    ChangeOutputLevel(BCMPinNumber, PinLevel),
+    ChangeOutputLevel(LevelChange),
     Save,
     Load,
 }
@@ -88,8 +108,8 @@ pub struct Gpio {
     hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
     /// Either desired state of an output, or detected state of input.
-    /// Note: Indexed by BCMPinNumber, that start at 0 (GPIO0)
-    pin_states: [Option<PinLevel>; 40],
+    /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
+    pin_states: [PinState; 40],
     pin_descriptions: Option<PinDescriptionSet>,
 }
 
@@ -190,8 +210,9 @@ impl Gpio {
 
                     // For output pins, if there is an initial state set then set that in pin state
                     // so the toggler will be drawn correctly on first draw
-                    if let PinFunction::Output(level) = function {
-                        self.pin_states[*bcm_pin_number as usize] = *level;
+                    if let PinFunction::Output(Some(level)) = function {
+                        self.pin_states[board_pin_number as usize - 1]
+                            .set_level(LevelChange::new(*bcm_pin_number, *level));
                     }
                 }
             }
@@ -215,7 +236,7 @@ impl Application for Gpio {
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
                 pin_descriptions: None,     // Until listener is ready
-                pin_states: [None; 40],
+                pin_states: core::array::from_fn(|_| PinState::new()),
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -269,15 +290,23 @@ impl Application for Gpio {
                     self.update_hw_config();
                 }
                 HWListenerEvent::InputChange(level_change) => {
-                    self.pin_states[level_change.bcm_pin_number as usize] =
-                        Some(level_change.new_level);
+                    if let Some(pins) = &self.pin_descriptions {
+                        if let Some(board_pin_number) =
+                            pins.bcm_to_board(level_change.bcm_pin_number)
+                        {
+                            self.pin_states[board_pin_number as usize].set_level(level_change);
+                        }
+                    }
                 }
             },
-            Message::ChangeOutputLevel(bcm_pin_number, new_level) => {
-                self.pin_states[bcm_pin_number as usize] = Some(new_level);
-                if let Some(ref mut listener) = &mut self.listener_sender {
-                    let _ = listener
-                        .try_send(HardwareEvent::OutputLevelChanged(bcm_pin_number, new_level));
+            Message::ChangeOutputLevel(level_change) => {
+                if let Some(pins) = &self.pin_descriptions {
+                    if let Some(board_pin_number) = pins.bcm_to_board(level_change.bcm_pin_number) {
+                        self.pin_states[board_pin_number as usize].set_level(level_change.clone());
+                    }
+                    if let Some(ref mut listener) = &mut self.listener_sender {
+                        let _ = listener.try_send(HardwareEvent::OutputLevelChanged(level_change));
+                    }
                 }
             }
         }
