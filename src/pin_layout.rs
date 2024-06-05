@@ -3,7 +3,8 @@ use iced::alignment::Horizontal;
 use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 
 use crate::{Gpio, PinState};
-use crate::custom_widgets::{circle::circle, line::line, waveform::waveform};
+use crate::custom_widgets::{circle::circle, line::line};
+use crate::custom_widgets::led::led;
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
@@ -158,7 +159,8 @@ fn get_pin_widget(
             }
 
             if is_left {
-                Row::new().push(waveform(16.0, 256.0, pin_state)).push(
+                // TODO Row::new().push(waveform(16.0, 256.0, pin_state)).push(
+                Row::new().push(led(16.0, pin_state)).push(
                     pick_list(sub_options, *pull, move |selected_pull| {
                         Message::PinFunctionSelected(
                             board_pin_number,
@@ -180,7 +182,8 @@ fn get_pin_widget(
                         })
                         .placeholder("Select Pullup"),
                     )
-                    .push(waveform(16.0, 256.0, pin_state))
+                    // TODO     .push(waveform(16.0, 256.0, pin_state))
+                    .push(led(16.0, pin_state))
             }
         }
 
