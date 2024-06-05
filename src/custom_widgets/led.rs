@@ -7,18 +7,18 @@ use iced::mouse;
 use crate::hw::PinLevel;
 
 pub struct Led {
-    radius: f32,
+    height: f32,
     state: Option<PinLevel>,
 }
 
 impl Led {
-    pub fn new(radius: f32, state: Option<PinLevel>) -> Self {
-        Self { radius, state }
+    pub fn new(height: f32, state: Option<PinLevel>) -> Self {
+        Self { height, state }
     }
 }
 
-pub fn led(radius: f32, state: Option<PinLevel>) -> Led {
-    Led::new(radius, state)
+pub fn led(height: f32, state: Option<PinLevel>) -> Led {
+    Led::new(height, state)
 }
 
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Led
@@ -38,7 +38,7 @@ where
         _renderer: &Renderer,
         _limits: &layout::Limits,
     ) -> layout::Node {
-        layout::Node::new(Size::new(self.radius * 2.0, self.radius * 2.0))
+        layout::Node::new(Size::new(self.height * 2.0, self.height * 2.0))
     }
 
     fn draw(
@@ -61,7 +61,7 @@ where
             renderer::Quad {
                 bounds: layout.bounds(),
                 border: iced::border::Border {
-                    radius: self.radius.into(),
+                    radius: self.height.into(),
                     ..Default::default()
                 },
                 ..renderer::Quad::default()

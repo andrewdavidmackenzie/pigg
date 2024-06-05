@@ -87,8 +87,8 @@ pub struct Gpio {
     chosen_layout: Layout,
     hardware_description: Option<HardwareDescriptor>,
     listener_sender: Option<Sender<HardwareEvent>>,
-    /// Either desired state or output, or detected state of input. Note BCMPinNumber, that starts
-    /// at 0 (GPIO0)
+    /// Either desired state of an output, or detected state of input.
+    /// Note: Indexed by BCMPinNumber, that start at 0 (GPIO0)
     pin_states: [Option<PinLevel>; 40],
     pin_descriptions: Option<PinDescriptionSet>,
 }
