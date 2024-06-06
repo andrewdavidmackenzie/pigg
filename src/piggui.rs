@@ -1,17 +1,17 @@
 use std::{env, io};
 
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
-    Subscription, Theme,
+    alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Button, Column, container, pick_list, Row, Text};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
 use hw::InputPull;
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
-use hw_listener::{HWListenerEvent, HardwareEvent};
+use hw_listener::{HardwareEvent, HWListenerEvent};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use style::CustomButton;
 
@@ -112,7 +112,7 @@ fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: false,
         position: window::Position::Centered,
-        size: iced::Size::new(1000.0, 900.0),
+        size: iced::Size::new(1100.0, 900.0),
         ..Default::default()
     };
 
@@ -404,7 +404,7 @@ impl Application for Gpio {
                     .push(configuration_column)
                     .push(version_row)
                     .align_items(Alignment::Start)
-                    .width(Length::Fixed(400.0))
+                    .width(Length::Fixed(240.0))
                     .height(Length::Shrink)
                     .spacing(1040),
             );
