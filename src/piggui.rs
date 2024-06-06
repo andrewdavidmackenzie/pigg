@@ -25,7 +25,7 @@ mod pin_layout;
 mod style;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const NAME: &str = env!("CARGO_PKG_NAME");
+const NAME: &str = "piggui";
 const LICENSE: &str = env!("CARGO_PKG_LICENSE");
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
@@ -111,8 +111,8 @@ fn main() -> Result<(), iced::Error> {
 
     let window = window::Settings {
         resizable: false,
-        decorations: true,
-        size: iced::Size::new(900.0, 900.0),
+        position: window::Position::Centered,
+        size: iced::Size::new(1000.0, 900.0),
         ..Default::default()
     };
 
@@ -379,9 +379,8 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
-            let version_text = Text::new(version());
+            let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
 
-            // TODO Implement Dialog box 
             let version_row = Row::new().push(version_text).align_items(Alignment::Start);
 
             let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
@@ -407,7 +406,7 @@ impl Application for Gpio {
                     .align_items(Alignment::Start)
                     .width(Length::Fixed(400.0))
                     .height(Length::Shrink)
-                    .spacing(750),
+                    .spacing(1040),
             );
         }
 
@@ -432,14 +431,14 @@ impl Application for Gpio {
         container(main_row)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(30)
+            .padding(20)
             .align_x(alignment::Horizontal::Center)
             .align_y(alignment::Vertical::Top)
             .into()
     }
 
     fn scale_factor(&self) -> f64 {
-        0.64
+        0.63
     }
 
     fn theme(&self) -> Theme {
