@@ -1,8 +1,8 @@
-use iced::{Color, Element, Length, Rectangle, Size};
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
 use iced::mouse;
+use iced::{Color, Element, Length, Rectangle, Size};
 use plotters_iced::{Chart, ChartBuilder, DrawingBackend};
 
 use crate::{Message, PinState};
@@ -31,6 +31,7 @@ impl Chart<Message> for Waveform {
     }
 }
 
+#[allow(dead_code)]
 pub fn waveform(height: f32, width: f32, pin_state: &PinState) -> Waveform {
     Waveform::new(height, width, pin_state)
 }

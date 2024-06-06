@@ -1,17 +1,17 @@
 use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Button, Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::{
+    alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
 use hw::InputPull;
-use hw_listener::{HardwareEvent, HWListenerEvent};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
+use hw_listener::{HWListenerEvent, HardwareEvent};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use style::CustomButton;
 
@@ -23,6 +23,11 @@ mod hw;
 mod hw_listener;
 mod pin_layout;
 mod style;
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const NAME: &str = "piggui";
+const LICENSE: &str = env!("CARGO_PKG_LICENSE");
+const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -77,10 +82,36 @@ impl std::fmt::Display for Layout {
     }
 }
 
+#[must_use]
+pub fn version() -> String {
+    format!(
+        "{name} {version}\n\
+        Copyright (C) 2024 The {name} Developers \n\
+        License {license}: <https://www.gnu.org/licenses/{license_lower}.html>\n\
+        This is free software: you are free to change and redistribute it.\n\
+        There is NO WARRANTY, to the extent permitted by law.\n\
+        \n\
+        Written by the {name} Contributors.\n\
+        Full source available at: {repository}",
+        name = NAME,
+        version = VERSION,
+        license = LICENSE,
+        license_lower = LICENSE.to_lowercase(),
+        repository = REPOSITORY,
+    )
+}
+
 fn main() -> Result<(), iced::Error> {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 1 && (args[1] == "--version" || args[1] == "-V") {
+        println!("{}", version());
+        return Ok(());
+    }
+
     let window = window::Settings {
         resizable: false,
-        decorations: true,
+        position: window::Position::Centered,
         size: iced::Size::new(1000.0, 900.0),
         ..Default::default()
     };
@@ -333,12 +364,12 @@ impl Application for Gpio {
         if let Some(hw_desc) = &self.hardware_description {
             let layout_row = Row::new()
                 .push(layout_selector)
-                .align_items(Alignment::Center)
+                .align_items(Alignment::Start)
                 .spacing(10);
 
             let hardware_desc_row = Row::new()
                 .push(hardware_view(hw_desc))
-                .align_items(Alignment::Start);
+                .align_items(Alignment::Center);
 
             let file_button_style = CustomButton {
                 bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
@@ -348,25 +379,34 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
+            let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
+
+            let version_row = Row::new().push(version_text).align_items(Alignment::Start);
+
+            let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
+            configuration_column = configuration_column.push(layout_row);
+            configuration_column = configuration_column.push(hardware_desc_row);
+            configuration_column = configuration_column.push(
+                Button::new(Text::new("Save Configuration").size(20))
+                    .padding(10)
+                    .style(file_button_style.get_button_style())
+                    .on_press(Message::Save),
+            );
+            configuration_column = configuration_column.push(
+                Button::new(Text::new("Load Configuration").size(20))
+                    .padding(10)
+                    .style(file_button_style.get_button_style())
+                    .on_press(Message::Load),
+            );
+
             main_row = main_row.push(
                 Column::new()
-                    .push(layout_row)
-                    .push(hardware_desc_row)
-                    .push(
-                        Button::new(Text::new("Save Configuration").size(20))
-                            .padding(10)
-                            .style(file_button_style.get_button_style())
-                            .on_press(Message::Save),
-                    )
-                    .push(
-                        Button::new(Text::new("Load Configuration").size(20))
-                            .padding(10)
-                            .style(file_button_style.get_button_style())
-                            .on_press(Message::Load),
-                    )
-                    .align_items(Alignment::Center)
+                    .push(configuration_column)
+                    .push(version_row)
+                    .align_items(Alignment::Start)
                     .width(Length::Fixed(400.0))
-                    .spacing(10),
+                    .height(Length::Shrink)
+                    .spacing(1040),
             );
         }
 
@@ -380,7 +420,6 @@ impl Application for Gpio {
                 .push(
                     Column::new()
                         .push(pin_layout)
-                        .spacing(10)
                         .align_items(Alignment::Center)
                         .height(Length::Fill),
                 )
@@ -392,7 +431,7 @@ impl Application for Gpio {
         container(main_row)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(30)
+            .padding(20)
             .align_x(alignment::Horizontal::Center)
             .align_y(alignment::Vertical::Top)
             .into()
@@ -410,7 +449,6 @@ impl Application for Gpio {
         hw_listener::subscribe().map(Message::HardwareListener)
     }
 }
-
 // Hardware Configuration Display
 fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, Message> {
     let hardware_info = Column::new()
@@ -419,7 +457,8 @@ fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, 
         .push(Text::new(format!("Serial: {}", hardware_description.serial)).size(20))
         .push(Text::new(format!("Model: {}", hardware_description.model)).size(20))
         .spacing(10)
-        .align_items(Alignment::Center);
+        .width(Length::Fill)
+        .align_items(Alignment::Start);
 
     container(hardware_info)
         .padding(10)
