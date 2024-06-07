@@ -315,8 +315,8 @@ impl Application for Gpio {
                 return window::resize(
                     window::Id::MAIN,
                     Size {
-                        width: width,
-                        height: height,
+                        width,
+                        height,
                     },
                 );
             }
