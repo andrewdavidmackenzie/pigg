@@ -4,7 +4,7 @@ use iced::futures::channel::mpsc::Sender;
 use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
     alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
-    Subscription, Theme,
+    Size, Subscription, Theme,
 };
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 
@@ -37,6 +37,13 @@ pub enum Layout {
 
 impl Layout {
     const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
+
+    fn get_spacing(&self) -> u16 {
+        match self {
+            Layout::BoardLayout => 470,
+            Layout::BCMLayout => 650, 
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -110,9 +117,11 @@ fn main() -> Result<(), iced::Error> {
     }
 
     let window = window::Settings {
-        resizable: false,
-        position: window::Position::Centered,
-        size: iced::Size::new(1000.0, 900.0),
+        resizable: true,
+        size: Size {
+            width: 1100.0,
+            height: 780.0,
+        },
         ..Default::default()
     };
 
@@ -254,6 +263,12 @@ impl Gpio {
             }
         }
     }
+    fn get_dimensions_for_layout(layout: Layout) -> (f32, f32) {
+        match layout {
+            Layout::BoardLayout => (1100f32, 780f32),
+            Layout::BCMLayout => (800f32, 950f32),
+        }
+    }
 }
 
 impl Application for Gpio {
@@ -274,10 +289,13 @@ impl Application for Gpio {
                 pin_descriptions: None,     // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
             },
-            Command::perform(Self::load(env::args().nth(1)), |result| match result {
-                Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
-                _ => Message::None,
-            }),
+            Command::batch(vec![Command::perform(
+                Self::load(env::args().nth(1)),
+                |result| match result {
+                    Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
+                    _ => Message::None,
+                },
+            )]),
         )
     }
 
@@ -293,6 +311,14 @@ impl Application for Gpio {
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
+                let (width, height) = Self::get_dimensions_for_layout(layout);
+                return window::resize(
+                    window::Id::MAIN,
+                    Size {
+                        width: width,
+                        height: height,
+                    },
+                );
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
@@ -356,7 +382,7 @@ impl Application for Gpio {
             Some(self.chosen_layout),
             Message::LayoutChanged,
         )
-        .text_size(25)
+        .width(Length::Shrink)
         .placeholder("Choose Layout");
 
         let mut main_row = Row::new();
@@ -387,14 +413,12 @@ impl Application for Gpio {
             configuration_column = configuration_column.push(layout_row);
             configuration_column = configuration_column.push(hardware_desc_row);
             configuration_column = configuration_column.push(
-                Button::new(Text::new("Save Configuration").size(20))
-                    .padding(10)
+                Button::new(Text::new("Save Configuration"))
                     .style(file_button_style.get_button_style())
                     .on_press(Message::Save),
             );
             configuration_column = configuration_column.push(
-                Button::new(Text::new("Load Configuration").size(20))
-                    .padding(10)
+                Button::new(Text::new("Load Configuration"))
                     .style(file_button_style.get_button_style())
                     .on_press(Message::Load),
             );
@@ -404,9 +428,9 @@ impl Application for Gpio {
                     .push(configuration_column)
                     .push(version_row)
                     .align_items(Alignment::Start)
-                    .width(Length::Fixed(400.0))
+                    .width(Length::Shrink)
                     .height(Length::Shrink)
-                    .spacing(1040),
+                    .spacing(self.chosen_layout.get_spacing()),
             );
         }
 
@@ -421,7 +445,8 @@ impl Application for Gpio {
                     Column::new()
                         .push(pin_layout)
                         .align_items(Alignment::Center)
-                        .height(Length::Fill),
+                        .height(Length::Fill)
+                        .width(Length::Fill),
                 )
                 .align_items(Alignment::Start)
                 .width(Length::Fill)
@@ -431,14 +456,10 @@ impl Application for Gpio {
         container(main_row)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(20)
+            .padding(10)
             .align_x(alignment::Horizontal::Center)
             .align_y(alignment::Vertical::Top)
             .into()
-    }
-
-    fn scale_factor(&self) -> f64 {
-        0.63
     }
 
     fn theme(&self) -> Theme {
@@ -452,17 +473,26 @@ impl Application for Gpio {
 // Hardware Configuration Display
 fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, Message> {
     let hardware_info = Column::new()
-        .push(Text::new(format!("Hardware: {}", hardware_description.hardware)).size(20))
-        .push(Text::new(format!("Revision: {}", hardware_description.revision)).size(20))
-        .push(Text::new(format!("Serial: {}", hardware_description.serial)).size(20))
-        .push(Text::new(format!("Model: {}", hardware_description.model)).size(20))
+        .push(Text::new(format!(
+            "Hardware: {}",
+            hardware_description.hardware
+        )))
+        .push(Text::new(format!(
+            "Revision: {}",
+            hardware_description.revision
+        )))
+        .push(Text::new(format!(
+            "Serial: {}",
+            hardware_description.serial
+        )))
+        .push(Text::new(format!("Model: {}", hardware_description.model)))
         .spacing(10)
-        .width(Length::Fill)
+        .width(Length::Shrink)
         .align_items(Alignment::Start);
 
     container(hardware_info)
         .padding(10)
-        .width(Length::Fill)
+        .width(Length::Shrink)
         .align_x(alignment::Horizontal::Center)
         .into()
 }
