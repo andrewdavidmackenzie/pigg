@@ -215,7 +215,7 @@ fn get_pin_widget(
 
     row.spacing(10)
         // TODO .width(256.0 + 120.0)
-        .width(16.0 + 120.0)
+        .width(Length::Fill)
         .align_items(Alignment::Center)
 }
 
