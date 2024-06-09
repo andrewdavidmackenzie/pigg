@@ -28,6 +28,10 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = "piggui";
 const LICENSE: &str = env!("CARGO_PKG_LICENSE");
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+const BOARD_LAYOUT_SPACING: u16 = 480;
+const BCM_LAYOUT_SPACING: u16 = 650;
+const BOARD_LAYOUT_SIZE: (f32, f32) = (1100.0, 780.0);
+const BCM_LAYOUT_SIZE: (f32, f32) = (800.0, 950.0);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -40,8 +44,8 @@ impl Layout {
 
     fn get_spacing(&self) -> u16 {
         match self {
-            Layout::BoardLayout => 470,
-            Layout::BCMLayout => 650, 
+            Layout::BoardLayout => BOARD_LAYOUT_SPACING,
+            Layout::BCMLayout => BCM_LAYOUT_SPACING,
         }
     }
 }
@@ -116,12 +120,10 @@ fn main() -> Result<(), iced::Error> {
         return Ok(());
     }
 
+    let size = Gpio::get_dimensions_for_layout(Layout::BoardLayout);
     let window = window::Settings {
         resizable: true,
-        size: Size {
-            width: 1100.0,
-            height: 780.0,
-        },
+        size,
         ..Default::default()
     };
 
@@ -263,10 +265,16 @@ impl Gpio {
             }
         }
     }
-    fn get_dimensions_for_layout(layout: Layout) -> (f32, f32) {
+    fn get_dimensions_for_layout(layout: Layout) -> Size {
         match layout {
-            Layout::BoardLayout => (1100f32, 780f32),
-            Layout::BCMLayout => (800f32, 950f32),
+            Layout::BoardLayout => Size {
+                width: BOARD_LAYOUT_SIZE.0,
+                height: BOARD_LAYOUT_SIZE.1,
+            },
+            Layout::BCMLayout => Size {
+                width: BCM_LAYOUT_SIZE.0,
+                height: BCM_LAYOUT_SIZE.1,
+            },
         }
     }
 }
@@ -311,14 +319,8 @@ impl Application for Gpio {
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
-                let (width, height) = Self::get_dimensions_for_layout(layout);
-                return window::resize(
-                    window::Id::MAIN,
-                    Size {
-                        width,
-                        height,
-                    },
-                );
+                let layout_size = Self::get_dimensions_for_layout(layout);
+                return window::resize(window::Id::MAIN, layout_size);
             }
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
