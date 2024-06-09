@@ -14,6 +14,10 @@ use crate::InputPull;
 use crate::Message;
 use crate::{Gpio, PinState};
 
+const PIN_NAME_WIDTH: f32 = 70.0;
+const PIN_ARROW_WIDTH: f32 = 30.0;
+const PIN_BUTTON_WIDTH: f32 = 30.0;
+
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
         "3V3" => CustomButton {
@@ -264,7 +268,7 @@ fn create_pin_view_side(
     }
 
     let mut pin_name_column = Column::new()
-        .width(Length::Fixed(70f32))
+        .width(Length::Fixed(PIN_NAME_WIDTH))
         .align_items(Alignment::Center);
 
     // Create the Pin name
@@ -276,7 +280,7 @@ fn create_pin_view_side(
 
     let mut pin_arrow_column = Column::new()
         .align_items(Alignment::Center)
-        .width(Length::Fixed(30f32));
+        .width(Length::Fixed(PIN_ARROW_WIDTH));
 
     let mut pin_arrow = Row::new().align_items(Alignment::Center);
 
@@ -297,7 +301,7 @@ fn create_pin_view_side(
             .horizontal_alignment(Horizontal::Center),
     )
     .padding(5)
-    .width(Length::Fixed(30f32))
+    .width(Length::Fixed(PIN_BUTTON_WIDTH))
     .style(get_pin_color(pin_description).get_button_style())
     .on_press(Message::Activate(pin_description.board_pin_number));
 
