@@ -438,6 +438,14 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
+            let about_button_style = CustomButton {
+                bg_color: Color::TRANSPARENT,          
+                text_color: Color::WHITE,                        
+                hovered_bg_color: Color::TRANSPARENT,  
+                hovered_text_color: Color::new(0.7, 0.7, 0.7, 1.0),                 
+                border_radius: 4.0,                              
+            };
+
             let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
             configuration_column = configuration_column.push(layout_row);
             configuration_column = configuration_column.push(hardware_desc_row);
@@ -454,7 +462,7 @@ impl Application for Gpio {
 
             let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
 
-            let add_toast_button = Button::new(version_text).on_press(Message::Add);
+            let add_toast_button = Button::new(version_text).on_press(Message::Add).style(about_button_style.get_button_style());
 
             let version_row = Row::new()
                 .push(add_toast_button)
