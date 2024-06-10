@@ -8,7 +8,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::hw::{BCMPinNumber, GPIOConfig, PinDescriptionSet, LevelChange};
+use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -215,9 +215,10 @@ impl Hardware for PiHW {
     /// Write the output level of an output using the bcm pin number
     fn set_output_level(
         &mut self,
-        level_change: LevelChange
+        bcm_pin_number: BCMPinNumber,
+        level_change: LevelChange,
     ) -> io::Result<()> {
-        match self.configured_pins.get_mut(&level_change.bcm_pin_number) {
+        match self.configured_pins.get_mut(&bcm_pin_number) {
             Some(Pin::Output(output_pin)) => match level_change.new_level {
                 true => output_pin.write(Level::High),
                 false => output_pin.write(Level::Low),

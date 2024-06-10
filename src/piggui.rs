@@ -1,4 +1,5 @@
 use std::{env, io};
+use std::time::Duration;
 
 use iced::{
     alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
@@ -17,7 +18,8 @@ use style::CustomButton;
 // Importing pin layout views
 use crate::hw::{LevelChange, PinDescriptionSet};
 use crate::layout::Layout;
-use crate::pin_state::PinState;
+use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
+use crate::version::version;
 use crate::views::hardware::hardware_view;
 
 mod custom_widgets;
@@ -27,31 +29,8 @@ mod layout;
 mod pin_layout;
 mod pin_state;
 mod style;
+mod version;
 mod views;
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const NAME: &str = "piggui";
-const LICENSE: &str = env!("CARGO_PKG_LICENSE");
-const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
-
-#[must_use]
-pub fn version() -> String {
-    format!(
-        "{name} {version}\n\
-        Copyright (C) 2024 The {name} Developers \n\
-        License {license}: <https://www.gnu.org/licenses/{license_lower}.html>\n\
-        This is free software: you are free to change and redistribute it.\n\
-        There is NO WARRANTY, to the extent permitted by law.\n\
-        \n\
-        Written by the {name} Contributors.\n\
-        Full source available at: {repository}",
-        name = NAME,
-        version = VERSION,
-        license = LICENSE,
-        license_lower = LICENSE.to_lowercase(),
-        repository = REPOSITORY,
-    )
-}
 
 fn main() -> Result<(), iced::Error> {
     let args: Vec<String> = env::args().collect();
@@ -301,7 +280,7 @@ impl Application for Gpio {
                 }
             }
             Message::UpdateCharts => {
-                // TODO update all the charts as the refresh period has passed
+                println!("Chart update");
             }
         }
         Command::none()
@@ -403,6 +382,10 @@ impl Application for Gpio {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        hw_listener::subscribe().map(Message::HardwareListener)
+        Subscription::batch([
+            hw_listener::subscribe().map(Message::HardwareListener),
+            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                .map(|_| Message::UpdateCharts),
+        ])
     }
 }

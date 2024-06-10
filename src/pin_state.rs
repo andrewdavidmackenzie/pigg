@@ -14,7 +14,7 @@ pub struct PinState {
     chart: Waveform<PinLevel>,
 }
 
-const CHART_UPDATES_PER_SECOND: u64 = 4;
+pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 const CHART_WIDTH: f32 = 256.0;
 const CHART_HEIGHT: f32 = 16.0;
 const CHART_DURATION: Duration = Duration::from_secs(CHART_WIDTH as u64 / CHART_UPDATES_PER_SECOND);
