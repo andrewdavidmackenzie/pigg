@@ -140,10 +140,10 @@ pub fn board_pin_layout_view(
 }
 
 const WAVEFORM_WIDTH: f32 = 256.0;
-const PICKLIST_WIDTH: f32 = 120.0;
-const TOGGLER_WIDTH: f32 = 120.0;
-const PADDING_WIDTH: f32 = 10.0;
-const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + PADDING_WIDTH + WAVEFORM_WIDTH;
+const PICKLIST_WIDTH: f32 = 100.0;
+const TOGGLER_WIDTH: f32 = 100.0;
+const SPACING_WIDTH: f32 = 10.0;
+const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + SPACING_WIDTH + WAVEFORM_WIDTH;
 
 /// Prepare a pick_list widget with the Input's pullup options
 fn pullup_picklist(
@@ -176,20 +176,16 @@ fn get_pin_widget<'a>(
     pin_state: &PinState,
     is_left: bool,
 ) -> Element<'static, Message> {
-    let row = match pin_function {
+    let mut row = match pin_function {
         Input(pull) => {
             let pullup_pick = pullup_picklist(*pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
                 Row::new()
-                    .padding(PADDING_WIDTH)
-                    .width(COLUMN_WIDTH)
                     .push(led(16.0, 16.0, pin_state))
                     // .push(pin_state.view())
                     .push(pullup_pick)
             } else {
                 Row::new()
-                    .padding(PADDING_WIDTH)
-                    .width(COLUMN_WIDTH)
                     .push(pullup_pick)
                     .push(led(16.0, 16.0, pin_state))
                 //      .push(pin_state.view())
@@ -210,18 +206,17 @@ fn get_pin_widget<'a>(
         _ => Row::new(),
     };
 
+    row = row
+        .width(Length::Shrink)
+        .spacing(SPACING_WIDTH)
+        .align_items(Alignment::Center);
+
+    let mut col = Column::new().width(Length::Fixed(COLUMN_WIDTH)).push(row);
+
     if is_left {
-        Column::new()
-            .width(Length::Fixed(COLUMN_WIDTH))
-            .align_items(Alignment::End)
-            .push(row.width(Length::Shrink).align_items(Alignment::Center))
-            .into()
+        col.align_items(Alignment::End).into()
     } else {
-        Column::new()
-            .width(Length::Fixed(COLUMN_WIDTH))
-            .align_items(Alignment::Start)
-            .push(row.width(Length::Shrink).align_items(Alignment::Center))
-            .into()
+        col.align_items(Alignment::Start).into()
     }
 }
 
