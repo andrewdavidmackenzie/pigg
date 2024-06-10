@@ -181,13 +181,13 @@ fn get_pin_widget<'a>(
             let pullup_pick = pullup_picklist(*pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
                 Row::new()
-                    .push(led(16.0, 16.0, pin_state))
+                    .push(led(16.0, 16.0, pin_state.level))
                     // .push(pin_state.view())
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
-                    .push(led(16.0, 16.0, pin_state))
+                    .push(led(16.0, 16.0, pin_state.level))
                 //      .push(pin_state.view())
             }
         }
@@ -211,7 +211,7 @@ fn get_pin_widget<'a>(
         .spacing(SPACING_WIDTH)
         .align_items(Alignment::Center);
 
-    let mut col = Column::new().width(Length::Fixed(COLUMN_WIDTH)).push(row);
+    let col = Column::new().width(Length::Fixed(COLUMN_WIDTH)).push(row);
 
     if is_left {
         col.align_items(Alignment::End).into()

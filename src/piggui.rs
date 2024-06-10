@@ -5,6 +5,7 @@ use iced::{
     alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
     Theme, window,
 };
+use iced::advanced::text::editor::Direction;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
 use plotters::prelude::{RGBAColor, ShapeStyle};
@@ -18,6 +19,7 @@ use style::CustomButton;
 
 // Importing pin layout views
 use crate::hw::{LevelChange, PinDescriptionSet};
+use crate::views::waveform::{ChartType, Waveform};
 
 mod custom_widgets;
 mod hw;
@@ -53,10 +55,9 @@ impl Layout {
 }
 
 /// PinState captures the state of a pin, including a history of previous states set/read
-#[derive(Clone)]
 pub struct PinState {
     level: Option<PinLevel>,
-    //chart: Waveform<PinLevel>,
+    chart: Waveform<PinLevel>,
 }
 
 impl PinState {
@@ -64,7 +65,6 @@ impl PinState {
     fn new() -> Self {
         PinState {
             level: None,
-            /*
             chart: Waveform::new(
                 ChartType::Logic(false, true),
                 CHART_LINE_STYLE,
@@ -73,15 +73,12 @@ impl PinState {
                 CHART_DURATION,
                 Direction::Right,
             ),
-             */
         }
     }
 
-    /*
     pub fn view(&self) -> Element<Message> {
         self.chart.view()
     }
-     */
 
     /// Try and get the last reported level of the pin, which could be considered "current level"
     /// if everything is working correctly.
