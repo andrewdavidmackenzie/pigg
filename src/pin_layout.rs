@@ -1,4 +1,5 @@
 use iced::{Alignment, Color, Element, Length};
+use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
 use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 
@@ -184,14 +185,14 @@ fn get_pin_widget(
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
                 Row::new()
-                    .push(pin_state.chart())
+                    .push(pin_state.chart(Direction::Left))
                     .push(led(16.0, 16.0, pin_state.get_level()))
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
                     .push(led(16.0, 16.0, pin_state.get_level()))
-                    .push(pin_state.chart())
+                    .push(pin_state.chart(Direction::Right))
             }
         }
 

@@ -8,12 +8,6 @@ use crate::hw::{LevelChange, PinLevel};
 use crate::Message;
 use crate::views::waveform::{ChartType, Waveform};
 
-/// PinState captures the state of a pin, including a history of previous states set/read
-pub struct PinState {
-    level: Option<PinLevel>,
-    chart: Waveform<PinLevel>,
-}
-
 pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 const CHART_WIDTH: f32 = 256.0;
 const CHART_HEIGHT: f32 = 20.0;
@@ -24,6 +18,12 @@ const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
     filled: true,
     stroke_width: 1,
 };
+
+/// PinState captures the state of a pin, including a history of previous states set/read
+pub struct PinState {
+    level: Option<PinLevel>,
+    chart: Waveform<PinLevel>,
+}
 
 impl PinState {
     /// Create a new PinState with an unknown level and a new Waveform chart of it
@@ -36,13 +36,12 @@ impl PinState {
                 CHART_WIDTH,
                 CHART_HEIGHT,
                 CHART_DURATION,
-                Direction::Right,
             ),
         }
     }
 
-    pub fn chart(&self) -> Element<Message> {
-        self.chart.view()
+    pub fn chart(&self, direction: Direction) -> Element<Message> {
+        self.chart.view(direction)
     }
 
     /// Try and get the last reported level of the pin, which could be considered "current level"

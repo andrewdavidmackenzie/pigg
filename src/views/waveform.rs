@@ -1,4 +1,5 @@
 use std::{collections::VecDeque, time::Duration};
+use std::cell::RefCell;
 use std::ops::Range;
 
 use chrono::{DateTime, Utc};
@@ -59,7 +60,7 @@ where
     style: ShapeStyle,
     width: f32,
     height: f32,
-    direction: Direction,
+    direction: RefCell<Direction>,
     cache: Cache,
     timespan: Duration,
     data_points: VecDeque<Sample<T>>,
@@ -82,14 +83,13 @@ where
         width: f32,
         height: f32,
         timespan: Duration,
-        direction: Direction,
     ) -> Self {
         Self {
             chart_type,
             style: line_style,
             width,
             height,
-            direction,
+            direction: RefCell::new(Direction::Right),
             cache: Cache::new(),
             data_points: VecDeque::new(),
             timespan,
@@ -173,8 +173,10 @@ where
         min..max
     }
 
-    /// Return an Element that can be used in views to display the chart
-    pub fn view(&self) -> Element<Message> {
+    /// Return an Element that can be used in views to display the chart,
+    /// specifying the direction to draw the waveform view in
+    pub fn view(&self, direction: Direction) -> Element<Message> {
+        self.direction.replace(direction);
         ChartWidget::new(self)
             .height(Length::Fixed(self.height))
             .width(Length::Fixed(self.width))
@@ -193,7 +195,7 @@ where
             let last_time = Utc::now();
             let start_of_chart_time =
                 last_time - chrono::Duration::seconds(self.timespan.as_secs() as i64);
-            let time_axis = match self.direction {
+            let time_axis = match self.direction.borrow().clone() {
                 Direction::Left => start_of_chart_time..last_time,
                 Direction::Right => last_time..start_of_chart_time,
             };
