@@ -4,7 +4,7 @@ use iced::widget::{button, Column, pick_list, Row, Text, toggler};
 
 use crate::{Gpio, PinState};
 use crate::custom_widgets::{circle::circle, line::line};
-use crate::custom_widgets::waveform::waveform;
+use crate::custom_widgets::led::led;
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
@@ -139,74 +139,87 @@ pub fn board_pin_layout_view(
     column.into()
 }
 
+const WAVEFORM_WIDTH: f32 = 256.0;
+const PICKLIST_WIDTH: f32 = 120.0;
+const TOGGLER_WIDTH: f32 = 120.0;
+const PADDING_WIDTH: f32 = 10.0;
+const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + PADDING_WIDTH + WAVEFORM_WIDTH;
+
+/// Prepare a pick_list widget with the Input's pullup options
+fn picklist(
+    pull: &Option<InputPull>,
+    board_pin_number: BoardPinNumber,
+    bcm_pin_number: BCMPinNumber,
+) -> Element<Message> {
+    let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
+
+    // Filter out the currently selected pull option
+    if let Some(selected_pull) = pull {
+        sub_options.retain(|&option| &option != selected_pull);
+    }
+
+    pick_list(sub_options, *pull, move |selected_pull| {
+        Message::PinFunctionSelected(board_pin_number, bcm_pin_number, Input(Some(selected_pull)))
+    })
+    .width(PICKLIST_WIDTH)
+    .placeholder("Select Pullup")
+    .into()
+}
+
 /// Create the widget that either shows an input pin's state,
 /// or allows the user to control the state of an output pin
 /// This should only be called for pins that have a valid BCMPinNumber
-fn get_pin_widget(
+fn get_pin_widget<'a>(
     board_pin_number: BoardPinNumber,
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: &PinFunction,
     pin_state: &PinState,
     is_left: bool,
-) -> Row<'static, Message> {
+) -> Element<'static, Message> {
     let row = match pin_function {
         Input(pull) => {
-            let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
-
-            // Filter out the currently selected pull option
-            if let Some(selected_pull) = pull {
-                sub_options.retain(|&option| &option != selected_pull);
-            }
-
             if is_left {
-                Row::new().push(waveform(16.0, 256.0, pin_state)).push(
-                    // TODO switcher Row::new().push(led(16.0, pin_state)).push(
-                    pick_list(sub_options, *pull, move |selected_pull| {
-                        Message::PinFunctionSelected(
-                            board_pin_number,
-                            bcm_pin_number.unwrap(),
-                            Input(Some(selected_pull)),
-                        )
-                    })
-                    .placeholder("Select Pullup"),
-                )
+                Row::new()
+                    .padding(PADDING_WIDTH)
+                    .push(led(16.0, 16.0, pin_state))
+                    // .push(pin_state.view())
+                    .push(picklist(pull, board_pin_number, bcm_pin_number.unwrap()))
             } else {
                 Row::new()
-                    .push(
-                        pick_list(sub_options, *pull, move |selected_pull| {
-                            Message::PinFunctionSelected(
-                                board_pin_number,
-                                bcm_pin_number.unwrap(),
-                                Input(Some(selected_pull)),
-                            )
-                        })
-                        .placeholder("Select Pullup"),
-                    )
-                    .push(waveform(16.0, 256.0, pin_state))
-                // TODO switcher .push(led(16.0, pin_state))
+                    .padding(PADDING_WIDTH)
+                    .push(picklist(pull, board_pin_number, bcm_pin_number.unwrap()))
+                    .push(led(16.0, 16.0, pin_state))
+                //      .push(pin_state.view())
             }
         }
 
         Output(_) => {
-            let toggler = toggler(
+            let output_control = toggler(
                 None,
                 pin_state.get_level().unwrap_or(false as PinLevel),
-                move |b| Message::ChangeOutputLevel(LevelChange::new(bcm_pin_number.unwrap(), b)),
-            );
-            if is_left {
-                Row::new().push(Column::new().push(toggler).align_items(Alignment::End))
-            } else {
-                Row::new().push(Column::new().push(toggler).align_items(Alignment::Start))
-            }
+                move |b| Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
+            )
+            .width(Length::Fixed(TOGGLER_WIDTH));
+
+            Row::new().push(output_control)
         }
 
         _ => Row::new(),
     };
 
-    row.spacing(10)
-        .width(256.0 + 120.0)
-        // TODO switcher .width(16.0 + 120.0)
-        .align_items(Alignment::Center)
+    if is_left {
+        Column::new()
+            .width(Length::Fixed(COLUMN_WIDTH))
+            .align_items(Alignment::End)
+            .push(row.width(COLUMN_WIDTH).align_items(Alignment::Center))
+            .into()
+    } else {
+        Column::new()
+            .width(Length::Fixed(COLUMN_WIDTH))
+            .align_items(Alignment::Start)
+            .push(row.width(COLUMN_WIDTH).align_items(Alignment::Center))
+            .into()
+    }
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left

@@ -1,4 +1,5 @@
 use std::{env, io};
+use std::time::Duration;
 
 use iced::{
     alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
@@ -6,7 +7,7 @@ use iced::{
 };
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
-use ringbuffer::{AllocRingBuffer, RingBuffer};
+use plotters::prelude::{RGBAColor, ShapeStyle};
 
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
 use hw::HardwareDescriptor;
@@ -23,6 +24,18 @@ mod hw;
 mod hw_listener;
 mod pin_layout;
 mod style;
+mod views;
+
+const CHART_UPDATES_PER_SECOND: u64 = 4;
+const CHART_WIDTH: f32 = 256.0;
+const CHART_HEIGHT: f32 = 16.0;
+const CHART_DURATION: Duration = Duration::from_secs(CHART_WIDTH as u64 / CHART_UPDATES_PER_SECOND);
+
+const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
+    color: RGBAColor(255, 255, 255, 1.0),
+    filled: true,
+    stroke_width: 1,
+};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = "piggui";
@@ -39,31 +52,47 @@ impl Layout {
     const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
 }
 
-#[derive(Clone)]
 /// PinState captures the state of a pin, including a history of previous states set/read
+#[derive(Clone)]
 pub struct PinState {
-    history: AllocRingBuffer<LevelChange>,
+    level: Option<PinLevel>,
+    //chart: Waveform<PinLevel>,
 }
 
 impl PinState {
-    /// Create a new PinState with an empty history of states
+    /// Create a new PinState with an unknown level and a new Waveform chart of it
     fn new() -> Self {
         PinState {
-            history: AllocRingBuffer::with_capacity_power_of_2(7),
+            level: None,
+            /*
+            chart: Waveform::new(
+                ChartType::Logic(false, true),
+                CHART_LINE_STYLE,
+                CHART_WIDTH,
+                CHART_HEIGHT,
+                CHART_DURATION,
+                Direction::Right,
+            ),
+             */
         }
     }
+
+    /*
+    pub fn view(&self) -> Element<Message> {
+        self.chart.view()
+    }
+     */
 
     /// Try and get the last reported level of the pin, which could be considered "current level"
     /// if everything is working correctly.
     pub fn get_level(&self) -> Option<PinLevel> {
-        self.history
-            .back()
-            .map(|level_change| level_change.new_level)
+        self.level
     }
 
     /// Add a LevelChange to the history of this pin's state
     pub fn set_level(&mut self, level_change: LevelChange) {
-        self.history.push(level_change);
+        self.level = Some(level_change.new_level);
+        //self.chart.push_data(level_change.into())
     }
 }
 
@@ -130,9 +159,10 @@ pub enum Message {
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
-    ChangeOutputLevel(LevelChange),
+    ChangeOutputLevel(BCMPinNumber, LevelChange),
     Save,
     Load,
+    UpdateCharts,
 }
 
 pub struct Gpio {
@@ -248,7 +278,7 @@ impl Gpio {
                     // so the toggler will be drawn correctly on first draw
                     if let PinFunction::Output(Some(level)) = function {
                         self.pin_states[board_pin_number as usize - 1]
-                            .set_level(LevelChange::new(*bcm_pin_number, *level));
+                            .set_level(LevelChange::new(*level));
                     }
                 }
             }
@@ -325,26 +355,30 @@ impl Application for Gpio {
                     self.set_pin_functions_after_load();
                     self.update_hw_config();
                 }
-                HWListenerEvent::InputChange(level_change) => {
+                HWListenerEvent::InputChange(bcm_pin_number, level_change) => {
                     if let Some(pins) = &self.pin_descriptions {
-                        if let Some(board_pin_number) =
-                            pins.bcm_to_board(level_change.bcm_pin_number)
-                        {
+                        if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
                             self.pin_states[board_pin_number as usize - 1].set_level(level_change);
                         }
                     }
                 }
             },
-            Message::ChangeOutputLevel(level_change) => {
+            Message::ChangeOutputLevel(bcm_pin_number, level_change) => {
                 if let Some(pins) = &self.pin_descriptions {
-                    if let Some(board_pin_number) = pins.bcm_to_board(level_change.bcm_pin_number) {
+                    if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
                         self.pin_states[board_pin_number as usize - 1]
                             .set_level(level_change.clone());
                     }
                     if let Some(ref mut listener) = &mut self.listener_sender {
-                        let _ = listener.try_send(HardwareEvent::OutputLevelChanged(level_change));
+                        let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
+                            bcm_pin_number,
+                            level_change,
+                        ));
                     }
                 }
+            }
+            Message::UpdateCharts => {
+                // TODO update all the charts as the refresh period has passed
             }
         }
         Command::none()

@@ -32,6 +32,9 @@ impl Hardware for NoneHW {
         C: FnMut(BCMPinNumber, bool),
     {
         println!("GPIO Config has been applied to fake hardware");
+
+        // TODO Launch a thread that sends random levels for Input pins
+
         Ok(())
     }
 
@@ -44,6 +47,8 @@ impl Hardware for NoneHW {
     where
         C: FnMut(BCMPinNumber, bool),
     {
+        // TODO Add any Input pin to the list that we sends random levels for
+
         println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
     }
@@ -54,10 +59,14 @@ impl Hardware for NoneHW {
     }
 
     /// Write the output level of an output using the bcm pin number
-    fn set_output_level(&mut self, level_change: LevelChange) -> io::Result<()> {
+    fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level_change: LevelChange,
+    ) -> io::Result<()> {
         println!(
             "Output with BCM Pin #{} set to {}",
-            level_change.bcm_pin_number, level_change.new_level
+            bcm_pin_number, level_change.new_level
         );
         Ok(())
     }

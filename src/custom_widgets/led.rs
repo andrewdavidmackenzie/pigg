@@ -8,20 +8,22 @@ use crate::PinState;
 
 pub struct Led {
     height: f32,
+    width: f32,
     state: PinState,
 }
 
 impl Led {
-    pub fn new(height: f32, state: &PinState) -> Self {
+    pub fn new(height: f32, width: f32, state: &PinState) -> Self {
         Self {
             height,
+            width,
             state: state.clone(),
         }
     }
 }
 
-pub fn led(height: f32, state: &PinState) -> Led {
-    Led::new(height, state)
+pub fn led(height: f32, width: f32, state: &PinState) -> Led {
+    Led::new(height, width, state)
 }
 
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Led
