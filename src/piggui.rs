@@ -1,8 +1,8 @@
-use iced::event::{self, Event};
+use iced::event::Event;
 use std::{env, io};
 
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{self, container, pick_list, Button, Column, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
     alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
     Size, Subscription, Theme,
