@@ -172,13 +172,13 @@ fn pullup_picklist(
 /// Create the widget that either shows an input pin's state,
 /// or allows the user to control the state of an output pin
 /// This should only be called for pins that have a valid BCMPinNumber
-fn get_pin_widget<'a>(
+fn get_pin_widget(
     board_pin_number: BoardPinNumber,
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: PinFunction,
-    pin_state: &'a PinState,
+    pin_state: &PinState,
     is_left: bool,
-) -> Element<'a, Message> {
+) -> Element<Message> {
     let mut row = match pin_function {
         Input(pull) => {
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
