@@ -23,7 +23,8 @@ path = "src/piglet.rs"
 default = ["gui"]
 pi = ["rppal"]
 pico = [] #embassy
-gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd", "plotters-iced", "plotters", "chrono"]
+gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd", "plotters-iced", "plotters", "chrono",
+    "sysinfo"]
 
 [dependencies]
 # for interacting with GPIO on the Raspberry Pi
@@ -44,6 +45,7 @@ plotters = { version = "0.3", optional = true, default_features = false, feature
     "line_series",
 ] }
 chrono = { version = "0.4", default-features = false, optional = true }
+sysinfo = { version = "0.30", default_features = false, optional = true }
 
 [dev-dependencies]
 tempfile = "3"

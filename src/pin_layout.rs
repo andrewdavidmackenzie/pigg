@@ -184,8 +184,8 @@ fn get_pin_widget(
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
                 Row::new()
-                    .push(led(16.0, 16.0, pin_state.get_level()))
                     .push(pin_state.chart())
+                    .push(led(16.0, 16.0, pin_state.get_level()))
                     .push(pullup_pick)
             } else {
                 Row::new()
