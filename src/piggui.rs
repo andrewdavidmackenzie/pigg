@@ -1,16 +1,13 @@
 use std::{env, io};
-use std::time::Duration;
 
 use iced::{
     alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
     Theme, window,
 };
-use iced::advanced::text::editor::Direction;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
-use plotters::prelude::{RGBAColor, ShapeStyle};
 
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction};
 use hw::HardwareDescriptor;
 use hw::InputPull;
 use hw_listener::{HardwareEvent, HWListenerEvent};
@@ -19,94 +16,22 @@ use style::CustomButton;
 
 // Importing pin layout views
 use crate::hw::{LevelChange, PinDescriptionSet};
-use crate::views::waveform::{ChartType, Waveform};
+use crate::layout::Layout;
+use crate::pin_state::PinState;
 
 mod custom_widgets;
 mod hw;
 mod hw_listener;
+mod layout;
 mod pin_layout;
+mod pin_state;
 mod style;
 mod views;
-
-const CHART_UPDATES_PER_SECOND: u64 = 4;
-const CHART_WIDTH: f32 = 256.0;
-const CHART_HEIGHT: f32 = 16.0;
-const CHART_DURATION: Duration = Duration::from_secs(CHART_WIDTH as u64 / CHART_UPDATES_PER_SECOND);
-
-const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
-    color: RGBAColor(255, 255, 255, 1.0),
-    filled: true,
-    stroke_width: 1,
-};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = "piggui";
 const LICENSE: &str = env!("CARGO_PKG_LICENSE");
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Layout {
-    BoardLayout,
-    BCMLayout,
-}
-
-impl Layout {
-    const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
-}
-
-/// PinState captures the state of a pin, including a history of previous states set/read
-pub struct PinState {
-    level: Option<PinLevel>,
-    chart: Waveform<PinLevel>,
-}
-
-impl PinState {
-    /// Create a new PinState with an unknown level and a new Waveform chart of it
-    fn new() -> Self {
-        PinState {
-            level: None,
-            chart: Waveform::new(
-                ChartType::Logic(false, true),
-                CHART_LINE_STYLE,
-                CHART_WIDTH,
-                CHART_HEIGHT,
-                CHART_DURATION,
-                Direction::Right,
-            ),
-        }
-    }
-
-    pub fn view(&self) -> Element<Message> {
-        self.chart.view()
-    }
-
-    /// Try and get the last reported level of the pin, which could be considered "current level"
-    /// if everything is working correctly.
-    pub fn get_level(&self) -> Option<PinLevel> {
-        self.level
-    }
-
-    /// Add a LevelChange to the history of this pin's state
-    pub fn set_level(&mut self, level_change: LevelChange) {
-        self.level = Some(level_change.new_level);
-        self.chart.push_data(level_change.into())
-    }
-}
-
-// Implementing format for Layout
-// TODO could maybe put the Name as a &str inside the enum elements above?
-impl std::fmt::Display for Layout {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Layout::BoardLayout => "Board Pin Layout",
-                Layout::BCMLayout => "BCM Pin Layout",
-            }
-        )
-    }
-}
 
 #[must_use]
 pub fn version() -> String {
