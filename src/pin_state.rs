@@ -10,7 +10,7 @@ use crate::views::waveform::{ChartType, Waveform};
 
 pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 const CHART_WIDTH: f32 = 256.0;
-const CHART_HEIGHT: f32 = 20.0;
+const CHART_HEIGHT: f32 = 30.0;
 const CHART_DURATION: Duration = Duration::from_secs(CHART_WIDTH as u64 / CHART_UPDATES_PER_SECOND);
 
 const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
