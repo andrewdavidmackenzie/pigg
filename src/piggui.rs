@@ -18,6 +18,7 @@ use style::CustomButton;
 use crate::hw::{LevelChange, PinDescriptionSet};
 use crate::layout::Layout;
 use crate::pin_state::PinState;
+use crate::views::hardware::hardware_view;
 
 mod custom_widgets;
 mod hw;
@@ -404,21 +405,4 @@ impl Application for Gpio {
     fn subscription(&self) -> Subscription<Message> {
         hw_listener::subscribe().map(Message::HardwareListener)
     }
-}
-// Hardware Configuration Display
-fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, Message> {
-    let hardware_info = Column::new()
-        .push(Text::new(format!("Hardware: {}", hardware_description.hardware)).size(20))
-        .push(Text::new(format!("Revision: {}", hardware_description.revision)).size(20))
-        .push(Text::new(format!("Serial: {}", hardware_description.serial)).size(20))
-        .push(Text::new(format!("Model: {}", hardware_description.model)).size(20))
-        .spacing(10)
-        .width(Length::Fill)
-        .align_items(Alignment::Start);
-
-    container(hardware_info)
-        .padding(10)
-        .width(Length::Fill)
-        .align_x(alignment::Horizontal::Center)
-        .into()
 }
