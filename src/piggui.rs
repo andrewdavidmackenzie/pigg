@@ -1,6 +1,4 @@
 use iced::event::{self, Event};
-use iced::keyboard;
-use iced::keyboard::key;
 use std::{env, io};
 
 use iced::futures::channel::mpsc::Sender;
@@ -32,8 +30,8 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = "piggui";
 const LICENSE: &str = env!("CARGO_PKG_LICENSE");
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
-const BOARD_LAYOUT_SPACING: u16 = 480;
-const BCM_LAYOUT_SPACING: u16 = 650;
+const BOARD_LAYOUT_SPACING: u16 = 470;
+const BCM_LAYOUT_SPACING: u16 = 640;
 const BOARD_LAYOUT_SIZE: (f32, f32) = (1100.0, 780.0);
 const BCM_LAYOUT_SIZE: (f32, f32) = (800.0, 950.0);
 
@@ -306,11 +304,7 @@ impl Application for Gpio {
                 listener_sender: None,      // Until listener is ready
                 pin_descriptions: None,     // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
-                toasts: vec![Toast {
-                    title: "Example Toast".into(),
-                    body: "Add more toasts in the form below!".into(),
-                    status: toast::Status::Primary,
-                }],
+                toasts: Vec::new(),
                 timeout_secs: toast::DEFAULT_TIMEOUT,
             },
             Command::batch(vec![Command::perform(
@@ -394,8 +388,8 @@ impl Application for Gpio {
             Message::Add => {
                 self.toasts.clear();
                 self.toasts.push(Toast {
-                    title: "Example Toast".into(),
-                    body: "This is a hardcoded toast message.".into(),
+                    title: "About Piggui".into(),
+                    body: version().into(),
                     status: toast::Status::Primary,
                 });
                 return Command::none();
@@ -444,12 +438,6 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
-            // let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
-
-            // let toast_manager_content = Column::new().spacing(10).push(add_toast_button);
-
-            // let version_row = Row::new().push(toast_manager).align_items(Alignment::Start);
-
             let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
             configuration_column = configuration_column.push(layout_row);
             configuration_column = configuration_column.push(hardware_desc_row);
@@ -464,20 +452,24 @@ impl Application for Gpio {
                     .on_press(Message::Load),
             );
 
+            let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
+
+            let add_toast_button = Button::new(version_text).on_press(Message::Add);
+
+            let version_row = Row::new()
+                .push(add_toast_button)
+                .align_items(Alignment::Start);
+
             main_row = main_row.push(
                 Column::new()
                     .push(configuration_column)
+                    .push(version_row)
                     .align_items(Alignment::Start)
                     .width(Length::Shrink)
                     .height(Length::Shrink)
-                    .spacing(450),
+                    .spacing(self.chosen_layout.get_spacing()),
             );
         }
-
-        let add_toast_button = Button::new(Text::new("Piggui")).on_press(Message::Add);
-
-        let toast_manager = toast::Manager::new(add_toast_button, &self.toasts, Message::Close)
-            .timeout(self.timeout_secs);
 
         if let Some(pins) = &self.pin_descriptions {
             let pin_layout = match self.chosen_layout {
@@ -485,26 +477,24 @@ impl Application for Gpio {
                 Layout::BCMLayout => bcm_pin_layout_view(pins, self),
             };
 
-            main_row = main_row
-                .push(
-                    Column::new()
-                        .push(pin_layout)
-                        .push(toast_manager)
-                        .align_items(Alignment::Center)
-                        .height(Length::Fill)
-                        .width(Length::Fill),
-                )
-                .align_items(Alignment::Start)
-                .width(Length::Fill)
-                .height(Length::Fill);
+            main_row = main_row.push(
+                Column::new()
+                    .push(pin_layout)
+                    .align_items(Alignment::Center)
+                    .height(Length::Fill)
+                    .width(Length::Fill),
+            );
         }
 
-        container(main_row)
+        let content = container(main_row)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(10)
-            .align_x(alignment::Horizontal::Center)
-            .align_y(alignment::Vertical::Top)
+            .center_x()
+            .center_y()
+            .padding(10);
+
+        toast::Manager::new(content, &self.toasts, Message::Close)
+            .timeout(self.timeout_secs)
             .into()
     }
 
@@ -653,7 +643,7 @@ mod toast {
                             .padding(5)
                             .style(theme::Container::Box),
                     ])
-                    .max_width(200)
+                    .width(550)
                     .into()
                 })
                 .collect();
