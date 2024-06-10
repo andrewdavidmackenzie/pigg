@@ -147,18 +147,18 @@ const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + PADDING_WIDTH + WAVEFORM_WIDTH;
 
 /// Prepare a pick_list widget with the Input's pullup options
 fn picklist(
-    pull: &Option<InputPull>,
+    pull: Option<InputPull>,
     board_pin_number: BoardPinNumber,
     bcm_pin_number: BCMPinNumber,
-) -> Element<Message> {
+) -> Element<'static, Message> {
     let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
 
     // Filter out the currently selected pull option
     if let Some(selected_pull) = pull {
-        sub_options.retain(|&option| &option != selected_pull);
+        sub_options.retain(|&option| option != selected_pull);
     }
 
-    pick_list(sub_options, *pull, move |selected_pull| {
+    pick_list(sub_options, pull, move |selected_pull| {
         Message::PinFunctionSelected(board_pin_number, bcm_pin_number, Input(Some(selected_pull)))
     })
     .width(PICKLIST_WIDTH)
@@ -183,11 +183,11 @@ fn get_pin_widget<'a>(
                     .padding(PADDING_WIDTH)
                     .push(led(16.0, 16.0, pin_state))
                     // .push(pin_state.view())
-                    .push(picklist(pull, board_pin_number, bcm_pin_number.unwrap()))
+                    .push(picklist(*pull, board_pin_number, bcm_pin_number.unwrap()))
             } else {
                 Row::new()
                     .padding(PADDING_WIDTH)
-                    .push(picklist(pull, board_pin_number, bcm_pin_number.unwrap()))
+                    .push(picklist(*pull, board_pin_number, bcm_pin_number.unwrap()))
                     .push(led(16.0, 16.0, pin_state))
                 //      .push(pin_state.view())
             }
