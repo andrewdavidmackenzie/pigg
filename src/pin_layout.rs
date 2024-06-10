@@ -146,7 +146,7 @@ const PADDING_WIDTH: f32 = 10.0;
 const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + PADDING_WIDTH + WAVEFORM_WIDTH;
 
 /// Prepare a pick_list widget with the Input's pullup options
-fn picklist(
+fn pullup_picklist(
     pull: Option<InputPull>,
     board_pin_number: BoardPinNumber,
     bcm_pin_number: BCMPinNumber,
@@ -178,16 +178,19 @@ fn get_pin_widget<'a>(
 ) -> Element<'static, Message> {
     let row = match pin_function {
         Input(pull) => {
+            let pullup_pick = pullup_picklist(*pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
                 Row::new()
                     .padding(PADDING_WIDTH)
+                    .width(COLUMN_WIDTH)
                     .push(led(16.0, 16.0, pin_state))
                     // .push(pin_state.view())
-                    .push(picklist(*pull, board_pin_number, bcm_pin_number.unwrap()))
+                    .push(pullup_pick)
             } else {
                 Row::new()
                     .padding(PADDING_WIDTH)
-                    .push(picklist(*pull, board_pin_number, bcm_pin_number.unwrap()))
+                    .width(COLUMN_WIDTH)
+                    .push(pullup_pick)
                     .push(led(16.0, 16.0, pin_state))
                 //      .push(pin_state.view())
             }
@@ -211,13 +214,13 @@ fn get_pin_widget<'a>(
         Column::new()
             .width(Length::Fixed(COLUMN_WIDTH))
             .align_items(Alignment::End)
-            .push(row.width(COLUMN_WIDTH).align_items(Alignment::Center))
+            .push(row.width(Length::Shrink).align_items(Alignment::Center))
             .into()
     } else {
         Column::new()
             .width(Length::Fixed(COLUMN_WIDTH))
             .align_items(Alignment::Start)
-            .push(row.width(COLUMN_WIDTH).align_items(Alignment::Center))
+            .push(row.width(Length::Shrink).align_items(Alignment::Center))
             .into()
     }
 }
