@@ -24,7 +24,7 @@ default = ["gui"]
 pi = ["rppal"]
 pico = [] #embassy
 gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd", "plotters-iced", "plotters", "chrono",
-    "sysinfo"]
+    "rand"]
 
 [dependencies]
 # for interacting with GPIO on the Raspberry Pi
@@ -45,7 +45,7 @@ plotters = { version = "0.3", optional = true, default_features = false, feature
     "line_series",
 ] }
 chrono = { version = "0.4", default-features = false, optional = true }
-sysinfo = { version = "0.30", default_features = false, optional = true }
+rand = { version = "0.8.5", optional = true }
 
 [dev-dependencies]
 tempfile = "3"

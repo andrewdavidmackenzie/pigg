@@ -8,7 +8,8 @@ use iced::{
 };
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
-use sysinfo::{CpuRefreshKind, RefreshKind, System};
+use rand::Rng;
+use rand::thread_rng;
 
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction};
 use hw::HardwareDescriptor;
@@ -81,7 +82,6 @@ pub struct Gpio {
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: [PinState; 40],
     pin_descriptions: Option<PinDescriptionSet>,
-    sys: System,
 }
 
 impl Gpio {
@@ -208,9 +208,6 @@ impl Application for Gpio {
                 listener_sender: None,      // Until listener is ready
                 pin_descriptions: None,     // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
-                sys: System::new_with_specifics(
-                    RefreshKind::new().with_cpu(CpuRefreshKind::new().with_cpu_usage()),
-                ),
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -286,16 +283,15 @@ impl Application for Gpio {
                 }
             }
             Message::UpdateCharts => {
-                self.sys.refresh_cpu();
-                // snap to 0 or 1 to simulate logic values
-                let usage = self.sys.cpus().first().unwrap().cpu_usage() > 20.0;
+                let mut rng = thread_rng();
+                let level: bool = rng.gen();
                 self.pin_states[2].set_level(LevelChange {
                     timestamp: Utc::now(),
-                    new_level: usage,
+                    new_level: level,
                 });
                 self.pin_states[7].set_level(LevelChange {
                     timestamp: Utc::now(),
-                    new_level: !usage,
+                    new_level: !level,
                 });
             }
         }

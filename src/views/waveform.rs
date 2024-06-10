@@ -195,7 +195,7 @@ where
             let last_time = Utc::now();
             let start_of_chart_time =
                 last_time - chrono::Duration::seconds(self.timespan.as_secs() as i64);
-            let time_axis = match self.direction.borrow().clone() {
+            let time_axis = match *self.direction.borrow() {
                 Direction::Left => start_of_chart_time..last_time,
                 Direction::Right => last_time..start_of_chart_time,
             };
