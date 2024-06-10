@@ -80,7 +80,10 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
 }
 
 /// View that lays out the pins in a single column ordered by BCM pin number
-pub fn bcm_pin_layout_view(pin_set: &PinDescriptionSet, gpio: &Gpio) -> Element<'static, Message> {
+pub fn bcm_pin_layout_view<'a>(
+    pin_set: &'a PinDescriptionSet,
+    gpio: &'a Gpio,
+) -> Element<'a, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for pin in pin_set.bcm_pins_sorted() {
@@ -102,10 +105,10 @@ pub fn bcm_pin_layout_view(pin_set: &PinDescriptionSet, gpio: &Gpio) -> Element<
 
 /// View that draws the pins laid out as they are on the physical Pi board
 /// View that draws the pins laid out as they are on the physical Pi board
-pub fn board_pin_layout_view(
-    pin_descriptions: &PinDescriptionSet,
-    gpio: &Gpio,
-) -> Element<'static, Message> {
+pub fn board_pin_layout_view<'a>(
+    pin_descriptions: &'a PinDescriptionSet,
+    gpio: &'a Gpio,
+) -> Element<'a, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     // Draw all pins, those with and without BCM pin numbers
@@ -172,23 +175,23 @@ fn pullup_picklist(
 fn get_pin_widget<'a>(
     board_pin_number: BoardPinNumber,
     bcm_pin_number: Option<BCMPinNumber>,
-    pin_function: &PinFunction,
-    pin_state: &PinState,
+    pin_function: PinFunction,
+    pin_state: &'a PinState,
     is_left: bool,
-) -> Element<'static, Message> {
+) -> Element<'a, Message> {
     let mut row = match pin_function {
         Input(pull) => {
-            let pullup_pick = pullup_picklist(*pull, board_pin_number, bcm_pin_number.unwrap());
+            let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
                 Row::new()
                     .push(led(16.0, 16.0, pin_state.level))
-                    // .push(pin_state.view())
+                    .push(pin_state.view())
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
                     .push(led(16.0, 16.0, pin_state.level))
-                //      .push(pin_state.view())
+                    .push(pin_state.view())
             }
         }
 
@@ -221,17 +224,17 @@ fn get_pin_widget<'a>(
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
-fn create_pin_view_side(
-    pin_description: &PinDescription,
+fn create_pin_view_side<'a>(
+    pin_description: &'a PinDescription,
     selected_function: PinFunction,
     is_left: bool,
-    pin_state: &PinState,
-) -> Row<'static, Message> {
+    pin_state: &'a PinState,
+) -> Row<'a, Message> {
     // Create a widget that is either used to visualize an input or control an output
     let pin_widget = get_pin_widget(
         pin_description.board_pin_number,
         pin_description.bcm_pin_number,
-        &selected_function,
+        selected_function,
         pin_state,
         is_left,
     );

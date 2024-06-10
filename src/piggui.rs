@@ -89,7 +89,7 @@ impl PinState {
     /// Add a LevelChange to the history of this pin's state
     pub fn set_level(&mut self, level_change: LevelChange) {
         self.level = Some(level_change.new_level);
-        //self.chart.push_data(level_change.into())
+        self.chart.push_data(level_change.into())
     }
 }
 
