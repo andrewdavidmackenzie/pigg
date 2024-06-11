@@ -15,14 +15,11 @@ use hw_listener::{HardwareEvent, HWListenerEvent};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use style::CustomButton;
 
-// Importing pin layout views
 use crate::hw::{LevelChange, PinDescriptionSet};
 use crate::layout::Layout;
 use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
 use crate::version::version;
 use crate::views::hardware::hardware_view;
-
-//use rand::Rng;
 
 mod custom_widgets;
 mod hw;
@@ -189,7 +186,7 @@ impl Gpio {
         }
     }
 
-    /// Set the pin (using board number) level with a LevelCange
+    /// Set the pin (using board number) level with a LevelChange
     fn set_pin_level_change(
         &mut self,
         board_pin_number: BoardPinNumber,
@@ -296,19 +293,6 @@ impl Application for Gpio {
                         self.pin_states[pin].chart.refresh();
                     }
                 }
-                /*
-                let mut rng = rand::thread_rng();
-                let level: bool = rng.gen();
-                self.pin_states[2].set_level(LevelChange {
-                    timestamp: Utc::now(),
-                    new_level: level,
-                });
-                self.pin_states[7].set_level(LevelChange {
-                    timestamp: Utc::now(),
-                    new_level: !level,
-                });
-
-                 */
             }
         }
         Command::none()

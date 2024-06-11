@@ -111,6 +111,7 @@ where
             }
             break;
         }
+
         self.refresh();
     }
 
@@ -121,12 +122,6 @@ where
 
     fn get_data(&self) -> Vec<(DateTime<Utc>, u32)> {
         match &self.chart_type {
-            Value(_, _) => self
-                .data_points
-                .iter()
-                .map(|sample| (sample.time, sample.value.clone().into()))
-                .collect(),
-
             Logic(min, max) => {
                 let mut previous_value = None;
 
@@ -160,6 +155,11 @@ where
                     })
                     .collect()
             }
+            Value(_, _) => self
+                .data_points
+                .iter()
+                .map(|sample| (sample.time, sample.value.clone().into()))
+                .collect(),
         }
     }
 

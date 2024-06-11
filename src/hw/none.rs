@@ -1,6 +1,8 @@
-// Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, etc.)
-
+/// Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, etc.)
 use std::io;
+use std::time::Duration;
+
+use rand::Rng;
 
 use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction, PinLevel};
 
@@ -48,24 +50,23 @@ impl Hardware for NoneHW {
     fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        _pin_function: &PinFunction,
-        mut _callback: C,
+        pin_function: &PinFunction,
+        mut callback: C,
     ) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, PinLevel) + Send + 'static,
     {
-        /*
         if let PinFunction::Input(_) = pin_function {
-            thread::spawn(move || {
+            std::thread::spawn(move || {
                 let mut rng = rand::thread_rng();
                 loop {
                     let level: bool = rng.gen();
                     callback(3, level);
-                    thread::sleep(Duration::from_millis(250));
+                    callback(14, !level);
+                    std::thread::sleep(Duration::from_millis(666));
                 }
             });
         }
-         */
         println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
     }
