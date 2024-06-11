@@ -13,14 +13,19 @@ use iced::widget::{button, column, container, horizontal_rule, horizontal_space,
 use iced::window;
 use iced::{Alignment, Element, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
 
-pub const DEFAULT_TIMEOUT: u64 = 5;
+pub const DEFAULT_TIMEOUT: u64 = u64::MAX / 3;
 
+/// Represents different statuses a toast can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Status {
     #[default]
+    /// Used for general information
     Primary,
+    /// Used for less prominent function
     Secondary,
+    /// Indicating successful operation
     Success,
+    /// Indicating error or warning
     Danger,
 }
 
