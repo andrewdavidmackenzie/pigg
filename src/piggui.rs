@@ -9,7 +9,6 @@ use iced::{
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
 use rand::Rng;
-use rand::thread_rng;
 
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction};
 use hw::HardwareDescriptor;
@@ -189,6 +188,15 @@ impl Gpio {
             }
         }
     }
+
+    /// Set the pin (using board number) level with a LevelCange
+    fn set_pin_level_change(
+        &mut self,
+        board_pin_number: BoardPinNumber,
+        level_change: LevelChange,
+    ) {
+        self.pin_states[board_pin_number as usize - 1].set_level(level_change);
+    }
 }
 
 impl Application for Gpio {
@@ -263,7 +271,7 @@ impl Application for Gpio {
                 HWListenerEvent::InputChange(bcm_pin_number, level_change) => {
                     if let Some(pins) = &self.pin_descriptions {
                         if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
-                            self.pin_states[board_pin_number as usize - 1].set_level(level_change);
+                            self.set_pin_level_change(board_pin_number, level_change);
                         }
                     }
                 }
@@ -271,8 +279,7 @@ impl Application for Gpio {
             Message::ChangeOutputLevel(bcm_pin_number, level_change) => {
                 if let Some(pins) = &self.pin_descriptions {
                     if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
-                        self.pin_states[board_pin_number as usize - 1]
-                            .set_level(level_change.clone());
+                        self.set_pin_level_change(board_pin_number, level_change.clone());
                     }
                     if let Some(ref mut listener) = &mut self.listener_sender {
                         let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
@@ -283,7 +290,7 @@ impl Application for Gpio {
                 }
             }
             Message::UpdateCharts => {
-                let mut rng = thread_rng();
+                let mut rng = rand::thread_rng();
                 let level: bool = rng.gen();
                 self.pin_states[2].set_level(LevelChange {
                     timestamp: Utc::now(),

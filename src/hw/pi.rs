@@ -8,7 +8,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet};
+use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -90,7 +90,7 @@ impl Hardware for PiHW {
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool) + Send + Sync + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static,
     {
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);

@@ -31,9 +31,16 @@ impl Hardware for NoneHW {
     where
         C: FnMut(BCMPinNumber, bool),
     {
-        println!("GPIO Config has been applied to fake hardware");
+        // Config only has pins that are configured
+        for (bcm_pin_number, pin_function) in &config.configured_pins {
+            let mut callback_clone = callback.clone();
+            let callback_wrapper = move |pin_number, level| {
+                callback_clone(pin_number, level);
+            };
+            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
+        }
 
-        // TODO Launch a thread that sends random levels for Input pins
+        println!("GPIO Config has been applied to fake hardware");
 
         Ok(())
     }
@@ -41,14 +48,24 @@ impl Hardware for NoneHW {
     fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        _pin_function: &PinFunction,
-        _callback: C,
+        pin_function: &PinFunction,
+        mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool),
+        C: FnMut(BCMPinNumber, bool) + Send + 'static,
     {
-        // TODO Add any Input pin to the list that we sends random levels for
-
+        /*
+        if let PinFunction::Input(_) = pin_function {
+            thread::spawn(move || {
+                let mut rng = rand::thread_rng();
+                loop {
+                    let level: bool = rng.gen();
+                    callback(3, level);
+                    thread::sleep(Duration::from_millis(250));
+                }
+            });
+        }
+         */
         println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
     }
