@@ -27,9 +27,9 @@ impl Hardware for NoneHW {
         super::GPIO_PIN_DESCRIPTIONS
     }
 
-    fn apply_config<C>(&mut self, _config: &GPIOConfig, _callback: C) -> io::Result<()>
+    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool),
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.configured_pins {
@@ -48,11 +48,11 @@ impl Hardware for NoneHW {
     fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        pin_function: &PinFunction,
-        mut callback: C,
+        _pin_function: &PinFunction,
+        mut _callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool) + Send + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + 'static,
     {
         /*
         if let PinFunction::Input(_) = pin_function {

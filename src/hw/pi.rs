@@ -67,7 +67,7 @@ impl Hardware for PiHW {
     /// configure the Pi GPIO hardware to correspond to it
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool) + Send + Sync + Clone + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.configured_pins {
