@@ -53,8 +53,8 @@ where
     ) {
         let color = match self.level {
             None => Color::BLACK,
-            Some(false) => Color::new(1.0, 0.0, 0.0, 1.0),
-            Some(true) => Color::new(0.0, 0.502, 0.0, 1.0),
+            Some(false) => Color::new(0.0, 0.3, 0.0, 1.0),
+            Some(true) => Color::new(0.0, 0.7, 0.0, 1.0),
         };
 
         renderer.fill_quad(

@@ -206,7 +206,17 @@ fn get_pin_widget(
             )
             .width(Length::Fixed(TOGGLER_WIDTH));
 
-            Row::new().push(output_control)
+            if is_left {
+                Row::new()
+                    .push(pin_state.chart(Direction::Left))
+                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(output_control)
+            } else {
+                Row::new()
+                    .push(output_control)
+                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(pin_state.chart(Direction::Right))
+            }
         }
 
         _ => Row::new(),
