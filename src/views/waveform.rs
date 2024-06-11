@@ -111,6 +111,11 @@ where
             }
             break;
         }
+        self.refresh();
+    }
+
+    /// Refresh and redraw the chart even if there is no new data, as time has passed
+    pub fn refresh(&mut self) {
         self.cache.clear();
     }
 

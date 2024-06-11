@@ -6,6 +6,7 @@ use iced::widget::mouse_area;
 
 use crate::{Gpio, PinState};
 use crate::custom_widgets::{circle::circle, line::line};
+use crate::custom_widgets::clicker::clicker;
 use crate::custom_widgets::led::led;
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
@@ -208,7 +209,7 @@ fn get_pin_widget(
             )
             .width(Length::Fixed(TOGGLER_WIDTH));
 
-            let push_button = mouse_area(circle(BUTTON_WIDTH))
+            let push_button = mouse_area(clicker(BUTTON_WIDTH))
                 .on_press({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
                     Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))

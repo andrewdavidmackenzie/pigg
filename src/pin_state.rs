@@ -22,7 +22,7 @@ const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
 /// PinState captures the state of a pin, including a history of previous states set/read
 pub struct PinState {
     level: Option<PinLevel>,
-    chart: Waveform<PinLevel>,
+    pub(crate) chart: Waveform<PinLevel>,
 }
 
 impl PinState {

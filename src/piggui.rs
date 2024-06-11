@@ -1,14 +1,12 @@
 use std::{env, io};
 use std::time::Duration;
 
-use chrono::Utc;
 use iced::{
     alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
     Theme, window,
 };
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
-use rand::Rng;
 
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction};
 use hw::HardwareDescriptor;
@@ -23,6 +21,8 @@ use crate::layout::Layout;
 use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
 use crate::version::version;
 use crate::views::hardware::hardware_view;
+
+//use rand::Rng;
 
 mod custom_widgets;
 mod hw;
@@ -141,10 +141,10 @@ impl Gpio {
         bcm_pin_number: BCMPinNumber,
         new_function: PinFunction,
     ) {
-        let pin_index = board_pin_number as usize - 1;
-        let previous_function = self.pin_function_selected[pin_index];
+        let board_pin_index = board_pin_number as usize - 1;
+        let previous_function = self.pin_function_selected[board_pin_index];
         if new_function != previous_function {
-            self.pin_function_selected[pin_index] = new_function;
+            self.pin_function_selected[board_pin_index] = new_function;
             // Pushing selected pin to the Pin Config
             if let Some(pin_config) = self
                 .gpio_config
@@ -290,6 +290,13 @@ impl Application for Gpio {
                 }
             }
             Message::UpdateCharts => {
+                // Update all the charts of the pins that have an assigned function
+                for pin in 0..40 {
+                    if self.pin_function_selected[pin] != PinFunction::None {
+                        self.pin_states[pin].chart.refresh();
+                    }
+                }
+                /*
                 let mut rng = rand::thread_rng();
                 let level: bool = rng.gen();
                 self.pin_states[2].set_level(LevelChange {
@@ -300,6 +307,8 @@ impl Application for Gpio {
                     timestamp: Utc::now(),
                     new_level: !level,
                 });
+
+                 */
             }
         }
         Command::none()
