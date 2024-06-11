@@ -1,7 +1,8 @@
 use iced::{Alignment, Color, Element, Length};
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
-use iced::widget::{button, Column, pick_list, Row, Text, toggler};
+use iced::widget::{button, Column, horizontal_space, pick_list, Row, Text, toggler};
+use iced::widget::mouse_area;
 
 use crate::{Gpio, PinState};
 use crate::custom_widgets::{circle::circle, line::line};
@@ -145,9 +146,10 @@ pub fn board_pin_layout_view<'a>(
 
 const WAVEFORM_WIDTH: f32 = 256.0;
 const LED_WIDTH: f32 = 16.0;
+const BUTTON_WIDTH: f32 = 16.0;
 const PICKLIST_WIDTH: f32 = 100.0;
-const TOGGLER_WIDTH: f32 = 120.0;
-const SPACING_WIDTH: f32 = 10.0;
+const TOGGLER_WIDTH: f32 = 100.0;
+const SPACING_WIDTH: f32 = 8.0;
 const COLUMN_WIDTH: f32 =
     PICKLIST_WIDTH + SPACING_WIDTH + LED_WIDTH + SPACING_WIDTH + WAVEFORM_WIDTH;
 
@@ -206,14 +208,28 @@ fn get_pin_widget(
             )
             .width(Length::Fixed(TOGGLER_WIDTH));
 
+            let push_button = mouse_area(circle(BUTTON_WIDTH))
+                .on_press({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                })
+                .on_release({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                });
+
             if is_left {
                 Row::new()
                     .push(pin_state.chart(Direction::Left))
                     .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(horizontal_space().width(Length::Fixed(1.0)))
+                    .push(push_button)
                     .push(output_control)
             } else {
                 Row::new()
                     .push(output_control)
+                    .push(push_button)
+                    .push(horizontal_space().width(Length::Fixed(1.0)))
                     .push(led(16.0, 16.0, pin_state.get_level()))
                     .push(pin_state.chart(Direction::Right))
             }
