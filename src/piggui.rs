@@ -1,4 +1,3 @@
-use iced::event::Event;
 use std::{env, io};
 
 use iced::futures::channel::mpsc::Sender;
@@ -136,6 +135,12 @@ fn main() -> Result<(), iced::Error> {
 }
 
 #[derive(Debug, Clone)]
+pub enum ToastMessage {
+    Add,
+    Close(usize),
+    Timeout(f64),
+}
+#[derive(Debug, Clone)]
 pub enum Message {
     Activate(BoardPinNumber),
     PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
@@ -144,10 +149,7 @@ pub enum Message {
     None,
     HardwareListener(HWListenerEvent),
     ChangeOutputLevel(LevelChange),
-    Add,
-    Close(usize),
-    Timeout(f64),
-    Event(Event),
+    Toast(ToastMessage),
     Save,
     Load,
 }
@@ -165,6 +167,7 @@ pub struct Gpio {
     pin_states: [PinState; 40],
     pin_descriptions: Option<PinDescriptionSet>,
     toasts: Vec<Toast>,
+    show_toast: bool,
     timeout_secs: u64,
 }
 
@@ -305,6 +308,7 @@ impl Application for Gpio {
                 pin_descriptions: None,     // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
                 toasts: Vec::new(),
+                show_toast: false,
                 timeout_secs: toast::DEFAULT_TIMEOUT,
             },
             Command::batch(vec![Command::perform(
@@ -374,6 +378,7 @@ impl Application for Gpio {
                     }
                 }
             },
+
             Message::ChangeOutputLevel(level_change) => {
                 if let Some(pins) = &self.pin_descriptions {
                     if let Some(board_pin_number) = pins.bcm_to_board(level_change.bcm_pin_number) {
@@ -385,26 +390,24 @@ impl Application for Gpio {
                     }
                 }
             }
-            Message::Add => {
-                self.toasts.clear();
-                self.toasts.push(Toast {
-                    title: "About Piggui".into(),
-                    body: version().into(),
-                    status: Status::Primary,
-                });
-                return Command::none();
-            }
-            Message::Close(index) => {
-                self.toasts.remove(index);
-                return Command::none();
-            }
-            Message::Timeout(timeout) => {
-                self.timeout_secs = timeout as u64;
-                return Command::none();
-            }
-            Message::Event(_) => {
-                return Command::none();
-            }
+            Message::Toast(toast_message) => match toast_message {
+                ToastMessage::Add => {
+                    self.toasts.clear();
+                    self.toasts.push(Toast {
+                        title: "About Piggui".into(),
+                        body: version().into(),
+                        status: Status::Primary,
+                    });
+                    self.show_toast = true;
+                }
+                ToastMessage::Close(index) => {
+                    self.show_toast = false;
+                    self.toasts.remove(index);
+                }
+                ToastMessage::Timeout(timeout) => {
+                    self.timeout_secs = timeout as u64;
+                }
+            },
         }
         Command::none()
     }
@@ -439,11 +442,11 @@ impl Application for Gpio {
             };
 
             let about_button_style = CustomButton {
-                bg_color: Color::TRANSPARENT,          
-                text_color: Color::WHITE,                        
-                hovered_bg_color: Color::TRANSPARENT,  
-                hovered_text_color: Color::new(0.7, 0.7, 0.7, 1.0),                 
-                border_radius: 4.0,                              
+                bg_color: Color::TRANSPARENT,
+                text_color: Color::WHITE,
+                hovered_bg_color: Color::TRANSPARENT,
+                hovered_text_color: Color::new(0.7, 0.7, 0.7, 1.0),
+                border_radius: 4.0,
             };
 
             let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
@@ -461,8 +464,16 @@ impl Application for Gpio {
             );
 
             let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
-
-            let add_toast_button = Button::new(version_text).on_press(Message::Add).style(about_button_style.get_button_style());
+            let add_toast_button = Button::new(version_text)
+                .on_press(if !self.show_toast {
+                    /// Add a new toast if `show_toast` is false
+                    Message::Toast(ToastMessage::Add)
+                } else {
+                    /// Close the existing toast if `show_toast` is true
+                    let index = self.toasts.len() - 1;
+                    Message::Toast(ToastMessage::Close(index))
+                })
+                .style(about_button_style.get_button_style());
 
             let version_row = Row::new()
                 .push(add_toast_button)
@@ -501,9 +512,11 @@ impl Application for Gpio {
             .center_y()
             .padding(10);
 
-        Manager::new(content, &self.toasts, Message::Close)
-            .timeout(self.timeout_secs)
-            .into()
+        Manager::new(content, &self.toasts, |index| {
+            Message::Toast(ToastMessage::Close(index))
+        })
+        .timeout(self.timeout_secs)
+        .into()
     }
 
     fn theme(&self) -> Theme {
