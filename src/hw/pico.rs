@@ -33,7 +33,6 @@ impl Hardware for PicoHW {
     where
         C: FnMut(BCMPinNumber, bool) + Send + Sync + Clone + 'static,
     {
-        println!("GPIO Config has been applied to Pico hardware");
         Ok(())
     }
 
@@ -46,7 +45,6 @@ impl Hardware for PicoHW {
     where
         C: FnMut(BCMPinNumber, bool) + Send + Sync + 'static,
     {
-        println!("Pin (BCM#) {_pin_number} config changed");
         Ok(())
     }
 
@@ -63,7 +61,6 @@ impl Hardware for PicoHW {
 
     /// Write the output level of an output using the bcm pin number
     fn set_output_level(&mut self, bcm_pin_number: BCMPinNumber, level: PinLevel) -> io::Result {
-        println!("Output with BCM Pin #{bcm_pin_number} set to {level}");
         Ok()
     }
 }

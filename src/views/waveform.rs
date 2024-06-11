@@ -125,7 +125,8 @@ where
             Logic(min, max) => {
                 let mut previous_value = None;
 
-                self.data_points
+                let mut data: Vec<(DateTime<Utc>, u32)> = self
+                    .data_points
                     .iter()
                     .flat_map(|sample| {
                         if let Some(previous) = &previous_value {
@@ -153,7 +154,10 @@ where
                             vec![(sample.time, sample.value.clone().into())]
                         }
                     })
-                    .collect()
+                    .collect();
+
+                data.insert(0, (Utc::now(), data.first().unwrap().1));
+                data
             }
             Value(_, _) => self
                 .data_points

@@ -78,7 +78,6 @@ impl Hardware for PiHW {
             self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
         }
 
-        println!("GPIO Config has been applied to Pi hardware");
         Ok(())
     }
 
@@ -197,7 +196,6 @@ impl Hardware for PiHW {
             }
         }
 
-        println!("Pin BCM# {bcm_pin_number} config changed");
         Ok(())
     }
 

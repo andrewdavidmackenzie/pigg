@@ -42,8 +42,6 @@ impl Hardware for NoneHW {
             self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
         }
 
-        println!("GPIO Config has been applied to fake hardware");
-
         Ok(())
     }
 
@@ -61,13 +59,11 @@ impl Hardware for NoneHW {
                 let mut rng = rand::thread_rng();
                 loop {
                     let level: bool = rng.gen();
-                    callback(3, level);
-                    callback(14, !level);
+                    callback(bcm_pin_number, level);
                     std::thread::sleep(Duration::from_millis(666));
                 }
             });
         }
-        println!("Pin (BCM#) {bcm_pin_number} config changed");
         Ok(())
     }
 
@@ -76,16 +72,12 @@ impl Hardware for NoneHW {
         Ok(true)
     }
 
-    /// Write the output level of an output using the bcm pin number
+    /// Set the level of a Hardware Output using the bcm pin number
     fn set_output_level(
         &mut self,
-        bcm_pin_number: BCMPinNumber,
-        level_change: LevelChange,
+        _bcm_pin_number: BCMPinNumber,
+        _level_change: LevelChange,
     ) -> io::Result<()> {
-        println!(
-            "Output with BCM Pin #{} set to {}",
-            bcm_pin_number, level_change.new_level
-        );
         Ok(())
     }
 }
