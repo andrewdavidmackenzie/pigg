@@ -8,7 +8,8 @@ use iced::advanced::widget::{self, Operation, Tree};
 use iced::advanced::{Clipboard, Shell, Widget};
 use iced::event::{self, Event};
 use iced::mouse;
-use iced::widget::{column, container};
+use iced::theme;
+use iced::widget::{button, column, container, horizontal_rule, horizontal_space, row, text};
 use iced::window;
 use iced::{Alignment, Element, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
 

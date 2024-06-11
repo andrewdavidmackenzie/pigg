@@ -466,10 +466,10 @@ impl Application for Gpio {
             let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
             let add_toast_button = Button::new(version_text)
                 .on_press(if !self.show_toast {
-                    /// Add a new toast if `show_toast` is false
+                    // Add a new toast if `show_toast` is false
                     Message::Toast(ToastMessage::Add)
                 } else {
-                    /// Close the existing toast if `show_toast` is true
+                    // Close the existing toast if `show_toast` is true
                     let index = self.toasts.len() - 1;
                     Message::Toast(ToastMessage::Close(index))
                 })
