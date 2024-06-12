@@ -63,7 +63,7 @@ where
     direction: RefCell<Direction>,
     cache: Cache,
     timespan: Duration,
-    data_points: VecDeque<Sample<T>>,
+    samples: VecDeque<Sample<T>>,
 }
 
 impl<T> Waveform<T>
@@ -91,28 +91,19 @@ where
             height,
             direction: RefCell::new(Direction::Right),
             cache: Cache::new(),
-            data_points: VecDeque::new(),
+            samples: VecDeque::new(),
             timespan,
         }
     }
 
     /// Add a new [Sample] to the data set to be displayed in the chart
+    // TODO write a unit test for this to check it trims correctly
     pub fn push_data(&mut self, sample: Sample<T>) {
         let limit = sample.time - self.timespan;
-        self.data_points.push_front(sample);
+        self.samples.push_front(sample);
 
-        // trim old values based on time
-        loop {
-            if let Some(old_sample) = self.data_points.back() {
-                if old_sample.time < limit {
-                    self.data_points.pop_back();
-                    continue;
-                }
-            }
-            break;
-        }
-
-        self.refresh();
+        // trim values outside the timespan of the chart
+        self.samples.retain(|sample| sample.time > limit);
     }
 
     /// Refresh and redraw the chart even if there is no new data, as time has passed
@@ -120,47 +111,55 @@ where
         self.cache.clear();
     }
 
+    // TODO write a unit test for this to cover a number of corner cases
     fn get_data(&self) -> Vec<(DateTime<Utc>, u32)> {
         match &self.chart_type {
             Logic(min, max) => {
-                let mut previous_value = None;
+                let mut previous_sample: Option<Sample<T>> = None;
 
-                let mut data: Vec<(DateTime<Utc>, u32)> = self
-                    .data_points
+                // iterate through the level changes front-back in the vecdeque, which is
+                // from most recent to oldest, adding points to cause vertical edges
+                let data: Vec<(DateTime<Utc>, u32)> = self
+                    .samples
                     .iter()
                     .flat_map(|sample| {
-                        if let Some(previous) = &previous_value {
-                            if previous == max && sample.value == *min {
-                                // falling edge
-                                previous_value = Some(sample.value.clone());
-                                vec![
-                                    (sample.time, max.clone().into()),
+                        if let Some(previous) = &previous_sample {
+                            if previous.value == *max && sample.value == *min {
+                                // falling edge when going from right to left
+                                let vec = vec![
+                                    (previous.time, min.clone().into()),
                                     (sample.time, sample.value.clone().into()),
-                                ]
-                            } else if previous == min && sample.value == *max {
-                                // rising edge
-                                previous_value = Some(sample.value.clone());
-                                vec![
-                                    (sample.time, min.clone().into()),
+                                ];
+                                previous_sample = Some(sample.clone());
+                                vec
+                            } else if previous.value == *min && sample.value == *max {
+                                // rising edge when going from left to right
+                                let vec = vec![
+                                    (previous.time, max.clone().into()),
                                     (sample.time, sample.value.clone().into()),
-                                ]
+                                ];
+                                previous_sample = Some(sample.clone());
+                                vec
                             } else {
                                 // same value
-                                vec![(sample.time, sample.value.clone().into())]
+                                vec![]
                             }
                         } else {
-                            // First value
-                            previous_value = Some(sample.value.clone());
-                            vec![(sample.time, sample.value.clone().into())]
+                            // last value added, at the start of the dequeue
+                            // Insert a value at current time, with the same value as previous one
+                            previous_sample = Some(sample.clone());
+                            vec![
+                                (Utc::now(), sample.value.clone().into()),
+                                (sample.time, sample.value.clone().into()),
+                            ]
                         }
                     })
                     .collect();
 
-                data.insert(0, (Utc::now(), data.first().unwrap().1));
                 data
             }
             Value(_, _) => self
-                .data_points
+                .samples
                 .iter()
                 .map(|sample| (sample.time, sample.value.clone().into()))
                 .collect(),
@@ -200,7 +199,7 @@ where
     type State = ();
 
     fn build_chart<DB: DrawingBackend>(&self, _state: &Self::State, mut chart: ChartBuilder<DB>) {
-        if !self.data_points.is_empty() {
+        if !self.samples.is_empty() {
             let last_time = Utc::now();
             let start_of_chart_time =
                 last_time - chrono::Duration::seconds(self.timespan.as_secs() as i64);
@@ -223,5 +222,99 @@ where
         draw_fn: F,
     ) -> Geometry {
         renderer.draw_cache(&self.cache, bounds, draw_fn)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::ops::Sub;
+    use std::time::Duration;
+
+    use chrono::Utc;
+    use plotters::prelude::{RGBAColor, ShapeStyle};
+
+    use crate::hw::PinLevel;
+    use crate::views::waveform::{ChartType, Sample, Waveform};
+
+    const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
+        color: RGBAColor(255, 255, 255, 1.0),
+        filled: true,
+        stroke_width: 1,
+    };
+
+    #[test]
+    fn falling_edge() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Logic(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let high_sent_time = Utc::now().sub(Duration::from_secs(2));
+        chart.push_data(Sample {
+            time: high_sent_time,
+            value: true,
+        });
+
+        let low_sent_time = Utc::now().sub(Duration::from_secs(1));
+        chart.push_data(Sample {
+            time: low_sent_time,
+            value: false,
+        });
+
+        let data = chart.get_data();
+        assert_eq!(data.len(), 4);
+
+        // Next most recent (and first) value should be the "low" inserted at query time
+        assert_eq!(data.get(0).unwrap().1, 0);
+
+        // Next most recent value should be "low" value sent
+        assert_eq!(data.get(1).unwrap(), &(low_sent_time, 0));
+
+        // Next most recent value should be the "high" inserted when "low" was sent
+        assert_eq!(data.get(2).unwrap(), &(low_sent_time, 1));
+
+        // Next most recent value should be the "high" sent initially
+        assert_eq!(data.get(3).unwrap(), &(high_sent_time, 1));
+    }
+
+    #[test]
+    fn rising_edge() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Logic(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let low_sent_time = Utc::now().sub(Duration::from_secs(2));
+        chart.push_data(Sample {
+            time: low_sent_time,
+            value: false,
+        });
+
+        let high_sent_time = Utc::now().sub(Duration::from_secs(1));
+        chart.push_data(Sample {
+            time: high_sent_time,
+            value: true,
+        });
+
+        let data = chart.get_data();
+        assert_eq!(data.len(), 4);
+
+        // Next most recent (and first) value should be the "high" inserted at query time
+        assert_eq!(data.get(0).unwrap().1, 1);
+
+        // Next most recent value should be "high" value sent
+        assert_eq!(data.get(1).unwrap(), &(high_sent_time, 1));
+
+        // Next most recent value should be the "low" inserted when "high" was sent
+        assert_eq!(data.get(2).unwrap(), &(high_sent_time, 0));
+
+        // Next most recent value should be the "low" sent initially
+        assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
     }
 }
