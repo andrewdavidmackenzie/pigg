@@ -156,6 +156,8 @@ where
                     })
                     .collect();
 
+                // TODO add values to cover specific corner cases
+
                 data
             }
             Value(_, _) => self
@@ -268,7 +270,7 @@ mod test {
         assert_eq!(data.len(), 4);
 
         // Next most recent (and first) value should be the "low" inserted at query time
-        assert_eq!(data.get(0).unwrap().1, 0);
+        assert_eq!(data.first().unwrap().1, 0);
 
         // Next most recent value should be "low" value sent
         assert_eq!(data.get(1).unwrap(), &(low_sent_time, 0));
@@ -306,7 +308,7 @@ mod test {
         assert_eq!(data.len(), 4);
 
         // Next most recent (and first) value should be the "high" inserted at query time
-        assert_eq!(data.get(0).unwrap().1, 1);
+        assert_eq!(data.first().unwrap().1, 1);
 
         // Next most recent value should be "high" value sent
         assert_eq!(data.get(1).unwrap(), &(high_sent_time, 1));
