@@ -21,6 +21,12 @@ use crate::pin_state::CHART_WIDTH;
 const PIN_NAME_WIDTH: f32 = 70.0;
 const PIN_ARROW_WIDTH: f32 = 30.0;
 const PIN_BUTTON_WIDTH: f32 = 30.0;
+const LED_WIDTH: f32 = 16.0;
+const BUTTON_WIDTH: f32 = 16.0;
+const PICKLIST_WIDTH: f32 = 100.0;
+const TOGGLER_WIDTH: f32 = 100.0;
+const SPACING_WIDTH: f32 = 8.0;
+const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + SPACING_WIDTH + LED_WIDTH + SPACING_WIDTH + CHART_WIDTH;
 
 fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
     match pin_description.name {
@@ -115,7 +121,6 @@ pub fn bcm_pin_layout_view<'a>(
 }
 
 /// View that draws the pins laid out as they are on the physical Pi board
-/// View that draws the pins laid out as they are on the physical Pi board
 pub fn board_pin_layout_view<'a>(
     pin_descriptions: &'a PinDescriptionSet,
     gpio: &'a Gpio,
@@ -155,13 +160,6 @@ pub fn board_pin_layout_view<'a>(
 
     column.into()
 }
-
-const LED_WIDTH: f32 = 16.0;
-const BUTTON_WIDTH: f32 = 16.0;
-const PICKLIST_WIDTH: f32 = 100.0;
-const TOGGLER_WIDTH: f32 = 100.0;
-const SPACING_WIDTH: f32 = 8.0;
-const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + SPACING_WIDTH + LED_WIDTH + SPACING_WIDTH + CHART_WIDTH;
 
 /// Prepare a pick_list widget with the Input's pullup options
 fn pullup_picklist(
