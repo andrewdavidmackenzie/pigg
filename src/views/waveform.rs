@@ -427,4 +427,58 @@ mod test {
         // Next most recent value should be "low" that is outside window but kept
         assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
     }
+
+    #[test]
+    fn unneeded_samples_deleted() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let now = Utc::now();
+
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(3)),
+        };
+        chart.push_data(low_sample.clone());
+
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(2)),
+        };
+        chart.push_data(low_sample.clone());
+
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(1)),
+        };
+        chart.push_data(low_sample.clone());
+
+        // Check the raw data has all - TODO to suppress the extra values when sending, not later
+        assert_eq!(chart.samples.len(), 3);
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        // graph should only need two points to represent tha flat line
+        assert_eq!(data.len(), 2);
+    }
+
+    #[test]
+    fn display_sample() {
+        let level_change = LevelChange {
+            new_level: false,
+            timestamp: Utc::now(),
+        };
+
+        let sample: Sample<PinLevel> = level_change.into();
+
+        let display = format!("{sample}");
+        assert!(display.contains("UTC"));
+        assert!(display.contains("false"));
+    }
 }
