@@ -469,6 +469,19 @@ mod test {
     }
 
     #[test]
+    fn check_range() {
+        let chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        assert_eq!(chart.range(), 0..1);
+    }
+
+    #[test]
     fn display_sample() {
         let level_change = LevelChange {
             new_level: false,
