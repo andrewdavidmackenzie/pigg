@@ -17,7 +17,7 @@ use plotters_iced::{Chart, ChartWidget, Renderer};
 
 use crate::hw::{LevelChange, PinLevel};
 use crate::Message;
-use crate::views::waveform::ChartType::{Logic, Value};
+use crate::views::waveform::ChartType::{Squarewave, Verbatim};
 
 /// `Sample<T>` can be used to send new samples to a waveform widget for display in a moving chart
 /// It must have a type `T` that implements `Into<u32>` for Y-axis value, and a `DateTime` when it
@@ -50,15 +50,15 @@ impl From<LevelChange> for Sample<PinLevel> {
 }
 
 /// Two types of charts can be drawn:
-/// - `Logic(false, true)` - which forces square wave display of boolean values
-/// - `Value(min, max)` - for display of continuous Y-axis values in a Line Series chart
+/// - `Squarewave(min, max)` - which forces square wave display of values
+/// - `Verbatim(min, max)` - for display of continuous Y-axis values in a Line Series chart
 pub enum ChartType<T>
 where
     T: Clone + Into<u32> + PartialEq,
 {
-    Logic(T, T),
+    Squarewave(T, T),
     #[allow(dead_code)]
-    Value(T, T),
+    Verbatim(T, T),
 }
 
 /// A Waveform chart - used to display the changes of a value over time
@@ -137,7 +137,7 @@ where
     // TODO write a unit test for this to cover a number of corner cases
     fn get_data(&self) -> Vec<(DateTime<Utc>, u32)> {
         match &self.chart_type {
-            Logic(min, max) => {
+            Squarewave(min, max) => {
                 let mut previous_sample: Option<Sample<T>> = None;
 
                 // iterate through the level changes front-back in the vecdeque, which is
@@ -185,7 +185,7 @@ where
 
                 data
             }
-            Value(_, _) => self
+            Verbatim(_, _) => self
                 .samples
                 .iter()
                 .map(|sample| (sample.time, sample.value.clone().into()))
@@ -195,11 +195,11 @@ where
 
     fn range(&self) -> Range<u32> {
         let (min, max) = match &self.chart_type {
-            Logic(min, max) => (
+            Squarewave(min, max) => (
                 <T as Into<u32>>::into(min.clone()),
                 <T as Into<u32>>::into(max.clone()),
             ),
-            Value(min, max) => (
+            Verbatim(min, max) => (
                 <T as Into<u32>>::into(min.clone()),
                 <T as Into<u32>>::into(max.clone()),
             ),
@@ -272,7 +272,7 @@ mod test {
     #[test]
     fn falling_edge() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Logic(false, true),
+            ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -310,7 +310,7 @@ mod test {
     #[test]
     fn rising_edge() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Logic(false, true),
+            ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -348,7 +348,7 @@ mod test {
     #[test]
     fn expired_sample() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Logic(false, true),
+            ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -381,7 +381,7 @@ mod test {
     #[test]
     fn expired_then_new_sample() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Logic(false, true),
+            ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
