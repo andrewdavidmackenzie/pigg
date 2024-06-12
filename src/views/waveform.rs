@@ -107,9 +107,9 @@ where
     }
 
     /// Add a new [Sample] to the data set to be displayed in the chart
-    pub fn push_data(&mut self, sample: Sample<T>) {
+    pub fn push_data(&mut self, sample: impl Into<Sample<T>>) {
         let limit = Utc::now() - self.timespan;
-        self.samples.push_front(sample);
+        self.samples.push_front(sample.into());
 
         // trim values outside the timespan of the chart
         let mut last_sample = None;
@@ -253,7 +253,7 @@ mod test {
     use chrono::Utc;
     use plotters::prelude::{RGBAColor, ShapeStyle};
 
-    use crate::hw::PinLevel;
+    use crate::hw::{LevelChange, PinLevel};
     use crate::views::waveform::{ChartType, Sample, Waveform};
 
     const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
@@ -385,9 +385,9 @@ mod test {
 
         // create a sample that will be added but then pruned as it's older than the window
         let low_sent_time = now.sub(Duration::from_secs(20));
-        let low_sample = Sample {
-            time: low_sent_time,
-            value: false,
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: low_sent_time,
         };
         chart.push_data(low_sample.clone());
         assert_eq!(chart.samples.len(), 1);
@@ -403,7 +403,7 @@ mod test {
         // Check the raw data has both
         assert_eq!(chart.samples.len(), 2);
         assert_eq!(chart.samples.front().unwrap(), &high_sample);
-        assert_eq!(chart.samples.get(1).unwrap(), &low_sample);
+        assert_eq!(chart.samples.get(1).unwrap(), &low_sample.into());
 
         // Get the chart data
         let data = chart.get_data();
@@ -426,5 +426,85 @@ mod test {
 
         // Next most recent value should be "low" that is outside window but kept
         assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
+    }
+
+    #[test]
+    fn unneeded_samples_deleted() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let now = Utc::now();
+
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(3)),
+        };
+        chart.push_data(low_sample.clone());
+
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(2)),
+        };
+        chart.push_data(low_sample.clone());
+
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(1)),
+        };
+        chart.push_data(low_sample.clone());
+
+        // Check the raw data has all - TODO to suppress the extra values when sending, not later
+        assert_eq!(chart.samples.len(), 3);
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        // graph should only need two points to represent tha flat line
+        assert_eq!(data.len(), 2);
+    }
+
+    #[test]
+    fn check_range_squarewave() {
+        let chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        assert_eq!(chart.range(), 0..1);
+    }
+
+    #[test]
+    fn check_range_verbatim() {
+        let chart = Waveform::<u32>::new(
+            ChartType::Verbatim(0, 100),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        assert_eq!(chart.range(), 0..100);
+    }
+
+    #[test]
+    fn display_sample() {
+        let level_change = LevelChange {
+            new_level: false,
+            timestamp: Utc::now(),
+        };
+
+        let sample: Sample<PinLevel> = level_change.into();
+
+        let display = format!("{sample}");
+        assert!(display.contains("UTC"));
+        assert!(display.contains("false"));
     }
 }
