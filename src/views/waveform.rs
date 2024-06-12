@@ -117,7 +117,7 @@ where
         self.samples.retain(|sample| {
             let retain = sample.time > limit;
             if !retain && last_sample.is_none() {
-                last_sample = Some(sample.clone()); // TODO do with a reference?
+                last_sample = Some(sample.clone());
             }
             retain
         });
@@ -143,8 +143,7 @@ where
                 // iterate through the level changes front-back in the vecdeque, which is
                 // from the most recent sample to the oldest sample
                 // Add points to force the shape to be a Square wave
-                let data: Vec<(DateTime<Utc>, u32)> = self
-                    .samples
+                self.samples
                     .iter()
                     .flat_map(|sample| {
                         if let Some(previous) = &previous_sample {
@@ -179,11 +178,7 @@ where
                             vec
                         }
                     })
-                    .collect();
-
-                // TODO add values to cover specific corner cases
-
-                data
+                    .collect()
             }
             Verbatim(_, _) => self
                 .samples
