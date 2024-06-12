@@ -15,7 +15,7 @@ const CHART_HEIGHT: f32 = 30.0;
 // If we update CHART_UPDATES_PER_SECOND that's 2 * CHART_UPDATES_PER_SECOND pixels per second.
 // So CHART_DURATION = CHART_WIDTH / CHART_UPDATES_PER_SECOND * 2(seconds)
 const CHART_DURATION: Duration =
-    Duration::from_secs(CHART_WIDTH as u64 / (CHART_UPDATES_PER_SECOND * 2));
+    Duration::from_secs(CHART_WIDTH as u64 / (CHART_UPDATES_PER_SECOND * 4));
 
 const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
     color: RGBAColor(255, 255, 255, 1.0),
