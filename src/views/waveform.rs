@@ -22,7 +22,7 @@ use crate::views::waveform::ChartType::{Logic, Value};
 /// `Sample<T>` can be used to send new samples to a waveform widget for display in a moving chart
 /// It must have a type `T` that implements `Into<u32>` for Y-axis value, and a `DateTime` when it
 /// was measured/detected for the X-axis (or time axis).
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Sample<T>
 where
     T: Clone + Into<u32> + PartialEq + Display,
@@ -113,16 +113,17 @@ where
         self.samples.push_front(sample);
 
         // trim values outside the timespan of the chart
-        let mut last_sample = self.samples.back().cloned();
+        let mut last_sample = None;
         self.samples.retain(|sample| {
-            last_sample = Some(sample.clone()); // TODO do with a reference?
-            sample.time > limit
+            let retain = sample.time > limit;
+            if !retain && last_sample.is_none() {
+                last_sample = Some(sample.clone()); // TODO do with a reference?
+            }
+            retain
         });
 
-        println!("samples len = {}", self.samples.len());
         if self.samples.len() < 2 {
             if let Some(last) = last_sample {
-                println!("Added back last sample: {}", last);
                 self.samples.push_back(last);
             }
         }
@@ -171,10 +172,11 @@ where
                             // last value added, at the start of the dequeue
                             // Insert a value at current time, with the same value as previous one
                             previous_sample = Some(sample.clone());
-                            vec![
+                            let vec = vec![
                                 (Utc::now(), sample.value.clone().into()),
                                 (sample.time, sample.value.clone().into()),
-                            ]
+                            ];
+                            vec
                         }
                     })
                     .collect();
@@ -390,19 +392,25 @@ mod test {
 
         // create a sample that will be added but then pruned as it's older than the window
         let low_sent_time = now.sub(Duration::from_secs(20));
-        chart.push_data(Sample {
+        let low_sample = Sample {
             time: low_sent_time,
             value: false,
-        });
+        };
+        chart.push_data(low_sample.clone());
+        assert_eq!(chart.samples.len(), 1);
 
-        let high_sent_time = now.sub(Duration::from_secs(50));
-        chart.push_data(Sample {
+        // Send a sample in the middle of the time window
+        let high_sent_time = now.sub(Duration::from_secs(5));
+        let high_sample = Sample {
             time: high_sent_time,
             value: true,
-        });
+        };
+        chart.push_data(high_sample.clone());
 
         // Check the raw data has both
         assert_eq!(chart.samples.len(), 2);
+        assert_eq!(chart.samples.front().unwrap(), &high_sample);
+        assert_eq!(chart.samples.get(1).unwrap(), &low_sample);
 
         // Get the chart data
         let data = chart.get_data();
@@ -419,5 +427,11 @@ mod test {
 
         // Next most recent value should be "high" value sent
         assert_eq!(data.get(1).unwrap(), &(high_sent_time, 1));
+
+        // Next most recent value should be "low" added with same time as "high" sent
+        assert_eq!(data.get(2).unwrap(), &(high_sent_time, 0));
+
+        // Next most recent value should be "low" that is outside window but kept
+        assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
     }
 }
