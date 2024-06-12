@@ -1,23 +1,23 @@
-use std::{env, io};
 use std::time::Duration;
+use std::{env, io};
 
-use iced::{
-    alignment, Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
+use hw_listener::{HWListenerEvent, HardwareEvent};
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Button, Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::{
+    executor, window, Alignment, Application, Color, Command, Element, Length, Settings, Size,
+    Subscription, Theme,
+};
 
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction};
-use hw::HardwareDescriptor;
-use hw::InputPull;
-use hw_listener::{HardwareEvent, HWListenerEvent};
+use custom_widgets::toast::{self, Manager, Status, Toast};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
+use layout::{BCM_LAYOUT_SIZE, BOARD_LAYOUT_SIZE};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
-use style::CustomButton;
 
 use crate::hw::{LevelChange, PinDescriptionSet};
 use crate::layout::Layout;
-use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
+use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
+use crate::style::CustomButton;
 use crate::version::version;
 use crate::views::hardware::hardware_view;
 
@@ -39,10 +39,10 @@ fn main() -> Result<(), iced::Error> {
         return Ok(());
     }
 
+    let size = Gpio::get_dimensions_for_layout(Layout::BoardLayout);
     let window = window::Settings {
-        resizable: false,
-        position: window::Position::Centered,
-        size: iced::Size::new(1100.0, 900.0),
+        resizable: true,
+        size,
         ..Default::default()
     };
 
@@ -53,6 +53,12 @@ fn main() -> Result<(), iced::Error> {
 }
 
 #[derive(Debug, Clone)]
+pub enum ToastMessage {
+    Add,
+    Close(usize),
+    Timeout(f64),
+}
+#[derive(Debug, Clone)]
 pub enum Message {
     Activate(BoardPinNumber),
     PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
@@ -61,6 +67,7 @@ pub enum Message {
     None,
     HardwareListener(HWListenerEvent),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
+    Toast(ToastMessage),
     Save,
     Load,
     UpdateCharts,
@@ -78,6 +85,9 @@ pub struct Gpio {
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: [PinState; 40],
     pin_descriptions: Option<PinDescriptionSet>,
+    toasts: Vec<Toast>,
+    show_toast: bool,
+    timeout_secs: u64,
 }
 
 impl Gpio {
@@ -185,7 +195,6 @@ impl Gpio {
             }
         }
     }
-
     /// Set the pin (using board number) level with a LevelChange
     fn set_pin_level_change(
         &mut self,
@@ -193,6 +202,19 @@ impl Gpio {
         level_change: LevelChange,
     ) {
         self.pin_states[board_pin_number as usize - 1].set_level(level_change);
+    }
+
+    fn get_dimensions_for_layout(layout: Layout) -> Size {
+        match layout {
+            Layout::BoardLayout => Size {
+                width: BOARD_LAYOUT_SIZE.0,
+                height: BOARD_LAYOUT_SIZE.1,
+            },
+            Layout::BCMLayout => Size {
+                width: BCM_LAYOUT_SIZE.0,
+                height: BCM_LAYOUT_SIZE.1,
+            },
+        }
     }
 }
 
@@ -213,11 +235,17 @@ impl Application for Gpio {
                 listener_sender: None,      // Until listener is ready
                 pin_descriptions: None,     // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
+                toasts: Vec::new(),
+                show_toast: false,
+                timeout_secs: toast::DEFAULT_TIMEOUT,
             },
-            Command::perform(Self::load(env::args().nth(1)), |result| match result {
-                Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
-                _ => Message::None,
-            }),
+            Command::batch(vec![Command::perform(
+                Self::load(env::args().nth(1)),
+                |result| match result {
+                    Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
+                    _ => Message::None,
+                },
+            )]),
         )
     }
 
@@ -233,7 +261,10 @@ impl Application for Gpio {
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
+                let layout_size = Self::get_dimensions_for_layout(layout);
+                return window::resize(window::Id::MAIN, layout_size);
             }
+
             Message::ConfigLoaded((filename, config)) => {
                 self.config_filename = Some(filename);
                 self.gpio_config = config;
@@ -273,6 +304,7 @@ impl Application for Gpio {
                     }
                 }
             },
+
             Message::ChangeOutputLevel(bcm_pin_number, level_change) => {
                 if let Some(pins) = &self.pin_descriptions {
                     if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
@@ -286,6 +318,7 @@ impl Application for Gpio {
                     }
                 }
             }
+
             Message::UpdateCharts => {
                 // Update all the charts of the pins that have an assigned function
                 for pin in 0..40 {
@@ -294,6 +327,25 @@ impl Application for Gpio {
                     }
                 }
             }
+
+            Message::Toast(toast_message) => match toast_message {
+                ToastMessage::Add => {
+                    self.toasts.clear();
+                    self.toasts.push(Toast {
+                        title: "About Piggui".into(),
+                        body: version().into(),
+                        status: Status::Primary,
+                    });
+                    self.show_toast = true;
+                }
+                ToastMessage::Close(index) => {
+                    self.show_toast = false;
+                    self.toasts.remove(index);
+                }
+                ToastMessage::Timeout(timeout) => {
+                    self.timeout_secs = timeout as u64;
+                }
+            },
         }
         Command::none()
     }
@@ -304,7 +356,7 @@ impl Application for Gpio {
             Some(self.chosen_layout),
             Message::LayoutChanged,
         )
-        .text_size(25)
+        .width(Length::Shrink)
         .placeholder("Choose Layout");
 
         let mut main_row = Row::new();
@@ -327,34 +379,52 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
-            let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
-
-            let version_row = Row::new().push(version_text).align_items(Alignment::Start);
+            let about_button_style = CustomButton {
+                bg_color: Color::TRANSPARENT,
+                text_color: Color::WHITE,
+                hovered_bg_color: Color::TRANSPARENT,
+                hovered_text_color: Color::new(0.7, 0.7, 0.7, 1.0),
+                border_radius: 4.0,
+            };
 
             let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
             configuration_column = configuration_column.push(layout_row);
             configuration_column = configuration_column.push(hardware_desc_row);
             configuration_column = configuration_column.push(
-                Button::new(Text::new("Save Configuration").size(20))
-                    .padding(10)
+                Button::new(Text::new("Save Configuration"))
                     .style(file_button_style.get_button_style())
                     .on_press(Message::Save),
             );
             configuration_column = configuration_column.push(
-                Button::new(Text::new("Load Configuration").size(20))
-                    .padding(10)
+                Button::new(Text::new("Load Configuration"))
                     .style(file_button_style.get_button_style())
                     .on_press(Message::Load),
             );
+
+            let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
+            let add_toast_button = Button::new(version_text)
+                .on_press(if !self.show_toast {
+                    // Add a new toast if `show_toast` is false
+                    Message::Toast(ToastMessage::Add)
+                } else {
+                    // Close the existing toast if `show_toast` is true
+                    let index = self.toasts.len() - 1;
+                    Message::Toast(ToastMessage::Close(index))
+                })
+                .style(about_button_style.get_button_style());
+
+            let version_row = Row::new()
+                .push(add_toast_button)
+                .align_items(Alignment::Start);
 
             main_row = main_row.push(
                 Column::new()
                     .push(configuration_column)
                     .push(version_row)
                     .align_items(Alignment::Start)
-                    .width(Length::Fixed(240.0))
+                    .width(Length::Shrink)
                     .height(Length::Shrink)
-                    .spacing(1040),
+                    .spacing(self.chosen_layout.get_spacing()),
             );
         }
 
@@ -364,29 +434,28 @@ impl Application for Gpio {
                 Layout::BCMLayout => bcm_pin_layout_view(pins, self),
             };
 
-            main_row = main_row
-                .push(
-                    Column::new()
-                        .push(pin_layout)
-                        .align_items(Alignment::Center)
-                        .height(Length::Fill),
-                )
-                .align_items(Alignment::Start)
-                .width(Length::Fill)
-                .height(Length::Fill);
+            main_row = main_row.push(
+                Column::new()
+                    .push(pin_layout)
+                    .align_items(Alignment::Center)
+                    .height(Length::Fill)
+                    .width(Length::Fill),
+            );
         }
 
-        container(main_row)
+        let content = container(main_row)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(20)
-            .align_x(alignment::Horizontal::Center)
-            .align_y(alignment::Vertical::Top)
-            .into()
-    }
+            .align_x(iced::alignment::Horizontal::Center)
+            .center_x()
+            .center_y()
+            .padding(10);
 
-    fn scale_factor(&self) -> f64 {
-        0.63
+        Manager::new(content, &self.toasts, |index| {
+            Message::Toast(ToastMessage::Close(index))
+        })
+        .timeout(self.timeout_secs)
+        .into()
     }
 
     fn theme(&self) -> Theme {

@@ -1,22 +1,26 @@
-use iced::{Alignment, Color, Element, Length};
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
-use iced::widget::{button, Column, horizontal_space, pick_list, Row, Text, toggler};
 use iced::widget::mouse_area;
+use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
+use iced::{Alignment, Color, Element, Length};
 
-use crate::{Gpio, PinState};
-use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::clicker::clicker;
 use crate::custom_widgets::led::led;
+use crate::custom_widgets::{circle::circle, line::line};
+use crate::hw::InputPull;
+use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
 };
-use crate::hw::PinFunction::{Input, Output};
-use crate::InputPull;
-use crate::Message;
 use crate::pin_state::CHART_WIDTH;
 use crate::style::CustomButton;
+use crate::Message;
+use crate::{Gpio, PinState};
+
+const PIN_NAME_WIDTH: f32 = 70.0;
+const PIN_ARROW_WIDTH: f32 = 30.0;
+const PIN_BUTTON_WIDTH: f32 = 30.0;
 
 fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
     match pin_description.name {
@@ -98,10 +102,13 @@ pub fn bcm_pin_layout_view<'a>(
             &gpio.pin_states[pin.board_pin_number as usize - 1],
         );
 
-        column = column.push(pin_row).push(iced::widget::Space::new(
-            Length::Fixed(1.0),
-            Length::Fixed(5.0),
-        ));
+        column = column
+            .push(pin_row)
+            .push(iced::widget::Space::new(
+                Length::Fixed(1.0),
+                Length::Fixed(5.0),
+            ))
+            .align_items(Alignment::Center);
     }
 
     column.into()
@@ -137,10 +144,13 @@ pub fn board_pin_layout_view<'a>(
             .spacing(10)
             .align_items(Alignment::Center);
 
-        column = column.push(row).push(iced::widget::Space::new(
-            Length::Fixed(1.0),
-            Length::Fixed(5.0),
-        ));
+        column = column
+            .push(row)
+            .push(iced::widget::Space::new(
+                Length::Fixed(1.0),
+                Length::Fixed(5.0),
+            ))
+            .align_items(Alignment::Center);
     }
 
     column.into()
@@ -169,7 +179,7 @@ fn pullup_picklist(
     pick_list(sub_options, pull, move |selected_pull| {
         Message::PinFunctionSelected(board_pin_number, bcm_pin_number, Input(Some(selected_pull)))
     })
-    .width(PICKLIST_WIDTH)
+    .width(Length::Fill)
     .placeholder("Select Pullup")
     .into()
 }
@@ -238,18 +248,10 @@ fn get_pin_widget(
         _ => Row::new(),
     };
 
-    row = row
-        .width(Length::Shrink)
+    row.width(Length::Fixed(COLUMN_WIDTH))
         .spacing(SPACING_WIDTH)
-        .align_items(Alignment::Center);
-
-    let col = Column::new().width(Length::Fixed(COLUMN_WIDTH)).push(row);
-
-    if is_left {
-        col.align_items(Alignment::End).into()
-    } else {
-        col.align_items(Alignment::Start).into()
-    }
+        .align_items(Alignment::Center)
+        .into()
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
@@ -270,14 +272,12 @@ fn create_pin_view_side<'a>(
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
-        .width(Length::Fixed(140f32))
+        .width(Length::Fixed(130f32))
         .align_items(Alignment::Center);
     if pin_description.options.len() > 1 {
         let board_pin_number = pin_description.board_pin_number;
         let bcm_pin_number = pin_description.bcm_pin_number.unwrap();
-        let mut pin_options_row = Row::new()
-            .align_items(Alignment::Center)
-            .width(Length::Fixed(140f32));
+        let mut pin_options_row = Row::new().align_items(Alignment::Center);
         let mut config_options = pin_description.options.to_vec();
         let selected = match selected_function {
             PinFunction::None => None,
@@ -286,63 +286,73 @@ fn create_pin_view_side<'a>(
                 Some(other)
             }
         };
+
         pin_options_row = pin_options_row.push(
             pick_list(config_options, selected, move |pin_function| {
                 Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function)
             })
-            .width(Length::Fixed(200f32))
+            .width(Length::Fixed(130f32))
             .placeholder("Select function"),
         );
 
         pin_option = pin_option.push(pin_options_row);
     }
 
+    let mut pin_name_column = Column::new()
+        .width(Length::Fixed(PIN_NAME_WIDTH))
+        .align_items(Alignment::Center);
+
     // Create the Pin name
     let pin_name = Row::new()
-        .width(Length::Fixed(55f32))
         .push(Text::new(pin_description.name))
         .align_items(Alignment::Center);
 
-    let mut pin_arrow = Row::new()
-        .width(Length::Fixed(60f32))
-        .align_items(Alignment::Center);
+    pin_name_column = pin_name_column.push(pin_name);
+
+    let mut pin_arrow_column = Column::new()
+        .align_items(Alignment::Center)
+        .width(Length::Fixed(PIN_ARROW_WIDTH));
+
+    let mut pin_arrow = Row::new().align_items(Alignment::Center);
+
     if is_left {
         pin_arrow = pin_arrow.push(circle(5.0));
-        pin_arrow = pin_arrow.push(line(50.0));
+        pin_arrow = pin_arrow.push(line(20.0));
     } else {
-        pin_arrow = pin_arrow.push(line(50.0));
+        pin_arrow = pin_arrow.push(line(20.0));
         pin_arrow = pin_arrow.push(circle(5.0));
     }
 
+    pin_arrow_column = pin_arrow_column.push(pin_arrow);
+
+    let mut pin_button_column = Column::new().align_items(Alignment::Center);
     // Create the pin itself, with number and as a button
     let pin_button = button(
         Text::new(pin_description.board_pin_number.to_string())
-            .size(20)
             .horizontal_alignment(Horizontal::Center),
     )
-    .padding(10)
-    .width(Length::Fixed(40f32))
+    .padding(5)
+    .width(Length::Fixed(PIN_BUTTON_WIDTH))
     .style(get_pin_color(pin_description).get_button_style())
     .on_press(Message::Activate(pin_description.board_pin_number));
 
+    pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
     if is_left {
         Row::new()
             .push(pin_widget)
             .push(pin_option)
-            .push(pin_name)
-            .push(pin_arrow)
-            .push(pin_button)
-            .spacing(10)
+            .push(pin_name_column)
+            .push(pin_arrow_column)
+            .push(pin_button_column)
             .align_items(Alignment::Center)
     } else {
         Row::new()
-            .push(pin_button)
-            .push(pin_arrow)
-            .push(pin_name)
+            .push(pin_button_column)
+            .push(pin_arrow_column)
+            .push(pin_name_column)
             .push(pin_option)
             .push(pin_widget)
-            .spacing(10)
             .align_items(Alignment::Center)
     }
 }
