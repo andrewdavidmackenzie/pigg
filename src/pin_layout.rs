@@ -1,40 +1,50 @@
-use iced::alignment::Horizontal;
-use iced::widget::{button, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Element, Length};
+use iced::advanced::text::editor::Direction;
+use iced::alignment::Horizontal;
+use iced::widget::{button, Column, horizontal_space, pick_list, Row, Text, toggler};
+use iced::widget::mouse_area;
 
-use crate::custom_widgets::led::led;
+use crate::{Gpio, PinState};
 use crate::custom_widgets::{circle::circle, line::line};
-use crate::hw::PinFunction::{Input, Output};
+use crate::custom_widgets::clicker::clicker;
+use crate::custom_widgets::led::led;
+use crate::custom_widgets::pin_style::PinStyle;
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
 };
-use crate::style::CustomButton;
-use crate::InputPull;
+use crate::hw::InputPull;
+use crate::hw::PinFunction::{Input, Output};
 use crate::Message;
-use crate::{Gpio, PinState};
+use crate::pin_state::CHART_WIDTH;
 
 const PIN_NAME_WIDTH: f32 = 70.0;
 const PIN_ARROW_WIDTH: f32 = 30.0;
 const PIN_BUTTON_WIDTH: f32 = 30.0;
+const LED_WIDTH: f32 = 16.0;
+const BUTTON_WIDTH: f32 = 16.0;
+const PICKLIST_WIDTH: f32 = 100.0;
+const TOGGLER_WIDTH: f32 = 100.0;
+const SPACING_WIDTH: f32 = 8.0;
+const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + SPACING_WIDTH + LED_WIDTH + SPACING_WIDTH + CHART_WIDTH;
 
-fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
+fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
     match pin_description.name {
-        "3V3" => CustomButton {
+        "3V3" => PinStyle {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "5V" => CustomButton {
+        "5V" => PinStyle {
             bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "Ground" => CustomButton {
+        "Ground" => PinStyle {
             bg_color: Color::BLACK,
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -42,7 +52,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::BLACK,
         },
 
-        "GPIO2" | "GPIO3" => CustomButton {
+        "GPIO2" | "GPIO3" => PinStyle {
             bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -50,7 +60,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
         },
 
-        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => CustomButton {
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => PinStyle {
             bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -58,7 +68,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
         },
 
-        "GPIO14" | "GPIO15" => CustomButton {
+        "GPIO14" | "GPIO15" => PinStyle {
             bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -66,14 +76,14 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
         },
 
-        "ID_SD" | "ID_SC" => CustomButton {
+        "ID_SD" | "ID_SC" => PinStyle {
             bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
             text_color: Color::WHITE,
             border_radius: 50.0,
             hovered_bg_color: Color::WHITE,
             hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
         },
-        _ => CustomButton {
+        _ => PinStyle {
             bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -84,7 +94,10 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
 }
 
 /// View that lays out the pins in a single column ordered by BCM pin number
-pub fn bcm_pin_layout_view(pin_set: &PinDescriptionSet, gpio: &Gpio) -> Element<'static, Message> {
+pub fn bcm_pin_layout_view<'a>(
+    pin_set: &'a PinDescriptionSet,
+    gpio: &'a Gpio,
+) -> Element<'a, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     for pin in pin_set.bcm_pins_sorted() {
@@ -95,21 +108,23 @@ pub fn bcm_pin_layout_view(pin_set: &PinDescriptionSet, gpio: &Gpio) -> Element<
             &gpio.pin_states[pin.board_pin_number as usize - 1],
         );
 
-        column = column.push(pin_row).push(iced::widget::Space::new(
-            Length::Fixed(1.0),
-            Length::Fixed(5.0),
-        ));
+        column = column
+            .push(pin_row)
+            .push(iced::widget::Space::new(
+                Length::Fixed(1.0),
+                Length::Fixed(5.0),
+            ))
+            .align_items(Alignment::Center);
     }
 
     column.into()
 }
 
 /// View that draws the pins laid out as they are on the physical Pi board
-/// View that draws the pins laid out as they are on the physical Pi board
-pub fn board_pin_layout_view(
-    pin_descriptions: &PinDescriptionSet,
-    gpio: &Gpio,
-) -> Element<'static, Message> {
+pub fn board_pin_layout_view<'a>(
+    pin_descriptions: &'a PinDescriptionSet,
+    gpio: &'a Gpio,
+) -> Element<'a, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
     // Draw all pins, those with and without BCM pin numbers
@@ -134,13 +149,37 @@ pub fn board_pin_layout_view(
             .spacing(10)
             .align_items(Alignment::Center);
 
-        column = column.push(row).push(iced::widget::Space::new(
-            Length::Fixed(1.0),
-            Length::Fixed(5.0),
-        ));
+        column = column
+            .push(row)
+            .push(iced::widget::Space::new(
+                Length::Fixed(1.0),
+                Length::Fixed(5.0),
+            ))
+            .align_items(Alignment::Center);
     }
 
     column.into()
+}
+
+/// Prepare a pick_list widget with the Input's pullup options
+fn pullup_picklist(
+    pull: Option<InputPull>,
+    board_pin_number: BoardPinNumber,
+    bcm_pin_number: BCMPinNumber,
+) -> Element<'static, Message> {
+    let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
+
+    // Filter out the currently selected pull option
+    if let Some(selected_pull) = pull {
+        sub_options.retain(|&option| option != selected_pull);
+    }
+
+    pick_list(sub_options, pull, move |selected_pull| {
+        Message::PinFunctionSelected(board_pin_number, bcm_pin_number, Input(Some(selected_pull)))
+    })
+    .width(Length::Fill)
+    .placeholder("Select Pullup")
+    .into()
 }
 
 /// Create the widget that either shows an input pin's state,
@@ -149,99 +188,89 @@ pub fn board_pin_layout_view(
 fn get_pin_widget(
     board_pin_number: BoardPinNumber,
     bcm_pin_number: Option<BCMPinNumber>,
-    pin_function: &PinFunction,
+    pin_function: PinFunction,
     pin_state: &PinState,
     is_left: bool,
-) -> Row<'static, Message> {
+) -> Element<Message> {
     let row = match pin_function {
         Input(pull) => {
-            let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
-
-            // Filter out the currently selected pull option
-            if let Some(selected_pull) = pull {
-                sub_options.retain(|&option| &option != selected_pull);
-            }
-
+            let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
-                // TODO Row::new().push(waveform(16.0, 256.0, pin_state)).push(
                 Row::new()
-                    .push(led(16.0, pin_state))
-                    .push(
-                        pick_list(sub_options, *pull, move |selected_pull| {
-                            Message::PinFunctionSelected(
-                                board_pin_number,
-                                bcm_pin_number.unwrap(),
-                                Input(Some(selected_pull)),
-                            )
-                        })
-                        .width(Length::Fill)
-                        .placeholder("Select Pullup"),
-                    )
-                    .width(Length::Fill)
+                    .push(pin_state.chart(Direction::Left))
+                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(pullup_pick)
             } else {
                 Row::new()
-                    .push(
-                        pick_list(sub_options, *pull, move |selected_pull| {
-                            Message::PinFunctionSelected(
-                                board_pin_number,
-                                bcm_pin_number.unwrap(),
-                                Input(Some(selected_pull)),
-                            )
-                        })
-                        .width(Length::Fill)
-                        .placeholder("Select Pullup"),
-                    )
-                    // TODO     .push(waveform(16.0, 256.0, pin_state))
-                    .push(led(16.0, pin_state))
-                    .width(Length::Fill)
+                    .push(pullup_pick)
+                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(pin_state.chart(Direction::Right))
             }
         }
 
         Output(_) => {
-            let toggler = toggler(
+            let output_control = toggler(
                 None,
                 pin_state.get_level().unwrap_or(false as PinLevel),
-                move |b| Message::ChangeOutputLevel(LevelChange::new(bcm_pin_number.unwrap(), b)),
-            );
+                move |b| Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
+            )
+            .width(Length::Fixed(TOGGLER_WIDTH));
+
+            let push_button = mouse_area(clicker(BUTTON_WIDTH))
+                .on_press({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                })
+                .on_release({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                });
+
             if is_left {
                 Row::new()
-                    .push(Column::new().push(toggler).align_items(Alignment::End))
-                    .width(Length::Fill)
+                    .push(pin_state.chart(Direction::Left))
+                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(horizontal_space().width(Length::Fixed(1.0)))
+                    .push(push_button)
+                    .push(output_control)
             } else {
                 Row::new()
-                    .push(Column::new().push(toggler).align_items(Alignment::Start))
-                    .width(Length::Fill)
+                    .push(output_control)
+                    .push(push_button)
+                    .push(horizontal_space().width(Length::Fixed(1.0)))
+                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(pin_state.chart(Direction::Right))
             }
         }
 
         _ => Row::new(),
     };
 
-    row.spacing(10)
-        // TODO .width(256.0 + 120.0)
-        .width(Length::Fill)
+    row.width(Length::Fixed(COLUMN_WIDTH))
+        .spacing(SPACING_WIDTH)
         .align_items(Alignment::Center)
+        .into()
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
-fn create_pin_view_side(
-    pin_description: &PinDescription,
+fn create_pin_view_side<'a>(
+    pin_description: &'a PinDescription,
     selected_function: PinFunction,
     is_left: bool,
-    pin_state: &PinState,
-) -> Row<'static, Message> {
+    pin_state: &'a PinState,
+) -> Row<'a, Message> {
     // Create a widget that is either used to visualize an input or control an output
     let pin_widget = get_pin_widget(
         pin_description.board_pin_number,
         pin_description.bcm_pin_number,
-        &selected_function,
+        selected_function,
         pin_state,
         is_left,
     );
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
-        .width(Length::Fill)
+        .width(Length::Fixed(130f32))
         .align_items(Alignment::Center);
     if pin_description.options.len() > 1 {
         let board_pin_number = pin_description.board_pin_number;
@@ -260,7 +289,7 @@ fn create_pin_view_side(
             pick_list(config_options, selected, move |pin_function| {
                 Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function)
             })
-            .width(Length::Fill)
+            .width(Length::Fixed(130f32))
             .placeholder("Select function"),
         );
 
@@ -302,7 +331,7 @@ fn create_pin_view_side(
     )
     .padding(5)
     .width(Length::Fixed(PIN_BUTTON_WIDTH))
-    .style(get_pin_color(pin_description).get_button_style())
+    .style(get_pin_style(pin_description).get_button_style())
     .on_press(Message::Activate(pin_description.board_pin_number));
 
     pin_button_column = pin_button_column.push(pin_button);

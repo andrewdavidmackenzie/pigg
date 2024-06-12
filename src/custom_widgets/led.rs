@@ -4,24 +4,21 @@ use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
 use iced::mouse;
 
-use crate::PinState;
+use crate::hw::PinLevel;
 
 pub struct Led {
     height: f32,
-    state: PinState,
+    level: Option<PinLevel>,
 }
 
 impl Led {
-    pub fn new(height: f32, state: &PinState) -> Self {
-        Self {
-            height,
-            state: state.clone(),
-        }
+    pub fn new(height: f32, _width: f32, level: Option<PinLevel>) -> Self {
+        Self { height, level }
     }
 }
 
-pub fn led(height: f32, state: &PinState) -> Led {
-    Led::new(height, state)
+pub fn led(height: f32, width: f32, level: Option<PinLevel>) -> Led {
+    Led::new(height, width, level)
 }
 
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Led
@@ -54,10 +51,10 @@ where
         _cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
-        let color = match self.state.get_level() {
+        let color = match self.level {
             None => Color::BLACK,
-            Some(false) => Color::new(0.0, 0.502, 0.0, 1.0),
-            Some(true) => Color::new(1.0, 0.0, 0.0, 1.0),
+            Some(false) => Color::new(0.0, 0.3, 0.0, 1.0),
+            Some(true) => Color::new(0.0, 0.7, 0.0, 1.0),
         };
 
         renderer.fill_quad(

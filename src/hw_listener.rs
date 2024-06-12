@@ -5,7 +5,7 @@ use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hw;
-use crate::hw::{GPIOConfig, LevelChange, PinDescriptionSet, PinFunction};
+use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction};
 use crate::hw::{Hardware, HardwareDescriptor};
 use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw_listener::HWListenerEvent::InputChange;
@@ -19,7 +19,7 @@ pub enum HWListenerEvent {
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
     Ready(Sender<HardwareEvent>, HardwareDescriptor, PinDescriptionSet),
     /// This event indicates that the logic level of an input has just changed
-    InputChange(LevelChange),
+    InputChange(BCMPinNumber, LevelChange),
 }
 
 /// This enum is for config changes done in the GUI to be sent to this listener to set up pin
@@ -31,9 +31,9 @@ pub enum HardwareEvent {
     /// A pin has had its config changed
     NewPinConfig(u8, PinFunction),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
-    InputLevelChanged(LevelChange),
+    InputLevelChanged(BCMPinNumber, LevelChange),
     /// The level of an output pin has been set to a new value
-    OutputLevelChanged(LevelChange),
+    OutputLevelChanged(BCMPinNumber, LevelChange),
 }
 
 /// This enum describes the states of the listener
@@ -54,10 +54,10 @@ fn send_current_input_states(
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
-                let _ = tx.try_send(InputLevelChanged(LevelChange::new(
+                let _ = tx.try_send(InputLevelChanged(
                     *bcm_pin_number,
-                    initial_level,
-                )));
+                    LevelChange::new(initial_level),
+                ));
             }
         }
     }
@@ -104,9 +104,10 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                 connected_hardware
                                     .apply_config(&config, move |pin_number, level| {
                                         sender_clone
-                                            .try_send(InputChange(LevelChange::new(
-                                                pin_number, level,
-                                            )))
+                                            .try_send(InputChange(
+                                                pin_number,
+                                                LevelChange::new(level),
+                                            ))
                                             .unwrap();
                                     })
                                     .unwrap();
@@ -123,19 +124,22 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                                     &new_function,
                                     move |bcm_pin_number, level| {
                                         sender_clone
-                                            .try_send(InputChange(LevelChange::new(
+                                            .try_send(InputChange(
                                                 bcm_pin_number,
-                                                level,
-                                            )))
+                                                LevelChange::new(level),
+                                            ))
                                             .unwrap();
                                     },
                                 );
                             }
-                            InputLevelChanged(level_change) => {
-                                let _ = gui_sender.send(InputChange(level_change)).await;
+                            InputLevelChanged(bcm_pin_number, level_change) => {
+                                let _ = gui_sender
+                                    .send(InputChange(bcm_pin_number, level_change))
+                                    .await;
                             }
-                            HardwareEvent::OutputLevelChanged(level_change) => {
-                                let _ = connected_hardware.set_output_level(level_change);
+                            HardwareEvent::OutputLevelChanged(bcm_pin_number, level_change) => {
+                                let _ = connected_hardware
+                                    .set_output_level(bcm_pin_number, level_change);
                             }
                         }
                     }

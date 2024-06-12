@@ -4,8 +4,8 @@ use std::fs::File;
 use std::io;
 use std::io::{BufReader, Write};
 use std::slice::Iter;
-use std::time::SystemTime;
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::hw::pin_descriptions::*;
@@ -53,7 +53,7 @@ pub trait Hardware {
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool) + Send + Sync + Clone + 'static;
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static;
     /// Apply a new config to one specific pin
     fn apply_pin_config<C>(
         &mut self,
@@ -62,11 +62,15 @@ pub trait Hardware {
         callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool) + Send + Sync + 'static;
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
     /// Read the input level of an input using the bcm pin number
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
     /// Write the output level of an output using the bcm pin number
-    fn set_output_level(&mut self, level_change: LevelChange) -> io::Result<()>;
+    fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level_change: LevelChange,
+    ) -> io::Result<()>;
 }
 
 /// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
@@ -82,22 +86,21 @@ pub type BCMPinNumber = u8;
 pub type BoardPinNumber = u8;
 pub type PinLevel = bool;
 
-/// LevelChange describes the change in level of an input (bcm_pin_number, level, timestamp)
-/// or an Output
+/// LevelChange describes the change in level of an input or Output
+/// - `new_level` : [PinLevel]
+/// - `timestamp` : [DateTime<Utc>]
 #[derive(Clone, Debug)]
 pub struct LevelChange {
-    pub bcm_pin_number: BCMPinNumber, // TODO remove this I think, as pin_states has pin number
     pub new_level: PinLevel,
-    pub timestamp: SystemTime,
+    pub timestamp: DateTime<Utc>,
 }
 
 impl LevelChange {
     /// Create a new LevelChange event with the timestamp for now
-    pub fn new(bcm_pin_number: BCMPinNumber, new_level: PinLevel) -> Self {
+    pub fn new(new_level: PinLevel) -> Self {
         Self {
-            bcm_pin_number,
             new_level,
-            timestamp: SystemTime::now(),
+            timestamp: Utc::now(),
         }
     }
 }

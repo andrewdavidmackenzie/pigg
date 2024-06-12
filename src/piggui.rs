@@ -1,117 +1,34 @@
 use std::{env, io};
+use std::time::Duration;
 
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    alignment, executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
-    Size, Subscription, Theme,
+    Alignment, Application, Color, Command, Element, executor, Length, Settings, Size, Subscription,
+    Theme, window,
 };
-use ringbuffer::{AllocRingBuffer, RingBuffer};
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
+use custom_widgets::pin_style::PinStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
-use hw::HardwareDescriptor;
-use hw::InputPull;
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, PinFunction, PinLevel};
-use hw_listener::{HWListenerEvent, HardwareEvent};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
+use hw_listener::{HardwareEvent, HWListenerEvent};
+use layout::{BCM_LAYOUT_SIZE, BOARD_LAYOUT_SIZE};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
-use style::CustomButton;
 
-// Importing pin layout views
 use crate::hw::{LevelChange, PinDescriptionSet};
+use crate::layout::Layout;
+use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
+use crate::version::version;
+use crate::views::hardware::hardware_view;
 
 mod custom_widgets;
 mod hw;
 mod hw_listener;
+mod layout;
 mod pin_layout;
-mod style;
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const NAME: &str = "piggui";
-const LICENSE: &str = env!("CARGO_PKG_LICENSE");
-const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
-const BOARD_LAYOUT_SPACING: u16 = 470;
-const BCM_LAYOUT_SPACING: u16 = 640;
-const BOARD_LAYOUT_SIZE: (f32, f32) = (1100.0, 780.0);
-const BCM_LAYOUT_SIZE: (f32, f32) = (800.0, 950.0);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Layout {
-    BoardLayout,
-    BCMLayout,
-}
-
-impl Layout {
-    const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
-
-    fn get_spacing(&self) -> u16 {
-        match self {
-            Layout::BoardLayout => BOARD_LAYOUT_SPACING,
-            Layout::BCMLayout => BCM_LAYOUT_SPACING,
-        }
-    }
-}
-
-#[derive(Clone)]
-/// PinState captures the state of a pin, including a history of previous states set/read
-pub struct PinState {
-    history: AllocRingBuffer<LevelChange>,
-}
-
-impl PinState {
-    /// Create a new PinState with an empty history of states
-    fn new() -> Self {
-        PinState {
-            history: AllocRingBuffer::with_capacity_power_of_2(7),
-        }
-    }
-
-    /// Try and get the last reported level of the pin, which could be considered "current level"
-    /// if everything is working correctly.
-    pub fn get_level(&self) -> Option<PinLevel> {
-        self.history
-            .back()
-            .map(|level_change| level_change.new_level)
-    }
-
-    /// Add a LevelChange to the history of this pin's state
-    pub fn set_level(&mut self, level_change: LevelChange) {
-        self.history.push(level_change);
-    }
-}
-
-// Implementing format for Layout
-// TODO could maybe put the Name as a &str inside the enum elements above?
-impl std::fmt::Display for Layout {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Layout::BoardLayout => "Board Pin Layout",
-                Layout::BCMLayout => "BCM Pin Layout",
-            }
-        )
-    }
-}
-
-#[must_use]
-pub fn version() -> String {
-    format!(
-        "{name} {version}\n\
-        Copyright (C) 2024 The {name} Developers \n\
-        License {license}: <https://www.gnu.org/licenses/{license_lower}.html>\n\
-        This is free software: you are free to change and redistribute it.\n\
-        There is NO WARRANTY, to the extent permitted by law.\n\
-        \n\
-        Written by the {name} Contributors.\n\
-        Full source available at: {repository}",
-        name = NAME,
-        version = VERSION,
-        license = LICENSE,
-        license_lower = LICENSE.to_lowercase(),
-        repository = REPOSITORY,
-    )
-}
+mod pin_state;
+mod version;
+mod views;
 
 fn main() -> Result<(), iced::Error> {
     let args: Vec<String> = env::args().collect();
@@ -148,10 +65,11 @@ pub enum Message {
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
-    ChangeOutputLevel(LevelChange),
+    ChangeOutputLevel(BCMPinNumber, LevelChange),
     Toast(ToastMessage),
     Save,
     Load,
+    UpdateCharts,
 }
 
 pub struct Gpio {
@@ -229,10 +147,10 @@ impl Gpio {
         bcm_pin_number: BCMPinNumber,
         new_function: PinFunction,
     ) {
-        let pin_index = board_pin_number as usize - 1;
-        let previous_function = self.pin_function_selected[pin_index];
+        let board_pin_index = board_pin_number as usize - 1;
+        let previous_function = self.pin_function_selected[board_pin_index];
         if new_function != previous_function {
-            self.pin_function_selected[pin_index] = new_function;
+            self.pin_function_selected[board_pin_index] = new_function;
             // Pushing selected pin to the Pin Config
             if let Some(pin_config) = self
                 .gpio_config
@@ -270,12 +188,21 @@ impl Gpio {
                     // so the toggler will be drawn correctly on first draw
                     if let PinFunction::Output(Some(level)) = function {
                         self.pin_states[board_pin_number as usize - 1]
-                            .set_level(LevelChange::new(*bcm_pin_number, *level));
+                            .set_level(LevelChange::new(*level));
                     }
                 }
             }
         }
     }
+    /// Set the pin (using board number) level with a LevelChange
+    fn set_pin_level_change(
+        &mut self,
+        board_pin_number: BoardPinNumber,
+        level_change: LevelChange,
+    ) {
+        self.pin_states[board_pin_number as usize - 1].set_level(level_change);
+    }
+
     fn get_dimensions_for_layout(layout: Layout) -> Size {
         match layout {
             Layout::BoardLayout => Size {
@@ -368,34 +295,44 @@ impl Application for Gpio {
                     self.set_pin_functions_after_load();
                     self.update_hw_config();
                 }
-                HWListenerEvent::InputChange(level_change) => {
+                HWListenerEvent::InputChange(bcm_pin_number, level_change) => {
                     if let Some(pins) = &self.pin_descriptions {
-                        if let Some(board_pin_number) =
-                            pins.bcm_to_board(level_change.bcm_pin_number)
-                        {
-                            self.pin_states[board_pin_number as usize - 1].set_level(level_change);
+                        if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
+                            self.set_pin_level_change(board_pin_number, level_change);
                         }
                     }
                 }
             },
 
-            Message::ChangeOutputLevel(level_change) => {
+            Message::ChangeOutputLevel(bcm_pin_number, level_change) => {
                 if let Some(pins) = &self.pin_descriptions {
-                    if let Some(board_pin_number) = pins.bcm_to_board(level_change.bcm_pin_number) {
-                        self.pin_states[board_pin_number as usize - 1]
-                            .set_level(level_change.clone());
+                    if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
+                        self.set_pin_level_change(board_pin_number, level_change.clone());
                     }
                     if let Some(ref mut listener) = &mut self.listener_sender {
-                        let _ = listener.try_send(HardwareEvent::OutputLevelChanged(level_change));
+                        let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
+                            bcm_pin_number,
+                            level_change,
+                        ));
                     }
                 }
             }
+
+            Message::UpdateCharts => {
+                // Update all the charts of the pins that have an assigned function
+                for pin in 0..40 {
+                    if self.pin_function_selected[pin] != PinFunction::None {
+                        self.pin_states[pin].chart.refresh();
+                    }
+                }
+            }
+
             Message::Toast(toast_message) => match toast_message {
                 ToastMessage::Add => {
                     self.toasts.clear();
                     self.toasts.push(Toast {
                         title: "About Piggui".into(),
-                        body: version().into(),
+                        body: version(),
                         status: Status::Primary,
                     });
                     self.show_toast = true;
@@ -433,7 +370,7 @@ impl Application for Gpio {
                 .push(hardware_view(hw_desc))
                 .align_items(Alignment::Center);
 
-            let file_button_style = CustomButton {
+            let file_button_style = PinStyle {
                 bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
                 text_color: Color::BLACK,
                 hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
@@ -441,7 +378,7 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
-            let about_button_style = CustomButton {
+            let about_button_style = PinStyle {
                 bg_color: Color::TRANSPARENT,
                 text_color: Color::WHITE,
                 hovered_bg_color: Color::TRANSPARENT,
@@ -508,6 +445,7 @@ impl Application for Gpio {
         let content = container(main_row)
             .height(Length::Fill)
             .width(Length::Fill)
+            .align_x(iced::alignment::Horizontal::Center)
             .center_x()
             .center_y()
             .padding(10);
@@ -524,32 +462,10 @@ impl Application for Gpio {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        hw_listener::subscribe().map(Message::HardwareListener)
+        Subscription::batch([
+            hw_listener::subscribe().map(Message::HardwareListener),
+            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                .map(|_| Message::UpdateCharts),
+        ])
     }
-}
-// Hardware Configuration Display
-fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, Message> {
-    let hardware_info = Column::new()
-        .push(Text::new(format!(
-            "Hardware: {}",
-            hardware_description.hardware
-        )))
-        .push(Text::new(format!(
-            "Revision: {}",
-            hardware_description.revision
-        )))
-        .push(Text::new(format!(
-            "Serial: {}",
-            hardware_description.serial
-        )))
-        .push(Text::new(format!("Model: {}", hardware_description.model)))
-        .spacing(10)
-        .width(Length::Shrink)
-        .align_items(Alignment::Start);
-
-    container(hardware_info)
-        .padding(10)
-        .width(Length::Shrink)
-        .align_x(alignment::Horizontal::Center)
-        .into()
 }

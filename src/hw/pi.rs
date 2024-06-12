@@ -8,7 +8,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 
-use crate::hw::{BCMPinNumber, GPIOConfig, PinDescriptionSet, LevelChange};
+use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -67,7 +67,7 @@ impl Hardware for PiHW {
     /// configure the Pi GPIO hardware to correspond to it
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool) + Send + Sync + Clone + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.configured_pins {
@@ -78,7 +78,6 @@ impl Hardware for PiHW {
             self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
         }
 
-        println!("GPIO Config has been applied to Pi hardware");
         Ok(())
     }
 
@@ -90,7 +89,7 @@ impl Hardware for PiHW {
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool) + Send + Sync + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static,
     {
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
@@ -197,7 +196,6 @@ impl Hardware for PiHW {
             }
         }
 
-        println!("Pin BCM# {bcm_pin_number} config changed");
         Ok(())
     }
 
@@ -215,9 +213,10 @@ impl Hardware for PiHW {
     /// Write the output level of an output using the bcm pin number
     fn set_output_level(
         &mut self,
-        level_change: LevelChange
+        bcm_pin_number: BCMPinNumber,
+        level_change: LevelChange,
     ) -> io::Result<()> {
-        match self.configured_pins.get_mut(&level_change.bcm_pin_number) {
+        match self.configured_pins.get_mut(&bcm_pin_number) {
             Some(Pin::Output(output_pin)) => match level_change.new_level {
                 true => output_pin.write(Level::High),
                 false => output_pin.write(Level::Low),

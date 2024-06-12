@@ -4,21 +4,21 @@ use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
 use iced::mouse;
 
-pub struct Circle {
+pub struct Clicker {
     radius: f32,
 }
 
-impl Circle {
+impl Clicker {
     pub fn new(radius: f32) -> Self {
         Self { radius }
     }
 }
 
-pub fn circle(radius: f32) -> Circle {
-    Circle::new(radius)
+pub fn clicker(radius: f32) -> Clicker {
+    Clicker::new(radius)
 }
 
-impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Circle
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker
 where
     Renderer: renderer::Renderer,
 {
@@ -53,7 +53,8 @@ where
                 bounds: layout.bounds(),
                 border: iced::border::Border {
                     radius: self.radius.into(),
-                    ..Default::default()
+                    color: Color::from_rgb8(0, 255, 0),
+                    width: 3.0,
                 },
                 ..renderer::Quad::default()
             },
@@ -62,11 +63,11 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Circle> for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<Clicker> for Element<'a, Message, Theme, Renderer>
 where
     Renderer: renderer::Renderer,
 {
-    fn from(circle: Circle) -> Self {
-        Self::new(circle)
+    fn from(clicker: Clicker) -> Self {
+        Self::new(clicker)
     }
 }

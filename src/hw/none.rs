@@ -1,6 +1,8 @@
-// Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, etc.)
-
+/// Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, etc.)
 use std::io;
+use std::time::Duration;
+
+use rand::Rng;
 
 use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction, PinLevel};
 
@@ -27,24 +29,41 @@ impl Hardware for NoneHW {
         super::GPIO_PIN_DESCRIPTIONS
     }
 
-    fn apply_config<C>(&mut self, _config: &GPIOConfig, _callback: C) -> io::Result<()>
+    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool),
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
-        println!("GPIO Config has been applied to fake hardware");
+        // Config only has pins that are configured
+        for (bcm_pin_number, pin_function) in &config.configured_pins {
+            let mut callback_clone = callback.clone();
+            let callback_wrapper = move |pin_number, level| {
+                callback_clone(pin_number, level);
+            };
+            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
+        }
+
         Ok(())
     }
 
     fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        _pin_function: &PinFunction,
-        _callback: C,
+        pin_function: &PinFunction,
+        mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, bool),
+        C: FnMut(BCMPinNumber, PinLevel) + Send + 'static,
     {
-        println!("Pin (BCM#) {bcm_pin_number} config changed");
+        if let PinFunction::Input(_) = pin_function {
+            std::thread::spawn(move || {
+                let mut rng = rand::thread_rng();
+                loop {
+                    let level: bool = rng.gen();
+                    callback(bcm_pin_number, level);
+                    std::thread::sleep(Duration::from_millis(666));
+                }
+            });
+        }
         Ok(())
     }
 
@@ -53,12 +72,12 @@ impl Hardware for NoneHW {
         Ok(true)
     }
 
-    /// Write the output level of an output using the bcm pin number
-    fn set_output_level(&mut self, level_change: LevelChange) -> io::Result<()> {
-        println!(
-            "Output with BCM Pin #{} set to {}",
-            level_change.bcm_pin_number, level_change.new_level
-        );
+    /// Set the level of a Hardware Output using the bcm pin number
+    fn set_output_level(
+        &mut self,
+        _bcm_pin_number: BCMPinNumber,
+        _level_change: LevelChange,
+    ) -> io::Result<()> {
         Ok(())
     }
 }
