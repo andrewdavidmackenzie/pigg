@@ -1,5 +1,6 @@
 use std::{collections::VecDeque, time::Duration};
 use std::cell::RefCell;
+use std::fmt::{Display, Formatter};
 use std::ops::Range;
 
 use chrono::{DateTime, Utc};
@@ -24,10 +25,19 @@ use crate::views::waveform::ChartType::{Logic, Value};
 #[derive(Clone)]
 pub struct Sample<T>
 where
-    T: Clone + Into<u32> + PartialEq,
+    T: Clone + Into<u32> + PartialEq + Display,
 {
     pub time: DateTime<Utc>,
     pub value: T,
+}
+
+impl<T> Display for Sample<T>
+where
+    T: Clone + Into<u32> + PartialEq + Display,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.time, self.value)
+    }
 }
 
 impl From<LevelChange> for Sample<PinLevel> {
@@ -54,7 +64,7 @@ where
 /// A Waveform chart - used to display the changes of a value over time
 pub struct Waveform<T>
 where
-    T: Clone + Into<u32> + PartialEq,
+    T: Clone + Into<u32> + PartialEq + Display,
 {
     chart_type: ChartType<T>,
     style: ShapeStyle,
@@ -68,7 +78,7 @@ where
 
 impl<T> Waveform<T>
 where
-    T: Clone + Into<u32> + PartialEq,
+    T: Clone + Into<u32> + PartialEq + Display,
 {
     /// Create a new `Waveform` chart for display with parameters:
     /// - `chart_type` : The type of chart to draw. See [ChartType]
@@ -99,11 +109,23 @@ where
     /// Add a new [Sample] to the data set to be displayed in the chart
     // TODO write a unit test for this to check it trims correctly
     pub fn push_data(&mut self, sample: Sample<T>) {
-        let limit = sample.time - self.timespan;
+        let limit = Utc::now() - self.timespan;
         self.samples.push_front(sample);
 
         // trim values outside the timespan of the chart
-        self.samples.retain(|sample| sample.time > limit);
+        let mut last_sample = self.samples.back().map(|s| s.clone());
+        self.samples.retain(|sample| {
+            last_sample = Some(sample.clone()); // TODO do with a reference?
+            sample.time > limit
+        });
+
+        println!("samples len = {}", self.samples.len());
+        if self.samples.len() < 2 {
+            if let Some(last) = last_sample {
+                println!("Added back last sample: {}", last);
+                self.samples.push_back(last);
+            }
+        }
     }
 
     /// Refresh and redraw the chart even if there is no new data, as time has passed
@@ -118,7 +140,8 @@ where
                 let mut previous_sample: Option<Sample<T>> = None;
 
                 // iterate through the level changes front-back in the vecdeque, which is
-                // from most recent to oldest, adding points to cause vertical edges
+                // from the most recent sample to the oldest sample
+                // Add points to force the shape to be a Square wave
                 let data: Vec<(DateTime<Utc>, u32)> = self
                     .samples
                     .iter()
@@ -196,7 +219,7 @@ where
 
 impl<T> Chart<Message> for Waveform<T>
 where
-    T: Clone + Into<u32> + PartialEq,
+    T: Clone + Into<u32> + PartialEq + Display,
 {
     type State = ();
 
@@ -318,5 +341,83 @@ mod test {
 
         // Next most recent value should be the "low" sent initially
         assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
+    }
+
+    #[test]
+    fn expired_sample() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Logic(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        // create a sample that will be added but then pruned as it's older than the window
+        let sent_time = Utc::now().sub(Duration::from_secs(20));
+        chart.push_data(Sample {
+            time: sent_time,
+            value: false,
+        });
+
+        // Check the raw data still contains it
+        assert_eq!(chart.samples.len(), 1);
+
+        // CHeck the chart data
+        let data = chart.get_data();
+
+        // chart data should have added a new point at time of query with the same level
+        assert_eq!(data.len(), 2);
+
+        // Next most recent (and first) value should be a "low" inserted at query time
+        assert_eq!(data.first().unwrap().1, 0);
+
+        // Next most recent value should be "low" value sent
+        assert_eq!(data.get(1).unwrap(), &(sent_time, 0));
+    }
+
+    #[test]
+    fn expired_then_new_sample() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Logic(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let now = Utc::now();
+
+        // create a sample that will be added but then pruned as it's older than the window
+        let low_sent_time = now.sub(Duration::from_secs(20));
+        chart.push_data(Sample {
+            time: low_sent_time,
+            value: false,
+        });
+
+        let high_sent_time = now.sub(Duration::from_secs(50));
+        chart.push_data(Sample {
+            time: high_sent_time,
+            value: true,
+        });
+
+        // Check the raw data has both
+        assert_eq!(chart.samples.len(), 2);
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        // chart data should have:
+        // - a new point at time of query with the same level
+        // - the high we sent
+        // - a low added at the same time as high sent, to create an edge
+        // - original low that is out of window
+        assert_eq!(data.len(), 4);
+
+        // Next most recent (and first) value should be a "low" inserted at query time
+        assert_eq!(data.first().unwrap().1, 1);
+
+        // Next most recent value should be "high" value sent
+        assert_eq!(data.get(1).unwrap(), &(high_sent_time, 1));
     }
 }
