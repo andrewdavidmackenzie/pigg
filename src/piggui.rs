@@ -8,6 +8,7 @@ use iced::{
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
+use custom_widgets::pin_style::PinStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
 use hw_listener::{HardwareEvent, HWListenerEvent};
@@ -17,7 +18,6 @@ use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 use crate::hw::{LevelChange, PinDescriptionSet};
 use crate::layout::Layout;
 use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
-use crate::style::CustomButton;
 use crate::version::version;
 use crate::views::hardware::hardware_view;
 
@@ -27,7 +27,6 @@ mod hw_listener;
 mod layout;
 mod pin_layout;
 mod pin_state;
-mod style;
 mod version;
 mod views;
 
@@ -371,7 +370,7 @@ impl Application for Gpio {
                 .push(hardware_view(hw_desc))
                 .align_items(Alignment::Center);
 
-            let file_button_style = CustomButton {
+            let file_button_style = PinStyle {
                 bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
                 text_color: Color::BLACK,
                 hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
@@ -379,7 +378,7 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
-            let about_button_style = CustomButton {
+            let about_button_style = PinStyle {
                 bg_color: Color::TRANSPARENT,
                 text_color: Color::WHITE,
                 hovered_bg_color: Color::TRANSPARENT,

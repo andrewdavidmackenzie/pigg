@@ -1,44 +1,44 @@
+use iced::{Alignment, Color, Element, Length};
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
+use iced::widget::{button, Column, horizontal_space, pick_list, Row, Text, toggler};
 use iced::widget::mouse_area;
-use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
-use iced::{Alignment, Color, Element, Length};
 
+use crate::{Gpio, PinState};
+use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::clicker::clicker;
 use crate::custom_widgets::led::led;
-use crate::custom_widgets::{circle::circle, line::line};
-use crate::hw::InputPull;
-use crate::hw::PinFunction::{Input, Output};
+use crate::custom_widgets::pin_style::PinStyle;
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
 };
-use crate::pin_state::CHART_WIDTH;
-use crate::style::CustomButton;
+use crate::hw::InputPull;
+use crate::hw::PinFunction::{Input, Output};
 use crate::Message;
-use crate::{Gpio, PinState};
+use crate::pin_state::CHART_WIDTH;
 
 const PIN_NAME_WIDTH: f32 = 70.0;
 const PIN_ARROW_WIDTH: f32 = 30.0;
 const PIN_BUTTON_WIDTH: f32 = 30.0;
 
-fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
+fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
     match pin_description.name {
-        "3V3" => CustomButton {
+        "3V3" => PinStyle {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "5V" => CustomButton {
+        "5V" => PinStyle {
             bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "Ground" => CustomButton {
+        "Ground" => PinStyle {
             bg_color: Color::BLACK,
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -46,7 +46,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::BLACK,
         },
 
-        "GPIO2" | "GPIO3" => CustomButton {
+        "GPIO2" | "GPIO3" => PinStyle {
             bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -54,7 +54,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
         },
 
-        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => CustomButton {
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => PinStyle {
             bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -62,7 +62,7 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
         },
 
-        "GPIO14" | "GPIO15" => CustomButton {
+        "GPIO14" | "GPIO15" => PinStyle {
             bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -70,14 +70,14 @@ fn get_pin_color(pin_description: &PinDescription) -> CustomButton {
             hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
         },
 
-        "ID_SD" | "ID_SC" => CustomButton {
+        "ID_SD" | "ID_SC" => PinStyle {
             bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
             text_color: Color::WHITE,
             border_radius: 50.0,
             hovered_bg_color: Color::WHITE,
             hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
         },
-        _ => CustomButton {
+        _ => PinStyle {
             bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -333,7 +333,7 @@ fn create_pin_view_side<'a>(
     )
     .padding(5)
     .width(Length::Fixed(PIN_BUTTON_WIDTH))
-    .style(get_pin_color(pin_description).get_button_style())
+    .style(get_pin_style(pin_description).get_button_style())
     .on_press(Message::Activate(pin_description.board_pin_number));
 
     pin_button_column = pin_button_column.push(pin_button);
