@@ -107,7 +107,6 @@ where
     }
 
     /// Add a new [Sample] to the data set to be displayed in the chart
-    // TODO write a unit test for this to check it trims correctly
     pub fn push_data(&mut self, sample: Sample<T>) {
         let limit = Utc::now() - self.timespan;
         self.samples.push_front(sample);
@@ -134,7 +133,6 @@ where
         self.cache.clear();
     }
 
-    // TODO write a unit test for this to cover a number of corner cases
     fn get_data(&self) -> Vec<(DateTime<Utc>, u32)> {
         match &self.chart_type {
             Squarewave(min, max) => {
