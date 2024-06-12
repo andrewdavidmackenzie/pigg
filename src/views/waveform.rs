@@ -469,7 +469,7 @@ mod test {
     }
 
     #[test]
-    fn check_range() {
+    fn check_range_squarewave() {
         let chart = Waveform::<PinLevel>::new(
             ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
@@ -479,6 +479,19 @@ mod test {
         );
 
         assert_eq!(chart.range(), 0..1);
+    }
+
+    #[test]
+    fn check_range_verbatim() {
+        let chart = Waveform::<u32>::new(
+            ChartType::Verbatim(0, 100),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        assert_eq!(chart.range(), 0..100);
     }
 
     #[test]
