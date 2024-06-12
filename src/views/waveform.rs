@@ -107,9 +107,9 @@ where
     }
 
     /// Add a new [Sample] to the data set to be displayed in the chart
-    pub fn push_data(&mut self, sample: Sample<T>) {
+    pub fn push_data(&mut self, sample: impl Into<Sample<T>>) {
         let limit = Utc::now() - self.timespan;
-        self.samples.push_front(sample);
+        self.samples.push_front(sample.into());
 
         // trim values outside the timespan of the chart
         let mut last_sample = None;
@@ -253,7 +253,7 @@ mod test {
     use chrono::Utc;
     use plotters::prelude::{RGBAColor, ShapeStyle};
 
-    use crate::hw::PinLevel;
+    use crate::hw::{LevelChange, PinLevel};
     use crate::views::waveform::{ChartType, Sample, Waveform};
 
     const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
@@ -385,9 +385,9 @@ mod test {
 
         // create a sample that will be added but then pruned as it's older than the window
         let low_sent_time = now.sub(Duration::from_secs(20));
-        let low_sample = Sample {
-            time: low_sent_time,
-            value: false,
+        let low_sample = LevelChange {
+            new_level: false,
+            timestamp: low_sent_time,
         };
         chart.push_data(low_sample.clone());
         assert_eq!(chart.samples.len(), 1);
@@ -403,7 +403,7 @@ mod test {
         // Check the raw data has both
         assert_eq!(chart.samples.len(), 2);
         assert_eq!(chart.samples.front().unwrap(), &high_sample);
-        assert_eq!(chart.samples.get(1).unwrap(), &low_sample);
+        assert_eq!(chart.samples.get(1).unwrap(), &low_sample.into());
 
         // Get the chart data
         let data = chart.get_data();
