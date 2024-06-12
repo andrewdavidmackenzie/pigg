@@ -1,22 +1,22 @@
-use std::time::Duration;
 use std::{env, io};
+use std::time::Duration;
 
-use hw_listener::{HWListenerEvent, HardwareEvent};
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    executor, window, Alignment, Application, Color, Command, Element, Length, Settings, Size,
-    Subscription, Theme,
+    Alignment, Application, Color, Command, Element, executor, Length, Settings, Size, Subscription,
+    Theme, window,
 };
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
+use hw_listener::{HardwareEvent, HWListenerEvent};
 use layout::{BCM_LAYOUT_SIZE, BOARD_LAYOUT_SIZE};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
 use crate::hw::{LevelChange, PinDescriptionSet};
 use crate::layout::Layout;
-use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
+use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
 use crate::style::CustomButton;
 use crate::version::version;
 use crate::views::hardware::hardware_view;
@@ -333,7 +333,7 @@ impl Application for Gpio {
                     self.toasts.clear();
                     self.toasts.push(Toast {
                         title: "About Piggui".into(),
-                        body: version().into(),
+                        body: version(),
                         status: Status::Primary,
                     });
                     self.show_toast = true;

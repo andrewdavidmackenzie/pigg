@@ -113,7 +113,7 @@ where
         self.samples.push_front(sample);
 
         // trim values outside the timespan of the chart
-        let mut last_sample = self.samples.back().map(|s| s.clone());
+        let mut last_sample = self.samples.back().cloned();
         self.samples.retain(|sample| {
             last_sample = Some(sample.clone()); // TODO do with a reference?
             sample.time > limit
