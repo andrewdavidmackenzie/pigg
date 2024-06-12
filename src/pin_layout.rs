@@ -194,7 +194,7 @@ fn get_pin_widget(
     pin_state: &PinState,
     is_left: bool,
 ) -> Element<Message> {
-    let mut row = match pin_function {
+    let row = match pin_function {
         Input(pull) => {
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
