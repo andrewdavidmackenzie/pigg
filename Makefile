@@ -21,7 +21,7 @@ release: release-build pibuild
 .PHONY: piclippy
 piclippy:
 ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
+	@echo "Detected as running on Raspberry Pi"
 else
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "pi" --tests --no-deps --target=aarch64-unknown-linux-gnu
 endif
@@ -29,7 +29,7 @@ endif
 .PHONY: clippy
 clippy:
 ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
+	@echo "Detected as running on Raspberry Pi"
 	cargo clippy --features "pi" --tests --no-deps
 else
 	cargo clippy --tests --no-deps
@@ -42,7 +42,7 @@ endif
 .PHONY: pibuild
 pibuild:
 ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
+	@echo "Detected as running on Raspberry Pi"
 else
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "pi" --target=aarch64-unknown-linux-gnu
 endif
@@ -52,7 +52,7 @@ endif
 .PHONY: build
 build:
 ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
+	@echo "Detected as running on Raspberry Pi"
 	cargo build --features "pi"
 else
 	cargo build
@@ -61,7 +61,7 @@ endif
 .PHONY: run
 run:
 ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
+	@echo "Detected as running on Raspberry Pi"
 	cargo run --features "pi"
 else
 	cargo run
@@ -71,7 +71,7 @@ endif
 .PHONY: release-build
 release-build:
 ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
+	@echo "Detected as running on Raspberry Pi"
 	cargo build --release --features "pi"
 else
 	cargo build --release
@@ -82,7 +82,7 @@ endif
 .PHONY: test
 test:
 ifneq ($(PI),)
-	echo "Detected as running on Raspberry Pi"
+	@echo "Detected as running on Raspberry Pi"
 	cargo test --features "pi"
 else
 	cargo test
