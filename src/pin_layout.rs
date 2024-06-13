@@ -25,9 +25,9 @@ const PIN_BUTTON_WIDTH: f32 = 30.0;
 const LED_WIDTH: f32 = 16.0;
 const BUTTON_WIDTH: f32 = 16.0;
 const PICKLIST_WIDTH: f32 = 100.0;
-const TOGGLER_WIDTH: f32 = 100.0;
+const TOGGLER_WIDTH: f32 = 120.0;
 const SPACING_WIDTH: f32 = 8.0;
-const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + SPACING_WIDTH + LED_WIDTH + SPACING_WIDTH + CHART_WIDTH;
+const COLUMN_WIDTH: f32 = PICKLIST_WIDTH + SPACING_WIDTH + LED_WIDTH + SPACING_WIDTH + CHART_WIDTH + 20.0;
 
 fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
     match pin_description.name {
@@ -264,7 +264,7 @@ fn get_pin_widget(
         _ => Row::new(),
     };
 
-    row.width(Length::Fixed(COLUMN_WIDTH + 20f32))
+    row.width(Length::Fixed(COLUMN_WIDTH))
         .spacing(SPACING_WIDTH)
         .align_items(Alignment::Center)
         .into()
