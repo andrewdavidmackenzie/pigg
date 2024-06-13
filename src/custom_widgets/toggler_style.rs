@@ -1,4 +1,4 @@
-use iced::{theme, widget::toggler, Color, Theme};
+use iced::{widget::toggler, Color, Theme};
 
 pub struct TogglerStyle {
     pub background: Color,
