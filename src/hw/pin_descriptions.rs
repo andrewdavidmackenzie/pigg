@@ -6,7 +6,7 @@ use crate::hw::{InputPull, PinDescription, PinFunction};
 ///
 /// In general, it has been harvested from the
 /// [official Raspberry Pi docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio-and-the-40-pin-header)
-/// , although sometimes augmented with other sources.
+/// , plus official Raspberry Pi datasheets and schematics from the same site.
 ///
 /// These pin descriptions are valid for Raspberry Pi Models B+, 2B, Zero, 3B, 3B+,
 /// 4B, Zero W, Zero2 W, 5
