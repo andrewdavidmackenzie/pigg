@@ -196,13 +196,13 @@ fn get_pin_widget(
     let toggle_button_style = TogglerStyle {
         background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
         background_border_width: 1.0,
-        background_border_color: Color::new(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
+        background_border_color: Color::WHITE,
         foreground: Color::new(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
         foreground_border_width: 1.0,
         foreground_border_color: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
         active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
         active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
-        active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
+        active_background_border: Color::BLACK, 
         active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
     };
 
