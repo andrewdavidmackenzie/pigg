@@ -6,7 +6,7 @@ use crate::hw::{InputPull, PinDescription, PinFunction};
 ///
 /// In general, it has been harvested from the
 /// [official Raspberry Pi docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio-and-the-40-pin-header)
-/// , plus official Raspberry Pi datasheets and schematics from the same site.
+/// , although sometimes augmented with other sources.
 ///
 /// The default Pullup/Pulldown settings are taking from the "BCM2711 ARM Peripherals" document
 ///
@@ -182,7 +182,7 @@ pub const PIN_13: PinDescription = PinDescription {
         // TODO ALT2: DPI_D23
         // TODO ALT3: SD1_DAT3
         // TODO ALT4: ARM_TMS / JTA TMS
-        // TODO ALT5: SPI6_CE1_N
+        // TODO ALT5:
     ],
 };
 
