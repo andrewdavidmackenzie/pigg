@@ -65,10 +65,10 @@ impl TogglerStyle {
     pub fn get_toggler_style(&self) -> iced::widget::theme::Toggler {
         iced::widget::theme::Toggler::Custom(Box::new(TogglerStyle {
             background: self.background,
-            background_border_width: 1.0,
+            background_border_width: self.background_border_width,
             background_border_color: self.background_border_color,
             foreground: self.foreground,
-            foreground_border_width: 1.0,
+            foreground_border_width: self.foreground_border_width,
             foreground_border_color: self.foreground_border_color,
             active_background: self.active_background,
             active_foreground: self.active_foreground,
