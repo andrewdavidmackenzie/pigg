@@ -43,11 +43,12 @@ pub const PIN_3: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C1_SDA,
+        // TODO ALT0::I2C1_SDA / SDA1
         // TODO ALT1: SMI SA3
-        // TODO ALT2: DPI VSYNC
-        // TODO ALT3: AVEOUT_VSYNC
-        // TODO ALT4: AVEIN_VSYNC
+        // TODO ALT2: DPI VSYNC / LCD_VSYNC
+        // TODO ALT3: SPI3_MOSI / AVEOUT_VSYNC
+        // TODO ALT4: CTS2 / AVEIN_VSYNC
+        // TODO ALT5: I2C3_SDA / SDA3
     ],
 };
 
@@ -66,11 +67,12 @@ pub const PIN_5: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C1_SCL,
+        // TODO ALT0::I2C1_SCL / SCL1
         // TODO ALT1: SMI SA2
-        // TODO ALT2: DPI_HSYNC
-        // TODO ALT3: AVEOUT_HSYNC
-        // TODO ALT4: AVEIN_HSYNC
+        // TODO ALT2: DPI_HSYNC / LCD_HSYNC
+        // TODO ALT3: SPI3_SCLK / AVEOUT_HSYNC
+        // TODO ALT4: RTS2 / AVEIN_HSYNC
+        // TODO ALT5: I2C3_SCL / SCL3
     ],
 };
 
@@ -88,13 +90,12 @@ pub const PIN_7: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C3_SDA, // TODO is this correct?
-        // TODO PinFunction::GPCLK0,
-        // TODO ALT1: SMI SA1
-        // TODO ALT2: DPI D0
-        // TODO ALT3: AVEOUT_VID0
-        // TODO ALT4: AVEIN_VID0
-        // TODO ALT5: JTAG_TDI
+        // TODO ALT0::GPCLK0,
+        // TODO ALT1: SMI SA1 / SA1
+        // TODO ALT2: DPI_D0
+        // TODO ALT3: SPI4_CE0_N / AVEOUT_VID0
+        // TODO ALT4: TXD3 / AVEIN_VID0
+        // TODO ALT5: SDA3 / JTAG_TDI
     ],
 };
 
@@ -105,12 +106,12 @@ pub const PIN_8: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::UART0_TXD,
-        // TODO ALT1: SMI SD6
-        // TODO ALT2: DSI D10
-        // TODO ALT3: AVEOUT_VID10
-        // TODO ALT4: AVEIN_VID10
-        // TODO ALT5: UART1_TXD
+        // TODO ALT0: UART0_TXD / TXD0
+        // TODO ALT1: SMI SD6 / SD6
+        // TODO ALT2: DSI_D10
+        // TODO ALT3: SPI5_MOSI / AVEOUT_VID10
+        // TODO ALT4: CTS5 / AVEIN_VID10
+        // TODO ALT5: TXD1 / UART1_TXD
     ],
 };
 
@@ -128,12 +129,12 @@ pub const PIN_10: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::UART0_RXD,
+        // TODO ALT0: UART0_RXD / RXD0
         // TODO ALT1: SMI SD7
-        // TODO ALT2: DPI D11
-        // TODO ALT3: AVEOUT VID11
-        // TODO ALT4: AVEIN VID11
-        // TODO ALT5: UART1_RXD
+        // TODO ALT2: DPI_D11
+        // TODO ALT3: SPI5_SCLK / AVEOUT VID11
+        // TODO ALT4: RTS5 / AVEIN VID11
+        // TODO ALT5: RXD1 / UART1_RXD
     ],
 };
 
@@ -144,12 +145,12 @@ pub const PIN_11: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::SPI1_CE1_N,
-        // TODO ALT0: FL1
+        // TODO ALT0: <reserved>
         // TODO ALT1: SMI SD9
-        // TODO ALT2: DPI D13
-        // TODO ALT3: UART0 RTS
-        // TODO ALT5: UART1 RTS
+        // TODO ALT2: DPI_D13
+        // TODO ALT3: UART0 RTS / RTS0
+        // TODO ALT4: SPI1_CE1_N
+        // TODO ALT5: UART1 RTS / RTS1
     ],
 };
 
@@ -160,12 +161,12 @@ pub const PIN_12: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::PCM_CLK,    // ALT0
+        // TODO ALT0: PCM_CLK
         // TODO ALT1: SMI SD10
-        // TODO ALT2: DPI D14
-        // TODO ALT3: I2C SLA/MOSI ??
-        // TODO PinFunction::SPI1_CE0_N, // ALT4
-        // TODO PinFunction::PWM0,       // ALT5
+        // TODO ALT2: DPI_D14
+        // TODO ALT3: SPI6_CE0_N
+        // TODO ALT4: SPI1_CE0_N
+        // TODO ALT5: PWM0_0
     ],
 };
 
@@ -176,12 +177,12 @@ pub const PIN_13: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::PWM1, // TODO is this correct?
-        // TODO ALT0: SD0 DAT3
-        // TODO ALT1: TE1
-        // TODO ALT2: DPI D23
-        // TODO ALT3: SD1 DAT3
-        // TODO ALT4: JTA TMS
+        // TODO ALT0: SD0_DAT3
+        // TODO ALT1: <reserved>
+        // TODO ALT2: DPI_D23
+        // TODO ALT3: SD1_DAT3
+        // TODO ALT4: ARM_TMS / JTA TMS
+        // TODO ALT5: SPI6_CE1_N
     ],
 };
 
@@ -199,12 +200,12 @@ pub const PIN_15: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C6_SDA, // TODO is this correct
-        // TODO ALT0: SD0 CLK
-        // TODO ALT1: SMI SD14
-        // TODO ALT2: DPI D18
-        // TODO ALT3: SD1 CLK
-        // TODO ALT4: JTA TRST
+        // TODO ALT0: SD0_CLK
+        // TODO ALT1: SMI SD14 / SD14
+        // TODO ALT2: DPI_D18
+        // TODO ALT3: SD1_CLK
+        // TODO ALT4: ARM_TRST / JTA TRST
+        // TODO ALT5: SDA6
     ],
 };
 
@@ -215,12 +216,12 @@ pub const PIN_16: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C6_SCL, // TODO is this correct?
         // TODO ALT0: SD0 CMD
-        // TODO ALT1: SMI SD15
-        // TODO ALT2: DPI D19
-        // TODO ALT3: SD1 CMD
-        // TODO ALT4: JTA RTCK
+        // TODO ALT1: SMI SD15 / SD15
+        // TODO ALT2: DPI_D19
+        // TODO ALT3: SD1_CMD
+        // TODO ALT4: ARM_RTCK / JTA RTCK
+        // TODO ALT5: SCL6
     ],
 };
 
@@ -238,12 +239,12 @@ pub const PIN_18: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::PWM0, // TODO is this correct?
-        // TODO ALT0: SD0 DAT0
-        // TODO ALT1: SMI SD16
-        // TODO ALT2: DPI D20
-        // TODO ALT3: SD1 DAT0
-        // TODO ALT4: JTA TDO
+        // TODO ALT0: SD0_DAT0
+        // TODO ALT1: SMI SD16 / SD16
+        // TODO ALT2: DPI_D20
+        // TODO ALT3: SD1_DAT0
+        // TODO ALT4: ARM_TDO / JTA TDO
+        // TODO ALT5: SPI3_CE1_N
     ],
 };
 
@@ -255,12 +256,12 @@ pub const PIN_19: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::SPI0_MOSI, // ALT0
-        // TODO PinFunction::PWM1,      // TODO is this correct?
+        // TODO ALT0: SPI0_MOSI
         // TODO ALT1: SMI SD2
-        // TODO ALT2: DPI D6
-        // TODO ALT3: AVEOUT VID6
-        // TODO ALT4: AVEIN VID6
+        // TODO ALT2: DPI_D6
+        // TODO ALT3: BSCSL SDA / MOSI / AVEOUT VID6
+        // TODO ALT4: CTS4 / AVEIN VID6
+        // TODO ALT5: SDA5
     ],
 };
 
@@ -279,12 +280,12 @@ pub const PIN_21: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C4_SCL, // TODO is this correct?
-        // TODO PinFunction::SPI0_MISO, // ALT0
+        // TODO ALT0:SPI0_MISO
         // TODO ALT1: SMI SD1
-        // TODO ALT2: DPI D5
-        // TODO ALT3: AVEOUT VID5
-        // TODO ALT4: AVEIN VID5
+        // TODO ALT2: DPI_D5
+        // TODO ALT3: BSCSL / MISO / AVEOUT VID5
+        // TODO ALT4: RXD4 / AVEIN VID5
+        // TODO ALT5: SCL4
     ],
 };
 
@@ -295,11 +296,12 @@ pub const PIN_22: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO ALT0: SD0 DAT1
-        // TODO ALT1: SMI SD17
-        // TODO ALT2: DPI D21
-        // TODO ALT3: SD1 DAT1
-        // TODO ALT4: JTAG TCK
+        // TODO ALT0: SD0_DAT1
+        // TODO ALT1: SMI_SD17 / SD17
+        // TODO ALT2: DPI_D21
+        // TODO ALT3: SD1_DAT1
+        // TODO ALT4: ARM_TCK / JTAG TCK
+        // TODO ALT5: SPI4_CE1_N
     ],
 };
 
@@ -311,11 +313,12 @@ pub const PIN_23: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::SPI0_SCLK, // ALT0
+        // TODO ALT0: SPI0_SCLK
         // TODO ALT1: SMI SD3
-        // TODO ALT2: DPI D7
-        // TODO ALT3: AVEOUT VID7
-        // TODO ALT4: AVEIN VID7
+        // TODO ALT2: DPI_D7
+        // TODO ALT3: BSCSL SCL / SCLK / AVEOUT VID7
+        // TODO ALT4: RTS4 / AVEIN VID7
+        // TODO ALT5: SCL5
     ],
 };
 
@@ -327,12 +330,12 @@ pub const PIN_24: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
-        // TODO PinFunction::SPI0_CE0_N, // ALT0
-        // TODO PinFunction::I2C4_SDA,   // TODO is this correct?
-        // TODO ALT1: SMI SD0
-        // TODO ALT2: DPI D4
-        // TODO ALT3: AVEOUT VID4
-        // TODO ALT4: AVEIN VID4
+        // TODO ALT0: SPI0_CE0_N
+        // TODO ALT1: SMI SD0 / SD0
+        // TODO ALT2: DPI_D4
+        // TODO ALT3: BSCSL / CE_N / AVEOUT VID4
+        // TODO ALT4: TXD4 / AVEIN VID4
+        // TODO ALT5: SDA4
     ],
 };
 
@@ -351,39 +354,40 @@ pub const PIN_26: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
-        // TODO PinFunction::SPI0_CE1_N, // ALT0
+        // TODO ALT0: SPI0_CE1_N
         // TODO ALT1: SMI SWE_N / SRW_N
-        // TODO ALT2: DPI D3
-        // TODO ALT3: AVEOUT VID3
-        // TODO ALT4: AVEIN VID3
+        // TODO ALT2: DPI_D3
+        // TODO ALT3: SPI4_SCLK / AVEOUT VID3
+        // TODO ALT4: RTS3 / AVEIN VID3
+        // TODO ALT5: SCL4
     ],
 };
 
 pub const PIN_27: PinDescription = PinDescription {
     board_pin_number: 27,
     bcm_pin_number: None,
-    name: "GPIO0", // EEPROM ID SCL
+    name: "GPIO0", // EEPROM ID_SD for HAT identification
     options: &[
-        // TODO PinFunction::I2C_EEPROM_ID_SD, // Is this ALT0 or the main function?
-        // TODO ALT0: I2C0 SDA (I suspect is the main function for talking to EEPROM)
+        // TODO ALT0: I2C0 SDA / SDA0
         // TODO ALT1: SMI SA5
-        // TODO ALT2: DPI CLK
-        // TODO ALT3: AVEOUT VCLK
-        // TODO ALT4: AVEIN VCLK
+        // TODO ALT2: DPI CLK / PCLK
+        // TODO ALT3: SPI3_CE0_N / AVEOUT VCLK
+        // TODO ALT4: TXD2 / AVEIN VCLK
+        // TODO ALT5: SDA6
     ],
 };
 
 pub const PIN_28: PinDescription = PinDescription {
     board_pin_number: 28,
     bcm_pin_number: None,
-    name: "GPIO1", // EEPROM ID SCL
+    name: "GPIO1", // EEPROM ID_SCL for HAT identification
     options: &[
-        // TODO PinFunction::I2C_EEPROM_ID_SC, // Is this ALT0 or the main function?
-        // TODO ALT0: I2C0 SDL (I suspect is the main function for talking to EEPROM)
+        // TODO ALT0: I2C0 SDL / SCL0
         // TODO ALT1: SMI SA4
-        // TODO ALT2: DPI DEN
-        // TODO ALT3: AVEOUT DSYNC
-        // TODO ALT4: AVEIN DSYNC
+        // TODO ALT2: DPI DEN / DE
+        // TODO ALT3: SPI3_MISO / AVEOUT DSYNC?
+        // TODO ALT4: RXD2 / AVEIN DSYNC?
+        // TODO ALT5: SCL6
     ],
 };
 
@@ -394,13 +398,12 @@ pub const PIN_29: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C3_SCL, // TODO is this correct
-        // TODO PinFunction::GPCLK1, // ALT0
-        // TODO ALT1: SMI SA0
-        // TODO ALT2: DPI D1
-        // TODO ALT3: AVEOUT VID1
-        // TODO ALT4: AVEIN VID1
-        // TODO ALT5: JTA TDO
+        // TODO ALT0::GPCLK1
+        // TODO ALT1: SMI_SA0 / SA0
+        // TODO ALT2: DPI_D1
+        // TODO ALT3: SPI4_MISO / AVEOUT VID1
+        // TODO ALT4: RXD3 / AVEIN VID1
+        // TODO ALT5: SCL3 / JTA TDO
     ],
 };
 
@@ -418,12 +421,12 @@ pub const PIN_31: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
-        // TODO PinFunction::GPCLK2, // ALT0
-        // TODO ALT1: SMI SOE_N / SE
-        // TODO ALT2: DPI D2
-        // TODO ALT3: AVEOUT VID2
-        // TODO ALT4: AVEIN VID2
-        // TODO ALT5: JTA RTCK
+        // TODO ALT0::GPCLK2
+        // TODO ALT1: SMI SOE_N / SOE_N / SE
+        // TODO ALT2: DPI_D2
+        // TODO ALT3: SPI4_MOSI / AVEOUT VID2
+        // TODO ALT4: CTS3 / AVEIN VID2
+        // TODO ALT5: SDA4 / JTA RTCK
     ],
 };
 
@@ -434,13 +437,12 @@ pub const PIN_32: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C5_SDA, // TODO is this correct?
-        // TODO PinFunction::PWM0,     // TODO should this be PWM0 according to pinout.xyz
+        // TODO ALT0: PWM0 / PWM0_0
         // TODO ALT1: SMI SD4
-        // TODO ALT2: DPI D8
-        // TODO ALT3: AVEOUT VID8
-        // TODO ALT4: AVEIN VID8
-        // TODO ALT5: JTA TMS
+        // TODO ALT2: DPI_D8
+        // TODO ALT3: SPI5_CE0_N / AVEOUT VID8
+        // TODO ALT4: TXD5 / AVEIN VID8
+        // TODO ALT5: SDA5 / JTA TMS
     ],
 };
 
@@ -451,13 +453,12 @@ pub const PIN_33: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::I2C5_SCL, // TODO is this correct
-        // TODO PinFunction::PWM1,     // ALT0
+        // TODO ALT0: PWM1 / PWM0_1
         // TODO ALT1: SMI SD5
-        // TODO ALT2: DPI D9
-        // TODO ALT3: AVEOUT VID9
-        // TODO ALT4: AVEIN VID9
-        // TODO ALT5: JTA TCK
+        // TODO ALT2: DPI_D9
+        // TODO ALT3: SPI5_MISO / AVEOUT VID9
+        // TODO ALT4: RXD5 / AVEIN VID9
+        // TODO ALT5: SCL5 / JTA TCK
     ],
 };
 
@@ -475,12 +476,12 @@ pub const PIN_35: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::PCM_FS,    // ALT0
+        // TODO ALT0: PCM_FS
         // TODO ALT1: SMI SD11
-        // TODO ALT2: DPI D15
-        // TODO ALT3: I2CSL SCL
-        // TODO PinFunction::SPI1_MISO, // ALT4
-        // TODO ALT5: PWM1
+        // TODO ALT2: DPI_D15
+        // TODO ALT3: SPI6_MISO
+        // TODO ALT4: SPI1_MISO
+        // TODO ALT5: PWM0_1
     ],
 };
 
@@ -491,11 +492,11 @@ pub const PIN_36: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO ALT0: FL0
+        // TODO ALT0: <reserved>
         // TODO ALT1: SMI SD8
-        // TODO ALT2: DPI D12
-        // TODO PinFunction::SPI1_CE2_N, // ALT4
-        // TODO ALT3: UART0 CTS
+        // TODO ALT2: DPI_D12
+        // TODO ALT3: UART0 CTS / CTS0
+        // TODO ALT4: SPI1_CE2_N
         // TODO ALT5: UART1 CTS
     ],
 };
@@ -507,11 +508,12 @@ pub const PIN_37: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO ALT0: SD0 DAT2
-        // TODO ALT1: TE0
-        // TODO ALT2: DPI D22
-        // TODO ALT3: SD1 DAT2
-        // TODO ALT4: JTA TDI
+        // TODO ALT0: SD0_DAT2
+        // TODO ALT1: <reserved>>
+        // TODO ALT2: DPI_D22
+        // TODO ALT3: SD1_DAT2
+        // TODO ALT4: ARM_TDI / JTA TDI
+        // TODO ALT5: SPI5_CE1_N
     ],
 };
 
@@ -522,11 +524,11 @@ pub const PIN_38: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::PCM_DIN, // ALT0
+        // TODO ALT0: PCM_DIN
         // TODO ALT1: SMI SD12
-        // TODO ALT2: DPI D16
-        // TODO ALT3: I2CSL MOSI
-        // TODO PinFunction::SPI1_MOSI, // ALT4
+        // TODO ALT2: DPI_D16
+        // TODO ALT3: SPI6_MOSI
+        // TODO ALT4: SPI1_MOSI
         // TODO ALT5: GPCLK0
     ],
 };
@@ -545,11 +547,11 @@ pub const PIN_40: PinDescription = PinDescription {
     options: &[
         PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
-        // TODO PinFunction::PCM_DOUT,  // ALT0
+        // TODO ALT0: PCM_DOUT
         // TODO ALT1: SMI SD13
-        // TODO ALT2: DPI D17
-        // TODO ALT3: I2CSL CE
-        // TODO PinFunction::SPI1_SCLK, // ALT4
+        // TODO ALT2: DPI_D17
+        // TODO ALT3: SPI6_SCLK
+        // TODO ALT4: SPI1_SCLK
         // TODO ALT5: GPCLK1
     ],
 };
