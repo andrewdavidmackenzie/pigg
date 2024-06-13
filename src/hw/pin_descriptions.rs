@@ -8,6 +8,8 @@ use crate::hw::{InputPull, PinDescription, PinFunction};
 /// [official Raspberry Pi docs](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio-and-the-40-pin-header)
 /// , although sometimes augmented with other sources.
 ///
+/// The default Pullup/Pulldown settings are taking from the "BCM2711 ARM Peripherals" document
+///
 /// These pin descriptions are valid for Raspberry Pi Models B+, 2B, Zero, 3B, 3B+,
 /// 4B, Zero W, Zero2 W, 5
 ///
@@ -84,7 +86,7 @@ pub const PIN_7: PinDescription = PinDescription {
     bcm_pin_number: Some(4),
     name: "GPIO4",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         // TODO PinFunction::I2C3_SDA, // TODO is this correct?
         // TODO PinFunction::GPCLK0,
@@ -101,7 +103,7 @@ pub const PIN_8: PinDescription = PinDescription {
     bcm_pin_number: Some(14),
     name: "GPIO14",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::UART0_TXD,
         // TODO ALT1: SMI SD6
@@ -124,7 +126,7 @@ pub const PIN_10: PinDescription = PinDescription {
     bcm_pin_number: Some(15),
     name: "GPIO15",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::UART0_RXD,
         // TODO ALT1: SMI SD7
@@ -140,7 +142,7 @@ pub const PIN_11: PinDescription = PinDescription {
     bcm_pin_number: Some(17),
     name: "GPIO17",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::SPI1_CE1_N,
         // TODO ALT0: FL1
@@ -156,7 +158,7 @@ pub const PIN_12: PinDescription = PinDescription {
     bcm_pin_number: Some(18),
     name: "GPIO18",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::PCM_CLK,    // ALT0
         // TODO ALT1: SMI SD10
@@ -172,7 +174,7 @@ pub const PIN_13: PinDescription = PinDescription {
     bcm_pin_number: Some(27),
     name: "GPIO27",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::PWM1, // TODO is this correct?
         // TODO ALT0: SD0 DAT3
@@ -195,7 +197,7 @@ pub const PIN_15: PinDescription = PinDescription {
     bcm_pin_number: Some(22),
     name: "GPIO22",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::I2C6_SDA, // TODO is this correct
         // TODO ALT0: SD0 CLK
@@ -211,7 +213,7 @@ pub const PIN_16: PinDescription = PinDescription {
     bcm_pin_number: Some(23),
     name: "GPIO23",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::I2C6_SCL, // TODO is this correct?
         // TODO ALT0: SD0 CMD
@@ -234,7 +236,7 @@ pub const PIN_18: PinDescription = PinDescription {
     bcm_pin_number: Some(24),
     name: "GPIO24",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::PWM0, // TODO is this correct?
         // TODO ALT0: SD0 DAT0
@@ -251,7 +253,7 @@ pub const PIN_19: PinDescription = PinDescription {
     bcm_pin_number: Some(10),
     name: "GPIO10",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::SPI0_MOSI, // ALT0
         // TODO PinFunction::PWM1,      // TODO is this correct?
@@ -275,7 +277,7 @@ pub const PIN_21: PinDescription = PinDescription {
     bcm_pin_number: Some(9),
     name: "GPIO9",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::I2C4_SCL, // TODO is this correct?
         // TODO PinFunction::SPI0_MISO, // ALT0
@@ -291,7 +293,7 @@ pub const PIN_22: PinDescription = PinDescription {
     bcm_pin_number: Some(25),
     name: "GPIO25",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO ALT0: SD0 DAT1
         // TODO ALT1: SMI SD17
@@ -307,7 +309,7 @@ pub const PIN_23: PinDescription = PinDescription {
     bcm_pin_number: Some(11),
     name: "GPIO11",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::SPI0_SCLK, // ALT0
         // TODO ALT1: SMI SD3
@@ -323,7 +325,7 @@ pub const PIN_24: PinDescription = PinDescription {
     bcm_pin_number: Some(8),
     name: "GPIO8",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         // TODO PinFunction::SPI0_CE0_N, // ALT0
         // TODO PinFunction::I2C4_SDA,   // TODO is this correct?
@@ -347,7 +349,7 @@ pub const PIN_26: PinDescription = PinDescription {
     bcm_pin_number: Some(7),
     name: "GPIO7",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         // TODO PinFunction::SPI0_CE1_N, // ALT0
         // TODO ALT1: SMI SWE_N / SRW_N
@@ -390,7 +392,7 @@ pub const PIN_29: PinDescription = PinDescription {
     bcm_pin_number: Some(5),
     name: "GPIO5",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         // TODO PinFunction::I2C3_SCL, // TODO is this correct
         // TODO PinFunction::GPCLK1, // ALT0
@@ -414,7 +416,7 @@ pub const PIN_31: PinDescription = PinDescription {
     bcm_pin_number: Some(6),
     name: "GPIO6",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
         PinFunction::Output(None),
         // TODO PinFunction::GPCLK2, // ALT0
         // TODO ALT1: SMI SOE_N / SE
@@ -430,7 +432,7 @@ pub const PIN_32: PinDescription = PinDescription {
     bcm_pin_number: Some(12),
     name: "GPIO12",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::I2C5_SDA, // TODO is this correct?
         // TODO PinFunction::PWM0,     // TODO should this be PWM0 according to pinout.xyz
@@ -447,7 +449,7 @@ pub const PIN_33: PinDescription = PinDescription {
     bcm_pin_number: Some(13),
     name: "GPIO13",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::I2C5_SCL, // TODO is this correct
         // TODO PinFunction::PWM1,     // ALT0
@@ -471,7 +473,7 @@ pub const PIN_35: PinDescription = PinDescription {
     bcm_pin_number: Some(19),
     name: "GPIO19",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::PCM_FS,    // ALT0
         // TODO ALT1: SMI SD11
@@ -487,7 +489,7 @@ pub const PIN_36: PinDescription = PinDescription {
     bcm_pin_number: Some(16),
     name: "GPIO16",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO ALT0: FL0
         // TODO ALT1: SMI SD8
@@ -503,7 +505,7 @@ pub const PIN_37: PinDescription = PinDescription {
     bcm_pin_number: Some(26),
     name: "GPIO26",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO ALT0: SD0 DAT2
         // TODO ALT1: TE0
@@ -518,7 +520,7 @@ pub const PIN_38: PinDescription = PinDescription {
     bcm_pin_number: Some(20),
     name: "GPIO20",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::PCM_DIN, // ALT0
         // TODO ALT1: SMI SD12
@@ -541,7 +543,7 @@ pub const PIN_40: PinDescription = PinDescription {
     bcm_pin_number: Some(21),
     name: "GPIO21",
     options: &[
-        PinFunction::Input(None),
+        PinFunction::Input(Some(InputPull::PullDown)),
         PinFunction::Output(None),
         // TODO PinFunction::PCM_DOUT,  // ALT0
         // TODO ALT1: SMI SD13
