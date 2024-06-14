@@ -1,7 +1,7 @@
 use iced::{Alignment, Color, Element, Length};
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
-use iced::widget::{button, Column, pick_list, Row, Text, toggler};
+use iced::widget::{button, Column, horizontal_space, pick_list, Row, Text, toggler};
 use iced::widget::mouse_area;
 
 use crate::{Gpio, PinState};
@@ -19,19 +19,19 @@ use crate::hw::PinFunction::{Input, Output};
 use crate::Message;
 use crate::pin_state::CHART_WIDTH;
 
-const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
-const PIN_OPTION_WIDTH: f32 = 130.0;
-const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
-const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
-const BOARD_SPACE_BETWEEN_PIN_ROWS: f32 = 10.0;
-const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
-const PIN_NAME_WIDTH: f32 = 60.0;
-const PIN_ARROW_WIDTH: f32 = PIN_ARROW_LINE_WIDTH + PIN_ARROW_CIRCLE_RADIUS * 2.0;
+// WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
-const LED_WIDTH: f32 = 16.0;
+const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
+const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
+const PIN_ARROW_WIDTH: f32 = PIN_ARROW_LINE_WIDTH + PIN_ARROW_CIRCLE_RADIUS * 2.0;
+const PIN_NAME_WIDTH: f32 = 60.0;
+const PIN_OPTION_WIDTH: f32 = 130.0;
+const TOGGLER_SIZE: f32 = 30.0;
+const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
 const BUTTON_WIDTH: f32 = 16.0;
-const TOGGLER_WIDTH: f32 = 100.0;
-const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + BUTTON_WIDTH;
+// We want the pullup on an Input to be the same width as the clicker + toggler on an Output
+const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + WIDGET_ROW_SPACING + BUTTON_WIDTH;
+const LED_WIDTH: f32 = 16.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
@@ -43,10 +43,15 @@ const PIN_VIEW_SIDE_WIDTH: f32 = PIN_BUTTON_WIDTH
     + WIDGET_ROW_SPACING
     + PIN_OPTION_WIDTH;
 const BCM_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
+const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 
 // Board Layout has two pin rows per row, with spacing between them
 const BOARD_LAYOUT_WIDTH: f32 =
-    PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_SPACE_BETWEEN_PIN_ROWS;
+    PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS;
+
+// HEIGHTS
+const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
+const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
 fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     match pin_description.name {
@@ -163,7 +168,7 @@ pub fn board_pin_layout_view<'a>(
         let row = Row::new()
             .push(left_row)
             .push(right_row)
-            .spacing(BOARD_SPACE_BETWEEN_PIN_ROWS)
+            .spacing(BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS)
             .align_items(Alignment::Center);
 
         column = column
@@ -228,27 +233,26 @@ fn get_pin_widget(
             if is_left {
                 Row::new()
                     .push(pin_state.chart(Direction::Left))
-                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
-                    .push(led(16.0, 16.0, pin_state.get_level()))
+                    .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(pin_state.chart(Direction::Right))
             }
         }
 
         Output(_) => {
-            let output_control = toggler(
+            let output_toggler = toggler(
                 None,
                 pin_state.get_level().unwrap_or(false as PinLevel),
                 move |b| Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
             )
-            .size(30)
-            .style(toggle_button_style.get_toggler_style())
-            .width(Length::Fixed(TOGGLER_WIDTH));
+            .size(TOGGLER_SIZE)
+            .style(toggle_button_style.get_toggler_style());
 
-            let push_button = mouse_area(clicker(BUTTON_WIDTH))
+            let output_clicker = mouse_area(clicker(BUTTON_WIDTH))
                 .on_press({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
                     Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
@@ -258,20 +262,21 @@ fn get_pin_widget(
                     Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 });
 
+            // For some unknown reason the Pullup picker is wider on the right side than the left
+            // to we add some space here to make this match on both side. A nasty hack!
             if is_left {
                 Row::new()
                     .push(pin_state.chart(Direction::Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(push_button)
-                    .push(output_control)
-                    .spacing(WIDGET_ROW_SPACING)
+                    .push(output_clicker)
+                    .push(output_toggler)
             } else {
                 Row::new()
-                    .push(output_control)
-                    .push(push_button)
+                    .push(output_toggler)
+                    .push(output_clicker)
+                    .push(horizontal_space().width(Length::Fixed(4.0))) // HACK!
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(pin_state.chart(Direction::Right))
-                    .spacing(WIDGET_ROW_SPACING)
             }
         }
 
