@@ -353,6 +353,53 @@ mod test {
     }
 
     #[test]
+    fn forty_board_pins() {
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.pins().len(), 40);
+    }
+
+    #[test]
+    fn twenty_seven_bcm_pins() {
+        // 0-27, not counting the gpio0 and gpio1 pins with no options
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.bcm_pins().len(), 26);
+    }
+
+    #[test]
+    fn bcm_pins_sort_in_order() {
+        // 0-27, not counting the gpio0 and gpio1 pins with no options
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        let sorted_bcm_pins = pin_set.bcm_pins_sorted();
+        assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
+        let mut previous = 1; // we start at GPIO2
+        for pin in sorted_bcm_pins {
+            assert_eq!(
+                pin.bcm_pin_number.unwrap(),
+                previous + 1,
+                "Pin numbering not in order or pins skipped"
+            );
+            previous = pin.bcm_pin_number.unwrap();
+        }
+    }
+
+    #[test]
+    fn bcp_pin_2() {
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.bcm_to_board(2), Some(3));
+    }
+
+    #[test]
+    fn bcp_pin_unknown() {
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.bcm_to_board(100), None);
+    }
+
+    #[test]
     fn create_a_config() {
         let config = GPIOConfig::default();
         assert!(config.configured_pins.is_empty());
