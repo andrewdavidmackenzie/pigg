@@ -1,22 +1,23 @@
-use iced::{Alignment, Color, Element, Length};
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
-use iced::widget::{button, Column, horizontal_space, pick_list, Row, Text, toggler};
 use iced::widget::mouse_area;
+use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
+use iced::{Alignment, Color, Element, Length};
 
-use crate::{Gpio, PinState};
-use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::clicker::clicker;
 use crate::custom_widgets::led::led;
 use crate::custom_widgets::pin_style::PinStyle;
+use crate::custom_widgets::toggler_style::TogglerStyle;
+use crate::custom_widgets::{circle::circle, line::line};
+use crate::hw::InputPull;
+use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
 };
-use crate::hw::InputPull;
-use crate::hw::PinFunction::{Input, Output};
-use crate::Message;
 use crate::pin_state::CHART_WIDTH;
+use crate::Message;
+use crate::{Gpio, PinState};
 
 const PIN_NAME_WIDTH: f32 = 70.0;
 const PIN_ARROW_WIDTH: f32 = 30.0;
@@ -192,6 +193,19 @@ fn get_pin_widget(
     pin_state: &PinState,
     is_left: bool,
 ) -> Element<Message> {
+    let toggle_button_style = TogglerStyle {
+        background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
+        background_border_width: 1.0,
+        background_border_color: Color::new(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
+        foreground: Color::new(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
+        foreground_border_width: 1.0,
+        foreground_border_color: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
+        active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
+        active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
+        active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
+        active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
+    };
+
     let row = match pin_function {
         Input(pull) => {
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
@@ -214,6 +228,8 @@ fn get_pin_widget(
                 pin_state.get_level().unwrap_or(false as PinLevel),
                 move |b| Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
             )
+            .size(30)
+            .style(toggle_button_style.get_toggler_style())
             .width(Length::Fixed(TOGGLER_WIDTH));
 
             let push_button = mouse_area(clicker(BUTTON_WIDTH))
@@ -233,6 +249,7 @@ fn get_pin_widget(
                     .push(horizontal_space().width(Length::Fixed(1.0)))
                     .push(push_button)
                     .push(output_control)
+                    .spacing(10)
             } else {
                 Row::new()
                     .push(output_control)
@@ -240,13 +257,14 @@ fn get_pin_widget(
                     .push(horizontal_space().width(Length::Fixed(1.0)))
                     .push(led(16.0, 16.0, pin_state.get_level()))
                     .push(pin_state.chart(Direction::Right))
+                    .spacing(10)
             }
         }
 
         _ => Row::new(),
     };
 
-    row.width(Length::Fixed(COLUMN_WIDTH))
+    row.width(Length::Fixed(COLUMN_WIDTH + 20f32))
         .spacing(SPACING_WIDTH)
         .align_items(Alignment::Center)
         .into()
