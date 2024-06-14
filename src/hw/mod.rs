@@ -376,11 +376,7 @@ mod test {
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
         let mut previous = 1; // we start at GPIO2
         for pin in sorted_bcm_pins {
-            assert_eq!(
-                pin.bcm_pin_number.unwrap(),
-                previous + 1,
-                "Pin numbering not in order or pins skipped"
-            );
+            assert_eq!(pin.bcm_pin_number.unwrap(), previous + 1);
             previous = pin.bcm_pin_number.unwrap();
         }
     }
