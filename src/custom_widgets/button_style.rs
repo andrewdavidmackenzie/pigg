@@ -1,7 +1,7 @@
 use iced::{Color, Theme};
 use iced::widget::button;
 
-pub struct PinStyle {
+pub struct ButtonStyle {
     pub bg_color: Color,
     pub text_color: Color,
     pub border_radius: f32,
@@ -9,7 +9,7 @@ pub struct PinStyle {
     pub hovered_text_color: Color,
 }
 
-impl button::StyleSheet for PinStyle {
+impl button::StyleSheet for ButtonStyle {
     type Style = Theme;
 
     fn active(&self, _style: &Self::Style) -> button::Appearance {
@@ -39,9 +39,9 @@ impl button::StyleSheet for PinStyle {
     }
 }
 
-impl PinStyle {
+impl ButtonStyle {
     pub fn get_button_style(&self) -> iced::widget::theme::Button {
-        iced::widget::theme::Button::Custom(Box::new(PinStyle {
+        iced::widget::theme::Button::Custom(Box::new(ButtonStyle {
             bg_color: self.bg_color,
             text_color: self.text_color,
             border_radius: self.border_radius,
