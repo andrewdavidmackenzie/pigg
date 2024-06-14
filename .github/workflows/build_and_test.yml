@@ -36,6 +36,9 @@ jobs:
         run: |
           cargo install grcov
 
+      - name: Setup LCOV
+        uses: hrishikesh-kadam/setup-lcov@v1
+
       - name: make
         run: |
           make clippy build test
