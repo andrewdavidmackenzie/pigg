@@ -50,7 +50,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-          lcov lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
+          lcov --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
         if: runner.os == 'macOS'
