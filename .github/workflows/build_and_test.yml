@@ -33,15 +33,27 @@ jobs:
           toolchain: stable
 
       - name: InstallCoverageTools
+        if: runner.os == 'macOS'
         run: |
           cargo install grcov
+
+      # lcov on ubuntu-latest (22.04) is still version 1.14 that doesn't have the "--erase-functions" option we want
+      - name: Setup LCOV
+        if: runner.os == 'macOS'
+        uses: hrishikesh-kadam/setup-lcov@v1
 
       - name: make
         run: |
           make clippy build test
+
+      - name: clean up coverage
+        if: runner.os == 'macOS'
+        run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          lcov --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
+        if: runner.os == 'macOS'
         uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
