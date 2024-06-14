@@ -42,11 +42,13 @@ const PIN_VIEW_SIDE_WIDTH: f32 = PIN_BUTTON_WIDTH
     + PIN_NAME_WIDTH
     + WIDGET_ROW_SPACING
     + PIN_OPTION_WIDTH;
-const BCM_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
+
 const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
+// Export these two so they can be used to calculate overall window size
+pub const BCM_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
 
 // Board Layout has two pin rows per row, with spacing between them
-const BOARD_LAYOUT_WIDTH: f32 =
+pub const BOARD_PIN_LAYOUT_WIDTH: f32 =
     PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS;
 
 // HEIGHTS
