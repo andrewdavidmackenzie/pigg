@@ -237,6 +237,9 @@ impl Application for Gpio {
     }
 
     fn title(&self) -> String {
+        if let Some(config_filename) = &self.config_filename {
+            return config_filename.clone();
+        }
         String::from("Piggui")
     }
 
@@ -271,6 +274,7 @@ impl Application for Gpio {
                     },
                 );
             }
+
             Message::Load => {
                 if self.unsaved_changes {
                     self.toasts.clear();
@@ -419,10 +423,6 @@ impl Application for Gpio {
                         Message::Toast(ToastMessage::Close(index))
                     }),
             );
-            if let Some(config_filename) = &self.config_filename {
-                let file_path = format!("Path: {}", config_filename.clone());
-                configuration_column = configuration_column.push(Text::new(file_path).size(12));
-            }
 
             let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
             let add_toast_button = Button::new(version_text)
