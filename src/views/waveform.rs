@@ -522,7 +522,7 @@ mod test {
     fn falling_edge_from_old_sample() {}
 
     #[test]
-    fn pulse_up_and_down__from_low_base() {}
+    fn pulse_up_and_down_from_low_base() {}
 
     #[test]
     fn pulse_down_and_up_from_high_base() {}
