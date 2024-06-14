@@ -1,22 +1,22 @@
-use std::{env, io};
 use std::time::Duration;
+use std::{env, io};
 
-use iced::{
-    Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
-    Theme, window,
-};
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{Button, Column, container, pick_list, Row, Text};
+use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::{
+    executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
+    Subscription, Theme,
+};
 
 use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
-use hw_listener::{HardwareEvent, HWListenerEvent};
+use hw_listener::{HWListenerEvent, HardwareEvent};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
 use crate::hw::{LevelChange, PinDescriptionSet};
 use crate::layout::Layout;
-use crate::pin_state::{CHART_UPDATES_PER_SECOND, PinState};
+use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::version::version;
 use crate::views::hardware::hardware_view;
 
@@ -87,6 +87,8 @@ pub struct Gpio {
     toasts: Vec<Toast>,
     show_toast: bool,
     timeout_secs: u64,
+    unsaved_changes: bool,
+    pending_load: bool,
 }
 
 impl Gpio {
@@ -224,6 +226,8 @@ impl Application for Gpio {
                 toasts: Vec::new(),
                 show_toast: false,
                 timeout_secs: toast::DEFAULT_TIMEOUT,
+                unsaved_changes: false,
+                pending_load: false,
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -253,9 +257,12 @@ impl Application for Gpio {
                 self.gpio_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
+                self.unsaved_changes = true;
             }
+
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
+                self.unsaved_changes = false;
                 return Command::perform(
                     Self::save_via_picker(gpio_config),
                     |result| match result {
@@ -265,11 +272,24 @@ impl Application for Gpio {
                 );
             }
             Message::Load => {
-                return Command::perform(Self::load_via_picker(), |result| match result {
-                    Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
-                    _ => Message::None,
-                })
+                if self.unsaved_changes {
+                    self.toasts.clear();
+                    self.toasts.push(Toast {
+                        title: "Unsaved Changes".into(),
+                        body: "You have unsaved changes. Do you want to continue without saving?"
+                            .into(),
+                        status: Status::Danger,
+                    });
+                    self.show_toast = true;
+                    self.pending_load = true;
+                } else {
+                    return Command::perform(Self::load_via_picker(), |result| match result {
+                        Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
+                        _ => Message::None,
+                    });
+                }
             }
+
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
@@ -324,6 +344,15 @@ impl Application for Gpio {
                 ToastMessage::Close(index) => {
                     self.show_toast = false;
                     self.toasts.remove(index);
+                    if self.pending_load {
+                        self.pending_load = false;
+                        return Command::perform(Self::load_via_picker(), |result| match result {
+                            Ok(Some((filename, config))) => {
+                                Message::ConfigLoaded((filename, config))
+                            }
+                            _ => Message::None,
+                        });
+                    }
                 }
                 ToastMessage::Timeout(timeout) => {
                     self.timeout_secs = timeout as u64;
@@ -381,7 +410,14 @@ impl Application for Gpio {
             configuration_column = configuration_column.push(
                 Button::new(Text::new("Load Configuration"))
                     .style(file_button_style.get_button_style())
-                    .on_press(Message::Load),
+                    .on_press(if !self.show_toast {
+                        // Add a new toast if `show_toast` is false
+                        Message::Load
+                    } else {
+                        // Close the existing toast if `show_toast` is true
+                        let index = self.toasts.len() - 1;
+                        Message::Toast(ToastMessage::Close(index))
+                    }),
             );
 
             let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
