@@ -513,17 +513,214 @@ mod test {
     fn resolution() {}
 
     #[test]
-    fn no_sample_empty_graph() {}
+    fn no_sample_empty_graph() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        assert!(chart.samples.is_empty());
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        assert!(data.is_empty());
+    }
 
     #[test]
-    fn rising_edge_from_old_sample() {}
+    fn rising_edge_from_old_sample() {
+        //  |                   |
+        //  +--------o          |
+        //  |        |          |
+        //  |        +----------|---o
+        //  |                   |
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let now = Utc::now();
+
+        // Create an old low sample that is out of the display window
+        let old_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(20)),
+        };
+        chart.push_data(old_sample.clone());
+
+        // create a new high sample that is in the window
+        let new_sample = LevelChange {
+            new_level: true,
+            timestamp: now.sub(Duration::from_secs(2)),
+        };
+        chart.push_data(new_sample.clone());
+
+        // Check the raw data has all
+        assert_eq!(chart.samples.len(), 2);
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        // graph should need 4 points to represent the edge
+        assert_eq!(data.len(), 4);
+        assert_eq!(data.first().unwrap().1, 1); // added at query time
+        assert_eq!(data.get(1).unwrap().1, 1); // top of rising edge
+        assert_eq!(data.get(2).unwrap().1, 0); // bottom of rising edge
+        assert_eq!(data.get(3).unwrap().1, 0); // old low sample
+    }
 
     #[test]
-    fn falling_edge_from_old_sample() {}
+    fn falling_edge_from_old_sample() {
+        //  |                   |
+        //  |        +----------|---o
+        //  |        |          |
+        //  +--------o          |
+        //  |                   |
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let now = Utc::now();
+
+        // Create an old high sample that is out of the display window
+        let old_sample = LevelChange {
+            new_level: true,
+            timestamp: now.sub(Duration::from_secs(20)),
+        };
+        chart.push_data(old_sample.clone());
+
+        // create a new low sample that is in the window
+        let new_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(2)),
+        };
+        chart.push_data(new_sample.clone());
+
+        // Check the raw data has all
+        assert_eq!(chart.samples.len(), 2);
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        // graph should need 4 points to represent the edge
+        assert_eq!(data.len(), 4);
+        assert_eq!(data.first().unwrap().1, 0); // added at query time
+        assert_eq!(data.get(1).unwrap().1, 0); // bottom of rising edge
+        assert_eq!(data.get(2).unwrap().1, 1); // top of rising edge
+        assert_eq!(data.get(3).unwrap().1, 1); // old high sample
+    }
 
     #[test]
-    fn pulse_up_and_down_from_low_base() {}
+    fn pulse_up_and_down_from_low_base() {
+        //  |                   |
+        //  |    +---o          |
+        //  |    |   |          |
+        //  +----o   +-------o--|
+        //  |                   |
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let now = Utc::now();
+
+        // Create a low sample that is in the display window
+        let old_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(9)),
+        };
+        chart.push_data(old_sample.clone());
+
+        // create a pulse, up and down
+        let new_sample = LevelChange {
+            new_level: true,
+            timestamp: now.sub(Duration::from_secs(5)),
+        };
+        chart.push_data(new_sample.clone());
+        let new_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(4)),
+        };
+        chart.push_data(new_sample.clone());
+
+        // Check the raw data has all
+        assert_eq!(chart.samples.len(), 3);
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        // graph should need 4 points to represent the edge
+        assert_eq!(data.len(), 6);
+        assert_eq!(data.first().unwrap().1, 0);
+        assert_eq!(data.get(1).unwrap().1, 0); // bottom left of pulse
+        assert_eq!(data.get(2).unwrap().1, 1); // top left of pulse
+        assert_eq!(data.get(3).unwrap().1, 1); // top right of pulse
+        assert_eq!(data.get(4).unwrap().1, 0); // bottom right of pulse
+        assert_eq!(data.get(5).unwrap().1, 0); // old low sample
+    }
 
     #[test]
-    fn pulse_down_and_up_from_high_base() {}
+    fn pulse_down_and_up_from_high_base() {
+        //  |                   |
+        //  +----o   +-------o--|
+        //  |    |   |          |
+        //  |    +---o          |
+        //  |                   |
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        let now = Utc::now();
+
+        // Create a high sample that is in the display window
+        let old_sample = LevelChange {
+            new_level: true,
+            timestamp: now.sub(Duration::from_secs(9)),
+        };
+        chart.push_data(old_sample.clone());
+
+        // create a pulse, down then back up
+        let new_sample = LevelChange {
+            new_level: false,
+            timestamp: now.sub(Duration::from_secs(5)),
+        };
+        chart.push_data(new_sample.clone());
+        let new_sample = LevelChange {
+            new_level: true,
+            timestamp: now.sub(Duration::from_secs(4)),
+        };
+        chart.push_data(new_sample.clone());
+
+        // Check the raw data has all
+        assert_eq!(chart.samples.len(), 3);
+
+        // Get the chart data
+        let data = chart.get_data();
+
+        // graph should need 4 points to represent the edge
+        assert_eq!(data.len(), 6);
+        assert_eq!(data.first().unwrap().1, 1); // added at query time
+        assert_eq!(data.get(1).unwrap().1, 1); // top left of pulse
+        assert_eq!(data.get(2).unwrap().1, 0); // bottom left of pulse
+        assert_eq!(data.get(3).unwrap().1, 0); // bottom right of pulse
+        assert_eq!(data.get(4).unwrap().1, 1); // rop right of pulse
+        assert_eq!(data.get(5).unwrap().1, 1); // old low sample
+    }
 }
