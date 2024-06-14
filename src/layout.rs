@@ -1,4 +1,4 @@
-use crate::pin_layout::BOARD_PIN_LAYOUT_WIDTH;
+use crate::pin_layout::{BCM_PIN_LAYOUT_WIDTH, BOARD_PIN_LAYOUT_WIDTH};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -9,6 +9,7 @@ pub enum Layout {
 const BOARD_LAYOUT_SPACING: u16 = 470;
 const BCM_LAYOUT_SPACING: u16 = 640;
 const BOARD_WINDOW_WIDTH: f32 = BOARD_PIN_LAYOUT_WIDTH;
+const BCM_WINDOW_WIDTH: f32 = BCM_PIN_LAYOUT_WIDTH;
 pub const BOARD_LAYOUT_SIZE: (f32, f32) = (1570.0, 780.0);
 pub const BCM_LAYOUT_SIZE: (f32, f32) = (1000.0, 950.0);
 
