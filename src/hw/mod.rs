@@ -340,8 +340,17 @@ mod test {
     use chrono::Utc;
     use tempfile::tempdir;
 
+    use crate::hw;
     use crate::hw::{GPIOConfig, LevelChange, PinFunction};
+    use crate::hw::Hardware;
     use crate::hw::InputPull::PullUp;
+
+    #[test]
+    fn hw_can_be_got() {
+        let hw = hw::get();
+        assert!(hw.descriptor().is_ok());
+        println!("{}", hw.descriptor().unwrap());
+    }
 
     #[test]
     fn create_a_config() {
