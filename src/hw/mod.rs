@@ -337,15 +337,78 @@ mod test {
     use std::io::Write;
     use std::path::PathBuf;
 
+    use chrono::Utc;
     use tempfile::tempdir;
 
-    use crate::hw::{GPIOConfig, PinFunction};
+    use crate::hw;
+    use crate::hw::{GPIOConfig, LevelChange, PinFunction};
+    use crate::hw::Hardware;
     use crate::hw::InputPull::PullUp;
+
+    #[test]
+    fn hw_can_be_got() {
+        let hw = hw::get();
+        assert!(hw.descriptor().is_ok());
+        println!("{}", hw.descriptor().unwrap());
+    }
+
+    #[test]
+    fn forty_board_pins() {
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.pins().len(), 40);
+    }
+
+    #[test]
+    fn twenty_seven_bcm_pins() {
+        // 0-27, not counting the gpio0 and gpio1 pins with no options
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.bcm_pins().len(), 26);
+    }
+
+    #[test]
+    fn bcm_pins_sort_in_order() {
+        // 0-27, not counting the gpio0 and gpio1 pins with no options
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        let sorted_bcm_pins = pin_set.bcm_pins_sorted();
+        assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
+        let mut previous = 1; // we start at GPIO2
+        for pin in sorted_bcm_pins {
+            assert_eq!(
+                pin.bcm_pin_number.unwrap(),
+                previous + 1,
+                "Pin numbering not in order or pins skipped"
+            );
+            previous = pin.bcm_pin_number.unwrap();
+        }
+    }
+
+    #[test]
+    fn bcp_pin_2() {
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.bcm_to_board(2), Some(3));
+    }
+
+    #[test]
+    fn bcp_pin_unknown() {
+        let hw = hw::get();
+        let pin_set = hw.pin_descriptions();
+        assert_eq!(pin_set.bcm_to_board(100), None);
+    }
 
     #[test]
     fn create_a_config() {
         let config = GPIOConfig::default();
         assert!(config.configured_pins.is_empty());
+    }
+
+    #[test]
+    fn level_change_time() {
+        let level_change = LevelChange::new(true);
+        assert!(level_change.timestamp <= Utc::now())
     }
 
     #[test]
