@@ -238,13 +238,10 @@ impl Application for Gpio {
                 show_toast: false,
                 timeout_secs: toast::DEFAULT_TIMEOUT,
             },
-            Command::batch(vec![Command::perform(
-                Self::load(env::args().nth(1)),
-                |result| match result {
-                    Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
-                    _ => Message::None,
-                },
-            )]),
+            Command::perform(Self::load(env::args().nth(1)), |result| match result {
+                Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
+                _ => Message::None,
+            }),
         )
     }
 
