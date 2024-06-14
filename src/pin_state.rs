@@ -60,3 +60,19 @@ impl PinState {
         self.chart.push_data(level_change)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::hw::LevelChange;
+    use crate::pin_state::PinState;
+
+    #[test]
+    fn level_stores_last() {
+        let mut state = PinState::new();
+        state.set_level(LevelChange::new(false));
+        state.set_level(LevelChange::new(true));
+        state.set_level(LevelChange::new(false));
+        state.set_level(LevelChange::new(true));
+        assert_eq!(state.get_level(), Some(true));
+    }
+}
