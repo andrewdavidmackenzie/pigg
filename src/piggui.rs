@@ -8,7 +8,7 @@ use iced::{
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{Button, Column, container, pick_list, Row, Text};
 
-use custom_widgets::pin_style::PinStyle;
+use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
 use hw_listener::{HardwareEvent, HWListenerEvent};
@@ -370,7 +370,7 @@ impl Application for Gpio {
                 .push(hardware_view(hw_desc))
                 .align_items(Alignment::Center);
 
-            let file_button_style = PinStyle {
+            let file_button_style = ButtonStyle {
                 bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
                 text_color: Color::BLACK,
                 hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
@@ -378,7 +378,7 @@ impl Application for Gpio {
                 border_radius: 2.0,
             };
 
-            let about_button_style = PinStyle {
+            let about_button_style = ButtonStyle {
                 bg_color: Color::TRANSPARENT,
                 text_color: Color::WHITE,
                 hovered_bg_color: Color::TRANSPARENT,

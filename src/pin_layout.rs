@@ -6,9 +6,9 @@ use iced::widget::mouse_area;
 
 use crate::{Gpio, PinState};
 use crate::custom_widgets::{circle::circle, line::line};
+use crate::custom_widgets::button_style::ButtonStyle;
 use crate::custom_widgets::clicker::clicker;
 use crate::custom_widgets::led::led;
-use crate::custom_widgets::pin_style::PinStyle;
 use crate::custom_widgets::toggler_style::TogglerStyle;
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
@@ -19,11 +19,14 @@ use crate::hw::PinFunction::{Input, Output};
 use crate::Message;
 use crate::pin_state::CHART_WIDTH;
 
+const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
+const PIN_OPTION_WIDTH: f32 = 130.0;
 const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
 const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
-const SPACE_BETWEEN_PIN_ROWS: f32 = 10.0;
-const PIN_NAME_WIDTH: f32 = 70.0;
-const PIN_ARROW_WIDTH: f32 = 30.0;
+const BOARD_SPACE_BETWEEN_PIN_ROWS: f32 = 10.0;
+const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
+const PIN_NAME_WIDTH: f32 = 60.0;
+const PIN_ARROW_WIDTH: f32 = PIN_ARROW_LINE_WIDTH + PIN_ARROW_CIRCLE_RADIUS * 2.0;
 const PIN_BUTTON_WIDTH: f32 = 30.0;
 const LED_WIDTH: f32 = 16.0;
 const BUTTON_WIDTH: f32 = 16.0;
@@ -32,24 +35,36 @@ const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + BUTTON_WIDTH;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
+const PIN_VIEW_SIDE_WIDTH: f32 = PIN_BUTTON_WIDTH
+    + WIDGET_ROW_SPACING
+    + PIN_ARROW_WIDTH
+    + WIDGET_ROW_SPACING
+    + PIN_NAME_WIDTH
+    + WIDGET_ROW_SPACING
+    + PIN_OPTION_WIDTH;
+const BCM_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
 
-fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
+// Board Layout has two pin rows per row, with spacing between them
+const BOARD_LAYOUT_WIDTH: f32 =
+    PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_SPACE_BETWEEN_PIN_ROWS;
+
+fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     match pin_description.name {
-        "3V3" => PinStyle {
+        "3V3" => ButtonStyle {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "5V" => PinStyle {
+        "5V" => ButtonStyle {
             bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "Ground" => PinStyle {
+        "Ground" => ButtonStyle {
             bg_color: Color::BLACK,
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -57,7 +72,7 @@ fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
             hovered_text_color: Color::BLACK,
         },
 
-        "GPIO2" | "GPIO3" => PinStyle {
+        "GPIO2" | "GPIO3" => ButtonStyle {
             bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -65,7 +80,7 @@ fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
             hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
         },
 
-        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => PinStyle {
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => ButtonStyle {
             bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -73,7 +88,7 @@ fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
             hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
         },
 
-        "GPIO14" | "GPIO15" => PinStyle {
+        "GPIO14" | "GPIO15" => ButtonStyle {
             bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -81,14 +96,14 @@ fn get_pin_style(pin_description: &PinDescription) -> PinStyle {
             hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
         },
 
-        "ID_SD" | "ID_SC" => PinStyle {
+        "ID_SD" | "ID_SC" => ButtonStyle {
             bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
             text_color: Color::WHITE,
             border_radius: 50.0,
             hovered_bg_color: Color::WHITE,
             hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
         },
-        _ => PinStyle {
+        _ => ButtonStyle {
             bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -115,10 +130,7 @@ pub fn bcm_pin_layout_view<'a>(
 
         column = column
             .push(pin_row)
-            .push(iced::widget::Space::new(
-                Length::Fixed(1.0),
-                Length::Fixed(5.0),
-            ))
+            .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
             .align_items(Alignment::Center);
     }
 
@@ -151,7 +163,7 @@ pub fn board_pin_layout_view<'a>(
         let row = Row::new()
             .push(left_row)
             .push(right_row)
-            .spacing(SPACE_BETWEEN_PIN_ROWS)
+            .spacing(BOARD_SPACE_BETWEEN_PIN_ROWS)
             .align_items(Alignment::Center);
 
         column = column
@@ -290,7 +302,7 @@ fn create_pin_view_side<'a>(
 
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
-        .width(Length::Fixed(130f32))
+        .width(Length::Fixed(PIN_OPTION_WIDTH))
         .align_items(Alignment::Center);
     if pin_description.options.len() > 1 {
         let board_pin_number = pin_description.board_pin_number;
@@ -309,7 +321,7 @@ fn create_pin_view_side<'a>(
             pick_list(config_options, selected, move |pin_function| {
                 Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function)
             })
-            .width(Length::Fixed(130f32))
+            .width(Length::Fixed(PIN_OPTION_WIDTH))
             .placeholder("Select function"),
         );
 
@@ -325,7 +337,7 @@ fn create_pin_view_side<'a>(
         .push(Text::new(pin_description.name))
         .align_items(Alignment::Center);
 
-    pin_name_column = pin_name_column.push(pin_name);
+    pin_name_column = pin_name_column.push(pin_name).width(PIN_NAME_WIDTH);
 
     let mut pin_arrow = Row::new()
         .align_items(Alignment::Center)
@@ -333,9 +345,9 @@ fn create_pin_view_side<'a>(
 
     if is_left {
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
-        pin_arrow = pin_arrow.push(line(20.0));
+        pin_arrow = pin_arrow.push(line(PIN_ARROW_LINE_WIDTH));
     } else {
-        pin_arrow = pin_arrow.push(line(20.0));
+        pin_arrow = pin_arrow.push(line(PIN_ARROW_LINE_WIDTH));
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
     }
 
@@ -355,14 +367,14 @@ fn create_pin_view_side<'a>(
         Row::new()
             .push(pin_widget)
             .push(pin_option)
-            .push(pin_name_column)
+            .push(pin_name_column.align_items(Alignment::End))
             .push(pin_arrow)
             .push(pin_button_column)
     } else {
         Row::new()
             .push(pin_button_column)
             .push(pin_arrow)
-            .push(pin_name_column)
+            .push(pin_name_column.align_items(Alignment::Start))
             .push(pin_option)
             .push(pin_widget)
     };
