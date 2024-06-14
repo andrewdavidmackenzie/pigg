@@ -514,7 +514,7 @@ mod test {
 
     #[test]
     fn no_sample_empty_graph() {
-        let mut chart = Waveform::<PinLevel>::new(
+        let chart = Waveform::<PinLevel>::new(
             ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
             256.0,

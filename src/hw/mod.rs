@@ -337,15 +337,22 @@ mod test {
     use std::io::Write;
     use std::path::PathBuf;
 
+    use chrono::Utc;
     use tempfile::tempdir;
 
-    use crate::hw::{GPIOConfig, PinFunction};
+    use crate::hw::{GPIOConfig, LevelChange, PinFunction};
     use crate::hw::InputPull::PullUp;
 
     #[test]
     fn create_a_config() {
         let config = GPIOConfig::default();
         assert!(config.configured_pins.is_empty());
+    }
+
+    #[test]
+    fn level_change_time() {
+        let level_change = LevelChange::new(true);
+        assert!(level_change.timestamp <= Utc::now())
     }
 
     #[test]
