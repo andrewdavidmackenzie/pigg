@@ -49,6 +49,7 @@ jobs:
         run: lcov --remove lcov.info '/Applications/*' '/usr*' '*tests/*' -o lcov.info --ignore-errors unused --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
+        if: runner.os == 'macOS'
         uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
