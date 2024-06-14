@@ -2,7 +2,7 @@ use std::{env, io};
 use std::time::Duration;
 
 use iced::{
-    Alignment, Application, Color, Command, Element, executor, Length, Settings, Size, Subscription,
+    Alignment, Application, Color, Command, Element, executor, Length, Settings, Subscription,
     Theme, window,
 };
 use iced::futures::channel::mpsc::Sender;
@@ -12,7 +12,6 @@ use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
 use hw_listener::{HardwareEvent, HWListenerEvent};
-use layout::{BCM_LAYOUT_SIZE, BOARD_LAYOUT_SIZE};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
 use crate::hw::{LevelChange, PinDescriptionSet};
@@ -38,7 +37,8 @@ fn main() -> Result<(), iced::Error> {
         return Ok(());
     }
 
-    let size = Gpio::get_dimensions_for_layout(Layout::BoardLayout);
+    let layout = Layout::BoardLayout;
+    let size = layout.get_window_size();
     let window = window::Settings {
         resizable: true,
         size,
@@ -202,19 +202,6 @@ impl Gpio {
     ) {
         self.pin_states[board_pin_number as usize - 1].set_level(level_change);
     }
-
-    fn get_dimensions_for_layout(layout: Layout) -> Size {
-        match layout {
-            Layout::BoardLayout => Size {
-                width: BOARD_LAYOUT_SIZE.0,
-                height: BOARD_LAYOUT_SIZE.1,
-            },
-            Layout::BCMLayout => Size {
-                width: BCM_LAYOUT_SIZE.0,
-                height: BCM_LAYOUT_SIZE.1,
-            },
-        }
-    }
 }
 
 impl Application for Gpio {
@@ -257,7 +244,7 @@ impl Application for Gpio {
             }
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
-                let layout_size = Self::get_dimensions_for_layout(layout);
+                let layout_size = layout.get_window_size();
                 return window::resize(window::Id::MAIN, layout_size);
             }
 
