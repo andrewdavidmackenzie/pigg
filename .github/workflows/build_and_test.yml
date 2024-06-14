@@ -43,8 +43,10 @@ jobs:
         run: |
           make clippy build test
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-          lcov --version
-          lcov --remove lcov.info '/Applications/*' '/usr*' '*tests/*' -o lcov.info --ignore-errors unused --erase-functions "(?=^.*fmt).+"
+
+      - name: clean up coverage
+        if: runner.os == 'macOS'
+        run: lcov --remove lcov.info '/Applications/*' '/usr*' '*tests/*' -o lcov.info --ignore-errors unused --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
         uses: codecov/codecov-action@v4
