@@ -33,6 +33,7 @@ jobs:
           toolchain: stable
 
       - name: InstallCoverageTools
+        if: runner.os == 'macOS'
         run: |
           cargo install grcov
 
