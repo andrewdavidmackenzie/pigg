@@ -33,20 +33,37 @@ jobs:
           toolchain: stable
 
       - name: InstallCoverageTools
-        run: |
-          cargo install grcov
+        run: cargo install grcov
 
-      - name: Setup LCOV
-        uses: hrishikesh-kadam/setup-lcov@v1
+      - name: Setup LCOV on ${{ runner.os }}
+        if: runner.os == 'Linux'
+        run: sudo apt-get -y install lcov
+        shell: bash
+
+      - name: Setup LCOV on ${{ runner.os }}
+        if: runner.os == 'macOS'
+        run: brew install lcov
+        shell: bash
+
+      - name: Setup LCOV on ${{ runner.os }}
+        if: runner.os == 'Windows'
+        run: |
+          choco install lcov
+          # For bash
+          echo "C:\ProgramData\chocolatey\lib\lcov\tools\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          # For pwsh, cmd and powershell
+          echo $env:GITHUB_ACTION_PATH
+          echo "$env:GITHUB_ACTION_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        shell: pwsh
+
+      - run: lcov --version
+        shell: bash
 
       - name: make
         run: |
           make clippy build test
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-
-      - name: clean up coverage
-        if: runner.os == 'macOS'
-        run: lcov --remove lcov.info '/Applications/*' '/usr*' '*tests/*' -o lcov.info --ignore-errors unused --erase-functions "(?=^.*fmt).+"
+          lcov --remove lcov.info '/Applications/*' '/usr*' '*tests/*' -o lcov.info --ignore-errors unused --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
         uses: codecov/codecov-action@v4
