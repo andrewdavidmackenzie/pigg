@@ -270,6 +270,7 @@ impl Application for Gpio {
             }
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
+                self.unsaved_changes = true;
                 self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
             }
             Message::LayoutChanged(layout) => {
