@@ -41,6 +41,7 @@ fn main() -> Result<(), iced::Error> {
     let size = layout.get_window_size();
     let window = window::Settings {
         resizable: true,
+        exit_on_close_request: false,
         size,
         ..Default::default()
     };
@@ -70,6 +71,7 @@ pub enum Message {
     Save,
     Load,
     UpdateCharts,
+    WindowEvent(iced::Event),
 }
 
 pub struct Gpio {
@@ -89,6 +91,7 @@ pub struct Gpio {
     timeout_secs: u64,
     unsaved_changes: bool,
     pending_load: bool,
+    pending_exit: bool,
 }
 
 impl Gpio {
@@ -228,6 +231,7 @@ impl Application for Gpio {
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 pending_load: false,
+                pending_exit: false,
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -245,6 +249,25 @@ impl Application for Gpio {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
+            Message::WindowEvent(event) => {
+                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
+                {
+                    if self.unsaved_changes {
+                        self.toasts.clear();
+                        self.toasts.push(Toast {
+                            title: "Unsaved Changes".into(),
+                            body:
+                                "You have unsaved changes. Do you want to continue without saving?"
+                                    .into(),
+                            status: Status::Danger,
+                        });
+                        self.show_toast = true;
+                        self.pending_exit = true;
+                    } else {
+                        return window::close(window::Id::MAIN);
+                    }
+                }
+            }
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
                 self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
@@ -356,6 +379,10 @@ impl Application for Gpio {
                             }
                             _ => Message::None,
                         });
+                    }
+                    if self.pending_exit {
+                        self.pending_exit = false;
+                        return window::close(window::Id::MAIN);
                     }
                 }
                 ToastMessage::Timeout(timeout) => {
@@ -490,6 +517,7 @@ impl Application for Gpio {
             hw_listener::subscribe().map(Message::HardwareListener),
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| Message::UpdateCharts),
+            iced::event::listen().map(Message::WindowEvent),
         ])
     }
 }
