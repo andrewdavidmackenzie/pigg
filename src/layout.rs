@@ -1,3 +1,5 @@
+#![allow(unused)] // Need to remove
+
 use iced::Size;
 
 use crate::pin_layout::{BCM_PIN_LAYOUT_WIDTH, BOARD_PIN_LAYOUT_WIDTH};
