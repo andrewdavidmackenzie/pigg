@@ -519,3 +519,95 @@ impl Application for Gpio {
         ])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn test_add_toast_message() {
+        let mut app = Gpio::new(()).0;
+
+        // No toasts should be present
+        assert!(app.toasts.is_empty());
+
+        // Add a toast
+        let _ = app.update(Message::Toast(ToastMessage::Add));
+
+        // Check if a toast was added
+        assert_eq!(app.toasts.len(), 1);
+        let toast = &app.toasts[0];
+        assert_eq!(toast.title, "About Piggui");
+    }
+
+    #[tokio::test]
+    async fn test_close_toast_message() {
+        let mut app = Gpio::new(()).0;
+
+        // Add a toast
+        let _ = app.update(Message::Toast(ToastMessage::Add));
+
+        // Ensure the toast was added
+        assert_eq!(app.toasts.len(), 1);
+
+        // Close the toast
+        let _ = app.update(Message::Toast(ToastMessage::Close(0)));
+
+        // Check if the toast was removed
+        assert!(app.toasts.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_window_close_with_unsaved_changes() {
+        let mut app = Gpio::new(()).0;
+
+        // Simulate unsaved changes
+        app.unsaved_changes = true;
+
+        // Send a close window event
+        let _ = app.update(Message::WindowEvent(iced::Event::Window(
+            window::Id::MAIN,
+            window::Event::CloseRequested,
+        )));
+
+        // Check if a warning toast was added
+        assert_eq!(app.toasts.len(), 1);
+        let toast = &app.toasts[0];
+        assert_eq!(toast.title, "Unsaved Changes");
+        assert_eq!(
+            toast.body,
+            "You have unsaved changes. Do you want to exit without saving?"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_load_with_unsaved_changes() {
+        let mut app = Gpio::new(()).0;
+
+        // Simulate unsaved changes
+        app.unsaved_changes = true;
+
+        // Send a load message
+        let _ = app.update(Message::Load);
+
+        // Check if a warning toast was added
+        assert_eq!(app.toasts.len(), 1);
+        let toast = &app.toasts[0];
+        assert_eq!(toast.title, "Unsaved Changes");
+        assert_eq!(
+            toast.body,
+            "You have unsaved changes. Do you want to continue without saving?"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_toast_timeout() {
+        let mut app = Gpio::new(()).0;
+
+        // Send a timeout message
+        let _ = app.update(Message::Toast(ToastMessage::Timeout(5.0)));
+
+        // Check the timeout
+        assert_eq!(app.timeout_secs, 5);
+    }
+}
+
