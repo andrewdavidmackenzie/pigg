@@ -25,14 +25,14 @@ pub fn get() -> impl Hardware {
 }
 
 #[derive(Clone, Debug)]
-pub struct HardwareDescriptor {
+pub struct HardwareDetails {
     pub hardware: String,
     pub revision: String,
     pub serial: String,
     pub model: String,
 }
 
-impl Display for HardwareDescriptor {
+impl Display for HardwareDetails {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Hardware: {}", self.hardware)?;
         writeln!(f, "Revision: {}", self.revision)?;
@@ -45,8 +45,10 @@ impl Display for HardwareDescriptor {
 /// interact with any possible GPIO hardware on the device to set config and get state
 #[must_use]
 pub trait Hardware {
-    /// Return a struct describing the hardware that we are connected to
-    fn descriptor(&self) -> io::Result<HardwareDescriptor>;
+    /// Return a struct describing the hardware that we are connected to:
+    /// * [HardwareDetails] such as revision etc
+    /// * [PinDescriptionSet] describing all the pins
+    fn description(&self) -> io::Result<HardwareDetails>;
     /// Return an array of 40 pin descriptions for the connected hardware.
     /// Array index = board_pin_number -1, as pin numbering start at 1
     fn pin_descriptions(&self) -> PinDescriptionSet;
@@ -348,8 +350,8 @@ mod test {
     #[test]
     fn hw_can_be_got() {
         let hw = hw::get();
-        assert!(hw.descriptor().is_ok());
-        println!("{}", hw.descriptor().unwrap());
+        assert!(hw.description().is_ok());
+        println!("{}", hw.description().unwrap());
     }
 
     #[test]

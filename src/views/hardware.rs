@@ -1,11 +1,11 @@
 use iced::widget::{container, Column, Text};
 use iced::{alignment, Alignment, Element, Length};
 
-use crate::hw::HardwareDescriptor;
+use crate::hw::HardwareDetails;
 use crate::Message;
 
 /// Hardware Configuration Display
-pub fn hardware_view(hardware_description: &HardwareDescriptor) -> Element<'static, Message> {
+pub fn hardware_view(hardware_description: &HardwareDetails) -> Element<'static, Message> {
     let hardware_info = Column::new()
         .push(Text::new(format!(
             "Hardware: {}",

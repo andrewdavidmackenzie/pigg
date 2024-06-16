@@ -7,7 +7,7 @@ use rand::Rng;
 use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction, PinLevel};
 
 use super::Hardware;
-use super::HardwareDescriptor;
+use super::HardwareDetails;
 
 pub struct NoneHW;
 
@@ -16,8 +16,8 @@ pub fn get() -> impl Hardware {
 }
 
 impl Hardware for NoneHW {
-    fn descriptor(&self) -> io::Result<HardwareDescriptor> {
-        Ok(HardwareDescriptor {
+    fn description(&self) -> io::Result<HardwareDetails> {
+        Ok(HardwareDetails {
             hardware: "NotAPi".to_string(),
             revision: "Unknown".to_string(),
             serial: "Unknown".to_string(),

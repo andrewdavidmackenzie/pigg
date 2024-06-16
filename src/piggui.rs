@@ -10,7 +10,7 @@ use iced::{
 
 use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
+use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDetails, PinFunction};
 use hw_listener::{HWListenerEvent, HardwareEvent};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
@@ -78,7 +78,7 @@ pub struct Gpio {
     gpio_config: GPIOConfig,
     pub pin_function_selected: [PinFunction; 40],
     chosen_layout: Layout,
-    hardware_description: Option<HardwareDescriptor>,
+    hardware_description: Option<HardwareDetails>,
     listener_sender: Option<Sender<HardwareEvent>>,
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)

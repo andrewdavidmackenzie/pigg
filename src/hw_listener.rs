@@ -6,7 +6,7 @@ use iced_futures::futures::StreamExt;
 
 use crate::hw;
 use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction};
-use crate::hw::{Hardware, HardwareDescriptor};
+use crate::hw::{Hardware, HardwareDetails};
 use crate::hw_listener::HWListenerEvent::InputChange;
 use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 
@@ -17,7 +17,7 @@ use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConf
 pub enum HWListenerEvent {
     /// This event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
-    Ready(Sender<HardwareEvent>, HardwareDescriptor, PinDescriptionSet),
+    Ready(Sender<HardwareEvent>, HardwareDetails, PinDescriptionSet),
     /// This event indicates that the logic level of an input has just changed
     InputChange(BCMPinNumber, LevelChange),
 }
@@ -73,7 +73,7 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
         move |mut gui_sender| async move {
             let mut state = State::Starting;
             let mut connected_hardware = hw::get();
-            let hardware_description = connected_hardware.descriptor().unwrap();
+            let hardware_description = connected_hardware.description().unwrap();
             let pin_descriptions = connected_hardware.pin_descriptions();
 
             loop {
