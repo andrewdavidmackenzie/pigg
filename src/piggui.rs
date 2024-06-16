@@ -4,17 +4,19 @@ use std::{env, io};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
+    executor, window, Alignment, Application, Color, Command, Element, Length, Padding, Settings,
     Subscription, Theme,
 };
 
 use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
-use hw_listener::{HWListenerEvent, HardwareEvent};
+use hw::{
+    hw_listener::{HWListenerEvent, HardwareEvent},
+    BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction,
+};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
-use crate::hw::{LevelChange, PinDescriptionSet};
+use crate::hw::{hw_listener, LevelChange};
 use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
@@ -23,7 +25,6 @@ use crate::views::version::version;
 
 mod custom_widgets;
 mod hw;
-mod hw_listener;
 mod layout;
 mod pin_layout;
 mod pin_state;
@@ -270,10 +271,10 @@ impl Gpio {
                 .spacing(self.chosen_layout.get_spacing()),
         );
 
-        if let Some(pins) = &self.pin_descriptions {
+        if let Some(hw_description) = &self.hardware_description {
             let pin_layout = match self.chosen_layout {
-                Layout::BoardLayout => board_pin_layout_view(pins, self),
-                Layout::BCMLayout => bcm_pin_layout_view(pins, self),
+                Layout::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
+                Layout::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
             };
 
             main_row = main_row.push(
