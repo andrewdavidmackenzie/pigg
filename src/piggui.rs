@@ -241,7 +241,7 @@ impl Application for Gpio {
     }
 
     fn title(&self) -> String {
-        self.config_filename.to_string().unwrap_or(String::from("Piggui"))
+        self.config_filename.clone().unwrap_or(String::from("Piggui"))
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
@@ -254,7 +254,7 @@ impl Application for Gpio {
                         self.toasts.push(Toast {
                             title: "Unsaved Changes".into(),
                             body:
-                                "You have unsaved changes. Do you want to continue without saving?"
+                                "You have unsaved changes. Do you want to exit without saving?"
                                     .into(),
                             status: Status::Danger,
                         });
