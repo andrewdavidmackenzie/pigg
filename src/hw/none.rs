@@ -4,10 +4,10 @@ use std::time::Duration;
 
 use rand::Rng;
 
-use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction, PinLevel};
+use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinFunction, PinLevel};
 
 use super::Hardware;
-use super::HardwareDetails;
+use super::{HardwareDescription, HardwareDetails};
 
 pub struct NoneHW;
 
@@ -16,17 +16,16 @@ pub fn get() -> impl Hardware {
 }
 
 impl Hardware for NoneHW {
-    fn description(&self) -> io::Result<HardwareDetails> {
-        Ok(HardwareDetails {
-            hardware: "NotAPi".to_string(),
-            revision: "Unknown".to_string(),
-            serial: "Unknown".to_string(),
-            model: "Fake Hardware".to_string(),
+    fn description(&self) -> io::Result<HardwareDescription> {
+        Ok(HardwareDescription {
+            details: HardwareDetails {
+                hardware: "NotAPi".to_string(),
+                revision: "Unknown".to_string(),
+                serial: "Unknown".to_string(),
+                model: "Fake Hardware".to_string(),
+            },
+            pins: super::GPIO_PIN_DESCRIPTIONS,
         })
-    }
-
-    fn pin_descriptions(&self) -> PinDescriptionSet {
-        super::GPIO_PIN_DESCRIPTIONS
     }
 
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
