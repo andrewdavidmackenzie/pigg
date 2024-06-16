@@ -16,7 +16,7 @@ const BOARD_LAYOUT_WIDTH: f32 = 1570.0;
 // const BCM_WINDOW_WIDTH: f32 = BCM_PIN_LAYOUT_WIDTH;
 const BOARD_LAYOUT_HEIGHT: f32 = 780.0;
 const BCM_LAYOUT_WIDTH: f32 = 1000.0;
-const BCM_LAYOUT_HEIGHT: f32 = 950.0;
+const BCM_LAYOUT_HEIGHT: f32 = 970.0;
 
 impl Layout {
     pub const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];

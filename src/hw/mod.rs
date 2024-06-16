@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::hw::pin_descriptions::*;
 
 pub mod hw_listener;
+
 /// There are three implementations of [`Hardware`] trait:
 /// * None - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * Pi - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B

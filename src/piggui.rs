@@ -4,28 +4,30 @@ use std::{env, io};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
+    executor, window, Alignment, Application, Color, Command, Element, Length, Padding, Settings,
     Subscription, Theme,
 };
 
 use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
-use hw::hw_listener::{HWListenerEvent, HardwareEvent};
-use hw::{hw_listener, BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction};
+use hw::{
+    hw_listener::{HWListenerEvent, HardwareEvent},
+    BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction,
+};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
-use crate::hw::LevelChange;
+use crate::hw::{hw_listener, LevelChange};
 use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
-use crate::version::version;
-use crate::views::hardware::hardware_view;
+use crate::views::hardware::hw_description;
+use crate::views::info::info_row;
+use crate::views::version::version;
 
 mod custom_widgets;
 mod hw;
 mod layout;
 mod pin_layout;
 mod pin_state;
-mod version;
 mod views;
 
 fn main() -> Result<(), iced::Error> {
@@ -53,7 +55,8 @@ fn main() -> Result<(), iced::Error> {
 
 #[derive(Debug, Clone)]
 pub enum ToastMessage {
-    Add,
+    VersionToast,
+    HardwareDetailsToast,
     Close(usize),
     Timeout(f64),
 }
@@ -84,8 +87,8 @@ pub struct Gpio {
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: [PinState; 40],
-    toasts: Vec<Toast>,
-    show_toast: bool,
+    pub toasts: Vec<Toast>,
+    pub show_toast: bool,
     timeout_secs: u64,
     unsaved_changes: bool,
     pending_load: bool,
@@ -201,6 +204,7 @@ impl Gpio {
             }
         }
     }
+
     /// Set the pin (using board number) level with a LevelChange
     fn set_pin_level_change(
         &mut self,
@@ -208,6 +212,81 @@ impl Gpio {
         level_change: LevelChange,
     ) {
         self.pin_states[board_pin_number as usize - 1].set_level(level_change);
+    }
+
+    fn configuration_column(&self) -> Element<'static, Message> {
+        let layout_selector = pick_list(
+            &Layout::ALL[..],
+            Some(self.chosen_layout),
+            Message::LayoutChanged,
+        )
+        .width(Length::Shrink)
+        .placeholder("Choose Layout");
+
+        let layout_row = Row::new()
+            .push(layout_selector)
+            .align_items(Alignment::Start)
+            .spacing(10);
+
+        let file_button_style = ButtonStyle {
+            bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
+            text_color: Color::BLACK,
+            hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
+            hovered_text_color: Color::WHITE,
+            border_radius: 2.0,
+        };
+
+        let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
+        configuration_column = configuration_column.push(layout_row);
+        configuration_column = configuration_column.push(
+            Button::new(Text::new("Save Configuration"))
+                .style(file_button_style.get_button_style())
+                .on_press(Message::Save),
+        );
+        configuration_column = configuration_column.push(
+            Button::new(Text::new("Load Configuration"))
+                .style(file_button_style.get_button_style())
+                .on_press(if !self.show_toast {
+                    // Add a new toast if `show_toast` is false
+                    Message::Load
+                } else {
+                    // Close the existing toast if `show_toast` is true
+                    let index = self.toasts.len() - 1;
+                    Message::Toast(ToastMessage::Close(index))
+                }),
+        );
+
+        configuration_column.into()
+    }
+
+    fn main_row(&self) -> Element<Message> {
+        let mut main_row = Row::new();
+
+        main_row = main_row.push(
+            Column::new()
+                .push(self.configuration_column())
+                .align_items(Alignment::Start)
+                .width(Length::Shrink)
+                .height(Length::Shrink)
+                .spacing(self.chosen_layout.get_spacing()),
+        );
+
+        if let Some(hw_description) = &self.hardware_description {
+            let pin_layout = match self.chosen_layout {
+                Layout::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
+                Layout::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
+            };
+
+            main_row = main_row.push(
+                Column::new()
+                    .push(pin_layout)
+                    .align_items(Alignment::Center)
+                    .height(Length::Fill)
+                    .width(Length::Fill),
+            );
+        }
+
+        main_row.into()
     }
 }
 
@@ -242,7 +321,9 @@ impl Application for Gpio {
     }
 
     fn title(&self) -> String {
-        self.config_filename.clone().unwrap_or(String::from("Piggui"))
+        self.config_filename
+            .clone()
+            .unwrap_or(String::from("Piggui"))
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
@@ -254,9 +335,8 @@ impl Application for Gpio {
                         self.toasts.clear();
                         self.toasts.push(Toast {
                             title: "Unsaved Changes".into(),
-                            body:
-                                "You have unsaved changes. Do you want to exit without saving?"
-                                    .into(),
+                            body: "You have unsaved changes. Do you want to exit without saving?"
+                                .into(),
                             status: Status::Danger,
                         });
                         self.show_toast = true;
@@ -364,11 +444,20 @@ impl Application for Gpio {
             }
 
             Message::Toast(toast_message) => match toast_message {
-                ToastMessage::Add => {
+                ToastMessage::VersionToast => {
                     self.toasts.clear();
                     self.toasts.push(Toast {
                         title: "About Piggui".into(),
                         body: version(),
+                        status: Status::Primary,
+                    });
+                    self.show_toast = true;
+                }
+                ToastMessage::HardwareDetailsToast => {
+                    self.toasts.clear();
+                    self.toasts.push(Toast {
+                        title: "About Connected Hardware".into(),
+                        body: hw_description(self),
                         status: Status::Primary,
                     });
                     self.show_toast = true;
@@ -398,111 +487,37 @@ impl Application for Gpio {
         Command::none()
     }
 
+    /*
+       +-window-------------------------------------------------------------------------------+
+       |  +-content(main_col)----------------------------------------------------------------+ |
+       |  | +-main-row--------------------------------------------------------------------+ | |
+       |  | | +-configuration-column-+--------------------------------------------------+ | | |
+       |  | | |                      |                                                  | | | |
+       |  | | +-configuration-column-+--------------------------------------------------+ | | |
+       |  | +-----------------------------------------------------------------------------+ | |
+       |  | +-info-row--------------------------------------------------------------------+ | |
+       |  | |  <version> | <hardware> | <status>                                          | | |
+       |  | +-----------------------------------------------------------------------------+ | |
+       |  +---------------------------------------------------------------------------------+ |
+       +--------------------------------------------------------------------------------------+
+    */
     fn view(&self) -> Element<Self::Message> {
-        let layout_selector = pick_list(
-            &Layout::ALL[..],
-            Some(self.chosen_layout),
-            Message::LayoutChanged,
-        )
-        .width(Length::Shrink)
-        .placeholder("Choose Layout");
+        let main_col = Column::new().push(self.main_row()).push(info_row(self));
 
-        let mut main_row = Row::new();
+        let padding = Padding {
+            top: 10.0,
+            right: 10.0,
+            bottom: 0.0,
+            left: 10.0,
+        };
 
-        if let Some(hw_desc) = &self.hardware_description {
-            let layout_row = Row::new()
-                .push(layout_selector)
-                .align_items(Alignment::Start)
-                .spacing(10);
-
-            let hardware_desc_row = Row::new()
-                .push(hardware_view(&hw_desc.details))
-                .align_items(Alignment::Center);
-
-            let file_button_style = ButtonStyle {
-                bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
-                text_color: Color::BLACK,
-                hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
-                hovered_text_color: Color::WHITE,
-                border_radius: 2.0,
-            };
-
-            let about_button_style = ButtonStyle {
-                bg_color: Color::TRANSPARENT,
-                text_color: Color::WHITE,
-                hovered_bg_color: Color::TRANSPARENT,
-                hovered_text_color: Color::new(0.7, 0.7, 0.7, 1.0),
-                border_radius: 4.0,
-            };
-
-            let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
-            configuration_column = configuration_column.push(layout_row);
-            configuration_column = configuration_column.push(hardware_desc_row);
-            configuration_column = configuration_column.push(
-                Button::new(Text::new("Save Configuration"))
-                    .style(file_button_style.get_button_style())
-                    .on_press(Message::Save),
-            );
-            configuration_column = configuration_column.push(
-                Button::new(Text::new("Load Configuration"))
-                    .style(file_button_style.get_button_style())
-                    .on_press(if !self.show_toast {
-                        // Add a new toast if `show_toast` is false
-                        Message::Load
-                    } else {
-                        // Close the existing toast if `show_toast` is true
-                        let index = self.toasts.len() - 1;
-                        Message::Toast(ToastMessage::Close(index))
-                    }),
-            );
-
-            let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
-            let add_toast_button = Button::new(version_text)
-                .on_press(if !self.show_toast {
-                    // Add a new toast if `show_toast` is false
-                    Message::Toast(ToastMessage::Add)
-                } else {
-                    // Close the existing toast if `show_toast` is true
-                    let index = self.toasts.len() - 1;
-                    Message::Toast(ToastMessage::Close(index))
-                })
-                .style(about_button_style.get_button_style());
-
-            let version_row = Row::new()
-                .push(add_toast_button)
-                .align_items(Alignment::Start);
-
-            main_row = main_row.push(
-                Column::new()
-                    .push(configuration_column)
-                    .push(version_row)
-                    .align_items(Alignment::Start)
-                    .width(Length::Shrink)
-                    .height(Length::Shrink)
-                    .spacing(self.chosen_layout.get_spacing()),
-            );
-
-            let pin_layout = match self.chosen_layout {
-                Layout::BoardLayout => board_pin_layout_view(&hw_desc.pins, self),
-                Layout::BCMLayout => bcm_pin_layout_view(&hw_desc.pins, self),
-            };
-
-            main_row = main_row.push(
-                Column::new()
-                    .push(pin_layout)
-                    .align_items(Alignment::Center)
-                    .height(Length::Fill)
-                    .width(Length::Fill),
-            );
-        }
-
-        let content = container(main_row)
+        let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
             .center_y()
-            .padding(10);
+            .padding(padding);
 
         Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
@@ -536,7 +551,7 @@ mod tests {
         assert!(app.toasts.is_empty());
 
         // Add a toast
-        let _ = app.update(Message::Toast(ToastMessage::Add));
+        let _ = app.update(Message::Toast(ToastMessage::VersionToast));
 
         // Check if a toast was added
         assert_eq!(app.toasts.len(), 1);
@@ -549,7 +564,7 @@ mod tests {
         let mut app = Gpio::new(()).0;
 
         // Add a toast
-        let _ = app.update(Message::Toast(ToastMessage::Add));
+        let _ = app.update(Message::Toast(ToastMessage::VersionToast));
 
         // Ensure the toast was added
         assert_eq!(app.toasts.len(), 1);
@@ -615,4 +630,3 @@ mod tests {
         assert_eq!(app.timeout_secs, 5);
     }
 }
-
