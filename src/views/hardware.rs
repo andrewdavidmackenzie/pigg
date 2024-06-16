@@ -15,7 +15,7 @@ pub fn hw_description(app: &Gpio) -> String {
             hardware_description.model,
         )
     } else {
-        format!("{}", "No Hardware connected")
+        "No Hardware connected".to_string()
     }
 }
 
@@ -23,7 +23,7 @@ pub fn hardware_button(app: &Gpio) -> Element<Message> {
     let hw_text = if let Some(hardware_description) = &app.hardware_description {
         hardware_description.model.clone()
     } else {
-        format!("{}", "No Hardware ")
+        "No Hardware".to_string()
     };
 
     let about_button_style = ButtonStyle {
