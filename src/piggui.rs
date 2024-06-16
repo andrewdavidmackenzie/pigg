@@ -4,7 +4,7 @@ use std::{env, io};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    executor, window, Alignment, Application, Color, Command, Element, Length, Padding, Settings,
+    executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
     Subscription, Theme,
 };
 
@@ -514,20 +514,13 @@ impl Application for Gpio {
     fn view(&self) -> Element<Self::Message> {
         let main_col = Column::new().push(self.main_row()).push(info_row(self));
 
-        let padding = Padding {
-            top: 10.0,
-            right: 10.0,
-            bottom: 0.0,
-            left: 10.0,
-        };
-
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
             .center_y()
-            .padding(padding);
+            .padding([10.0, 10.0, 0.0, 10.0]);
 
         Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
