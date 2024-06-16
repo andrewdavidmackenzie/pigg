@@ -1,4 +1,3 @@
-#![allow(unused)] // Need to remove
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
 use iced::widget::mouse_area;
@@ -36,21 +35,22 @@ const LED_WIDTH: f32 = 16.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
-const PIN_VIEW_SIDE_WIDTH: f32 = PIN_BUTTON_WIDTH
-    + WIDGET_ROW_SPACING
-    + PIN_ARROW_WIDTH
-    + WIDGET_ROW_SPACING
-    + PIN_NAME_WIDTH
-    + WIDGET_ROW_SPACING
-    + PIN_OPTION_WIDTH;
+
+// const PIN_VIEW_SIDE_WIDTH: f32 = PIN_BUTTON_WIDTH
+//     + WIDGET_ROW_SPACING
+//     + PIN_ARROW_WIDTH
+//     + WIDGET_ROW_SPACING
+//     + PIN_NAME_WIDTH
+//     + WIDGET_ROW_SPACING
+//     + PIN_OPTION_WIDTH;
 
 const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 // Export these two so they can be used to calculate overall window size
-pub const BCM_PIN_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
+// pub const BCM_PIN_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
 
 // Board Layout has two pin rows per row, with spacing between them
-pub const BOARD_PIN_LAYOUT_WIDTH: f32 =
-    PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS;
+// pub const BOARD_PIN_LAYOUT_WIDTH: f32 =
+//     PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS;
 
 // HEIGHTS
 const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
