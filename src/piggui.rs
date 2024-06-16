@@ -102,6 +102,7 @@ impl Gpio {
 
     async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
+            .add_filter("Pigg Config", &["pigg"])
             .set_title("Choose config file to load")
             .set_directory(env::current_dir().unwrap())
             .pick_file()
@@ -117,6 +118,7 @@ impl Gpio {
 
     async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<()> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
+            .add_filter("Pigg Config", &["pigg"])
             .set_title("Choose file")
             .set_directory(env::current_dir().unwrap())
             .save_file()
