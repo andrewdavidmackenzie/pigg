@@ -1,14 +1,14 @@
-use iced::{subscription, Subscription};
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::Sender;
+use iced::{subscription, Subscription};
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hw;
 use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction};
 use crate::hw::{Hardware, HardwareDescriptor};
-use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw_listener::HWListenerEvent::InputChange;
+use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 
 /// This enum is for events created by this listener, sent to the Gui
 // TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception

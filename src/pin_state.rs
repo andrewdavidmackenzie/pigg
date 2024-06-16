@@ -5,8 +5,8 @@ use iced::Element;
 use plotters::prelude::{RGBAColor, ShapeStyle};
 
 use crate::hw::{LevelChange, PinLevel};
-use crate::Message;
 use crate::views::waveform::{ChartType, Waveform};
+use crate::Message;
 
 pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 pub const CHART_WIDTH: f32 = 256.0;
