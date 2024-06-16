@@ -10,8 +10,8 @@ use iced::{
 
 use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction};
-use hw_listener::{HWListenerEvent, HardwareEvent};
+use hw::hw_listener::{HWListenerEvent, HardwareEvent};
+use hw::{hw_listener, BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
 use crate::hw::LevelChange;
@@ -22,7 +22,6 @@ use crate::views::hardware::hardware_view;
 
 mod custom_widgets;
 mod hw;
-mod hw_listener;
 mod layout;
 mod pin_layout;
 mod pin_state;
@@ -241,9 +240,11 @@ impl Application for Gpio {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
+
             Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
                 self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
             }
+
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
                 let layout_size = layout.get_window_size();
@@ -256,6 +257,7 @@ impl Application for Gpio {
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
             }
+
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
                 return Command::perform(
@@ -266,13 +268,16 @@ impl Application for Gpio {
                     },
                 );
             }
+
             Message::Load => {
                 return Command::perform(Self::load_via_picker(), |result| match result {
                     Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
                     _ => Message::None,
                 })
             }
+
             Message::None => {}
+
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc) => {
                     self.listener_sender = Some(config_change_sender);
