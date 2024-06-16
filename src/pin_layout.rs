@@ -1,23 +1,23 @@
-use iced::{Alignment, Color, Element, Length};
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
-use iced::widget::{button, Column, horizontal_space, pick_list, Row, Text, toggler};
 use iced::widget::mouse_area;
+use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
+use iced::{Alignment, Color, Element, Length};
 
-use crate::{Gpio, PinState};
-use crate::custom_widgets::{circle::circle, line::line};
 use crate::custom_widgets::button_style::ButtonStyle;
 use crate::custom_widgets::clicker::clicker;
 use crate::custom_widgets::led::led;
 use crate::custom_widgets::toggler_style::TogglerStyle;
+use crate::custom_widgets::{circle::circle, line::line};
+use crate::hw::InputPull;
+use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
     BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
     PinLevel,
 };
-use crate::hw::InputPull;
-use crate::hw::PinFunction::{Input, Output};
-use crate::Message;
 use crate::pin_state::CHART_WIDTH;
+use crate::Message;
+use crate::{Gpio, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
