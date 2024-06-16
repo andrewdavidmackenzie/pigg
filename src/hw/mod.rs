@@ -414,7 +414,7 @@ mod test {
         };
 
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.piggui");
+        let test_file = output_dir.join("test.pigg");
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
@@ -427,7 +427,7 @@ mod test {
     fn load_one_pin_config_input_no_pull() {
         let pin_config = r#"{"configured_pins":[[1,{"Input":null}]]}"#;
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.piggui");
+        let test_file = output_dir.join("test.pigg");
         let mut file = File::create(&test_file).expect("Could not create test file");
         file.write_all(pin_config.as_bytes())
             .expect("Could not write to test file");
@@ -441,7 +441,7 @@ mod test {
     fn load_test_file() {
         let root = std::env::var("CARGO_MANIFEST_DIR").expect("Could not get manifest dir");
         let mut path = PathBuf::from(root);
-        path = path.join("configs/andrews_board.piggui");
+        path = path.join("configs/andrews_board.pigg");
         let config = GPIOConfig::load(path.to_str().expect("Could not get Path as str"))
             .expect("Could not load GPIOConfig from path");
         assert_eq!(config.configured_pins.len(), 2);
@@ -464,7 +464,7 @@ mod test {
         };
 
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.piggui");
+        let test_file = output_dir.join("test.pigg");
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
