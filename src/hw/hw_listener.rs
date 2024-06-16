@@ -5,10 +5,10 @@ use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hw;
-use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinFunction};
-use crate::hw::{Hardware, HardwareDescriptor};
-use crate::hw_listener::HWListenerEvent::InputChange;
-use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::hw_listener::HWListenerEvent::InputChange;
+use crate::hw::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::Hardware;
+use crate::hw::{BCMPinNumber, GPIOConfig, HardwareDescription, LevelChange, PinFunction};
 
 /// This enum is for events created by this listener, sent to the Gui
 // TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
@@ -17,7 +17,7 @@ use crate::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConf
 pub enum HWListenerEvent {
     /// This event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
-    Ready(Sender<HardwareEvent>, HardwareDescriptor, PinDescriptionSet),
+    Ready(Sender<HardwareEvent>, HardwareDescription),
     /// This event indicates that the logic level of an input has just changed
     InputChange(BCMPinNumber, LevelChange),
 }
@@ -73,8 +73,7 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
         move |mut gui_sender| async move {
             let mut state = State::Starting;
             let mut connected_hardware = hw::get();
-            let hardware_description = connected_hardware.descriptor().unwrap();
-            let pin_descriptions = connected_hardware.pin_descriptions();
+            let hardware_description = connected_hardware.description().unwrap();
 
             loop {
                 let mut sender_clone = gui_sender.clone();
@@ -88,7 +87,6 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
                             .send(HWListenerEvent::Ready(
                                 hardware_event_sender.clone(),
                                 hardware_description.clone(),
-                                pin_descriptions.clone(),
                             ))
                             .await;
 

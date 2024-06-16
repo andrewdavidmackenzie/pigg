@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::hw::pin_descriptions::*;
 
+pub mod hw_listener;
 /// There are three implementations of [`Hardware`] trait:
 /// * None - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * Pi - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
@@ -25,14 +26,14 @@ pub fn get() -> impl Hardware {
 }
 
 #[derive(Clone, Debug)]
-pub struct HardwareDescriptor {
+pub struct HardwareDetails {
     pub hardware: String,
     pub revision: String,
     pub serial: String,
     pub model: String,
 }
 
-impl Display for HardwareDescriptor {
+impl Display for HardwareDetails {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Hardware: {}", self.hardware)?;
         writeln!(f, "Revision: {}", self.revision)?;
@@ -41,15 +42,21 @@ impl Display for HardwareDescriptor {
     }
 }
 
+/// [HardwareDescription] contains details about the board we are running on and the GPIO pins
+#[derive(Clone, Debug)]
+pub struct HardwareDescription {
+    pub details: HardwareDetails,
+    pub pins: PinDescriptionSet,
+}
+
 /// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
 /// interact with any possible GPIO hardware on the device to set config and get state
 #[must_use]
 pub trait Hardware {
-    /// Return a struct describing the hardware that we are connected to
-    fn descriptor(&self) -> io::Result<HardwareDescriptor>;
-    /// Return an array of 40 pin descriptions for the connected hardware.
-    /// Array index = board_pin_number -1, as pin numbering start at 1
-    fn pin_descriptions(&self) -> PinDescriptionSet;
+    /// Return a [HardwareDescription] struct describing the hardware that we are connected to:
+    /// * [HardwareDescription] such as revision etc.
+    /// * [PinDescriptionSet] describing all the pins
+    fn description(&self) -> io::Result<HardwareDescription>;
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
@@ -233,6 +240,8 @@ pub struct PinDescription {
     pub options: &'static [PinFunction], // The set of functions the pin can have, chosen by user config
 }
 
+/// Struct describing all the pins for the connected hardware.
+/// Array indexed from 0 so, board_pin_number -1, as pin numbering start at 1
 #[derive(Debug, Clone)]
 pub struct PinDescriptionSet {
     pins: [PinDescription; 40],
@@ -348,14 +357,14 @@ mod test {
     #[test]
     fn hw_can_be_got() {
         let hw = hw::get();
-        assert!(hw.descriptor().is_ok());
-        println!("{}", hw.descriptor().unwrap());
+        assert!(hw.description().is_ok());
+        println!("{:?}", hw.description().unwrap());
     }
 
     #[test]
     fn forty_board_pins() {
         let hw = hw::get();
-        let pin_set = hw.pin_descriptions();
+        let pin_set = hw.description().unwrap().pins;
         assert_eq!(pin_set.pins().len(), 40);
     }
 
@@ -363,7 +372,7 @@ mod test {
     fn twenty_seven_bcm_pins() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = hw::get();
-        let pin_set = hw.pin_descriptions();
+        let pin_set = hw.description().unwrap().pins;
         assert_eq!(pin_set.bcm_pins().len(), 26);
     }
 
@@ -371,7 +380,7 @@ mod test {
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = hw::get();
-        let pin_set = hw.pin_descriptions();
+        let pin_set = hw.description().unwrap().pins;
         let sorted_bcm_pins = pin_set.bcm_pins_sorted();
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
         let mut previous = 1; // we start at GPIO2
@@ -384,14 +393,14 @@ mod test {
     #[test]
     fn bcp_pin_2() {
         let hw = hw::get();
-        let pin_set = hw.pin_descriptions();
+        let pin_set = hw.description().unwrap().pins;
         assert_eq!(pin_set.bcm_to_board(2), Some(3));
     }
 
     #[test]
     fn bcp_pin_unknown() {
         let hw = hw::get();
-        let pin_set = hw.pin_descriptions();
+        let pin_set = hw.description().unwrap().pins;
         assert_eq!(pin_set.bcm_to_board(100), None);
     }
 

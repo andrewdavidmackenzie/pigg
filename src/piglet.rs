@@ -10,9 +10,9 @@ mod hw;
 /// over the network.
 fn main() {
     let mut hw = hw::get();
-    println!("{}", hw.descriptor().unwrap());
+    println!("{}", hw.description().unwrap().details);
     println!("Pin Descriptions:");
-    for pin_description in hw.pin_descriptions().iter() {
+    for pin_description in hw.description().unwrap().pins.iter() {
         println!("{pin_description}")
     }
 

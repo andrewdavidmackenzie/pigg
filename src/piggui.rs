@@ -10,11 +10,11 @@ use iced::{
 
 use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
-use hw::{BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescriptor, PinFunction};
-use hw_listener::{HWListenerEvent, HardwareEvent};
+use hw::hw_listener::{HWListenerEvent, HardwareEvent};
+use hw::{hw_listener, BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction};
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
-use crate::hw::{LevelChange, PinDescriptionSet};
+use crate::hw::LevelChange;
 use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::version::version;
@@ -22,7 +22,6 @@ use crate::views::hardware::hardware_view;
 
 mod custom_widgets;
 mod hw;
-mod hw_listener;
 mod layout;
 mod pin_layout;
 mod pin_state;
@@ -80,12 +79,11 @@ pub struct Gpio {
     gpio_config: GPIOConfig,
     pub pin_function_selected: [PinFunction; 40],
     chosen_layout: Layout,
-    hardware_description: Option<HardwareDescriptor>,
+    hardware_description: Option<HardwareDescription>,
     listener_sender: Option<Sender<HardwareEvent>>,
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: [PinState; 40],
-    pin_descriptions: Option<PinDescriptionSet>,
     toasts: Vec<Toast>,
     show_toast: bool,
     timeout_secs: u64,
@@ -186,9 +184,11 @@ impl Gpio {
     /// Go through all the pins in the loaded GPIOConfig and set its function in the
     /// pin_function_selected array, which is what is used for drawing the UI correctly.
     fn set_pin_functions_after_load(&mut self) {
-        if let Some(pin_set) = &self.pin_descriptions {
+        if let Some(hardware_description) = &self.hardware_description {
             for (bcm_pin_number, function) in &self.gpio_config.configured_pins {
-                if let Some(board_pin_number) = pin_set.bcm_to_board(*bcm_pin_number) {
+                if let Some(board_pin_number) =
+                    hardware_description.pins.bcm_to_board(*bcm_pin_number)
+                {
                     self.pin_function_selected[board_pin_number as usize - 1] = *function;
 
                     // For output pins, if there is an initial state set then set that in pin state
@@ -226,7 +226,6 @@ impl Application for Gpio {
                 chosen_layout: Layout::BoardLayout,
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
-                pin_descriptions: None,     // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
                 toasts: Vec::new(),
                 show_toast: false,
@@ -268,10 +267,12 @@ impl Application for Gpio {
                 }
             }
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
+
             Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
                 self.unsaved_changes = true;
                 self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
             }
+
             Message::LayoutChanged(layout) => {
                 self.chosen_layout = layout;
                 let layout_size = layout.get_window_size();
@@ -318,17 +319,19 @@ impl Application for Gpio {
             }
 
             Message::None => {}
+
             Message::HardwareListener(event) => match event {
-                HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
+                HWListenerEvent::Ready(config_change_sender, hw_desc) => {
                     self.listener_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
-                    self.pin_descriptions = Some(pins);
                     self.set_pin_functions_after_load();
                     self.update_hw_config();
                 }
                 HWListenerEvent::InputChange(bcm_pin_number, level_change) => {
-                    if let Some(pins) = &self.pin_descriptions {
-                        if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
+                    if let Some(hardware_description) = &self.hardware_description {
+                        if let Some(board_pin_number) =
+                            hardware_description.pins.bcm_to_board(bcm_pin_number)
+                        {
                             self.set_pin_level_change(board_pin_number, level_change);
                         }
                     }
@@ -336,8 +339,10 @@ impl Application for Gpio {
             },
 
             Message::ChangeOutputLevel(bcm_pin_number, level_change) => {
-                if let Some(pins) = &self.pin_descriptions {
-                    if let Some(board_pin_number) = pins.bcm_to_board(bcm_pin_number) {
+                if let Some(hardware_description) = &self.hardware_description {
+                    if let Some(board_pin_number) =
+                        hardware_description.pins.bcm_to_board(bcm_pin_number)
+                    {
                         self.set_pin_level_change(board_pin_number, level_change.clone());
                     }
                     if let Some(ref mut listener) = &mut self.listener_sender {
@@ -411,7 +416,7 @@ impl Application for Gpio {
                 .spacing(10);
 
             let hardware_desc_row = Row::new()
-                .push(hardware_view(hw_desc))
+                .push(hardware_view(&hw_desc.details))
                 .align_items(Alignment::Center);
 
             let file_button_style = ButtonStyle {
@@ -476,12 +481,10 @@ impl Application for Gpio {
                     .height(Length::Shrink)
                     .spacing(self.chosen_layout.get_spacing()),
             );
-        }
 
-        if let Some(pins) = &self.pin_descriptions {
             let pin_layout = match self.chosen_layout {
-                Layout::BoardLayout => board_pin_layout_view(pins, self),
-                Layout::BCMLayout => bcm_pin_layout_view(pins, self),
+                Layout::BoardLayout => board_pin_layout_view(&hw_desc.pins, self),
+                Layout::BCMLayout => bcm_pin_layout_view(&hw_desc.pins, self),
             };
 
             main_row = main_row.push(

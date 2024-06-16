@@ -8,11 +8,11 @@ use rppal::gpio::OutputPin;
 #[allow(unused_imports)] // just checking builds work for now...
 use rppal::gpio::{InputPin, Level, Trigger};
 
-use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinLevel};
+use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
-use super::HardwareDescriptor;
+use super::{HardwareDescription, HardwareDetails};
 
 enum Pin {
     Input(InputPin),
@@ -31,12 +31,9 @@ pub fn get() -> impl Hardware {
     }
 }
 
-/// Implement the [Hardware] trait for ordinary Pi hardware.
-// -> Result<(), Box<dyn Error>>
-impl Hardware for PiHW {
-    /// Find the Pi hardware description
-    fn descriptor(&self) -> io::Result<HardwareDescriptor> {
-        let mut descriptor = HardwareDescriptor {
+impl PiHW {
+    fn get_details() -> io::Result<HardwareDetails> {
+        let mut details = HardwareDetails {
             hardware: "Unknown".to_string(),
             revision: "Unknown".to_string(),
             serial: "Unknown".to_string(),
@@ -48,19 +45,27 @@ impl Hardware for PiHW {
                 .split_once(':')
                 .map(|(key, value)| (key.trim(), value.trim()))
             {
-                Some(("Hardware", hw)) => descriptor.hardware = hw.to_string(),
-                Some(("Revision", revision)) => descriptor.revision = revision.to_string(),
-                Some(("Serial", serial)) => descriptor.serial = serial.to_string(),
-                Some(("Model", model)) => descriptor.model = model.to_string(),
+                Some(("Hardware", hw)) => details.hardware = hw.to_string(),
+                Some(("Revision", revision)) => details.revision = revision.to_string(),
+                Some(("Serial", serial)) => details.serial = serial.to_string(),
+                Some(("Model", model)) => details.model = model.to_string(),
                 _ => {}
             }
         }
 
-        Ok(descriptor)
+        Ok(details)
     }
+}
 
-    fn pin_descriptions(&self) -> PinDescriptionSet {
-        super::GPIO_PIN_DESCRIPTIONS
+/// Implement the [Hardware] trait for ordinary Pi hardware.
+// -> Result<(), Box<dyn Error>>
+impl Hardware for PiHW {
+    /// Find the Pi hardware description
+    fn description(&self) -> io::Result<HardwareDescription> {
+        Ok(HardwareDescription {
+            details: Self::get_details()?,
+            pins: super::GPIO_PIN_DESCRIPTIONS,
+        })
     }
 
     /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
