@@ -20,7 +20,7 @@ use crate::hw::{hw_listener, LevelChange};
 use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
-use crate::views::info::info_row;
+use crate::views::info::{info_row, StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
 mod custom_widgets;
@@ -72,6 +72,7 @@ pub enum Message {
     Toast(ToastMessage),
     Save,
     Load,
+    Status(StatusMessage),
     SaveCancelled,
     UpdateCharts,
     WindowEvent(iced::Event),
@@ -93,6 +94,8 @@ pub struct Gpio {
     timeout_secs: u64,
     unsaved_changes: bool,
     pending_load: bool,
+    pending_exit: bool,
+    status_message_queue: StatusMessageQueue,
 }
 
 impl Gpio {
@@ -289,6 +292,10 @@ impl Gpio {
 
         main_row.into()
     }
+
+    fn new_status_message(&mut self, message: StatusMessage) {
+        self.status_message_queue.add(message);
+    }
 }
 
 impl Application for Gpio {
@@ -312,6 +319,8 @@ impl Application for Gpio {
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 pending_load: false,
+                pending_exit: false,
+                status_message_queue: Default::default(),
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -373,18 +382,16 @@ impl Application for Gpio {
                 return Command::perform(
                     Self::save_via_picker(gpio_config),
                     |result| match result {
-                        Ok(true) => {
-                            // Save was successful
-                            Message::None
-                        }
-                        Ok(false) => {
-                            // User cancelled the save
-                            Message::SaveCancelled
-                        }
-                        Err(_) => {
-                            // Handle error if needed
-                            Message::None
-                        }
+                        Ok(true) => Message::Status(StatusMessage::Info(
+                            "File saved successfully".to_string(),
+                        )),
+                        Ok(false) => Message::Status(StatusMessage::Warning(
+                            "Save cancelled".to_string(),
+                        )),
+                        Err(_) => Message::Status(StatusMessage::Error(
+                            "Error saving file".to_string(),
+                            format!("Error saving file. {e}")
+                        )),
                     },
                 );
             }
@@ -493,6 +500,8 @@ impl Application for Gpio {
                     self.timeout_secs = timeout as u64;
                 }
             },
+
+            Message::Status(msg) => self.new_status_message(msg),
         }
         Command::none()
     }
