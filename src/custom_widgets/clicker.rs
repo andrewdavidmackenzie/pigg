@@ -1,8 +1,8 @@
-use iced::{Color, Element, Length, Rectangle, Size};
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{self, Widget};
 use iced::mouse;
+use iced::{Color, Element, Length, Rectangle, Size};
 
 pub struct Clicker {
     radius: f32,

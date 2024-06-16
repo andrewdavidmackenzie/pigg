@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 
+use rppal::gpio::Gpio;
+use rppal::gpio::OutputPin;
 /// Implementation of GPIO for raspberry pi - uses rrpal
 #[allow(unused_imports)] // just checking builds work for now...
 use rppal::gpio::{InputPin, Level, Trigger};
-use rppal::gpio::Gpio;
-use rppal::gpio::OutputPin;
 
 use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinDescriptionSet, PinLevel};
 use crate::hw::{InputPull, PinFunction};

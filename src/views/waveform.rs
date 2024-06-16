@@ -1,14 +1,14 @@
-use std::{collections::VecDeque, time::Duration};
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::ops::Range;
+use std::{collections::VecDeque, time::Duration};
 
 use chrono::{DateTime, Utc};
-use iced::{
-    Element,
-    Length, Size, widget::canvas::{Cache, Frame, Geometry},
-};
 use iced::advanced::text::editor::Direction;
+use iced::{
+    widget::canvas::{Cache, Frame, Geometry},
+    Element, Length, Size,
+};
 use plotters::backend::DrawingBackend;
 use plotters::chart::ChartBuilder;
 use plotters::series::LineSeries;
@@ -16,8 +16,8 @@ use plotters::style::ShapeStyle;
 use plotters_iced::{Chart, ChartWidget, Renderer};
 
 use crate::hw::{LevelChange, PinLevel};
-use crate::Message;
 use crate::views::waveform::ChartType::{Squarewave, Verbatim};
+use crate::Message;
 
 /// `Sample<T>` can be used to send new samples to a waveform widget for display in a moving chart
 /// It must have a type `T` that implements `Into<u32>` for Y-axis value, and a `DateTime` when it

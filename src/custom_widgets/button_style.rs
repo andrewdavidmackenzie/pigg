@@ -1,5 +1,5 @@
-use iced::{Color, Theme};
 use iced::widget::button;
+use iced::{Color, Theme};
 
 pub struct ButtonStyle {
     pub bg_color: Color,

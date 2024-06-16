@@ -341,9 +341,9 @@ mod test {
     use tempfile::tempdir;
 
     use crate::hw;
-    use crate::hw::{GPIOConfig, LevelChange, PinFunction};
     use crate::hw::Hardware;
     use crate::hw::InputPull::PullUp;
+    use crate::hw::{GPIOConfig, LevelChange, PinFunction};
 
     #[test]
     fn hw_can_be_got() {
