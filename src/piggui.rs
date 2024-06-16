@@ -241,10 +241,7 @@ impl Application for Gpio {
     }
 
     fn title(&self) -> String {
-        if let Some(config_filename) = &self.config_filename {
-            return config_filename.clone();
-        }
-        String::from("Piggui")
+        self.config_filename.to_string().unwrap_or(String::from("Piggui"))
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
