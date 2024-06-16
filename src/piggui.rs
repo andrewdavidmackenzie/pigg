@@ -41,6 +41,7 @@ fn main() -> Result<(), iced::Error> {
     let size = layout.get_window_size();
     let window = window::Settings {
         resizable: true,
+        exit_on_close_request: false,
         size,
         ..Default::default()
     };
@@ -70,6 +71,7 @@ pub enum Message {
     Save,
     Load,
     UpdateCharts,
+    WindowEvent(iced::Event),
 }
 
 pub struct Gpio {
@@ -87,6 +89,9 @@ pub struct Gpio {
     toasts: Vec<Toast>,
     show_toast: bool,
     timeout_secs: u64,
+    unsaved_changes: bool,
+    pending_load: bool,
+    pending_exit: bool,
 }
 
 impl Gpio {
@@ -226,6 +231,9 @@ impl Application for Gpio {
                 toasts: Vec::new(),
                 show_toast: false,
                 timeout_secs: toast::DEFAULT_TIMEOUT,
+                unsaved_changes: false,
+                pending_load: false,
+                pending_exit: false,
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -235,13 +243,33 @@ impl Application for Gpio {
     }
 
     fn title(&self) -> String {
-        String::from("Piggui")
+        self.config_filename.clone().unwrap_or(String::from("Piggui"))
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
+            Message::WindowEvent(event) => {
+                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
+                {
+                    if self.unsaved_changes {
+                        self.toasts.clear();
+                        self.toasts.push(Toast {
+                            title: "Unsaved Changes".into(),
+                            body:
+                                "You have unsaved changes. Do you want to exit without saving?"
+                                    .into(),
+                            status: Status::Danger,
+                        });
+                        self.show_toast = true;
+                        self.pending_exit = true;
+                    } else {
+                        return window::close(window::Id::MAIN);
+                    }
+                }
+            }
             Message::Activate(pin_number) => println!("Pin {pin_number} clicked"),
             Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
+                self.unsaved_changes = true;
                 self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
             }
             Message::LayoutChanged(layout) => {
@@ -255,9 +283,12 @@ impl Application for Gpio {
                 self.gpio_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
+                self.unsaved_changes = true;
             }
+
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
+                self.unsaved_changes = false;
                 return Command::perform(
                     Self::save_via_picker(gpio_config),
                     |result| match result {
@@ -266,12 +297,26 @@ impl Application for Gpio {
                     },
                 );
             }
+
             Message::Load => {
-                return Command::perform(Self::load_via_picker(), |result| match result {
-                    Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
-                    _ => Message::None,
-                })
+                if self.unsaved_changes {
+                    self.toasts.clear();
+                    self.toasts.push(Toast {
+                        title: "Unsaved Changes".into(),
+                        body: "You have unsaved changes. Do you want to continue without saving?"
+                            .into(),
+                        status: Status::Danger,
+                    });
+                    self.show_toast = true;
+                    self.pending_load = true;
+                } else {
+                    return Command::perform(Self::load_via_picker(), |result| match result {
+                        Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
+                        _ => Message::None,
+                    });
+                }
             }
+
             Message::None => {}
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc, pins) => {
@@ -326,6 +371,19 @@ impl Application for Gpio {
                 ToastMessage::Close(index) => {
                     self.show_toast = false;
                     self.toasts.remove(index);
+                    if self.pending_load {
+                        self.pending_load = false;
+                        return Command::perform(Self::load_via_picker(), |result| match result {
+                            Ok(Some((filename, config))) => {
+                                Message::ConfigLoaded((filename, config))
+                            }
+                            _ => Message::None,
+                        });
+                    }
+                    if self.pending_exit {
+                        self.pending_exit = false;
+                        return window::close(window::Id::MAIN);
+                    }
                 }
                 ToastMessage::Timeout(timeout) => {
                     self.timeout_secs = timeout as u64;
@@ -383,7 +441,14 @@ impl Application for Gpio {
             configuration_column = configuration_column.push(
                 Button::new(Text::new("Load Configuration"))
                     .style(file_button_style.get_button_style())
-                    .on_press(Message::Load),
+                    .on_press(if !self.show_toast {
+                        // Add a new toast if `show_toast` is false
+                        Message::Load
+                    } else {
+                        // Close the existing toast if `show_toast` is true
+                        let index = self.toasts.len() - 1;
+                        Message::Toast(ToastMessage::Close(index))
+                    }),
             );
 
             let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
@@ -452,6 +517,99 @@ impl Application for Gpio {
             hw_listener::subscribe().map(Message::HardwareListener),
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| Message::UpdateCharts),
+            iced::event::listen().map(Message::WindowEvent),
         ])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn test_add_toast_message() {
+        let mut app = Gpio::new(()).0;
+
+        // No toasts should be present
+        assert!(app.toasts.is_empty());
+
+        // Add a toast
+        let _ = app.update(Message::Toast(ToastMessage::Add));
+
+        // Check if a toast was added
+        assert_eq!(app.toasts.len(), 1);
+        let toast = &app.toasts[0];
+        assert_eq!(toast.title, "About Piggui");
+    }
+
+    #[tokio::test]
+    async fn test_close_toast_message() {
+        let mut app = Gpio::new(()).0;
+
+        // Add a toast
+        let _ = app.update(Message::Toast(ToastMessage::Add));
+
+        // Ensure the toast was added
+        assert_eq!(app.toasts.len(), 1);
+
+        // Close the toast
+        let _ = app.update(Message::Toast(ToastMessage::Close(0)));
+
+        // Check if the toast was removed
+        assert!(app.toasts.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_window_close_with_unsaved_changes() {
+        let mut app = Gpio::new(()).0;
+
+        // Simulate unsaved changes
+        app.unsaved_changes = true;
+
+        // Send a close window event
+        let _ = app.update(Message::WindowEvent(iced::Event::Window(
+            window::Id::MAIN,
+            window::Event::CloseRequested,
+        )));
+
+        // Check if a warning toast was added
+        assert_eq!(app.toasts.len(), 1);
+        let toast = &app.toasts[0];
+        assert_eq!(toast.title, "Unsaved Changes");
+        assert_eq!(
+            toast.body,
+            "You have unsaved changes. Do you want to exit without saving?"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_load_with_unsaved_changes() {
+        let mut app = Gpio::new(()).0;
+
+        // Simulate unsaved changes
+        app.unsaved_changes = true;
+
+        // Send a load message
+        let _ = app.update(Message::Load);
+
+        // Check if a warning toast was added
+        assert_eq!(app.toasts.len(), 1);
+        let toast = &app.toasts[0];
+        assert_eq!(toast.title, "Unsaved Changes");
+        assert_eq!(
+            toast.body,
+            "You have unsaved changes. Do you want to continue without saving?"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_toast_timeout() {
+        let mut app = Gpio::new(()).0;
+
+        // Send a timeout message
+        let _ = app.update(Message::Toast(ToastMessage::Timeout(5.0)));
+
+        // Check the timeout
+        assert_eq!(app.timeout_secs, 5);
+    }
+}
+

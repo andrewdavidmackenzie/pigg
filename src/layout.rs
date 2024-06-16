@@ -1,6 +1,6 @@
 use iced::Size;
 
-use crate::pin_layout::{BCM_PIN_LAYOUT_WIDTH, BOARD_PIN_LAYOUT_WIDTH};
+// use crate::pin_layout::{BCM_PIN_LAYOUT_WIDTH, BOARD_PIN_LAYOUT_WIDTH};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layout {
@@ -11,9 +11,9 @@ pub enum Layout {
 const BOARD_LAYOUT_SPACING: u16 = 470;
 const BCM_LAYOUT_SPACING: u16 = 640;
 // TODO use these later, together with config column width to calculate the required window width
-const BOARD_WINDOW_WIDTH: f32 = BOARD_PIN_LAYOUT_WIDTH;
+// const BOARD_WINDOW_WIDTH: f32 = BOARD_PIN_LAYOUT_WIDTH;
 const BOARD_LAYOUT_WIDTH: f32 = 1570.0;
-const BCM_WINDOW_WIDTH: f32 = BCM_PIN_LAYOUT_WIDTH;
+// const BCM_WINDOW_WIDTH: f32 = BCM_PIN_LAYOUT_WIDTH;
 const BOARD_LAYOUT_HEIGHT: f32 = 780.0;
 const BCM_LAYOUT_WIDTH: f32 = 1000.0;
 const BCM_LAYOUT_HEIGHT: f32 = 950.0;
