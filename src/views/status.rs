@@ -98,9 +98,7 @@ pub fn status_message(app: &Gpio) -> Element<Message> {
 #[cfg(test)]
 mod test {
     use crate::views::status::StatusMessage::{Error, Info, Warning};
-    use crate::views::status::{status_message, StatusMessageQueue};
-    use crate::Gpio;
-    use iced::application::Application;
+    use crate::views::status::StatusMessageQueue;
 
     #[test]
     fn errors_first() {
@@ -131,16 +129,5 @@ mod test {
         queue.clear_message();
         assert_eq!(queue.current_message, Some(Info("last".into())));
         assert_eq!(queue.queue.len(), 0);
-    }
-
-    #[tokio::test]
-    async fn no_text() {
-        let (app, _command) = Gpio::new(());
-        let el = status_message(&app);
-        let button = el.as_widget();
-        let tree = button.children();
-        println!("{:?}", tree);
-        let text = tree.first();
-        println!("{:?}", text);
     }
 }
