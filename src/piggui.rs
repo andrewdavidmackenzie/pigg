@@ -93,7 +93,6 @@ pub struct Gpio {
     timeout_secs: u64,
     unsaved_changes: bool,
     pending_load: bool,
-    pending_exit: bool,
 }
 
 impl Gpio {
@@ -313,7 +312,6 @@ impl Application for Gpio {
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 pending_load: false,
-                pending_exit: false,
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -342,7 +340,7 @@ impl Application for Gpio {
                             status: Status::Danger,
                         });
                         self.show_toast = true;
-                        self.pending_exit = true;
+                        self.unsaved_changes = false;
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -362,11 +360,12 @@ impl Application for Gpio {
             }
 
             Message::ConfigLoaded((filename, config)) => {
+                let config_is_different = !self.gpio_config.is_equal(&config);
                 self.config_filename = Some(filename);
                 self.gpio_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
-                self.unsaved_changes = true;
+                self.unsaved_changes = config_is_different;
             }
 
             Message::Save => {
@@ -488,10 +487,6 @@ impl Application for Gpio {
                             }
                             _ => Message::None,
                         });
-                    }
-                    if self.pending_exit {
-                        self.pending_exit = false;
-                        return window::close(window::Id::MAIN);
                     }
                 }
                 ToastMessage::Timeout(timeout) => {
