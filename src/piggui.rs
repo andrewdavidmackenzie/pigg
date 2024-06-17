@@ -20,7 +20,8 @@ use crate::hw::{hw_listener, LevelChange};
 use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
-use crate::views::info::{info_row, StatusMessage, StatusMessageQueue};
+use crate::views::info::info_row;
+use crate::views::status::{StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
 mod custom_widgets;
