@@ -73,8 +73,8 @@ pub enum Message {
     Toast(ToastMessage),
     Save,
     Load,
-    Status(StatusMessage),
-    SaveCancelled,
+    ShowStatusMessage(StatusMessage),
+    ClearStatusMessage,
     UpdateCharts,
     WindowEvent(iced::Event),
 }
@@ -126,7 +126,7 @@ impl Gpio {
         }
     }
 
-    async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
+    async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<String> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .add_filter("Pigg Config", &["pigg"])
             .set_title("Choose file")
@@ -136,11 +136,9 @@ impl Gpio {
         {
             let path: std::path::PathBuf = handle.path().to_owned();
             let path_str = path.display().to_string();
-            gpio_config.save(&path_str).unwrap();
-            Ok(true)
-
+            gpio_config.save(&path_str)
         } else {
-            Ok(false)
+            Ok("File save cancelled".into())
         }
     }
 
@@ -226,8 +224,8 @@ impl Gpio {
             Some(self.chosen_layout),
             Message::LayoutChanged,
         )
-            .width(Length::Shrink)
-            .placeholder("Choose Layout");
+        .width(Length::Shrink)
+        .placeholder("Choose Layout");
 
         let layout_row = Row::new()
             .push(layout_selector)
@@ -241,6 +239,7 @@ impl Gpio {
             hovered_text_color: Color::WHITE,
             border_radius: 2.0,
         };
+
         let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
         configuration_column = configuration_column.push(layout_row);
         configuration_column = configuration_column.push(
@@ -292,10 +291,6 @@ impl Gpio {
         }
 
         main_row.into()
-    }
-
-    fn new_status_message(&mut self, message: StatusMessage) {
-        self.status_message_queue.add(message);
     }
 }
 
@@ -350,7 +345,7 @@ impl Application for Gpio {
                             status: Status::Danger,
                         });
                         self.show_toast = true;
-                        self.unsaved_changes = false;
+                        self.pending_exit = true;
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -370,35 +365,28 @@ impl Application for Gpio {
             }
 
             Message::ConfigLoaded((filename, config)) => {
-                let config_is_different = !self.gpio_config.is_equal(&config);
                 self.config_filename = Some(filename);
                 self.gpio_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
-                self.unsaved_changes = config_is_different;
+                self.unsaved_changes = true;
             }
 
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
+                self.unsaved_changes = false;
                 return Command::perform(
                     Self::save_via_picker(gpio_config),
                     |result| match result {
-                        Ok(true) => Message::Status(StatusMessage::Info(
+                        Ok(_) => Message::ShowStatusMessage(StatusMessage::Info(
                             "File saved successfully".to_string(),
                         )),
-                        Ok(false) => Message::Status(StatusMessage::Warning(
-                            "Save cancelled".to_string(),
-                        )),
-                        Err(_) => Message::Status(StatusMessage::Error(
+                        Err(e) => Message::ShowStatusMessage(StatusMessage::Error(
                             "Error saving file".to_string(),
-                            format!("Error saving file. {e}")
+                            format!("Error saving file. {e}",),
                         )),
                     },
                 );
-            }
-
-            Message::SaveCancelled => {
-                self.unsaved_changes = true;
             }
 
             Message::Load => {
@@ -496,13 +484,19 @@ impl Application for Gpio {
                             _ => Message::None,
                         });
                     }
+                    if self.pending_exit {
+                        self.pending_exit = false;
+                        return window::close(window::Id::MAIN);
+                    }
                 }
                 ToastMessage::Timeout(timeout) => {
                     self.timeout_secs = timeout as u64;
                 }
             },
 
-            Message::Status(msg) => self.new_status_message(msg),
+            Message::ShowStatusMessage(msg) => self.status_message_queue.add_message(msg),
+
+            Message::ClearStatusMessage => self.status_message_queue.clear_message(),
         }
         Command::none()
     }
@@ -535,8 +529,8 @@ impl Application for Gpio {
         Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
         })
-            .timeout(self.timeout_secs)
-            .into()
+        .timeout(self.timeout_secs)
+        .into()
     }
 
     fn theme(&self) -> Theme {
@@ -544,12 +538,20 @@ impl Application for Gpio {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        Subscription::batch([
+        let mut subscriptions = vec![
             hw_listener::subscribe().map(Message::HardwareListener),
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| Message::UpdateCharts),
             iced::event::listen().map(Message::WindowEvent),
-        ])
+        ];
+
+        if self.status_message_queue.has_info_messages() {
+            subscriptions.push(
+                iced::time::every(Duration::from_secs(3)).map(|_| Message::ClearStatusMessage),
+            );
+        }
+
+        Subscription::batch(subscriptions)
     }
 }
 
