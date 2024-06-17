@@ -2,8 +2,9 @@ use iced::Size;
 
 // use crate::pin_layout::{BCM_PIN_LAYOUT_WIDTH, BOARD_PIN_LAYOUT_WIDTH};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Layout {
+    #[default]
     BoardLayout,
     BCMLayout,
 }

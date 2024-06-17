@@ -4,7 +4,7 @@ use std::{env, io};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{container, pick_list, Button, Column, Row, Text};
 use iced::{
-    executor, window, Alignment, Application, Color, Command, Element, Length, Padding, Settings,
+    executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
     Subscription, Theme,
 };
 
@@ -21,6 +21,7 @@ use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
 use crate::views::info::info_row;
+use crate::views::status::{StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
 mod custom_widgets;
@@ -73,6 +74,8 @@ pub enum Message {
     Save,
     Load,
     SaveCancelled,
+    ShowStatusMessage(StatusMessage),
+    ClearStatusMessage,
     UpdateCharts,
     WindowEvent(iced::Event),
 }
@@ -93,6 +96,7 @@ pub struct Gpio {
     timeout_secs: u64,
     unsaved_changes: bool,
     pending_load: bool,
+    status_message_queue: StatusMessageQueue,
 }
 
 impl Gpio {
@@ -134,7 +138,6 @@ impl Gpio {
             let path_str = path.display().to_string();
             gpio_config.save(&path_str).unwrap();
             Ok(true)
-
         } else {
             Ok(false)
         }
@@ -222,8 +225,8 @@ impl Gpio {
             Some(self.chosen_layout),
             Message::LayoutChanged,
         )
-            .width(Length::Shrink)
-            .placeholder("Choose Layout");
+        .width(Length::Shrink)
+        .placeholder("Choose Layout");
 
         let layout_row = Row::new()
             .push(layout_selector)
@@ -312,6 +315,7 @@ impl Application for Gpio {
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 pending_load: false,
+                status_message_queue: Default::default(),
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -373,18 +377,16 @@ impl Application for Gpio {
                 return Command::perform(
                     Self::save_via_picker(gpio_config),
                     |result| match result {
-                        Ok(true) => {
-                            // Save was successful
-                            Message::None
-                        }
-                        Ok(false) => {
-                            // User cancelled the save
-                            Message::SaveCancelled
-                        }
-                        Err(_) => {
-                            // Handle error if needed
-                            Message::None
-                        }
+                        Ok(true) => Message::ShowStatusMessage(StatusMessage::Info(
+                            "File saved successfully".to_string(),
+                        )),
+                        Ok(false) => Message::ShowStatusMessage(StatusMessage::Warning(
+                            "File save cancelled".to_string(),
+                        )),
+                        Err(e) => Message::ShowStatusMessage(StatusMessage::Error(
+                            "Error saving file".to_string(),
+                            format!("Error saving file. {e}",),
+                        )),
                     },
                 );
             }
@@ -493,6 +495,10 @@ impl Application for Gpio {
                     self.timeout_secs = timeout as u64;
                 }
             },
+
+            Message::ShowStatusMessage(msg) => self.status_message_queue.add_message(msg),
+
+            Message::ClearStatusMessage => self.status_message_queue.clear_message(),
         }
         Command::none()
     }
@@ -514,26 +520,19 @@ impl Application for Gpio {
     fn view(&self) -> Element<Self::Message> {
         let main_col = Column::new().push(self.main_row()).push(info_row(self));
 
-        let padding = Padding {
-            top: 10.0,
-            right: 10.0,
-            bottom: 0.0,
-            left: 10.0,
-        };
-
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
             .center_y()
-            .padding(padding);
+            .padding([10.0, 10.0, 0.0, 10.0]);
 
         Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
         })
-            .timeout(self.timeout_secs)
-            .into()
+        .timeout(self.timeout_secs)
+        .into()
     }
 
     fn theme(&self) -> Theme {
@@ -541,12 +540,20 @@ impl Application for Gpio {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        Subscription::batch([
+        let mut subscriptions = vec![
             hw_listener::subscribe().map(Message::HardwareListener),
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| Message::UpdateCharts),
             iced::event::listen().map(Message::WindowEvent),
-        ])
+        ];
+
+        if self.status_message_queue.showing_info_message() {
+            subscriptions.push(
+                iced::time::every(Duration::from_secs(3)).map(|_| Message::ClearStatusMessage),
+            );
+        }
+
+        Subscription::batch(subscriptions)
     }
 }
 
