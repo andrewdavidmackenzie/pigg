@@ -545,7 +545,8 @@ impl Application for Gpio {
             iced::event::listen().map(Message::WindowEvent),
         ];
 
-        if self.status_message_queue.has_info_messages() {
+        if self.status_message_queue.showing_info_message() {
+            println!("Will clear info message in 3s");
             subscriptions.push(
                 iced::time::every(Duration::from_secs(3)).map(|_| Message::ClearStatusMessage),
             );

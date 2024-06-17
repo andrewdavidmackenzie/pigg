@@ -1,4 +1,5 @@
 use crate::custom_widgets::button_style::ButtonStyle;
+use crate::views::status::StatusMessage::Info;
 use crate::{Gpio, Message};
 use iced::widget::{Button, Text};
 use iced::{Color, Element, Length};
@@ -54,6 +55,7 @@ impl StatusMessageQueue {
     /// If there is another message in the queue then it sets that as the new message to be shown
     /// If there is no other message queues to be shown, then set to None and no message is shown
     pub fn clear_message(&mut self) {
+        println!("Clearing message");
         if self.queue.is_empty() {
             self.current_message = None;
         } else {
@@ -62,8 +64,12 @@ impl StatusMessageQueue {
     }
 
     /// Are there any [StatusMessage]  of type Info in the queue waiting to be displayed?
-    pub fn has_info_messages(&self) -> bool {
-        !self.queue.is_empty()
+    pub fn showing_info_message(&self) -> bool {
+        if let Some(Info(_)) = self.current_message {
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -112,7 +118,7 @@ mod test {
         queue.add_message(Warning("middle".into()));
         assert_eq!(queue.queue.len(), 3);
 
-        assert!(queue.has_info_messages());
+        assert!(queue.showing_info_message());
 
         queue.clear_message();
         assert_eq!(
