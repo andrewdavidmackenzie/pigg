@@ -72,6 +72,7 @@ pub enum Message {
     Toast(ToastMessage),
     Save,
     Load,
+    SaveCancelled,
     UpdateCharts,
     WindowEvent(iced::Event),
 }
@@ -122,7 +123,7 @@ impl Gpio {
         }
     }
 
-    async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<()> {
+    async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
         if let Some(handle) = rfd::AsyncFileDialog::new()
             .add_filter("Pigg Config", &["pigg"])
             .set_title("Choose file")
@@ -132,9 +133,11 @@ impl Gpio {
         {
             let path: std::path::PathBuf = handle.path().to_owned();
             let path_str = path.display().to_string();
-            gpio_config.save(&path_str)
+            gpio_config.save(&path_str).unwrap();
+            Ok(true)
+
         } else {
-            Ok(())
+            Ok(false)
         }
     }
 
@@ -220,8 +223,8 @@ impl Gpio {
             Some(self.chosen_layout),
             Message::LayoutChanged,
         )
-        .width(Length::Shrink)
-        .placeholder("Choose Layout");
+            .width(Length::Shrink)
+            .placeholder("Choose Layout");
 
         let layout_row = Row::new()
             .push(layout_selector)
@@ -235,7 +238,6 @@ impl Gpio {
             hovered_text_color: Color::WHITE,
             border_radius: 2.0,
         };
-
         let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
         configuration_column = configuration_column.push(layout_row);
         configuration_column = configuration_column.push(
@@ -369,14 +371,27 @@ impl Application for Gpio {
 
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
-                self.unsaved_changes = false;
                 return Command::perform(
                     Self::save_via_picker(gpio_config),
                     |result| match result {
-                        Ok(_) => Message::None,
-                        _ => Message::None, // eprintln ! ("Error saving configuration to {}: {}", path_str, err);
+                        Ok(true) => {
+                            // Save was successful
+                            Message::None
+                        }
+                        Ok(false) => {
+                            // User cancelled the save
+                            Message::SaveCancelled
+                        }
+                        Err(_) => {
+                            // Handle error if needed
+                            Message::None
+                        }
                     },
                 );
+            }
+
+            Message::SaveCancelled => {
+                self.unsaved_changes = true;
             }
 
             Message::Load => {
@@ -522,8 +537,8 @@ impl Application for Gpio {
         Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
         })
-        .timeout(self.timeout_secs)
-        .into()
+            .timeout(self.timeout_secs)
+            .into()
     }
 
     fn theme(&self) -> Theme {
