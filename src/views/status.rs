@@ -1,5 +1,4 @@
 use crate::custom_widgets::button_style::ButtonStyle;
-use crate::views::status::StatusMessage::Info;
 use crate::{Gpio, Message};
 use iced::widget::{Button, Text};
 use iced::{Color, Element, Length};
@@ -16,9 +15,9 @@ use iced::{Color, Element, Length};
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum StatusMessage {
-    Info(String) = 0,
-    Warning(String) = 1,
     Error(String, String) = 2,
+    Warning(String) = 1,
+    Info(String) = 0,
 }
 
 impl StatusMessage {
@@ -55,7 +54,6 @@ impl StatusMessageQueue {
     /// If there is another message in the queue then it sets that as the new message to be shown
     /// If there is no other message queues to be shown, then set to None and no message is shown
     pub fn clear_message(&mut self) {
-        println!("Clearing message");
         if self.queue.is_empty() {
             self.current_message = None;
         } else {
@@ -65,11 +63,7 @@ impl StatusMessageQueue {
 
     /// Are there any [StatusMessage]  of type Info in the queue waiting to be displayed?
     pub fn showing_info_message(&self) -> bool {
-        if let Some(Info(_)) = self.current_message {
-            true
-        } else {
-            false
-        }
+        matches!(self.current_message, Some(StatusMessage::Info(_)))
     }
 }
 
@@ -104,26 +98,49 @@ pub fn status_message(app: &Gpio) -> Element<Message> {
 #[cfg(test)]
 mod test {
     use crate::views::status::StatusMessage::{Error, Info, Warning};
-    use crate::views::status::StatusMessageQueue;
+    use crate::views::status::{status_message, StatusMessageQueue};
+    use crate::Gpio;
+    use iced::application::Application;
 
     #[test]
     fn errors_first() {
         let mut queue: StatusMessageQueue = Default::default();
 
         queue.add_message(Info("shown".into()));
+        assert!(queue.showing_info_message());
         assert_eq!(queue.current_message, Some(Info("shown".into())));
 
+        // Add three more messages that should be queued up
         queue.add_message(Info("last".into()));
         queue.add_message(Error("first".into(), "Details".into()));
         queue.add_message(Warning("middle".into()));
         assert_eq!(queue.queue.len(), 3);
 
-        assert!(queue.showing_info_message());
-
+        // clear the current message, it should be replaced by highest priority message in the queue
         queue.clear_message();
         assert_eq!(
             queue.current_message,
             Some(Error("first".into(), "Details".into()))
         );
+        assert_eq!(queue.queue.len(), 2);
+
+        queue.clear_message();
+        assert_eq!(queue.current_message, Some(Warning("middle".into())));
+        assert_eq!(queue.queue.len(), 1);
+
+        queue.clear_message();
+        assert_eq!(queue.current_message, Some(Info("last".into())));
+        assert_eq!(queue.queue.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn no_text() {
+        let (app, _command) = Gpio::new(());
+        let el = status_message(&app);
+        let button = el.as_widget();
+        let tree = button.children();
+        println!("{:?}", tree);
+        let text = tree.first();
+        println!("{:?}", text);
     }
 }
