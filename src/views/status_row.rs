@@ -1,7 +1,8 @@
 use crate::custom_widgets::button_style::ButtonStyle;
-use crate::{Message, Piggui};
 use iced::widget::{Button, Text};
 use iced::{Color, Element, Length};
+use iced_futures::Subscription;
+use std::time::Duration;
 
 /// There are three types of messages we can display in the message text in the status bar.
 ///
@@ -18,6 +19,13 @@ pub enum StatusMessage {
     Error(String, String) = 2,
     Warning(String) = 1,
     Info(String) = 0,
+}
+
+/// StatusRow reacts to these message types
+#[derive(Debug, Clone)]
+pub enum StatusRowMessage {
+    ShowStatusMessage(StatusMessage),
+    ClearStatusMessage,
 }
 
 impl StatusMessage {
@@ -67,38 +75,68 @@ impl StatusMessageQueue {
     }
 }
 
-pub fn status_message(app: &Piggui) -> Element<Message> {
-    let (text_color, message_text) = match &app.status_message_queue.current_message {
-        None => (Color::TRANSPARENT, "".into()),
-        Some(msg) => {
-            let text_color = match msg {
-                StatusMessage::Error(_, _) => Color::from_rgb8(255, 0, 0),
-                StatusMessage::Warning(_) => iced::Color::new(1.0, 0.647, 0.0, 1.0),
-                StatusMessage::Info(_) => Color::WHITE,
-            };
-            (text_color, msg.text())
+pub struct StatusRow {
+    status_message_queue: StatusMessageQueue,
+}
+
+impl StatusRow {
+    /// Create a new [StatusRow]
+    pub fn new() -> Self {
+        StatusRow {
+            status_message_queue: StatusMessageQueue::default(),
         }
-    };
+    }
 
-    let button_style = ButtonStyle {
-        bg_color: Color::TRANSPARENT,
-        text_color,
-        hovered_bg_color: Color::TRANSPARENT,
-        hovered_text_color: Color::WHITE,
-        border_radius: 4.0,
-    };
+    /// Update the state and do actions depending on the [StatusRowMessage] sent
+    pub fn update(&mut self, message: StatusRowMessage) {
+        match message {
+            StatusRowMessage::ShowStatusMessage(msg) => self.status_message_queue.add_message(msg),
+            StatusRowMessage::ClearStatusMessage => self.status_message_queue.clear_message(),
+        }
+    }
 
-    Button::new(Text::new(message_text))
-        .on_press(Message::ClearStatusMessage)
-        .style(button_style.get_button_style())
-        .width(Length::Fixed(400.0))
-        .into()
+    /// Create the view that represents a status row at the bottom of the screen
+    pub fn view(&self) -> Element<StatusRowMessage> {
+        let (text_color, message_text) = match &self.status_message_queue.current_message {
+            None => (Color::TRANSPARENT, "".into()),
+            Some(msg) => {
+                let text_color = match msg {
+                    StatusMessage::Error(_, _) => Color::from_rgb8(255, 0, 0),
+                    StatusMessage::Warning(_) => iced::Color::new(1.0, 0.647, 0.0, 1.0),
+                    StatusMessage::Info(_) => Color::WHITE,
+                };
+                (text_color, msg.text())
+            }
+        };
+
+        let button_style = ButtonStyle {
+            bg_color: Color::TRANSPARENT,
+            text_color,
+            hovered_bg_color: Color::TRANSPARENT,
+            hovered_text_color: Color::WHITE,
+            border_radius: 4.0,
+        };
+
+        Button::new(Text::new(message_text))
+            .on_press(StatusRowMessage::ClearStatusMessage)
+            .style(button_style.get_button_style())
+            .width(Length::Fixed(400.0))
+            .into()
+    }
+
+    pub fn subscription(&self) -> Subscription<StatusRowMessage> {
+        if self.status_message_queue.showing_info_message() {
+            iced::time::every(Duration::from_secs(3)).map(|_| StatusRowMessage::ClearStatusMessage)
+        } else {
+            Subscription::none()
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::views::status::StatusMessage::{Error, Info, Warning};
-    use crate::views::status::StatusMessageQueue;
+    use crate::views::status_row::StatusMessage::{Error, Info, Warning};
+    use crate::views::status_row::StatusMessageQueue;
 
     #[test]
     fn errors_first() {

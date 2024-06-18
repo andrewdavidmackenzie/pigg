@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::hw::pin_descriptions::*;
 
-pub mod hw_listener;
+pub mod hardware_subscription;
 
 /// There are three implementations of [`Hardware`] trait:
 /// * None - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
@@ -60,8 +60,8 @@ pub trait Hardware {
     fn description(&self) -> io::Result<HardwareDescription>;
     /// Apply a complete set of pin configurations to the connected hardware
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
-        where
-            C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static;
+    where
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static;
     /// Apply a new config to one specific pin
     fn apply_pin_config<C>(
         &mut self,
@@ -69,8 +69,8 @@ pub trait Hardware {
         pin_function: &PinFunction,
         callback: C,
     ) -> io::Result<()>
-        where
-            C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
+    where
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
     /// Read the input level of an input using the bcm pin number
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
     /// Write the output level of an output using the bcm pin number
