@@ -1,5 +1,5 @@
-use crate::custom_widgets::button_style::ButtonStyle;
 use crate::styles::background::SetAppearance;
+use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_button;
 use crate::views::version::version_button;
 use crate::{Message, Piggui};
@@ -29,7 +29,7 @@ pub fn view(app: &Piggui) -> Element<Message> {
     container(
         Row::new()
             .push(version_button(app))
-            .push(hardware_button::view(app))
+            .push(hardware_button::view(&app.hardware_view))
             .push(unsaved_status(app))
             .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
             .push(app.status_row.view().map(Message::StatusRow))
