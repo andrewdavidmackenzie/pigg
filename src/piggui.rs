@@ -14,11 +14,12 @@ use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
+use crate::views::status_row::StatusMessage::{Error, Info};
 use crate::views::status_row::StatusRowMessage::ShowStatusMessage;
 use crate::views::status_row::{StatusMessage, StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
-use crate::Message::ConfigLoaded;
+use crate::Message::*;
 
 mod custom_widgets;
 mod file_helper;
@@ -62,7 +63,6 @@ pub enum Message {
     ConfigLoaded(String, GPIOConfig),
     LayoutChanged(Layout),
     UnsavedChanges(bool),
-    None,
     Hardware(HardwareMessage),
     Toast(ToastMessage),
     Save,
@@ -127,7 +127,7 @@ impl Application for Piggui {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::WindowEvent(event) => {
+            WindowEvent(event) => {
                 if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
                 {
                     if self.unsaved_changes {
@@ -146,22 +146,22 @@ impl Application for Piggui {
                 }
             }
 
-            Message::LayoutChanged(layout) => {
+            LayoutChanged(layout) => {
                 // Keep overall window management at this level and out of LayoutSelector
                 return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
-            Message::Save => {
+            Save => {
                 return save(self.hardware_view.get_config());
             }
 
-            Message::SaveCancelled => {
+            SaveCancelled => {
                 // TODO this is not always true no? If you don't have unsaved changes, you can still
                 // Save, then cancel it... it should push/pop the previous value I think?
                 self.unsaved_changes = true;
             }
 
-            Message::Load => {
+            Load => {
                 if !self.showing_toast {
                     // Add a new toast if `show_toast` is false
                     if self.unsaved_changes {
@@ -178,7 +178,13 @@ impl Application for Piggui {
                     } else {
                         return Command::perform(load_via_picker(), |result| match result {
                             Ok(Some((filename, config))) => ConfigLoaded(filename, config),
-                            _ => Message::None,
+                            Ok(None) => {
+                                StatusRow(ShowStatusMessage(Info("File load cancelled".into())))
+                            }
+                            Err(e) => StatusRow(ShowStatusMessage(Error(
+                                "File could not be loaded".into(),
+                                format!("Error loading file: {e}"),
+                            ))),
                         });
                     }
                 } else {
@@ -189,8 +195,6 @@ impl Application for Piggui {
                     });
                 }
             }
-
-            Message::None => {}
 
             Message::Toast(toast_message) => match toast_message {
                 ToastMessage::VersionToast => {
@@ -226,7 +230,13 @@ impl Application for Piggui {
                         self.pending_load = false;
                         return Command::perform(load_via_picker(), |result| match result {
                             Ok(Some((filename, config))) => ConfigLoaded(filename, config),
-                            _ => Message::None,
+                            Ok(None) => {
+                                StatusRow(ShowStatusMessage(Info("File load cancelled".into())))
+                            }
+                            Err(e) => StatusRow(ShowStatusMessage(Error(
+                                "File could not be loaded".into(),
+                                format!("Error loading file: {e}"),
+                            ))),
                         });
                     }
                 }
@@ -237,11 +247,11 @@ impl Application for Piggui {
 
             Message::StatusRow(msg) => return self.status_row.update(msg),
 
-            Message::Hardware(msg) => return self.hardware_view.update(msg),
+            Hardware(msg) => return self.hardware_view.update(msg),
 
-            Message::UnsavedChanges(changes) => self.unsaved_changes = changes,
+            UnsavedChanges(changes) => self.unsaved_changes = changes,
 
-            Message::ConfigLoaded(filename, config) => {
+            ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
                 return Command::perform(empty(), |_| Message::Hardware(NewConfig(config)));
             }
