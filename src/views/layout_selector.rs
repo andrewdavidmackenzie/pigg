@@ -1,12 +1,27 @@
-use iced::Size;
+use crate::Message;
+use iced::widget::pick_list;
+use iced::{Element, Length, Size};
 
-// use crate::pin_layout::{BCM_PIN_LAYOUT_WIDTH, BOARD_PIN_LAYOUT_WIDTH};
-
+/// These are the possible layouts to chose from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum LayoutSelector {
+pub enum Layout {
     #[default]
     BoardLayout,
     BCMLayout,
+}
+
+// Implementing Display for Layout
+impl std::fmt::Display for Layout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Layout::BoardLayout => "Board Pin Layout",
+                Layout::BCMLayout => "BCM Pin Layout",
+            }
+        )
+    }
 }
 
 const BOARD_LAYOUT_SPACING: u16 = 470;
@@ -18,42 +33,67 @@ const BOARD_LAYOUT_WIDTH: f32 = 1570.0;
 const BOARD_LAYOUT_HEIGHT: f32 = 780.0;
 const BCM_LAYOUT_WIDTH: f32 = 1000.0;
 const BCM_LAYOUT_HEIGHT: f32 = 970.0;
+const LAYOUTS: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
+
+#[derive(Clone, PartialEq, Default)]
+pub struct LayoutSelector {
+    selected_layout: Layout,
+}
 
 impl LayoutSelector {
-    pub const ALL: [LayoutSelector; 2] = [LayoutSelector::BoardLayout, LayoutSelector::BCMLayout];
+    pub fn new() -> Self {
+        LayoutSelector {
+            selected_layout: Layout::default(),
+        }
+    }
 
     pub fn get_spacing(&self) -> u16 {
-        match self {
-            LayoutSelector::BoardLayout => BOARD_LAYOUT_SPACING,
-            LayoutSelector::BCMLayout => BCM_LAYOUT_SPACING,
+        match self.selected_layout {
+            Layout::BoardLayout => BOARD_LAYOUT_SPACING,
+            Layout::BCMLayout => BCM_LAYOUT_SPACING,
+        }
+    }
+
+    pub fn get_default_window_size() -> Size {
+        Size {
+            width: BOARD_LAYOUT_WIDTH,
+            height: BOARD_LAYOUT_HEIGHT,
         }
     }
 
     pub fn get_window_size(&self) -> Size {
-        match self {
-            LayoutSelector::BoardLayout => Size {
+        match self.selected_layout {
+            Layout::BoardLayout => Size {
                 width: BOARD_LAYOUT_WIDTH,
                 height: BOARD_LAYOUT_HEIGHT,
             },
-            LayoutSelector::BCMLayout => Size {
+            Layout::BCMLayout => Size {
                 width: BCM_LAYOUT_WIDTH,
                 height: BCM_LAYOUT_HEIGHT,
             },
         }
     }
-}
 
-// Implementing format for Layout
-// TODO could maybe put the Name as a &str inside the enum elements above?
-impl std::fmt::Display for LayoutSelector {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                LayoutSelector::BoardLayout => "Board Pin Layout",
-                LayoutSelector::BCMLayout => "BCM Pin Layout",
-            }
+    /// Set the new layout as being selected and return the window size required
+    pub fn set(&mut self, new_layout: Layout) -> Size {
+        self.selected_layout = new_layout;
+        self.get_window_size()
+    }
+
+    // Return the currently selected layout
+    pub fn get(&self) -> Layout {
+        self.selected_layout
+    }
+
+    /// Generate the view to represent the [LayoutSelector]
+    pub fn view(&self) -> Element<'static, Message> {
+        pick_list(
+            &LAYOUTS[..],
+            Some(self.selected_layout),
+            Message::LayoutChanged,
         )
+        .width(Length::Shrink)
+        .placeholder("Choose Layout")
+        .into()
     }
 }

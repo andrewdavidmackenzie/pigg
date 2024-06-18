@@ -2,7 +2,7 @@ use std::time::Duration;
 use std::{env, io};
 
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::widget::{container, Button, Column, Row, Text};
 use iced::{
     executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
     Subscription, Theme,
@@ -20,7 +20,7 @@ use crate::hw::{hw_listener, LevelChange};
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
 use crate::views::info::info_row;
-use crate::views::layout_selector::LayoutSelector;
+use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::status::{StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
@@ -38,12 +38,10 @@ fn main() -> Result<(), iced::Error> {
         return Ok(());
     }
 
-    let layout = LayoutSelector::BoardLayout;
-    let size = layout.get_window_size();
     let window = window::Settings {
         resizable: true,
         exit_on_close_request: false,
-        size,
+        size: LayoutSelector::get_default_window_size(),
         ..Default::default()
     };
 
@@ -64,7 +62,7 @@ pub enum ToastMessage {
 pub enum Message {
     Activate(BoardPinNumber),
     PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
-    LayoutChanged(LayoutSelector),
+    LayoutChanged(Layout),
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
@@ -84,7 +82,7 @@ pub struct Gpio {
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
     pub pin_function_selected: [PinFunction; 40],
-    chosen_layout: LayoutSelector,
+    layout_selector: LayoutSelector,
     hardware_description: Option<HardwareDescription>,
     listener_sender: Option<Sender<HardwareEvent>>,
     /// Either desired state of an output, or detected state of input.
@@ -219,16 +217,8 @@ impl Gpio {
     }
 
     fn configuration_column(&self) -> Element<'static, Message> {
-        let layout_selector = pick_list(
-            &LayoutSelector::ALL[..],
-            Some(self.chosen_layout),
-            Message::LayoutChanged,
-        )
-        .width(Length::Shrink)
-        .placeholder("Choose Layout");
-
         let layout_row = Row::new()
-            .push(layout_selector)
+            .push(self.layout_selector.view())
             .align_items(Alignment::Start)
             .spacing(10);
 
@@ -271,13 +261,13 @@ impl Gpio {
                 .align_items(Alignment::Start)
                 .width(Length::Shrink)
                 .height(Length::Shrink)
-                .spacing(self.chosen_layout.get_spacing()),
+                .spacing(self.layout_selector.get_spacing()),
         );
 
         if let Some(hw_description) = &self.hardware_description {
-            let pin_layout = match self.chosen_layout {
-                LayoutSelector::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
-                LayoutSelector::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
+            let pin_layout = match self.layout_selector.get() {
+                Layout::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
+                Layout::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
             };
 
             main_row = main_row.push(
@@ -305,7 +295,7 @@ impl Application for Gpio {
                 config_filename: None,
                 gpio_config: GPIOConfig::default(),
                 pin_function_selected: [PinFunction::None; 40],
-                chosen_layout: LayoutSelector::BoardLayout,
+                layout_selector: LayoutSelector::new(),
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
@@ -314,7 +304,7 @@ impl Application for Gpio {
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 pending_load: false,
-                status_message_queue: Default::default(),
+                status_message_queue: StatusMessageQueue::default(),
             },
             Command::perform(Self::load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -357,9 +347,7 @@ impl Application for Gpio {
             }
 
             Message::LayoutChanged(layout) => {
-                self.chosen_layout = layout;
-                let layout_size = layout.get_window_size();
-                return window::resize(window::Id::MAIN, layout_size);
+                return window::resize(window::Id::MAIN, self.layout_selector.set(layout))
             }
 
             Message::ConfigLoaded((filename, config)) => {
