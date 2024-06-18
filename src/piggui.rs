@@ -382,6 +382,7 @@ impl Application for Piggui {
     fn view(&self) -> Element<Self::Message> {
         let main_col = Column::new()
             .push(main_row::view(self))
+            .push(iced::widget::horizontal_rule(10))
             .push(info_row::view(self));
 
         let content = container(main_col)
