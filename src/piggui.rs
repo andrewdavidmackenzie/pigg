@@ -16,7 +16,7 @@ use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::status_row::StatusMessage::{Error, Info};
 use crate::views::status_row::StatusRowMessage::ShowStatusMessage;
-use crate::views::status_row::{StatusMessage, StatusRow, StatusRowMessage};
+use crate::views::status_row::{StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
@@ -62,7 +62,7 @@ pub enum ToastMessage {
 pub enum Message {
     ConfigLoaded(String, GPIOConfig),
     LayoutChanged(Layout),
-    UnsavedChanges(bool),
+    ConfigChangesMade,
     Hardware(HardwareMessage),
     Toast(ToastMessage),
     Save,
@@ -108,8 +108,8 @@ impl Application for Piggui {
             },
             match env::args().nth(1) {
                 Some(filename) => Command::perform(load(filename), |result| match result {
-                    Ok((filename, config)) => Message::ConfigLoaded(filename, config),
-                    Err(e) => Message::StatusRow(ShowStatusMessage(StatusMessage::Error(
+                    Ok((filename, config)) => ConfigLoaded(filename, config),
+                    Err(e) => Message::StatusRow(ShowStatusMessage(Error(
                         "Error loading config from file".into(),
                         format!("Error loading the file specified on command line: {}", e),
                     ))),
@@ -249,11 +249,11 @@ impl Application for Piggui {
 
             Hardware(msg) => return self.hardware_view.update(msg),
 
-            UnsavedChanges(changes) => self.unsaved_changes = changes,
+            ConfigChangesMade => self.unsaved_changes = true,
 
             ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
-                return Command::perform(empty(), |_| Message::Hardware(NewConfig(config)));
+                return Command::perform(empty(), |_| Hardware(NewConfig(config)));
             }
         }
 
@@ -300,8 +300,8 @@ impl Application for Piggui {
     /// Subscribe to events from Hardware, from Windows and timings for StatusRow
     fn subscription(&self) -> Subscription<Message> {
         let subscriptions = vec![
-            self.hardware_view.subscription().map(Message::Hardware),
-            iced::event::listen().map(Message::WindowEvent),
+            self.hardware_view.subscription().map(Hardware),
+            iced::event::listen().map(WindowEvent),
             self.status_row.subscription().map(Message::StatusRow),
         ];
 
@@ -354,7 +354,7 @@ mod tests {
         app.unsaved_changes = true;
 
         // Send a close window event
-        let _ = app.update(Message::WindowEvent(iced::Event::Window(
+        let _ = app.update(WindowEvent(iced::Event::Window(
             window::Id::MAIN,
             window::Event::CloseRequested,
         )));
@@ -377,7 +377,7 @@ mod tests {
         app.unsaved_changes = true;
 
         // Send a load message
-        let _ = app.update(Message::Load);
+        let _ = app.update(Load);
 
         // Check if a warning toast was added
         assert_eq!(app.toasts.len(), 1);

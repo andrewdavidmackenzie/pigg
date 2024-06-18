@@ -256,18 +256,14 @@ impl HardwareView {
             PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
                 self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
                 return Command::perform(empty(), |_| {
-                    <Piggui as iced::Application>::Message::UnsavedChanges(true)
+                    <Piggui as iced::Application>::Message::ConfigChangesMade
                 });
             }
 
             NewConfig(config) => {
-                let config_is_different = !self.gpio_config.is_equal(&config);
                 self.gpio_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
-                return Command::perform(empty(), move |_| {
-                    <Piggui as iced::Application>::Message::UnsavedChanges(config_is_different)
-                });
             }
 
             HardwareListener(event) => match event {
