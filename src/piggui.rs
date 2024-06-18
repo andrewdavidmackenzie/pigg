@@ -2,26 +2,24 @@ use std::env;
 use std::time::Duration;
 
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, Button, Column, Row, Text};
+use iced::widget::{container, Column};
 use iced::{
-    executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
-    Subscription, Theme,
+    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
-use crate::file_helper::{load, load_via_picker, save_via_picker};
-use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{
     hw_listener::{HWListenerEvent, HardwareEvent},
     BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction,
 };
-use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
+use crate::file_helper::{load, load_via_picker, save_via_picker};
 use crate::hw::{hw_listener, LevelChange};
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
 use crate::views::info::info_row;
 use crate::views::layout_selector::{Layout, LayoutSelector};
+use crate::views::main_row;
 use crate::views::status::{StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
@@ -174,72 +172,6 @@ impl Piggui {
         level_change: LevelChange,
     ) {
         self.pin_states[board_pin_number as usize - 1].set_level(level_change);
-    }
-
-    fn configuration_column(&self) -> Element<'static, Message> {
-        let layout_row = Row::new()
-            .push(self.layout_selector.view())
-            .align_items(Alignment::Start)
-            .spacing(10);
-
-        let file_button_style = ButtonStyle {
-            bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
-            text_color: Color::BLACK,
-            hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
-            hovered_text_color: Color::WHITE,
-            border_radius: 2.0,
-        };
-        let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
-        configuration_column = configuration_column.push(layout_row);
-        configuration_column = configuration_column.push(
-            Button::new(Text::new("Save Configuration"))
-                .style(file_button_style.get_button_style())
-                .on_press(Message::Save),
-        );
-        configuration_column = configuration_column.push(
-            Button::new(Text::new("Load Configuration"))
-                .style(file_button_style.get_button_style())
-                .on_press(if !self.show_toast {
-                    // Add a new toast if `show_toast` is false
-                    Message::Load
-                } else {
-                    // Close the existing toast if `show_toast` is true
-                    let index = self.toasts.len() - 1;
-                    Message::Toast(ToastMessage::Close(index))
-                }),
-        );
-
-        configuration_column.into()
-    }
-
-    fn main_row(&self) -> Element<Message> {
-        let mut main_row = Row::new();
-
-        main_row = main_row.push(
-            Column::new()
-                .push(self.configuration_column())
-                .align_items(Alignment::Start)
-                .width(Length::Shrink)
-                .height(Length::Shrink)
-                .spacing(self.layout_selector.get_spacing()),
-        );
-
-        if let Some(hw_description) = &self.hardware_description {
-            let pin_layout = match self.layout_selector.get() {
-                Layout::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
-                Layout::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
-            };
-
-            main_row = main_row.push(
-                Column::new()
-                    .push(pin_layout)
-                    .align_items(Alignment::Center)
-                    .height(Length::Fill)
-                    .width(Length::Fill),
-            );
-        }
-
-        main_row.into()
     }
 }
 
@@ -463,7 +395,9 @@ impl Application for Piggui {
        +--------------------------------------------------------------------------------------+
     */
     fn view(&self) -> Element<Self::Message> {
-        let main_col = Column::new().push(self.main_row()).push(info_row(self));
+        let main_col = Column::new()
+            .push(main_row::view(self))
+            .push(info_row(self));
 
         let content = container(main_col)
             .height(Length::Fill)
@@ -505,6 +439,7 @@ impl Application for Piggui {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[tokio::test]
     async fn test_add_toast_message() {
         let mut app = Piggui::new(()).0;
