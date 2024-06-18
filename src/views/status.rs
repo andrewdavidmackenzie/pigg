@@ -1,5 +1,5 @@
 use crate::custom_widgets::button_style::ButtonStyle;
-use crate::{Gpio, Message};
+use crate::{Message, Piggui};
 use iced::widget::{Button, Text};
 use iced::{Color, Element, Length};
 
@@ -67,7 +67,7 @@ impl StatusMessageQueue {
     }
 }
 
-pub fn status_message(app: &Gpio) -> Element<Message> {
+pub fn status_message(app: &Piggui) -> Element<Message> {
     let (text_color, message_text) = match &app.status_message_queue.current_message {
         None => (Color::TRANSPARENT, "".into()),
         Some(msg) => {

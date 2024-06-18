@@ -1,32 +1,31 @@
+use std::env;
 use std::time::Duration;
-use std::{env, io};
 
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{container, pick_list, Button, Column, Row, Text};
+use iced::widget::{container, Column};
 use iced::{
-    executor, window, Alignment, Application, Color, Command, Element, Length, Settings,
-    Subscription, Theme,
+    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
-use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{
     hw_listener::{HWListenerEvent, HardwareEvent},
     BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction,
 };
-use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
+use crate::file_helper::{load, load_via_picker, save_via_picker};
 use crate::hw::{hw_listener, LevelChange};
-use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
 use crate::views::info::info_row;
+use crate::views::layout_selector::{Layout, LayoutSelector};
+use crate::views::main_row;
 use crate::views::status::{StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
 mod custom_widgets;
+mod file_helper;
 mod hw;
-mod layout;
 mod pin_layout;
 mod pin_state;
 mod views;
@@ -39,16 +38,14 @@ fn main() -> Result<(), iced::Error> {
         return Ok(());
     }
 
-    let layout = Layout::BoardLayout;
-    let size = layout.get_window_size();
     let window = window::Settings {
         resizable: true,
         exit_on_close_request: false,
-        size,
+        size: LayoutSelector::get_default_window_size(),
         ..Default::default()
     };
 
-    Gpio::run(Settings {
+    Piggui::run(Settings {
         window,
         ..Default::default()
     })
@@ -80,12 +77,13 @@ pub enum Message {
     WindowEvent(iced::Event),
 }
 
-pub struct Gpio {
+/// [Piggui] Is the struct that holds application state and implements [Application] for Iced
+pub struct Piggui {
     #[allow(dead_code)]
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
     pub pin_function_selected: [PinFunction; 40],
-    chosen_layout: Layout,
+    layout_selector: LayoutSelector,
     hardware_description: Option<HardwareDescription>,
     listener_sender: Option<Sender<HardwareEvent>>,
     /// Either desired state of an output, or detected state of input.
@@ -99,50 +97,7 @@ pub struct Gpio {
     status_message_queue: StatusMessageQueue,
 }
 
-impl Gpio {
-    async fn load(filename: Option<String>) -> io::Result<Option<(String, GPIOConfig)>> {
-        match filename {
-            Some(config_filename) => {
-                let config = GPIOConfig::load(&config_filename)?;
-                Ok(Some((config_filename, config)))
-            }
-            None => Ok(None),
-        }
-    }
-
-    async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
-        if let Some(handle) = rfd::AsyncFileDialog::new()
-            .add_filter("Pigg Config", &["pigg"])
-            .set_title("Choose config file to load")
-            .set_directory(env::current_dir().unwrap())
-            .pick_file()
-            .await
-        {
-            let path: std::path::PathBuf = handle.path().to_owned();
-            let path_str = path.display().to_string();
-            Self::load(Some(path_str)).await
-        } else {
-            Ok(None)
-        }
-    }
-
-    async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
-        if let Some(handle) = rfd::AsyncFileDialog::new()
-            .add_filter("Pigg Config", &["pigg"])
-            .set_title("Choose file")
-            .set_directory(env::current_dir().unwrap())
-            .save_file()
-            .await
-        {
-            let path: std::path::PathBuf = handle.path().to_owned();
-            let path_str = path.display().to_string();
-            gpio_config.save(&path_str).unwrap();
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
+impl Piggui {
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut listener) = &mut self.listener_sender {
@@ -218,95 +173,21 @@ impl Gpio {
     ) {
         self.pin_states[board_pin_number as usize - 1].set_level(level_change);
     }
-
-    fn configuration_column(&self) -> Element<'static, Message> {
-        let layout_selector = pick_list(
-            &Layout::ALL[..],
-            Some(self.chosen_layout),
-            Message::LayoutChanged,
-        )
-        .width(Length::Shrink)
-        .placeholder("Choose Layout");
-
-        let layout_row = Row::new()
-            .push(layout_selector)
-            .align_items(Alignment::Start)
-            .spacing(10);
-
-        let file_button_style = ButtonStyle {
-            bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
-            text_color: Color::BLACK,
-            hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
-            hovered_text_color: Color::WHITE,
-            border_radius: 2.0,
-        };
-        let mut configuration_column = Column::new().align_items(Alignment::Start).spacing(10);
-        configuration_column = configuration_column.push(layout_row);
-        configuration_column = configuration_column.push(
-            Button::new(Text::new("Save Configuration"))
-                .style(file_button_style.get_button_style())
-                .on_press(Message::Save),
-        );
-        configuration_column = configuration_column.push(
-            Button::new(Text::new("Load Configuration"))
-                .style(file_button_style.get_button_style())
-                .on_press(if !self.show_toast {
-                    // Add a new toast if `show_toast` is false
-                    Message::Load
-                } else {
-                    // Close the existing toast if `show_toast` is true
-                    let index = self.toasts.len() - 1;
-                    Message::Toast(ToastMessage::Close(index))
-                }),
-        );
-
-        configuration_column.into()
-    }
-
-    fn main_row(&self) -> Element<Message> {
-        let mut main_row = Row::new();
-
-        main_row = main_row.push(
-            Column::new()
-                .push(self.configuration_column())
-                .align_items(Alignment::Start)
-                .width(Length::Shrink)
-                .height(Length::Shrink)
-                .spacing(self.chosen_layout.get_spacing()),
-        );
-
-        if let Some(hw_description) = &self.hardware_description {
-            let pin_layout = match self.chosen_layout {
-                Layout::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
-                Layout::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
-            };
-
-            main_row = main_row.push(
-                Column::new()
-                    .push(pin_layout)
-                    .align_items(Alignment::Center)
-                    .height(Length::Fill)
-                    .width(Length::Fill),
-            );
-        }
-
-        main_row.into()
-    }
 }
 
-impl Application for Gpio {
+impl Application for Piggui {
     type Executor = executor::Default;
     type Message = Message;
     type Theme = Theme;
     type Flags = ();
 
-    fn new(_flags: ()) -> (Gpio, Command<Self::Message>) {
+    fn new(_flags: ()) -> (Piggui, Command<Self::Message>) {
         (
             Self {
                 config_filename: None,
                 gpio_config: GPIOConfig::default(),
                 pin_function_selected: [PinFunction::None; 40],
-                chosen_layout: Layout::BoardLayout,
+                layout_selector: LayoutSelector::new(),
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
@@ -315,9 +196,9 @@ impl Application for Gpio {
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 pending_load: false,
-                status_message_queue: Default::default(),
+                status_message_queue: StatusMessageQueue::default(),
             },
-            Command::perform(Self::load(env::args().nth(1)), |result| match result {
+            Command::perform(load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
                 _ => Message::None,
             }),
@@ -358,9 +239,8 @@ impl Application for Gpio {
             }
 
             Message::LayoutChanged(layout) => {
-                self.chosen_layout = layout;
-                let layout_size = layout.get_window_size();
-                return window::resize(window::Id::MAIN, layout_size);
+                // Keep overall window management at this level and out of LayoutSelector
+                return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
             Message::ConfigLoaded((filename, config)) => {
@@ -374,21 +254,18 @@ impl Application for Gpio {
 
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
-                return Command::perform(
-                    Self::save_via_picker(gpio_config),
-                    |result| match result {
-                        Ok(true) => Message::ShowStatusMessage(StatusMessage::Info(
-                            "File saved successfully".to_string(),
-                        )),
-                        Ok(false) => Message::ShowStatusMessage(StatusMessage::Warning(
-                            "File save cancelled".to_string(),
-                        )),
-                        Err(e) => Message::ShowStatusMessage(StatusMessage::Error(
-                            "Error saving file".to_string(),
-                            format!("Error saving file. {e}",),
-                        )),
-                    },
-                );
+                return Command::perform(save_via_picker(gpio_config), |result| match result {
+                    Ok(true) => Message::ShowStatusMessage(StatusMessage::Info(
+                        "File saved successfully".to_string(),
+                    )),
+                    Ok(false) => Message::ShowStatusMessage(StatusMessage::Warning(
+                        "File save cancelled".to_string(),
+                    )),
+                    Err(e) => Message::ShowStatusMessage(StatusMessage::Error(
+                        "Error saving file".to_string(),
+                        format!("Error saving file. {e}",),
+                    )),
+                });
             }
 
             Message::SaveCancelled => {
@@ -407,7 +284,7 @@ impl Application for Gpio {
                     self.show_toast = true;
                     self.pending_load = true;
                 } else {
-                    return Command::perform(Self::load_via_picker(), |result| match result {
+                    return Command::perform(load_via_picker(), |result| match result {
                         Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
                         _ => Message::None,
                     });
@@ -483,7 +360,7 @@ impl Application for Gpio {
                     self.toasts.remove(index);
                     if self.pending_load {
                         self.pending_load = false;
-                        return Command::perform(Self::load_via_picker(), |result| match result {
+                        return Command::perform(load_via_picker(), |result| match result {
                             Ok(Some((filename, config))) => {
                                 Message::ConfigLoaded((filename, config))
                             }
@@ -518,7 +395,9 @@ impl Application for Gpio {
        +--------------------------------------------------------------------------------------+
     */
     fn view(&self) -> Element<Self::Message> {
-        let main_col = Column::new().push(self.main_row()).push(info_row(self));
+        let main_col = Column::new()
+            .push(main_row::view(self))
+            .push(info_row(self));
 
         let content = container(main_col)
             .height(Length::Fill)
@@ -560,9 +439,10 @@ impl Application for Gpio {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[tokio::test]
     async fn test_add_toast_message() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // No toasts should be present
         assert!(app.toasts.is_empty());
@@ -578,7 +458,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_close_toast_message() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Add a toast
         let _ = app.update(Message::Toast(ToastMessage::VersionToast));
@@ -595,7 +475,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_window_close_with_unsaved_changes() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes
         app.unsaved_changes = true;
@@ -618,7 +498,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_load_with_unsaved_changes() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes
         app.unsaved_changes = true;
@@ -638,7 +518,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_toast_timeout() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Send a timeout message
         let _ = app.update(Message::Toast(ToastMessage::Timeout(5.0)));

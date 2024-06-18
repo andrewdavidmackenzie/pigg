@@ -1,5 +1,5 @@
 use crate::custom_widgets::button_style::ButtonStyle;
-use crate::{Gpio, Message, ToastMessage};
+use crate::{Message, Piggui, ToastMessage};
 use iced::widget::{Button, Text};
 use iced::{Color, Element};
 
@@ -28,7 +28,7 @@ pub fn version() -> String {
 }
 
 // TODO maybe avoid using Gpio, and pass parameters, or a closure?
-pub fn version_button(app: &Gpio) -> Element<Message> {
+pub fn version_button(app: &Piggui) -> Element<Message> {
     let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
     let about_button_style = ButtonStyle {
         bg_color: Color::TRANSPARENT,

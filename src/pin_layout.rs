@@ -17,7 +17,7 @@ use crate::hw::{
 };
 use crate::pin_state::CHART_WIDTH;
 use crate::Message;
-use crate::{Gpio, PinState};
+use crate::{Piggui, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -124,7 +124,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 /// View that lays out the pins in a single column ordered by BCM pin number
 pub fn bcm_pin_layout_view<'a>(
     pin_set: &'a PinDescriptionSet,
-    gpio: &'a Gpio,
+    gpio: &'a Piggui,
 ) -> Element<'a, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
@@ -148,7 +148,7 @@ pub fn bcm_pin_layout_view<'a>(
 /// View that draws the pins laid out as they are on the physical Pi board
 pub fn board_pin_layout_view<'a>(
     pin_descriptions: &'a PinDescriptionSet,
-    gpio: &'a Gpio,
+    gpio: &'a Piggui,
 ) -> Element<'a, Message> {
     let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
