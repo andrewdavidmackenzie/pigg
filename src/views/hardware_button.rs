@@ -19,7 +19,8 @@ pub fn hw_description(app: &Piggui) -> String {
     }
 }
 
-pub fn hardware_button(app: &Piggui) -> Element<Message> {
+/// Create the view that represents the clickable button that shows what hardware is connected
+pub fn view(app: &Piggui) -> Element<Message> {
     let hw_text = if let Some(hardware_description) = &app.hardware_description {
         hardware_description.details.model.clone()
     } else {

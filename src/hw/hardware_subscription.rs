@@ -5,8 +5,8 @@ use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hw;
-use crate::hw::hw_listener::HWListenerEvent::InputChange;
-use crate::hw::hw_listener::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::hardware_subscription::HWListenerEvent::InputChange;
+use crate::hw::hardware_subscription::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::Hardware;
 use crate::hw::{BCMPinNumber, GPIOConfig, HardwareDescription, LevelChange, PinFunction};
 

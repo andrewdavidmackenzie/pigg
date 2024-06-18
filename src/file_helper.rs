@@ -1,4 +1,8 @@
 use crate::hw::GPIOConfig;
+use crate::views::status_row::StatusMessage;
+use crate::views::status_row::StatusRowMessage::ShowStatusMessage;
+use crate::Message;
+use iced::Command;
 use std::{env, io};
 
 pub async fn load(filename: Option<String>) -> io::Result<Option<(String, GPIOConfig)>> {
@@ -27,7 +31,7 @@ pub async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
     }
 }
 
-pub async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
+async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
     if let Some(handle) = rfd::AsyncFileDialog::new()
         .add_filter("Pigg Config", &["pigg"])
         .set_title("Choose file")
@@ -42,4 +46,19 @@ pub async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
     } else {
         Ok(false)
     }
+}
+
+pub fn save(gpio_config: GPIOConfig) -> Command<Message> {
+    Command::perform(save_via_picker(gpio_config), |result| match result {
+        Ok(true) => Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
+            "File saved successfully".to_string(),
+        ))),
+        Ok(false) => Message::StatusRow(ShowStatusMessage(StatusMessage::Warning(
+            "File save cancelled".to_string(),
+        ))),
+        Err(e) => Message::StatusRow(ShowStatusMessage(StatusMessage::Error(
+            "Error saving file".to_string(),
+            format!("Error saving file. {e}",),
+        ))),
+    })
 }

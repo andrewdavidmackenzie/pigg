@@ -9,19 +9,18 @@ use iced::{
 
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{
-    hw_listener::{HWListenerEvent, HardwareEvent},
+    hardware_subscription::{HWListenerEvent, HardwareEvent},
     BCMPinNumber, BoardPinNumber, GPIOConfig, HardwareDescription, PinFunction,
 };
 
-use crate::file_helper::{load, load_via_picker, save_via_picker};
-use crate::hw::{hw_listener, LevelChange};
+use crate::file_helper::{load, load_via_picker, save};
+use crate::hw::{hardware_subscription, LevelChange};
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
-use crate::views::hardware::hw_description;
-use crate::views::info::info_row;
+use crate::views::hardware_button::hw_description;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::main_row;
-use crate::views::status::{StatusMessage, StatusMessageQueue};
+use crate::views::status_row::{StatusRow, StatusRowMessage};
 use crate::views::version::version;
+use crate::views::{info_row, main_row};
 
 mod custom_widgets;
 mod file_helper;
@@ -58,6 +57,8 @@ pub enum ToastMessage {
     Close(usize),
     Timeout(f64),
 }
+
+/// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 pub enum Message {
     Activate(BoardPinNumber),
@@ -71,21 +72,19 @@ pub enum Message {
     Save,
     Load,
     SaveCancelled,
-    ShowStatusMessage(StatusMessage),
-    ClearStatusMessage,
+    StatusRow(StatusRowMessage),
     UpdateCharts,
     WindowEvent(iced::Event),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
 pub struct Piggui {
-    #[allow(dead_code)]
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
     pub pin_function_selected: [PinFunction; 40],
     layout_selector: LayoutSelector,
     hardware_description: Option<HardwareDescription>,
-    listener_sender: Option<Sender<HardwareEvent>>,
+    hardware_sender: Option<Sender<HardwareEvent>>,
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: [PinState; 40],
@@ -94,14 +93,14 @@ pub struct Piggui {
     timeout_secs: u64,
     unsaved_changes: bool,
     pending_load: bool,
-    status_message_queue: StatusMessageQueue,
+    status_row: StatusRow,
 }
 
 impl Piggui {
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
-        if let Some(ref mut listener) = &mut self.listener_sender {
-            let _ = listener.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
+        if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
+            let _ = hardware_sender.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
         }
     }
 
@@ -137,7 +136,7 @@ impl Piggui {
             // Report config changes to the hardware listener
             // Since config loading and hardware listener setup can occur out of order
             // mark the config as changed. If we send to the listener, then mark as done
-            if let Some(ref mut listener) = &mut self.listener_sender {
+            if let Some(ref mut listener) = &mut self.hardware_sender {
                 let _ =
                     listener.try_send(HardwareEvent::NewPinConfig(bcm_pin_number, new_function));
             }
@@ -189,14 +188,14 @@ impl Application for Piggui {
                 pin_function_selected: [PinFunction::None; 40],
                 layout_selector: LayoutSelector::new(),
                 hardware_description: None, // Until listener is ready
-                listener_sender: None,      // Until listener is ready
+                hardware_sender: None,      // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),
                 toasts: Vec::new(),
                 show_toast: false,
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 pending_load: false,
-                status_message_queue: StatusMessageQueue::default(),
+                status_row: StatusRow::new(),
             },
             Command::perform(load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
@@ -247,25 +246,13 @@ impl Application for Piggui {
                 let config_is_different = !self.gpio_config.is_equal(&config);
                 self.config_filename = Some(filename);
                 self.gpio_config = config;
+                self.unsaved_changes = config_is_different;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
-                self.unsaved_changes = config_is_different;
             }
 
             Message::Save => {
-                let gpio_config = self.gpio_config.clone();
-                return Command::perform(save_via_picker(gpio_config), |result| match result {
-                    Ok(true) => Message::ShowStatusMessage(StatusMessage::Info(
-                        "File saved successfully".to_string(),
-                    )),
-                    Ok(false) => Message::ShowStatusMessage(StatusMessage::Warning(
-                        "File save cancelled".to_string(),
-                    )),
-                    Err(e) => Message::ShowStatusMessage(StatusMessage::Error(
-                        "Error saving file".to_string(),
-                        format!("Error saving file. {e}",),
-                    )),
-                });
+                return save(self.gpio_config.clone());
             }
 
             Message::SaveCancelled => {
@@ -295,7 +282,7 @@ impl Application for Piggui {
 
             Message::HardwareListener(event) => match event {
                 HWListenerEvent::Ready(config_change_sender, hw_desc) => {
-                    self.listener_sender = Some(config_change_sender);
+                    self.hardware_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_functions_after_load();
                     self.update_hw_config();
@@ -318,7 +305,7 @@ impl Application for Piggui {
                     {
                         self.set_pin_level_change(board_pin_number, level_change.clone());
                     }
-                    if let Some(ref mut listener) = &mut self.listener_sender {
+                    if let Some(ref mut listener) = &mut self.hardware_sender {
                         let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
                             bcm_pin_number,
                             level_change,
@@ -373,9 +360,7 @@ impl Application for Piggui {
                 }
             },
 
-            Message::ShowStatusMessage(msg) => self.status_message_queue.add_message(msg),
-
-            Message::ClearStatusMessage => self.status_message_queue.clear_message(),
+            Message::StatusRow(msg) => self.status_row.update(msg),
         }
         Command::none()
     }
@@ -397,7 +382,7 @@ impl Application for Piggui {
     fn view(&self) -> Element<Self::Message> {
         let main_col = Column::new()
             .push(main_row::view(self))
-            .push(info_row(self));
+            .push(info_row::view(self));
 
         let content = container(main_col)
             .height(Length::Fill)
@@ -419,18 +404,13 @@ impl Application for Piggui {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        let mut subscriptions = vec![
-            hw_listener::subscribe().map(Message::HardwareListener),
+        let subscriptions = vec![
+            hardware_subscription::subscribe().map(Message::HardwareListener),
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| Message::UpdateCharts),
             iced::event::listen().map(Message::WindowEvent),
+            self.status_row.subscription().map(Message::StatusRow),
         ];
-
-        if self.status_message_queue.showing_info_message() {
-            subscriptions.push(
-                iced::time::every(Duration::from_secs(3)).map(|_| Message::ClearStatusMessage),
-            );
-        }
 
         Subscription::batch(subscriptions)
     }
