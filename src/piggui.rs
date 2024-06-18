@@ -78,7 +78,6 @@ pub enum Message {
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
 pub struct Piggui {
-    #[allow(dead_code)]
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
     pub pin_function_selected: [PinFunction; 40],
