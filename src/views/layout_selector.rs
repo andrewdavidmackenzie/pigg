@@ -75,7 +75,7 @@ impl LayoutSelector {
     }
 
     /// Set the new layout as being selected and return the window size required
-    pub fn set(&mut self, new_layout: Layout) -> Size {
+    pub fn update(&mut self, new_layout: Layout) -> Size {
         self.selected_layout = new_layout;
         self.get_window_size()
     }

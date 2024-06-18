@@ -347,7 +347,8 @@ impl Application for Gpio {
             }
 
             Message::LayoutChanged(layout) => {
-                return window::resize(window::Id::MAIN, self.layout_selector.set(layout))
+                // Keep overall window management at this level and out of LayoutSelector
+                return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
             Message::ConfigLoaded((filename, config)) => {
