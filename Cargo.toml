@@ -13,7 +13,6 @@ readme = "README.md"
 [[bin]]
 name = "piggui"
 path = "src/piggui.rs"
-required-features = ["gui"]
 
 [[bin]]
 name = "piglet"
@@ -22,7 +21,6 @@ path = "src/piglet.rs"
 [features]
 default = ["gui"]
 pi = ["rppal"]
-pico = [] #embassy
 gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd", "plotters-iced", "plotters", "chrono",
     "rand"]
 

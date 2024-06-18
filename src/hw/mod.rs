@@ -13,12 +13,10 @@ use crate::hw::pin_descriptions::*;
 pub mod hardware_subscription;
 
 /// There are three implementations of [`Hardware`] trait:
-/// * None - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
-/// * Pi - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
-/// * Pico - Raspberry Pi Pico Microcontroller (To Be done)
-#[cfg_attr(all(feature = "pico", not(feature = "pi")), path = "pico.rs")]
-#[cfg_attr(all(feature = "pi", not(feature = "pico")), path = "pi.rs")]
-#[cfg_attr(not(any(feature = "pico", feature = "pi")), path = "none.rs")]
+/// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
+/// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
+#[cfg_attr(feature = "pi", path = "pi_hw.rs")]
+#[cfg_attr(not(feature = "pi"), path = "fake_hw.rs")]
 mod implementation;
 pub mod pin_descriptions;
 
