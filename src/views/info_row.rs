@@ -18,7 +18,7 @@ fn unsaved_status(app: &Piggui) -> Element<Message> {
         true => Button::new("Unsaved changes").on_press(Message::Save),
         false => Button::new(""),
     }
-    .width(Length::Fixed(140.0))
+    .width(Length::Fixed(160.0))
     .style(button_style.get_button_style())
     .into()
 }
