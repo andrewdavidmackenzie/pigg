@@ -13,10 +13,12 @@ readme = "README.md"
 [[bin]]
 name = "piggui"
 path = "src/piggui.rs"
+required-features = ["gui"]
 
 [[bin]]
 name = "piglet"
 path = "src/piglet.rs"
+required-features = ["pi"]
 
 [features]
 default = ["gui"]

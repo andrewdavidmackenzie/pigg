@@ -89,7 +89,7 @@ many have GH issues.
   remotely
   Issues [#106](https://github.com/andrewdavidmackenzie/pigg/issues/106),
   [#3](https://github.com/andrewdavidmackenzie/pigg/issues/3)
-- Pico support for a headless hardware backend
+- Pico support for a headless hardware backend accessed over the network
 - Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 
 ## Project Structure
