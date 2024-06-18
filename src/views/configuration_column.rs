@@ -1,5 +1,5 @@
 use crate::custom_widgets::button_style::ButtonStyle;
-use crate::{Message, Piggui, ToastMessage};
+use crate::{Message, Piggui};
 use iced::widget::{Button, Column, Text};
 use iced::{Alignment, Color, Element, Length};
 
@@ -16,17 +16,9 @@ pub fn view(app: &Piggui) -> Element<'static, Message> {
     let save_button = Button::new(Text::new("Save Configuration"))
         .style(file_button_style.get_button_style())
         .on_press(Message::Save);
-    // TODO I would factor out the if in on_press and put it under Load message (call it"LoadRequested"?)
     let load_button = Button::new(Text::new("Load Configuration"))
         .style(file_button_style.get_button_style())
-        .on_press(if !app.show_toast {
-            // Add a new toast if `show_toast` is false
-            Message::Load
-        } else {
-            // Close the existing toast if `show_toast` is true
-            let index = app.toasts.len() - 1;
-            Message::Toast(ToastMessage::Close(index))
-        });
+        .on_press(Message::Load);
 
     let mut configuration_column = Column::new()
         .align_items(Alignment::Start)

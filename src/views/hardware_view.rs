@@ -1,24 +1,30 @@
 use iced::advanced::text::editor::Direction;
 use iced::alignment::Horizontal;
+use iced::futures::channel::mpsc::Sender;
 use iced::widget::mouse_area;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
-use iced::{Alignment, Color, Element, Length};
+use iced::{Alignment, Color, Command, Element, Length};
+use iced_futures::Subscription;
+use std::time::Duration;
 
 use crate::custom_widgets::button_style::ButtonStyle;
 use crate::custom_widgets::clicker::clicker;
 use crate::custom_widgets::led::led;
 use crate::custom_widgets::toggler_style::TogglerStyle;
 use crate::custom_widgets::{circle::circle, line::line};
-use crate::hw::InputPull;
+use crate::hw::hardware_subscription::{HWListenerEvent, HardwareEvent};
 use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
-    BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
-    PinLevel,
+    hardware_subscription, BCMPinNumber, BoardPinNumber, LevelChange, PinDescription,
+    PinDescriptionSet, PinFunction, PinLevel,
 };
-use crate::pin_state::CHART_WIDTH;
+use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
+use crate::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
+use crate::views::hardware_view::HardwareMessage::{
+    Activate, ChangeOutputLevel, HardwareListener, NewConfig, PinFunctionSelected, UpdateCharts,
+};
 use crate::views::layout_selector::Layout;
-use crate::Message;
-use crate::{Piggui, PinState};
+use crate::{Message, Piggui, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -56,6 +62,17 @@ const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 // HEIGHTS
 const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
+
+/// [HardwareMessage] covers all messages that are handled by hardware_view
+#[derive(Debug, Clone)]
+pub enum HardwareMessage {
+    Activate(BoardPinNumber),
+    PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
+    NewConfig(GPIOConfig),
+    HardwareListener(HWListenerEvent),
+    ChangeOutputLevel(BCMPinNumber, LevelChange),
+    UpdateCharts,
+}
 
 fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     match pin_description.name {
@@ -122,17 +139,182 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     }
 }
 
-pub struct HardwareView {}
+pub struct HardwareView {
+    gpio_config: GPIOConfig,
+    pin_function_selected: [PinFunction; 40],
+    hardware_sender: Option<Sender<HardwareEvent>>,
+    pub hardware_description: Option<HardwareDescription>,
+    /// Either desired state of an output, or detected state of input.
+    /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
+    pin_states: [PinState; 40],
+}
+
+async fn empty() {}
 
 impl HardwareView {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            gpio_config: GPIOConfig::default(),
+            pin_function_selected: [PinFunction::None; 40],
+            hardware_description: None, // Until listener is ready
+            hardware_sender: None,      // Until listener is ready
+            pin_states: core::array::from_fn(|_| PinState::new()),
+        }
     }
-    pub fn view<'a>(&self, app: &'a Piggui, layout: Layout) -> Element<'a, Message> {
-        if let Some(hw_description) = &app.hardware_description {
+
+    pub fn get_config(&self) -> GPIOConfig {
+        self.gpio_config.clone()
+    }
+
+    /// Send the GPIOConfig from the GUI to the hardware to have it applied
+    fn update_hw_config(&mut self) {
+        if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
+            let _ = hardware_sender.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
+        }
+    }
+
+    /// A new function has been selected for a pin via the UI, this function:
+    /// - updates the pin_selected_function array for the UI
+    /// - saves it in the gpio_config, so when we save later it's there
+    /// - sends the update to the hardware to have it applied
+    fn new_pin_function(
+        &mut self,
+        board_pin_number: BoardPinNumber,
+        bcm_pin_number: BCMPinNumber,
+        new_function: PinFunction,
+    ) {
+        let board_pin_index = board_pin_number as usize - 1;
+        let previous_function = self.pin_function_selected[board_pin_index];
+        if new_function != previous_function {
+            self.pin_function_selected[board_pin_index] = new_function;
+            // Pushing selected pin to the Pin Config
+            if let Some(pin_config) = self
+                .gpio_config
+                .configured_pins
+                .iter_mut()
+                .find(|(pin, _)| *pin == bcm_pin_number)
+            {
+                *pin_config = (bcm_pin_number, new_function);
+            } else {
+                // TODO this could just be adding to the config, not replacing existing ones, no?
+                // Add a new configuration entry if it doesn't exist
+                self.gpio_config
+                    .configured_pins
+                    .push((bcm_pin_number, new_function));
+            }
+            // Report config changes to the hardware listener
+            // Since config loading and hardware listener setup can occur out of order
+            // mark the config as changed. If we send to the listener, then mark as done
+            if let Some(ref mut listener) = &mut self.hardware_sender {
+                let _ =
+                    listener.try_send(HardwareEvent::NewPinConfig(bcm_pin_number, new_function));
+            }
+        }
+    }
+
+    /// Go through all the pins in the loaded GPIOConfig and set its function in the
+    /// pin_function_selected array, which is what is used for drawing the UI correctly.
+    fn set_pin_functions_after_load(&mut self) {
+        if let Some(hardware_description) = &self.hardware_description {
+            for (bcm_pin_number, function) in &self.gpio_config.configured_pins {
+                if let Some(board_pin_number) =
+                    hardware_description.pins.bcm_to_board(*bcm_pin_number)
+                {
+                    self.pin_function_selected[board_pin_number as usize - 1] = *function;
+
+                    // For output pins, if there is an initial state set then set that in pin state
+                    // so the toggler will be drawn correctly on first draw
+                    if let Output(Some(level)) = function {
+                        self.pin_states[board_pin_number as usize - 1]
+                            .set_level(LevelChange::new(*level));
+                    }
+                }
+            }
+        }
+    }
+
+    /// Set the pin (using board number) level with a LevelChange
+    fn set_pin_level_change(
+        &mut self,
+        board_pin_number: BoardPinNumber,
+        level_change: LevelChange,
+    ) {
+        self.pin_states[board_pin_number as usize - 1].set_level(level_change);
+    }
+
+    pub fn update(&mut self, message: HardwareMessage) -> Command<Message> {
+        match message {
+            UpdateCharts => {
+                // Update all the charts of the pins that have an assigned function
+                for pin in 0..40 {
+                    if self.pin_function_selected[pin] != PinFunction::None {
+                        self.pin_states[pin].chart.refresh();
+                    }
+                }
+            }
+
+            PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function) => {
+                self.new_pin_function(board_pin_number, bcm_pin_number, pin_function);
+                return Command::perform(empty(), |_| {
+                    <Piggui as iced::Application>::Message::UnsavedChanges(true)
+                });
+            }
+
+            NewConfig(config) => {
+                let config_is_different = !self.gpio_config.is_equal(&config);
+                self.gpio_config = config;
+                self.set_pin_functions_after_load();
+                self.update_hw_config();
+                return Command::perform(empty(), move |_| {
+                    <Piggui as iced::Application>::Message::UnsavedChanges(config_is_different)
+                });
+            }
+
+            HardwareListener(event) => match event {
+                HWListenerEvent::Ready(config_change_sender, hw_desc) => {
+                    self.hardware_sender = Some(config_change_sender);
+                    self.hardware_description = Some(hw_desc);
+                    self.set_pin_functions_after_load();
+                    self.update_hw_config();
+                }
+                HWListenerEvent::InputChange(bcm_pin_number, level_change) => {
+                    if let Some(hardware_description) = &self.hardware_description {
+                        if let Some(board_pin_number) =
+                            hardware_description.pins.bcm_to_board(bcm_pin_number)
+                        {
+                            self.set_pin_level_change(board_pin_number, level_change);
+                        }
+                    }
+                }
+            },
+
+            ChangeOutputLevel(bcm_pin_number, level_change) => {
+                if let Some(hardware_description) = &self.hardware_description {
+                    if let Some(board_pin_number) =
+                        hardware_description.pins.bcm_to_board(bcm_pin_number)
+                    {
+                        self.set_pin_level_change(board_pin_number, level_change.clone());
+                    }
+                    if let Some(ref mut listener) = &mut self.hardware_sender {
+                        let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
+                            bcm_pin_number,
+                            level_change,
+                        ));
+                    }
+                }
+            }
+
+            Activate(pin_number) => println!("Pin {pin_number} clicked"),
+        }
+
+        Command::none()
+    }
+
+    pub fn view(&self, layout: Layout) -> Element<HardwareMessage> {
+        if let Some(hw_description) = &self.hardware_description {
             let pin_layout = match layout {
-                Layout::BoardLayout => Self::board_pin_layout_view(&hw_description.pins, app),
-                Layout::BCMLayout => Self::bcm_pin_layout_view(&hw_description.pins, app),
+                Layout::BoardLayout => self.board_pin_layout_view(&hw_description.pins),
+                Layout::BCMLayout => self.bcm_pin_layout_view(&hw_description.pins),
             };
 
             pin_layout
@@ -142,19 +324,30 @@ impl HardwareView {
         }
     }
 
+    /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
+    pub fn subscription(&self) -> Subscription<HardwareMessage> {
+        let subscriptions = [
+            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                .map(|_| UpdateCharts),
+            hardware_subscription::subscribe().map(HardwareListener),
+        ];
+
+        Subscription::batch(subscriptions)
+    }
+
     /// View that lays out the pins in a single column ordered by BCM pin number
     pub fn bcm_pin_layout_view<'a>(
+        &'a self,
         pin_set: &'a PinDescriptionSet,
-        gpio: &'a Piggui,
-    ) -> Element<'a, Message> {
+    ) -> Element<'a, HardwareMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         for pin in pin_set.bcm_pins_sorted() {
             let pin_row = create_pin_view_side(
                 pin,
-                gpio.pin_function_selected[pin.board_pin_number as usize - 1],
+                self.pin_function_selected[pin.board_pin_number as usize - 1],
                 false,
-                &gpio.pin_states[pin.board_pin_number as usize - 1],
+                &self.pin_states[pin.board_pin_number as usize - 1],
             );
 
             column = column
@@ -168,25 +361,25 @@ impl HardwareView {
 
     /// View that draws the pins laid out as they are on the physical Pi board
     pub fn board_pin_layout_view<'a>(
+        &'a self,
         pin_descriptions: &'a PinDescriptionSet,
-        gpio: &'a Piggui,
-    ) -> Element<'a, Message> {
+    ) -> Element<'a, HardwareMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         // Draw all pins, those with and without BCM pin numbers
         for pair in pin_descriptions.pins().chunks(2) {
             let left_row = create_pin_view_side(
                 &pair[0],
-                gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
+                self.pin_function_selected[pair[0].board_pin_number as usize - 1],
                 true,
-                &gpio.pin_states[pair[0].board_pin_number as usize - 1],
+                &self.pin_states[pair[0].board_pin_number as usize - 1],
             );
 
             let right_row = create_pin_view_side(
                 &pair[1],
-                gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
+                self.pin_function_selected[pair[1].board_pin_number as usize - 1],
                 false,
-                &gpio.pin_states[pair[1].board_pin_number as usize - 1],
+                &self.pin_states[pair[1].board_pin_number as usize - 1],
             );
 
             let row = Row::new()
@@ -213,7 +406,7 @@ fn pullup_picklist(
     pull: Option<InputPull>,
     board_pin_number: BoardPinNumber,
     bcm_pin_number: BCMPinNumber,
-) -> Element<'static, Message> {
+) -> Element<'static, HardwareMessage> {
     let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
 
     // Filter out the currently selected pull option
@@ -222,7 +415,7 @@ fn pullup_picklist(
     }
 
     pick_list(sub_options, pull, move |selected_pull| {
-        Message::PinFunctionSelected(board_pin_number, bcm_pin_number, Input(Some(selected_pull)))
+        PinFunctionSelected(board_pin_number, bcm_pin_number, Input(Some(selected_pull)))
     })
     .width(Length::Fixed(PULLUP_WIDTH))
     .placeholder("Select Pullup")
@@ -238,7 +431,7 @@ fn get_pin_widget(
     pin_function: PinFunction,
     pin_state: &PinState,
     is_left: bool,
-) -> Element<Message> {
+) -> Element<HardwareMessage> {
     let toggle_button_style = TogglerStyle {
         background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
         background_border_width: 1.0,
@@ -252,7 +445,7 @@ fn get_pin_widget(
         active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
     };
 
-    let row = match pin_function {
+    let row: Row<HardwareMessage> = match pin_function {
         Input(pull) => {
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
@@ -272,7 +465,7 @@ fn get_pin_widget(
             let output_toggler = toggler(
                 None,
                 pin_state.get_level().unwrap_or(false as PinLevel),
-                move |b| Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
+                move |b| ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
             )
             .size(TOGGLER_SIZE)
             .style(toggle_button_style.get_toggler_style());
@@ -280,11 +473,11 @@ fn get_pin_widget(
             let output_clicker = mouse_area(clicker(BUTTON_WIDTH))
                 .on_press({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 })
                 .on_release({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    Message::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 });
 
             // For some unknown reason the Pullup picker is wider on the right side than the left
@@ -320,7 +513,7 @@ fn create_pin_view_side<'a>(
     selected_function: PinFunction,
     is_left: bool,
     pin_state: &'a PinState,
-) -> Row<'a, Message> {
+) -> Row<'a, HardwareMessage> {
     // Create a widget that is either used to visualize an input or control an output
     let pin_widget = get_pin_widget(
         pin_description.board_pin_number,
@@ -349,7 +542,7 @@ fn create_pin_view_side<'a>(
 
         pin_options_row = pin_options_row.push(
             pick_list(config_options, selected, move |pin_function| {
-                Message::PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function)
+                PinFunctionSelected(board_pin_number, bcm_pin_number, pin_function)
             })
             .width(Length::Fixed(PIN_OPTION_WIDTH))
             .placeholder("Select function"),
@@ -389,7 +582,7 @@ fn create_pin_view_side<'a>(
     )
     .width(Length::Fixed(PIN_BUTTON_WIDTH))
     .style(get_pin_style(pin_description).get_button_style())
-    .on_press(Message::Activate(pin_description.board_pin_number));
+    .on_press(HardwareMessage::Activate(pin_description.board_pin_number));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right

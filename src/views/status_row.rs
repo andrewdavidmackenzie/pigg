@@ -1,6 +1,7 @@
 use crate::custom_widgets::button_style::ButtonStyle;
+use crate::Message;
 use iced::widget::{Button, Text};
-use iced::{Color, Element, Length};
+use iced::{Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::time::Duration;
 
@@ -88,11 +89,13 @@ impl StatusRow {
     }
 
     /// Update the state and do actions depending on the [StatusRowMessage] sent
-    pub fn update(&mut self, message: StatusRowMessage) {
+    pub fn update(&mut self, message: StatusRowMessage) -> Command<Message> {
         match message {
             StatusRowMessage::ShowStatusMessage(msg) => self.status_message_queue.add_message(msg),
             StatusRowMessage::ClearStatusMessage => self.status_message_queue.clear_message(),
         }
+
+        Command::none()
     }
 
     /// Create the view that represents a status row at the bottom of the screen

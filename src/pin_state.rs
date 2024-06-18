@@ -5,8 +5,8 @@ use iced::Element;
 use plotters::prelude::{RGBAColor, ShapeStyle};
 
 use crate::hw::{LevelChange, PinLevel};
+use crate::views::hardware_view::HardwareMessage;
 use crate::views::waveform::{ChartType, Waveform};
-use crate::Message;
 
 pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 pub const CHART_WIDTH: f32 = 256.0;
@@ -44,7 +44,7 @@ impl PinState {
         }
     }
 
-    pub fn chart(&self, direction: Direction) -> Element<Message> {
+    pub fn chart(&self, direction: Direction) -> Element<HardwareMessage> {
         self.chart.view(direction)
     }
 

@@ -5,14 +5,9 @@ use crate::Message;
 use iced::Command;
 use std::{env, io};
 
-pub async fn load(filename: Option<String>) -> io::Result<Option<(String, GPIOConfig)>> {
-    match filename {
-        Some(config_filename) => {
-            let config = GPIOConfig::load(&config_filename)?;
-            Ok(Some((config_filename, config)))
-        }
-        None => Ok(None),
-    }
+pub async fn load(filename: String) -> io::Result<(String, GPIOConfig)> {
+    let config = GPIOConfig::load(&filename)?;
+    Ok((filename, config))
 }
 
 pub async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
@@ -25,7 +20,7 @@ pub async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
     {
         let path: std::path::PathBuf = handle.path().to_owned();
         let path_str = path.display().to_string();
-        load(Some(path_str)).await
+        Ok(Some(load(path_str).await?))
     } else {
         Ok(None)
     }

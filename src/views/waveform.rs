@@ -16,8 +16,8 @@ use plotters::style::ShapeStyle;
 use plotters_iced::{Chart, ChartWidget, Renderer};
 
 use crate::hw::{LevelChange, PinLevel};
+use crate::views::hardware_view::HardwareMessage;
 use crate::views::waveform::ChartType::{Squarewave, Verbatim};
-use crate::Message;
 
 /// `Sample<T>` can be used to send new samples to a waveform widget for display in a moving chart
 /// It must have a type `T` that implements `Into<u32>` for Y-axis value, and a `DateTime` when it
@@ -203,7 +203,7 @@ where
 
     /// Return an Element that can be used in views to display the chart,
     /// specifying the direction to draw the waveform view in
-    pub fn view(&self, direction: Direction) -> Element<Message> {
+    pub fn view(&self, direction: Direction) -> Element<HardwareMessage> {
         self.direction.replace(direction);
         ChartWidget::new(self)
             .height(Length::Fixed(self.height))
@@ -212,7 +212,7 @@ where
     }
 }
 
-impl<T> Chart<Message> for Waveform<T>
+impl<T> Chart<HardwareMessage> for Waveform<T>
 where
     T: Clone + Into<u32> + PartialEq + Display,
 {

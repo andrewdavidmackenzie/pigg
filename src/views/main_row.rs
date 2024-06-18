@@ -20,7 +20,11 @@ pub fn view(app: &Piggui) -> Element<Message> {
 
     main_row = main_row.push(
             Column::new()
-                .push(app.hardware_view.view(app, app.layout_selector.get()))
+                .push(
+                    app.hardware_view
+                        .view(app.layout_selector.get())
+                        .map(Message::Hardware),
+                )
                 .align_items(Alignment::Center)
                 .height(Length::Fill)
                 .width(Length::Fill),
