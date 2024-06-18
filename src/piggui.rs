@@ -17,16 +17,15 @@ use hw::{
 use pin_layout::{bcm_pin_layout_view, board_pin_layout_view};
 
 use crate::hw::{hw_listener, LevelChange};
-use crate::layout::Layout;
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware::hw_description;
 use crate::views::info::info_row;
+use crate::views::layout_selector::LayoutSelector;
 use crate::views::status::{StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
 mod custom_widgets;
 mod hw;
-mod layout;
 mod pin_layout;
 mod pin_state;
 mod views;
@@ -39,7 +38,7 @@ fn main() -> Result<(), iced::Error> {
         return Ok(());
     }
 
-    let layout = Layout::BoardLayout;
+    let layout = LayoutSelector::BoardLayout;
     let size = layout.get_window_size();
     let window = window::Settings {
         resizable: true,
@@ -65,7 +64,7 @@ pub enum ToastMessage {
 pub enum Message {
     Activate(BoardPinNumber),
     PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
-    LayoutChanged(Layout),
+    LayoutChanged(LayoutSelector),
     ConfigLoaded((String, GPIOConfig)),
     None,
     HardwareListener(HWListenerEvent),
@@ -85,7 +84,7 @@ pub struct Gpio {
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
     pub pin_function_selected: [PinFunction; 40],
-    chosen_layout: Layout,
+    chosen_layout: LayoutSelector,
     hardware_description: Option<HardwareDescription>,
     listener_sender: Option<Sender<HardwareEvent>>,
     /// Either desired state of an output, or detected state of input.
@@ -221,7 +220,7 @@ impl Gpio {
 
     fn configuration_column(&self) -> Element<'static, Message> {
         let layout_selector = pick_list(
-            &Layout::ALL[..],
+            &LayoutSelector::ALL[..],
             Some(self.chosen_layout),
             Message::LayoutChanged,
         )
@@ -277,8 +276,8 @@ impl Gpio {
 
         if let Some(hw_description) = &self.hardware_description {
             let pin_layout = match self.chosen_layout {
-                Layout::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
-                Layout::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
+                LayoutSelector::BoardLayout => board_pin_layout_view(&hw_description.pins, self),
+                LayoutSelector::BCMLayout => bcm_pin_layout_view(&hw_description.pins, self),
             };
 
             main_row = main_row.push(
@@ -306,7 +305,7 @@ impl Application for Gpio {
                 config_filename: None,
                 gpio_config: GPIOConfig::default(),
                 pin_function_selected: [PinFunction::None; 40],
-                chosen_layout: Layout::BoardLayout,
+                chosen_layout: LayoutSelector::BoardLayout,
                 hardware_description: None, // Until listener is ready
                 listener_sender: None,      // Until listener is ready
                 pin_states: core::array::from_fn(|_| PinState::new()),

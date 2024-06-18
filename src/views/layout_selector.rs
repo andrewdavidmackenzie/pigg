@@ -3,7 +3,7 @@ use iced::Size;
 // use crate::pin_layout::{BCM_PIN_LAYOUT_WIDTH, BOARD_PIN_LAYOUT_WIDTH};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Layout {
+pub enum LayoutSelector {
     #[default]
     BoardLayout,
     BCMLayout,
@@ -19,23 +19,23 @@ const BOARD_LAYOUT_HEIGHT: f32 = 780.0;
 const BCM_LAYOUT_WIDTH: f32 = 1000.0;
 const BCM_LAYOUT_HEIGHT: f32 = 970.0;
 
-impl Layout {
-    pub const ALL: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
+impl LayoutSelector {
+    pub const ALL: [LayoutSelector; 2] = [LayoutSelector::BoardLayout, LayoutSelector::BCMLayout];
 
     pub fn get_spacing(&self) -> u16 {
         match self {
-            Layout::BoardLayout => BOARD_LAYOUT_SPACING,
-            Layout::BCMLayout => BCM_LAYOUT_SPACING,
+            LayoutSelector::BoardLayout => BOARD_LAYOUT_SPACING,
+            LayoutSelector::BCMLayout => BCM_LAYOUT_SPACING,
         }
     }
 
     pub fn get_window_size(&self) -> Size {
         match self {
-            Layout::BoardLayout => Size {
+            LayoutSelector::BoardLayout => Size {
                 width: BOARD_LAYOUT_WIDTH,
                 height: BOARD_LAYOUT_HEIGHT,
             },
-            Layout::BCMLayout => Size {
+            LayoutSelector::BCMLayout => Size {
                 width: BCM_LAYOUT_WIDTH,
                 height: BCM_LAYOUT_HEIGHT,
             },
@@ -45,14 +45,14 @@ impl Layout {
 
 // Implementing format for Layout
 // TODO could maybe put the Name as a &str inside the enum elements above?
-impl std::fmt::Display for Layout {
+impl std::fmt::Display for LayoutSelector {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Layout::BoardLayout => "Board Pin Layout",
-                Layout::BCMLayout => "BCM Pin Layout",
+                LayoutSelector::BoardLayout => "Board Pin Layout",
+                LayoutSelector::BCMLayout => "BCM Pin Layout",
             }
         )
     }
