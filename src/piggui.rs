@@ -27,6 +27,7 @@ mod file_helper;
 mod hw;
 mod pin_layout;
 mod pin_state;
+mod styles;
 mod views;
 
 fn main() -> Result<(), iced::Error> {
@@ -389,8 +390,7 @@ impl Application for Piggui {
             .width(Length::Fill)
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
-            .center_y()
-            .padding([10.0, 10.0, 0.0, 10.0]);
+            .center_y();
 
         Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))

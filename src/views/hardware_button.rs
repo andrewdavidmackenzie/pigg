@@ -43,6 +43,8 @@ pub fn view(app: &Piggui) -> Element<Message> {
             let index = app.toasts.len() - 1;
             Message::Toast(ToastMessage::Close(index))
         })
+        .clip(true)
+        .height(iced::Length::Shrink)
         .style(about_button_style.get_button_style());
 
     add_toast_button.into()
