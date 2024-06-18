@@ -29,6 +29,7 @@ pub fn view(app: &Piggui) -> Element<Message> {
         .push(version_button(app))
         .push(hardware_button::view(app))
         .push(unsaved_status(app))
+        .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
         .push(app.status_row.view().map(Message::StatusRow))
         .spacing(20.0)
         .into()

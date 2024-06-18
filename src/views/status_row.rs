@@ -122,7 +122,7 @@ impl StatusRow {
             .style(button_style.get_button_style())
             .clip(true)
             .height(iced::Length::Shrink)
-            .width(Length::Fixed(400.0))
+            .width(Length::Shrink)
             .into()
     }
 
