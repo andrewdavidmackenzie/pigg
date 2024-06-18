@@ -578,7 +578,7 @@ fn create_pin_view_side<'a>(
     )
     .width(Length::Fixed(PIN_BUTTON_WIDTH))
     .style(get_pin_style(pin_description).get_button_style())
-    .on_press(HardwareMessage::Activate(pin_description.board_pin_number));
+    .on_press(Activate(pin_description.board_pin_number));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
