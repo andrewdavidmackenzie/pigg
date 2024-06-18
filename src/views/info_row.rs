@@ -8,7 +8,7 @@ use iced::{Color, Element, Length};
 fn unsaved_status(app: &Piggui) -> Element<Message> {
     let button_style = ButtonStyle {
         bg_color: Color::TRANSPARENT,
-        text_color: Color::WHITE,
+        text_color: Color::new(1.0, 0.0, 0.0, 1.0),
         hovered_bg_color: Color::TRANSPARENT,
         hovered_text_color: Color::new(0.7, 0.7, 0.7, 1.0),
         border_radius: 4.0,
