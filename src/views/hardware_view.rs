@@ -137,7 +137,7 @@ impl HardwareView {
 
             pin_layout
         } else {
-            // The no hardware view
+            // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
             Row::new().into()
         }
     }
