@@ -1,5 +1,5 @@
+use std::env;
 use std::time::Duration;
-use std::{env, io};
 
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::{container, Button, Column, Row, Text};
@@ -8,6 +8,7 @@ use iced::{
     Subscription, Theme,
 };
 
+use crate::file_helper::{load, load_via_picker, save_via_picker};
 use custom_widgets::button_style::ButtonStyle;
 use custom_widgets::toast::{self, Manager, Status, Toast};
 use hw::{
@@ -25,6 +26,7 @@ use crate::views::status::{StatusMessage, StatusMessageQueue};
 use crate::views::version::version;
 
 mod custom_widgets;
+mod file_helper;
 mod hw;
 mod pin_layout;
 mod pin_state;
@@ -97,49 +99,6 @@ pub struct Gpio {
 }
 
 impl Gpio {
-    async fn load(filename: Option<String>) -> io::Result<Option<(String, GPIOConfig)>> {
-        match filename {
-            Some(config_filename) => {
-                let config = GPIOConfig::load(&config_filename)?;
-                Ok(Some((config_filename, config)))
-            }
-            None => Ok(None),
-        }
-    }
-
-    async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
-        if let Some(handle) = rfd::AsyncFileDialog::new()
-            .add_filter("Pigg Config", &["pigg"])
-            .set_title("Choose config file to load")
-            .set_directory(env::current_dir().unwrap())
-            .pick_file()
-            .await
-        {
-            let path: std::path::PathBuf = handle.path().to_owned();
-            let path_str = path.display().to_string();
-            Self::load(Some(path_str)).await
-        } else {
-            Ok(None)
-        }
-    }
-
-    async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
-        if let Some(handle) = rfd::AsyncFileDialog::new()
-            .add_filter("Pigg Config", &["pigg"])
-            .set_title("Choose file")
-            .set_directory(env::current_dir().unwrap())
-            .save_file()
-            .await
-        {
-            let path: std::path::PathBuf = handle.path().to_owned();
-            let path_str = path.display().to_string();
-            gpio_config.save(&path_str).unwrap();
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut listener) = &mut self.listener_sender {
@@ -306,7 +265,7 @@ impl Application for Gpio {
                 pending_load: false,
                 status_message_queue: StatusMessageQueue::default(),
             },
-            Command::perform(Self::load(env::args().nth(1)), |result| match result {
+            Command::perform(load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
                 _ => Message::None,
             }),
@@ -362,21 +321,18 @@ impl Application for Gpio {
 
             Message::Save => {
                 let gpio_config = self.gpio_config.clone();
-                return Command::perform(
-                    Self::save_via_picker(gpio_config),
-                    |result| match result {
-                        Ok(true) => Message::ShowStatusMessage(StatusMessage::Info(
-                            "File saved successfully".to_string(),
-                        )),
-                        Ok(false) => Message::ShowStatusMessage(StatusMessage::Warning(
-                            "File save cancelled".to_string(),
-                        )),
-                        Err(e) => Message::ShowStatusMessage(StatusMessage::Error(
-                            "Error saving file".to_string(),
-                            format!("Error saving file. {e}",),
-                        )),
-                    },
-                );
+                return Command::perform(save_via_picker(gpio_config), |result| match result {
+                    Ok(true) => Message::ShowStatusMessage(StatusMessage::Info(
+                        "File saved successfully".to_string(),
+                    )),
+                    Ok(false) => Message::ShowStatusMessage(StatusMessage::Warning(
+                        "File save cancelled".to_string(),
+                    )),
+                    Err(e) => Message::ShowStatusMessage(StatusMessage::Error(
+                        "Error saving file".to_string(),
+                        format!("Error saving file. {e}",),
+                    )),
+                });
             }
 
             Message::SaveCancelled => {
@@ -395,7 +351,7 @@ impl Application for Gpio {
                     self.show_toast = true;
                     self.pending_load = true;
                 } else {
-                    return Command::perform(Self::load_via_picker(), |result| match result {
+                    return Command::perform(load_via_picker(), |result| match result {
                         Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),
                         _ => Message::None,
                     });
@@ -471,7 +427,7 @@ impl Application for Gpio {
                     self.toasts.remove(index);
                     if self.pending_load {
                         self.pending_load = false;
-                        return Command::perform(Self::load_via_picker(), |result| match result {
+                        return Command::perform(load_via_picker(), |result| match result {
                             Ok(Some((filename, config))) => {
                                 Message::ConfigLoaded((filename, config))
                             }
