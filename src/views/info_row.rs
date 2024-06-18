@@ -24,7 +24,8 @@ fn unsaved_status(app: &Piggui) -> Element<Message> {
     .into()
 }
 
-pub fn info_row(app: &Piggui) -> Element<Message> {
+/// Create the view that represents the info row at the bottom of the window
+pub fn view(app: &Piggui) -> Element<Message> {
     Row::new()
         .push(version_button(app))
         .push(hardware_button::view(app))
