@@ -16,7 +16,7 @@ use hw::{
 use crate::file_helper::{load, load_via_picker, save_via_picker};
 use crate::hw::{hw_listener, LevelChange};
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
-use crate::views::hardware::hw_description;
+use crate::views::hardware_button::hw_description;
 use crate::views::info::info_row;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;

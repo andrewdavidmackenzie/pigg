@@ -1,5 +1,5 @@
 use crate::custom_widgets::button_style::ButtonStyle;
-use crate::views::hardware::hardware_button;
+use crate::views::hardware_button;
 use crate::views::status::status_message;
 use crate::views::version::version_button;
 use crate::{Message, Piggui};
@@ -27,7 +27,7 @@ fn unsaved_status(app: &Piggui) -> Element<Message> {
 pub fn info_row(app: &Piggui) -> Element<Message> {
     Row::new()
         .push(version_button(app))
-        .push(hardware_button(app))
+        .push(hardware_button::view(app))
         .push(unsaved_status(app))
         .push(status_message(app))
         .spacing(20.0)
