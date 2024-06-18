@@ -17,6 +17,7 @@ use crate::file_helper::{load, load_via_picker, save};
 use crate::hw::{hardware_subscription, LevelChange};
 use crate::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::views::hardware_button::hw_description;
+use crate::views::hardware_view::HardwareView;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::status_row::{StatusRow, StatusRowMessage};
 use crate::views::version::version;
@@ -25,7 +26,6 @@ use crate::views::{info_row, main_row};
 mod custom_widgets;
 mod file_helper;
 mod hw;
-mod pin_layout;
 mod pin_state;
 mod styles;
 mod views;
@@ -95,6 +95,7 @@ pub struct Piggui {
     unsaved_changes: bool,
     pending_load: bool,
     status_row: StatusRow,
+    hardware_view: HardwareView,
 }
 
 impl Piggui {
@@ -197,6 +198,7 @@ impl Application for Piggui {
                 unsaved_changes: false,
                 pending_load: false,
                 status_row: StatusRow::new(),
+                hardware_view: HardwareView::new(),
             },
             Command::perform(load(env::args().nth(1)), |result| match result {
                 Ok(Some((filename, config))) => Message::ConfigLoaded((filename, config)),

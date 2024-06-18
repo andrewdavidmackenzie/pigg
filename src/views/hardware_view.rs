@@ -16,6 +16,7 @@ use crate::hw::{
     PinLevel,
 };
 use crate::pin_state::CHART_WIDTH;
+use crate::views::layout_selector::Layout;
 use crate::Message;
 use crate::{Piggui, PinState};
 
@@ -45,7 +46,7 @@ const PIN_WIDGET_ROW_WIDTH: f32 =
 //     + PIN_OPTION_WIDTH;
 
 const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
-// Export these two so they can be used to calculate overall window size
+// Export these two, so they can be used to calculate overall window size
 // pub const BCM_PIN_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
 
 // Board Layout has two pin rows per row, with spacing between them
@@ -121,69 +122,90 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     }
 }
 
-/// View that lays out the pins in a single column ordered by BCM pin number
-pub fn bcm_pin_layout_view<'a>(
-    pin_set: &'a PinDescriptionSet,
-    gpio: &'a Piggui,
-) -> Element<'a, Message> {
-    let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
+pub struct HardwareView {}
 
-    for pin in pin_set.bcm_pins_sorted() {
-        let pin_row = create_pin_view_side(
-            pin,
-            gpio.pin_function_selected[pin.board_pin_number as usize - 1],
-            false,
-            &gpio.pin_states[pin.board_pin_number as usize - 1],
-        );
+impl HardwareView {
+    pub fn new() -> Self {
+        Self {}
+    }
+    pub fn view<'a>(&self, app: &'a Piggui, layout: Layout) -> Element<'a, Message> {
+        if let Some(hw_description) = &app.hardware_description {
+            let pin_layout = match layout {
+                Layout::BoardLayout => Self::board_pin_layout_view(&hw_description.pins, app),
+                Layout::BCMLayout => Self::bcm_pin_layout_view(&hw_description.pins, app),
+            };
 
-        column = column
-            .push(pin_row)
-            .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
-            .align_items(Alignment::Center);
+            pin_layout
+        } else {
+            // The no hardware view
+            Row::new().into()
+        }
     }
 
-    column.into()
-}
+    /// View that lays out the pins in a single column ordered by BCM pin number
+    pub fn bcm_pin_layout_view<'a>(
+        pin_set: &'a PinDescriptionSet,
+        gpio: &'a Piggui,
+    ) -> Element<'a, Message> {
+        let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-/// View that draws the pins laid out as they are on the physical Pi board
-pub fn board_pin_layout_view<'a>(
-    pin_descriptions: &'a PinDescriptionSet,
-    gpio: &'a Piggui,
-) -> Element<'a, Message> {
-    let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
+        for pin in pin_set.bcm_pins_sorted() {
+            let pin_row = create_pin_view_side(
+                pin,
+                gpio.pin_function_selected[pin.board_pin_number as usize - 1],
+                false,
+                &gpio.pin_states[pin.board_pin_number as usize - 1],
+            );
 
-    // Draw all pins, those with and without BCM pin numbers
-    for pair in pin_descriptions.pins().chunks(2) {
-        let left_row = create_pin_view_side(
-            &pair[0],
-            gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
-            true,
-            &gpio.pin_states[pair[0].board_pin_number as usize - 1],
-        );
+            column = column
+                .push(pin_row)
+                .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
+                .align_items(Alignment::Center);
+        }
 
-        let right_row = create_pin_view_side(
-            &pair[1],
-            gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
-            false,
-            &gpio.pin_states[pair[1].board_pin_number as usize - 1],
-        );
-
-        let row = Row::new()
-            .push(left_row)
-            .push(right_row)
-            .spacing(BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS)
-            .align_items(Alignment::Center);
-
-        column = column
-            .push(row)
-            .push(iced::widget::Space::new(
-                Length::Fixed(1.0),
-                Length::Fixed(VERTICAL_SPACE_BETWEEN_PIN_ROWS),
-            ))
-            .align_items(Alignment::Center);
+        column.into()
     }
 
-    column.into()
+    /// View that draws the pins laid out as they are on the physical Pi board
+    pub fn board_pin_layout_view<'a>(
+        pin_descriptions: &'a PinDescriptionSet,
+        gpio: &'a Piggui,
+    ) -> Element<'a, Message> {
+        let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
+
+        // Draw all pins, those with and without BCM pin numbers
+        for pair in pin_descriptions.pins().chunks(2) {
+            let left_row = create_pin_view_side(
+                &pair[0],
+                gpio.pin_function_selected[pair[0].board_pin_number as usize - 1],
+                true,
+                &gpio.pin_states[pair[0].board_pin_number as usize - 1],
+            );
+
+            let right_row = create_pin_view_side(
+                &pair[1],
+                gpio.pin_function_selected[pair[1].board_pin_number as usize - 1],
+                false,
+                &gpio.pin_states[pair[1].board_pin_number as usize - 1],
+            );
+
+            let row = Row::new()
+                .push(left_row)
+                .push(right_row)
+                .spacing(BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS)
+                .align_items(Alignment::Center);
+
+            column = column
+                .push(row)
+                .push(iced::widget::Space::new(
+                    Length::Fixed(1.0),
+                    Length::Fixed(VERTICAL_SPACE_BETWEEN_PIN_ROWS),
+                ))
+                .align_items(Alignment::Center);
+        }
+
+        column.into()
+    }
 }
 
 /// Prepare a pick_list widget with the Input's pullup options
