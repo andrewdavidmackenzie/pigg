@@ -2,10 +2,10 @@ use iced::widget::{Button, Text};
 use iced::{Color, Element};
 
 use crate::custom_widgets::button_style::ButtonStyle;
-use crate::{Gpio, Message, ToastMessage};
+use crate::{Message, Piggui, ToastMessage};
 
 #[must_use]
-pub fn hw_description(app: &Gpio) -> String {
+pub fn hw_description(app: &Piggui) -> String {
     if let Some(hardware_description) = &app.hardware_description {
         format!(
             "Hardware: {}\nRevision: {}\nSerial: {}\nModel: {}",
@@ -19,7 +19,7 @@ pub fn hw_description(app: &Gpio) -> String {
     }
 }
 
-pub fn hardware_button(app: &Gpio) -> Element<Message> {
+pub fn hardware_button(app: &Piggui) -> Element<Message> {
     let hw_text = if let Some(hardware_description) = &app.hardware_description {
         hardware_description.details.model.clone()
     } else {

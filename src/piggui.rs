@@ -47,7 +47,7 @@ fn main() -> Result<(), iced::Error> {
         ..Default::default()
     };
 
-    Gpio::run(Settings {
+    Piggui::run(Settings {
         window,
         ..Default::default()
     })
@@ -79,7 +79,8 @@ pub enum Message {
     WindowEvent(iced::Event),
 }
 
-pub struct Gpio {
+/// [Piggui] Is the struct that holds application state and implements [Application] for Iced
+pub struct Piggui {
     #[allow(dead_code)]
     config_filename: Option<String>,
     gpio_config: GPIOConfig,
@@ -98,7 +99,7 @@ pub struct Gpio {
     status_message_queue: StatusMessageQueue,
 }
 
-impl Gpio {
+impl Piggui {
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut listener) = &mut self.listener_sender {
@@ -242,13 +243,13 @@ impl Gpio {
     }
 }
 
-impl Application for Gpio {
+impl Application for Piggui {
     type Executor = executor::Default;
     type Message = Message;
     type Theme = Theme;
     type Flags = ();
 
-    fn new(_flags: ()) -> (Gpio, Command<Self::Message>) {
+    fn new(_flags: ()) -> (Piggui, Command<Self::Message>) {
         (
             Self {
                 config_filename: None,
@@ -506,7 +507,7 @@ mod tests {
     use super::*;
     #[tokio::test]
     async fn test_add_toast_message() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // No toasts should be present
         assert!(app.toasts.is_empty());
@@ -522,7 +523,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_close_toast_message() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Add a toast
         let _ = app.update(Message::Toast(ToastMessage::VersionToast));
@@ -539,7 +540,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_window_close_with_unsaved_changes() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes
         app.unsaved_changes = true;
@@ -562,7 +563,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_load_with_unsaved_changes() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes
         app.unsaved_changes = true;
@@ -582,7 +583,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_toast_timeout() {
-        let mut app = Gpio::new(()).0;
+        let mut app = Piggui::new(()).0;
 
         // Send a timeout message
         let _ = app.update(Message::Toast(ToastMessage::Timeout(5.0)));

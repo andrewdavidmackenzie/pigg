@@ -2,11 +2,11 @@ use crate::custom_widgets::button_style::ButtonStyle;
 use crate::views::hardware::hardware_button;
 use crate::views::status::status_message;
 use crate::views::version::version_button;
-use crate::{Gpio, Message};
+use crate::{Message, Piggui};
 use iced::widget::{Button, Row};
 use iced::{Color, Element, Length};
 
-fn unsaved_status(app: &Gpio) -> Element<Message> {
+fn unsaved_status(app: &Piggui) -> Element<Message> {
     let button_style = ButtonStyle {
         bg_color: Color::TRANSPARENT,
         text_color: Color::WHITE,
@@ -24,7 +24,7 @@ fn unsaved_status(app: &Gpio) -> Element<Message> {
     .into()
 }
 
-pub fn info_row(app: &Gpio) -> Element<Message> {
+pub fn info_row(app: &Piggui) -> Element<Message> {
     Row::new()
         .push(version_button(app))
         .push(hardware_button(app))
