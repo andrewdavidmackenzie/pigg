@@ -2,7 +2,7 @@ use std::env;
 use std::time::Duration;
 
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::{self, container, Column};
+use iced::widget::{container, Column};
 use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
@@ -27,6 +27,7 @@ mod file_helper;
 mod hw;
 mod pin_layout;
 mod pin_state;
+mod styles;
 mod views;
 
 fn main() -> Result<(), iced::Error> {
@@ -382,7 +383,6 @@ impl Application for Piggui {
     fn view(&self) -> Element<Self::Message> {
         let main_col = Column::new()
             .push(main_row::view(self))
-            .push(widget::horizontal_rule(0))
             .push(info_row::view(self));
 
         let content = container(main_col)
@@ -390,8 +390,7 @@ impl Application for Piggui {
             .width(Length::Fill)
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
-            .center_y()
-            .padding([10.0, 10.0, 0.0, 10.0]);
+            .center_y();
 
         Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
