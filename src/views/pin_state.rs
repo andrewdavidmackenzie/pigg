@@ -44,7 +44,7 @@ impl PinState {
         }
     }
 
-    pub fn chart(&self, direction: Direction) -> Element<HardwareMessage> {
+    pub fn view(&self, direction: Direction) -> Element<HardwareMessage> {
         self.chart.view(direction)
     }
 
@@ -64,7 +64,7 @@ impl PinState {
 #[cfg(test)]
 mod test {
     use crate::hw::LevelChange;
-    use crate::pin_state::PinState;
+    use crate::views::pin_state::PinState;
 
     #[test]
     fn level_stores_last() {

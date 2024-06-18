@@ -7,23 +7,20 @@ use iced::{
 
 use widgets::toast::{self, Manager, Status, Toast};
 
-use crate::file_helper::{load, load_via_picker, save};
+use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::GPIOConfig;
-use crate::pin_state::PinState;
 use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::status_row::StatusMessage::{Error, Info};
-use crate::views::status_row::StatusRowMessage::ShowStatusMessage;
 use crate::views::status_row::{StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
+use views::pin_state::PinState;
 
 mod file_helper;
 mod hw;
-mod pin_state;
 mod styles;
 mod views;
 mod widgets;
@@ -106,16 +103,7 @@ impl Application for Piggui {
                 status_row: StatusRow::new(),
                 hardware_view: HardwareView::new(),
             },
-            match env::args().nth(1) {
-                Some(filename) => Command::perform(load(filename), |result| match result {
-                    Ok((filename, config)) => ConfigLoaded(filename, config),
-                    Err(e) => Message::StatusRow(ShowStatusMessage(Error(
-                        "Error loading config from file".into(),
-                        format!("Error loading the file specified on command line: {}", e),
-                    ))),
-                }),
-                None => Command::none(),
-            },
+            maybe_load_no_picker(env::args().nth(1)),
         )
     }
 
@@ -176,16 +164,7 @@ impl Application for Piggui {
                         self.showing_toast = true;
                         self.pending_load = true;
                     } else {
-                        return Command::perform(load_via_picker(), |result| match result {
-                            Ok(Some((filename, config))) => ConfigLoaded(filename, config),
-                            Ok(None) => {
-                                StatusRow(ShowStatusMessage(Info("File load cancelled".into())))
-                            }
-                            Err(e) => StatusRow(ShowStatusMessage(Error(
-                                "File could not be loaded".into(),
-                                format!("Error loading file: {e}"),
-                            ))),
-                        });
+                        return pick_and_load();
                     }
                 } else {
                     // Close the existing toast if `show_toast` is true
@@ -228,16 +207,7 @@ impl Application for Piggui {
                     self.toasts.remove(index);
                     if self.pending_load {
                         self.pending_load = false;
-                        return Command::perform(load_via_picker(), |result| match result {
-                            Ok(Some((filename, config))) => ConfigLoaded(filename, config),
-                            Ok(None) => {
-                                StatusRow(ShowStatusMessage(Info("File load cancelled".into())))
-                            }
-                            Err(e) => StatusRow(ShowStatusMessage(Error(
-                                "File could not be loaded".into(),
-                                format!("Error loading file: {e}"),
-                            ))),
-                        });
+                        return pick_and_load();
                     }
                 }
                 ToastMessage::Timeout(timeout) => {

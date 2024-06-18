@@ -4,6 +4,7 @@ pub mod hardware_view;
 pub mod info_row;
 pub mod layout_selector;
 pub mod main_row;
+pub mod pin_state;
 pub mod status_row;
 pub mod version;
 pub mod waveform;

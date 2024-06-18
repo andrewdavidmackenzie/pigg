@@ -14,13 +14,13 @@ use crate::hw::{
     PinDescriptionSet, PinFunction, PinLevel,
 };
 use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
-use crate::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareMessage::{
     Activate, ChangeOutputLevel, HardwareListener, NewConfig, PinFunctionSelected, UpdateCharts,
 };
 use crate::views::layout_selector::Layout;
+use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
@@ -446,14 +446,14 @@ fn get_pin_widget(
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
             if is_left {
                 Row::new()
-                    .push(pin_state.chart(Direction::Left))
+                    .push(pin_state.view(Direction::Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(pin_state.chart(Direction::Right))
+                    .push(pin_state.view(Direction::Right))
             }
         }
 
@@ -480,7 +480,7 @@ fn get_pin_widget(
             // to we add some space here to make this match on both side. A nasty hack!
             if is_left {
                 Row::new()
-                    .push(pin_state.chart(Direction::Left))
+                    .push(pin_state.view(Direction::Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(output_clicker)
                     .push(output_toggler)
@@ -490,7 +490,7 @@ fn get_pin_widget(
                     .push(output_clicker)
                     .push(horizontal_space().width(Length::Fixed(4.0))) // HACK!
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(pin_state.chart(Direction::Right))
+                    .push(pin_state.view(Direction::Right))
             }
         }
 
