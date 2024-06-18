@@ -120,6 +120,8 @@ impl StatusRow {
         Button::new(Text::new(message_text))
             .on_press(StatusRowMessage::ClearStatusMessage)
             .style(button_style.get_button_style())
+            .clip(true)
+            .height(iced::Length::Shrink)
             .width(Length::Fixed(400.0))
             .into()
     }
