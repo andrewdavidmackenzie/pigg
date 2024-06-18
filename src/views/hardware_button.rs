@@ -1,7 +1,7 @@
 use iced::widget::{Button, Text};
 use iced::{Color, Element};
 
-use crate::custom_widgets::button_style::ButtonStyle;
+use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_view::HardwareView;
 use crate::{Message, ToastMessage};
 

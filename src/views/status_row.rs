@@ -1,4 +1,4 @@
-use crate::custom_widgets::button_style::ButtonStyle;
+use crate::styles::button_style::ButtonStyle;
 use crate::Message;
 use iced::widget::{Button, Text};
 use iced::{Color, Command, Element, Length};

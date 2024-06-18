@@ -7,11 +7,6 @@ use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::time::Duration;
 
-use crate::custom_widgets::button_style::ButtonStyle;
-use crate::custom_widgets::clicker::clicker;
-use crate::custom_widgets::led::led;
-use crate::custom_widgets::toggler_style::TogglerStyle;
-use crate::custom_widgets::{circle::circle, line::line};
 use crate::hw::hardware_subscription::{HWListenerEvent, HardwareEvent};
 use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
@@ -20,10 +15,15 @@ use crate::hw::{
 };
 use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
 use crate::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
+use crate::styles::button_style::ButtonStyle;
+use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareMessage::{
     Activate, ChangeOutputLevel, HardwareListener, NewConfig, PinFunctionSelected, UpdateCharts,
 };
 use crate::views::layout_selector::Layout;
+use crate::widgets::clicker::clicker;
+use crate::widgets::led::led;
+use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
 
 // WIDTHS

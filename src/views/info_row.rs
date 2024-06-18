@@ -1,5 +1,5 @@
-use crate::custom_widgets::button_style::ButtonStyle;
 use crate::styles::background::SetAppearance;
+use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_button;
 use crate::views::version::version_button;
 use crate::{Message, Piggui};

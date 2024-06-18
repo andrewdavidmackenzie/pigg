@@ -5,7 +5,7 @@ use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
-use custom_widgets::toast::{self, Manager, Status, Toast};
+use widgets::toast::{self, Manager, Status, Toast};
 
 use crate::file_helper::{load, load_via_picker, save};
 use crate::hw::GPIOConfig;
@@ -21,12 +21,12 @@ use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
 
-mod custom_widgets;
 mod file_helper;
 mod hw;
 mod pin_state;
 mod styles;
 mod views;
+mod widgets;
 
 fn main() -> Result<(), iced::Error> {
     let args: Vec<String> = env::args().collect();
