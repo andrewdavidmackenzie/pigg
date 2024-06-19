@@ -111,20 +111,18 @@ where
         let limit = Utc::now() - self.timespan;
         self.samples.push_front(sample.into());
 
-        // trim values outside the timespan of the chart
-        let mut last_sample = None;
+        // trim values outside the timespan of the chart, except the most recent one
+        let mut last_out_of_window_sample = None;
         self.samples.retain(|sample| {
             let retain = sample.time > limit;
-            if !retain && last_sample.is_none() {
-                last_sample = Some(sample.clone());
+            if !retain && last_out_of_window_sample.is_none() {
+                last_out_of_window_sample = Some(sample.clone());
             }
             retain
         });
 
-        if self.samples.len() < 2 {
-            if let Some(last) = last_sample {
-                self.samples.push_back(last);
-            }
+        if let Some(last) = last_out_of_window_sample {
+            self.samples.push_back(last);
         }
     }
 
