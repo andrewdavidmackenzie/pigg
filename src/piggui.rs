@@ -13,7 +13,7 @@ use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::status_row::{StatusRow, StatusRowMessage};
+use crate::views::status_message::{StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
