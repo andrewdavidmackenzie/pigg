@@ -1,7 +1,7 @@
 use crate::hw::GPIOConfig;
-use crate::views::status_row::StatusMessage;
-use crate::views::status_row::StatusMessage::{Error, Info};
-use crate::views::status_row::StatusRowMessage::ShowStatusMessage;
+use crate::views::status_message::StatusMessage;
+use crate::views::status_message::StatusMessage::{Error, Info};
+use crate::views::status_message::StatusRowMessage::ShowStatusMessage;
 use crate::Message;
 use crate::Message::{ConfigLoaded, StatusRow};
 use iced::Command;

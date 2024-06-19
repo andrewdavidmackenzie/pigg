@@ -140,8 +140,8 @@ impl StatusRow {
 
 #[cfg(test)]
 mod test {
-    use crate::views::status_row::StatusMessage::{Error, Info, Warning};
-    use crate::views::status_row::StatusMessageQueue;
+    use crate::views::status_message::StatusMessage::{Error, Info, Warning};
+    use crate::views::status_message::StatusMessageQueue;
 
     #[test]
     fn errors_first() {
