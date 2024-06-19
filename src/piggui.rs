@@ -57,7 +57,6 @@ pub enum Message {
     Toast(ToastMessage),
     Save,
     Load,
-    SaveCancelled,
     StatusRow(StatusRowMessage),
     WindowEvent(iced::Event),
 }
@@ -111,6 +110,7 @@ impl Application for Piggui {
                             ToastMessage::UnsavedChangesExitToast,
                             None
                         );
+                        self.unsaved_changes = false;
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -124,10 +124,6 @@ impl Application for Piggui {
             Save => {
                 self.unsaved_changes = false;
                 return save(self.hardware_view.get_config());
-            }
-
-            SaveCancelled => {
-                self.unsaved_changes = true;
             }
 
             Load => {
@@ -144,12 +140,12 @@ impl Application for Piggui {
                 } else {
                     let index = self.toast_handler.get_toasts().len() - 1;
                     return Command::perform(empty(), move |_| {
-                        Message::Toast(ToastMessage::Close(index))
+                        Toast(ToastMessage::Close(index))
                     });
                 }
             }
 
-            Message::Toast(toast_message) => {
+            Toast(toast_message) => {
                 let hardware_view = match toast_message {
                     ToastMessage::HardwareDetailsToast => Some(&self.hardware_view),
                     _ => None,
