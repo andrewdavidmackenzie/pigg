@@ -9,11 +9,13 @@ use widgets::toast::{self, Manager, Status, Toast};
 
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::GPIOConfig;
+use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::status_row::{StatusRow, StatusRowMessage};
+use crate::views::status_row::StatusRowMessage::ShowStatusMessage;
+use crate::views::status_row::{StatusMessage, StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
@@ -22,6 +24,7 @@ use views::pin_state::PinState;
 mod file_helper;
 mod hw;
 mod styles;
+mod toast_handler;
 mod views;
 mod widgets;
 
@@ -46,14 +49,6 @@ fn main() -> Result<(), iced::Error> {
     })
 }
 
-#[derive(Debug, Clone)]
-pub enum ToastMessage {
-    VersionToast,
-    HardwareDetailsToast,
-    Close(usize),
-    Timeout(f64),
-}
-
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -73,12 +68,10 @@ pub enum Message {
 pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
-    pub toasts: Vec<Toast>,
-    pub showing_toast: bool,
     timeout_secs: u64,
     unsaved_changes: bool,
-    pending_load: bool,
     status_row: StatusRow,
+    toast_handler: ToastHandler,
     hardware_view: HardwareView,
 }
 
@@ -95,12 +88,10 @@ impl Application for Piggui {
             Self {
                 config_filename: None,
                 layout_selector: LayoutSelector::new(),
-                toasts: Vec::new(),
-                showing_toast: false,
                 timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
-                pending_load: false,
                 status_row: StatusRow::new(),
+                toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(),
             },
             maybe_load_no_picker(env::args().nth(1)),
@@ -116,18 +107,12 @@ impl Application for Piggui {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             WindowEvent(event) => {
-                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
-                {
+                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event {
                     if self.unsaved_changes {
-                        self.toasts.clear();
-                        self.toasts.push(Toast {
-                            title: "Unsaved Changes".into(),
-                            body: "You have unsaved changes. Do you want to exit without saving?"
-                                .into(),
-                            status: Status::Danger,
-                        });
-                        self.showing_toast = true;
-                        self.unsaved_changes = false;
+                        let _ = self.toast_handler.update(
+                            ToastMessage::UnsavedChangesExitToast,
+                            None
+                        );
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -135,85 +120,44 @@ impl Application for Piggui {
             }
 
             LayoutChanged(layout) => {
-                // Keep overall window management at this level and out of LayoutSelector
                 return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
             Save => {
+                self.unsaved_changes = false;
                 return save(self.hardware_view.get_config());
             }
 
             SaveCancelled => {
-                // TODO this is not always true no? If you don't have unsaved changes, you can still
-                // Save, then cancel it... it should push/pop the previous value I think?
                 self.unsaved_changes = true;
             }
 
             Load => {
-                if !self.showing_toast {
-                    // Add a new toast if `show_toast` is false
+                if !self.toast_handler.showing_toast {
                     if self.unsaved_changes {
-                        self.toasts.clear();
-                        self.toasts.push(Toast {
-                            title: "Unsaved Changes".into(),
-                            body:
-                                "You have unsaved changes. Do you want to continue without saving?"
-                                    .into(),
-                            status: Status::Danger,
-                        });
-                        self.showing_toast = true;
-                        self.pending_load = true;
+                        let _ = self.toast_handler.update(
+                            ToastMessage::UnsavedChangesToast,
+                            None
+                        );
+                        self.toast_handler.set_pending_load(true);
                     } else {
                         return pick_and_load();
                     }
                 } else {
-                    // Close the existing toast if `show_toast` is true
-                    let index = self.toasts.len() - 1;
+                    let index = self.toast_handler.get_toasts().len() - 1;
                     return Command::perform(empty(), move |_| {
                         Message::Toast(ToastMessage::Close(index))
                     });
                 }
             }
 
-            Message::Toast(toast_message) => match toast_message {
-                ToastMessage::VersionToast => {
-                    self.toasts.clear();
-                    self.toasts.push(Toast {
-                        title: "About Piggui".into(),
-                        body: version(),
-                        status: Status::Primary,
-                    });
-                    self.showing_toast = true;
-                }
-                ToastMessage::HardwareDetailsToast => {
-                    if self.showing_toast {
-                        // Close the existing toast if `show_toast` is true
-                        let index = self.toasts.len() - 1;
-                        return Command::perform(empty(), move |_| {
-                            Message::Toast(ToastMessage::Close(index))
-                        });
-                    } else {
-                        self.toasts.clear();
-                        self.toasts.push(Toast {
-                            title: "About Connected Hardware".into(),
-                            body: hw_description(&self.hardware_view),
-                            status: Status::Primary,
-                        });
-                        self.showing_toast = true;
-                    }
-                }
-                ToastMessage::Close(index) => {
-                    self.showing_toast = false;
-                    self.toasts.remove(index);
-                    if self.pending_load {
-                        self.pending_load = false;
-                        return pick_and_load();
-                    }
-                }
-                ToastMessage::Timeout(timeout) => {
-                    self.timeout_secs = timeout as u64;
-                }
-            },
+            Message::Toast(toast_message) => {
+                let hardware_view = match toast_message {
+                    ToastMessage::HardwareDetailsToast => Some(&self.hardware_view),
+                    _ => None,
+                };
+                return self.toast_handler.update(toast_message, hardware_view);
+            }
 
             Message::StatusRow(msg) => return self.status_row.update(msg),
 
@@ -256,11 +200,11 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        Manager::new(content, &self.toasts, |index| {
+        Manager::new(content, &self.toast_handler.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
         })
-        .timeout(self.timeout_secs)
-        .into()
+            .timeout(self.timeout_secs)
+            .into()
     }
 
     fn theme(&self) -> Theme {
@@ -288,14 +232,14 @@ mod tests {
         let mut app = Piggui::new(()).0;
 
         // No toasts should be present
-        assert!(app.toasts.is_empty());
+        assert!(app.toast_handler.toasts.is_empty());
 
         // Add a toast
         let _ = app.update(Message::Toast(ToastMessage::VersionToast));
 
         // Check if a toast was added
-        assert_eq!(app.toasts.len(), 1);
-        let toast = &app.toasts[0];
+        assert_eq!(app.toast_handler.toasts.len(), 1);
+        let toast = &app.toast_handler.toasts[0];
         assert_eq!(toast.title, "About Piggui");
     }
 
@@ -307,13 +251,13 @@ mod tests {
         let _ = app.update(Message::Toast(ToastMessage::VersionToast));
 
         // Ensure the toast was added
-        assert_eq!(app.toasts.len(), 1);
+        assert_eq!(app.toast_handler.toasts.len(), 1);
 
         // Close the toast
         let _ = app.update(Message::Toast(ToastMessage::Close(0)));
 
         // Check if the toast was removed
-        assert!(app.toasts.is_empty());
+        assert!(app.toast_handler.toasts.is_empty());
     }
 
     #[tokio::test]
@@ -330,8 +274,8 @@ mod tests {
         )));
 
         // Check if a warning toast was added
-        assert_eq!(app.toasts.len(), 1);
-        let toast = &app.toasts[0];
+        assert_eq!(app.toast_handler.toasts.len(), 1);
+        let toast = &app.toast_handler.toasts[0];
         assert_eq!(toast.title, "Unsaved Changes");
         assert_eq!(
             toast.body,
@@ -350,8 +294,8 @@ mod tests {
         let _ = app.update(Load);
 
         // Check if a warning toast was added
-        assert_eq!(app.toasts.len(), 1);
-        let toast = &app.toasts[0];
+        assert_eq!(app.toast_handler.toasts.len(), 1);
+        let toast = &app.toast_handler.toasts[0];
         assert_eq!(toast.title, "Unsaved Changes");
         assert_eq!(
             toast.body,

@@ -38,12 +38,12 @@ pub fn version_button(app: &Piggui) -> Element<Message> {
         border_radius: 4.0,
     };
     Button::new(version_text)
-        .on_press(if !app.showing_toast {
+        .on_press(if !app.toast_handler.showing_toast {
             // Add a new toast if `show_toast` is false
             Message::Toast(ToastMessage::VersionToast)
         } else {
             // Close the existing toast if `show_toast` is true
-            let index = app.toasts.len() - 1;
+            let index = app.toast_handler.toasts.len() - 1;
             Message::Toast(ToastMessage::Close(index))
         })
         .clip(true)
