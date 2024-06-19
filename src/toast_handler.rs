@@ -17,7 +17,7 @@ pub enum ToastMessage {
 pub struct ToastHandler {
     pub toasts: Vec<Toast>,
     pub showing_toast: bool,
-    timeout_secs: u64,
+    pub timeout_secs: u64,
     pending_load: bool,
 }
 

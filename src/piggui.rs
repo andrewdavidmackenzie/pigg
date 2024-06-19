@@ -299,12 +299,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_toast_timeout() {
-        let mut app = Piggui::new(()).0;
+        // Create a new ToastHandler instance
+        let mut toast_handler = ToastHandler::new();
 
         // Send a timeout message
-        let _ = app.update(Message::Toast(ToastMessage::Timeout(5.0)));
+        let _ = toast_handler.update(ToastMessage::Timeout(5.0), None);
 
         // Check the timeout
-        assert_eq!(app.timeout_secs, 5);
+        assert_eq!(toast_handler.timeout_secs, 5);
     }
 }
