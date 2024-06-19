@@ -30,9 +30,9 @@ pub fn view(hardware_view: &HardwareView) -> Element<Message> {
 
     let about_button_style = ButtonStyle {
         bg_color: Color::TRANSPARENT,
-        text_color: Color::WHITE,
+        text_color: Color::new(0.7, 0.7, 0.7, 1.0),
         hovered_bg_color: Color::TRANSPARENT,
-        hovered_text_color: Color::new(0.7, 0.7, 0.7, 1.0),
+        hovered_text_color: Color::WHITE,
         border_radius: 4.0,
     };
     Button::new(Text::new(hw_text))
