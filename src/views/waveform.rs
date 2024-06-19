@@ -108,26 +108,32 @@ where
 
     /// Add a new [Sample] to the data set to be displayed in the chart
     pub fn push_data(&mut self, sample: impl Into<Sample<T>>) {
-        let limit = Utc::now() - self.timespan;
         self.samples.push_front(sample.into());
+        self.trim_data();
+    }
 
-        // trim values outside the timespan of the chart, except the most recent one
-        let mut last_out_of_window_sample = None;
-        self.samples.retain(|sample| {
-            let retain = sample.time > limit;
-            if !retain && last_out_of_window_sample.is_none() {
-                last_out_of_window_sample = Some(sample.clone());
+    // trim values outside the timespan of the chart, except the most recent one
+    fn trim_data(&mut self) {
+        if !self.samples.is_empty() {
+            let limit = Utc::now() - self.timespan;
+            let mut last_out_of_window_sample = None;
+            self.samples.retain(|sample| {
+                let retain = sample.time > limit;
+                if !retain && last_out_of_window_sample.is_none() {
+                    last_out_of_window_sample = Some(sample.clone());
+                }
+                retain
+            });
+
+            if let Some(last) = last_out_of_window_sample {
+                self.samples.push_back(last);
             }
-            retain
-        });
-
-        if let Some(last) = last_out_of_window_sample {
-            self.samples.push_back(last);
         }
     }
 
     /// Refresh and redraw the chart even if there is no new data, as time has passed
     pub fn refresh(&mut self) {
+        self.trim_data();
         self.cache.clear();
     }
 
