@@ -8,7 +8,7 @@ use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::time::Duration;
 
-use crate::hw::hardware_subscription::{HWListenerEvent, HardwareEvent};
+use crate::hw::hardware_subscription::{HWLSubscriptionMessage, HardwareEvent};
 use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
     hardware_subscription, BCMPinNumber, BoardPinNumber, LevelChange, PinDescription,
@@ -18,7 +18,7 @@ use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareMessage::{
-    Activate, ChangeOutputLevel, HardwareListener, NewConfig, PinFunctionSelected, UpdateCharts,
+    Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
 use crate::views::layout_selector::Layout;
 use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
@@ -70,7 +70,7 @@ pub enum HardwareMessage {
     Activate(BoardPinNumber),
     PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
     NewConfig(GPIOConfig),
-    HardwareListener(HWListenerEvent),
+    HardwareSubscription(HWLSubscriptionMessage),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
 }
@@ -234,15 +234,6 @@ impl HardwareView {
         }
     }
 
-    /// Set the pin (using board number) level with a LevelChange
-    fn set_pin_level_change(
-        &mut self,
-        board_pin_number: BoardPinNumber,
-        level_change: LevelChange,
-    ) {
-        self.pin_states[board_pin_number as usize - 1].set_level(level_change);
-    }
-
     pub fn update(&mut self, message: HardwareMessage) -> Command<Message> {
         match message {
             UpdateCharts => {
@@ -267,19 +258,19 @@ impl HardwareView {
                 self.update_hw_config();
             }
 
-            HardwareListener(event) => match event {
-                HWListenerEvent::Ready(config_change_sender, hw_desc) => {
+            HardwareSubscription(event) => match event {
+                HWLSubscriptionMessage::Ready(config_change_sender, hw_desc) => {
                     self.hardware_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_functions_after_load();
                     self.update_hw_config();
                 }
-                HWListenerEvent::InputChange(bcm_pin_number, level_change) => {
+                HWLSubscriptionMessage::InputChange(bcm_pin_number, level_change) => {
                     if let Some(hardware_description) = &self.hardware_description {
                         if let Some(board_pin_number) =
                             hardware_description.pins.bcm_to_board(bcm_pin_number)
                         {
-                            self.set_pin_level_change(board_pin_number, level_change);
+                            self.pin_states[board_pin_number as usize - 1].set_level(level_change);
                         }
                     }
                 }
@@ -290,7 +281,8 @@ impl HardwareView {
                     if let Some(board_pin_number) =
                         hardware_description.pins.bcm_to_board(bcm_pin_number)
                     {
-                        self.set_pin_level_change(board_pin_number, level_change.clone());
+                        self.pin_states[board_pin_number as usize - 1]
+                            .set_level(level_change.clone());
                     }
                     if let Some(ref mut listener) = &mut self.hardware_sender {
                         let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
@@ -326,7 +318,7 @@ impl HardwareView {
         let subscriptions = [
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| UpdateCharts),
-            hardware_subscription::subscribe().map(HardwareListener),
+            hardware_subscription::subscribe().map(HardwareSubscription),
         ];
 
         Subscription::batch(subscriptions)

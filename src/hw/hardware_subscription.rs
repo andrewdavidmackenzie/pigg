@@ -5,7 +5,7 @@ use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hw;
-use crate::hw::hardware_subscription::HWListenerEvent::InputChange;
+use crate::hw::hardware_subscription::HWLSubscriptionMessage::InputChange;
 use crate::hw::hardware_subscription::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::Hardware;
 use crate::hw::{BCMPinNumber, GPIOConfig, HardwareDescription, LevelChange, PinFunction};
@@ -14,7 +14,7 @@ use crate::hw::{BCMPinNumber, GPIOConfig, HardwareDescription, LevelChange, PinF
 // TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
 #[allow(clippy::large_enum_variant)] // remove when fix todo above
 #[derive(Clone, Debug)]
-pub enum HWListenerEvent {
+pub enum HWLSubscriptionMessage {
     /// This event indicates that the listener is ready. It conveys a sender to the GUI
     /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
     Ready(Sender<HardwareEvent>, HardwareDescription),
@@ -65,7 +65,7 @@ fn send_current_input_states(
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe() -> Subscription<HWListenerEvent> {
+pub fn subscribe() -> Subscription<HWLSubscriptionMessage> {
     struct Connect;
     subscription::channel(
         std::any::TypeId::of::<Connect>(),
@@ -84,7 +84,7 @@ pub fn subscribe() -> Subscription<HWListenerEvent> {
 
                         // Send the sender back to the GUI
                         let _ = sender_clone
-                            .send(HWListenerEvent::Ready(
+                            .send(HWLSubscriptionMessage::Ready(
                                 hardware_event_sender.clone(),
                                 hardware_description.clone(),
                             ))
