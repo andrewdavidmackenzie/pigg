@@ -1,6 +1,6 @@
 use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareView;
-use crate::widgets::toast::{Manager, Status, Toast};
+use crate::widgets::toast::{Status, Toast};
 use crate::Message;
 use iced::Command;
 

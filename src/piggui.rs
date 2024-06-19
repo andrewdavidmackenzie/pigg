@@ -5,17 +5,15 @@ use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
-use widgets::toast::{self, Manager, Status, Toast};
+use widgets::toast::{self, Manager};
 
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::GPIOConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
-use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::status_row::StatusRowMessage::ShowStatusMessage;
-use crate::views::status_row::{StatusMessage, StatusRow, StatusRowMessage};
+use crate::views::status_row::{StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
