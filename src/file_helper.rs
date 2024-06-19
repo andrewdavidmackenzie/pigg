@@ -62,7 +62,7 @@ pub fn save(gpio_config: GPIOConfig) -> Command<Message> {
         Ok(true) => Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
             "File saved successfully".to_string(),
         ))),
-        Ok(false) => Message::StatusRow(ShowStatusMessage(StatusMessage::Warning(
+        Ok(false) => Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
             "File save cancelled".to_string(),
         ))),
         Err(e) => Message::StatusRow(ShowStatusMessage(StatusMessage::Error(
