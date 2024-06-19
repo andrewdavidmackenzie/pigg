@@ -2,8 +2,9 @@ use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::mouse_area;
+use iced::widget::tooltip::Position;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
+use iced::widget::{mouse_area, Tooltip};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::time::Duration;
@@ -469,18 +470,27 @@ fn get_pin_widget(
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 });
 
+            let toggle_tooltip =
+                Tooltip::new(output_toggler, "Click to toggle level", Position::Top);
+
+            let clicker_tooltip = Tooltip::new(
+                output_clicker,
+                "Click and hold to invert level",
+                Position::Top,
+            );
+
             // For some unknown reason the Pullup picker is wider on the right side than the left
             // to we add some space here to make this match on both side. A nasty hack!
             if direction == Left {
                 Row::new()
                     .push(pin_state.view(Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(output_clicker)
-                    .push(output_toggler)
+                    .push(clicker_tooltip)
+                    .push(toggle_tooltip)
             } else {
                 Row::new()
-                    .push(output_toggler)
-                    .push(output_clicker)
+                    .push(toggle_tooltip)
+                    .push(clicker_tooltip)
                     .push(horizontal_space().width(Length::Fixed(4.0))) // HACK!
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(pin_state.view(Right))
