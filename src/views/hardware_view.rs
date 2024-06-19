@@ -1,4 +1,5 @@
 use iced::advanced::text::editor::Direction;
+use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::mouse_area;
@@ -342,7 +343,7 @@ impl HardwareView {
             let pin_row = create_pin_view_side(
                 pin,
                 self.pin_function_selected[pin.board_pin_number as usize - 1],
-                false,
+                Right,
                 &self.pin_states[pin.board_pin_number as usize - 1],
             );
 
@@ -367,14 +368,14 @@ impl HardwareView {
             let left_row = create_pin_view_side(
                 &pair[0],
                 self.pin_function_selected[pair[0].board_pin_number as usize - 1],
-                true,
+                Left,
                 &self.pin_states[pair[0].board_pin_number as usize - 1],
             );
 
             let right_row = create_pin_view_side(
                 &pair[1],
                 self.pin_function_selected[pair[1].board_pin_number as usize - 1],
-                false,
+                Right,
                 &self.pin_states[pair[1].board_pin_number as usize - 1],
             );
 
@@ -426,7 +427,7 @@ fn get_pin_widget(
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: PinFunction,
     pin_state: &PinState,
-    is_left: bool,
+    direction: Direction,
 ) -> Element<HardwareMessage> {
     let toggle_button_style = TogglerStyle {
         background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
@@ -444,16 +445,16 @@ fn get_pin_widget(
     let row: Row<HardwareMessage> = match pin_function {
         Input(pull) => {
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
-            if is_left {
+            if direction == Left {
                 Row::new()
-                    .push(pin_state.view(Direction::Left))
+                    .push(pin_state.view(Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(pin_state.view(Direction::Right))
+                    .push(pin_state.view(Right))
             }
         }
 
@@ -478,9 +479,9 @@ fn get_pin_widget(
 
             // For some unknown reason the Pullup picker is wider on the right side than the left
             // to we add some space here to make this match on both side. A nasty hack!
-            if is_left {
+            if direction == Left {
                 Row::new()
-                    .push(pin_state.view(Direction::Left))
+                    .push(pin_state.view(Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(output_clicker)
                     .push(output_toggler)
@@ -490,7 +491,7 @@ fn get_pin_widget(
                     .push(output_clicker)
                     .push(horizontal_space().width(Length::Fixed(4.0))) // HACK!
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(pin_state.view(Direction::Right))
+                    .push(pin_state.view(Right))
             }
         }
 
@@ -507,7 +508,7 @@ fn get_pin_widget(
 fn create_pin_view_side<'a>(
     pin_description: &'a PinDescription,
     selected_function: PinFunction,
-    is_left: bool,
+    direction: Direction,
     pin_state: &'a PinState,
 ) -> Row<'a, HardwareMessage> {
     // Create a widget that is either used to visualize an input or control an output
@@ -516,7 +517,7 @@ fn create_pin_view_side<'a>(
         pin_description.bcm_pin_number,
         selected_function,
         pin_state,
-        is_left,
+        direction,
     );
 
     // Create the drop-down selector of pin function
@@ -562,7 +563,7 @@ fn create_pin_view_side<'a>(
         .align_items(Alignment::Center)
         .width(Length::Fixed(PIN_ARROW_WIDTH));
 
-    if is_left {
+    if direction == Left {
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
         pin_arrow = pin_arrow.push(line(PIN_ARROW_LINE_WIDTH));
     } else {
@@ -582,7 +583,7 @@ fn create_pin_view_side<'a>(
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
-    let row = if is_left {
+    let row = if direction == Left {
         Row::new()
             .push(pin_widget)
             .push(pin_option)
