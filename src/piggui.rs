@@ -140,9 +140,9 @@ impl Application for Piggui {
                     } else {
                         return pick_and_load();
                     }
-                } else if let Some(index) = self.toast_handler.get_latest_toast_index() {
+                } else {
                     return Command::perform(crate::empty(), move |_| {
-                        Message::Toast(ToastMessage::Close(index))
+                        Message::Toast(ToastMessage::CloseLastToast)
                     });
                 }
             }

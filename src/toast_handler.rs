@@ -11,6 +11,7 @@ pub enum ToastMessage {
     UnsavedChangesToast,
     UnsavedChangesExitToast,
     Close(usize),
+    CloseLastToast,
     Timeout(f64),
 }
 
@@ -96,6 +97,17 @@ impl ToastHandler {
                 }
             }
 
+            ToastMessage::CloseLastToast => {
+                if let Some(index) = self.get_latest_toast_index() {
+                    self.showing_toast = false;
+                    self.remove_toast(index);
+                    if self.pending_load {
+                        self.pending_load = false;
+                        return crate::file_helper::pick_and_load();
+                    }
+                }
+            }
+
             ToastMessage::Timeout(timeout) => {
                 self.timeout_secs = timeout as u64;
             }
@@ -127,7 +139,7 @@ impl ToastHandler {
         }
     }
 
-    pub fn get_latest_toast_index(&self) -> Option<usize> {
+    fn get_latest_toast_index(&self) -> Option<usize> {
         if !self.toasts.is_empty() {
             Some(self.toasts.len() - 1)
         } else {
