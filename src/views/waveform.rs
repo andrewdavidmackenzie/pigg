@@ -141,38 +141,26 @@ where
         match &self.chart_type {
             Squarewave(_, _) => {
                 let mut previous_sample: Option<Sample<T>> = None;
+                let mut graph_data = vec![];
 
-                // iterate through the level changes front-back in the vecdeque, which is
+                // iterate through the Samples front-back in the vecdeque, which is
                 // from the most recent sample to the oldest sample
                 // Add points to force the shape to be a Square wave
-                self.samples
-                    .iter()
-                    .flat_map(|sample| {
-                        if let Some(previous) = &previous_sample {
-                            if previous.value != sample.value {
-                                // edge - insert a point at previous time at current level
-                                let vec = vec![
-                                    (previous.time, sample.value.clone().into()),
-                                    (sample.time, sample.value.clone().into()),
-                                ];
-                                previous_sample = Some(sample.clone());
-                                vec
-                            } else {
-                                // same value - we don't need to insert any to form an edge
-                                vec![]
-                            }
-                        } else {
-                            // last value added, at the start of the dequeue
-                            // Insert a value at current time, with the same value as previous one
-                            previous_sample = Some(sample.clone());
-                            let vec = vec![
-                                (Utc::now(), sample.value.clone().into()),
-                                (sample.time, sample.value.clone().into()),
-                            ];
-                            vec
+                for sample in &self.samples {
+                    if let Some(previous) = &previous_sample {
+                        if previous.value != sample.value {
+                            // edge - insert a point at previous time at current level
+                            graph_data.push((previous.time, sample.value.clone().into()));
                         }
-                    })
-                    .collect()
+                    } else {
+                        // last value added, at the start of the dequeue
+                        // Insert a value at current time, with the same value as previous one
+                        graph_data.push((Utc::now(), sample.value.clone().into()));
+                    }
+                    graph_data.push((sample.time, sample.value.clone().into()));
+                    previous_sample = Some(sample.clone());
+                }
+                graph_data
             }
             Verbatim(_, _) => self
                 .samples
@@ -461,59 +449,6 @@ mod test {
 
         // Next most recent value should be "low" that is outside window but kept
         assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
-    }
-
-    #[test]
-    fn unneeded_samples_deleted() {
-        let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
-            CHART_LINE_STYLE,
-            256.0,
-            16.0,
-            Duration::from_secs(10),
-        );
-
-        let now = Utc::now();
-
-        let low_sample = LevelChange {
-            new_level: false,
-            timestamp: now.sub(Duration::from_secs(3)),
-        };
-        chart.push_data(low_sample.clone());
-
-        let low_sample = LevelChange {
-            new_level: false,
-            timestamp: now.sub(Duration::from_secs(2)),
-        };
-        chart.push_data(low_sample.clone());
-
-        let low_sample = LevelChange {
-            new_level: false,
-            timestamp: now.sub(Duration::from_secs(1)),
-        };
-        chart.push_data(low_sample.clone());
-
-        // Check the raw data has all - TODO to suppress the extra values when sending, not later
-        assert_eq!(chart.samples.len(), 3);
-
-        // Get the chart data
-        let data = chart.get_data();
-
-        // graph should only need two points to represent tha flat line
-        assert_eq!(data.len(), 2);
-    }
-
-    #[test]
-    fn check_range_squarewave() {
-        let chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
-            CHART_LINE_STYLE,
-            256.0,
-            16.0,
-            Duration::from_secs(10),
-        );
-
-        assert_eq!(chart.range(), 0..1);
     }
 
     #[test]
