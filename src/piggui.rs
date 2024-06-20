@@ -178,10 +178,12 @@ impl Application for Piggui {
        +--------------------------------------------------------------------------------------+
     */
     fn view(&self) -> Element<Message> {
-        let main_col = Column::new().push(main_row::view(self)).push(
-            self.info_row
-                .view(self.unsaved_changes, &self.hardware_view),
-        );
+        let main_col = Column::new()
+            .push(main_row::view(&self.hardware_view, &self.layout_selector))
+            .push(
+                self.info_row
+                    .view(self.unsaved_changes, &self.hardware_view),
+            );
 
         let content = container(main_col)
             .height(Length::Fill)

@@ -1,15 +1,20 @@
 use crate::views::configuration_column;
-use crate::{Message, Piggui};
+use crate::views::hardware_view::HardwareView;
+use crate::views::layout_selector::LayoutSelector;
+use crate::Message;
 use iced::widget::{container, Column, Row};
 use iced::{Alignment, Element, Length};
 
 /// Construct the view that represents the main row of the app
-pub fn view(app: &Piggui) -> Element<Message> {
+pub fn view<'a>(
+    hardware_view: &'a HardwareView,
+    layout_selector: &'a LayoutSelector,
+) -> Element<'a, Message> {
     let mut main_row = Row::new();
 
     main_row = main_row.push(
         Column::new()
-            .push(configuration_column::view(app))
+            .push(configuration_column::view(layout_selector))
             .align_items(Alignment::Start)
             .width(Length::Shrink)
             .height(Length::Shrink),
@@ -18,8 +23,8 @@ pub fn view(app: &Piggui) -> Element<Message> {
     main_row = main_row.push(
         Column::new()
             .push(
-                app.hardware_view
-                    .view(app.layout_selector.get())
+                hardware_view
+                    .view(layout_selector.get())
                     .map(Message::Hardware),
             )
             .align_items(Alignment::Center)
