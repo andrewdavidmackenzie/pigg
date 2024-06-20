@@ -112,7 +112,7 @@ where
         self.trim_data();
     }
 
-    // trim values outside the timespan of the chart, except the most recent one
+    /// Trim samples outside the timespan of the chart, except the most recent one
     fn trim_data(&mut self) {
         if !self.samples.is_empty() {
             let limit = Utc::now() - self.timespan;
