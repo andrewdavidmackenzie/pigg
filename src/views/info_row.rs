@@ -1,6 +1,6 @@
 use crate::styles::background::SetAppearance;
 use crate::views::hardware_view::HardwareView;
-use crate::views::status_message::StatusRow;
+use crate::views::message_row::MessageRow;
 use crate::views::version::version_button;
 use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
@@ -11,7 +11,7 @@ use iced::{Color, Element, Length};
 pub fn view<'a>(
     unsaved_changes: bool,
     hardware_view: &'a HardwareView,
-    status_row: &'a StatusRow,
+    status_row: &'a MessageRow,
 ) -> Element<'a, Message> {
     container(
         Row::new()

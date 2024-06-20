@@ -16,40 +16,40 @@ use std::time::Duration;
 /// Clicking a message removes it and shows next message.
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u8)]
-pub enum StatusMessage {
+pub enum MessageMessage {
     Error(String, String) = 2,
     Warning(String) = 1,
     Info(String) = 0,
 }
 
-/// StatusRow reacts to these message types
+/// [MessageRow] reacts to these message types
 #[derive(Debug, Clone)]
 pub enum StatusRowMessage {
-    ShowStatusMessage(StatusMessage),
+    ShowStatusMessage(MessageMessage),
     ClearStatusMessage,
 }
 
-impl StatusMessage {
+impl MessageMessage {
     fn text(&self) -> String {
         match self {
-            StatusMessage::Error(msg, _) => msg.clone(),
-            StatusMessage::Warning(msg) => msg.clone(),
-            StatusMessage::Info(msg) => msg.clone(),
+            MessageMessage::Error(msg, _) => msg.clone(),
+            MessageMessage::Warning(msg) => msg.clone(),
+            MessageMessage::Info(msg) => msg.clone(),
         }
     }
 }
 
 #[derive(Default)]
-pub struct StatusMessageQueue {
-    queue: Vec<StatusMessage>,
-    current_message: Option<StatusMessage>,
+pub struct MessageQueue {
+    queue: Vec<MessageMessage>,
+    current_message: Option<MessageMessage>,
 }
 
-impl StatusMessageQueue {
-    /// Add a new [StatusMessage] to be displayed
+impl MessageQueue {
+    /// Add a new [MessageMessage] to be displayed
     /// If none is being displayed currently, set it as the one that will be displayed by view().
     /// If a message is currently being displayed, add this one to the queue.
-    pub fn add_message(&mut self, message: StatusMessage) {
+    pub fn add_message(&mut self, message: MessageMessage) {
         match self.current_message {
             None => self.current_message = Some(message),
             Some(_) => {
@@ -70,29 +70,29 @@ impl StatusMessageQueue {
         }
     }
 
-    /// Are there any [StatusMessage]  of type Info in the queue waiting to be displayed?
+    /// Are there any [MessageMessage]  of type Info in the queue waiting to be displayed?
     pub fn showing_info_message(&self) -> bool {
-        matches!(self.current_message, Some(StatusMessage::Info(_)))
+        matches!(self.current_message, Some(MessageMessage::Info(_)))
     }
 }
 
-pub struct StatusRow {
-    status_message_queue: StatusMessageQueue,
+pub struct MessageRow {
+    message_queue: MessageQueue,
 }
 
-impl StatusRow {
-    /// Create a new [StatusRow]
+impl MessageRow {
+    /// Create a new [MessageRow]
     pub fn new() -> Self {
-        StatusRow {
-            status_message_queue: StatusMessageQueue::default(),
+        MessageRow {
+            message_queue: MessageQueue::default(),
         }
     }
 
     /// Update the state and do actions depending on the [StatusRowMessage] sent
     pub fn update(&mut self, message: StatusRowMessage) -> Command<Message> {
         match message {
-            StatusRowMessage::ShowStatusMessage(msg) => self.status_message_queue.add_message(msg),
-            StatusRowMessage::ClearStatusMessage => self.status_message_queue.clear_message(),
+            StatusRowMessage::ShowStatusMessage(msg) => self.message_queue.add_message(msg),
+            StatusRowMessage::ClearStatusMessage => self.message_queue.clear_message(),
         }
 
         Command::none()
@@ -100,13 +100,13 @@ impl StatusRow {
 
     /// Create the view that represents a status row at the bottom of the screen
     pub fn view(&self) -> Element<StatusRowMessage> {
-        let (text_color, message_text) = match &self.status_message_queue.current_message {
+        let (text_color, message_text) = match &self.message_queue.current_message {
             None => (Color::TRANSPARENT, "".into()),
             Some(msg) => {
                 let text_color = match msg {
-                    StatusMessage::Error(_, _) => Color::from_rgb8(255, 0, 0),
-                    StatusMessage::Warning(_) => iced::Color::new(1.0, 0.647, 0.0, 1.0),
-                    StatusMessage::Info(_) => Color::WHITE,
+                    MessageMessage::Error(_, _) => Color::from_rgb8(255, 0, 0),
+                    MessageMessage::Warning(_) => iced::Color::new(1.0, 0.647, 0.0, 1.0),
+                    MessageMessage::Info(_) => Color::WHITE,
                 };
                 (text_color, msg.text())
             }
@@ -130,7 +130,7 @@ impl StatusRow {
     }
 
     pub fn subscription(&self) -> Subscription<StatusRowMessage> {
-        if self.status_message_queue.showing_info_message() {
+        if self.message_queue.showing_info_message() {
             iced::time::every(Duration::from_secs(3)).map(|_| StatusRowMessage::ClearStatusMessage)
         } else {
             Subscription::none()
@@ -140,12 +140,12 @@ impl StatusRow {
 
 #[cfg(test)]
 mod test {
-    use crate::views::status_message::StatusMessage::{Error, Info, Warning};
-    use crate::views::status_message::StatusMessageQueue;
+    use crate::views::message_row::MessageMessage::{Error, Info, Warning};
+    use crate::views::message_row::MessageQueue;
 
     #[test]
     fn errors_first() {
-        let mut queue: StatusMessageQueue = Default::default();
+        let mut queue: MessageQueue = Default::default();
 
         queue.add_message(Info("shown".into()));
         assert!(queue.showing_info_message());

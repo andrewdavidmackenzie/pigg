@@ -11,8 +11,8 @@ use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::status_message::StatusRowMessage::ShowStatusMessage;
-use crate::views::status_message::{StatusMessage, StatusRow, StatusRowMessage};
+use crate::views::message_row::StatusRowMessage::ShowStatusMessage;
+use crate::views::message_row::{MessageMessage, MessageRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
@@ -66,7 +66,7 @@ pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
     unsaved_changes: bool,
-    status_row: StatusRow,
+    status_row: MessageRow,
     toast_handler: ToastHandler,
     hardware_view: HardwareView,
 }
@@ -85,7 +85,7 @@ impl Application for Piggui {
                 config_filename: None,
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
-                status_row: StatusRow::new(),
+                status_row: MessageRow::new(),
                 toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(),
             },
@@ -124,7 +124,7 @@ impl Application for Piggui {
             ConfigSaved => {
                 self.unsaved_changes = false;
                 return Command::perform(empty(), |_| {
-                    Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
+                    Message::StatusRow(ShowStatusMessage(MessageMessage::Info(
                         "File saved successfully".to_string(),
                     )))
                 });
