@@ -1,13 +1,15 @@
 use iced::advanced::text::editor::Direction;
+use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
-use iced::widget::mouse_area;
+use iced::widget::tooltip::Position;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
+use iced::widget::{mouse_area, Tooltip};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::time::Duration;
 
-use crate::hw::hardware_subscription::{HWListenerEvent, HardwareEvent};
+use crate::hw::hardware_subscription::{HWLSubscriptionMessage, HardwareEvent};
 use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
     hardware_subscription, BCMPinNumber, BoardPinNumber, LevelChange, PinDescription,
@@ -17,7 +19,7 @@ use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareMessage::{
-    Activate, ChangeOutputLevel, HardwareListener, NewConfig, PinFunctionSelected, UpdateCharts,
+    Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
 use crate::views::layout_selector::Layout;
 use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
@@ -69,7 +71,7 @@ pub enum HardwareMessage {
     Activate(BoardPinNumber),
     PinFunctionSelected(BoardPinNumber, BCMPinNumber, PinFunction),
     NewConfig(GPIOConfig),
-    HardwareListener(HWListenerEvent),
+    HardwareSubscription(HWLSubscriptionMessage),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
 }
@@ -233,15 +235,6 @@ impl HardwareView {
         }
     }
 
-    /// Set the pin (using board number) level with a LevelChange
-    fn set_pin_level_change(
-        &mut self,
-        board_pin_number: BoardPinNumber,
-        level_change: LevelChange,
-    ) {
-        self.pin_states[board_pin_number as usize - 1].set_level(level_change);
-    }
-
     pub fn update(&mut self, message: HardwareMessage) -> Command<Message> {
         match message {
             UpdateCharts => {
@@ -266,19 +259,19 @@ impl HardwareView {
                 self.update_hw_config();
             }
 
-            HardwareListener(event) => match event {
-                HWListenerEvent::Ready(config_change_sender, hw_desc) => {
+            HardwareSubscription(event) => match event {
+                HWLSubscriptionMessage::Ready(config_change_sender, hw_desc) => {
                     self.hardware_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_functions_after_load();
                     self.update_hw_config();
                 }
-                HWListenerEvent::InputChange(bcm_pin_number, level_change) => {
+                HWLSubscriptionMessage::InputChange(bcm_pin_number, level_change) => {
                     if let Some(hardware_description) = &self.hardware_description {
                         if let Some(board_pin_number) =
                             hardware_description.pins.bcm_to_board(bcm_pin_number)
                         {
-                            self.set_pin_level_change(board_pin_number, level_change);
+                            self.pin_states[board_pin_number as usize - 1].set_level(level_change);
                         }
                     }
                 }
@@ -289,7 +282,8 @@ impl HardwareView {
                     if let Some(board_pin_number) =
                         hardware_description.pins.bcm_to_board(bcm_pin_number)
                     {
-                        self.set_pin_level_change(board_pin_number, level_change.clone());
+                        self.pin_states[board_pin_number as usize - 1]
+                            .set_level(level_change.clone());
                     }
                     if let Some(ref mut listener) = &mut self.hardware_sender {
                         let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
@@ -325,7 +319,7 @@ impl HardwareView {
         let subscriptions = [
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| UpdateCharts),
-            hardware_subscription::subscribe().map(HardwareListener),
+            hardware_subscription::subscribe().map(HardwareSubscription),
         ];
 
         Subscription::batch(subscriptions)
@@ -342,7 +336,7 @@ impl HardwareView {
             let pin_row = create_pin_view_side(
                 pin,
                 self.pin_function_selected[pin.board_pin_number as usize - 1],
-                false,
+                Right,
                 &self.pin_states[pin.board_pin_number as usize - 1],
             );
 
@@ -367,14 +361,14 @@ impl HardwareView {
             let left_row = create_pin_view_side(
                 &pair[0],
                 self.pin_function_selected[pair[0].board_pin_number as usize - 1],
-                true,
+                Left,
                 &self.pin_states[pair[0].board_pin_number as usize - 1],
             );
 
             let right_row = create_pin_view_side(
                 &pair[1],
                 self.pin_function_selected[pair[1].board_pin_number as usize - 1],
-                false,
+                Right,
                 &self.pin_states[pair[1].board_pin_number as usize - 1],
             );
 
@@ -426,7 +420,7 @@ fn get_pin_widget(
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: PinFunction,
     pin_state: &PinState,
-    is_left: bool,
+    direction: Direction,
 ) -> Element<HardwareMessage> {
     let toggle_button_style = TogglerStyle {
         background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
@@ -444,16 +438,16 @@ fn get_pin_widget(
     let row: Row<HardwareMessage> = match pin_function {
         Input(pull) => {
             let pullup_pick = pullup_picklist(pull, board_pin_number, bcm_pin_number.unwrap());
-            if is_left {
+            if direction == Left {
                 Row::new()
-                    .push(pin_state.view(Direction::Left))
+                    .push(pin_state.view(Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(pin_state.view(Direction::Right))
+                    .push(pin_state.view(Right))
             }
         }
 
@@ -476,21 +470,30 @@ fn get_pin_widget(
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 });
 
+            let toggle_tooltip =
+                Tooltip::new(output_toggler, "Click to toggle level", Position::Top);
+
+            let clicker_tooltip = Tooltip::new(
+                output_clicker,
+                "Click and hold to invert level",
+                Position::Top,
+            );
+
             // For some unknown reason the Pullup picker is wider on the right side than the left
             // to we add some space here to make this match on both side. A nasty hack!
-            if is_left {
+            if direction == Left {
                 Row::new()
-                    .push(pin_state.view(Direction::Left))
+                    .push(pin_state.view(Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(output_clicker)
-                    .push(output_toggler)
+                    .push(clicker_tooltip)
+                    .push(toggle_tooltip)
             } else {
                 Row::new()
-                    .push(output_toggler)
-                    .push(output_clicker)
+                    .push(toggle_tooltip)
+                    .push(clicker_tooltip)
                     .push(horizontal_space().width(Length::Fixed(4.0))) // HACK!
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(pin_state.view(Direction::Right))
+                    .push(pin_state.view(Right))
             }
         }
 
@@ -507,7 +510,7 @@ fn get_pin_widget(
 fn create_pin_view_side<'a>(
     pin_description: &'a PinDescription,
     selected_function: PinFunction,
-    is_left: bool,
+    direction: Direction,
     pin_state: &'a PinState,
 ) -> Row<'a, HardwareMessage> {
     // Create a widget that is either used to visualize an input or control an output
@@ -516,7 +519,7 @@ fn create_pin_view_side<'a>(
         pin_description.bcm_pin_number,
         selected_function,
         pin_state,
-        is_left,
+        direction,
     );
 
     // Create the drop-down selector of pin function
@@ -562,7 +565,7 @@ fn create_pin_view_side<'a>(
         .align_items(Alignment::Center)
         .width(Length::Fixed(PIN_ARROW_WIDTH));
 
-    if is_left {
+    if direction == Left {
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
         pin_arrow = pin_arrow.push(line(PIN_ARROW_LINE_WIDTH));
     } else {
@@ -582,7 +585,7 @@ fn create_pin_view_side<'a>(
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
-    let row = if is_left {
+    let row = if direction == Left {
         Row::new()
             .push(pin_widget)
             .push(pin_option)

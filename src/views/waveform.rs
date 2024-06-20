@@ -108,21 +108,24 @@ where
 
     /// Add a new [Sample] to the data set to be displayed in the chart
     pub fn push_data(&mut self, sample: impl Into<Sample<T>>) {
-        let limit = Utc::now() - self.timespan;
         self.samples.push_front(sample.into());
+        self.trim_data();
+    }
 
-        // trim values outside the timespan of the chart
-        let mut last_sample = None;
-        self.samples.retain(|sample| {
-            let retain = sample.time > limit;
-            if !retain && last_sample.is_none() {
-                last_sample = Some(sample.clone());
-            }
-            retain
-        });
+    // trim values outside the timespan of the chart, except the most recent one
+    fn trim_data(&mut self) {
+        if !self.samples.is_empty() {
+            let limit = Utc::now() - self.timespan;
+            let mut last_out_of_window_sample = None;
+            self.samples.retain(|sample| {
+                let retain = sample.time > limit;
+                if !retain && last_out_of_window_sample.is_none() {
+                    last_out_of_window_sample = Some(sample.clone());
+                }
+                retain
+            });
 
-        if self.samples.len() < 2 {
-            if let Some(last) = last_sample {
+            if let Some(last) = last_out_of_window_sample {
                 self.samples.push_back(last);
             }
         }
@@ -130,6 +133,7 @@ where
 
     /// Refresh and redraw the chart even if there is no new data, as time has passed
     pub fn refresh(&mut self) {
+        self.trim_data();
         self.cache.clear();
     }
 
@@ -339,7 +343,7 @@ mod test {
     }
 
     #[test]
-    fn expired_sample() {
+    fn sample_outside_window_preserved() {
         let mut chart = Waveform::<PinLevel>::new(
             ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
@@ -348,7 +352,7 @@ mod test {
             Duration::from_secs(10),
         );
 
-        // create a sample that will be added but then pruned as it's older than the window
+        // create a sample older than the window
         let sent_time = Utc::now().sub(Duration::from_secs(20));
         chart.push_data(Sample {
             time: sent_time,
@@ -358,7 +362,7 @@ mod test {
         // Check the raw data still contains it
         assert_eq!(chart.samples.len(), 1);
 
-        // CHeck the chart data
+        // Check the chart data
         let data = chart.get_data();
 
         // chart data should have added a new point at time of query with the same level
@@ -369,6 +373,45 @@ mod test {
 
         // Next most recent value should be "low" value sent
         assert_eq!(data.get(1).unwrap(), &(sent_time, 0));
+    }
+
+    #[test]
+    fn extra_samples_outside_window_deleted() {
+        let mut chart = Waveform::<PinLevel>::new(
+            ChartType::Squarewave(false, true),
+            CHART_LINE_STYLE,
+            256.0,
+            16.0,
+            Duration::from_secs(10),
+        );
+
+        // create a sample older than the window
+        let oldest = Utc::now().sub(Duration::from_secs(20));
+        chart.push_data(Sample {
+            time: oldest,
+            value: true,
+        });
+
+        let next_oldest = Utc::now().sub(Duration::from_secs(15));
+        chart.push_data(Sample {
+            time: next_oldest,
+            value: false,
+        });
+
+        // Check the raw data does not contain the oldest
+        assert_eq!(chart.samples.len(), 1);
+
+        // Check the chart data
+        let data = chart.get_data();
+
+        // chart data should have added a new point at time of query with the same level
+        assert_eq!(data.len(), 2);
+
+        // Next most recent (and first) value should be a "low" inserted at query time
+        assert_eq!(data.first().unwrap().1, 0);
+
+        // Next most recent value should be "low" value sent
+        assert_eq!(data.get(1).unwrap(), &(next_oldest, 0));
     }
 
     #[test]
