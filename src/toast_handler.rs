@@ -211,7 +211,7 @@ mod tests {
         let _ = toast_handler.update(ToastMessage::Timeout(5.0), None);
 
         // Check the timeout
-        assert_eq!(toast_handler.get_timeout(), 5);
+        assert_eq!(toast_handler.timeout_secs, 5);
     }
 
     #[test]
@@ -220,7 +220,7 @@ mod tests {
 
         // Add a toast
         let _ = toast_handler.update(ToastMessage::VersionToast, None);
-        assert!(toast_handler.is_showing_toast());
+        assert!(toast_handler.showing_toast);
 
         // Set pending load
         toast_handler.set_pending_load(true);
