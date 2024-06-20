@@ -139,7 +139,7 @@ where
 
     fn get_data(&self) -> Vec<(DateTime<Utc>, u32)> {
         match &self.chart_type {
-            Squarewave(min, max) => {
+            Squarewave(_, _) => {
                 let mut previous_sample: Option<Sample<T>> = None;
 
                 // iterate through the level changes front-back in the vecdeque, which is
@@ -149,24 +149,16 @@ where
                     .iter()
                     .flat_map(|sample| {
                         if let Some(previous) = &previous_sample {
-                            if previous.value == *max && sample.value == *min {
-                                // falling edge when going from right to left
+                            if previous.value != sample.value {
+                                // edge - insert a point at previous time at current level
                                 let vec = vec![
-                                    (previous.time, min.clone().into()),
-                                    (sample.time, sample.value.clone().into()),
-                                ];
-                                previous_sample = Some(sample.clone());
-                                vec
-                            } else if previous.value == *min && sample.value == *max {
-                                // rising edge when going from left to right
-                                let vec = vec![
-                                    (previous.time, max.clone().into()),
+                                    (previous.time, sample.value.clone().into()),
                                     (sample.time, sample.value.clone().into()),
                                 ];
                                 previous_sample = Some(sample.clone());
                                 vec
                             } else {
-                                // same value
+                                // same value - we don't need to insert any to form an edge
                                 vec![]
                             }
                         } else {
