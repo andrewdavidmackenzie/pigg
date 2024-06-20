@@ -231,4 +231,21 @@ mod tests {
         // Pending load should be false after closing the toast
         assert!(!toast_handler.pending_load);
     }
+
+    #[tokio::test]
+    async fn test_hardware_details_toast() {
+        let mut toast_handler = ToastHandler::new();
+
+        // Show hardware details toast
+        let _ = toast_handler.update(
+            ToastMessage::HardwareDetailsToast,
+            Some(&HardwareView::new()),
+        );
+
+        // Check if a toast was added
+        assert_eq!(toast_handler.get_toasts().len(), 1);
+        let toast = &toast_handler.get_toasts()[0];
+        assert_eq!(toast.title, "About Connected Hardware");
+        assert!(!toast.body.is_empty());
+    }
 }

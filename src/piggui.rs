@@ -253,17 +253,4 @@ mod tests {
             "You have unsaved changes. Do you want to continue without saving?"
         );
     }
-
-    #[tokio::test]
-    async fn test_hardware_details_toast() {
-        let mut app = Piggui::new(()).0;
-        // Show hardware details toast
-        let _ = app.update(Message::Toast(ToastMessage::HardwareDetailsToast));
-
-        // Check if a toast was added
-        assert_eq!(app.toast_handler.get_toasts().len(), 1);
-        let toast = &app.toast_handler.get_toasts()[0];
-        assert_eq!(toast.title, "About Connected Hardware");
-        assert!(!toast.body.is_empty());
-    }
 }
