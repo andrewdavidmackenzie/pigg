@@ -52,12 +52,12 @@ fn main() -> Result<(), iced::Error> {
 #[derive(Debug, Clone)]
 pub enum Message {
     ConfigLoaded(String, GPIOConfig),
+    ConfigSaved,
     LayoutChanged(Layout),
     ConfigChangesMade,
     Hardware(HardwareMessage),
     Toast(ToastMessage),
     Save,
-    SaveSuccessful,
     Load,
     StatusRow(StatusRowMessage),
     WindowEvent(iced::Event),
@@ -125,7 +125,7 @@ impl Application for Piggui {
                 return save(self.hardware_view.get_config());
             }
 
-            SaveSuccessful => {
+            ConfigSaved => {
                 self.unsaved_changes = false;
                 return Command::perform(crate::empty(), |_| {
                     Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
