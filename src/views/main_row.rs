@@ -12,8 +12,7 @@ pub fn view(app: &Piggui) -> Element<Message> {
             .push(configuration_column::view(app))
             .align_items(Alignment::Start)
             .width(Length::Shrink)
-            .height(Length::Shrink)
-            .spacing(app.layout_selector.get_spacing()),
+            .height(Length::Shrink),
     );
 
     main_row = main_row.push(

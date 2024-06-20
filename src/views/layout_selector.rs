@@ -24,8 +24,6 @@ impl std::fmt::Display for Layout {
     }
 }
 
-const BOARD_LAYOUT_SPACING: u16 = 470;
-const BCM_LAYOUT_SPACING: u16 = 640;
 // TODO use these later, together with config column width to calculate the required window width
 // const BOARD_WINDOW_WIDTH: f32 = BOARD_PIN_LAYOUT_WIDTH;
 const BOARD_LAYOUT_WIDTH: f32 = 1570.0;
@@ -44,13 +42,6 @@ impl LayoutSelector {
     pub fn new() -> Self {
         LayoutSelector {
             selected_layout: Layout::default(),
-        }
-    }
-
-    pub fn get_spacing(&self) -> u16 {
-        match self.selected_layout {
-            Layout::BoardLayout => BOARD_LAYOUT_SPACING,
-            Layout::BCMLayout => BCM_LAYOUT_SPACING,
         }
     }
 
