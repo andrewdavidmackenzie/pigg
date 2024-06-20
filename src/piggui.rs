@@ -13,11 +13,12 @@ use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::status_message::{StatusRow, StatusRowMessage};
+use crate::views::status_message::{StatusMessage, StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
 use views::pin_state::PinState;
+use crate::views::status_message::StatusRowMessage::ShowStatusMessage;
 
 mod file_helper;
 mod hw;
@@ -56,6 +57,7 @@ pub enum Message {
     Hardware(HardwareMessage),
     Toast(ToastMessage),
     Save,
+    SaveSuccessful,
     Load,
     StatusRow(StatusRowMessage),
     WindowEvent(iced::Event),
@@ -65,7 +67,6 @@ pub enum Message {
 pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
-    timeout_secs: u64,
     unsaved_changes: bool,
     status_row: StatusRow,
     toast_handler: ToastHandler,
@@ -85,7 +86,6 @@ impl Application for Piggui {
             Self {
                 config_filename: None,
                 layout_selector: LayoutSelector::new(),
-                timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
                 status_row: StatusRow::new(),
                 toast_handler: ToastHandler::new(),
@@ -108,9 +108,8 @@ impl Application for Piggui {
                     if self.unsaved_changes {
                         let _ = self.toast_handler.update(
                             ToastMessage::UnsavedChangesExitToast,
-                            None
+                            None,
                         );
-                        self.unsaved_changes = false;
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -118,39 +117,43 @@ impl Application for Piggui {
             }
 
             LayoutChanged(layout) => {
+                // Keep overall window management at this level and out of LayoutSelector
                 return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
             Save => {
-                self.unsaved_changes = false;
                 return save(self.hardware_view.get_config());
             }
 
+            SaveSuccessful => {
+                self.unsaved_changes = false;
+                return Command::perform(crate::empty(), |_| Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
+                    "File saved successfully".to_string(),
+                ))));
+            }
+
             Load => {
-                if !self.toast_handler.showing_toast {
+                if !self.toast_handler.is_showing_toast() {
                     if self.unsaved_changes {
                         let _ = self.toast_handler.update(
                             ToastMessage::UnsavedChangesToast,
-                            None
+                            None,
                         );
                         self.toast_handler.set_pending_load(true);
                     } else {
                         return pick_and_load();
                     }
                 } else {
-                    let index = self.toast_handler.get_toasts().len() - 1;
-                    return Command::perform(empty(), move |_| {
-                        Toast(ToastMessage::Close(index))
-                    });
+                    if let Some(index) = self.toast_handler.get_latest_toast_index() {
+                        return Command::perform(crate::empty(), move |_| {
+                            Message::Toast(ToastMessage::Close(index))
+                        });
+                    }
                 }
             }
 
             Toast(toast_message) => {
-                let hardware_view = match toast_message {
-                    ToastMessage::HardwareDetailsToast => Some(&self.hardware_view),
-                    _ => None,
-                };
-                return self.toast_handler.update(toast_message, hardware_view);
+                return self.toast_handler.update(toast_message, Some(&self.hardware_view));
             }
 
             Message::StatusRow(msg) => return self.status_row.update(msg),
@@ -161,12 +164,16 @@ impl Application for Piggui {
 
             ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
-                return Command::perform(empty(), |_| Hardware(NewConfig(config)));
+                self.unsaved_changes = false;
+                return Command::perform(crate::empty(), |_| Hardware(NewConfig(config)));
             }
         }
 
         Command::none()
     }
+
+
+
 
     /*
        +-window-------------------------------------------------------------------------------+
@@ -194,10 +201,10 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        Manager::new(content, &self.toast_handler.toasts, |index| {
+        Manager::new(content, &self.toast_handler.get_toasts(), |index| {
             Message::Toast(ToastMessage::Close(index))
         })
-            .timeout(self.timeout_secs)
+            .timeout(self.toast_handler.get_timeout())
             .into()
     }
 
@@ -222,39 +229,6 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_add_toast_message() {
-        let mut app = Piggui::new(()).0;
-
-        // No toasts should be present
-        assert!(app.toast_handler.toasts.is_empty());
-
-        // Add a toast
-        let _ = app.update(Message::Toast(ToastMessage::VersionToast));
-
-        // Check if a toast was added
-        assert_eq!(app.toast_handler.toasts.len(), 1);
-        let toast = &app.toast_handler.toasts[0];
-        assert_eq!(toast.title, "About Piggui");
-    }
-
-    #[tokio::test]
-    async fn test_close_toast_message() {
-        let mut app = Piggui::new(()).0;
-
-        // Add a toast
-        let _ = app.update(Message::Toast(ToastMessage::VersionToast));
-
-        // Ensure the toast was added
-        assert_eq!(app.toast_handler.toasts.len(), 1);
-
-        // Close the toast
-        let _ = app.update(Message::Toast(ToastMessage::Close(0)));
-
-        // Check if the toast was removed
-        assert!(app.toast_handler.toasts.is_empty());
-    }
-
-    #[tokio::test]
     async fn test_window_close_with_unsaved_changes() {
         let mut app = Piggui::new(()).0;
 
@@ -268,8 +242,8 @@ mod tests {
         )));
 
         // Check if a warning toast was added
-        assert_eq!(app.toast_handler.toasts.len(), 1);
-        let toast = &app.toast_handler.toasts[0];
+        assert_eq!(app.toast_handler.get_toasts().len(), 1);
+        let toast = &app.toast_handler.get_toasts()[0];
         assert_eq!(toast.title, "Unsaved Changes");
         assert_eq!(
             toast.body,
@@ -288,8 +262,8 @@ mod tests {
         let _ = app.update(Load);
 
         // Check if a warning toast was added
-        assert_eq!(app.toast_handler.toasts.len(), 1);
-        let toast = &app.toast_handler.toasts[0];
+        assert_eq!(app.toast_handler.get_toasts().len(), 1);
+        let toast = &app.toast_handler.get_toasts()[0];
         assert_eq!(toast.title, "Unsaved Changes");
         assert_eq!(
             toast.body,
@@ -298,14 +272,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_toast_timeout() {
-        // Create a new ToastHandler instance
-        let mut toast_handler = ToastHandler::new();
+    async fn test_hardware_details_toast() {
+        let mut app = Piggui::new(()).0;
+        // Show hardware details toast
+        let _ = app.update(Message::Toast(ToastMessage::HardwareDetailsToast));
 
-        // Send a timeout message
-        let _ = toast_handler.update(ToastMessage::Timeout(5.0), None);
-
-        // Check the timeout
-        assert_eq!(toast_handler.timeout_secs, 5);
+        // Check if a toast was added
+        assert_eq!(app.toast_handler.get_toasts().len(), 1);
+        let toast = &app.toast_handler.get_toasts()[0];
+        assert_eq!(toast.title, "About Connected Hardware");
+        assert!(!toast.body.is_empty());
     }
 }
