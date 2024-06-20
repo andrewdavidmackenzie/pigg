@@ -145,7 +145,7 @@ pub struct HardwareView {
     gpio_config: GPIOConfig,
     pin_function_selected: [PinFunction; 40],
     hardware_sender: Option<Sender<HardwareEvent>>,
-    pub hardware_description: Option<HardwareDescription>,
+    hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: [PinState; 40],
@@ -168,6 +168,7 @@ impl HardwareView {
         self.gpio_config.clone()
     }
 
+    /// Return a String describing the HW Piggui is connected to, or a placeholder string
     #[must_use]
     pub fn hw_description(&self) -> String {
         if let Some(hardware_description) = &self.hardware_description {
@@ -178,6 +179,16 @@ impl HardwareView {
                 hardware_description.details.serial,
                 hardware_description.details.model,
             )
+        } else {
+            "No Hardware connected".to_string()
+        }
+    }
+
+    /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
+    #[must_use]
+    pub fn hw_model(&self) -> String {
+        if let Some(hardware_description) = &self.hardware_description {
+            hardware_description.details.model.clone()
         } else {
             "No Hardware connected".to_string()
         }
@@ -625,8 +636,14 @@ mod test {
     use crate::views::hardware_view::HardwareView;
 
     #[test]
-    fn no_hardware() {
+    fn no_hardware_description() {
         let hw_view = HardwareView::new();
         assert_eq!(hw_view.hw_description(), "No Hardware connected");
+    }
+
+    #[test]
+    fn no_hardware_model() {
+        let hw_view = HardwareView::new();
+        assert_eq!(hw_view.hw_model(), "No Hardware connected");
     }
 }
