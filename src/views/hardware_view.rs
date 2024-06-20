@@ -168,6 +168,21 @@ impl HardwareView {
         self.gpio_config.clone()
     }
 
+    #[must_use]
+    pub fn hw_description(&self) -> String {
+        if let Some(hardware_description) = &self.hardware_description {
+            format!(
+                "Hardware: {}\nRevision: {}\nSerial: {}\nModel: {}",
+                hardware_description.details.hardware,
+                hardware_description.details.revision,
+                hardware_description.details.serial,
+                hardware_description.details.model,
+            )
+        } else {
+            "No Hardware connected".to_string()
+        }
+    }
+
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
@@ -603,4 +618,15 @@ fn create_pin_view_side<'a>(
 
     row.align_items(Alignment::Center)
         .spacing(WIDGET_ROW_SPACING)
+}
+
+#[cfg(test)]
+mod test {
+    use crate::views::hardware_view::HardwareView;
+
+    #[test]
+    fn no_hardware() {
+        let hw_view = HardwareView::new();
+        assert_eq!(hw_view.hw_description(), "No Hardware connected");
+    }
 }

@@ -107,7 +107,7 @@ impl Application for Piggui {
                     if self.unsaved_changes {
                         let _ = self
                             .toast_handler
-                            .update(ToastMessage::UnsavedChangesExitToast, None);
+                            .update(ToastMessage::UnsavedChangesExitToast, &self.hardware_view);
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -134,7 +134,7 @@ impl Application for Piggui {
                 if self.unsaved_changes {
                     let _ = self
                         .toast_handler
-                        .update(ToastMessage::UnsavedChangesToast, None);
+                        .update(ToastMessage::UnsavedChangesToast, &self.hardware_view);
                 } else {
                     return Command::batch(vec![ToastHandler::clear_last_toast(), pick_and_load()]);
                 }
@@ -143,7 +143,7 @@ impl Application for Piggui {
             Toast(toast_message) => {
                 return self
                     .toast_handler
-                    .update(toast_message, Some(&self.hardware_view));
+                    .update(toast_message, &self.hardware_view);
             }
 
             Message::StatusRow(msg) => return self.status_row.update(msg),
