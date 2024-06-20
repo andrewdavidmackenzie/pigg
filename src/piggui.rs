@@ -51,12 +51,12 @@ fn main() -> Result<(), iced::Error> {
 pub enum Message {
     ConfigLoaded(String, GPIOConfig),
     ConfigSaved,
-    LayoutChanged(Layout),
     ConfigChangesMade,
-    Hardware(HardwareMessage),
-    Toast(ToastMessage),
     Save,
     Load,
+    LayoutChanged(Layout),
+    Hardware(HardwareMessage),
+    Toast(ToastMessage),
     StatusRow(StatusRowMessage),
     WindowEvent(iced::Event),
 }
@@ -119,9 +119,7 @@ impl Application for Piggui {
                 return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
-            Save => {
-                return save(self.hardware_view.get_config());
-            }
+            Save => return save(self.hardware_view.get_config()),
 
             ConfigSaved => {
                 self.unsaved_changes = false;
