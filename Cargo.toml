@@ -23,7 +23,7 @@ required-features = ["pi"]
 [features]
 default = ["gui"]
 pi = ["rppal"]
-gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd", "plotters-iced", "plotters", "chrono",
+gui = ["iced", "serde", "serde_json", "iced_futures", "rfd", "plotters-iced", "plotters", "chrono",
     "rand"]
 
 [dependencies]
@@ -35,7 +35,6 @@ iced = { version = "0.12.1", default-features = false, features = ["tokio", "deb
 iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", ], optional = true }
 iced_futures = { version = "0.12.0", default-features = false, optional = true }
 iced_native = { version = "0.10.3", optional = true }
-tokio = { version = "1", features = ["full"], optional = true }
 serde = { version = "1.0.203", features = ["derive"], optional = true }
 serde_json = { version = "1.0.117", optional = true }
 rfd = { version = "0.14.1", optional = true }

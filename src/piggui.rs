@@ -211,8 +211,8 @@ impl Application for Piggui {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_window_close_with_unsaved_changes() {
+    #[test]
+    fn test_window_close_with_unsaved_changes() {
         let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes
@@ -234,8 +234,8 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_load_with_unsaved_changes() {
+    #[test]
+    fn test_load_with_unsaved_changes() {
         let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes

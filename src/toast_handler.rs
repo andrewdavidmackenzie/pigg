@@ -232,8 +232,8 @@ mod tests {
         assert!(!toast_handler.pending_load);
     }
 
-    #[tokio::test]
-    async fn test_hardware_details_toast() {
+    #[test]
+    fn test_hardware_details_toast() {
         let mut toast_handler = ToastHandler::new();
 
         // Show hardware details toast
