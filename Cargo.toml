@@ -28,7 +28,8 @@ gui = ["iced", "tokio", "serde", "serde_json", "iced_futures", "rfd", "plotters-
 
 [dependencies]
 # for interacting with GPIO on the Raspberry Pi
-rppal = { version = "0.18.0", optional = true }
+rppal = { git = "https://github.com/andrewdavidmackenzie/rppal", optional = true }
+#rppal = { version = "0.18.0", optional = true }
 
 # for GUI
 iced = { version = "0.12.1", default-features = false, features = ["tokio", "debug", "canvas", "advanced"], optional = true }
