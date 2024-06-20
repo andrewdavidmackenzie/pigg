@@ -57,6 +57,7 @@ impl ToastHandler {
                     status: Status::Danger,
                 });
                 self.showing_toast = true;
+                self.set_pending_load(true);
             }
 
             ToastMessage::VersionToast => {
@@ -118,7 +119,7 @@ impl ToastHandler {
 
     /// Take an element and wrap it in a Manager for toasts
     pub fn view<'a>(&'a self, content: Element<'a, Message>) -> Element<'a, Message> {
-        Manager::new(content, self.get_toasts(), |index| {
+        Manager::new(content, &self.toasts, |index| {
             Message::Toast(ToastMessage::Close(index))
         })
         .timeout(self.timeout_secs)
@@ -147,13 +148,15 @@ impl ToastHandler {
         }
     }
 
-    pub fn set_pending_load(&mut self, pending: bool) {
+    fn set_pending_load(&mut self, pending: bool) {
         self.pending_load = pending;
     }
 
     pub fn is_showing_toast(&self) -> bool {
         self.showing_toast
     }
+
+    #[cfg(test)]
     pub fn get_toasts(&self) -> &Vec<Toast> {
         &self.toasts
     }

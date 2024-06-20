@@ -131,19 +131,18 @@ impl Application for Piggui {
             }
 
             Load => {
-                if !self.toast_handler.is_showing_toast() {
-                    if self.unsaved_changes {
-                        let _ = self
-                            .toast_handler
-                            .update(ToastMessage::UnsavedChangesToast, None);
-                        self.toast_handler.set_pending_load(true);
+                if self.unsaved_changes {
+                    let _ = self
+                        .toast_handler
+                        .update(ToastMessage::UnsavedChangesToast, None);
+                } else {
+                    if self.toast_handler.is_showing_toast() {
+                        return Command::perform(crate::empty(), move |_| {
+                            Message::Toast(ToastMessage::CloseLastToast)
+                        });
                     } else {
                         return pick_and_load();
                     }
-                } else {
-                    return Command::perform(crate::empty(), move |_| {
-                        Message::Toast(ToastMessage::CloseLastToast)
-                    });
                 }
             }
 
