@@ -1,8 +1,8 @@
 use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareView;
-use crate::widgets::toast::{Status, Toast};
+use crate::widgets::toast::{Manager, Status, Toast};
 use crate::Message;
-use iced::Command;
+use iced::{Command, Element};
 
 #[derive(Debug, Clone)]
 pub enum ToastMessage {
@@ -104,13 +104,19 @@ impl ToastHandler {
         Command::none()
     }
 
+    /// Take an element and wrap it in a Manager for toasts
+    pub fn view<'a>(&'a self, content: Element<'a, Message>) -> Element<'a, Message> {
+        Manager::new(content, self.get_toasts(), |index| {
+            Message::Toast(ToastMessage::Close(index))
+        })
+        .timeout(self.timeout_secs)
+        .into()
+    }
+
     fn clear_toasts(&mut self) {
         self.toasts.clear();
     }
 
-    pub fn get_timeout(&self) -> u64 {
-        self.timeout_secs
-    }
     fn push_toast(&mut self, toast: Toast) {
         self.toasts.push(toast);
     }

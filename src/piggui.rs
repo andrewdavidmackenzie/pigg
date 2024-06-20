@@ -5,8 +5,6 @@ use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
-use widgets::toast::Manager;
-
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::GPIOConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
@@ -187,7 +185,7 @@ impl Application for Piggui {
        |  +---------------------------------------------------------------------------------+ |
        +--------------------------------------------------------------------------------------+
     */
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<Message> {
         let main_col = Column::new()
             .push(main_row::view(self))
             .push(info_row::view(self));
@@ -199,11 +197,7 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        Manager::new(content, self.toast_handler.get_toasts(), |index| {
-            Message::Toast(ToastMessage::Close(index))
-        })
-        .timeout(self.toast_handler.get_timeout())
-        .into()
+        self.toast_handler.view(content.into())
     }
 
     fn theme(&self) -> Theme {
