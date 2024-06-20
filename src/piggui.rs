@@ -13,12 +13,12 @@ use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
+use crate::views::status_message::StatusRowMessage::ShowStatusMessage;
 use crate::views::status_message::{StatusMessage, StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
 use views::pin_state::PinState;
-use crate::views::status_message::StatusRowMessage::ShowStatusMessage;
 
 mod file_helper;
 mod hw;
@@ -104,12 +104,12 @@ impl Application for Piggui {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             WindowEvent(event) => {
-                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event {
+                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
+                {
                     if self.unsaved_changes {
-                        let _ = self.toast_handler.update(
-                            ToastMessage::UnsavedChangesExitToast,
-                            None,
-                        );
+                        let _ = self
+                            .toast_handler
+                            .update(ToastMessage::UnsavedChangesExitToast, None);
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -127,33 +127,34 @@ impl Application for Piggui {
 
             SaveSuccessful => {
                 self.unsaved_changes = false;
-                return Command::perform(crate::empty(), |_| Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
-                    "File saved successfully".to_string(),
-                ))));
+                return Command::perform(crate::empty(), |_| {
+                    Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
+                        "File saved successfully".to_string(),
+                    )))
+                });
             }
 
             Load => {
                 if !self.toast_handler.is_showing_toast() {
                     if self.unsaved_changes {
-                        let _ = self.toast_handler.update(
-                            ToastMessage::UnsavedChangesToast,
-                            None,
-                        );
+                        let _ = self
+                            .toast_handler
+                            .update(ToastMessage::UnsavedChangesToast, None);
                         self.toast_handler.set_pending_load(true);
                     } else {
                         return pick_and_load();
                     }
-                } else {
-                    if let Some(index) = self.toast_handler.get_latest_toast_index() {
-                        return Command::perform(crate::empty(), move |_| {
-                            Message::Toast(ToastMessage::Close(index))
-                        });
-                    }
+                } else if let Some(index) = self.toast_handler.get_latest_toast_index() {
+                    return Command::perform(crate::empty(), move |_| {
+                        Message::Toast(ToastMessage::Close(index))
+                    });
                 }
             }
 
             Toast(toast_message) => {
-                return self.toast_handler.update(toast_message, Some(&self.hardware_view));
+                return self
+                    .toast_handler
+                    .update(toast_message, Some(&self.hardware_view));
             }
 
             Message::StatusRow(msg) => return self.status_row.update(msg),
@@ -171,9 +172,6 @@ impl Application for Piggui {
 
         Command::none()
     }
-
-
-
 
     /*
        +-window-------------------------------------------------------------------------------+
@@ -201,11 +199,11 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        Manager::new(content, &self.toast_handler.get_toasts(), |index| {
+        Manager::new(content, self.toast_handler.get_toasts(), |index| {
             Message::Toast(ToastMessage::Close(index))
         })
-            .timeout(self.toast_handler.get_timeout())
-            .into()
+        .timeout(self.toast_handler.get_timeout())
+        .into()
     }
 
     fn theme(&self) -> Theme {

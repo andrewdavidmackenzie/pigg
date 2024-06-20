@@ -51,7 +51,8 @@ impl ToastHandler {
                 self.clear_toasts();
                 self.push_toast(Toast {
                     title: "Unsaved Changes".into(),
-                    body: "You have unsaved changes. Do you want to continue without saving?".into(),
+                    body: "You have unsaved changes. Do you want to continue without saving?"
+                        .into(),
                     status: Status::Danger,
                 });
                 self.showing_toast = true;
@@ -75,16 +76,14 @@ impl ToastHandler {
                             Message::Toast(ToastMessage::Close(index))
                         });
                     }
-                } else {
-                    if let Some(hw_view) = hardware_view {
-                        self.clear_toasts();
-                        self.push_toast(Toast {
-                            title: "About Connected Hardware".into(),
-                            body: hw_description(hw_view),
-                            status: Status::Primary,
-                        });
-                        self.showing_toast = true;
-                    }
+                } else if let Some(hw_view) = hardware_view {
+                    self.clear_toasts();
+                    self.push_toast(Toast {
+                        title: "About Connected Hardware".into(),
+                        body: hw_description(hw_view),
+                        status: Status::Primary,
+                    });
+                    self.showing_toast = true;
                 }
             }
 
