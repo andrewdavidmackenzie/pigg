@@ -103,5 +103,6 @@ mod test {
     fn switch_to_bcm() {
         let mut layout_selector = LayoutSelector::new();
         assert_eq!(layout_selector.update(Layout::BCMLayout), BCM_LAYOUT_SIZE);
+        assert_eq!(layout_selector.get(), Layout::BCMLayout);
     }
 }
