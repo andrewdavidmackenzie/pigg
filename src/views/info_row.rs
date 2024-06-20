@@ -28,7 +28,7 @@ fn unsaved_status(app: &Piggui) -> Element<Message> {
 pub fn view(app: &Piggui) -> Element<Message> {
     container(
         Row::new()
-            .push(version_button(app))
+            .push(version_button())
             .push(hardware_button::view(&app.hardware_view))
             .push(unsaved_status(app))
             .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
