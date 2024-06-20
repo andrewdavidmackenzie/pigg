@@ -1,38 +1,25 @@
 use crate::styles::background::SetAppearance;
-use crate::styles::button_style::ButtonStyle;
-use crate::views::hardware_button;
+use crate::views::hardware_view::HardwareView;
+use crate::views::status_message::StatusRow;
 use crate::views::version::version_button;
-use crate::{Message, Piggui};
-use iced::widget::{container, Button, Row};
+use crate::views::{hardware_button, unsaved_status};
+use crate::Message;
+use iced::widget::{container, Row};
 use iced::{Color, Element, Length};
 
-fn unsaved_status(app: &Piggui) -> Element<Message> {
-    let button_style = ButtonStyle {
-        bg_color: Color::TRANSPARENT,
-        text_color: Color::new(1.0, 0.647, 0.0, 0.7),
-        hovered_bg_color: Color::TRANSPARENT,
-        hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
-        border_radius: 4.0,
-    };
-
-    match app.unsaved_changes {
-        true => Button::new("Unsaved changes").on_press(Message::Save),
-        false => Button::new(""),
-    }
-    .width(Length::Fixed(160.0))
-    .style(button_style.get_button_style())
-    .into()
-}
-
 /// Create the view that represents the info row at the bottom of the window
-pub fn view(app: &Piggui) -> Element<Message> {
+pub fn view<'a>(
+    unsaved_changes: bool,
+    hardware_view: &'a HardwareView,
+    status_row: &'a StatusRow,
+) -> Element<'a, Message> {
     container(
         Row::new()
             .push(version_button())
-            .push(hardware_button::view(&app.hardware_view))
-            .push(unsaved_status(app))
+            .push(hardware_button::view(hardware_view))
+            .push(unsaved_status::view(unsaved_changes))
             .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
-            .push(app.status_row.view().map(Message::StatusRow))
+            .push(status_row.view().map(Message::StatusRow))
             .spacing(20.0)
             .padding([0.0, 0.0, 0.0, 0.0]),
     )

@@ -6,5 +6,6 @@ pub mod layout_selector;
 pub mod main_row;
 pub mod pin_state;
 pub mod status_message;
+pub mod unsaved_status;
 pub mod version;
 pub mod waveform;
