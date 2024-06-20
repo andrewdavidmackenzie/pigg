@@ -16,7 +16,6 @@ use super::{HardwareDescription, HardwareDetails};
 
 enum Pin {
     Input(InputPin),
-    #[allow(dead_code)] // TODO
     Output(OutputPin),
 }
 
