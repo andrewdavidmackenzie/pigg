@@ -15,7 +15,8 @@ use super::Hardware;
 use super::{HardwareDescription, HardwareDetails};
 
 enum Pin {
-    Input(InputPin),
+    // Cache the input level and only report REAL edge changes
+    Input((InputPin, PinLevel)),
     Output(OutputPin),
 }
 
@@ -115,8 +116,9 @@ impl Hardware for PiHW {
                         callback(bcm_pin_number, level == Level::High)
                     })
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                let initial_level = input.read() == Level::High;
                 self.configured_pins
-                    .insert(bcm_pin_number, Pin::Input(input));
+                    .insert(bcm_pin_number, Pin::Input((input, initial_level)));
             }
             PinFunction::Output(value) => {
                 let pin = Gpio::new()
@@ -206,7 +208,7 @@ impl Hardware for PiHW {
     /// Read the input level of an input using the bcm pin number
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         match self.configured_pins.get(&bcm_pin_number) {
-            Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
+            Some(Pin::Input(input_pin)) => Ok(input_pin.0.read() == Level::High),
             _ => Err(io::Error::new(
                 io::ErrorKind::Other,
                 "Could not find a configured input pin",
