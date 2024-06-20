@@ -5,7 +5,7 @@ use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
-use widgets::toast::{self, Manager};
+use widgets::toast::Manager;
 
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::GPIOConfig;
