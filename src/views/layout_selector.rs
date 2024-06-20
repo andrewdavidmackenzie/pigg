@@ -24,16 +24,17 @@ impl std::fmt::Display for Layout {
     }
 }
 
-const BOARD_LAYOUT_SPACING: u16 = 470;
-const BCM_LAYOUT_SPACING: u16 = 640;
-// TODO use these later, together with config column width to calculate the required window width
-// const BOARD_WINDOW_WIDTH: f32 = BOARD_PIN_LAYOUT_WIDTH;
-const BOARD_LAYOUT_WIDTH: f32 = 1570.0;
-// const BCM_WINDOW_WIDTH: f32 = BCM_PIN_LAYOUT_WIDTH;
-const BOARD_LAYOUT_HEIGHT: f32 = 780.0;
-const BCM_LAYOUT_WIDTH: f32 = 860.0;
-const BCM_LAYOUT_HEIGHT: f32 = 976.0;
 const LAYOUTS: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
+
+const BOARD_LAYOUT_SIZE: Size = Size {
+    width: 1570.0,
+    height: 780.0,
+};
+
+const BCM_LAYOUT_SIZE: Size = Size {
+    width: 860.0,
+    height: 976.0,
+};
 
 #[derive(Clone, PartialEq, Default)]
 pub struct LayoutSelector {
@@ -47,37 +48,17 @@ impl LayoutSelector {
         }
     }
 
-    pub fn get_spacing(&self) -> u16 {
-        match self.selected_layout {
-            Layout::BoardLayout => BOARD_LAYOUT_SPACING,
-            Layout::BCMLayout => BCM_LAYOUT_SPACING,
-        }
-    }
-
-    pub fn get_default_window_size() -> Size {
-        Size {
-            width: BOARD_LAYOUT_WIDTH,
-            height: BOARD_LAYOUT_HEIGHT,
-        }
-    }
-
-    pub fn get_window_size(&self) -> Size {
-        match self.selected_layout {
-            Layout::BoardLayout => Size {
-                width: BOARD_LAYOUT_WIDTH,
-                height: BOARD_LAYOUT_HEIGHT,
-            },
-            Layout::BCMLayout => Size {
-                width: BCM_LAYOUT_WIDTH,
-                height: BCM_LAYOUT_HEIGHT,
-            },
-        }
+    pub const fn get_default_window_size() -> Size {
+        BOARD_LAYOUT_SIZE
     }
 
     /// Set the new layout as being selected and return the window size required
     pub fn update(&mut self, new_layout: Layout) -> Size {
         self.selected_layout = new_layout;
-        self.get_window_size()
+        match self.selected_layout {
+            Layout::BoardLayout => BOARD_LAYOUT_SIZE,
+            Layout::BCMLayout => BCM_LAYOUT_SIZE,
+        }
     }
 
     // Return the currently selected layout
@@ -95,5 +76,33 @@ impl LayoutSelector {
         .width(Length::Shrink)
         .placeholder("Choose Layout")
         .into()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::views::layout_selector::{
+        Layout, LayoutSelector, BCM_LAYOUT_SIZE, BOARD_LAYOUT_SIZE,
+    };
+
+    #[test]
+    fn default_is_board() {
+        assert_eq!(LayoutSelector::get_default_window_size(), BOARD_LAYOUT_SIZE);
+    }
+
+    #[test]
+    fn initial() {
+        let mut layout_selector = LayoutSelector::new();
+        assert_eq!(
+            layout_selector.update(layout_selector.get()),
+            BOARD_LAYOUT_SIZE
+        );
+    }
+
+    #[test]
+    fn switch_to_bcm() {
+        let mut layout_selector = LayoutSelector::new();
+        assert_eq!(layout_selector.update(Layout::BCMLayout), BCM_LAYOUT_SIZE);
+        assert_eq!(layout_selector.get(), Layout::BCMLayout);
     }
 }

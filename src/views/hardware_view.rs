@@ -145,7 +145,7 @@ pub struct HardwareView {
     gpio_config: GPIOConfig,
     pin_function_selected: [PinFunction; 40],
     hardware_sender: Option<Sender<HardwareEvent>>,
-    pub hardware_description: Option<HardwareDescription>,
+    hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: [PinState; 40],
@@ -166,6 +166,32 @@ impl HardwareView {
 
     pub fn get_config(&self) -> GPIOConfig {
         self.gpio_config.clone()
+    }
+
+    /// Return a String describing the HW Piggui is connected to, or a placeholder string
+    #[must_use]
+    pub fn hw_description(&self) -> String {
+        if let Some(hardware_description) = &self.hardware_description {
+            format!(
+                "Hardware: {}\nRevision: {}\nSerial: {}\nModel: {}",
+                hardware_description.details.hardware,
+                hardware_description.details.revision,
+                hardware_description.details.serial,
+                hardware_description.details.model,
+            )
+        } else {
+            "No Hardware connected".to_string()
+        }
+    }
+
+    /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
+    #[must_use]
+    pub fn hw_model(&self) -> String {
+        if let Some(hardware_description) = &self.hardware_description {
+            hardware_description.details.model.clone()
+        } else {
+            "No Hardware connected".to_string()
+        }
     }
 
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
@@ -603,4 +629,21 @@ fn create_pin_view_side<'a>(
 
     row.align_items(Alignment::Center)
         .spacing(WIDGET_ROW_SPACING)
+}
+
+#[cfg(test)]
+mod test {
+    use crate::views::hardware_view::HardwareView;
+
+    #[test]
+    fn no_hardware_description() {
+        let hw_view = HardwareView::new();
+        assert_eq!(hw_view.hw_description(), "No Hardware connected");
+    }
+
+    #[test]
+    fn no_hardware_model() {
+        let hw_view = HardwareView::new();
+        assert_eq!(hw_view.hw_model(), "No Hardware connected");
+    }
 }

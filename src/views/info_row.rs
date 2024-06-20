@@ -1,41 +1,51 @@
 use crate::styles::background::SetAppearance;
-use crate::styles::button_style::ButtonStyle;
-use crate::views::hardware_button;
+use crate::views::hardware_view::HardwareView;
+use crate::views::message_row::{MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
-use crate::{Message, Piggui};
-use iced::widget::{container, Button, Row};
-use iced::{Color, Element, Length};
+use crate::views::{hardware_button, unsaved_status};
+use crate::Message;
+use iced::widget::{container, Row};
+use iced::{Color, Command, Element, Length};
+use iced_futures::Subscription;
 
-fn unsaved_status(app: &Piggui) -> Element<Message> {
-    let button_style = ButtonStyle {
-        bg_color: Color::TRANSPARENT,
-        text_color: Color::new(1.0, 0.647, 0.0, 0.7),
-        hovered_bg_color: Color::TRANSPARENT,
-        hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
-        border_radius: 4.0,
-    };
-
-    match app.unsaved_changes {
-        true => Button::new("Unsaved changes").on_press(Message::Save),
-        false => Button::new(""),
-    }
-    .width(Length::Fixed(160.0))
-    .style(button_style.get_button_style())
-    .into()
+pub struct InfoRow {
+    message_row: MessageRow,
 }
 
-/// Create the view that represents the info row at the bottom of the window
-pub fn view(app: &Piggui) -> Element<Message> {
-    container(
-        Row::new()
-            .push(version_button())
-            .push(hardware_button::view(&app.hardware_view))
-            .push(unsaved_status(app))
-            .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
-            .push(app.status_row.view().map(Message::StatusRow))
-            .spacing(20.0)
-            .padding([0.0, 0.0, 0.0, 0.0]),
-    )
-    .set_background(Color::from_rgb8(45, 45, 45))
-    .into()
+impl InfoRow {
+    /// Create a new InfoRow
+    pub fn new() -> Self {
+        Self {
+            message_row: MessageRow::new(),
+        }
+    }
+
+    /// Update state based on [MessageRowMessage] messages received
+    pub fn update(&mut self, message: MessageRowMessage) -> Command<Message> {
+        self.message_row.update(message)
+    }
+
+    /// Create the view that represents the info row at the bottom of the window
+    pub fn view<'a>(
+        &'a self,
+        unsaved_changes: bool,
+        hardware_view: &'a HardwareView,
+    ) -> Element<'a, Message> {
+        container(
+            Row::new()
+                .push(version_button())
+                .push(hardware_button::view(hardware_view))
+                .push(unsaved_status::view(unsaved_changes))
+                .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
+                .push(self.message_row.view().map(Message::InfoRow))
+                .spacing(20.0)
+                .padding([0.0, 0.0, 0.0, 0.0]),
+        )
+        .set_background(Color::from_rgb8(45, 45, 45))
+        .into()
+    }
+
+    pub fn subscription(&self) -> Subscription<MessageRowMessage> {
+        self.message_row.subscription()
+    }
 }

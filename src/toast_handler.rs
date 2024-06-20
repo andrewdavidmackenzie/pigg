@@ -1,4 +1,3 @@
-use crate::views::hardware_button::hw_description;
 use crate::views::hardware_view::HardwareView;
 use crate::widgets::toast::{Manager, Status, Toast};
 use crate::Message;
@@ -35,7 +34,7 @@ impl ToastHandler {
     pub fn update(
         &mut self,
         message: ToastMessage,
-        hardware_view: Option<&HardwareView>,
+        hardware_view: &HardwareView,
     ) -> Command<Message> {
         match message {
             ToastMessage::UnsavedChangesExitToast => {
@@ -78,11 +77,11 @@ impl ToastHandler {
                             Message::Toast(ToastMessage::Close(index))
                         });
                     }
-                } else if let Some(hw_view) = hardware_view {
+                } else {
                     self.clear_toasts();
                     self.push_toast(Toast {
                         title: "About Connected Hardware".into(),
-                        body: hw_description(hw_view),
+                        body: hardware_view.hw_description(),
                         status: Status::Primary,
                     });
                     self.showing_toast = true;
@@ -178,7 +177,7 @@ mod tests {
         assert!(toast_handler.get_toasts().is_empty());
 
         // Add a toast
-        let _ = toast_handler.update(ToastMessage::VersionToast, None);
+        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new());
 
         // Check if a toast was added
         assert_eq!(toast_handler.get_toasts().len(), 1);
@@ -191,13 +190,13 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Add a toast
-        let _ = toast_handler.update(ToastMessage::VersionToast, None);
+        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new());
 
         // Ensure the toast was added
         assert_eq!(toast_handler.get_toasts().len(), 1);
 
         // Close the toast
-        let _ = toast_handler.update(ToastMessage::Close(0), None);
+        let _ = toast_handler.update(ToastMessage::Close(0), &HardwareView::new());
 
         // Check if the toast was removed
         assert!(toast_handler.get_toasts().is_empty());
@@ -208,7 +207,7 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Send a timeout message
-        let _ = toast_handler.update(ToastMessage::Timeout(5.0), None);
+        let _ = toast_handler.update(ToastMessage::Timeout(5.0), &HardwareView::new());
 
         // Check the timeout
         assert_eq!(toast_handler.timeout_secs, 5);
@@ -219,14 +218,14 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Add a toast
-        let _ = toast_handler.update(ToastMessage::VersionToast, None);
+        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new());
         assert!(toast_handler.showing_toast);
 
         // Set pending load
         toast_handler.set_pending_load(true);
 
         // Close the toast
-        let _ = toast_handler.update(ToastMessage::Close(0), None);
+        let _ = toast_handler.update(ToastMessage::Close(0), &HardwareView::new());
 
         // Pending load should be false after closing the toast
         assert!(!toast_handler.pending_load);
@@ -237,10 +236,7 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Show hardware details toast
-        let _ = toast_handler.update(
-            ToastMessage::HardwareDetailsToast,
-            Some(&HardwareView::new()),
-        );
+        let _ = toast_handler.update(ToastMessage::HardwareDetailsToast, &HardwareView::new());
 
         // Check if a toast was added
         assert_eq!(toast_handler.get_toasts().len(), 1);

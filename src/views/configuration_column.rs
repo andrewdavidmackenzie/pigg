@@ -1,10 +1,11 @@
 use crate::styles::button_style::ButtonStyle;
-use crate::{Message, Piggui};
+use crate::views::layout_selector::LayoutSelector;
+use crate::Message;
 use iced::widget::{Button, Column, Text};
 use iced::{Alignment, Color, Element, Length};
 
 /// Construct the view that represents the configuration column
-pub fn view(app: &Piggui) -> Element<'static, Message> {
+pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
     let file_button_style = ButtonStyle {
         bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
         text_color: Color::BLACK,
@@ -24,7 +25,7 @@ pub fn view(app: &Piggui) -> Element<'static, Message> {
         .align_items(Alignment::Start)
         .spacing(10)
         .width(Length::Shrink);
-    configuration_column = configuration_column.push(app.layout_selector.view());
+    configuration_column = configuration_column.push(layout_selector.view());
     configuration_column = configuration_column.push(save_button);
     configuration_column = configuration_column.push(load_button);
 
