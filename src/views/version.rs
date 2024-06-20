@@ -1,5 +1,5 @@
 use crate::styles::button_style::ButtonStyle;
-use crate::{Message, Piggui, ToastMessage};
+use crate::{Message, ToastMessage};
 use iced::widget::{Button, Text};
 use iced::{Color, Element};
 
@@ -27,8 +27,7 @@ pub fn version() -> String {
     )
 }
 
-// TODO maybe avoid using Gpio, and pass parameters, or a closure?
-pub fn version_button(app: &Piggui) -> Element<Message> {
+pub fn version_button() -> Element<'static, Message> {
     let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
     let about_button_style = ButtonStyle {
         bg_color: Color::TRANSPARENT,
@@ -38,14 +37,7 @@ pub fn version_button(app: &Piggui) -> Element<Message> {
         border_radius: 4.0,
     };
     Button::new(version_text)
-        .on_press(if !app.showing_toast {
-            // Add a new toast if `show_toast` is false
-            Message::Toast(ToastMessage::VersionToast)
-        } else {
-            // Close the existing toast if `show_toast` is true
-            let index = app.toasts.len() - 1;
-            Message::Toast(ToastMessage::Close(index))
-        })
+        .on_press(Message::Toast(ToastMessage::VersionToast))
         .clip(true)
         .height(iced::Length::Shrink)
         .style(about_button_style.get_button_style())

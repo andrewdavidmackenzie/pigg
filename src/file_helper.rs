@@ -1,5 +1,4 @@
 use crate::hw::GPIOConfig;
-use crate::views::status_message::StatusMessage;
 use crate::views::status_message::StatusMessage::{Error, Info};
 use crate::views::status_message::StatusRowMessage::ShowStatusMessage;
 use crate::Message;
@@ -59,14 +58,10 @@ async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
 /// the result to return correct [Message]
 pub fn save(gpio_config: GPIOConfig) -> Command<Message> {
     Command::perform(save_via_picker(gpio_config), |result| match result {
-        Ok(true) => Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
-            "File saved successfully".to_string(),
-        ))),
-        Ok(false) => Message::StatusRow(ShowStatusMessage(StatusMessage::Warning(
-            "File save cancelled".to_string(),
-        ))),
-        Err(e) => Message::StatusRow(ShowStatusMessage(StatusMessage::Error(
-            "Error saving file".to_string(),
+        Ok(true) => Message::ConfigSaved,
+        Ok(false) => Message::StatusRow(ShowStatusMessage(Info("File save cancelled".into()))),
+        Err(e) => Message::StatusRow(ShowStatusMessage(Error(
+            "Error saving file".into(),
             format!("Error saving file. {e}",),
         ))),
     })

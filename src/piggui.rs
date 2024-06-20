@@ -5,15 +5,14 @@ use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 
-use widgets::toast::{self, Manager, Status, Toast};
-
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::GPIOConfig;
-use crate::views::hardware_button::hw_description;
+use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::status_message::{StatusRow, StatusRowMessage};
+use crate::views::status_message::StatusRowMessage::ShowStatusMessage;
+use crate::views::status_message::{StatusMessage, StatusRow, StatusRowMessage};
 use crate::views::version::version;
 use crate::views::{info_row, main_row};
 use crate::Message::*;
@@ -22,6 +21,7 @@ use views::pin_state::PinState;
 mod file_helper;
 mod hw;
 mod styles;
+mod toast_handler;
 mod views;
 mod widgets;
 
@@ -46,25 +46,17 @@ fn main() -> Result<(), iced::Error> {
     })
 }
 
-#[derive(Debug, Clone)]
-pub enum ToastMessage {
-    VersionToast,
-    HardwareDetailsToast,
-    Close(usize),
-    Timeout(f64),
-}
-
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 pub enum Message {
     ConfigLoaded(String, GPIOConfig),
-    LayoutChanged(Layout),
+    ConfigSaved,
     ConfigChangesMade,
-    Hardware(HardwareMessage),
-    Toast(ToastMessage),
     Save,
     Load,
-    SaveCancelled,
+    LayoutChanged(Layout),
+    Hardware(HardwareMessage),
+    Toast(ToastMessage),
     StatusRow(StatusRowMessage),
     WindowEvent(iced::Event),
 }
@@ -73,12 +65,9 @@ pub enum Message {
 pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
-    pub toasts: Vec<Toast>,
-    pub showing_toast: bool,
-    timeout_secs: u64,
     unsaved_changes: bool,
-    pending_load: bool,
     status_row: StatusRow,
+    toast_handler: ToastHandler,
     hardware_view: HardwareView,
 }
 
@@ -95,12 +84,9 @@ impl Application for Piggui {
             Self {
                 config_filename: None,
                 layout_selector: LayoutSelector::new(),
-                toasts: Vec::new(),
-                showing_toast: false,
-                timeout_secs: toast::DEFAULT_TIMEOUT,
                 unsaved_changes: false,
-                pending_load: false,
                 status_row: StatusRow::new(),
+                toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(),
             },
             maybe_load_no_picker(env::args().nth(1)),
@@ -119,15 +105,9 @@ impl Application for Piggui {
                 if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
                 {
                     if self.unsaved_changes {
-                        self.toasts.clear();
-                        self.toasts.push(Toast {
-                            title: "Unsaved Changes".into(),
-                            body: "You have unsaved changes. Do you want to exit without saving?"
-                                .into(),
-                            status: Status::Danger,
-                        });
-                        self.showing_toast = true;
-                        self.unsaved_changes = false;
+                        let _ = self
+                            .toast_handler
+                            .update(ToastMessage::UnsavedChangesExitToast, None);
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -139,81 +119,32 @@ impl Application for Piggui {
                 return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
-            Save => {
-                return save(self.hardware_view.get_config());
-            }
+            Save => return save(self.hardware_view.get_config()),
 
-            SaveCancelled => {
-                // TODO this is not always true no? If you don't have unsaved changes, you can still
-                // Save, then cancel it... it should push/pop the previous value I think?
-                self.unsaved_changes = true;
+            ConfigSaved => {
+                self.unsaved_changes = false;
+                return Command::perform(crate::empty(), |_| {
+                    Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
+                        "File saved successfully".to_string(),
+                    )))
+                });
             }
 
             Load => {
-                if !self.showing_toast {
-                    // Add a new toast if `show_toast` is false
-                    if self.unsaved_changes {
-                        self.toasts.clear();
-                        self.toasts.push(Toast {
-                            title: "Unsaved Changes".into(),
-                            body:
-                                "You have unsaved changes. Do you want to continue without saving?"
-                                    .into(),
-                            status: Status::Danger,
-                        });
-                        self.showing_toast = true;
-                        self.pending_load = true;
-                    } else {
-                        return pick_and_load();
-                    }
+                if self.unsaved_changes {
+                    let _ = self
+                        .toast_handler
+                        .update(ToastMessage::UnsavedChangesToast, None);
                 } else {
-                    // Close the existing toast if `show_toast` is true
-                    let index = self.toasts.len() - 1;
-                    return Command::perform(empty(), move |_| {
-                        Message::Toast(ToastMessage::Close(index))
-                    });
+                    return Command::batch(vec![ToastHandler::clear_last_toast(), pick_and_load()]);
                 }
             }
 
-            Message::Toast(toast_message) => match toast_message {
-                ToastMessage::VersionToast => {
-                    self.toasts.clear();
-                    self.toasts.push(Toast {
-                        title: "About Piggui".into(),
-                        body: version(),
-                        status: Status::Primary,
-                    });
-                    self.showing_toast = true;
-                }
-                ToastMessage::HardwareDetailsToast => {
-                    if self.showing_toast {
-                        // Close the existing toast if `show_toast` is true
-                        let index = self.toasts.len() - 1;
-                        return Command::perform(empty(), move |_| {
-                            Message::Toast(ToastMessage::Close(index))
-                        });
-                    } else {
-                        self.toasts.clear();
-                        self.toasts.push(Toast {
-                            title: "About Connected Hardware".into(),
-                            body: hw_description(&self.hardware_view),
-                            status: Status::Primary,
-                        });
-                        self.showing_toast = true;
-                    }
-                }
-                ToastMessage::Close(index) => {
-                    self.showing_toast = false;
-                    self.toasts.remove(index);
-                    if self.pending_load {
-                        self.pending_load = false;
-                        return pick_and_load();
-                    }
-                }
-                ToastMessage::Timeout(timeout) => {
-                    self.timeout_secs = timeout as u64;
-                }
-            },
+            Toast(toast_message) => {
+                return self
+                    .toast_handler
+                    .update(toast_message, Some(&self.hardware_view));
+            }
 
             Message::StatusRow(msg) => return self.status_row.update(msg),
 
@@ -223,7 +154,8 @@ impl Application for Piggui {
 
             ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
-                return Command::perform(empty(), |_| Hardware(NewConfig(config)));
+                self.unsaved_changes = false;
+                return Command::perform(crate::empty(), |_| Hardware(NewConfig(config)));
             }
         }
 
@@ -234,17 +166,17 @@ impl Application for Piggui {
        +-window-------------------------------------------------------------------------------+
        |  +-content(main_col)---------------------------------------------------------------+ |
        |  | +-main-row--------------------------------------------------------------------+ | |
-       |  | | +-configuration-column-+-hardware-view------------------------------------+ | | |
-       |  | | |                      |                                                  | | | |
-       |  | | +----------------------+--------------------------------------------------+ | | |
+       |  | |                                                                             | | |
+       |  | |                                                                             | | |
+       |  | |                                                                             | | |
        |  | +-----------------------------------------------------------------------------+ | |
        |  | +-info-row--------------------------------------------------------------------+ | |
-       |  | |  <version> | <hardware> | <unsaved>                                 <status>| | |
+       |  | |                                                                             | | |
        |  | +-----------------------------------------------------------------------------+ | |
        |  +---------------------------------------------------------------------------------+ |
        +--------------------------------------------------------------------------------------+
     */
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<Message> {
         let main_col = Column::new()
             .push(main_row::view(self))
             .push(info_row::view(self));
@@ -256,11 +188,7 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        Manager::new(content, &self.toasts, |index| {
-            Message::Toast(ToastMessage::Close(index))
-        })
-        .timeout(self.timeout_secs)
-        .into()
+        self.toast_handler.view(content.into())
     }
 
     fn theme(&self) -> Theme {
@@ -283,41 +211,8 @@ impl Application for Piggui {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_add_toast_message() {
-        let mut app = Piggui::new(()).0;
-
-        // No toasts should be present
-        assert!(app.toasts.is_empty());
-
-        // Add a toast
-        let _ = app.update(Message::Toast(ToastMessage::VersionToast));
-
-        // Check if a toast was added
-        assert_eq!(app.toasts.len(), 1);
-        let toast = &app.toasts[0];
-        assert_eq!(toast.title, "About Piggui");
-    }
-
-    #[tokio::test]
-    async fn test_close_toast_message() {
-        let mut app = Piggui::new(()).0;
-
-        // Add a toast
-        let _ = app.update(Message::Toast(ToastMessage::VersionToast));
-
-        // Ensure the toast was added
-        assert_eq!(app.toasts.len(), 1);
-
-        // Close the toast
-        let _ = app.update(Message::Toast(ToastMessage::Close(0)));
-
-        // Check if the toast was removed
-        assert!(app.toasts.is_empty());
-    }
-
-    #[tokio::test]
-    async fn test_window_close_with_unsaved_changes() {
+    #[test]
+    fn test_window_close_with_unsaved_changes() {
         let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes
@@ -330,8 +225,8 @@ mod tests {
         )));
 
         // Check if a warning toast was added
-        assert_eq!(app.toasts.len(), 1);
-        let toast = &app.toasts[0];
+        assert_eq!(app.toast_handler.get_toasts().len(), 1);
+        let toast = &app.toast_handler.get_toasts()[0];
         assert_eq!(toast.title, "Unsaved Changes");
         assert_eq!(
             toast.body,
@@ -339,8 +234,8 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_load_with_unsaved_changes() {
+    #[test]
+    fn test_load_with_unsaved_changes() {
         let mut app = Piggui::new(()).0;
 
         // Simulate unsaved changes
@@ -350,23 +245,12 @@ mod tests {
         let _ = app.update(Load);
 
         // Check if a warning toast was added
-        assert_eq!(app.toasts.len(), 1);
-        let toast = &app.toasts[0];
+        assert_eq!(app.toast_handler.get_toasts().len(), 1);
+        let toast = &app.toast_handler.get_toasts()[0];
         assert_eq!(toast.title, "Unsaved Changes");
         assert_eq!(
             toast.body,
             "You have unsaved changes. Do you want to continue without saving?"
         );
-    }
-
-    #[tokio::test]
-    async fn test_toast_timeout() {
-        let mut app = Piggui::new(()).0;
-
-        // Send a timeout message
-        let _ = app.update(Message::Toast(ToastMessage::Timeout(5.0)));
-
-        // Check the timeout
-        assert_eq!(app.timeout_secs, 5);
     }
 }
