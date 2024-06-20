@@ -136,13 +136,7 @@ impl Application for Piggui {
                         .toast_handler
                         .update(ToastMessage::UnsavedChangesToast, None);
                 } else {
-                    if self.toast_handler.is_showing_toast() {
-                        return Command::perform(crate::empty(), move |_| {
-                            Message::Toast(ToastMessage::CloseLastToast)
-                        });
-                    } else {
-                        return pick_and_load();
-                    }
+                    return Command::batch(vec![ToastHandler::clear_last_toast(), pick_and_load()]);
                 }
             }
 

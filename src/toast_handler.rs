@@ -126,6 +126,14 @@ impl ToastHandler {
         .into()
     }
 
+    async fn empty() {}
+
+    pub fn clear_last_toast() -> Command<Message> {
+        Command::perform(Self::empty(), |_| {
+            Message::Toast(ToastMessage::CloseLastToast)
+        })
+    }
+
     fn clear_toasts(&mut self) {
         self.toasts.clear();
     }
@@ -150,10 +158,6 @@ impl ToastHandler {
 
     fn set_pending_load(&mut self, pending: bool) {
         self.pending_load = pending;
-    }
-
-    pub fn is_showing_toast(&self) -> bool {
-        self.showing_toast
     }
 
     #[cfg(test)]
