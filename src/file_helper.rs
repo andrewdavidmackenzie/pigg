@@ -1,8 +1,8 @@
 use crate::hw::GPIOConfig;
 use crate::views::message_row::MessageMessage::{Error, Info};
-use crate::views::message_row::StatusRowMessage::ShowStatusMessage;
+use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message;
-use crate::Message::{ConfigLoaded, StatusRow};
+use crate::Message::{ConfigLoaded, InfoRow};
 use iced::Command;
 use std::{env, io};
 
@@ -59,8 +59,8 @@ async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
 pub fn save(gpio_config: GPIOConfig) -> Command<Message> {
     Command::perform(save_via_picker(gpio_config), |result| match result {
         Ok(true) => Message::ConfigSaved,
-        Ok(false) => Message::StatusRow(ShowStatusMessage(Info("File save cancelled".into()))),
-        Err(e) => Message::StatusRow(ShowStatusMessage(Error(
+        Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
+        Err(e) => Message::InfoRow(ShowStatusMessage(Error(
             "Error saving file".into(),
             format!("Error saving file. {e}",),
         ))),
@@ -72,8 +72,8 @@ pub fn save(gpio_config: GPIOConfig) -> Command<Message> {
 pub fn pick_and_load() -> Command<Message> {
     Command::perform(load_via_picker(), |result| match result {
         Ok(Some((filename, config))) => ConfigLoaded(filename, config),
-        Ok(None) => StatusRow(ShowStatusMessage(Info("File load cancelled".into()))),
-        Err(e) => StatusRow(ShowStatusMessage(Error(
+        Ok(None) => InfoRow(ShowStatusMessage(Info("File load cancelled".into()))),
+        Err(e) => InfoRow(ShowStatusMessage(Error(
             "File could not be loaded".into(),
             format!("Error loading file: {e}"),
         ))),
@@ -87,7 +87,7 @@ pub fn maybe_load_no_picker(arg: Option<String>) -> Command<Message> {
     match arg {
         Some(filename) => Command::perform(load(filename), |result| match result {
             Ok((filename, config)) => ConfigLoaded(filename, config),
-            Err(e) => Message::StatusRow(ShowStatusMessage(Error(
+            Err(e) => Message::InfoRow(ShowStatusMessage(Error(
                 "Error loading config from file".into(),
                 format!("Error loading the file specified on command line: {}", e),
             ))),

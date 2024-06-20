@@ -10,11 +10,12 @@ use crate::hw::GPIOConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
+use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::message_row::StatusRowMessage::ShowStatusMessage;
-use crate::views::message_row::{MessageMessage, MessageRow, StatusRowMessage};
+use crate::views::main_row;
+use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
+use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::views::version::version;
-use crate::views::{info_row, main_row};
 use crate::Message::*;
 use views::pin_state::PinState;
 
@@ -57,7 +58,7 @@ pub enum Message {
     LayoutChanged(Layout),
     Hardware(HardwareMessage),
     Toast(ToastMessage),
-    StatusRow(StatusRowMessage),
+    InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
 }
 
@@ -66,7 +67,7 @@ pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
     unsaved_changes: bool,
-    status_row: MessageRow,
+    info_row: InfoRow,
     toast_handler: ToastHandler,
     hardware_view: HardwareView,
 }
@@ -85,7 +86,7 @@ impl Application for Piggui {
                 config_filename: None,
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
-                status_row: MessageRow::new(),
+                info_row: InfoRow::new(),
                 toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(),
             },
@@ -124,7 +125,7 @@ impl Application for Piggui {
             ConfigSaved => {
                 self.unsaved_changes = false;
                 return Command::perform(empty(), |_| {
-                    Message::StatusRow(ShowStatusMessage(MessageMessage::Info(
+                    InfoRow(ShowStatusMessage(MessageMessage::Info(
                         "File saved successfully".to_string(),
                     )))
                 });
@@ -146,7 +147,7 @@ impl Application for Piggui {
                     .update(toast_message, &self.hardware_view);
             }
 
-            Message::StatusRow(msg) => return self.status_row.update(msg),
+            InfoRow(msg) => return self.info_row.update(msg),
 
             Hardware(msg) => return self.hardware_view.update(msg),
 
@@ -177,13 +178,10 @@ impl Application for Piggui {
        +--------------------------------------------------------------------------------------+
     */
     fn view(&self) -> Element<Message> {
-        let main_col = Column::new()
-            .push(main_row::view(self))
-            .push(info_row::view(
-                self.unsaved_changes,
-                &self.hardware_view,
-                &self.status_row,
-            ));
+        let main_col = Column::new().push(main_row::view(self)).push(
+            self.info_row
+                .view(self.unsaved_changes, &self.hardware_view),
+        );
 
         let content = container(main_col)
             .height(Length::Fill)
@@ -204,7 +202,7 @@ impl Application for Piggui {
         let subscriptions = vec![
             self.hardware_view.subscription().map(Hardware),
             iced::event::listen().map(WindowEvent),
-            self.status_row.subscription().map(Message::StatusRow),
+            self.info_row.subscription().map(InfoRow),
         ];
 
         Subscription::batch(subscriptions)

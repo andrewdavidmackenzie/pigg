@@ -24,7 +24,7 @@ pub enum MessageMessage {
 
 /// [MessageRow] reacts to these message types
 #[derive(Debug, Clone)]
-pub enum StatusRowMessage {
+pub enum MessageRowMessage {
     ShowStatusMessage(MessageMessage),
     ClearStatusMessage,
 }
@@ -88,18 +88,18 @@ impl MessageRow {
         }
     }
 
-    /// Update the state and do actions depending on the [StatusRowMessage] sent
-    pub fn update(&mut self, message: StatusRowMessage) -> Command<Message> {
+    /// Update the state and do actions depending on the [MessageRowMessage] sent
+    pub fn update(&mut self, message: MessageRowMessage) -> Command<Message> {
         match message {
-            StatusRowMessage::ShowStatusMessage(msg) => self.message_queue.add_message(msg),
-            StatusRowMessage::ClearStatusMessage => self.message_queue.clear_message(),
+            MessageRowMessage::ShowStatusMessage(msg) => self.message_queue.add_message(msg),
+            MessageRowMessage::ClearStatusMessage => self.message_queue.clear_message(),
         }
 
         Command::none()
     }
 
     /// Create the view that represents a status row at the bottom of the screen
-    pub fn view(&self) -> Element<StatusRowMessage> {
+    pub fn view(&self) -> Element<MessageRowMessage> {
         let (text_color, message_text) = match &self.message_queue.current_message {
             None => (Color::TRANSPARENT, "".into()),
             Some(msg) => {
@@ -121,7 +121,7 @@ impl MessageRow {
         };
 
         Button::new(Text::new(message_text))
-            .on_press(StatusRowMessage::ClearStatusMessage)
+            .on_press(MessageRowMessage::ClearStatusMessage)
             .style(button_style.get_button_style())
             .clip(true)
             .height(iced::Length::Shrink)
@@ -129,9 +129,9 @@ impl MessageRow {
             .into()
     }
 
-    pub fn subscription(&self) -> Subscription<StatusRowMessage> {
+    pub fn subscription(&self) -> Subscription<MessageRowMessage> {
         if self.message_queue.showing_info_message() {
-            iced::time::every(Duration::from_secs(3)).map(|_| StatusRowMessage::ClearStatusMessage)
+            iced::time::every(Duration::from_secs(3)).map(|_| MessageRowMessage::ClearStatusMessage)
         } else {
             Subscription::none()
         }
