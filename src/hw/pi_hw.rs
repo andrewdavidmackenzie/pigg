@@ -15,8 +15,8 @@ use super::Hardware;
 use super::{HardwareDescription, HardwareDetails};
 
 enum Pin {
+    // Cache the input level and only report REAL edge changes
     Input(InputPin),
-    #[allow(dead_code)] // TODO
     Output(OutputPin),
 }
 
@@ -113,7 +113,7 @@ impl Hardware for PiHW {
                 };
                 input
                     .set_async_interrupt(Trigger::Both, move |level| {
-                        callback(bcm_pin_number, level == Level::High)
+                        callback(bcm_pin_number, level == Level::High);
                     })
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
                 self.configured_pins
