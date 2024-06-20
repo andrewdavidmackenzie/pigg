@@ -56,10 +56,24 @@ pub trait Hardware {
     /// * [HardwareDescription] such as revision etc.
     /// * [PinDescriptionSet] describing all the pins
     fn description(&self) -> io::Result<HardwareDescription>;
-    /// Apply a complete set of pin configurations to the connected hardware
+
+    /// This takes the GPIOConfig struct and configures all the pins in it
     fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static;
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
+    {
+        // Config only has pins that are configured
+        for (bcm_pin_number, pin_function) in &config.configured_pins {
+            let mut callback_clone = callback.clone();
+            let callback_wrapper = move |pin_number, level| {
+                callback_clone(pin_number, level);
+            };
+            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
+        }
+
+        Ok(())
+    }
+
     /// Apply a new config to one specific pin
     fn apply_pin_config<C>(
         &mut self,
@@ -69,8 +83,10 @@ pub trait Hardware {
     ) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
+
     /// Read the input level of an input using the bcm pin number
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
+
     /// Write the output level of an output using the bcm pin number
     fn set_output_level(
         &mut self,
