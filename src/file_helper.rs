@@ -59,9 +59,7 @@ async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
 /// the result to return correct [Message]
 pub fn save(gpio_config: GPIOConfig) -> Command<Message> {
     Command::perform(save_via_picker(gpio_config), |result| match result {
-        Ok(true) => Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
-            "File saved successfully".to_string(),
-        ))),
+        Ok(true) => Message::SaveSuccessful,
         Ok(false) => Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
             "File save cancelled".to_string(),
         ))),
