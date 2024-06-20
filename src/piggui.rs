@@ -123,7 +123,7 @@ impl Application for Piggui {
 
             ConfigSaved => {
                 self.unsaved_changes = false;
-                return Command::perform(crate::empty(), |_| {
+                return Command::perform(empty(), |_| {
                     Message::StatusRow(ShowStatusMessage(StatusMessage::Info(
                         "File saved successfully".to_string(),
                     )))
@@ -155,7 +155,7 @@ impl Application for Piggui {
             ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
-                return Command::perform(crate::empty(), |_| Hardware(NewConfig(config)));
+                return Command::perform(empty(), |_| Hardware(NewConfig(config)));
             }
         }
 

@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use rand::Rng;
 
-use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinFunction, PinLevel};
+use crate::hw::{BCMPinNumber, LevelChange, PinFunction, PinLevel};
 
 use super::Hardware;
 use super::{HardwareDescription, HardwareDetails};
@@ -26,22 +26,6 @@ impl Hardware for NoneHW {
             },
             pins: super::GPIO_PIN_DESCRIPTIONS,
         })
-    }
-
-    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
-    where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
-    {
-        // Config only has pins that are configured
-        for (bcm_pin_number, pin_function) in &config.configured_pins {
-            let mut callback_clone = callback.clone();
-            let callback_wrapper = move |pin_number, level| {
-                callback_clone(pin_number, level);
-            };
-            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
-        }
-
-        Ok(())
     }
 
     fn apply_pin_config<C>(

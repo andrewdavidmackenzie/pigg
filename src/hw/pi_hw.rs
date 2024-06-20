@@ -5,10 +5,9 @@ use std::io;
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
 /// Implementation of GPIO for raspberry pi - uses rrpal
-#[allow(unused_imports)] // just checking builds work for now...
 use rppal::gpio::{InputPin, Level, Trigger};
 
-use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinLevel};
+use crate::hw::{BCMPinNumber, LevelChange, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -66,24 +65,6 @@ impl Hardware for PiHW {
             details: Self::get_details()?,
             pins: super::GPIO_PIN_DESCRIPTIONS,
         })
-    }
-
-    /// This takes the "virtual" configuration of GPIO from a GPIOConfig struct and uses rppal to
-    /// configure the Pi GPIO hardware to correspond to it
-    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
-    where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
-    {
-        // Config only has pins that are configured
-        for (bcm_pin_number, pin_function) in &config.configured_pins {
-            let mut callback_clone = callback.clone();
-            let callback_wrapper = move |pin_number, level| {
-                callback_clone(pin_number, level);
-            };
-            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
-        }
-
-        Ok(())
     }
 
     /// Apply the requested config to one pin, using bcm_pin_number
