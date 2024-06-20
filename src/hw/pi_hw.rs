@@ -7,7 +7,7 @@ use rppal::gpio::OutputPin;
 /// Implementation of GPIO for raspberry pi - uses rrpal
 use rppal::gpio::{InputPin, Level, Trigger};
 
-use crate::hw::{BCMPinNumber, GPIOConfig, LevelChange, PinLevel};
+use crate::hw::{BCMPinNumber, LevelChange, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
