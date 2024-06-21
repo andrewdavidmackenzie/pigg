@@ -5,12 +5,12 @@ use iced::{advanced::Clipboard, advanced::Shell, touch};
 use iced::{event, mouse, Event};
 use iced::{Color, Element, Length, Rectangle, Size};
 
-
 pub struct Clicker<Message> {
     radius: f32,
     on_press: Option<Message>,
     on_release: Option<Message>,
 }
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct State {
     is_pressed: bool,
@@ -20,13 +20,11 @@ struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
-            // Default
             is_pressed: false,
             color: Color::WHITE,
         }
     }
 }
-
 
 impl<Message> Clicker<Message> {
     pub fn new(radius: f32) -> Self {
@@ -36,19 +34,19 @@ impl<Message> Clicker<Message> {
             on_release: None,
         }
     }
-        pub fn on_press(mut self, on_press: Message) -> Self {
-            self.on_press = Some(on_press);
-            self
-        }
 
-        pub fn on_release(mut self, on_release: Message) -> Self {
-            self.on_release = Some(on_release);
-            self
-        }
+    pub fn on_press(mut self, on_press: Message) -> Self {
+        self.on_press = Some(on_press);
+        self
     }
 
+    pub fn on_release(mut self, on_release: Message) -> Self {
+        self.on_release = Some(on_release);
+        self
+    }
+}
 
-pub fn clicker<Message, Renderer>(radius: f32) -> Clicker< Message> {
+pub fn clicker<Message, Renderer>(radius: f32) -> Clicker<Message> {
     Clicker::new(radius)
 }
 
@@ -58,7 +56,6 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
         Message: Clone,
         Renderer: renderer::Renderer,
 {
-
     fn tag(&self) -> widget::tree::Tag {
         widget::tree::Tag::of::<State>()
     }
@@ -66,7 +63,6 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
     fn state(&self) -> widget::tree::State {
         widget::tree::State::new(State::default())
     }
-
 
     fn draw(
         &self,
@@ -110,12 +106,13 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
-
                 if let Some(on_press) = self.on_press.clone() {
+                    if cursor.is_over(layout.bounds()) {
                         state.is_pressed = true;
-                        state.color = Color::BLACK;
+                        state.color = Color::from_rgb8(255, 0, 0);
                         shell.publish(on_press);
                         return event::Status::Captured;
+                    }
                 }
             }
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
@@ -129,7 +126,6 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
                     }
                 }
             }
-
             Event::Touch(touch::Event::FingerLost { .. }) => {
                 state.is_pressed = false;
                 state.color = Color::WHITE;
@@ -155,33 +151,24 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
     ) -> layout::Node {
         layout::Node::new(Size::new(self.radius * 2.0, self.radius * 2.0))
     }
+
     fn mouse_interaction(
         &self,
-        tree: &Tree,
+        _state: &Tree,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _viewport: &Rectangle,
         _renderer: &Renderer,
     ) -> mouse::Interaction {
-        let state = tree.state.downcast_ref::<State>();
-        let bounds = layout.bounds();
-
-        if cursor.is_over(bounds) {
-            if state.is_pressed {
-                mouse::Interaction::Grabbing
-            } else {
-                mouse::Interaction::Pointer
-            }
+        if cursor.is_over(layout.bounds()) {
+            mouse::Interaction::Pointer
         } else {
-            if state.is_pressed {
-                mouse::Interaction::Grab
-            } else {
-                mouse::Interaction::default()
-            }
+            mouse::Interaction::default()
         }
     }
 }
-impl<'a, Message, Theme, Renderer> From<Clicker<Message>> for Element<'a,  Message, Theme, Renderer>
+
+impl<'a, Message, Theme, Renderer> From<Clicker<Message>> for Element<'a, Message, Theme, Renderer>
     where
         Message: Clone + 'a,
         Renderer: renderer::Renderer,
@@ -190,5 +177,3 @@ impl<'a, Message, Theme, Renderer> From<Clicker<Message>> for Element<'a,  Messa
         Element::new(clicker)
     }
 }
-
-
