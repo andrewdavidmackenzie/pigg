@@ -14,5 +14,6 @@
 
 [Displaying an Inputs level from HW Button](https://youtu.be/YZMhHqfmcx4)
 
-[Controlling an LED on an Output](https://youtu.be/HBQWMZNyZw4) 
+[Controlling an LED on an Output](https://youtu.be/HBQWMZNyZw4)
 
+[Version details](https://youtu.be/KjPX6tWX9Cs)
