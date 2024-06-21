@@ -5,7 +5,7 @@ use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
 use iced::widget::{mouse_area, Tooltip};
-use iced::{Alignment, Color, Command, Element, Length};
+use iced::{Alignment, Color, Command, Element, Length, Renderer};
 use iced_futures::Subscription;
 use std::time::Duration;
 
@@ -486,14 +486,14 @@ fn get_pin_widget(
             .size(TOGGLER_SIZE)
             .style(toggle_button_style.get_toggler_style());
 
-            let output_clicker = mouse_area(clicker(BUTTON_WIDTH))
+            let output_clicker = clicker::<HardwareMessage, Renderer>(BUTTON_WIDTH)
                 .on_press({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                    HardwareMessage::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 })
                 .on_release({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                    HardwareMessage::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 });
 
             let toggle_tooltip =
