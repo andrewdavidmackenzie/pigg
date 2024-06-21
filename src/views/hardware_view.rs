@@ -4,7 +4,7 @@ use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
-use iced::widget::{mouse_area, Tooltip};
+use iced::widget::Tooltip;
 use iced::{Alignment, Color, Command, Element, Length, Renderer};
 use iced_futures::Subscription;
 use std::time::Duration;
