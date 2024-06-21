@@ -109,6 +109,7 @@ impl Application for Piggui {
                         let _ = self
                             .toast_handler
                             .update(ToastMessage::UnsavedChangesExitToast, &self.hardware_view);
+                        self.unsaved_changes = false;
                     } else {
                         return window::close(window::Id::MAIN);
                     }
