@@ -12,10 +12,10 @@ The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
     <td valign="top">
-      <img alt="BCM Pin Layout Screenshot" src="images/bcm_pin_layout.png" width="400" align="top" />
+      <img alt="BCM Pin Layout Screenshot" src="assets/images/bcm_pin_layout.png" width="400" align="top" />
     </td>
     <td valign="top">
-      <img alt="Board Pin Layout Screenshot" src="images/board_pin_layout.png" width="400" align="top" />
+      <img alt="Board Pin Layout Screenshot" src="assets/images/board_pin_layout.png" width="400" align="top" />
     </td>
   </tr>
 </table>
