@@ -13,17 +13,9 @@ pub struct Clicker<Message> {
     on_release_color: Color,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 struct State {
     is_pressed: bool,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            is_pressed: false,
-        }
-    }
 }
 
 impl<Message> Clicker<Message> {
@@ -48,15 +40,19 @@ impl<Message> Clicker<Message> {
     }
 }
 
-pub fn clicker<Message, Renderer>(radius: f32, on_press_color: Color, on_release_color: Color) -> Clicker<Message> {
+pub fn clicker<Message>(
+    radius: f32,
+    on_press_color: Color,
+    on_release_color: Color,
+) -> Clicker<Message> {
     Clicker::new(radius, on_press_color, on_release_color)
 }
 
 #[allow(missing_debug_implementations)]
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Message>
-    where
-        Message: Clone,
-        Renderer: renderer::Renderer,
+where
+    Message: Clone,
+    Renderer: renderer::Renderer,
 {
     fn tag(&self) -> widget::tree::Tag {
         widget::tree::Tag::of::<State>()
@@ -90,10 +86,9 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
             },
             if state.is_pressed {
                 self.on_press_color
-            }
-            else {
+            } else {
                 self.on_release_color
-            }
+            },
         );
     }
 
@@ -173,9 +168,9 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
 }
 
 impl<'a, Message, Theme, Renderer> From<Clicker<Message>> for Element<'a, Message, Theme, Renderer>
-    where
-        Message: Clone + 'a,
-        Renderer: renderer::Renderer,
+where
+    Message: Clone + 'a,
+    Renderer: renderer::Renderer,
 {
     fn from(clicker: Clicker<Message>) -> Self {
         Element::new(clicker)
