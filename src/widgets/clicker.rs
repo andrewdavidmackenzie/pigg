@@ -9,29 +9,31 @@ pub struct Clicker<Message> {
     radius: f32,
     on_press: Option<Message>,
     on_release: Option<Message>,
+    on_press_color: Color,
+    on_release_color: Color,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct State {
     is_pressed: bool,
-    color: Color,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             is_pressed: false,
-            color: Color::WHITE,
         }
     }
 }
 
 impl<Message> Clicker<Message> {
-    pub fn new(radius: f32) -> Self {
+    pub fn new(radius: f32, on_press_color: Color, on_release_color: Color) -> Self {
         Self {
             radius,
             on_press: None,
             on_release: None,
+            on_press_color,
+            on_release_color,
         }
     }
 
@@ -46,8 +48,8 @@ impl<Message> Clicker<Message> {
     }
 }
 
-pub fn clicker<Message, Renderer>(radius: f32) -> Clicker<Message> {
-    Clicker::new(radius)
+pub fn clicker<Message, Renderer>(radius: f32, on_press_color: Color, on_release_color: Color) -> Clicker<Message> {
+    Clicker::new(radius, on_press_color, on_release_color)
 }
 
 #[allow(missing_debug_implementations)]
@@ -86,7 +88,12 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
                 },
                 ..renderer::Quad::default()
             },
-            state.color, // State color
+            if state.is_pressed {
+                self.on_press_color
+            }
+            else {
+                self.on_release_color
+            }
         );
     }
 
@@ -109,7 +116,6 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
                 if let Some(on_press) = self.on_press.clone() {
                     if cursor.is_over(layout.bounds()) {
                         state.is_pressed = true;
-                        state.color = Color::from_rgb8(255, 0, 0);
                         shell.publish(on_press);
                         return event::Status::Captured;
                     }
@@ -120,7 +126,6 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
                 if let Some(on_release) = self.on_release.clone() {
                     if cursor.is_over(layout.bounds()) {
                         state.is_pressed = false;
-                        state.color = Color::WHITE;
                         shell.publish(on_release);
                         return event::Status::Captured;
                     }
@@ -128,7 +133,6 @@ impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Clicker<Mess
             }
             Event::Touch(touch::Event::FingerLost { .. }) => {
                 state.is_pressed = false;
-                state.color = Color::WHITE;
             }
             _ => {}
         }
