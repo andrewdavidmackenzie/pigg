@@ -486,14 +486,14 @@ fn get_pin_widget(
             .size(TOGGLER_SIZE)
             .style(toggle_button_style.get_toggler_style());
 
-            let output_clicker = clicker::<HardwareMessage, Renderer>(BUTTON_WIDTH)
+            let output_clicker = clicker::<HardwareMessage, Renderer>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
                 .on_press({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    HardwareMessage::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 })
                 .on_release({
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    HardwareMessage::ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
                 });
 
             let toggle_tooltip =
