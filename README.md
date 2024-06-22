@@ -12,16 +12,28 @@ The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
     <td valign="top">
-      <img alt="BCM Pin Layout Screenshot" src="images/bcm_pin_layout.png" width="400" align="top" />
+      <img alt="BCM Pin Layout Screenshot" src="assets/images/bcm_pin_layout.png" width="400" align="top" />
     </td>
     <td valign="top">
-      <img alt="Board Pin Layout Screenshot" src="images/board_pin_layout.png" width="400" align="top" />
+      <img alt="Board Pin Layout Screenshot" src="assets/images/board_pin_layout.png" width="400" align="top" />
     </td>
   </tr>
 </table>
 
-This first versions allows you to set up a GPIO hardware with Inputs or Outputs, and to control the
+You can set up a GPIO hardware with Inputs or Outputs, and control the
 level of the outputs and see the level of the inputs, from the GUI.
+
+<table cellspacing="0" cellpadding="0" border="0">
+  <tr>
+    <td valign="top">
+      <img alt="Input" src="assets/gifs/input.gif" width="400" align="top" />
+    </td>
+    <td valign="top">
+      <img alt="Output" src="assets/gifs/output.gif" width="400" align="top" />
+    </td>
+  </tr>
+</table>
+
 
 We have many ideas for how to improve it though, so please read on and send us your ideas also!
 
@@ -36,18 +48,22 @@ around the Pi and GPIO.
 Please let us know what you think, and suggestions, via GitHub discussions or GH issues, or in threads where we
 communicate its existence (discord, reddit, etc.).
 
-## Current Functionality
+## Current Features
 
-- visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
+- Visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
   physical layout of the Pi's GPIO connector/header, or a "BCM Pin Layout" with only the programmable
   GPIO pins, ordered by BCM pin number
 - Each pin has its board pin number, name and function.
 - Drop down selector to config each pin (Currently as an Input with or without pull-up/pull-down, or
   as an Output)
-- Inputs have a visualization like an LED to show its current level (Black is unknown, Red is off, Green is on)
-- Outputs have a toggle switch that can be used to change the value at the output
+- Inputs have a visualization like an LED to show its current level (Black is unknown, Red is off, Green is on),
+  plus a waveform view that shows you the recent history of the level detected on the input.
+- Outputs have a toggle switch that can be used to change the value at the output,
+  plus a waveform view showing the recent history of the level set on the Output.
 - GPIO configurations can be loaded at startup with a command line filename option, or loaded via
   file-picker from the UI or saves to file via file picker.
+
+You can see gifs and videos of features [here](assets/features.md)
 
 ## Help wanted, Raspberry Pi experts!
 
@@ -67,16 +83,15 @@ We have identified a number of areas we would like to work on after this initial
 but would really appreciate your input on what could be most useful or just the coolest,
 many have GH issues.
 
-- Review pin descriptions [Issue #102](https://github.com/andrewdavidmackenzie/pigg/issues/102)
-- Code cleanup and refactor [Issue #101](https://github.com/andrewdavidmackenzie/pigg/issues/101)
-- Add tests for UI and get coverage up [Issue #19](https://github.com/andrewdavidmackenzie/pigg/issues/19)
-- Better error handling [Issue #89](https://github.com/andrewdavidmackenzie/pigg/issues/89)
+- The next big one we would like to work on is having the GUI ("piggui") connect to
+  a Pi over the network (running either "piglet" or using the existing Remote GPIO feature
+  of PiOS) to control and view the GPIO hardware from a distance, including on
+  Mac, Linux, Windows machines and other Raspberry
+  Pis. [Issue #106](https://github.com/andrewdavidmackenzie/pigg/issues/106)
 - Automation of release process and publishing
   packages [Issue #85](https://github.com/andrewdavidmackenzie/pigg/issues/85)
-- Improvements to Load/Save functionality [Issue #103](https://github.com/andrewdavidmackenzie/pigg/issues/103)
 - Pre-built binaries for install on Raspberry Pi [Issue #112](https://github.com/andrewdavidmackenzie/pigg/issues/112)
   and easier install [Issue #111](https://github.com/andrewdavidmackenzie/pigg/issues/111)
-- Improve visualizations of inputs [Issue #116](https://github.com/andrewdavidmackenzie/pigg/issues/116)
 - Expand support beyond GPIO ( e.g. Clocks, PWM, I2C, UART, SPI etc.) with GUI support for config of pins in groups
   Issues [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
   [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
