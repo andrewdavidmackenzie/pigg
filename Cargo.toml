@@ -36,7 +36,7 @@ iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "ca
 iced_futures = { version = "0.12.0", default-features = false, optional = true }
 iced_native = { version = "0.10.3", optional = true }
 serde = { version = "1.0.203", features = ["derive"], optional = true }
-serde_json = { version = "1.0.117", optional = true }
+serde_json = { version = "1.0.118", optional = true }
 rfd = { version = "0.14.1", optional = true }
 plotters-iced = { version = "0.10", optional = true }
 plotters = { version = "0.3", optional = true, default_features = false, features = [
