@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
@@ -318,7 +319,7 @@ impl Display for PinDescription {
 /// A vector of tuples of (bcm_pin_number, PinFunction)
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GPIOConfig {
-    pub configured_pins: Vec<(BCMPinNumber, PinFunction)>,
+    pub configured_pins: HashMap<BCMPinNumber, PinFunction>,
 }
 
 impl Display for GPIOConfig {
@@ -360,6 +361,7 @@ impl GPIOConfig {
 
 #[cfg(test)]
 mod test {
+    use std::collections::HashMap;
     use std::fs;
     use std::fs::File;
     use std::io::Write;
@@ -437,23 +439,23 @@ mod test {
 
     #[test]
     fn save_one_pin_config_input_no_pullup() {
-        let config = GPIOConfig {
-            configured_pins: vec![(1, PinFunction::Input(None))],
+        let mut config = GPIOConfig {
+            configured_pins: HashMap::new(),
         };
-
+        config.configured_pins.insert(1, PinFunction::Input(None));
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
-        let pin_config = r#"{"configured_pins":[[1,{"Input":null}]]}"#;
+        let pin_config = r#"{"configured_pins":{"1":{"Input":null}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
 
     #[test]
     fn load_one_pin_config_input_no_pull() {
-        let pin_config = r#"{"configured_pins":[[1,{"Input":null}]]}"#;
+        let pin_config = r#"{"configured_pins":{"1":{"Input":null}}}"#;
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
         let mut file = File::create(&test_file).expect("Could not create test file");
@@ -461,8 +463,10 @@ mod test {
             .expect("Could not write to test file");
         let config = GPIOConfig::load(test_file.to_str().unwrap()).unwrap();
         assert_eq!(config.configured_pins.len(), 1);
-        assert_eq!(config.configured_pins[0].0, 1);
-        assert_eq!(config.configured_pins[0].1, PinFunction::Input(None));
+        assert_eq!(
+            config.configured_pins.get(&1),
+            Some(&PinFunction::Input(None))
+        );
     }
 
     #[test]
@@ -474,29 +478,33 @@ mod test {
             .expect("Could not load GPIOConfig from path");
         assert_eq!(config.configured_pins.len(), 2);
         // GPIO17 configured as an Output - set to true (high) level
-        assert_eq!(config.configured_pins[0].0, 17);
-        assert_eq!(config.configured_pins[0].1, PinFunction::Output(Some(true)));
+        assert_eq!(
+            config.configured_pins.get(&17),
+            Some(&PinFunction::Output(Some(true)))
+        );
 
         // GPIO26 configured as an Input - with an internal PullUp
-        assert_eq!(config.configured_pins[1].0, 26);
         assert_eq!(
-            config.configured_pins[1].1,
-            PinFunction::Input(Some(PullUp))
+            config.configured_pins.get(&26),
+            Some(&PinFunction::Input(Some(PullUp)))
         );
     }
 
     #[test]
     fn save_one_pin_config_output_with_level() {
-        let config = GPIOConfig {
-            configured_pins: vec![(7, PinFunction::Output(Some(true)))], // GPIO7 output set to 1
+        let mut config = GPIOConfig {
+            configured_pins: HashMap::new(),
         };
+        config
+            .configured_pins
+            .insert(7, PinFunction::Output(Some(true))); // GPIO7 output set to 1
 
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
-        let pin_config = r#"{"configured_pins":[[7,{"Output":true}]]}"#;
+        let pin_config = r#"{"configured_pins":{"7":{"Output":true}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }

@@ -1,6 +1,1 @@
-{
-    "configured_pins":[
-    [17,{"Output":true}],
-    [26,{"Input":"PullUp"}]
-    ]
-}
+{"configured_pins":{"26":{"Input":"PullUp"},"17":{"Output":true}}}
