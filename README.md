@@ -3,11 +3,10 @@
 
 # pigg - Raspberry Pi GPIO GUI
 
-A GUI for visualization/control of GPIO on Raspberry Pis, written in [rust](https://www.rust-lang.org/)
-using [Iced](https://github.com/iced-rs/iced) for the
-GUI and [rppal](https://github.com/golemparts/rppal) for Raspberry Pi GPIO control.
+An app for Raspberry Pi GPIO Output control and Input visualization, built in rust using the
+[Iced](https://github.com/iced-rs) GUI toolkit and [rppal](https://github.com/golemparts/rppal/) GPIO crate.
 
-The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
+The GUI binary (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
 
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
@@ -22,8 +21,11 @@ The GUI component, the Pi Gpio GUI (PIGGUI) is affectionately known as "piggy".
   </tr>
 </table>
 
-You can set up a GPIO hardware with Inputs or Outputs, and control the
-level of the outputs and see the level of the inputs, from the GUI.
+Currently, when run on a Pi, you can configure the Pi's GPIO hardware Inputs or Outputs, controlling the
+level of the Outputs and view the level of the Inputs.
+
+It runs on macOS/Linux/Windows. When we add networking support, this will allow you to control the Pi GPIO
+hardware remotely.
 
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
@@ -36,20 +38,6 @@ level of the outputs and see the level of the inputs, from the GUI.
   </tr>
 </table>
 
-
-We have many ideas for how to improve it though, so please read on and send us your ideas also!
-
-## Motivation
-
-We started this project mainly to continue our learnings in rust, Iced-based GUIs and Raspberry
-Pi GPIO Hardware control.
-
-So, it's possible you might think "I can already this with 'XYZ'", but we wanted to do a native GUI in rust
-around the Pi and GPIO.
-
-Please let us know what you think, and suggestions, via GitHub discussions or GH issues, or in threads where we
-communicate its existence (discord, reddit, etc.).
-
 ## Current Features
 
 - Visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
@@ -60,24 +48,20 @@ communicate its existence (discord, reddit, etc.).
   as an Output)
 - Inputs have a visualization like an LED to show its current level (Black is unknown, Red is off, Green is on),
   plus a waveform view that shows you the recent history of the level detected on the input.
-- Outputs have a toggle switch that can be used to change the value at the output,
-  plus a waveform view showing the recent history of the level set on the Output.
+- Outputs have a toggle switch that can be used to change the stable value of the output, plus a "clicker" for quick
+  inversions of the stable level, plus a waveform view showing the recent history of the level set on the Output.
 - GPIO configurations can be loaded at startup with a command line filename option, or loaded via
-  file-picker from the UI or saves to file via file picker.
+  file-picker from the UI or saved to file via file picker.
 
-You can see gifs and videos of features [here](assets/features.md)
+You can see more gifs and videos of features [here](assets/features.md)
 
-## Help wanted, Raspberry Pi experts!
+## Input from Raspberry Pi users wanted
 
-We would like help and/or input from Raspberry Pi users in the following areas:
+We would like input from Raspberry Pi users to help us decide the order of things to work on in the future,
+and input on how integrate new functionalities (e.g. I2C buses, SPI, UART, etc.).
 
-- Pin definitions and their alternative functions. We have done an initial definition for GPIO (Input/Output)
-  functionality, gathering data from multiple sources, but we have found a number of contradictions in pin
-  definitions that we need to get to the bottom of before we extend the functionality further. The problems
-  detected can be found described in detail
-  in [GitHub issue #102](https://github.com/andrewdavidmackenzie/pigg/issues/102)
-- Deciding the order of things to work on in the future based on interest from others.
-- Ideas for how to integrate newer functionalities (e.g. I2C buses, SPI, UART, etc.)
+Please let us know what you think, and suggestions, via GitHub discussions or GH issues, or in threads where we
+communicate its existence (discord, reddit, etc.).
 
 ## Short-term Roadmap
 
@@ -94,18 +78,14 @@ many have GH issues.
   packages [Issue #85](https://github.com/andrewdavidmackenzie/pigg/issues/85)
 - Pre-built binaries for install on Raspberry Pi [Issue #112](https://github.com/andrewdavidmackenzie/pigg/issues/112)
   and easier install [Issue #111](https://github.com/andrewdavidmackenzie/pigg/issues/111)
-- Expand support beyond GPIO ( e.g. Clocks, PWM, I2C, UART, SPI etc.) with GUI support for config of pins in groups
-  Issues [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
+- Expand support beyond Inputs and Outputs ( e.g. Clocks, PWM, I2C, UART, SPI etc.).
+  Issue [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
   [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
 - True logical layout, grouping pins by function [Issue #94](https://github.com/andrewdavidmackenzie/pigg/issues/94)
 
 ## Further out ideas
 
 - Allow connections between pins [Issue #95](https://github.com/andrewdavidmackenzie/pigg/issues/95)
-- Able to have UI on different device to where GPIO is and connect
-  remotely
-  Issues [#106](https://github.com/andrewdavidmackenzie/pigg/issues/106),
-  [#3](https://github.com/andrewdavidmackenzie/pigg/issues/3)
 - Pico support for a headless hardware backend accessed over the network
 - Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 

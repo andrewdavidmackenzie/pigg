@@ -357,7 +357,7 @@ impl HardwareView {
     ) -> Element<'a, HardwareMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
-        // Draw all pins, those with and without BCM pin numbers
+        // Draw all pins, those with and without [BCMPinNumber]
         for pair in pin_descriptions.pins().chunks(2) {
             let left_row = create_pin_view_side(
                 &pair[0],

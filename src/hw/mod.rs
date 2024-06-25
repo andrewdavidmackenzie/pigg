@@ -85,10 +85,10 @@ pub trait Hardware {
     where
         C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
 
-    /// Read the input level of an input using the bcm pin number
+    /// Read the input level of an input using  [BCMPinNumber]
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
 
-    /// Write the output level of an output using the bcm pin number
+    /// Write the output level of an output using the [BCMPinNumber]
     fn set_output_level(
         &mut self,
         bcm_pin_number: BCMPinNumber,
@@ -239,7 +239,7 @@ pub enum PinFunction {
 
 impl Display for PinFunction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // Remove anything after the first '(' of debug output
+        // Remove anything after the first opening bracket of debug representation
         let full = format!("{:?}", self);
         write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
     }
@@ -299,7 +299,7 @@ impl PinDescriptionSet {
     }
 
     /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
-    /// ascending order of BCM pin number
+    /// ascending order of [BCMPinNumber]
     pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
         let mut pins = self.bcm_pins();
         pins.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
