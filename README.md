@@ -3,7 +3,8 @@
 
 # pigg - Raspberry Pi GPIO GUI
 
-An app for Raspberry Pi GPIO Output control and Input visualization.
+An app for Raspberry Pi GPIO Output control and Input visualization, built in rust using the
+[Iced](https://github.com/iced-rs) GUI toolkit and [rppal](https://github.com/golemparts/rppal/) GPIO crate.
 
 The GUI binary (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
 
