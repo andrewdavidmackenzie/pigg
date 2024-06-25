@@ -508,4 +508,21 @@ mod test {
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
+
+    #[test]
+    fn save_one_pin_config_output_no_level() {
+        let mut config = GPIOConfig {
+            configured_pins: HashMap::new(),
+        };
+        config.configured_pins.insert(7, PinFunction::Output(None)); // GPIO7 output set to 1
+
+        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let test_file = output_dir.join("test.pigg");
+
+        config.save(test_file.to_str().unwrap()).unwrap();
+
+        let pin_config = r#"{"configured_pins":{"7":{"Output":null}}}"#;
+        let contents = fs::read_to_string(test_file).expect("Could not read test file");
+        assert_eq!(contents, pin_config);
+    }
 }
