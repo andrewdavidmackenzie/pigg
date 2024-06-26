@@ -32,7 +32,7 @@ fn main() {
     // Load config from file or default
     let (filename, config) = match matches.get_one::<String>("config") {
         Some(config_filename) => {
-            let config = HardwareConfig::load(&config_filename).unwrap();
+            let config = HardwareConfig::load(config_filename).unwrap();
             (Some(config_filename), config)
         }
         None => (None, HardwareConfig::default()),
