@@ -11,11 +11,10 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use crate::hardware_subscription::{HWLSubscriptionMessage, HardwareEvent};
+use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
 use crate::hw::pin_function::PinFunction::{Input, Output};
-use crate::hw::{
-    BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinLevel,
-};
+use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
