@@ -113,55 +113,6 @@ impl Hardware for PiHW {
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Output(output_pin));
             }
-            // TODO implement all of these IC2 channel configs
-            PinFunction::I2C1_SDA => {
-                todo!()
-            }
-            PinFunction::I2C1_SCL => {}
-            PinFunction::I2C3_SDA => {}
-            PinFunction::I2C3_SCL => {}
-            PinFunction::I2C4_SDA => {}
-            PinFunction::I2C4_SCL => {}
-            PinFunction::I2C5_SDA => {}
-            PinFunction::I2C5_SCL => {}
-            PinFunction::I2C6_SDA => {}
-            PinFunction::I2C6_SCL => {}
-
-            // SPI Interface #0
-            PinFunction::SPI0_MOSI => {}
-            PinFunction::SPI0_MISO => {}
-            PinFunction::SPI0_SCLK => {}
-            PinFunction::SPI0_CE0_N => {}
-            PinFunction::SPI0_CE1_N => {}
-            PinFunction::SPI0_MOMI => { /* bi di mode */ }
-
-            // SPI Interface #1
-            PinFunction::SPI1_MOSI => {}
-            PinFunction::SPI1_MISO => {}
-            PinFunction::SPI1_SCLK => {}
-            PinFunction::SPI1_CE0_N => {}
-            PinFunction::SPI1_CE1_N => {}
-            PinFunction::SPI1_CE2_N => {}
-            PinFunction::SPI1_MOMI => { /* bi di mode */ }
-
-            // General Purpose CLock functions
-            PinFunction::GPCLK0 => {}
-            PinFunction::GPCLK1 => {}
-            PinFunction::GPCLK2 => {}
-
-            // TODO think about how to handle UART output, maybe some sort of channel is created
-            // and text received on it is sent to the UART or similar.
-            PinFunction::UART0_TXD => {}
-            PinFunction::UART0_RXD => {}
-
-            // PCM (Pulse Width Modulation) functions
-            PinFunction::PWM0 => {}
-            PinFunction::PWM1 => {}
-
-            PinFunction::PCM_DIN => {}
-            PinFunction::PCM_DOUT => {}
-            PinFunction::PCM_FS => {}
-            PinFunction::PCM_CLK => {}
 
             // HAT EEPROM ID functions, only used at boot and not configurable
             PinFunction::I2C_EEPROM_ID_SD | PinFunction::I2C_EEPROM_ID_SC => {
@@ -177,9 +128,8 @@ impl Hardware for PiHW {
                     "Ground, 3V3 or 5V pins cannot be configured",
                 ));
             }
-            PinFunction::None => {
-                // TODO Back to none
-            }
+
+            _ => {}
         }
 
         Ok(())
