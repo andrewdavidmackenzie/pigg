@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::hw::pin_descriptions::*;
 use crate::hw::pin_function::PinFunction;
 
-pub(crate) mod config;
+pub mod config;
 /// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
