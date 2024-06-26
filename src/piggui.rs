@@ -6,7 +6,7 @@ use iced::{
 };
 
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
-use crate::hw::GPIOConfig;
+use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
@@ -51,7 +51,7 @@ fn main() -> Result<(), iced::Error> {
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 pub enum Message {
-    ConfigLoaded(String, GPIOConfig),
+    ConfigLoaded(String, HardwareConfig),
     ConfigSaved,
     ConfigChangesMade,
     Save,

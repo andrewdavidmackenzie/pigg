@@ -11,11 +11,12 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use crate::hardware_subscription::{HWLSubscriptionMessage, HardwareEvent};
+use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
 use crate::hw::pin_function::PinFunction::{Input, Output};
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
-use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
+use crate::hw::{HardwareDescription, InputPull};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareMessage::{
@@ -70,7 +71,7 @@ const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 pub enum HardwareMessage {
     Activate(BoardPinNumber),
     PinFunctionSelected(BCMPinNumber, PinFunction),
-    NewConfig(GPIOConfig),
+    NewConfig(HardwareConfig),
     HardwareSubscription(HWLSubscriptionMessage),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
@@ -142,7 +143,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 }
 
 pub struct HardwareView {
-    gpio_config: GPIOConfig,
+    hardware_config: HardwareConfig,
     hardware_sender: Option<Sender<HardwareEvent>>,
     hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
@@ -155,15 +156,15 @@ async fn empty() {}
 impl HardwareView {
     pub fn new() -> Self {
         Self {
-            gpio_config: GPIOConfig::default(),
+            hardware_config: HardwareConfig::default(),
             hardware_description: None, // Until listener is ready
             hardware_sender: None,      // Until listener is ready
             pin_states: HashMap::new(),
         }
     }
 
-    pub fn get_config(&self) -> GPIOConfig {
-        self.gpio_config.clone()
+    pub fn get_config(&self) -> HardwareConfig {
+        self.hardware_config.clone()
     }
 
     /// Return a String describing the HW Piggui is connected to, or a placeholder string
@@ -195,7 +196,8 @@ impl HardwareView {
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
-            let _ = hardware_sender.try_send(HardwareEvent::NewConfig(self.gpio_config.clone()));
+            let _ =
+                hardware_sender.try_send(HardwareEvent::NewConfig(self.hardware_config.clone()));
         }
     }
 
@@ -205,13 +207,13 @@ impl HardwareView {
     /// - sends the update to the hardware to have it applied
     fn new_pin_function(&mut self, bcm_pin_number: BCMPinNumber, new_function: PinFunction) {
         let previous_function = self
-            .gpio_config
-            .configured_pins
+            .hardware_config
+            .pins
             .get(&bcm_pin_number)
             .unwrap_or(&PinFunction::None);
         if &new_function != previous_function {
-            self.gpio_config
-                .configured_pins
+            self.hardware_config
+                .pins
                 .insert(bcm_pin_number, new_function);
 
             self.pin_states.insert(bcm_pin_number, PinState::new());
@@ -229,7 +231,7 @@ impl HardwareView {
     /// Go through all the pins in the loaded GPIOConfig and set its function in the
     /// pin_function_selected array, which is what is used for drawing the UI correctly.
     fn set_pin_functions_after_load(&mut self) {
-        for (bcm_pin_number, function) in &self.gpio_config.configured_pins {
+        for (bcm_pin_number, function) in &self.hardware_config.pins {
             // For output pins, if there is an initial state set then set that in pin state
             // so the toggler will be drawn correctly on first draw
             if let Output(Some(level)) = function {
@@ -258,7 +260,7 @@ impl HardwareView {
             }
 
             NewConfig(config) => {
-                self.gpio_config = config;
+                self.hardware_config = config;
                 self.set_pin_functions_after_load();
                 self.update_hw_config();
             }
@@ -332,8 +334,8 @@ impl HardwareView {
         for pin_description in pin_set.bcm_pins_sorted() {
             let pin_row = create_pin_view_side(
                 pin_description,
-                self.gpio_config
-                    .configured_pins
+                self.hardware_config
+                    .pins
                     .get(&pin_description.bcm_pin_number.unwrap()),
                 Right,
                 self.pin_states
@@ -360,8 +362,8 @@ impl HardwareView {
         for pair in pin_descriptions.pins().chunks(2) {
             let left_row = create_pin_view_side(
                 &pair[0],
-                self.gpio_config
-                    .configured_pins
+                self.hardware_config
+                    .pins
                     .get(&pair[0].bcm_pin_number.unwrap_or(0)),
                 Left,
                 self.pin_states.get(&pair[0].bcm_pin_number.unwrap_or(0)),
@@ -369,8 +371,8 @@ impl HardwareView {
 
             let right_row = create_pin_view_side(
                 &pair[1],
-                self.gpio_config
-                    .configured_pins
+                self.hardware_config
+                    .pins
                     .get(&pair[1].bcm_pin_number.unwrap_or(0)),
                 Right,
                 self.pin_states.get(&pair[1].bcm_pin_number.unwrap_or(0)),

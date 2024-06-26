@@ -7,9 +7,10 @@ use iced_futures::futures::StreamExt;
 use crate::hardware_subscription::HWLSubscriptionMessage::InputChange;
 use crate::hardware_subscription::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw;
+use crate::hw::config::HardwareConfig;
 use crate::hw::pin_function::PinFunction;
 use crate::hw::Hardware;
-use crate::hw::{BCMPinNumber, GPIOConfig, HardwareDescription, LevelChange};
+use crate::hw::{BCMPinNumber, HardwareDescription, LevelChange};
 
 /// This enum is for events created by this listener, sent to the Gui
 // TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
@@ -28,7 +29,7 @@ pub enum HWLSubscriptionMessage {
 pub enum HardwareEvent {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains
-    NewConfig(GPIOConfig),
+    NewConfig(HardwareConfig),
     /// A pin has had its config changed
     NewPinConfig(u8, PinFunction),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
@@ -47,11 +48,11 @@ enum State {
 
 fn send_current_input_states(
     mut tx: Sender<HardwareEvent>,
-    config: &GPIOConfig,
+    config: &HardwareConfig,
     connected_hardware: &impl Hardware,
 ) {
     // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.configured_pins {
+    for (bcm_pin_number, pin_function) in &config.pins {
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {

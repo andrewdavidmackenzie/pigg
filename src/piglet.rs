@@ -1,6 +1,7 @@
 use std::env;
 
-use hw::{GPIOConfig, Hardware};
+use crate::hw::config::HardwareConfig;
+use hw::Hardware;
 
 #[allow(dead_code)]
 mod hw;
@@ -19,10 +20,10 @@ fn main() {
     // Load config from file or default
     let (filename, config) = match env::args().nth(1) {
         Some(config_filename) => {
-            let config = GPIOConfig::load(&config_filename).unwrap();
+            let config = HardwareConfig::load(&config_filename).unwrap();
             (Some(config_filename), config)
         }
-        None => (None, GPIOConfig::default()),
+        None => (None, HardwareConfig::default()),
     };
 
     match filename {

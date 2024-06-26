@@ -1,10 +1,8 @@
-use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::fs::File;
 use std::io;
-use std::io::{BufReader, Write};
 
+use crate::hw::config::HardwareConfig;
 use chrono::{DateTime, Utc};
 use pin_description::PinDescriptionSet;
 use serde::{Deserialize, Serialize};
@@ -12,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::hw::pin_descriptions::*;
 use crate::hw::pin_function::PinFunction;
 
+pub(crate) mod config;
 /// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
@@ -80,12 +79,12 @@ pub trait Hardware {
     fn description(&self) -> io::Result<HardwareDescription>;
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    fn apply_config<C>(&mut self, config: &GPIOConfig, callback: C) -> io::Result<()>
+    fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
-        for (bcm_pin_number, pin_function) in &config.configured_pins {
+        for (bcm_pin_number, pin_function) in &config.pins {
             let mut callback_clone = callback.clone();
             let callback_wrapper = move |pin_number, level| {
                 callback_clone(pin_number, level);
@@ -153,64 +152,10 @@ impl Display for InputPull {
     }
 }
 
-/// A vector of tuples of (bcm_pin_number, PinFunction)
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct GPIOConfig {
-    pub configured_pins: HashMap<BCMPinNumber, PinFunction>,
-}
-
-impl Display for GPIOConfig {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if self.configured_pins.is_empty() {
-            writeln!(f, "No Pins are Configured")
-        } else {
-            writeln!(f, "Configured Pins:")?;
-            for (bcm_pin_number, pin_function) in &self.configured_pins {
-                writeln!(f, "\tBCM Pin #: {bcm_pin_number} - {}", pin_function)?;
-            }
-            Ok(())
-        }
-    }
-}
-
-impl GPIOConfig {
-    /// Load a new GPIOConfig from the file named `filename`
-    // TODO take AsPath/AsRef etc
-    pub fn load(filename: &str) -> io::Result<GPIOConfig> {
-        let file = File::open(filename)?;
-        let reader = BufReader::new(file);
-        let config = serde_json::from_reader(reader)?;
-        Ok(config)
-    }
-
-    /// Save this GPIOConfig to the file named `filename`
-    #[allow(dead_code)]
-    pub fn save(&self, filename: &str) -> io::Result<String> {
-        let mut file = File::create(filename)?;
-        let contents = serde_json::to_string(self)?;
-        file.write_all(contents.as_bytes())?;
-        Ok(format!("File saved successfully to {}", filename))
-    }
-    pub fn is_equal(&self, other: &Self) -> bool {
-        self.configured_pins == other.configured_pins
-    }
-}
-
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-    use std::fs;
-    use std::fs::File;
-    use std::io::Write;
-    use std::path::PathBuf;
-
-    use chrono::Utc;
-    use tempfile::tempdir;
-
     use crate::hw;
     use crate::hw::Hardware;
-    use crate::hw::InputPull::PullUp;
-    use crate::hw::{GPIOConfig, LevelChange, PinFunction};
 
     #[test]
     fn hw_can_be_got() {
@@ -260,106 +205,5 @@ mod test {
         let hw = hw::get();
         let pin_set = hw.description().unwrap().pins;
         assert_eq!(pin_set.bcm_to_board(100), None);
-    }
-
-    #[test]
-    fn create_a_config() {
-        let config = GPIOConfig::default();
-        assert!(config.configured_pins.is_empty());
-    }
-
-    #[test]
-    fn level_change_time() {
-        let level_change = LevelChange::new(true);
-        assert!(level_change.timestamp <= Utc::now())
-    }
-
-    #[test]
-    fn save_one_pin_config_input_no_pullup() {
-        let mut config = GPIOConfig {
-            configured_pins: HashMap::new(),
-        };
-        config.configured_pins.insert(1, PinFunction::Input(None));
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.pigg");
-
-        config.save(test_file.to_str().unwrap()).unwrap();
-
-        let pin_config = r#"{"configured_pins":{"1":{"Input":null}}}"#;
-        let contents = fs::read_to_string(test_file).expect("Could not read test file");
-        assert_eq!(contents, pin_config);
-    }
-
-    #[test]
-    fn load_one_pin_config_input_no_pull() {
-        let pin_config = r#"{"configured_pins":{"1":{"Input":null}}}"#;
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.pigg");
-        let mut file = File::create(&test_file).expect("Could not create test file");
-        file.write_all(pin_config.as_bytes())
-            .expect("Could not write to test file");
-        let config = GPIOConfig::load(test_file.to_str().unwrap()).unwrap();
-        assert_eq!(config.configured_pins.len(), 1);
-        assert_eq!(
-            config.configured_pins.get(&1),
-            Some(&PinFunction::Input(None))
-        );
-    }
-
-    #[test]
-    fn load_test_file() {
-        let root = std::env::var("CARGO_MANIFEST_DIR").expect("Could not get manifest dir");
-        let mut path = PathBuf::from(root);
-        path = path.join("configs/andrews_board.pigg");
-        let config = GPIOConfig::load(path.to_str().expect("Could not get Path as str"))
-            .expect("Could not load GPIOConfig from path");
-        assert_eq!(config.configured_pins.len(), 2);
-        // GPIO17 configured as an Output - set to true (high) level
-        assert_eq!(
-            config.configured_pins.get(&17),
-            Some(&PinFunction::Output(Some(true)))
-        );
-
-        // GPIO26 configured as an Input - with an internal PullUp
-        assert_eq!(
-            config.configured_pins.get(&26),
-            Some(&PinFunction::Input(Some(PullUp)))
-        );
-    }
-
-    #[test]
-    fn save_one_pin_config_output_with_level() {
-        let mut config = GPIOConfig {
-            configured_pins: HashMap::new(),
-        };
-        config
-            .configured_pins
-            .insert(7, PinFunction::Output(Some(true))); // GPIO7 output set to 1
-
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.pigg");
-
-        config.save(test_file.to_str().unwrap()).unwrap();
-
-        let pin_config = r#"{"configured_pins":{"7":{"Output":true}}}"#;
-        let contents = fs::read_to_string(test_file).expect("Could not read test file");
-        assert_eq!(contents, pin_config);
-    }
-
-    #[test]
-    fn save_one_pin_config_output_no_level() {
-        let mut config = GPIOConfig {
-            configured_pins: HashMap::new(),
-        };
-        config.configured_pins.insert(7, PinFunction::Output(None)); // GPIO7 output set to 1
-
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.pigg");
-
-        config.save(test_file.to_str().unwrap()).unwrap();
-
-        let pin_config = r#"{"configured_pins":{"7":{"Output":null}}}"#;
-        let contents = fs::read_to_string(test_file).expect("Could not read test file");
-        assert_eq!(contents, pin_config);
     }
 }
