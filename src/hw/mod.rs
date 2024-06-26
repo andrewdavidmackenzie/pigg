@@ -10,12 +10,13 @@ use serde::{Deserialize, Serialize};
 use crate::hw::pin_function::PinFunction;
 
 pub mod config;
+#[cfg(feature = "fake")]
+mod fake_hw;
 /// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
-#[cfg_attr(feature = "pi", path = "pi_hw.rs")]
-#[cfg_attr(not(feature = "pi"), path = "fake_hw.rs")]
-mod implementation;
+#[cfg(feature = "pi")]
+mod pi_hw;
 pub(crate) mod pin_description;
 mod pin_descriptions;
 pub(crate) mod pin_function;
@@ -29,8 +30,13 @@ pub type BoardPinNumber = u8;
 pub type PinLevel = bool;
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
+#[cfg(feature = "pi")]
 pub fn get() -> impl Hardware {
-    implementation::get()
+    pi_hw::get()
+}
+#[cfg(feature = "fake")]
+pub fn get() -> impl Hardware {
+    fake_hw::get()
 }
 
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to

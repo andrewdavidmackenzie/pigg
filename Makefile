@@ -102,8 +102,8 @@ ifneq ($(PI),)
 	cargo test --bin piglet --features "pi"
 else
 	# Compile for host, targeting fake hardware
-	cargo test --bin piggui --features "gui"
-	cargo test --bin piglet
+	cargo test --bin piggui --features "gui","fake"
+	cargo test --bin piglet --features "fake"
 	# cross can run tests on pi architecture, so we cannot run tests that depend on "pi" hardware
 	# and no point in re-running tests on pi architecture on "fake" hardware that we have already ran above on host
 endif
