@@ -195,6 +195,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "pi_hw")]
     fn pi_hardware_descriptor() {
         let hw = super::get();
         let hw_descriptor = hw
