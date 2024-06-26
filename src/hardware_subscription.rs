@@ -4,11 +4,15 @@ use iced::{subscription, Subscription};
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
+use crate::hardware_subscription::HWLSubscriptionMessage::InputChange;
+use crate::hardware_subscription::HardwareEvent::{
+    InputLevelChanged, NewConfig, NewPinConfig, OutputLevelChanged,
+};
 use crate::hw;
-use crate::hw::hardware_subscription::HWLSubscriptionMessage::InputChange;
-use crate::hw::hardware_subscription::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::config::HardwareConfig;
+use crate::hw::pin_function::PinFunction;
 use crate::hw::Hardware;
-use crate::hw::{BCMPinNumber, GPIOConfig, HardwareDescription, LevelChange, PinFunction};
+use crate::hw::{BCMPinNumber, HardwareDescription, LevelChange};
 
 /// This enum is for events created by this listener, sent to the Gui
 // TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
@@ -20,6 +24,8 @@ pub enum HWLSubscriptionMessage {
     Ready(Sender<HardwareEvent>, HardwareDescription),
     /// This event indicates that the logic level of an input has just changed
     InputChange(BCMPinNumber, LevelChange),
+    /// We have lost connection to the hardware
+    Lost,
 }
 
 /// This enum is for config changes done in the GUI to be sent to this listener to set up pin
@@ -27,9 +33,9 @@ pub enum HWLSubscriptionMessage {
 pub enum HardwareEvent {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains
-    NewConfig(GPIOConfig),
+    NewConfig(HardwareConfig),
     /// A pin has had its config changed
-    NewPinConfig(u8, PinFunction),
+    NewPinConfig(BCMPinNumber, PinFunction),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
     InputLevelChanged(BCMPinNumber, LevelChange),
     /// The level of an output pin has been set to a new value
@@ -46,11 +52,11 @@ enum State {
 
 fn send_current_input_states(
     mut tx: Sender<HardwareEvent>,
-    config: &GPIOConfig,
+    config: &HardwareConfig,
     connected_hardware: &impl Hardware,
 ) {
     // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.configured_pins {
+    for (bcm_pin_number, pin_function) in &config.pins {
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
@@ -80,7 +86,7 @@ pub fn subscribe() -> Subscription<HWLSubscriptionMessage> {
                 match &mut state {
                     State::Starting => {
                         // Create channel
-                        let (hardware_event_sender, config_event_receiver) = mpsc::channel(100);
+                        let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
                         // Send the sender back to the GUI
                         let _ = sender_clone
@@ -90,8 +96,8 @@ pub fn subscribe() -> Subscription<HWLSubscriptionMessage> {
                             ))
                             .await;
 
-                        // We are ready to receive ConfigEvent messages from the GUI
-                        state = State::Ready(config_event_receiver, hardware_event_sender);
+                        // We are ready to receive messages from the GUI
+                        state = State::Ready(hardware_event_receiver, hardware_event_sender);
                     }
 
                     State::Ready(hardware_event_receiver, hardware_event_sender) => {
@@ -135,7 +141,7 @@ pub fn subscribe() -> Subscription<HWLSubscriptionMessage> {
                                     .send(InputChange(bcm_pin_number, level_change))
                                     .await;
                             }
-                            HardwareEvent::OutputLevelChanged(bcm_pin_number, level_change) => {
+                            OutputLevelChanged(bcm_pin_number, level_change) => {
                                 let _ = connected_hardware
                                     .set_output_level(bcm_pin_number, level_change);
                             }

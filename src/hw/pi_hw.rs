@@ -7,11 +7,22 @@ use rppal::gpio::OutputPin;
 /// Implementation of GPIO for raspberry pi - uses rrpal
 use rppal::gpio::{InputPin, Level, Trigger};
 
+use crate::hw::pin_description::PinDescriptionSet;
+use crate::hw::pin_descriptions::*;
 use crate::hw::{BCMPinNumber, LevelChange, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
 use super::{HardwareDescription, HardwareDetails};
+
+/// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
+/// For now, we will use the same descriptions for all hardware
+const GPIO_PIN_DESCRIPTIONS: PinDescriptionSet = PinDescriptionSet::new([
+    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
+    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
+    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
+    PIN_38, PIN_39, PIN_40,
+]);
 
 enum Pin {
     // Cache the input level and only report REAL edge changes
@@ -63,7 +74,7 @@ impl Hardware for PiHW {
     fn description(&self) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
             details: Self::get_details()?,
-            pins: super::GPIO_PIN_DESCRIPTIONS,
+            pins: GPIO_PIN_DESCRIPTIONS,
         })
     }
 
@@ -113,55 +124,6 @@ impl Hardware for PiHW {
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Output(output_pin));
             }
-            // TODO implement all of these IC2 channel configs
-            PinFunction::I2C1_SDA => {
-                todo!()
-            }
-            PinFunction::I2C1_SCL => {}
-            PinFunction::I2C3_SDA => {}
-            PinFunction::I2C3_SCL => {}
-            PinFunction::I2C4_SDA => {}
-            PinFunction::I2C4_SCL => {}
-            PinFunction::I2C5_SDA => {}
-            PinFunction::I2C5_SCL => {}
-            PinFunction::I2C6_SDA => {}
-            PinFunction::I2C6_SCL => {}
-
-            // SPI Interface #0
-            PinFunction::SPI0_MOSI => {}
-            PinFunction::SPI0_MISO => {}
-            PinFunction::SPI0_SCLK => {}
-            PinFunction::SPI0_CE0_N => {}
-            PinFunction::SPI0_CE1_N => {}
-            PinFunction::SPI0_MOMI => { /* bi di mode */ }
-
-            // SPI Interface #1
-            PinFunction::SPI1_MOSI => {}
-            PinFunction::SPI1_MISO => {}
-            PinFunction::SPI1_SCLK => {}
-            PinFunction::SPI1_CE0_N => {}
-            PinFunction::SPI1_CE1_N => {}
-            PinFunction::SPI1_CE2_N => {}
-            PinFunction::SPI1_MOMI => { /* bi di mode */ }
-
-            // General Purpose CLock functions
-            PinFunction::GPCLK0 => {}
-            PinFunction::GPCLK1 => {}
-            PinFunction::GPCLK2 => {}
-
-            // TODO think about how to handle UART output, maybe some sort of channel is created
-            // and text received on it is sent to the UART or similar.
-            PinFunction::UART0_TXD => {}
-            PinFunction::UART0_RXD => {}
-
-            // PCM (Pulse Width Modulation) functions
-            PinFunction::PWM0 => {}
-            PinFunction::PWM1 => {}
-
-            PinFunction::PCM_DIN => {}
-            PinFunction::PCM_DOUT => {}
-            PinFunction::PCM_FS => {}
-            PinFunction::PCM_CLK => {}
 
             // HAT EEPROM ID functions, only used at boot and not configurable
             PinFunction::I2C_EEPROM_ID_SD | PinFunction::I2C_EEPROM_ID_SC => {
@@ -177,9 +139,8 @@ impl Hardware for PiHW {
                     "Ground, 3V3 or 5V pins cannot be configured",
                 ));
             }
-            PinFunction::None => {
-                // TODO Back to none
-            }
+
+            _ => {}
         }
 
         Ok(())
@@ -225,35 +186,37 @@ mod test {
     #[test]
     fn get_hardware() {
         let hw = super::get();
-        assert_eq!(hw.pin_descriptions().len(), 40);
-    }
-
-    #[test]
-    fn pi_hardware_descriptor() {
-        let hw = super::get();
-        let hw_descriptor = hw
-            .descriptor()
+        let description = hw
+            .description()
             .expect("Could not read Hardware description");
-        assert!(hw_descriptor.hardware != "Unknown");
-        assert!(hw_descriptor.revision != "Unknown");
-        assert!(hw_descriptor.serial != "Unknown");
-        assert!(hw_descriptor.model != "Unknown");
-    }
-
-    #[test]
-    fn pin_descriptions() {
-        let hw = super::get();
-        let pins = hw.pin_descriptions();
+        let pins = description.pins.pins();
         assert_eq!(pins.len(), 40);
         assert_eq!(pins[0].name, "3V3")
     }
 
     #[test]
+    #[cfg(feature = "pi_hw")]
+    fn pi_hardware_descriptor() {
+        let hw = super::get();
+        let hw_descriptor = hw
+            .description()
+            .expect("Could not read Hardware description")
+            .details;
+        assert_ne!(hw_descriptor.hardware, "Unknown");
+        assert_ne!(hw_descriptor.revision, "Unknown");
+        assert_ne!(hw_descriptor.serial, "Unknown");
+        assert_ne!(hw_descriptor.model, "Unknown");
+    }
+
+    #[test]
     fn try_all_pin_configs() {
         let mut hw = super::get();
-        let pins = hw.pin_descriptions();
+        let description = hw
+            .description()
+            .expect("Could not read Hardware description");
+        let pins = description.pins.pins();
 
-        for pin in &pins {
+        for pin in pins {
             if let Some(bcm) = pin.bcm_pin_number {
                 for pin_function in pin.options {
                     hw.apply_pin_config(bcm, pin_function, |_, _| {})

@@ -1,4 +1,4 @@
-use crate::hw::GPIOConfig;
+use crate::hw::config::HardwareConfig;
 use crate::views::message_row::MessageMessage::{Error, Info};
 use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message;
@@ -7,9 +7,9 @@ use iced::Command;
 use std::{env, io};
 
 /// Asynchronously load a .piggui config file from file named `filename` (no picker)
-/// In the result, return the filename and the loaded [GPIOConfig]
-async fn load(filename: String) -> io::Result<(String, GPIOConfig)> {
-    let config = GPIOConfig::load(&filename)?;
+/// In the result, return the filename and the loaded [HardwareConfig]
+async fn load(filename: String) -> io::Result<(String, HardwareConfig)> {
+    let config = HardwareConfig::load(&filename)?;
     Ok((filename, config))
 }
 
@@ -17,7 +17,7 @@ async fn load(filename: String) -> io::Result<(String, GPIOConfig)> {
 /// If the user selects a file, and it is loaded successfully, it will return `Ok((filename, [GPIOConfig]))`
 /// If the user selects a file, and it is fails to load, it will return `Err(e)`
 /// If the user cancels the selection it will return `Ok(None)`
-async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
+async fn load_via_picker() -> io::Result<Option<(String, HardwareConfig)>> {
     if let Some(handle) = rfd::AsyncFileDialog::new()
         .add_filter("Pigg Config", &["pigg"])
         .set_title("Choose config file to load")
@@ -33,11 +33,11 @@ async fn load_via_picker() -> io::Result<Option<(String, GPIOConfig)>> {
     }
 }
 
-/// Asynchronously show the user a picker and then save the [GPIOConfig] to the .piggui file
+/// Asynchronously show the user a picker and then save the [HardwareConfig] to the .piggui file
 /// If the user selects a file, and it is saves successfully, it will return `Ok(true)`
 /// If the user selects a file, and it is fails to load, it will return `Err(e)`
 /// If the user cancels the selection it will return `Ok(false)`
-async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
+async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
     if let Some(handle) = rfd::AsyncFileDialog::new()
         .add_filter("Pigg Config", &["pigg"])
         .set_title("Choose file")
@@ -54,9 +54,9 @@ async fn save_via_picker(gpio_config: GPIOConfig) -> io::Result<bool> {
     }
 }
 
-/// Utility function that saves the [GPIOConfig] to a file using `Command::perform` and uses
+/// Utility function that saves the [HardwareConfig] to a file using `Command::perform` and uses
 /// the result to return correct [Message]
-pub fn save(gpio_config: GPIOConfig) -> Command<Message> {
+pub fn save(gpio_config: HardwareConfig) -> Command<Message> {
     Command::perform(save_via_picker(gpio_config), |result| match result {
         Ok(true) => Message::ConfigSaved,
         Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),

@@ -6,7 +6,7 @@ use iced::{
 };
 
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
-use crate::hw::GPIOConfig;
+use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareMessage::NewConfig;
 use crate::views::hardware_view::{HardwareMessage, HardwareView};
@@ -20,6 +20,7 @@ use crate::Message::*;
 use views::pin_state::PinState;
 
 mod file_helper;
+pub mod hardware_subscription;
 mod hw;
 mod styles;
 mod toast_handler;
@@ -50,7 +51,7 @@ fn main() -> Result<(), iced::Error> {
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 pub enum Message {
-    ConfigLoaded(String, GPIOConfig),
+    ConfigLoaded(String, HardwareConfig),
     ConfigSaved,
     ConfigChangesMade,
     Save,
@@ -60,6 +61,7 @@ pub enum Message {
     Toast(ToastMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
+    HardwareLost,
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -158,6 +160,14 @@ impl Application for Piggui {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
                 return Command::perform(empty(), |_| Hardware(NewConfig(config)));
+            }
+            HardwareLost => {
+                return Command::perform(empty(), |_| {
+                    InfoRow(ShowStatusMessage(MessageMessage::Error(
+                        "Connection to Hardware Lost".to_string(),
+                        "The connection to GPIO hardware has been lost. Check networking and try to re-connect".to_string()
+                    )))
+                });
             }
         }
 
