@@ -86,14 +86,14 @@ mod test {
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
-        let pin_config = r#"{"configured_pins":{"1":{"Input":null}}}"#;
+        let pin_config = r#"{"pins":{"1":{"Input":null}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
 
     #[test]
     fn load_one_pin_config_input_no_pull() {
-        let pin_config = r#"{"configured_pins":{"1":{"Input":null}}}"#;
+        let pin_config = r#"{"pins":{"1":{"Input":null}}}"#;
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
         let mut file = File::create(&test_file).expect("Could not create test file");
@@ -134,7 +134,7 @@ mod test {
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
-        let pin_config = r#"{"configured_pins":{"7":{"Output":true}}}"#;
+        let pin_config = r#"{"pins":{"7":{"Output":true}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
@@ -151,7 +151,7 @@ mod test {
 
         config.save(test_file.to_str().unwrap()).unwrap();
 
-        let pin_config = r#"{"configured_pins":{"7":{"Output":null}}}"#;
+        let pin_config = r#"{"pins":{"7":{"Output":null}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
