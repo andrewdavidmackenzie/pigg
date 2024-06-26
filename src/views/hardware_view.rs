@@ -10,7 +10,7 @@ use iced_futures::Subscription;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::hardware_subscription::{HWLSubscriptionMessage, HardwareEvent};
+use crate::hardware_subscription::{HWLSubscriptionMessage, HardwareConfigMessage};
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
@@ -144,7 +144,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 
 pub struct HardwareView {
     hardware_config: HardwareConfig,
-    hardware_sender: Option<Sender<HardwareEvent>>,
+    hardware_sender: Option<Sender<HardwareConfigMessage>>,
     hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
@@ -196,8 +196,9 @@ impl HardwareView {
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
         if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
-            let _ =
-                hardware_sender.try_send(HardwareEvent::NewConfig(self.hardware_config.clone()));
+            let _ = hardware_sender.try_send(HardwareConfigMessage::NewConfig(
+                self.hardware_config.clone(),
+            ));
         }
     }
 
@@ -222,15 +223,17 @@ impl HardwareView {
             // Since config loading and hardware listener setup can occur out of order
             // mark the config as changed. If we send to the listener, then mark as done
             if let Some(ref mut listener) = &mut self.hardware_sender {
-                let _ =
-                    listener.try_send(HardwareEvent::NewPinConfig(bcm_pin_number, new_function));
+                let _ = listener.try_send(HardwareConfigMessage::NewPinConfig(
+                    bcm_pin_number,
+                    new_function,
+                ));
             }
         }
     }
 
-    /// Go through all the pins in the loaded GPIOConfig and set its function in the
-    /// pin_function_selected array, which is what is used for drawing the UI correctly.
-    fn set_pin_functions_after_load(&mut self) {
+    /// Go through all the pins in the [HardwareConfig], make sure a pin state exists for the pin
+    /// and then set the current level if it was specified for an Output
+    fn set_pin_states_after_load(&mut self) {
         for (bcm_pin_number, function) in &self.hardware_config.pins {
             // For output pins, if there is an initial state set then set that in pin state
             // so the toggler will be drawn correctly on first draw
@@ -261,7 +264,7 @@ impl HardwareView {
 
             NewConfig(config) => {
                 self.hardware_config = config;
-                self.set_pin_functions_after_load();
+                self.set_pin_states_after_load();
                 self.update_hw_config();
             }
 
@@ -269,7 +272,7 @@ impl HardwareView {
                 HWLSubscriptionMessage::Ready(config_change_sender, hw_desc) => {
                     self.hardware_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
-                    self.set_pin_functions_after_load();
+                    self.set_pin_states_after_load();
                     self.update_hw_config();
                 }
                 HWLSubscriptionMessage::InputChange(bcm_pin_number, level_change) => {
@@ -291,7 +294,7 @@ impl HardwareView {
                     .or_insert(PinState::new())
                     .set_level(level_change.clone());
                 if let Some(ref mut listener) = &mut self.hardware_sender {
-                    let _ = listener.try_send(HardwareEvent::OutputLevelChanged(
+                    let _ = listener.try_send(HardwareConfigMessage::OutputLevelChanged(
                         bcm_pin_number,
                         level_change,
                     ));
