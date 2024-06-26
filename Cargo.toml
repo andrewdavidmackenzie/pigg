@@ -21,8 +21,8 @@ path = "src/piglet.rs"
 
 [features]
 default = []
-pi = ["rppal"]
-fake = []
+pi_hw = ["rppal"]
+fake_hw = []
 gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters"]
 
 [dependencies]

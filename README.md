@@ -103,7 +103,7 @@ On macOS, linux and windows it uses a fake GPIO hardware backend.
 A "GUI-less" binary. Currently, it has minimal functionality. It can be built on any platform and will use the fake
 Hardware backend (but not be very useful!).
 
-If built on the Pi (with the "pi" feature), then it has a real GPIO hardware backend.
+If built on the Pi (with the "pi_hw" feature), then it has a real GPIO hardware backend.
 
 It takes a file command line option. It will load the GPIO configuration from the file (like "piggui" can) and
 it will apply it to the hardware. But currently there is no way to interact with it after that.
@@ -123,7 +123,7 @@ with a fake hardware backend, not real Pi GPIO hardware, but you can play with t
 
 To be able to interact with real Pi GPIO hardware you have two options:
 
-- Run `cargo install --features "pi"` on your Pi
+- Run `cargo install --features "pi_hw"` on your Pi
 - Follow the instructions before for Building from Source on your Pi
     - Use `make` to build on macOS/linux/Windows and cross-compile for your Pi, but you will need `Docker`/`Podman`
       and `cross`
@@ -200,7 +200,7 @@ loading a config, the default config will be used.
 
 To do this you can use the equivalent of what `make run` does, adding the filename:
 
-- On a Pi: `cargo run --features "pi" -- <filename>`
+- On a Pi: `cargo run --features "pi_hw" -- <filename>`
 - On macOS, linux or Windows: `cargo run -- <filename>`
 
 ## Contributing
