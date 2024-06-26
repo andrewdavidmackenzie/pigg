@@ -105,7 +105,7 @@ else
 	cargo test --bin piggui --features "gui"
 	cargo test --bin piglet
 	# cross can run tests on pi architecture, so we cannot run tests that depend on "pi" hardware
-	#and no point in re-running tests on pi architecture on "fake" hardware that we have already ran above on host
+	# and no point in re-running tests on pi architecture on "fake" hardware that we have already ran above on host
 endif
 
 .PHONY: copy
