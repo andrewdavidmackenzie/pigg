@@ -59,52 +59,6 @@ pub struct HardwareDescription {
     pub pins: PinDescriptionSet,
 }
 
-/// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
-/// interact with any possible GPIO hardware on the device to set config and get state
-#[must_use]
-pub trait Hardware {
-    /// Return a [HardwareDescription] struct describing the hardware that we are connected to:
-    /// * [HardwareDescription] such as revision etc.
-    /// * [PinDescriptionSet] describing all the pins
-    fn description(&self) -> io::Result<HardwareDescription>;
-
-    /// This takes the GPIOConfig struct and configures all the pins in it
-    fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
-    where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
-    {
-        // Config only has pins that are configured
-        for (bcm_pin_number, pin_function) in &config.pins {
-            let mut callback_clone = callback.clone();
-            let callback_wrapper = move |pin_number, level| {
-                callback_clone(pin_number, level);
-            };
-            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
-        }
-
-        Ok(())
-    }
-
-    /// Apply a new config to one specific pin
-    fn apply_pin_config<C>(
-        &mut self,
-        bcm_pin_number: BCMPinNumber,
-        pin_function: &PinFunction,
-        callback: C,
-    ) -> io::Result<()>
-    where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
-
-    /// Read the input level of an input using  [BCMPinNumber]
-    fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
-
-    /// Write the output level of an output using the [BCMPinNumber]
-    fn set_output_level(
-        &mut self,
-        bcm_pin_number: BCMPinNumber,
-        level_change: LevelChange,
-    ) -> io::Result<()>;
-}
 /// LevelChange describes the change in level of an input or Output
 /// - `new_level` : [PinLevel]
 /// - `timestamp` : [DateTime<Utc>]
@@ -140,6 +94,52 @@ impl Display for InputPull {
             InputPull::None => write!(f, "None"),
         }
     }
+}
+
+/// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
+/// interact with any possible GPIO hardware on the device to set config and get state
+pub trait Hardware {
+    /// Return a [HardwareDescription] struct describing the hardware that we are connected to:
+    /// * [HardwareDescription] such as revision etc.
+    /// * [PinDescriptionSet] describing all the pins
+    fn description(&self) -> io::Result<HardwareDescription>;
+
+    /// This takes the GPIOConfig struct and configures all the pins in it
+    fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    where
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
+    {
+        // Config only has pins that are configured
+        for (bcm_pin_number, pin_function) in &config.pins {
+            let mut callback_clone = callback.clone();
+            let callback_wrapper = move |pin_number, level| {
+                callback_clone(pin_number, level);
+            };
+            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
+        }
+
+        Ok(())
+    }
+
+    /// Apply a new config to one specific pin
+    fn apply_pin_config<C>(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        pin_function: &PinFunction,
+        callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
+
+    /// Read the input level of an input using its [BCMPinNumber]
+    fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
+
+    /// Write the output level of an output using its [BCMPinNumber]
+    fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level_change: LevelChange,
+    ) -> io::Result<()>;
 }
 
 #[cfg(test)]
