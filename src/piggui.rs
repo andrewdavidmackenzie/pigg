@@ -1,3 +1,4 @@
+use clap::{Arg, ArgMatches};
 use std::env;
 
 use iced::widget::{container, Column};
@@ -15,7 +16,6 @@ use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
 use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
-use crate::views::version::version;
 use crate::Message::*;
 use views::pin_state::PinState;
 
@@ -28,13 +28,6 @@ mod views;
 mod widgets;
 
 fn main() -> Result<(), iced::Error> {
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() > 1 && (args[1] == "--version" || args[1] == "-V") {
-        println!("{}", version());
-        return Ok(());
-    }
-
     let window = window::Settings {
         resizable: true,
         exit_on_close_request: false,
@@ -46,6 +39,21 @@ fn main() -> Result<(), iced::Error> {
         window,
         ..Default::default()
     })
+}
+
+/// Parse the command line arguments using clap
+fn get_matches() -> ArgMatches {
+    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
+
+    let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
+
+    let app = app.arg(
+        Arg::new("config-file")
+            .num_args(0..)
+            .help("Path of a '.pigg' config file to load"),
+    );
+
+    app.get_matches()
 }
 
 /// These are the messages that Piggui responds to
@@ -83,6 +91,11 @@ impl Application for Piggui {
     type Flags = ();
 
     fn new(_flags: ()) -> (Piggui, Command<Message>) {
+        let matches = get_matches();
+        let config_filename = matches
+            .get_one::<String>("config-file")
+            .map(|s| s.to_string());
+
         (
             Self {
                 config_filename: None,
@@ -92,7 +105,7 @@ impl Application for Piggui {
                 toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(),
             },
-            maybe_load_no_picker(env::args().nth(1)),
+            maybe_load_no_picker(config_filename),
         )
     }
 
