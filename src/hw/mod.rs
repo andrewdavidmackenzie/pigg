@@ -10,14 +10,33 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::hw::pin_descriptions::*;
+use crate::hw::pin_function::PinFunction;
 
-/// There are three implementations of [`Hardware`] trait:
+/// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
 #[cfg_attr(feature = "pi", path = "pi_hw.rs")]
 #[cfg_attr(not(feature = "pi"), path = "fake_hw.rs")]
 mod implementation;
 mod pin_descriptions;
+pub(crate) mod pin_function;
+
+/// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
+/// For now, we will use the same descriptions for all hardware
+const GPIO_PIN_DESCRIPTIONS: PinDescriptionSet = PinDescriptionSet::new([
+    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
+    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
+    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
+    PIN_38, PIN_39, PIN_40,
+]);
+
+/// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number
+pub type BCMPinNumber = u8;
+
+/// [BoardPinNumber] is used to refer to a GPIO pin by the numbering of the GPIO header on the Pi
+pub type BoardPinNumber = u8;
+/// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
+pub type PinLevel = bool;
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
 pub fn get() -> impl Hardware {
@@ -94,20 +113,6 @@ pub trait Hardware {
         level_change: LevelChange,
     ) -> io::Result<()>;
 }
-
-/// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
-/// For now, we will use the same descriptions for all hardware
-const GPIO_PIN_DESCRIPTIONS: PinDescriptionSet = PinDescriptionSet::new([
-    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
-    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
-    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
-    PIN_38, PIN_39, PIN_40,
-]);
-
-pub type BCMPinNumber = u8;
-pub type BoardPinNumber = u8;
-pub type PinLevel = bool;
-
 /// LevelChange describes the change in level of an input or Output
 /// - `new_level` : [PinLevel]
 /// - `timestamp` : [DateTime<Utc>]
@@ -142,105 +147,6 @@ impl Display for InputPull {
             InputPull::PullDown => write!(f, "Pull Down"),
             InputPull::None => write!(f, "None"),
         }
-    }
-}
-
-/// For SPI interfaces see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
-///
-/// Standard mode
-/// In Standard SPI mode the peripheral implements the standard three-wire serial protocol
-/// * SCLK - serial clock
-/// * CE   - chip enable (often called chip select)
-/// * MOSI - master out slave in
-/// * MISO - master in slave out
-///
-/// Bidirectional mode
-/// In bidirectional SPI mode the same SPI standard is implemented, except that a single wire
-/// is used for data (MOMI) instead of the two used in standard mode (MISO and MOSI).
-/// In this mode, the MOSI pin serves as MOMI pin.
-/// * SCLK - serial clock
-/// * CE   - chip enable (often called chip select)
-/// * MOMI - master out master in
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
-#[allow(non_camel_case_types)]
-#[allow(clippy::upper_case_acronyms)]
-pub enum PinFunction {
-    None,
-
-    /// Power and Ground functions
-    Power3V3,
-    Power5V,
-    Ground,
-
-    /// GPIO functions
-    Input(Option<InputPull>),
-    Output(Option<PinLevel>),
-
-    /// General Purpose Clock functions (from https://pinout.xyz/pinout/gpclk)
-    GPCLK0,
-    GPCLK1,
-    GPCLK2,
-
-    /// I2C bus functions
-    I2C1_SDA,
-    I2C1_SCL,
-    I2C3_SDA,
-    I2C3_SCL,
-    I2C4_SDA,
-    I2C4_SCL,
-    I2C5_SDA,
-    I2C5_SCL,
-    I2C6_SDA,
-    I2C6_SCL,
-
-    /// SPI Interface #0
-    SPI0_MOSI,
-    /// Bi-directional mode
-    SPI0_MOMI,
-    SPI0_MISO,
-    SPI0_SCLK,
-    SPI0_CE0_N,
-    SPI0_CE1_N,
-
-    // SPI Interface #0
-    SPI1_MOSI,
-    /// Bi-directional mode
-    SPI1_MOMI,
-    SPI1_MISO,
-    SPI1_SCLK,
-    SPI1_CE0_N,
-    SPI1_CE1_N,
-    SPI1_CE2_N,
-
-    /// PWM functions - two pins each use these
-    PWM0,
-    PWM1,
-
-    /// UART functions
-    /// UART0 - Transmit
-    UART0_TXD,
-    /// UART0 - Receive
-    UART0_RXD,
-
-    /// PCM functions - how uncompressed digital audio is encoded
-    PCM_FS,
-    /// PCM Data In
-    PCM_DIN,
-    /// PCM Data Out
-    PCM_DOUT,
-    /// PCM CLock
-    PCM_CLK,
-
-    /// HAT ID related functions - two pins to talk to HAT EEPROM via I2C
-    I2C_EEPROM_ID_SD,
-    I2C_EEPROM_ID_SC,
-}
-
-impl Display for PinFunction {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // Remove anything after the first opening bracket of debug representation
-        let full = format!("{:?}", self);
-        write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
     }
 }
 
