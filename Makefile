@@ -22,10 +22,14 @@ release: release-build
 clippy:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
 	cargo clippy --features "gui","pi" --bin piggui --tests --no-deps
 	cargo clippy --features "pi" --bin piglet --tests --no-deps
 else
-	cargo clippy --features "gui"             --tests --no-deps
+	# Compile for host, targeting fake hardware
+	cargo clippy --bin piggui --features "gui","fake" --tests --no-deps
+	cargo clippy --bin piglet --features "fake" --tests --no-deps
+	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --release --features "gui","pi" --tests --no-deps --target=aarch64-unknown-linux-gnu
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piglet --release --features "pi" --tests --no-deps --target=aarch64-unknown-linux-gnu
 endif
@@ -36,10 +40,14 @@ endif
 build:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
 	cargo build --bin piggui --features "gui","pi"
 	cargo build --bin piglet --features "pi"
 else
-	cargo build --bin piggui --features "gui"
+	# Compile for host, targeting fake hardware
+	cargo build --bin piggui --features "gui","fake"
+	cargo build --bin piglet --features "fake"
+	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi" --target=aarch64-unknown-linux-gnu
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi" --target=aarch64-unknown-linux-gnu
 endif
@@ -48,11 +56,22 @@ endif
 run:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
 	cargo run --bin piggui --features "gui","pi"
-	#cargo run --bin piglet --features "pi"
 else
-	cargo run --bin piggui --features "gui"
-	#cargo run --bin piglet
+	# Compile for host, targeting fake hardware
+	cargo run --bin piggui --features "gui","fake"
+endif
+
+.PHONY: run-piglet
+run-piglet:
+ifneq ($(PI),)
+	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
+	cargo run --bin piglet --features "pi"
+else
+	# Compile for host, targeting fake hardware
+	cargo run --bin piglet --features "fake"
 endif
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
@@ -60,11 +79,16 @@ endif
 release-build:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
 	cargo build --bin piggui --release --features "gui","pi"
 	cargo build --bin piglet --release --features "pi"
 else
-	cargo build --bin piggui --release --features "gui"
-	cargo build --bin piglet --release
+	# Compile for host, targeting fake hardware
+	cargo build --bin piggui --release --features "gui","fake"
+	cargo build --bin piglet --release --features "fake"
+	# Cross compile for pi, targeting real hardware
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi" --target=aarch64-unknown-linux-gnu
 endif
 
 # This will only test GUI tests in piggui on the local host, whatever that is
@@ -73,11 +97,15 @@ endif
 test:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
 	cargo test --bin piggui --features "gui","pi"
 	cargo test --bin piglet --features "pi"
 else
+	# Compile for host, targeting fake hardware
 	cargo test --bin piggui --features "gui"
 	cargo test --bin piglet
+	# cross can run tests on pi architecture, so we cannot run tests that depend on "pi" hardware
+	#and no point in re-running tests on pi architecture on "fake" hardware that we have already ran above on host
 endif
 
 .PHONY: copy
