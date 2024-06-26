@@ -80,7 +80,7 @@ pub fn subscribe() -> Subscription<HWLSubscriptionMessage> {
                 match &mut state {
                     State::Starting => {
                         // Create channel
-                        let (hardware_event_sender, config_event_receiver) = mpsc::channel(100);
+                        let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
                         // Send the sender back to the GUI
                         let _ = sender_clone
@@ -90,8 +90,8 @@ pub fn subscribe() -> Subscription<HWLSubscriptionMessage> {
                             ))
                             .await;
 
-                        // We are ready to receive ConfigEvent messages from the GUI
-                        state = State::Ready(config_event_receiver, hardware_event_sender);
+                        // We are ready to receive messages from the GUI
+                        state = State::Ready(hardware_event_receiver, hardware_event_sender);
                     }
 
                     State::Ready(hardware_event_receiver, hardware_event_sender) => {

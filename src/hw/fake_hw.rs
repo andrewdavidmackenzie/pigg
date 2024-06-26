@@ -1,4 +1,4 @@
-/// Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, etc.)
+/// Fake Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, Windows)
 use std::io;
 use std::time::Duration;
 
@@ -9,13 +9,13 @@ use crate::hw::{BCMPinNumber, LevelChange, PinFunction, PinLevel};
 use super::Hardware;
 use super::{HardwareDescription, HardwareDetails};
 
-pub struct NoneHW;
+pub struct FakeHW;
 
 pub fn get() -> impl Hardware {
-    NoneHW {}
+    FakeHW {}
 }
 
-impl Hardware for NoneHW {
+impl Hardware for FakeHW {
     fn description(&self) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
             details: HardwareDetails {
