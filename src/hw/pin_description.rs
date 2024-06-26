@@ -33,16 +33,6 @@ impl PinDescriptionSet {
         self.pins.iter()
     }
 
-    /// Find a possible pin's board_pin_number using a BCMPinNumber
-    pub fn bcm_to_board(&self, bcm_pin_number: BCMPinNumber) -> Option<BoardPinNumber> {
-        for pin in &self.pins {
-            if pin.bcm_pin_number == Some(bcm_pin_number) {
-                return Some(pin.board_pin_number);
-            }
-        }
-        None
-    }
-
     /// Return a slice of PinDescriptions
     pub fn pins(&self) -> &[PinDescription] {
         &self.pins

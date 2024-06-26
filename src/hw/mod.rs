@@ -182,18 +182,4 @@ mod test {
             previous = pin.bcm_pin_number.unwrap();
         }
     }
-
-    #[test]
-    fn bcp_pin_2() {
-        let hw = hw::get();
-        let pin_set = hw.description().unwrap().pins;
-        assert_eq!(pin_set.bcm_to_board(2), Some(3));
-    }
-
-    #[test]
-    fn bcp_pin_unknown() {
-        let hw = hw::get();
-        let pin_set = hw.description().unwrap().pins;
-        assert_eq!(pin_set.bcm_to_board(100), None);
-    }
 }
