@@ -61,6 +61,7 @@ pub enum Message {
     Toast(ToastMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
+    HardwareLost,
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -159,6 +160,14 @@ impl Application for Piggui {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
                 return Command::perform(empty(), |_| Hardware(NewConfig(config)));
+            }
+            HardwareLost => {
+                return Command::perform(empty(), |_| {
+                    InfoRow(ShowStatusMessage(MessageMessage::Error(
+                        "Connection to Hardware Lost".to_string(),
+                        "The connection to GPIO hardware has been lost. Check networking and try to re-connect".to_string()
+                    )))
+                });
             }
         }
 

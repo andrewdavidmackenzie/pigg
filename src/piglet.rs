@@ -1,9 +1,8 @@
 use std::env;
 
-use crate::hw::config::HardwareConfig;
+use hw::config::HardwareConfig;
 use hw::Hardware;
 
-#[allow(dead_code)]
 mod hw;
 
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI

@@ -5,7 +5,9 @@ use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
 use crate::hardware_subscription::HWLSubscriptionMessage::InputChange;
-use crate::hardware_subscription::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
+use crate::hardware_subscription::HardwareEvent::{
+    InputLevelChanged, NewConfig, NewPinConfig, OutputLevelChanged,
+};
 use crate::hw;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_function::PinFunction;
@@ -22,6 +24,8 @@ pub enum HWLSubscriptionMessage {
     Ready(Sender<HardwareEvent>, HardwareDescription),
     /// This event indicates that the logic level of an input has just changed
     InputChange(BCMPinNumber, LevelChange),
+    /// We have lost connection to the hardware
+    Lost,
 }
 
 /// This enum is for config changes done in the GUI to be sent to this listener to set up pin
@@ -31,7 +35,7 @@ pub enum HardwareEvent {
     /// start listening for level changes on each of the input pins it contains
     NewConfig(HardwareConfig),
     /// A pin has had its config changed
-    NewPinConfig(u8, PinFunction),
+    NewPinConfig(BCMPinNumber, PinFunction),
     /// A level change detected by the Hardware - this is sent by the hw monitoring thread, not GUI
     InputLevelChanged(BCMPinNumber, LevelChange),
     /// The level of an output pin has been set to a new value
@@ -137,7 +141,7 @@ pub fn subscribe() -> Subscription<HWLSubscriptionMessage> {
                                     .send(InputChange(bcm_pin_number, level_change))
                                     .await;
                             }
-                            HardwareEvent::OutputLevelChanged(bcm_pin_number, level_change) => {
+                            OutputLevelChanged(bcm_pin_number, level_change) => {
                                 let _ = connected_hardware
                                     .set_output_level(bcm_pin_number, level_change);
                             }

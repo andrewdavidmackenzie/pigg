@@ -278,6 +278,11 @@ impl HardwareView {
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
+                HWLSubscriptionMessage::Lost => {
+                    return Command::perform(empty(), |_| {
+                        <Piggui as iced::Application>::Message::HardwareLost
+                    });
+                }
             },
 
             ChangeOutputLevel(bcm_pin_number, level_change) => {
