@@ -11,16 +11,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::hw::pin_descriptions::*;
 
-pub mod hardware_subscription;
-
 /// There are three implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
 #[cfg_attr(feature = "pi", path = "pi_hw.rs")]
 #[cfg_attr(not(feature = "pi"), path = "fake_hw.rs")]
 mod implementation;
-pub mod pin_descriptions;
+mod pin_descriptions;
 
+/// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
 pub fn get() -> impl Hardware {
     implementation::get()
 }

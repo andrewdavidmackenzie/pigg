@@ -4,9 +4,9 @@ use iced::{subscription, Subscription};
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 
+use crate::hardware_subscription::HWLSubscriptionMessage::InputChange;
+use crate::hardware_subscription::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw;
-use crate::hw::hardware_subscription::HWLSubscriptionMessage::InputChange;
-use crate::hw::hardware_subscription::HardwareEvent::{InputLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::Hardware;
 use crate::hw::{BCMPinNumber, GPIOConfig, HardwareDescription, LevelChange, PinFunction};
 

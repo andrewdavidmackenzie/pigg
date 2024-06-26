@@ -20,6 +20,7 @@ use crate::Message::*;
 use views::pin_state::PinState;
 
 mod file_helper;
+pub mod hardware_subscription;
 mod hw;
 mod styles;
 mod toast_handler;

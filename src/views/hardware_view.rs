@@ -10,11 +10,11 @@ use iced_futures::Subscription;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::hw::hardware_subscription::{HWLSubscriptionMessage, HardwareEvent};
+use crate::hardware_subscription::{HWLSubscriptionMessage, HardwareEvent};
 use crate::hw::PinFunction::{Input, Output};
 use crate::hw::{
-    hardware_subscription, BCMPinNumber, BoardPinNumber, LevelChange, PinDescription,
-    PinDescriptionSet, PinFunction, PinLevel,
+    BCMPinNumber, BoardPinNumber, LevelChange, PinDescription, PinDescriptionSet, PinFunction,
+    PinLevel,
 };
 use crate::hw::{GPIOConfig, HardwareDescription, InputPull};
 use crate::styles::button_style::ButtonStyle;
@@ -27,7 +27,7 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{Message, Piggui, PinState};
+use crate::{hardware_subscription, Message, Piggui, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
