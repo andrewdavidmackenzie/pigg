@@ -186,35 +186,36 @@ mod test {
     #[test]
     fn get_hardware() {
         let hw = super::get();
-        assert_eq!(hw.pin_descriptions().len(), 40);
+        let description = hw
+            .description()
+            .expect("Could not read Hardware description");
+        let pins = description.pins.pins();
+        assert_eq!(pins.len(), 40);
+        assert_eq!(pins[0].name, "3V3")
     }
 
     #[test]
     fn pi_hardware_descriptor() {
         let hw = super::get();
         let hw_descriptor = hw
-            .descriptor()
-            .expect("Could not read Hardware description");
-        assert!(hw_descriptor.hardware != "Unknown");
-        assert!(hw_descriptor.revision != "Unknown");
-        assert!(hw_descriptor.serial != "Unknown");
-        assert!(hw_descriptor.model != "Unknown");
-    }
-
-    #[test]
-    fn pin_descriptions() {
-        let hw = super::get();
-        let pins = hw.pin_descriptions();
-        assert_eq!(pins.len(), 40);
-        assert_eq!(pins[0].name, "3V3")
+            .description()
+            .expect("Could not read Hardware description")
+            .details;
+        assert_ne!(hw_descriptor.hardware, "Unknown");
+        assert_ne!(hw_descriptor.revision, "Unknown");
+        assert_ne!(hw_descriptor.serial, "Unknown");
+        assert_ne!(hw_descriptor.model, "Unknown");
     }
 
     #[test]
     fn try_all_pin_configs() {
         let mut hw = super::get();
-        let pins = hw.pin_descriptions();
+        let description = hw
+            .description()
+            .expect("Could not read Hardware description");
+        let pins = description.pins.pins();
 
-        for pin in &pins {
+        for pin in pins {
             if let Some(bcm) = pin.bcm_pin_number {
                 for pin_function in pin.options {
                     hw.apply_pin_config(bcm, pin_function, |_, _| {})

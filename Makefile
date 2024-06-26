@@ -14,37 +14,20 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build pibuild test
+all: clippy build test
 
-release: release-build pibuild
-
-.PHONY: piclippy
-piclippy:
-ifneq ($(PI),)
-	@echo "Detected as running on Raspberry Pi"
-else
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --release --features "pi" --tests --no-deps --target=aarch64-unknown-linux-gnu
-endif
+release: release-build
 
 .PHONY: clippy
 clippy:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
-	cargo clippy --features "pi" --tests --no-deps
+	cargo clippy --features "gui","pi" --bin piggui --tests --no-deps
+	cargo clippy --features "pi" --bin piglet --tests --no-deps
 else
-	cargo clippy --tests --no-deps
-endif
-
-# I'm currently building using release profile for Pi, as not debugging natively on it. If we want to do that then
-# we may need to add another make target
-# For raspberry pi, build with the "rrpal" and "iced" features.
-# That should build both the "piggui" and "piglet" binaries, with GUI and GPIO in "piggui" and GPIO in "piglet"
-.PHONY: pibuild
-pibuild:
-ifneq ($(PI),)
-	@echo "Detected as running on Raspberry Pi"
-else
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --features "pi" --target=aarch64-unknown-linux-gnu
+	cargo clippy --features "gui"             --tests --no-deps
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --release --features "gui","pi" --tests --no-deps --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piglet --release --features "pi" --tests --no-deps --target=aarch64-unknown-linux-gnu
 endif
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
@@ -53,18 +36,23 @@ endif
 build:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
-	cargo build --features "pi"
+	cargo build --bin piggui --features "gui","pi"
+	cargo build --bin piglet --features "pi"
 else
-	cargo build
+	cargo build --bin piggui --features "gui"
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi" --target=aarch64-unknown-linux-gnu
 endif
 
 .PHONY: run
 run:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
-	cargo run --features "pi"
+	cargo run --bin piggui --features "gui","pi"
+	#cargo run --bin piglet --features "pi"
 else
-	cargo run
+	cargo run --bin piggui --features "gui"
+	#cargo run --bin piglet
 endif
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
@@ -72,9 +60,11 @@ endif
 release-build:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
-	cargo build --release --features "pi"
+	cargo build --bin piggui --release --features "gui","pi"
+	cargo build --bin piglet --release --features "pi"
 else
-	cargo build --release
+	cargo build --bin piggui --release --features "gui"
+	cargo build --bin piglet --release
 endif
 
 # This will only test GUI tests in piggui on the local host, whatever that is
@@ -83,13 +73,15 @@ endif
 test:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
-	cargo test --features "pi"
+	cargo test --bin piggui --features "gui","pi"
+	cargo test --bin piglet --features "pi"
 else
-	cargo test
+	cargo test --bin piggui --features "gui"
+	cargo test --bin piglet
 endif
 
 .PHONY: copy
-copy: pibuild
+copy: build
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 

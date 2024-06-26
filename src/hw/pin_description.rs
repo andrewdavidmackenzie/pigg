@@ -34,23 +34,21 @@ impl PinDescriptionSet {
     }
 
     /// Return a slice of PinDescriptions
+    #[allow(dead_code)] // for piglet
     pub fn pins(&self) -> &[PinDescription] {
         &self.pins
     }
 
-    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering
-    pub fn bcm_pins(&self) -> Vec<&PinDescription> {
-        self.pins
+    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
+    /// ascending order of [BCMPinNumber]
+    #[cfg(feature = "gui")]
+    pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
+        let mut pins = self
+            .pins
             .iter()
             .filter(|pin| pin.options.len() > 1)
             .filter(|pin| pin.bcm_pin_number.is_some())
-            .collect::<Vec<&PinDescription>>()
-    }
-
-    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
-    /// ascending order of [BCMPinNumber]
-    pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
-        let mut pins = self.bcm_pins();
+            .collect::<Vec<&PinDescription>>();
         pins.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
         pins
     }

@@ -64,12 +64,15 @@ pub struct HardwareDescription {
 /// - `timestamp` : [DateTime<Utc>]
 #[derive(Clone, Debug)]
 pub struct LevelChange {
+    #[allow(dead_code)] // For piglet - TODO remove when used
     pub new_level: PinLevel,
+    #[allow(dead_code)] // For piglet - TODO remove when used
     pub timestamp: DateTime<Utc>,
 }
 
 impl LevelChange {
     /// Create a new LevelChange event with the timestamp for now
+    #[allow(dead_code)] // for piglet
     pub fn new(new_level: PinLevel) -> Self {
         Self {
             new_level,
@@ -132,9 +135,11 @@ pub trait Hardware {
         C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
 
     /// Read the input level of an input using its [BCMPinNumber]
+    #[allow(dead_code)] // for piglet
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
 
     /// Write the output level of an output using its [BCMPinNumber]
+    #[allow(dead_code)] // for piglet
     fn set_output_level(
         &mut self,
         bcm_pin_number: BCMPinNumber,
@@ -162,14 +167,7 @@ mod test {
     }
 
     #[test]
-    fn twenty_seven_bcm_pins() {
-        // 0-27, not counting the gpio0 and gpio1 pins with no options
-        let hw = hw::get();
-        let pin_set = hw.description().unwrap().pins;
-        assert_eq!(pin_set.bcm_pins().len(), 26);
-    }
-
-    #[test]
+    #[cfg(feature = "gui")]
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = hw::get();

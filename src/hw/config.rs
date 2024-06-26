@@ -38,14 +38,12 @@ impl HardwareConfig {
     }
 
     /// Save this GPIOConfig to the file named `filename`
+    #[allow(dead_code)] // for piglet
     pub fn save(&self, filename: &str) -> io::Result<String> {
         let mut file = File::create(filename)?;
         let contents = serde_json::to_string(self)?;
         file.write_all(contents.as_bytes())?;
         Ok(format!("File saved successfully to {}", filename))
-    }
-    pub fn is_equal(&self, other: &Self) -> bool {
-        self.pins == other.pins
     }
 }
 

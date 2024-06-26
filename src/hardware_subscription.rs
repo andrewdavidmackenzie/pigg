@@ -16,6 +16,7 @@ use crate::hw::{BCMPinNumber, HardwareDescription, LevelChange};
 
 /// This enum is for events created by this listener, sent to the Gui
 // TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
+#[allow(clippy::large_enum_variant)] // remove when fix todo above
 #[derive(Clone, Debug)]
 pub enum HWLSubscriptionMessage {
     /// This event indicates that the listener is ready. It conveys a sender to the GUI
