@@ -1,5 +1,5 @@
 use crate::hw::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputLevelChanged};
-use crate::hw::{HardwareDescription, HardwareDetails, PIGLET_ALPN};
+use crate::hw::{HardwareDescription, PIGLET_ALPN};
 use crate::views::hardware_view::{HardwareEventMessage, State};
 use anyhow::Context;
 use clap::Parser;
@@ -114,10 +114,10 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
 
 async fn connect() -> anyhow::Result<HardwareDescription> {
     let args = Piglet {
-        node_id: NodeId::from_str("6zj3agq2zji7aozalpjlyidnxtwkv7up4tajk7l6yc4v2osrer4q").unwrap(),
+        node_id: NodeId::from_str("vmxprrr4xqlrm6fz46sls3jsrg3ycep7fmz4mp5xc6pwfpstyw7a").unwrap(),
         addrs: vec![
-            "79.154.163.213:53852".parse().unwrap(),
-            "192.168.1.77:53852".parse().unwrap(),
+            "79.154.163.213:53642".parse().unwrap(),
+            "192.168.1.77:53642".parse().unwrap(),
         ],
         relay_url: RelayUrl::from_str("https://euw1-1.relay.iroh.network./").unwrap(),
     };
@@ -163,22 +163,13 @@ async fn connect() -> anyhow::Result<HardwareDescription> {
     // Returns a QUIC connection.
     let conn = endpoint.connect(addr, PIGLET_ALPN).await?;
 
-    // Send a datagram over the connection.
-    //let message = format!("{me} is saying 'hello!'");
-    //conn.send_datagram(message.as_bytes().to_vec().into())?;
+    let (_send, mut receive) = conn.open_bi().await?;
 
-    // Read a datagram over the connection.
-    let message = conn.read_datagram().await?;
-    let message = String::from_utf8(message.into())?;
-    println!("received: {message}");
+    let message = receive.read_to_end(4096).await?;
+    let string = String::from_utf8(message.into())?;
+    println!("received:{}", string);
 
-    Ok(HardwareDescription {
-        details: HardwareDetails {
-            hardware: "".to_string(),
-            revision: "".to_string(),
-            serial: "".to_string(),
-            model: "network".to_string(),
-        },
-        pins: crate::hw::fake_hw::FAKE_PIN_DESCRIPTIONS,
-    })
+    let desc = serde_json::from_str(&string)?;
+
+    Ok(desc)
 }

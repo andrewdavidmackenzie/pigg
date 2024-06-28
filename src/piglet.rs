@@ -149,38 +149,26 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
 
     info!("node relay server url: {relay_url}");
 
-    let message = serde_json::to_vec(&hardware.description()?)?;
-    println!("message: {}", String::from_utf8_lossy(&message));
-    println!("hw description size: {}", message.len());
-
     // accept incoming connections, returns a normal QUIC connection
-    while let Some(mut conn) = endpoint.accept().await {
-        let alpn = conn.alpn().await?;
+    while let Some(conn) = endpoint.accept().await {
         let conn = conn.await?;
         let node_id = iroh_net::endpoint::get_remote_node_id(&conn)?;
         // TODO below will need String::from_utf8_lossy(&alpn), when next release is out
         info!(
-            "Connection from {node_id} with ALPN {} (coming from {})",
-            String::from_utf8_lossy(&alpn),
+            "Connection from {node_id} with address {}",
             conn.remote_address()
         );
 
-        println!("max datagram size: {:?}", conn.max_datagram_size());
+        let (mut send, mut receive) = conn.open_bi().await?;
 
         // initially send our hardware description
         let message = serde_json::to_vec(&hardware.description()?)?;
-
-        info!(
-            "Responding with HardwareDescription: len = {}",
-            message.len()
-        );
-        //conn.send_datagram(message.into())?;
-        conn.send_datagram("Config".into())?;
+        send.write_all(&message).await?;
 
         // spawn a task to handle reading and writing from/to the connection
         tokio::spawn(async move {
             // use the `quinn` API to read a datagram off the connection, and send a datagram in return
-            while let Ok(message) = conn.read_datagram().await {
+            while let Ok(message) = receive.read_to_end(4096).await {
                 match serde_json::from_str(&String::from_utf8_lossy(&message)) {
                     Ok(HardwareConfigMessage::NewConfig(_)) => {}
                     Ok(HardwareConfigMessage::NewPinConfig(_, _)) => {}

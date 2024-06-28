@@ -11,6 +11,8 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 
+#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
+use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
@@ -30,7 +32,7 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{hardware_subscription, Message, Piggui, PinState};
+use crate::{Message, Piggui, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
