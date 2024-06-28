@@ -112,7 +112,7 @@ fn get_matches() -> ArgMatches {
 /// Listen for an incoming iroh-net connection
 #[cfg(feature = "network")]
 async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
-    //    tracing_subscriber::fmt::init();
+    //tracing_subscriber::fmt::init();
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
@@ -149,6 +149,10 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
 
     info!("node relay server url: {relay_url}");
 
+    let message = serde_json::to_vec(&hardware.description()?)?;
+    println!("message: {}", String::from_utf8_lossy(&message));
+    println!("hw description size: {}", message.len());
+
     // accept incoming connections, returns a normal QUIC connection
     while let Some(mut conn) = endpoint.accept().await {
         let alpn = conn.alpn().await?;
@@ -160,6 +164,8 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
             String::from_utf8_lossy(&alpn),
             conn.remote_address()
         );
+
+        println!("max datagram size: {:?}", conn.max_datagram_size());
 
         // initially send our hardware description
         let message = serde_json::to_vec(&hardware.description()?)?;
@@ -175,9 +181,10 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         tokio::spawn(async move {
             // use the `quinn` API to read a datagram off the connection, and send a datagram in return
             while let Ok(message) = conn.read_datagram().await {
-                let config_message: HardwareConfigMessage =
-                    serde_json::from_str(&*String::from_utf8_lossy(&message.to_vec()))?;
-                match config_message {
+                match serde_json::from_str(&String::from_utf8_lossy(&message)) {
+                    Ok(HardwareConfigMessage::NewConfig(_)) => {}
+                    Ok(HardwareConfigMessage::NewPinConfig(_, _)) => {}
+                    Ok(HardwareConfigMessage::OutputLevelChanged(_, _)) => {}
                     _ => {
                         println!("Unknown message");
                         conn.send_datagram("hi! you sent unknown message piglet.".into())?;

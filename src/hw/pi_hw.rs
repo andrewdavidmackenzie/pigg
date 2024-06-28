@@ -217,7 +217,7 @@ mod test {
         let pins = description.pins.pins();
 
         for pin in pins {
-            if let Some(bcm) = pin.bcm_pin_number {
+            if let Some(bcm) = pin.bcm {
                 for pin_function in pin.options {
                     hw.apply_pin_config(bcm, pin_function, |_, _| {})
                         .expect("Failed to apply pin config")

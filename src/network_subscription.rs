@@ -114,14 +114,15 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
 
 async fn connect() -> anyhow::Result<HardwareDescription> {
     let args = Piglet {
-        node_id: NodeId::from_str("swld47wqc2zdiqdbu4anwzhjcjdiel74lyiqwxu7q4eguykyknuq").unwrap(),
+        node_id: NodeId::from_str("6zj3agq2zji7aozalpjlyidnxtwkv7up4tajk7l6yc4v2osrer4q").unwrap(),
         addrs: vec![
-            "79.154.163.213:64983".parse().unwrap(),
-            "192.168.1.77:64983".parse().unwrap(),
+            "79.154.163.213:53852".parse().unwrap(),
+            "192.168.1.77:53852".parse().unwrap(),
         ],
         relay_url: RelayUrl::from_str("https://euw1-1.relay.iroh.network./").unwrap(),
     };
 
+    tracing_subscriber::fmt::init();
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.

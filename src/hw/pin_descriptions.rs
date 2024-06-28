@@ -24,23 +24,23 @@ use std::borrow::Cow;
 /// datasheet."
 
 pub(crate) const PIN_1: PinDescription = PinDescription {
-    board_pin_number: 1,
-    bcm_pin_number: None,
+    bpn: 1,
+    bcm: None,
     name: Cow::Borrowed("3V3"),
     options: Cow::Borrowed(&[PinFunction::Power3V3]),
 };
 
 pub(crate) const PIN_2: PinDescription = PinDescription {
-    board_pin_number: 2,
-    bcm_pin_number: None,
+    bpn: 2,
+    bcm: None,
     name: Cow::Borrowed("5V"),
     options: Cow::Borrowed(&[PinFunction::Power5V]),
 };
 
 /// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
 pub(crate) const PIN_3: PinDescription = PinDescription {
-    board_pin_number: 3,
-    bcm_pin_number: Some(2),
+    bpn: 3,
+    bcm: Some(2),
     name: Cow::Borrowed("GPIO2"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullUp)),
@@ -55,16 +55,16 @@ pub(crate) const PIN_3: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_4: PinDescription = PinDescription {
-    board_pin_number: 4,
-    bcm_pin_number: None,
+    bpn: 4,
+    bcm: None,
     name: Cow::Borrowed("5V"),
     options: Cow::Borrowed(&[PinFunction::Power5V]),
 };
 
 /// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
 pub(crate) const PIN_5: PinDescription = PinDescription {
-    board_pin_number: 5,
-    bcm_pin_number: Some(3),
+    bpn: 5,
+    bcm: Some(3),
     name: Cow::Borrowed("GPIO3"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullUp)),
@@ -79,15 +79,15 @@ pub(crate) const PIN_5: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_6: PinDescription = PinDescription {
-    board_pin_number: 6,
-    bcm_pin_number: None,
+    bpn: 6,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 pub(crate) const PIN_7: PinDescription = PinDescription {
-    board_pin_number: 7,
-    bcm_pin_number: Some(4),
+    bpn: 7,
+    bcm: Some(4),
     name: Cow::Borrowed("GPIO4"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullUp)),
@@ -102,8 +102,8 @@ pub(crate) const PIN_7: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_8: PinDescription = PinDescription {
-    board_pin_number: 8,
-    bcm_pin_number: Some(14),
+    bpn: 8,
+    bcm: Some(14),
     name: Cow::Borrowed("GPIO14"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -118,15 +118,15 @@ pub(crate) const PIN_8: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_9: PinDescription = PinDescription {
-    board_pin_number: 9,
-    bcm_pin_number: None,
+    bpn: 9,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 pub(crate) const PIN_10: PinDescription = PinDescription {
-    board_pin_number: 10,
-    bcm_pin_number: Some(15),
+    bpn: 10,
+    bcm: Some(15),
     name: Cow::Borrowed("GPIO15"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -141,8 +141,8 @@ pub(crate) const PIN_10: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_11: PinDescription = PinDescription {
-    board_pin_number: 11,
-    bcm_pin_number: Some(17),
+    bpn: 11,
+    bcm: Some(17),
     name: Cow::Borrowed("GPIO17"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -157,8 +157,8 @@ pub(crate) const PIN_11: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_12: PinDescription = PinDescription {
-    board_pin_number: 12,
-    bcm_pin_number: Some(18),
+    bpn: 12,
+    bcm: Some(18),
     name: Cow::Borrowed("GPIO18"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -173,8 +173,8 @@ pub(crate) const PIN_12: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_13: PinDescription = PinDescription {
-    board_pin_number: 13,
-    bcm_pin_number: Some(27),
+    bpn: 13,
+    bcm: Some(27),
     name: Cow::Borrowed("GPIO27"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -189,15 +189,15 @@ pub(crate) const PIN_13: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_14: PinDescription = PinDescription {
-    board_pin_number: 14,
-    bcm_pin_number: None,
+    bpn: 14,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 pub(crate) const PIN_15: PinDescription = PinDescription {
-    board_pin_number: 15,
-    bcm_pin_number: Some(22),
+    bpn: 15,
+    bcm: Some(22),
     name: Cow::Borrowed("GPIO22"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -212,8 +212,8 @@ pub(crate) const PIN_15: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_16: PinDescription = PinDescription {
-    board_pin_number: 16,
-    bcm_pin_number: Some(23),
+    bpn: 16,
+    bcm: Some(23),
     name: Cow::Borrowed("GPIO23"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -228,15 +228,15 @@ pub(crate) const PIN_16: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_17: PinDescription = PinDescription {
-    board_pin_number: 17,
-    bcm_pin_number: None,
+    bpn: 17,
+    bcm: None,
     name: Cow::Borrowed("3V3"),
     options: Cow::Borrowed(&[PinFunction::Power3V3]),
 };
 
 pub(crate) const PIN_18: PinDescription = PinDescription {
-    board_pin_number: 18,
-    bcm_pin_number: Some(24),
+    bpn: 18,
+    bcm: Some(24),
     name: Cow::Borrowed("GPIO24"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -252,8 +252,8 @@ pub(crate) const PIN_18: PinDescription = PinDescription {
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub(crate) const PIN_19: PinDescription = PinDescription {
-    board_pin_number: 19,
-    bcm_pin_number: Some(10),
+    bpn: 19,
+    bcm: Some(10),
     name: Cow::Borrowed("GPIO10"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -268,16 +268,16 @@ pub(crate) const PIN_19: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_20: PinDescription = PinDescription {
-    board_pin_number: 20,
-    bcm_pin_number: None,
+    bpn: 20,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub(crate) const PIN_21: PinDescription = PinDescription {
-    board_pin_number: 21,
-    bcm_pin_number: Some(9),
+    bpn: 21,
+    bcm: Some(9),
     name: Cow::Borrowed("GPIO9"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -292,8 +292,8 @@ pub(crate) const PIN_21: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_22: PinDescription = PinDescription {
-    board_pin_number: 22,
-    bcm_pin_number: Some(25),
+    bpn: 22,
+    bcm: Some(25),
     name: Cow::Borrowed("GPIO25"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -309,8 +309,8 @@ pub(crate) const PIN_22: PinDescription = PinDescription {
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub(crate) const PIN_23: PinDescription = PinDescription {
-    board_pin_number: 23,
-    bcm_pin_number: Some(11),
+    bpn: 23,
+    bcm: Some(11),
     name: Cow::Borrowed("GPIO11"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -326,8 +326,8 @@ pub(crate) const PIN_23: PinDescription = PinDescription {
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub(crate) const PIN_24: PinDescription = PinDescription {
-    board_pin_number: 24,
-    bcm_pin_number: Some(8),
+    bpn: 24,
+    bcm: Some(8),
     name: Cow::Borrowed("GPIO8"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullUp)),
@@ -342,16 +342,16 @@ pub(crate) const PIN_24: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_25: PinDescription = PinDescription {
-    board_pin_number: 25,
-    bcm_pin_number: None,
+    bpn: 25,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 pub(crate) const PIN_26: PinDescription = PinDescription {
-    board_pin_number: 26,
-    bcm_pin_number: Some(7),
+    bpn: 26,
+    bcm: Some(7),
     name: Cow::Borrowed("GPIO7"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullUp)),
@@ -366,8 +366,8 @@ pub(crate) const PIN_26: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_27: PinDescription = PinDescription {
-    board_pin_number: 27,
-    bcm_pin_number: None,
+    bpn: 27,
+    bcm: None,
     name: Cow::Borrowed("GPIO0"), // EEPROM ID_SD for HAT identification
     options: Cow::Borrowed(&[
         // TODO ALT0: I2C0 SDA / SDA0
@@ -380,8 +380,8 @@ pub(crate) const PIN_27: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_28: PinDescription = PinDescription {
-    board_pin_number: 28,
-    bcm_pin_number: None,
+    bpn: 28,
+    bcm: None,
     name: Cow::Borrowed("GPIO1"), // EEPROM ID_SCL for HAT identification
     options: Cow::Borrowed(&[
         // TODO ALT0: I2C0 SDL / SCL0
@@ -394,8 +394,8 @@ pub(crate) const PIN_28: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_29: PinDescription = PinDescription {
-    board_pin_number: 29,
-    bcm_pin_number: Some(5),
+    bpn: 29,
+    bcm: Some(5),
     name: Cow::Borrowed("GPIO5"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullUp)),
@@ -410,15 +410,15 @@ pub(crate) const PIN_29: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_30: PinDescription = PinDescription {
-    board_pin_number: 30,
-    bcm_pin_number: None,
+    bpn: 30,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 pub(crate) const PIN_31: PinDescription = PinDescription {
-    board_pin_number: 31,
-    bcm_pin_number: Some(6),
+    bpn: 31,
+    bcm: Some(6),
     name: Cow::Borrowed("GPIO6"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullUp)),
@@ -433,8 +433,8 @@ pub(crate) const PIN_31: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_32: PinDescription = PinDescription {
-    board_pin_number: 32,
-    bcm_pin_number: Some(12),
+    bpn: 32,
+    bcm: Some(12),
     name: Cow::Borrowed("GPIO12"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -449,8 +449,8 @@ pub(crate) const PIN_32: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_33: PinDescription = PinDescription {
-    board_pin_number: 33,
-    bcm_pin_number: Some(13),
+    bpn: 33,
+    bcm: Some(13),
     name: Cow::Borrowed("GPIO13"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -465,15 +465,15 @@ pub(crate) const PIN_33: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_34: PinDescription = PinDescription {
-    board_pin_number: 34,
-    bcm_pin_number: None,
+    bpn: 34,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 pub(crate) const PIN_35: PinDescription = PinDescription {
-    board_pin_number: 35,
-    bcm_pin_number: Some(19),
+    bpn: 35,
+    bcm: Some(19),
     name: Cow::Borrowed("GPIO19"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -488,8 +488,8 @@ pub(crate) const PIN_35: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_36: PinDescription = PinDescription {
-    board_pin_number: 36,
-    bcm_pin_number: Some(16),
+    bpn: 36,
+    bcm: Some(16),
     name: Cow::Borrowed("GPIO16"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -504,8 +504,8 @@ pub(crate) const PIN_36: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_37: PinDescription = PinDescription {
-    board_pin_number: 37,
-    bcm_pin_number: Some(26),
+    bpn: 37,
+    bcm: Some(26),
     name: Cow::Borrowed("GPIO26"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -520,8 +520,8 @@ pub(crate) const PIN_37: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_38: PinDescription = PinDescription {
-    board_pin_number: 38,
-    bcm_pin_number: Some(20),
+    bpn: 38,
+    bcm: Some(20),
     name: Cow::Borrowed("GPIO20"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),
@@ -536,15 +536,15 @@ pub(crate) const PIN_38: PinDescription = PinDescription {
 };
 
 pub(crate) const PIN_39: PinDescription = PinDescription {
-    board_pin_number: 39,
-    bcm_pin_number: None,
+    bpn: 39,
+    bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[PinFunction::Ground]),
 };
 
 pub(crate) const PIN_40: PinDescription = PinDescription {
-    board_pin_number: 40,
-    bcm_pin_number: Some(21),
+    bpn: 40,
+    bcm: Some(21),
     name: Cow::Borrowed("GPIO21"),
     options: Cow::Borrowed(&[
         PinFunction::Input(Some(InputPull::PullDown)),

@@ -14,8 +14,9 @@ use std::slice::Iter;
 /// * [options] is a list of [PinFunction] the pin can be configured as
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PinDescription {
-    pub board_pin_number: BoardPinNumber,
-    pub bcm_pin_number: Option<BCMPinNumber>,
+    pub bpn: BoardPinNumber,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bcm: Option<BCMPinNumber>,
     pub name: Cow<'static, str>,
     pub options: Cow<'static, [PinFunction]>, // The set of functions the pin can have, chosen by user config
 }
@@ -53,17 +54,17 @@ impl PinDescriptionSet {
             .pins
             .iter()
             .filter(|pin| pin.options.len() > 1)
-            .filter(|pin| pin.bcm_pin_number.is_some())
+            .filter(|pin| pin.bcm.is_some())
             .collect::<Vec<&PinDescription>>();
-        pins.sort_by_key(|pin| pin.bcm_pin_number.unwrap());
+        pins.sort_by_key(|pin| pin.bcm.unwrap());
         pins
     }
 }
 
 impl Display for PinDescription {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Board Pin #: {}", self.board_pin_number)?;
-        writeln!(f, "\tBCM Pin #: {:?}", self.bcm_pin_number)?;
+        writeln!(f, "Board Pin #: {}", self.bpn)?;
+        writeln!(f, "\tBCM Pin #: {:?}", self.bcm)?;
         writeln!(f, "\tName Pin #: {}", self.name)?;
         writeln!(f, "\tFunctions #: {:?}", self.options)
     }

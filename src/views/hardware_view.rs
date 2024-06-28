@@ -377,12 +377,9 @@ impl HardwareView {
         for pin_description in pin_set.bcm_pins_sorted() {
             let pin_row = create_pin_view_side(
                 pin_description,
-                self.hardware_config
-                    .pins
-                    .get(&pin_description.bcm_pin_number.unwrap()),
+                self.hardware_config.pins.get(&pin_description.bcm.unwrap()),
                 Right,
-                self.pin_states
-                    .get(&pin_description.bcm_pin_number.unwrap_or(0)),
+                self.pin_states.get(&pin_description.bcm.unwrap_or(0)),
             );
 
             column = column
@@ -405,20 +402,16 @@ impl HardwareView {
         for pair in pin_descriptions.pins().chunks(2) {
             let left_row = create_pin_view_side(
                 &pair[0],
-                self.hardware_config
-                    .pins
-                    .get(&pair[0].bcm_pin_number.unwrap_or(0)),
+                self.hardware_config.pins.get(&pair[0].bcm.unwrap_or(0)),
                 Left,
-                self.pin_states.get(&pair[0].bcm_pin_number.unwrap_or(0)),
+                self.pin_states.get(&pair[0].bcm.unwrap_or(0)),
             );
 
             let right_row = create_pin_view_side(
                 &pair[1],
-                self.hardware_config
-                    .pins
-                    .get(&pair[1].bcm_pin_number.unwrap_or(0)),
+                self.hardware_config.pins.get(&pair[1].bcm.unwrap_or(0)),
                 Right,
-                self.pin_states.get(&pair[1].bcm_pin_number.unwrap_or(0)),
+                self.pin_states.get(&pair[1].bcm.unwrap_or(0)),
             );
 
             let row = Row::new()
@@ -563,12 +556,7 @@ fn create_pin_view_side<'a>(
 ) -> Row<'a, HardwareViewMessage> {
     let pin_widget = if let Some(state) = pin_state {
         // Create a widget that is either used to visualize an input or control an output
-        get_pin_widget(
-            pin_description.bcm_pin_number,
-            selected_function,
-            state,
-            direction,
-        )
+        get_pin_widget(pin_description.bcm, selected_function, state, direction)
     } else {
         Row::new().width(Length::Fixed(PIN_WIDGET_ROW_WIDTH)).into()
     };
@@ -578,7 +566,7 @@ fn create_pin_view_side<'a>(
         .width(Length::Fixed(PIN_OPTION_WIDTH))
         .align_items(Alignment::Center);
     if pin_description.options.len() > 1 {
-        let bcm_pin_number = pin_description.bcm_pin_number.unwrap();
+        let bcm_pin_number = pin_description.bcm.unwrap();
         let mut pin_options_row = Row::new().align_items(Alignment::Center);
         let mut config_options = pin_description.options.to_vec();
         let selected = match selected_function {
@@ -626,13 +614,11 @@ fn create_pin_view_side<'a>(
 
     let mut pin_button_column = Column::new().align_items(Alignment::Center);
     // Create the pin itself, with number and as a button
-    let pin_button = button(
-        Text::new(pin_description.board_pin_number.to_string())
-            .horizontal_alignment(Horizontal::Center),
-    )
-    .width(Length::Fixed(PIN_BUTTON_WIDTH))
-    .style(get_pin_style(pin_description).get_button_style())
-    .on_press(Activate(pin_description.board_pin_number));
+    let pin_button =
+        button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
+            .width(Length::Fixed(PIN_BUTTON_WIDTH))
+            .style(get_pin_style(pin_description).get_button_style())
+            .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
