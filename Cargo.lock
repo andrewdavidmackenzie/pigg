@@ -4147,6 +4147,7 @@ dependencies = [
  "rfd",
  "rppal",
  "serde",
+ "serde_arrays",
  "serde_json",
  "tempfile",
  "tokio",
@@ -5230,6 +5231,15 @@ name = "serde-error"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e988182713aeed6a619a88bca186f6d6407483485ffe44c869ee264f8eabd13f"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde_arrays"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38636132857f68ec3d5f3eb121166d2af33cb55174c4d5ff645db6165cbef0fd"
 dependencies = [
  "serde",
 ]

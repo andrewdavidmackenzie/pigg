@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
     hw.apply_config(&config, input_level_changed)?;
     trace!("Configuration applied to hardware");
 
-    listen().await
+    listen(hw).await
 }
 
 /// Callback function that is called when an input changes level
@@ -93,7 +93,7 @@ fn get_matches() -> ArgMatches {
 }
 
 /// Listen for an incoming iroh-net connection
-async fn listen() -> anyhow::Result<()> {
+async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
@@ -137,10 +137,16 @@ async fn listen() -> anyhow::Result<()> {
         let node_id = iroh_net::endpoint::get_remote_node_id(&conn)?;
         // TODO below will need String::from_utf8_lossy(&alpn), when next release is out
         info!(
-            "new (unreliable) connection from {node_id} with ALPN {} (coming from {})",
+            "Connection from {node_id} with ALPN {} (coming from {})",
             String::from_utf8_lossy(&alpn),
             conn.remote_address()
         );
+
+        // initially send our hardware description
+        let message = serde_json::to_string(&hardware.description()?)?;
+
+        info!("Responding with HardwareDescription");
+        conn.send_datagram(message.as_bytes().to_vec().into())?;
 
         // spawn a task to handle reading and writing from/to the connection
         tokio::spawn(async move {

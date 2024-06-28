@@ -59,7 +59,7 @@ pub enum HardwareConfigMessage {
 }
 
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDetails {
     pub hardware: String,
     pub revision: String,
@@ -78,7 +78,7 @@ impl Display for HardwareDetails {
 }
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize)]
 pub struct HardwareDescription {
     pub details: HardwareDetails,
     pub pins: PinDescriptionSet,

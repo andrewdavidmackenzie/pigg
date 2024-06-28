@@ -1,5 +1,7 @@
 use crate::hw::pin_function::PinFunction;
 use crate::hw::{BCMPinNumber, BoardPinNumber};
+use serde::Serialize;
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::slice::Iter;
@@ -7,18 +9,19 @@ use std::slice::Iter;
 /// [board_pin_number] refer to the pins by the number of the pin printed on the board
 /// [bcm_pin_number] refer to the pins by the "Broadcom SOC channel" number,
 /// these are the numbers after "GPIO"
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PinDescription {
     pub board_pin_number: BoardPinNumber,
     pub bcm_pin_number: Option<BCMPinNumber>,
-    pub name: &'static str,
+    pub name: Cow<'static, str>,
     pub options: &'static [PinFunction], // The set of functions the pin can have, chosen by user config
 }
 
 /// Struct describing all the pins for the connected hardware.
 /// Array indexed from 0 so, board_pin_number -1, as pin numbering start at 1
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PinDescriptionSet {
+    #[serde(with = "serde_arrays")]
     pins: [PinDescription; 40],
 }
 
