@@ -9,8 +9,8 @@ use iced::{
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
-use crate::views::hardware_view::HardwareMessage::NewConfig;
-use crate::views::hardware_view::{HardwareMessage, HardwareView};
+use crate::views::hardware_view::HardwareViewMessage::NewConfig;
+use crate::views::hardware_view::{HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
@@ -20,8 +20,10 @@ use crate::Message::*;
 use views::pin_state::PinState;
 
 mod file_helper;
+#[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
 pub mod hardware_subscription;
 mod hw;
+pub mod network_subscription;
 mod styles;
 mod toast_handler;
 mod views;
@@ -65,7 +67,7 @@ pub enum Message {
     Save,
     Load,
     LayoutChanged(Layout),
-    Hardware(HardwareMessage),
+    Hardware(HardwareViewMessage),
     Toast(ToastMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
@@ -226,9 +228,9 @@ impl Application for Piggui {
     /// Subscribe to events from Hardware, from Windows and timings for StatusRow
     fn subscription(&self) -> Subscription<Message> {
         let subscriptions = vec![
-            self.hardware_view.subscription().map(Hardware),
             iced::event::listen().map(WindowEvent),
             self.info_row.subscription().map(InfoRow),
+            self.hardware_view.subscription().map(Hardware),
         ];
 
         Subscription::batch(subscriptions)

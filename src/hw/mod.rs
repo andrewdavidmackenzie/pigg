@@ -10,11 +10,13 @@ use serde::{Deserialize, Serialize};
 use crate::hw::pin_function::PinFunction;
 
 pub mod config;
-#[cfg(feature = "fake_hw")]
-mod fake_hw;
+
 /// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
+// TODO make this module private again
+#[cfg(feature = "fake_hw")]
+pub(crate) mod fake_hw;
 #[cfg(feature = "pi_hw")]
 mod pi_hw;
 pub(crate) mod pin_description;
@@ -29,6 +31,8 @@ pub type BoardPinNumber = u8;
 /// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
 pub type PinLevel = bool;
 
+pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
+
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
 #[cfg(feature = "pi_hw")]
 pub fn get() -> impl Hardware {
@@ -37,6 +41,21 @@ pub fn get() -> impl Hardware {
 #[cfg(feature = "fake_hw")]
 pub fn get() -> impl Hardware {
     fake_hw::get()
+}
+
+/// This enum is for hardware config changes initiated in the GUI by the user,
+/// and sent to the subscription for it to apply to the hardware
+///    * NewConfig
+///    * NewPinConfig
+///    * OutputLevelChanged
+pub enum HardwareConfigMessage {
+    /// A complete new hardware config has been loaded and applied to the hardware, so we should
+    /// start listening for level changes on each of the input pins it contains
+    NewConfig(HardwareConfig),
+    /// A pin has had its config changed
+    NewPinConfig(BCMPinNumber, PinFunction),
+    /// The level of an output pin has been set to a new value
+    OutputLevelChanged(BCMPinNumber, LevelChange),
 }
 
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to

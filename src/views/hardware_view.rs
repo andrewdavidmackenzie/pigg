@@ -1,7 +1,7 @@
 use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
-use iced::futures::channel::mpsc::Sender;
+use iced::futures::channel::mpsc::{Receiver, Sender};
 use iced::widget::tooltip::Position;
 use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
@@ -10,16 +10,16 @@ use iced_futures::Subscription;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::hardware_subscription::{HWLSubscriptionMessage, HardwareConfigMessage};
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
 use crate::hw::pin_function::PinFunction::{Input, Output};
+use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
-use crate::views::hardware_view::HardwareMessage::{
+use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
 use crate::views::layout_selector::Layout;
@@ -27,7 +27,7 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{hardware_subscription, Message, Piggui, PinState};
+use crate::{hardware_subscription, network_subscription, Message, Piggui, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -66,13 +66,27 @@ const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
-/// [HardwareMessage] covers all messages that are handled by hardware_view
+/// This enum is for events created by async events in the hardware that will be sent to the Gui
+// TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
+#[allow(clippy::large_enum_variant)] // remove when fix todo above
+#[derive(Clone, Debug)]
+pub enum HardwareEventMessage {
+    /// This event indicates that the listener is ready. It conveys a sender to the GUI
+    /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
+    Connected(Sender<HardwareConfigMessage>, HardwareDescription),
+    /// This event indicates that the logic level of an input has just changed
+    InputChange(BCMPinNumber, LevelChange),
+    /// We have lost the connection to the hardware
+    Disconnected,
+}
+
+/// [HardwareViewMessage] covers all messages that are handled by hardware_view
 #[derive(Debug, Clone)]
-pub enum HardwareMessage {
+pub enum HardwareViewMessage {
     Activate(BoardPinNumber),
     PinFunctionSelected(BCMPinNumber, PinFunction),
     NewConfig(HardwareConfig),
-    HardwareSubscription(HWLSubscriptionMessage),
+    HardwareSubscription(HardwareEventMessage),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
 }
@@ -149,6 +163,17 @@ pub struct HardwareView {
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: HashMap<BCMPinNumber, PinState>,
+}
+
+/// This enum describes the states of the subscription
+pub enum State {
+    /// Just starting up, we have not yet set up a channel between GUI and Listener
+    Disconnected,
+    /// The subscription is ready and will listen for config events on the channel contained
+    Connected(
+        Receiver<HardwareConfigMessage>,
+        Sender<HardwareConfigMessage>,
+    ),
 }
 
 async fn empty() {}
@@ -246,7 +271,7 @@ impl HardwareView {
         }
     }
 
-    pub fn update(&mut self, message: HardwareMessage) -> Command<Message> {
+    pub fn update(&mut self, message: HardwareViewMessage) -> Command<Message> {
         match message {
             UpdateCharts => {
                 // Update all the charts of the pins that have an assigned function
@@ -269,19 +294,19 @@ impl HardwareView {
             }
 
             HardwareSubscription(event) => match event {
-                HWLSubscriptionMessage::Ready(config_change_sender, hw_desc) => {
+                HardwareEventMessage::Connected(config_change_sender, hw_desc) => {
                     self.hardware_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
                 }
-                HWLSubscriptionMessage::InputChange(bcm_pin_number, level_change) => {
+                HardwareEventMessage::InputChange(bcm_pin_number, level_change) => {
                     self.pin_states
                         .entry(bcm_pin_number)
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HWLSubscriptionMessage::Lost => {
+                HardwareEventMessage::Disconnected => {
                     return Command::perform(empty(), |_| {
                         <Piggui as iced::Application>::Message::HardwareLost
                     });
@@ -307,7 +332,7 @@ impl HardwareView {
         Command::none()
     }
 
-    pub fn view(&self, layout: Layout) -> Element<HardwareMessage> {
+    pub fn view(&self, layout: Layout) -> Element<HardwareViewMessage> {
         if let Some(hw_description) = &self.hardware_description {
             let pin_layout = match layout {
                 Layout::BoardLayout => self.board_pin_layout_view(&hw_description.pins),
@@ -322,11 +347,13 @@ impl HardwareView {
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
-    pub fn subscription(&self) -> Subscription<HardwareMessage> {
+    pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
         let subscriptions = [
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| UpdateCharts),
+            #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
             hardware_subscription::subscribe().map(HardwareSubscription),
+            network_subscription::subscribe().map(HardwareSubscription),
         ];
 
         Subscription::batch(subscriptions)
@@ -336,7 +363,7 @@ impl HardwareView {
     pub fn bcm_pin_layout_view<'a>(
         &'a self,
         pin_set: &'a PinDescriptionSet,
-    ) -> Element<'a, HardwareMessage> {
+    ) -> Element<'a, HardwareViewMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         for pin_description in pin_set.bcm_pins_sorted() {
@@ -363,7 +390,7 @@ impl HardwareView {
     pub fn board_pin_layout_view<'a>(
         &'a self,
         pin_descriptions: &'a PinDescriptionSet,
-    ) -> Element<'a, HardwareMessage> {
+    ) -> Element<'a, HardwareViewMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         // Draw all pins, those with and without [BCMPinNumber]
@@ -409,7 +436,7 @@ impl HardwareView {
 fn pullup_picklist(
     pull: &Option<InputPull>,
     bcm_pin_number: BCMPinNumber,
-) -> Element<'static, HardwareMessage> {
+) -> Element<'static, HardwareViewMessage> {
     let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
 
     // Filter out the currently selected pull option
@@ -433,7 +460,7 @@ fn get_pin_widget<'a>(
     pin_function: Option<&'a PinFunction>,
     pin_state: &'a PinState,
     direction: Direction,
-) -> Element<'a, HardwareMessage> {
+) -> Element<'a, HardwareViewMessage> {
     let toggle_button_style = TogglerStyle {
         background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
         background_border_width: 1.0,
@@ -447,7 +474,7 @@ fn get_pin_widget<'a>(
         active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
     };
 
-    let row: Row<HardwareMessage> = match pin_function {
+    let row: Row<HardwareViewMessage> = match pin_function {
         Some(Input(pull)) => {
             let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
             if direction == Left {
@@ -473,7 +500,7 @@ fn get_pin_widget<'a>(
             .style(toggle_button_style.get_toggler_style());
 
             let output_clicker =
-                clicker::<HardwareMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
+                clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
                     .on_press({
                         let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
                         ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
@@ -525,7 +552,7 @@ fn create_pin_view_side<'a>(
     selected_function: Option<&'a PinFunction>,
     direction: Direction,
     pin_state: Option<&'a PinState>,
-) -> Row<'a, HardwareMessage> {
+) -> Row<'a, HardwareViewMessage> {
     let pin_widget = if let Some(state) = pin_state {
         // Create a widget that is either used to visualize an input or control an output
         get_pin_widget(

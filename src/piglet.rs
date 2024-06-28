@@ -1,4 +1,4 @@
-use crate::hw::{BCMPinNumber, PinLevel};
+use crate::hw::{BCMPinNumber, PinLevel, PIGLET_ALPN};
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
 use env_logger::Builder;
@@ -11,8 +11,6 @@ use std::env;
 use std::str::FromStr;
 
 mod hw;
-
-const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
@@ -97,7 +95,6 @@ fn get_matches() -> ArgMatches {
 /// Listen for an incoming iroh-net connection
 async fn listen() -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
-    println!("secret key: {secret_key}");
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
     let endpoint = Endpoint::builder()
@@ -116,7 +113,6 @@ async fn listen() -> anyhow::Result<()> {
 
     let me = endpoint.node_id();
     println!("node id: {me}");
-    println!("node listening addresses:");
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -124,23 +120,15 @@ async fn listen() -> anyhow::Result<()> {
         .await
         .context("no endpoints")?
         .into_iter()
-        .map(|endpoint| {
-            let addr = endpoint.addr.to_string();
-            println!("\t{addr}");
-            addr
-        })
+        .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
+    println!("node listening addresses: {local_addrs}");
 
     let relay_url = endpoint.home_relay()
     .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
 
     println!("node relay server url: {relay_url}");
-    println!("\nin a separate terminal run:");
-
-    println!(
-        "\tcargo run --example connect-unreliable -- --node-id {me} --addrs \"{local_addrs:?}\" --relay-url {relay_url}\n"
-    );
 
     // accept incoming connections, returns a normal QUIC connection
     while let Some(mut conn) = endpoint.accept().await {
@@ -161,7 +149,7 @@ async fn listen() -> anyhow::Result<()> {
                 let message = String::from_utf8(message.into())?;
                 println!("received: {message}");
 
-                let message = format!("hi! you connected to pigglet@{me}.");
+                let message = format!("hi! you connected to piglet@{me}.");
                 conn.send_datagram(message.as_bytes().to_vec().into())?;
             }
 
