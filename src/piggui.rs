@@ -23,6 +23,7 @@ mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
 pub mod hardware_subscription;
 mod hw;
+#[cfg(feature = "network")]
 pub mod network_subscription;
 mod styles;
 mod toast_handler;

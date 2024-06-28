@@ -7,6 +7,7 @@ use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -17,6 +18,8 @@ use crate::hw::pin_function::PinFunction::{Input, Output};
 use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
+#[cfg(feature = "network")]
+use crate::network_subscription;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareViewMessage::{
@@ -27,7 +30,7 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{hardware_subscription, network_subscription, Message, Piggui, PinState};
+use crate::{hardware_subscription, Message, Piggui, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -93,21 +96,21 @@ pub enum HardwareViewMessage {
 
 fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     match pin_description.name {
-        "3V3" => ButtonStyle {
+        Cow::Borrowed("3V3") => ButtonStyle {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "5V" => ButtonStyle {
+        Cow::Borrowed("5V") => ButtonStyle {
             bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        "Ground" => ButtonStyle {
+        Cow::Borrowed("Ground") => ButtonStyle {
             bg_color: Color::BLACK,
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -115,7 +118,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::BLACK,
         },
 
-        "GPIO2" | "GPIO3" => ButtonStyle {
+        Cow::Borrowed("GPIO2") | Cow::Borrowed("GPIO3") => ButtonStyle {
             bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -123,7 +126,11 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
         },
 
-        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => ButtonStyle {
+        Cow::Borrowed("GPIO7")
+        | Cow::Borrowed("GPIO8")
+        | Cow::Borrowed("GPIO9")
+        | Cow::Borrowed("GPIO10")
+        | Cow::Borrowed("GPIO11") => ButtonStyle {
             bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -131,7 +138,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
         },
 
-        "GPIO14" | "GPIO15" => ButtonStyle {
+        Cow::Borrowed("GPIO14") | Cow::Borrowed("GPIO15") => ButtonStyle {
             bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -139,7 +146,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
         },
 
-        "ID_SD" | "ID_SC" => ButtonStyle {
+        Cow::Borrowed("ID_SD") | Cow::Borrowed("ID_SC") => ButtonStyle {
             bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -353,6 +360,7 @@ impl HardwareView {
                 .map(|_| UpdateCharts),
             #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
             hardware_subscription::subscribe().map(HardwareSubscription),
+            #[cfg(feature = "network")]
             network_subscription::subscribe().map(HardwareSubscription),
         ];
 
@@ -599,7 +607,7 @@ fn create_pin_view_side<'a>(
 
     // Create the Pin name
     let pin_name = Row::new()
-        .push(Text::new(pin_description.name))
+        .push(Text::new(pin_description.name.to_string()))
         .align_items(Alignment::Center);
 
     pin_name_column = pin_name_column.push(pin_name).width(PIN_NAME_WIDTH);

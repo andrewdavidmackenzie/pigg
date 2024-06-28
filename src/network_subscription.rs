@@ -114,10 +114,10 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
 
 async fn connect() -> anyhow::Result<HardwareDescription> {
     let args = Piglet {
-        node_id: NodeId::from_str("kbwfm2ffj7jtxlfrur5ngjbspjr4q2r3ifkej7jsuir53x7qtwyq").unwrap(),
+        node_id: NodeId::from_str("swld47wqc2zdiqdbu4anwzhjcjdiel74lyiqwxu7q4eguykyknuq").unwrap(),
         addrs: vec![
-            "79.154.163.213:53787".parse().unwrap(),
-            "192.168.1.77:53787".parse().unwrap(),
+            "79.154.163.213:64983".parse().unwrap(),
+            "192.168.1.77:64983".parse().unwrap(),
         ],
         relay_url: RelayUrl::from_str("https://euw1-1.relay.iroh.network./").unwrap(),
     };
@@ -161,11 +161,10 @@ async fn connect() -> anyhow::Result<HardwareDescription> {
     // Attempt to connect, over the given ALPN.
     // Returns a QUIC connection.
     let conn = endpoint.connect(addr, PIGLET_ALPN).await?;
-    println!("connected");
 
     // Send a datagram over the connection.
-    let message = format!("{me} is saying 'hello!'");
-    conn.send_datagram(message.as_bytes().to_vec().into())?;
+    //let message = format!("{me} is saying 'hello!'");
+    //conn.send_datagram(message.as_bytes().to_vec().into())?;
 
     // Read a datagram over the connection.
     let message = conn.read_datagram().await?;

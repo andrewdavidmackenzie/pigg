@@ -31,6 +31,7 @@ pub type BoardPinNumber = u8;
 /// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
 pub type PinLevel = bool;
 
+#[cfg(feature = "network")]
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
@@ -48,6 +49,7 @@ pub fn get() -> impl Hardware {
 ///    * NewConfig
 ///    * NewPinConfig
 ///    * OutputLevelChanged
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HardwareConfigMessage {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains
@@ -78,7 +80,7 @@ impl Display for HardwareDetails {
 }
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDescription {
     pub details: HardwareDetails,
     pub pins: PinDescriptionSet,
@@ -87,11 +89,9 @@ pub struct HardwareDescription {
 /// LevelChange describes the change in level of an input or Output
 /// - `new_level` : [PinLevel]
 /// - `timestamp` : [DateTime<Utc>]
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevelChange {
-    #[allow(dead_code)] // For piglet - TODO remove when used
     pub new_level: PinLevel,
-    #[allow(dead_code)] // For piglet - TODO remove when used
     pub timestamp: DateTime<Utc>,
 }
 

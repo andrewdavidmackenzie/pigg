@@ -1,22 +1,23 @@
-use crate::hw::{BCMPinNumber, PinLevel, PIGLET_ALPN};
+use crate::hw::{BCMPinNumber, PinLevel};
+#[cfg(feature = "network")]
+use crate::hw::{HardwareConfigMessage, PIGLET_ALPN};
+#[cfg(feature = "network")]
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
 use env_logger::Builder;
+#[cfg(feature = "network")]
 use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
+#[cfg(feature = "network")]
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
 use log::{info, trace, LevelFilter};
-use std::env;
 use std::str::FromStr;
+use std::{env, io};
 
 mod hw;
 
-/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
-/// in Piggy, but without any GUI or related dependencies, loading a config from file and
-/// over the network.
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn local_init() -> io::Result<impl Hardware> {
     let matches = get_matches();
 
     setup_logging(&matches);
@@ -42,10 +43,26 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    hw.apply_config(&config, input_level_changed)?;
+    hw.apply_config(&config, crate::input_level_changed)?;
     trace!("Configuration applied to hardware");
 
+    Ok(hw)
+}
+
+/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
+/// in Piggy, but without any GUI or related dependencies, loading a config from file and
+/// over the network.
+#[tokio::main]
+#[cfg(feature = "network")]
+async fn main() -> anyhow::Result<()> {
+    let hw = local_init()?;
+    #[cfg(feature = "network")]
     listen(hw).await
+}
+
+#[cfg(not(feature = "network"))]
+fn main() {
+    local_init().unwrap();
 }
 
 /// Callback function that is called when an input changes level
@@ -53,7 +70,7 @@ fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
     info!("Pin #{bcm_pin_number} changed level to '{level}'");
 }
 
-/// Setup logging with the requested verbosity level
+/// Setup logging with the requested verbosity level - or default if none specified
 fn setup_logging(matches: &ArgMatches) {
     let default = String::from("error");
     let verbosity_option = matches.get_one::<String>("verbosity");
@@ -93,7 +110,9 @@ fn get_matches() -> ArgMatches {
 }
 
 /// Listen for an incoming iroh-net connection
+#[cfg(feature = "network")]
 async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
+    //    tracing_subscriber::fmt::init();
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
@@ -112,7 +131,7 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         .await?;
 
     let me = endpoint.node_id();
-    println!("node id: {me}");
+    info!("node id: {me}");
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -123,12 +142,12 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
-    println!("node listening addresses: {local_addrs}");
+    info!("node listening addresses: {local_addrs}");
 
     let relay_url = endpoint.home_relay()
     .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
 
-    println!("node relay server url: {relay_url}");
+    info!("node relay server url: {relay_url}");
 
     // accept incoming connections, returns a normal QUIC connection
     while let Some(mut conn) = endpoint.accept().await {
@@ -143,20 +162,27 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         );
 
         // initially send our hardware description
-        let message = serde_json::to_string(&hardware.description()?)?;
+        let message = serde_json::to_vec(&hardware.description()?)?;
 
-        info!("Responding with HardwareDescription");
-        conn.send_datagram(message.as_bytes().to_vec().into())?;
+        info!(
+            "Responding with HardwareDescription: len = {}",
+            message.len()
+        );
+        //conn.send_datagram(message.into())?;
+        conn.send_datagram("Config".into())?;
 
         // spawn a task to handle reading and writing from/to the connection
         tokio::spawn(async move {
             // use the `quinn` API to read a datagram off the connection, and send a datagram in return
             while let Ok(message) = conn.read_datagram().await {
-                let message = String::from_utf8(message.into())?;
-                println!("received: {message}");
-
-                let message = format!("hi! you connected to piglet@{me}.");
-                conn.send_datagram(message.as_bytes().to_vec().into())?;
+                let config_message: HardwareConfigMessage =
+                    serde_json::from_str(&*String::from_utf8_lossy(&message.to_vec()))?;
+                match config_message {
+                    _ => {
+                        println!("Unknown message");
+                        conn.send_datagram("hi! you sent unknown message piglet.".into())?;
+                    }
+                }
             }
 
             Ok::<_, anyhow::Error>(())
