@@ -43,7 +43,7 @@ fn local_init() -> io::Result<impl Hardware> {
         }
     };
 
-    hw.apply_config(&config, crate::input_level_changed)?;
+    hw.apply_config(&config, input_level_changed)?;
     trace!("Configuration applied to hardware");
 
     Ok(hw)
@@ -112,10 +112,9 @@ fn get_matches() -> ArgMatches {
 /// Listen for an incoming iroh-net connection
 #[cfg(feature = "network")]
 async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
-    //tracing_subscriber::fmt::init();
     let secret_key = SecretKey::generate();
 
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
+    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
     let endpoint = Endpoint::builder()
         // The secret key is used to authenticate with other nodes. The PublicKey portion of this secret key is how we identify nodes, often referred to as the `node_id` in our codebase.
         .secret_key(secret_key)
@@ -131,7 +130,8 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         .await?;
 
     let me = endpoint.node_id();
-    info!("node id: {me}");
+    println!("node id: {me}");
+    println!("node listening addresses:");
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -139,51 +139,66 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         .await
         .context("no endpoints")?
         .into_iter()
-        .map(|endpoint| endpoint.addr.to_string())
+        .map(|endpoint| {
+            let addr = endpoint.addr.to_string();
+            println!("\t{addr}");
+            addr
+        })
         .collect::<Vec<_>>()
         .join(" ");
-    info!("node listening addresses: {local_addrs}");
 
-    let relay_url = endpoint.home_relay()
-    .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
+    println!("local Addresses: {local_addrs}");
 
-    info!("node relay server url: {relay_url}");
+    let relay_url = endpoint
+        .home_relay()
+        .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
+    println!("node relay server url: {relay_url}");
 
     // accept incoming connections, returns a normal QUIC connection
-    while let Some(conn) = endpoint.accept().await {
+    while let Some(mut conn) = endpoint.accept().await {
+        let alpn = conn.alpn().await?;
         let conn = conn.await?;
         let node_id = iroh_net::endpoint::get_remote_node_id(&conn)?;
-        // TODO below will need String::from_utf8_lossy(&alpn), when next release is out
-        info!(
-            "Connection from {node_id} with address {}",
+        println!(
+            "new connection from {node_id} with ALPN {} (coming from {})",
+            String::from_utf8_lossy(&alpn),
             conn.remote_address()
         );
 
-        let (mut send, mut receive) = conn.open_bi().await?;
+        let desc = hardware.description()?;
 
-        // initially send our hardware description
-        let message = serde_json::to_vec(&hardware.description()?)?;
-        send.write_all(&message).await?;
-
-        // spawn a task to handle reading and writing from/to the connection
+        // spawn a task to handle reading and writing off of the connection
         tokio::spawn(async move {
+            // accept a bi-directional QUIC connection
+            // use the `quinn` APIs to send and recv content
+            let (mut send, mut receive) = conn.accept_bi().await?;
+
+            println!("accepted bi stream, waiting for data...");
+
             // use the `quinn` API to read a datagram off the connection, and send a datagram in return
             while let Ok(message) = receive.read_to_end(4096).await {
-                match serde_json::from_str(&String::from_utf8_lossy(&message)) {
+                let content = String::from_utf8_lossy(&message);
+
+                println!("received: {}", content);
+
+                match serde_json::from_str(&content) {
                     Ok(HardwareConfigMessage::NewConfig(_)) => {}
                     Ok(HardwareConfigMessage::NewPinConfig(_, _)) => {}
                     Ok(HardwareConfigMessage::OutputLevelChanged(_, _)) => {}
-                    _ => {
-                        println!("Unknown message");
-                        conn.send_datagram("hi! you sent unknown message piglet.".into())?;
-                    }
+                    _ => println!("Unknown message: {content}",),
                 }
+
+                println!("sending hardware config");
+                let message = serde_json::to_string(&desc)?;
+                send.write_all(message.as_bytes()).await?;
+                send.finish().await?;
+
+                println!("waiting for another message");
             }
 
             Ok::<_, anyhow::Error>(())
         });
     }
-    // stop with SIGINT (ctrl-c)
 
     Ok(())
 }

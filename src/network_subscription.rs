@@ -44,18 +44,26 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                         // Create channel
                         let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
-                        let hardware_description = connect().await.unwrap();
+                        match connect().await {
+                            Ok(hardware_description) => {
+                                // Send the sender back to the GUI
+                                let _ = gui_sender_clone
+                                    .send(HardwareEventMessage::Connected(
+                                        hardware_event_sender.clone(),
+                                        hardware_description.clone(),
+                                    ))
+                                    .await;
 
-                        // Send the sender back to the GUI
-                        let _ = gui_sender_clone
-                            .send(HardwareEventMessage::Connected(
-                                hardware_event_sender.clone(),
-                                hardware_description.clone(),
-                            ))
-                            .await;
-
-                        // We are ready to receive messages from the GUI
-                        state = State::Connected(hardware_event_receiver, hardware_event_sender);
+                                // We are ready to receive messages from the GUI
+                                state = State::Connected(
+                                    hardware_event_receiver,
+                                    hardware_event_sender,
+                                );
+                            }
+                            Err(e) => {
+                                eprintln!("Error connecting to piglet: {e}");
+                            }
+                        }
                     }
 
                     State::Connected(hardware_event_receiver, _hardware_event_sender) => {
@@ -114,16 +122,16 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
 
 async fn connect() -> anyhow::Result<HardwareDescription> {
     let args = Piglet {
-        node_id: NodeId::from_str("vmxprrr4xqlrm6fz46sls3jsrg3ycep7fmz4mp5xc6pwfpstyw7a").unwrap(),
+        node_id: NodeId::from_str("4p4i7dvcimdsfadjh7xr6r2fgz4qrtppvhinz3takwopjmmsn5ea").unwrap(),
         addrs: vec![
-            "79.154.163.213:53642".parse().unwrap(),
-            "192.168.1.77:53642".parse().unwrap(),
+            "79.154.163.213:55355".parse().unwrap(),
+            "192.168.1.77:55355".parse().unwrap(),
         ],
         relay_url: RelayUrl::from_str("https://euw1-1.relay.iroh.network./").unwrap(),
     };
 
-    tracing_subscriber::fmt::init();
     let secret_key = SecretKey::generate();
+    println!("secret key: {secret_key}");
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
     let endpoint = Endpoint::builder()
@@ -160,16 +168,25 @@ async fn connect() -> anyhow::Result<HardwareDescription> {
     let addr = NodeAddr::from_parts(args.node_id, Some(args.relay_url), args.addrs);
 
     // Attempt to connect, over the given ALPN.
-    // Returns a QUIC connection.
+    // Returns a Quinn connection.
     let conn = endpoint.connect(addr, PIGLET_ALPN).await?;
+    println!("connected");
 
-    let (_send, mut receive) = conn.open_bi().await?;
+    // Use the Quinn API to send and recv content.
+    let (mut send, mut receive) = conn.open_bi().await?;
 
+    println!("opened bidi, writing hello");
+
+    let message = format!("{me} is saying 'hello!'");
+    send.write_all(message.as_bytes()).await?;
+    send.finish().await?;
+
+    println!("waiting for message back");
     let message = receive.read_to_end(4096).await?;
-    let string = String::from_utf8(message.into())?;
-    println!("received:{}", string);
+    let message = String::from_utf8(message)?;
+    println!("received: {message}");
 
-    let desc = serde_json::from_str(&string)?;
+    let desc = serde_json::from_str(&message)?;
 
     Ok(desc)
 }
