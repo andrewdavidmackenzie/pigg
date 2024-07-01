@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
+#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 use std::io;
 
 use crate::hw::config::HardwareConfig;
@@ -10,14 +11,17 @@ use serde::{Deserialize, Serialize};
 use crate::hw::pin_function::PinFunction;
 
 pub mod config;
-#[cfg(feature = "fake_hw")]
-mod fake_hw;
+
 /// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
+// TODO make this module private again
+#[cfg(feature = "fake_hw")]
+pub(crate) mod fake_hw;
 #[cfg(feature = "pi_hw")]
 mod pi_hw;
 pub(crate) mod pin_description;
+#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 mod pin_descriptions;
 pub(crate) mod pin_function;
 
@@ -29,6 +33,9 @@ pub type BoardPinNumber = u8;
 /// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
 pub type PinLevel = bool;
 
+#[cfg(feature = "network")]
+pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
+
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
 #[cfg(feature = "pi_hw")]
 pub fn get() -> impl Hardware {
@@ -39,8 +46,24 @@ pub fn get() -> impl Hardware {
     fake_hw::get()
 }
 
+/// This enum is for hardware config changes initiated in the GUI by the user,
+/// and sent to the subscription for it to apply to the hardware
+///    * NewConfig
+///    * NewPinConfig
+///    * OutputLevelChanged
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum HardwareConfigMessage {
+    /// A complete new hardware config has been loaded and applied to the hardware, so we should
+    /// start listening for level changes on each of the input pins it contains
+    NewConfig(HardwareConfig),
+    /// A pin has had its config changed
+    NewPinConfig(BCMPinNumber, PinFunction),
+    /// The level of an output pin has been set to a new value
+    OutputLevelChanged(BCMPinNumber, LevelChange),
+}
+
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDetails {
     pub hardware: String,
     pub revision: String,
@@ -59,7 +82,7 @@ impl Display for HardwareDetails {
 }
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDescription {
     pub details: HardwareDetails,
     pub pins: PinDescriptionSet,
@@ -68,11 +91,9 @@ pub struct HardwareDescription {
 /// LevelChange describes the change in level of an input or Output
 /// - `new_level` : [PinLevel]
 /// - `timestamp` : [DateTime<Utc>]
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevelChange {
-    #[allow(dead_code)] // For piglet - TODO remove when used
     pub new_level: PinLevel,
-    #[allow(dead_code)] // For piglet - TODO remove when used
     pub timestamp: DateTime<Utc>,
 }
 
@@ -107,6 +128,7 @@ impl Display for InputPull {
 
 /// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
 /// interact with any possible GPIO hardware on the device to set config and get state
+#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 pub trait Hardware {
     /// Return a [HardwareDescription] struct describing the hardware that we are connected to:
     /// * [HardwareDescription] such as revision etc.
@@ -145,7 +167,6 @@ pub trait Hardware {
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
 
     /// Write the output level of an output using its [BCMPinNumber]
-    #[allow(dead_code)] // for piglet
     fn set_output_level(
         &mut self,
         bcm_pin_number: BCMPinNumber,
@@ -182,8 +203,8 @@ mod test {
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
         let mut previous = 1; // we start at GPIO2
         for pin in sorted_bcm_pins {
-            assert_eq!(pin.bcm_pin_number.unwrap(), previous + 1);
-            previous = pin.bcm_pin_number.unwrap();
+            assert_eq!(pin.bcm.unwrap(), previous + 1);
+            previous = pin.bcm.unwrap();
         }
     }
 }

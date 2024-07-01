@@ -1,19 +1,24 @@
+use crate::hw::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputLevelChanged};
+#[cfg(feature = "network")]
+use crate::hw::PIGLET_ALPN;
 use crate::hw::{BCMPinNumber, PinLevel};
+#[cfg(feature = "network")]
+use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
 use env_logger::Builder;
+#[cfg(feature = "network")]
+use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
-use log::{info, trace, LevelFilter};
+#[cfg(feature = "network")]
+use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
+use log::{error, info, trace, LevelFilter};
 use std::str::FromStr;
-use std::time::Duration;
-use std::{env, thread};
+use std::{env, io};
 
 mod hw;
 
-/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
-/// in Piggy, but without any GUI or related dependencies, loading a config from file and
-/// over the network.
-fn main() {
+fn local_init() -> io::Result<impl Hardware> {
     let matches = get_matches();
 
     setup_logging(&matches);
@@ -39,9 +44,26 @@ fn main() {
         }
     };
 
-    hw.apply_config(&config, input_level_changed).unwrap();
+    hw.apply_config(&config, input_level_changed)?;
     trace!("Configuration applied to hardware");
-    thread::sleep(Duration::from_secs(60));
+
+    Ok(hw)
+}
+
+/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
+/// in Piggy, but without any GUI or related dependencies, loading a config from file and
+/// over the network.
+#[tokio::main]
+#[cfg(feature = "network")]
+async fn main() -> anyhow::Result<()> {
+    let hw = local_init()?;
+    #[cfg(feature = "network")]
+    listen(hw).await
+}
+
+#[cfg(not(feature = "network"))]
+fn main() {
+    local_init().unwrap();
 }
 
 /// Callback function that is called when an input changes level
@@ -49,7 +71,7 @@ fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
     info!("Pin #{bcm_pin_number} changed level to '{level}'");
 }
 
-/// Setup logging with the requested verbosity level
+/// Setup logging with the requested verbosity level - or default if none specified
 fn setup_logging(matches: &ArgMatches) {
     let default = String::from("error");
     let verbosity_option = matches.get_one::<String>("verbosity");
@@ -86,4 +108,98 @@ fn get_matches() -> ArgMatches {
     );
 
     app.get_matches()
+}
+
+/// Listen for an incoming iroh-net connection
+#[cfg(feature = "network")]
+async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
+    let secret_key = SecretKey::generate();
+
+    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
+    let endpoint = Endpoint::builder()
+        // The secret key is used to authenticate with other nodes. The PublicKey portion of this secret key is how we identify nodes, often referred to as the `node_id` in our codebase.
+        .secret_key(secret_key)
+        // set the ALPN protocols this endpoint will accept on incoming connections
+        .alpns(vec![PIGLET_ALPN.to_vec()])
+        // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
+        // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
+        // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
+        // If you want to experiment with relaying using your own relay server, you must pass in the same custom relay url to both the `listen` code AND the `connect` code
+        .relay_mode(RelayMode::Default)
+        // you can choose a port to bind to, but passing in `0` will bind the socket to a random available port
+        .bind(0)
+        .await?;
+
+    let me = endpoint.node_id();
+    info!("node id: {me}");
+
+    let local_addrs = endpoint
+        .direct_addresses()
+        .next()
+        .await
+        .context("no endpoints")?
+        .into_iter()
+        .map(|endpoint| endpoint.addr.to_string())
+        .collect::<Vec<_>>()
+        .join(" ");
+    info!("local Addresses: {local_addrs}");
+
+    let relay_url = endpoint
+        .home_relay()
+        .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
+    info!("node relay server url: {relay_url}");
+
+    // accept incoming connections, returns a normal QUIC connection
+    while let Some(conn) = endpoint.accept().await {
+        let conn = conn.await?;
+        let node_id = iroh_net::endpoint::get_remote_node_id(&conn)?;
+        info!("new connection from {node_id}",);
+
+        // accept a bidirectional QUIC connection - use the `quinn` APIs to send and recv content
+        let (mut send, mut receive) = conn.accept_bi().await?;
+
+        // receive the initial message that starts the conversation
+        let msg = receive.read_to_end(4096).await?;
+        trace!("Received: {}", String::from_utf8_lossy(&msg));
+
+        trace!("Sending hardware description");
+        let desc = hardware.description()?;
+        let message = serde_json::to_string(&desc)?;
+        send.write_all(message.as_bytes()).await?;
+        send.finish().await?;
+
+        loop {
+            // accept a bidirectional QUIC connection - use the `quinn` APIs to send and recv content
+            trace!("waiting for a bi-di connection");
+            let (mut sender, mut receive) = conn.accept_bi().await?;
+
+            trace!("Connected, waiting for message");
+            let message = receive.read_to_end(4096).await?;
+
+            if !message.is_empty() {
+                let content = String::from_utf8_lossy(&message);
+                match serde_json::from_str(&content) {
+                    Ok(NewConfig(config)) => hardware
+                        .apply_config(&config, move |bcm, level| {
+                            info!("Pin #{bcm} input level changed to {level}");
+                        })
+                        .unwrap(),
+                    Ok(NewPinConfig(bcm, pin_function)) => hardware
+                        .apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                            info!("Pin #{bcm} input level changed to {level}");
+                        })
+                        .unwrap(),
+                    Ok(OutputLevelChanged(bcm, level_change)) => {
+                        info!("Pin #{bcm} output level change: {level_change:?}");
+                        hardware.set_output_level(bcm, level_change).unwrap();
+                    }
+                    _ => error!("Unknown message: {content}"),
+                }
+
+                sender.write_all(b"OK").await?;
+            }
+        }
+    }
+
+    Ok(())
 }
