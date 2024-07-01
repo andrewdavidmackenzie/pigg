@@ -1,5 +1,5 @@
 use iced::futures::channel::mpsc;
-use iced::futures::channel::mpsc::Sender;
+use iced::futures::channel::mpsc::{Receiver, Sender};
 use iced::{subscription, Subscription};
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
@@ -7,11 +7,22 @@ use iced_futures::futures::StreamExt;
 use crate::hw;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_function::PinFunction;
-use crate::hw::Hardware;
 use crate::hw::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputLevelChanged};
 use crate::hw::LevelChange;
+use crate::hw::{Hardware, HardwareConfigMessage};
+use crate::views::hardware_view::HardwareEventMessage;
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
-use crate::views::hardware_view::{HardwareEventMessage, State};
+
+/// This enum describes the states of the subscription
+pub enum State {
+    /// Just starting up, we have not yet set up a channel between GUI and Listener
+    Disconnected,
+    /// The subscription is ready and will listen for config events on the channel contained
+    Connected(
+        Receiver<HardwareConfigMessage>,
+        Sender<HardwareConfigMessage>,
+    ),
+}
 
 fn send_current_input_states(
     tx: &mut Sender<HardwareEventMessage>,

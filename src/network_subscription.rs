@@ -1,30 +1,28 @@
-use crate::hw::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputLevelChanged};
-use crate::hw::{HardwareDescription, PIGLET_ALPN};
-use crate::views::hardware_view::{HardwareEventMessage, State};
+use crate::hw::{HardwareConfigMessage, HardwareDescription, PIGLET_ALPN};
+use crate::views::hardware_view::HardwareEventMessage;
 use anyhow::Context;
-use clap::Parser;
 use iced::futures::channel::mpsc;
+use iced::futures::channel::mpsc::{Receiver, Sender};
 use iced::{subscription, Subscription};
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
+use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::RelayMode;
-use iroh_net::relay::RelayUrl;
 use iroh_net::{Endpoint, NodeAddr, NodeId};
 use std::net::SocketAddr;
 use std::str::FromStr;
 
-#[derive(Debug, Parser)]
-struct Piglet {
-    /// The id of the remote node.
-    #[arg(short, long, help = "Iroh node id")]
-    node_id: NodeId,
-    /// The list of direct UDP addresses for the remote node.
-    #[clap(short, long, value_parser, num_args = 1.., value_delimiter = ' ')]
-    addrs: Vec<SocketAddr>,
-    /// The url of the relay server the remote node can also be reached at.
-    #[clap(short, long)]
-    relay_url: RelayUrl,
+/// This enum describes the states of the subscription
+pub enum NetworkState {
+    /// Just starting up, we have not yet set up a channel between GUI and Listener
+    Disconnected,
+    /// The subscription is ready and will listen for config events on the channel contained
+    Connected(
+        Receiver<HardwareConfigMessage>,
+        Sender<HardwareConfigMessage>,
+        Connection,
+    ),
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
@@ -35,17 +33,17 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
         std::any::TypeId::of::<Connect>(),
         100,
         move |gui_sender| async move {
-            let mut state = State::Disconnected;
+            let mut state = NetworkState::Disconnected;
 
             loop {
                 let mut gui_sender_clone = gui_sender.clone();
                 match &mut state {
-                    State::Disconnected => {
+                    NetworkState::Disconnected => {
                         // Create channel
                         let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
                         match connect().await {
-                            Ok(hardware_description) => {
+                            Ok((hardware_description, connection)) => {
                                 // Send the sender back to the GUI
                                 let _ = gui_sender_clone
                                     .send(HardwareEventMessage::Connected(
@@ -55,9 +53,10 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                                     .await;
 
                                 // We are ready to receive messages from the GUI
-                                state = State::Connected(
+                                state = NetworkState::Connected(
                                     hardware_event_receiver,
                                     hardware_event_sender,
+                                    connection,
                                 );
                             }
                             Err(e) => {
@@ -66,53 +65,21 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                         }
                     }
 
-                    State::Connected(hardware_event_receiver, _hardware_event_sender) => {
+                    NetworkState::Connected(
+                        hardware_event_receiver,
+                        _hardware_event_sender,
+                        connection,
+                    ) => {
                         let hardware_event = hardware_event_receiver.select_next_some().await;
+                        let (mut sender, mut receiver) = connection.open_bi().await.unwrap();
 
-                        match hardware_event {
-                            NewConfig(_config) => {
-                                /*
-                                connected_hardware
-                                    .apply_config(&config, move |pin_number, level| {
-                                        gui_sender_clone
-                                            .try_send(InputChange(
-                                                pin_number,
-                                                LevelChange::new(level),
-                                            ))
-                                            .unwrap();
-                                    })
-                                    .unwrap();
+                        let message = serde_json::to_string(&hardware_event).unwrap();
+                        sender.write_all(message.as_bytes()).await.unwrap();
+                        sender.finish().await.unwrap();
 
-                                send_current_input_states(
-                                    &mut gui_sender,
-                                    &config,
-                                    &connected_hardware,
-                                );
-                                 */
-                            }
-                            NewPinConfig(_bcm_pin_number, _new_function) => {
-                                /*
-                                let _ = connected_hardware.apply_pin_config(
-                                    bcm_pin_number,
-                                    &new_function,
-                                    move |bcm_pin_number, level| {
-                                        gui_sender_clone
-                                            .try_send(InputChange(
-                                                bcm_pin_number,
-                                                LevelChange::new(level),
-                                            ))
-                                            .unwrap();
-                                    },
-                                );
-                                 */
-                            }
-                            OutputLevelChanged(_bcm_pin_number, _level_change) => {
-                                /*
-                                let _ = connected_hardware
-                                    .set_output_level(bcm_pin_number, level_change);
-                                 */
-                            }
-                        }
+                        let message = receiver.read_to_end(4096).await.unwrap();
+                        let content = String::from_utf8_lossy(&message);
+                        println!("Replied: {content}");
                     }
                 }
             }
@@ -120,29 +87,32 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
     )
 }
 
-async fn connect() -> anyhow::Result<HardwareDescription> {
+#[derive(Debug)]
+struct Piglet {
+    /// The id of the remote node.
+    node_id: NodeId,
+    /// The list of direct UDP addresses for the remote node.
+    addrs: Vec<SocketAddr>,
+}
+
+async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     let args = Piglet {
-        node_id: NodeId::from_str("4p4i7dvcimdsfadjh7xr6r2fgz4qrtppvhinz3takwopjmmsn5ea").unwrap(),
+        node_id: NodeId::from_str("o4lknbi4ohseogye3g2jzxhuphxu7cimhrbsuaipkrmt57lphkva").unwrap(),
         addrs: vec![
-            "79.154.163.213:55355".parse().unwrap(),
-            "192.168.1.77:55355".parse().unwrap(),
+            "79.154.163.213:52414".parse().unwrap(),
+            "192.168.1.77:52414".parse().unwrap(),
         ],
-        relay_url: RelayUrl::from_str("https://euw1-1.relay.iroh.network./").unwrap(),
     };
 
     let secret_key = SecretKey::generate();
-    println!("secret key: {secret_key}");
 
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
+    // Build a `Endpoint`, which uses PublicKeys as node identifiers
     let endpoint = Endpoint::builder()
-        // The secret key is used to authenticate with other nodes. The PublicKey portion of this secret key is how we identify nodes, often referred to as the `node_id` in our codebase.
+        // The secret key is used to authenticate with other nodes.
         .secret_key(secret_key)
         // Set the ALPN protocols this endpoint will accept on incoming connections
         .alpns(vec![PIGLET_ALPN.to_vec()])
         // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
-        // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
-        // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
-        // If you want to experiment with relaying using your own relay server, you must pass in the same custom relay url to both the `listen` code AND the `connect` code
         .relay_mode(RelayMode::Default)
         // You can choose a port to bind to, but passing in `0` will bind the socket to a random available port
         .bind(0)
@@ -163,30 +133,23 @@ async fn connect() -> anyhow::Result<HardwareDescription> {
     let relay_url = endpoint
         .home_relay()
         .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    println!("node relay server url: {relay_url}\n");
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
-    let addr = NodeAddr::from_parts(args.node_id, Some(args.relay_url), args.addrs);
+    let addr = NodeAddr::from_parts(args.node_id, Some(relay_url), args.addrs);
 
     // Attempt to connect, over the given ALPN.
     // Returns a Quinn connection.
-    let conn = endpoint.connect(addr, PIGLET_ALPN).await?;
-    println!("connected");
+    let connection = endpoint.connect(addr, PIGLET_ALPN).await?;
 
     // Use the Quinn API to send and recv content.
-    let (mut send, mut receive) = conn.open_bi().await?;
+    let (mut sender, mut receiver) = connection.open_bi().await?;
 
-    println!("opened bidi, writing hello");
+    sender.write_all(b"Hello").await?;
+    sender.finish().await?;
 
-    let message = format!("{me} is saying 'hello!'");
-    send.write_all(message.as_bytes()).await?;
-    send.finish().await?;
-
-    println!("waiting for message back");
-    let message = receive.read_to_end(4096).await?;
+    let message = receiver.read_to_end(4096).await?;
     let message = String::from_utf8(message)?;
-    println!("received: {message}");
 
     let desc = serde_json::from_str(&message)?;
 
-    Ok(desc)
+    Ok((desc, connection))
 }

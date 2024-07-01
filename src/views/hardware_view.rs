@@ -1,7 +1,7 @@
 use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
-use iced::futures::channel::mpsc::{Receiver, Sender};
+use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
 use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
@@ -172,17 +172,6 @@ pub struct HardwareView {
     /// Either desired state of an output, or detected state of input.
     /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: HashMap<BCMPinNumber, PinState>,
-}
-
-/// This enum describes the states of the subscription
-pub enum State {
-    /// Just starting up, we have not yet set up a channel between GUI and Listener
-    Disconnected,
-    /// The subscription is ready and will listen for config events on the channel contained
-    Connected(
-        Receiver<HardwareConfigMessage>,
-        Sender<HardwareConfigMessage>,
-    ),
 }
 
 async fn empty() {}

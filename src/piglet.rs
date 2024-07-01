@@ -1,6 +1,7 @@
-use crate::hw::{BCMPinNumber, PinLevel};
+use crate::hw::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputLevelChanged};
 #[cfg(feature = "network")]
-use crate::hw::{HardwareConfigMessage, PIGLET_ALPN};
+use crate::hw::PIGLET_ALPN;
+use crate::hw::{BCMPinNumber, PinLevel};
 #[cfg(feature = "network")]
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
@@ -11,7 +12,7 @@ use hw::config::HardwareConfig;
 use hw::Hardware;
 #[cfg(feature = "network")]
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
-use log::{info, trace, LevelFilter};
+use log::{error, info, trace, LevelFilter};
 use std::str::FromStr;
 use std::{env, io};
 
@@ -111,7 +112,7 @@ fn get_matches() -> ArgMatches {
 
 /// Listen for an incoming iroh-net connection
 #[cfg(feature = "network")]
-async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
+async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
@@ -130,8 +131,7 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         .await?;
 
     let me = endpoint.node_id();
-    println!("node id: {me}");
-    println!("node listening addresses:");
+    info!("node id: {me}");
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -139,65 +139,66 @@ async fn listen(hardware: impl Hardware) -> anyhow::Result<()> {
         .await
         .context("no endpoints")?
         .into_iter()
-        .map(|endpoint| {
-            let addr = endpoint.addr.to_string();
-            println!("\t{addr}");
-            addr
-        })
+        .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
-
-    println!("local Addresses: {local_addrs}");
+    info!("local Addresses: {local_addrs}");
 
     let relay_url = endpoint
         .home_relay()
         .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    println!("node relay server url: {relay_url}");
+    info!("node relay server url: {relay_url}");
 
     // accept incoming connections, returns a normal QUIC connection
-    while let Some(mut conn) = endpoint.accept().await {
-        let alpn = conn.alpn().await?;
+    while let Some(conn) = endpoint.accept().await {
         let conn = conn.await?;
         let node_id = iroh_net::endpoint::get_remote_node_id(&conn)?;
-        println!(
-            "new connection from {node_id} with ALPN {} (coming from {})",
-            String::from_utf8_lossy(&alpn),
-            conn.remote_address()
-        );
+        info!("new connection from {node_id}",);
 
+        // accept a bidirectional QUIC connection - use the `quinn` APIs to send and recv content
+        let (mut send, mut receive) = conn.accept_bi().await?;
+
+        // receive the initial message that starts the conversation
+        let msg = receive.read_to_end(4096).await?;
+        trace!("Received: {}", String::from_utf8_lossy(&msg));
+
+        trace!("Sending hardware description");
         let desc = hardware.description()?;
+        let message = serde_json::to_string(&desc)?;
+        send.write_all(message.as_bytes()).await?;
+        send.finish().await?;
 
-        // spawn a task to handle reading and writing off of the connection
-        tokio::spawn(async move {
-            // accept a bi-directional QUIC connection
-            // use the `quinn` APIs to send and recv content
-            let (mut send, mut receive) = conn.accept_bi().await?;
+        loop {
+            // accept a bidirectional QUIC connection - use the `quinn` APIs to send and recv content
+            trace!("waiting for a bi-di connection");
+            let (mut sender, mut receive) = conn.accept_bi().await?;
 
-            println!("accepted bi stream, waiting for data...");
+            trace!("Connected, waiting for message");
+            let message = receive.read_to_end(4096).await?;
 
-            // use the `quinn` API to read a datagram off the connection, and send a datagram in return
-            while let Ok(message) = receive.read_to_end(4096).await {
+            if !message.is_empty() {
                 let content = String::from_utf8_lossy(&message);
-
-                println!("received: {}", content);
-
                 match serde_json::from_str(&content) {
-                    Ok(HardwareConfigMessage::NewConfig(_)) => {}
-                    Ok(HardwareConfigMessage::NewPinConfig(_, _)) => {}
-                    Ok(HardwareConfigMessage::OutputLevelChanged(_, _)) => {}
-                    _ => println!("Unknown message: {content}",),
+                    Ok(NewConfig(config)) => hardware
+                        .apply_config(&config, move |bcm, level| {
+                            info!("Pin #{bcm} input level changed to {level}");
+                        })
+                        .unwrap(),
+                    Ok(NewPinConfig(bcm, pin_function)) => hardware
+                        .apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                            info!("Pin #{bcm} input level changed to {level}");
+                        })
+                        .unwrap(),
+                    Ok(OutputLevelChanged(bcm, level_change)) => {
+                        info!("Pin #{bcm} output level change: {level_change:?}");
+                        hardware.set_output_level(bcm, level_change).unwrap();
+                    }
+                    _ => error!("Unknown message: {content}"),
                 }
 
-                println!("sending hardware config");
-                let message = serde_json::to_string(&desc)?;
-                send.write_all(message.as_bytes()).await?;
-                send.finish().await?;
-
-                println!("waiting for another message");
+                sender.write_all(b"OK").await?;
             }
-
-            Ok::<_, anyhow::Error>(())
-        });
+        }
     }
 
     Ok(())

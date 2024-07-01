@@ -20,7 +20,7 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = []
+default = ["network"]
 pi_hw = ["rppal"]
 fake_hw = []
 gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters"]

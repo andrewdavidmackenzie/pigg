@@ -167,7 +167,6 @@ pub trait Hardware {
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
 
     /// Write the output level of an output using its [BCMPinNumber]
-    #[allow(dead_code)] // for piglet
     fn set_output_level(
         &mut self,
         bcm_pin_number: BCMPinNumber,
