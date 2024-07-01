@@ -127,6 +127,8 @@ async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
         println!("\t{}", local_endpoint.addr)
     }
 
+    // find my closest relay - maybe set this as a default in the UI but allow used to
+    // override it in a text entry box. Leave black for user if fails to fetch it.
     let relay_url = endpoint.home_relay().ok_or(io::Error::new(
         io::ErrorKind::Other,
         "Could not get home relay",
