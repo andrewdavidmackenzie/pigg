@@ -44,6 +44,7 @@ rppal = { version = "0.18.0", optional = true }
 # used in piglet only
 log = "0.4.22"
 env_logger = "0.11.3"
+# TODO review this list of tokio features and reduce if possible
 tokio = { version = "1", features = ["io-util", "macros", "sync", "rt", "net", "fs", "io-std", "signal", "process"], optional = true }
 
 # used by piggui in GUI only

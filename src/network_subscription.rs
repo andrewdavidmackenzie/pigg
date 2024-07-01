@@ -10,6 +10,7 @@ use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::RelayMode;
 use iroh_net::{Endpoint, NodeAddr, NodeId};
+use std::io;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
@@ -93,10 +94,10 @@ struct Piglet {
 
 async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     let args = Piglet {
-        node_id: NodeId::from_str("yy3sfuixuhopjdvrmny7f3u2jgwaktlontbljg5xjjdkclckkxnq").unwrap(),
+        node_id: NodeId::from_str("hyhwn3lk45d76uv6dyoaoeya6ido26tubski6rfum6rjpt2ees6q").unwrap(),
         addrs: vec![
-            "79.154.163.213:60293".parse().unwrap(),
-            "192.168.1.77:60293".parse().unwrap(),
+            "79.154.163.213:49882".parse().unwrap(),
+            "192.168.1.77:49882".parse().unwrap(),
         ],
     };
 
@@ -126,21 +127,21 @@ async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
         println!("\t{}", local_endpoint.addr)
     }
 
-    let relay_url = endpoint
-        .home_relay()
-        .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
+    let relay_url = endpoint.home_relay().ok_or(io::Error::new(
+        io::ErrorKind::Other,
+        "Could not get home relay",
+    ))?;
+
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
     let addr = NodeAddr::from_parts(args.node_id, Some(relay_url), args.addrs);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
     let connection = endpoint.connect(addr, PIGLET_ALPN).await?;
 
-    // Use the Quinn API to send and recv content.
-    let mut description_receiver = connection.accept_uni().await?;
-
-    let message = description_receiver.read_to_end(4096).await?;
+    // create a uni receiver to receive the hardware description on
+    let mut gui_receiver = connection.accept_uni().await?;
+    let message = gui_receiver.read_to_end(4096).await?;
     let message = String::from_utf8(message)?;
-
     let desc = serde_json::from_str(&message)?;
 
     Ok((desc, connection))

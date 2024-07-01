@@ -80,10 +80,10 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                         match hardware_event {
                             NewConfig(config) => {
                                 connected_hardware
-                                    .apply_config(&config, move |pin_number, level| {
+                                    .apply_config(&config, move |bcm_pin_number, level| {
                                         gui_sender_clone
                                             .try_send(InputChange(
-                                                pin_number,
+                                                bcm_pin_number,
                                                 LevelChange::new(level),
                                             ))
                                             .unwrap();

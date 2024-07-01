@@ -10,12 +10,13 @@ use env_logger::Builder;
 use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
-use iroh_net::endpoint::SendStream;
+use iroh_net::endpoint::Connection;
 #[cfg(feature = "network")]
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
 use log::{error, info, trace, LevelFilter};
 use std::str::FromStr;
 use std::{env, io};
+use tokio::runtime::Runtime;
 
 mod hw;
 
@@ -168,7 +169,7 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
             // accept a bidirectional QUIC connection - use the `quinn` APIs to send and recv content
             trace!("waiting for a bi-di connection");
             let mut config_receiver = connection.accept_uni().await?;
-
+            let connection_clone = connection.clone();
             trace!("Connected, waiting for message");
             let message = config_receiver.read_to_end(4096).await?;
 
@@ -177,16 +178,19 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
                 match serde_json::from_str(&content) {
                     Ok(NewConfig(config)) => hardware
                         .apply_config(&config, move |bcm, level| {
-                            //send_input_change(&mut gui_sender, bcm, level).await;
+                            send_input_change(connection_clone.clone(), bcm, level);
                         })
                         .unwrap(),
-                    Ok(NewPinConfig(bcm, pin_function)) => hardware
-                        .apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                            //send_input_change(&mut gui_sender, bcm, level).await;
-                        })
-                        .unwrap(),
+                    Ok(NewPinConfig(bcm, pin_function)) => {
+                        info!("New pin config for pin #{bcm}: {pin_function}");
+                        hardware
+                            .apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                                send_input_change(connection_clone.clone(), bcm, level);
+                            })
+                            .unwrap()
+                    }
                     Ok(IOLevelChanged(bcm, level_change)) => {
-                        info!("Pin #{bcm} output level change: {level_change:?}");
+                        info!("Pin #{bcm} Output level change: {level_change:?}");
                         hardware.set_output_level(bcm, level_change).unwrap();
                     }
                     _ => error!("Unknown message: {content}"),
@@ -198,12 +202,15 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Send a detected input level change back to the GUI using the `event_sender` [SendStream]
-async fn send_input_change(event_sender: &mut SendStream, bcm: BCMPinNumber, level: PinLevel) {
+/// Send a detected input level change back to the GUI using the `gui_sender` [SendStream]
+fn send_input_change(connection: Connection, bcm: BCMPinNumber, level: PinLevel) {
     info!("Pin #{bcm} input level changed to {level}");
     let level_change = LevelChange::new(level);
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = serde_json::to_string(&hardware_event).unwrap();
-    event_sender.write_all(message.as_bytes()).await.unwrap();
-    event_sender.finish().await.unwrap();
+    let rt = Runtime::new().unwrap();
+    let mut gui_sender = rt.block_on(connection.open_uni()).unwrap();
+    rt.block_on(gui_sender.write_all(message.as_bytes()))
+        .unwrap();
+    rt.block_on(gui_sender.finish()).unwrap();
 }
