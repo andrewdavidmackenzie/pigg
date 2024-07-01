@@ -176,11 +176,14 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
             if !message.is_empty() {
                 let content = String::from_utf8_lossy(&message);
                 match serde_json::from_str(&content) {
-                    Ok(NewConfig(config)) => hardware
-                        .apply_config(&config, move |bcm, level| {
-                            send_input_change(connection_clone.clone(), bcm, level);
-                        })
-                        .unwrap(),
+                    Ok(NewConfig(config)) => {
+                        info!("New config applied");
+                        hardware
+                            .apply_config(&config, move |bcm, level| {
+                                send_input_change(connection_clone.clone(), bcm, level);
+                            })
+                            .unwrap()
+                    }
                     Ok(NewPinConfig(bcm, pin_function)) => {
                         info!("New pin config for pin #{bcm}: {pin_function}");
                         hardware
