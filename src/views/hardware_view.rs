@@ -317,7 +317,7 @@ impl HardwareView {
                     .or_insert(PinState::new())
                     .set_level(level_change.clone());
                 if let Some(ref mut listener) = &mut self.hardware_sender {
-                    let _ = listener.try_send(HardwareConfigMessage::OutputLevelChanged(
+                    let _ = listener.try_send(HardwareConfigMessage::IOLevelChanged(
                         bcm_pin_number,
                         level_change,
                     ));

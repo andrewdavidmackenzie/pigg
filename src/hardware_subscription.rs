@@ -7,7 +7,7 @@ use iced_futures::futures::StreamExt;
 use crate::hw;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_function::PinFunction;
-use crate::hw::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputLevelChanged};
+use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::LevelChange;
 use crate::hw::{Hardware, HardwareConfigMessage};
 use crate::views::hardware_view::HardwareEventMessage;
@@ -110,7 +110,7 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                                     },
                                 );
                             }
-                            OutputLevelChanged(bcm_pin_number, level_change) => {
+                            IOLevelChanged(bcm_pin_number, level_change) => {
                                 let _ = connected_hardware
                                     .set_output_level(bcm_pin_number, level_change);
                             }

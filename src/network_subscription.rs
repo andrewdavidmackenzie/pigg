@@ -71,15 +71,11 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                         connection,
                     ) => {
                         let hardware_event = hardware_event_receiver.select_next_some().await;
-                        let (mut sender, mut receiver) = connection.open_bi().await.unwrap();
+                        let mut config_sender = connection.open_uni().await.unwrap();
 
                         let message = serde_json::to_string(&hardware_event).unwrap();
-                        sender.write_all(message.as_bytes()).await.unwrap();
-                        sender.finish().await.unwrap();
-
-                        let message = receiver.read_to_end(4096).await.unwrap();
-                        let content = String::from_utf8_lossy(&message);
-                        println!("Replied: {content}");
+                        config_sender.write_all(message.as_bytes()).await.unwrap();
+                        config_sender.finish().await.unwrap();
                     }
                 }
             }
@@ -97,10 +93,10 @@ struct Piglet {
 
 async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     let args = Piglet {
-        node_id: NodeId::from_str("o4lknbi4ohseogye3g2jzxhuphxu7cimhrbsuaipkrmt57lphkva").unwrap(),
+        node_id: NodeId::from_str("yy3sfuixuhopjdvrmny7f3u2jgwaktlontbljg5xjjdkclckkxnq").unwrap(),
         addrs: vec![
-            "79.154.163.213:52414".parse().unwrap(),
-            "192.168.1.77:52414".parse().unwrap(),
+            "79.154.163.213:60293".parse().unwrap(),
+            "192.168.1.77:60293".parse().unwrap(),
         ],
     };
 
@@ -136,17 +132,13 @@ async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
     let addr = NodeAddr::from_parts(args.node_id, Some(relay_url), args.addrs);
 
-    // Attempt to connect, over the given ALPN.
-    // Returns a Quinn connection.
+    // Attempt to connect, over the given ALPN, returns a Quinn connection.
     let connection = endpoint.connect(addr, PIGLET_ALPN).await?;
 
     // Use the Quinn API to send and recv content.
-    let (mut sender, mut receiver) = connection.open_bi().await?;
+    let mut description_receiver = connection.accept_uni().await?;
 
-    sender.write_all(b"Hello").await?;
-    sender.finish().await?;
-
-    let message = receiver.read_to_end(4096).await?;
+    let message = description_receiver.read_to_end(4096).await?;
     let message = String::from_utf8(message)?;
 
     let desc = serde_json::from_str(&message)?;

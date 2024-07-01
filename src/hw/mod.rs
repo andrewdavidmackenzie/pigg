@@ -58,8 +58,8 @@ pub enum HardwareConfigMessage {
     NewConfig(HardwareConfig),
     /// A pin has had its config changed
     NewPinConfig(BCMPinNumber, PinFunction),
-    /// The level of an output pin has been set to a new value
-    OutputLevelChanged(BCMPinNumber, LevelChange),
+    /// The level of a pin has changed
+    IOLevelChanged(BCMPinNumber, LevelChange),
 }
 
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
