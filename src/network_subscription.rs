@@ -94,10 +94,10 @@ struct Piglet {
 
 async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     let args = Piglet {
-        node_id: NodeId::from_str("mnkbskgv7q5wada3dlpimq7dlm4gc32q4wnauu4iafsbpcrtlpzq").unwrap(),
+        node_id: NodeId::from_str("odvvntniz4qijaq6gdnsxuhe2wlhugiwdgkb7uqfw6zxhke7zxmq").unwrap(),
         addrs: vec![
-            "79.154.163.213:62028".parse().unwrap(),
-            "192.168.1.77:62028".parse().unwrap(),
+            "79.154.163.213:55772".parse().unwrap(),
+            "192.168.1.77:55772".parse().unwrap(),
         ],
     };
 

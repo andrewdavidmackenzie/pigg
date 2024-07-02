@@ -7,7 +7,6 @@ use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -97,22 +96,22 @@ pub enum HardwareViewMessage {
 }
 
 fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
-    match pin_description.name {
-        Cow::Borrowed("3V3") => ButtonStyle {
+    match &pin_description.name.to_string() as &str {
+        "3V3" => ButtonStyle {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        Cow::Borrowed("5V") => ButtonStyle {
+        "5V" => ButtonStyle {
             bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
             text_color: Color::BLACK,
             border_radius: 50.0,
             hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
             hovered_text_color: Color::BLACK,
         },
-        Cow::Borrowed("Ground") => ButtonStyle {
+        "Ground" => ButtonStyle {
             bg_color: Color::BLACK,
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -120,7 +119,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::BLACK,
         },
 
-        Cow::Borrowed("GPIO2") | Cow::Borrowed("GPIO3") => ButtonStyle {
+        "GPIO2" | "GPIO3" => ButtonStyle {
             bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -128,11 +127,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
         },
 
-        Cow::Borrowed("GPIO7")
-        | Cow::Borrowed("GPIO8")
-        | Cow::Borrowed("GPIO9")
-        | Cow::Borrowed("GPIO10")
-        | Cow::Borrowed("GPIO11") => ButtonStyle {
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => ButtonStyle {
             bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -140,7 +135,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
         },
 
-        Cow::Borrowed("GPIO14") | Cow::Borrowed("GPIO15") => ButtonStyle {
+        "GPIO14" | "GPIO15" => ButtonStyle {
             bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
             text_color: Color::WHITE,
             border_radius: 50.0,
@@ -148,7 +143,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
             hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
         },
 
-        Cow::Borrowed("ID_SD") | Cow::Borrowed("ID_SC") => ButtonStyle {
+        "ID_SD" | "ID_SC" => ButtonStyle {
             bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
             text_color: Color::WHITE,
             border_radius: 50.0,
