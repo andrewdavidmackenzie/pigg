@@ -436,13 +436,37 @@ fn pullup_picklist(
         sub_options.retain(|&option| option != *selected_pull);
     }
 
-    pick_list(sub_options, *pull, move |selected_pull| {
-        PinFunctionSelected(bcm_pin_number, Input(Some(selected_pull)))
-    })
-    .width(Length::Fixed(PULLUP_WIDTH))
-    .placeholder("Select Pullup")
-    .into()
+    let display_text = if let Some(selected_pull) = pull {
+        selected_pull.to_string()
+    } else {
+        "Select Pullup".to_string()
+    };
+    let menu_items = Item::with_menu(
+        Text::new(display_text.clone()), // Display "Select Pullup" or the selected option
+        Menu::new(
+            sub_options
+                .iter()
+                .map(|option| {
+                    Item::new(Button::new(Text::new(option.to_string())).on_press(
+                        HardwareMessage::PinFunctionSelected(bcm_pin_number, Input(Some(*option))),
+                    ))
+                })
+                .collect::<Vec<_>>(),
+        )
+            .max_width(100.0)
+            .offset(10.0),
+    );
+
+    // Create the menu bar with the menu items
+    let menu = iced_aw::menu_bar!((
+        button(Text::new(display_text)), // Display "Select Pullup" or the selected option
+        Menu::new(vec![menu_items]).offset(0.0).max_width(100.0)
+    ));
+
+    Row::new().align_items(Alignment::Center).push(menu).into()
+
 }
+
 
 /// Create the widget that either shows an input pin's state,
 /// or allows the user to control the state of an output pin
