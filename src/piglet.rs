@@ -58,8 +58,8 @@ fn local_init() -> io::Result<impl Hardware> {
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
 /// over the network.
-#[tokio::main]
 #[cfg(feature = "network")]
+#[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let hw = local_init()?;
     #[cfg(feature = "network")]
