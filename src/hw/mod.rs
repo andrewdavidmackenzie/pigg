@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::future::Future;
 #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 use std::io;
 
@@ -136,42 +137,44 @@ pub trait Hardware {
     fn description(&self) -> io::Result<HardwareDescription>;
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    fn apply_config<C, F>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
+        F: Future<Output = ()> + Send,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.pins {
-            let mut callback_clone = callback.clone();
-            let callback_wrapper = move |pin_number, level| {
-                callback_clone(pin_number, level);
-            };
-            self.apply_pin_config(*bcm_pin_number, pin_function, callback_wrapper)?;
+            let callback_clone = callback.clone();
+            self.apply_pin_config(*bcm_pin_number, pin_function, move |pin_number, level| {
+                let mut cc = callback_clone.clone();
+                async move {
+                    cc(pin_number, level).await;
+                }
+            })?;
         }
 
         Ok(())
     }
 
     /// Apply a new config to one specific pin
-    fn apply_pin_config<C>(
+    fn apply_pin_config<C, F>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
         callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static;
+        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
+        F: Future<Output = ()> + Send;
 
     /// Read the input level of an input using its [BCMPinNumber]
     #[allow(dead_code)] // for piglet
     fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
 
     /// Write the output level of an output using its [BCMPinNumber]
-    fn set_output_level(
-        &mut self,
-        bcm_pin_number: BCMPinNumber,
-        level_change: LevelChange,
-    ) -> io::Result<()>;
+    #[allow(dead_code)] // for piglet
+    fn set_output_level(&mut self, bcm_pin_number: BCMPinNumber, level: PinLevel)
+        -> io::Result<()>;
 }
 
 #[cfg(test)]

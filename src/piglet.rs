@@ -1,7 +1,8 @@
-use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 #[cfg(feature = "network")]
-use crate::hw::PIGLET_ALPN;
-use crate::hw::{BCMPinNumber, LevelChange, PinLevel};
+use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::{BCMPinNumber, PinLevel};
+#[cfg(feature = "network")]
+use crate::hw::{LevelChange, PIGLET_ALPN};
 #[cfg(feature = "network")]
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
@@ -10,13 +11,15 @@ use env_logger::Builder;
 use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
+#[cfg(feature = "network")]
 use iroh_net::endpoint::Connection;
 #[cfg(feature = "network")]
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
-use log::{error, info, trace, LevelFilter};
+#[cfg(feature = "network")]
+use log::error;
+use log::{info, trace, LevelFilter};
 use std::str::FromStr;
 use std::{env, io};
-use tokio::runtime::Runtime;
 
 mod hw;
 
@@ -69,7 +72,7 @@ fn main() {
 }
 
 /// Callback function that is called when an input changes level
-fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
+async fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
     info!("Pin #{bcm_pin_number} changed level to '{level}'");
 }
 
@@ -152,7 +155,7 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
     info!("node relay server url: {relay_url}");
 
     // accept incoming connections, returns a normal QUIC connection
-    while let Some(connecting) = endpoint.accept().await {
+    if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
         let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
         info!("new connection from {node_id}",);
@@ -180,7 +183,10 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
                         info!("New config applied");
                         hardware
                             .apply_config(&config, move |bcm, level| {
-                                send_input_change(connection_clone.clone(), bcm, level);
+                                let cc = connection_clone.clone();
+                                async move {
+                                    send_input_change(cc, bcm, level).await;
+                                }
                             })
                             .unwrap()
                     }
@@ -188,7 +194,10 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
                         info!("New pin config for pin #{bcm}: {pin_function}");
                         hardware
                             .apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                                send_input_change(connection_clone.clone(), bcm, level);
+                                let cc = connection_clone.clone();
+                                async move {
+                                    send_input_change(cc, bcm, level).await;
+                                }
                             })
                             .unwrap()
                     }
@@ -206,14 +215,18 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
 }
 
 /// Send a detected input level change back to the GUI using the `gui_sender` [SendStream]
-fn send_input_change(connection: Connection, bcm: BCMPinNumber, level: PinLevel) {
+#[cfg(feature = "network")]
+async fn send_input_change(connection: Connection, bcm: BCMPinNumber, level: PinLevel) {
     info!("Pin #{bcm} input level changed to {level}");
     let level_change = LevelChange::new(level);
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = serde_json::to_string(&hardware_event).unwrap();
-    let rt = Runtime::new().unwrap();
-    let mut gui_sender = rt.block_on(connection.open_uni()).unwrap();
-    rt.block_on(gui_sender.write_all(message.as_bytes()))
-        .unwrap();
-    rt.block_on(gui_sender.finish()).unwrap();
+    //let rt = Runtime::new().unwrap();
+    let mut gui_sender =
+        //rt.block_on(
+        connection.open_uni().await.unwrap();
+    //rt.block_on(
+    gui_sender.write_all(message.as_bytes()).await.unwrap();
+    //rt.block_on(
+    gui_sender.finish().await.unwrap();
 }

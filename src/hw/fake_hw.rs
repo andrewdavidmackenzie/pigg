@@ -1,10 +1,12 @@
+use std::future::Future;
 /// Fake Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, Windows)
 use std::io;
 use std::time::Duration;
 
-use rand::Rng;
+use tokio::task;
+use tokio::time::sleep;
 
-use crate::hw::{BCMPinNumber, LevelChange, PinFunction, PinLevel};
+use crate::hw::{BCMPinNumber, PinFunction, PinLevel};
 
 use super::Hardware;
 use super::{HardwareDescription, HardwareDetails};
@@ -13,6 +15,7 @@ use crate::hw::pin_descriptions::*;
 
 /// FakeHW Pins - mimicking Model the 40 pin GPIO
 // TODO make private again
+//noinspection DuplicatedCode
 pub const FAKE_PIN_DESCRIPTIONS: PinDescriptionSet = PinDescriptionSet::new([
     PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
     PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
@@ -39,22 +42,22 @@ impl Hardware for FakeHW {
         })
     }
 
-    fn apply_pin_config<C>(
+    fn apply_pin_config<C, F>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
+        F: Future<Output = ()> + Send,
     {
         if let PinFunction::Input(_) = pin_function {
-            std::thread::spawn(move || {
-                let mut rng = rand::thread_rng();
+            task::spawn(async move {
                 loop {
-                    let level: bool = rng.gen();
-                    callback(bcm_pin_number, level);
-                    std::thread::sleep(Duration::from_millis(666));
+                    let level: bool = rand::random::<bool>();
+                    callback(bcm_pin_number, level).await;
+                    sleep(Duration::from_millis(666)).await;
                 }
             });
         }
@@ -70,7 +73,7 @@ impl Hardware for FakeHW {
     fn set_output_level(
         &mut self,
         _bcm_pin_number: BCMPinNumber,
-        _level_change: LevelChange,
+        _level: PinLevel,
     ) -> io::Result<()> {
         Ok(())
     }

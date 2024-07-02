@@ -20,9 +20,9 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["network"]
+default = []
 pi_hw = ["rppal"]
-fake_hw = []
+fake_hw = ["tokio"]
 gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters"]
 network = ["iroh-net", "anyhow", "futures-lite", "tokio"]
 
@@ -37,6 +37,8 @@ clap = { version = "4.5.7", default-features = false, features = ["std"] }
 iroh-net = { version = "0.19.0", optional = true }
 anyhow = { version = "1", optional = true }
 futures-lite = { version = "2.3", optional = true }
+# TODO review this list of tokio features and reduce if possible - default-features = false then activate those needed
+tokio = { version = "1", features = ["time", "io-util", "macros", "sync", "rt", "net", "fs", "io-std", "signal", "process"], optional = true }
 
 # for interacting with GPIO on the Raspberry Pi
 rppal = { version = "0.18.0", optional = true }
@@ -44,8 +46,6 @@ rppal = { version = "0.18.0", optional = true }
 # used in piglet only
 log = "0.4.22"
 env_logger = "0.11.3"
-# TODO review this list of tokio features and reduce if possible
-tokio = { version = "1", features = ["io-util", "macros", "sync", "rt", "net", "fs", "io-std", "signal", "process"], optional = true }
 
 # used by piggui in GUI only
 iced = { version = "0.12.1", default-features = false, features = ["tokio", "debug", "canvas", "advanced"], optional = true }
