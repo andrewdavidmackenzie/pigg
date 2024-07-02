@@ -96,7 +96,7 @@ pub enum HardwareViewMessage {
 }
 
 fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
-    match &pin_description.name.to_string() as &str {
+    match pin_description.name.as_ref() {
         "3V3" => ButtonStyle {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
