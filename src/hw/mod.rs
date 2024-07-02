@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
+#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 use std::future::Future;
 #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 use std::io;
