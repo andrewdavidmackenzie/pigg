@@ -221,7 +221,7 @@ mod test {
 
         for pin in pins {
             if let Some(bcm) = pin.bcm {
-                for pin_function in pin.options {
+                for pin_function in &pin.options.to_vec() {
                     hw.apply_pin_config(bcm, pin_function, |_, _| async {})
                         .expect("Failed to apply pin config")
                 }
