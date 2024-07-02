@@ -203,7 +203,9 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
                     }
                     Ok(IOLevelChanged(bcm, level_change)) => {
                         info!("Pin #{bcm} Output level change: {level_change:?}");
-                        hardware.set_output_level(bcm, level_change).unwrap();
+                        hardware
+                            .set_output_level(bcm, level_change.new_level)
+                            .unwrap();
                     }
                     _ => error!("Unknown message: {content}"),
                 }
