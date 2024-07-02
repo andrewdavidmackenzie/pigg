@@ -20,7 +20,7 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = []
+default = ["network"]
 pi_hw = ["rppal"]
 fake_hw = ["tokio", "rand"]
 gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters"]
@@ -37,8 +37,7 @@ rand = { version = "0.8.5", optional = true }
 iroh-net = { version = "0.19.0", optional = true }
 anyhow = { version = "1", optional = true }
 futures-lite = { version = "2.3", optional = true }
-# TODO review this list of tokio features and reduce if possible - default-features = false then activate those needed
-tokio = { version = "1", features = ["time", "io-util", "macros", "sync", "rt", "net", "fs", "io-std", "signal", "process"], optional = true }
+tokio = { version = "1", default-features = false, optional = true }
 
 # for interacting with GPIO on the Raspberry Pi
 rppal = { version = "0.18.0", optional = true }
