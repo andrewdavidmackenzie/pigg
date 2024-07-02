@@ -92,6 +92,7 @@ struct Piglet {
     addrs: Vec<SocketAddr>,
 }
 
+//noinspection SpellCheckingInspection
 async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     let args = Piglet {
         node_id: NodeId::from_str("odvvntniz4qijaq6gdnsxuhe2wlhugiwdgkb7uqfw6zxhke7zxmq").unwrap(),
