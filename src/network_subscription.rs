@@ -19,11 +19,7 @@ pub enum NetworkState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
-    Connected(
-        Receiver<HardwareConfigMessage>,
-        Sender<HardwareConfigMessage>,
-        Connection,
-    ),
+    Connected(Receiver<HardwareConfigMessage>, Connection),
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
@@ -54,11 +50,8 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                                     .await;
 
                                 // We are ready to receive messages from the GUI
-                                state = NetworkState::Connected(
-                                    hardware_event_receiver,
-                                    hardware_event_sender,
-                                    connection,
-                                );
+                                state =
+                                    NetworkState::Connected(hardware_event_receiver, connection);
                             }
                             Err(e) => {
                                 eprintln!("Error connecting to piglet: {e}");
@@ -66,14 +59,9 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                         }
                     }
 
-                    NetworkState::Connected(
-                        hardware_event_receiver,
-                        _hardware_event_sender,
-                        connection,
-                    ) => {
+                    NetworkState::Connected(config_change_receiver, connection) => {
                         // receive a config change from the UI
-                        let config_change_message =
-                            hardware_event_receiver.select_next_some().await;
+                        let config_change_message = config_change_receiver.select_next_some().await;
                         // open a quick stream to the connected hardware
                         let mut config_sender = connection.open_uni().await.unwrap();
                         // serialize the message
