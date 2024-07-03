@@ -5,9 +5,10 @@ use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use anyhow::{ensure, Context};
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::Receiver;
+use iced::futures::sink::SinkExt;
 use iced::futures::StreamExt;
+use iced::futures::{pin_mut, FutureExt};
 use iced::{futures, subscription, Subscription};
-use iced_futures::futures::sink::SinkExt;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::RelayMode;
@@ -62,6 +63,10 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                     }
 
                     NetworkState::Connected(config_change_receiver, connection) => {
+                        let mut fused_wait_for_remote_message =
+                            wait_for_remote_message(connection).fuse();
+                        pin_mut!(fused_wait_for_remote_message);
+
                         futures::select! {
                             // receive a config change from the UI
                             config_change_message = config_change_receiver.select_next_some() => {
@@ -69,8 +74,8 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                             }
 
                             // receive an input level change from remote hardware
-                            config_change = wait_for_remote_message(connection).select_next_some() => {
-                                match config_change {
+                            remote_event = fused_wait_for_remote_message.next() => {
+                                match remote_event {
                                    Ok(IOLevelChanged(bcm, level_change)) => {
                                     gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
                                     },
@@ -114,14 +119,6 @@ async fn send_config_change(
     // close and flush the stream to ensure the message is sent
     config_sender.finish().await?;
     Ok(())
-}
-
-#[derive(Debug)]
-struct Piglet {
-    /// The id of the remote node.
-    node_id: NodeId,
-    /// The list of direct UDP addresses for the remote node.
-    addrs: Vec<SocketAddr>,
 }
 
 //noinspection SpellCheckingInspection
