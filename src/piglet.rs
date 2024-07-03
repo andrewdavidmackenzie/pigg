@@ -223,12 +223,7 @@ async fn send_input_change(connection: Connection, bcm: BCMPinNumber, level: Pin
     let level_change = LevelChange::new(level);
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = serde_json::to_string(&hardware_event).unwrap();
-    //let rt = Runtime::new().unwrap();
-    let mut gui_sender =
-        //rt.block_on(
-        connection.open_uni().await.unwrap();
-    //rt.block_on(
+    let mut gui_sender = connection.open_uni().await.unwrap();
     gui_sender.write_all(message.as_bytes()).await.unwrap();
-    //rt.block_on(
     gui_sender.finish().await.unwrap();
 }
