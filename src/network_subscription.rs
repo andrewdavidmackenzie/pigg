@@ -71,11 +71,16 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                         _hardware_event_sender,
                         connection,
                     ) => {
-                        let hardware_event = hardware_event_receiver.select_next_some().await;
+                        // receive a config change from the UI
+                        let config_change_message =
+                            hardware_event_receiver.select_next_some().await;
+                        // open a quick stream to the connected hardware
                         let mut config_sender = connection.open_uni().await.unwrap();
-
-                        let message = serde_json::to_string(&hardware_event).unwrap();
-                        config_sender.write_all(message.as_bytes()).await.unwrap();
+                        // serialize the message
+                        let content = serde_json::to_string(&config_change_message).unwrap();
+                        // send it to the remotely connected hardware
+                        config_sender.write_all(content.as_bytes()).await.unwrap();
+                        // close and flush the stream to ensure the message is sent
                         config_sender.finish().await.unwrap();
                     }
                 }
