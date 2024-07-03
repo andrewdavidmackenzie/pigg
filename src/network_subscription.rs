@@ -126,14 +126,7 @@ struct Piglet {
 
 //noinspection SpellCheckingInspection
 async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
-    let args = Piglet {
-        node_id: NodeId::from_str("odvvntniz4qijaq6gdnsxuhe2wlhugiwdgkb7uqfw6zxhke7zxmq").unwrap(),
-        addrs: vec![
-            "79.154.163.213:55772".parse().unwrap(),
-            "192.168.1.77:55772".parse().unwrap(),
-        ],
-    };
-
+    let node_id = NodeId::from_str("odvvntniz4qijaq6gdnsxuhe2wlhugiwdgkb7uqfw6zxhke7zxmq").unwrap();
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
@@ -168,7 +161,7 @@ async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     ))?;
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
-    let addr = NodeAddr::from_parts(args.node_id, Some(relay_url), args.addrs);
+    let addr = NodeAddr::from_parts(node_id, Some(relay_url), vec![]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
     let connection = endpoint.connect(addr, PIGLET_ALPN).await?;
