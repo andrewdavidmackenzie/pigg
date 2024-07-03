@@ -120,7 +120,8 @@ async fn send_config_change(
 
 //noinspection SpellCheckingInspection
 async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
-    let node_id = NodeId::from_str("5oejh52fa67hupj7mdja36feza3trhtb5sezsrin7uoexqktb6aq").unwrap();
+    // TODO this will come from UI entry later. For now copy this from the output of piglet then run piggui
+    let node_id = NodeId::from_str("2r7vxyfvkfgwfkcxt5wky72jghy4n6boawnvz5fxes62tqmnnmhq").unwrap();
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
@@ -135,17 +136,12 @@ async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
         .bind(0)
         .await?;
 
-    let me = endpoint.node_id();
-    println!("node id: {me}");
-    println!("node listening addresses:");
-    for local_endpoint in endpoint
+    for _local_endpoint in endpoint
         .direct_addresses()
         .next()
         .await
         .context("no endpoints")?
-    {
-        println!("\t{}", local_endpoint.addr)
-    }
+    {}
 
     // find my closest relay - maybe set this as a default in the UI but allow used to
     // override it in a text entry box. Leave black for user if fails to fetch it.

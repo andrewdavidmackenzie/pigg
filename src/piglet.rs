@@ -181,31 +181,25 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
                 match serde_json::from_str(&content) {
                     Ok(NewConfig(config)) => {
                         info!("New config applied");
-                        hardware
-                            .apply_config(&config, move |bcm, level| {
-                                let cc = connection_clone.clone();
-                                async move {
-                                    send_input_change(cc, bcm, level).await;
-                                }
-                            })
-                            .unwrap()
+                        let _ = hardware.apply_config(&config, move |bcm, level| {
+                            let cc = connection_clone.clone();
+                            async move {
+                                let _ = send_input_change(cc, bcm, level).await;
+                            }
+                        });
                     }
                     Ok(NewPinConfig(bcm, pin_function)) => {
                         info!("New pin config for pin #{bcm}: {pin_function}");
-                        hardware
-                            .apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                                let cc = connection_clone.clone();
-                                async move {
-                                    send_input_change(cc, bcm, level).await;
-                                }
-                            })
-                            .unwrap()
+                        let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                            let cc = connection_clone.clone();
+                            async move {
+                                let _ = send_input_change(cc, bcm, level).await;
+                            }
+                        });
                     }
                     Ok(IOLevelChanged(bcm, level_change)) => {
                         info!("Pin #{bcm} Output level change: {level_change:?}");
-                        hardware
-                            .set_output_level(bcm, level_change.new_level)
-                            .unwrap();
+                        let _ = hardware.set_output_level(bcm, level_change.new_level);
                     }
                     _ => error!("Unknown message: {content}"),
                 }
@@ -218,12 +212,16 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
 
 /// Send a detected input level change back to the GUI using the `gui_sender` [SendStream]
 #[cfg(feature = "network")]
-async fn send_input_change(connection: Connection, bcm: BCMPinNumber, level: PinLevel) {
-    info!("Pin #{bcm} input level changed to {level}");
+async fn send_input_change(
+    connection: Connection,
+    bcm: BCMPinNumber,
+    level: PinLevel,
+) -> anyhow::Result<()> {
     let level_change = LevelChange::new(level);
+    info!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event).unwrap();
-    let mut gui_sender = connection.open_uni().await.unwrap();
-    gui_sender.write_all(message.as_bytes()).await.unwrap();
-    gui_sender.finish().await.unwrap();
+    let message = serde_json::to_string(&hardware_event)?;
+    let mut gui_sender = connection.open_uni().await?;
+    gui_sender.write_all(message.as_bytes()).await?;
+    Ok(gui_sender.finish().await?)
 }
