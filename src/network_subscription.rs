@@ -14,7 +14,6 @@ use iroh_net::key::SecretKey;
 use iroh_net::relay::RelayMode;
 use iroh_net::{Endpoint, NodeAddr, NodeId};
 use std::io;
-use std::net::SocketAddr;
 use std::str::FromStr;
 
 /// This enum describes the states of the subscription
@@ -63,8 +62,9 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                     }
 
                     NetworkState::Connected(config_change_receiver, connection) => {
-                        let mut fused_wait_for_remote_message =
-                            wait_for_remote_message(connection).fuse();
+                        let mut connection_clone = connection.clone();
+                        let fused_wait_for_remote_message =
+                            wait_for_remote_message(&mut connection_clone).fuse();
                         pin_mut!(fused_wait_for_remote_message);
 
                         futures::select! {
@@ -74,13 +74,10 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                             }
 
                             // receive an input level change from remote hardware
-                            remote_event = fused_wait_for_remote_message.next() => {
-                                match remote_event {
-                                   Ok(IOLevelChanged(bcm, level_change)) => {
-                                    gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
-                                    },
-                                   _ => {}
-                                }
+                            remote_event = fused_wait_for_remote_message => {
+                                if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
+                                     gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
+                                 }
                             }
                         }
                     }
@@ -123,7 +120,7 @@ async fn send_config_change(
 
 //noinspection SpellCheckingInspection
 async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
-    let node_id = NodeId::from_str("odvvntniz4qijaq6gdnsxuhe2wlhugiwdgkb7uqfw6zxhke7zxmq").unwrap();
+    let node_id = NodeId::from_str("5oejh52fa67hupj7mdja36feza3trhtb5sezsrin7uoexqktb6aq").unwrap();
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
