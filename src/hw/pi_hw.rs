@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
+use std::future::Future;
 use std::io;
 
 use rppal::gpio::Gpio;
@@ -9,7 +10,7 @@ use rppal::gpio::{InputPin, Level, Trigger};
 
 use crate::hw::pin_description::PinDescriptionSet;
 use crate::hw::pin_descriptions::*;
-use crate::hw::{BCMPinNumber, LevelChange, PinLevel};
+use crate::hw::{BCMPinNumber, PinLevel};
 use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
@@ -17,6 +18,7 @@ use super::{HardwareDescription, HardwareDetails};
 
 /// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
 /// For now, we will use the same descriptions for all hardware
+//noinspection DuplicatedCode
 const GPIO_PIN_DESCRIPTIONS: PinDescriptionSet = PinDescriptionSet::new([
     PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
     PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
@@ -79,14 +81,15 @@ impl Hardware for PiHW {
     }
 
     /// Apply the requested config to one pin, using bcm_pin_number
-    fn apply_pin_config<C>(
+    fn apply_pin_config<C, F>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + 'static,
+        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
+        F: Future<Output = ()>,
     {
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
@@ -161,10 +164,10 @@ impl Hardware for PiHW {
     fn set_output_level(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        level_change: LevelChange,
+        level: PinLevel,
     ) -> io::Result<()> {
         match self.configured_pins.get_mut(&bcm_pin_number) {
-            Some(Pin::Output(output_pin)) => match level_change.new_level {
+            Some(Pin::Output(output_pin)) => match level {
                 true => output_pin.write(Level::High),
                 false => output_pin.write(Level::Low),
             },
@@ -217,9 +220,9 @@ mod test {
         let pins = description.pins.pins();
 
         for pin in pins {
-            if let Some(bcm) = pin.bcm_pin_number {
-                for pin_function in pin.options {
-                    hw.apply_pin_config(bcm, pin_function, |_, _| {})
+            if let Some(bcm) = pin.bcm {
+                for pin_function in &pin.options.to_vec() {
+                    hw.apply_pin_config(bcm, pin_function, |_, _| async {})
                         .expect("Failed to apply pin config")
                 }
             }

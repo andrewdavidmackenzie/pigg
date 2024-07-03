@@ -10,16 +10,20 @@ use iced_futures::Subscription;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::hardware_subscription::{HWLSubscriptionMessage, HardwareConfigMessage};
+#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
+use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
 use crate::hw::pin_function::PinFunction::{Input, Output};
+use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
+#[cfg(feature = "network")]
+use crate::network_subscription;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
-use crate::views::hardware_view::HardwareMessage::{
+use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
 use crate::views::layout_selector::Layout;
@@ -27,7 +31,7 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{hardware_subscription, Message, Piggui, PinState};
+use crate::{Message, Piggui, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -66,19 +70,33 @@ const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
-/// [HardwareMessage] covers all messages that are handled by hardware_view
+/// This enum is for events created by async events in the hardware that will be sent to the Gui
+// TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
+#[allow(clippy::large_enum_variant)] // remove when fix todo above
+#[derive(Clone, Debug)]
+pub enum HardwareEventMessage {
+    /// This event indicates that the listener is ready. It conveys a sender to the GUI
+    /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
+    Connected(Sender<HardwareConfigMessage>, HardwareDescription),
+    /// This event indicates that the logic level of an input has just changed
+    InputChange(BCMPinNumber, LevelChange),
+    /// We have lost the connection to the hardware
+    Disconnected,
+}
+
+/// [HardwareViewMessage] covers all messages that are handled by hardware_view
 #[derive(Debug, Clone)]
-pub enum HardwareMessage {
+pub enum HardwareViewMessage {
     Activate(BoardPinNumber),
     PinFunctionSelected(BCMPinNumber, PinFunction),
     NewConfig(HardwareConfig),
-    HardwareSubscription(HWLSubscriptionMessage),
+    HardwareSubscription(HardwareEventMessage),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
 }
 
 fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
-    match pin_description.name {
+    match pin_description.name.as_ref() {
         "3V3" => ButtonStyle {
             bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
             text_color: Color::BLACK,
@@ -246,7 +264,7 @@ impl HardwareView {
         }
     }
 
-    pub fn update(&mut self, message: HardwareMessage) -> Command<Message> {
+    pub fn update(&mut self, message: HardwareViewMessage) -> Command<Message> {
         match message {
             UpdateCharts => {
                 // Update all the charts of the pins that have an assigned function
@@ -269,19 +287,19 @@ impl HardwareView {
             }
 
             HardwareSubscription(event) => match event {
-                HWLSubscriptionMessage::Ready(config_change_sender, hw_desc) => {
+                HardwareEventMessage::Connected(config_change_sender, hw_desc) => {
                     self.hardware_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
                 }
-                HWLSubscriptionMessage::InputChange(bcm_pin_number, level_change) => {
+                HardwareEventMessage::InputChange(bcm_pin_number, level_change) => {
                     self.pin_states
                         .entry(bcm_pin_number)
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HWLSubscriptionMessage::Lost => {
+                HardwareEventMessage::Disconnected => {
                     return Command::perform(empty(), |_| {
                         <Piggui as iced::Application>::Message::HardwareLost
                     });
@@ -294,7 +312,7 @@ impl HardwareView {
                     .or_insert(PinState::new())
                     .set_level(level_change.clone());
                 if let Some(ref mut listener) = &mut self.hardware_sender {
-                    let _ = listener.try_send(HardwareConfigMessage::OutputLevelChanged(
+                    let _ = listener.try_send(HardwareConfigMessage::IOLevelChanged(
                         bcm_pin_number,
                         level_change,
                     ));
@@ -307,7 +325,7 @@ impl HardwareView {
         Command::none()
     }
 
-    pub fn view(&self, layout: Layout) -> Element<HardwareMessage> {
+    pub fn view(&self, layout: Layout) -> Element<HardwareViewMessage> {
         if let Some(hw_description) = &self.hardware_description {
             let pin_layout = match layout {
                 Layout::BoardLayout => self.board_pin_layout_view(&hw_description.pins),
@@ -322,11 +340,14 @@ impl HardwareView {
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
-    pub fn subscription(&self) -> Subscription<HardwareMessage> {
+    pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
         let subscriptions = [
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| UpdateCharts),
+            #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
             hardware_subscription::subscribe().map(HardwareSubscription),
+            #[cfg(feature = "network")]
+            network_subscription::subscribe().map(HardwareSubscription),
         ];
 
         Subscription::batch(subscriptions)
@@ -336,18 +357,15 @@ impl HardwareView {
     pub fn bcm_pin_layout_view<'a>(
         &'a self,
         pin_set: &'a PinDescriptionSet,
-    ) -> Element<'a, HardwareMessage> {
+    ) -> Element<'a, HardwareViewMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         for pin_description in pin_set.bcm_pins_sorted() {
             let pin_row = create_pin_view_side(
                 pin_description,
-                self.hardware_config
-                    .pins
-                    .get(&pin_description.bcm_pin_number.unwrap()),
+                self.hardware_config.pins.get(&pin_description.bcm.unwrap()),
                 Right,
-                self.pin_states
-                    .get(&pin_description.bcm_pin_number.unwrap_or(0)),
+                self.pin_states.get(&pin_description.bcm.unwrap_or(0)),
             );
 
             column = column
@@ -363,27 +381,23 @@ impl HardwareView {
     pub fn board_pin_layout_view<'a>(
         &'a self,
         pin_descriptions: &'a PinDescriptionSet,
-    ) -> Element<'a, HardwareMessage> {
+    ) -> Element<'a, HardwareViewMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         // Draw all pins, those with and without [BCMPinNumber]
         for pair in pin_descriptions.pins().chunks(2) {
             let left_row = create_pin_view_side(
                 &pair[0],
-                self.hardware_config
-                    .pins
-                    .get(&pair[0].bcm_pin_number.unwrap_or(0)),
+                self.hardware_config.pins.get(&pair[0].bcm.unwrap_or(0)),
                 Left,
-                self.pin_states.get(&pair[0].bcm_pin_number.unwrap_or(0)),
+                self.pin_states.get(&pair[0].bcm.unwrap_or(0)),
             );
 
             let right_row = create_pin_view_side(
                 &pair[1],
-                self.hardware_config
-                    .pins
-                    .get(&pair[1].bcm_pin_number.unwrap_or(0)),
+                self.hardware_config.pins.get(&pair[1].bcm.unwrap_or(0)),
                 Right,
-                self.pin_states.get(&pair[1].bcm_pin_number.unwrap_or(0)),
+                self.pin_states.get(&pair[1].bcm.unwrap_or(0)),
             );
 
             let row = Row::new()
@@ -409,7 +423,7 @@ impl HardwareView {
 fn pullup_picklist(
     pull: &Option<InputPull>,
     bcm_pin_number: BCMPinNumber,
-) -> Element<'static, HardwareMessage> {
+) -> Element<'static, HardwareViewMessage> {
     let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
 
     // Filter out the currently selected pull option
@@ -433,7 +447,7 @@ fn get_pin_widget<'a>(
     pin_function: Option<&'a PinFunction>,
     pin_state: &'a PinState,
     direction: Direction,
-) -> Element<'a, HardwareMessage> {
+) -> Element<'a, HardwareViewMessage> {
     let toggle_button_style = TogglerStyle {
         background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
         background_border_width: 1.0,
@@ -447,7 +461,7 @@ fn get_pin_widget<'a>(
         active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
     };
 
-    let row: Row<HardwareMessage> = match pin_function {
+    let row: Row<HardwareViewMessage> = match pin_function {
         Some(Input(pull)) => {
             let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
             if direction == Left {
@@ -473,7 +487,7 @@ fn get_pin_widget<'a>(
             .style(toggle_button_style.get_toggler_style());
 
             let output_clicker =
-                clicker::<HardwareMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
+                clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
                     .on_press({
                         let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
                         ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
@@ -525,15 +539,10 @@ fn create_pin_view_side<'a>(
     selected_function: Option<&'a PinFunction>,
     direction: Direction,
     pin_state: Option<&'a PinState>,
-) -> Row<'a, HardwareMessage> {
+) -> Row<'a, HardwareViewMessage> {
     let pin_widget = if let Some(state) = pin_state {
         // Create a widget that is either used to visualize an input or control an output
-        get_pin_widget(
-            pin_description.bcm_pin_number,
-            selected_function,
-            state,
-            direction,
-        )
+        get_pin_widget(pin_description.bcm, selected_function, state, direction)
     } else {
         Row::new().width(Length::Fixed(PIN_WIDGET_ROW_WIDTH)).into()
     };
@@ -543,7 +552,7 @@ fn create_pin_view_side<'a>(
         .width(Length::Fixed(PIN_OPTION_WIDTH))
         .align_items(Alignment::Center);
     if pin_description.options.len() > 1 {
-        let bcm_pin_number = pin_description.bcm_pin_number.unwrap();
+        let bcm_pin_number = pin_description.bcm.unwrap();
         let mut pin_options_row = Row::new().align_items(Alignment::Center);
         let mut config_options = pin_description.options.to_vec();
         let selected = match selected_function {
@@ -572,7 +581,7 @@ fn create_pin_view_side<'a>(
 
     // Create the Pin name
     let pin_name = Row::new()
-        .push(Text::new(pin_description.name))
+        .push(Text::new(pin_description.name.to_string()))
         .align_items(Alignment::Center);
 
     pin_name_column = pin_name_column.push(pin_name).width(PIN_NAME_WIDTH);
@@ -591,13 +600,11 @@ fn create_pin_view_side<'a>(
 
     let mut pin_button_column = Column::new().align_items(Alignment::Center);
     // Create the pin itself, with number and as a button
-    let pin_button = button(
-        Text::new(pin_description.board_pin_number.to_string())
-            .horizontal_alignment(Horizontal::Center),
-    )
-    .width(Length::Fixed(PIN_BUTTON_WIDTH))
-    .style(get_pin_style(pin_description).get_button_style())
-    .on_press(Activate(pin_description.board_pin_number));
+    let pin_button =
+        button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
+            .width(Length::Fixed(PIN_BUTTON_WIDTH))
+            .style(get_pin_style(pin_description).get_button_style())
+            .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
