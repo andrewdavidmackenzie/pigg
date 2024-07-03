@@ -1,11 +1,13 @@
+use crate::hw::HardwareConfigMessage::IOLevelChanged;
 use crate::hw::{HardwareConfigMessage, HardwareDescription, PIGLET_ALPN};
 use crate::views::hardware_view::HardwareEventMessage;
-use anyhow::Context;
+use crate::views::hardware_view::HardwareEventMessage::InputChange;
+use anyhow::{ensure, Context};
 use iced::futures::channel::mpsc;
-use iced::futures::channel::mpsc::{Receiver, Sender};
-use iced::{subscription, Subscription};
+use iced::futures::channel::mpsc::Receiver;
+use iced::futures::StreamExt;
+use iced::{futures, subscription, Subscription};
 use iced_futures::futures::sink::SinkExt;
-use iced_futures::futures::StreamExt;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::RelayMode;
@@ -60,21 +62,58 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                     }
 
                     NetworkState::Connected(config_change_receiver, connection) => {
-                        // receive a config change from the UI
-                        let config_change_message = config_change_receiver.select_next_some().await;
-                        // open a quick stream to the connected hardware
-                        let mut config_sender = connection.open_uni().await.unwrap();
-                        // serialize the message
-                        let content = serde_json::to_string(&config_change_message).unwrap();
-                        // send it to the remotely connected hardware
-                        config_sender.write_all(content.as_bytes()).await.unwrap();
-                        // close and flush the stream to ensure the message is sent
-                        config_sender.finish().await.unwrap();
+                        futures::select! {
+                            // receive a config change from the UI
+                            config_change_message = config_change_receiver.select_next_some() => {
+                                send_config_change(connection, config_change_message).await.unwrap()
+                            }
+
+                            // receive an input level change from remote hardware
+                            config_change = wait_for_remote_message(connection).select_next_some() => {
+                                match config_change {
+                                   Ok(IOLevelChanged(bcm, level_change)) => {
+                                    gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
+                                    },
+                                   _ => {}
+                                }
+                            }
+                        }
                     }
                 }
             }
         },
     )
+}
+
+/// Wait until we receive a message from remote hardware
+async fn wait_for_remote_message(
+    connection: &mut Connection,
+) -> Result<HardwareConfigMessage, anyhow::Error> {
+    let mut config_receiver = connection.accept_uni().await?;
+    let message = config_receiver.read_to_end(4096).await?;
+    ensure!(
+        !message.is_empty(),
+        io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
+    );
+
+    let content = String::from_utf8_lossy(&message);
+    Ok(serde_json::from_str(&content)?)
+}
+
+/// Send config change received form the GUI to the remote hardware
+async fn send_config_change(
+    connection: &mut Connection,
+    config_change_message: HardwareConfigMessage,
+) -> anyhow::Result<()> {
+    // open a quick stream to the connected hardware
+    let mut config_sender = connection.open_uni().await?;
+    // serialize the message
+    let content = serde_json::to_string(&config_change_message)?;
+    // send it to the remotely connected hardware
+    config_sender.write_all(content.as_bytes()).await?;
+    // close and flush the stream to ensure the message is sent
+    config_sender.finish().await?;
+    Ok(())
 }
 
 #[derive(Debug)]
