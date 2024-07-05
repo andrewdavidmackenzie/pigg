@@ -345,9 +345,9 @@ impl HardwareView {
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| UpdateCharts),
             #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
-                hardware_subscription::subscribe().map(HardwareSubscription),
+            hardware_subscription::subscribe().map(HardwareSubscription),
             #[cfg(feature = "network")]
-                network_subscription::subscribe().map(HardwareSubscription),
+            network_subscription::subscribe().map(HardwareSubscription),
         ];
 
         Subscription::batch(subscriptions)
@@ -434,9 +434,9 @@ fn pullup_picklist(
     pick_list(sub_options, *pull, move |selected_pull| {
         PinFunctionSelected(bcm_pin_number, Input(Some(selected_pull)))
     })
-        .width(Length::Fixed(PULLUP_WIDTH))
-        .placeholder("Select Pullup")
-        .into()
+    .width(Length::Fixed(PULLUP_WIDTH))
+    .placeholder("Select Pullup")
+    .into()
 }
 
 /// Create the widget that either shows an input pin's state,
@@ -483,8 +483,8 @@ fn get_pin_widget<'a>(
                 pin_state.get_level().unwrap_or(false as PinLevel),
                 move |b| ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
             )
-                .size(TOGGLER_SIZE)
-                .style(toggle_button_style.get_toggler_style());
+            .size(TOGGLER_SIZE)
+            .style(toggle_button_style.get_toggler_style());
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
@@ -557,8 +557,10 @@ fn create_pin_view_side<'a>(
         let mut pin_options_row = Row::new().align_items(Alignment::Center);
 
         // Filter options
-        let mut config_options: Vec<_> = pin_description.options.iter().filter(|&&option| {
-            match selected_function {
+        let mut config_options: Vec<_> = pin_description
+            .options
+            .iter()
+            .filter(|&&option| match selected_function {
                 Some(Input(Some(_))) => {
                     matches!(option, Output(None) | PinFunction::None)
                 }
@@ -567,8 +569,9 @@ fn create_pin_view_side<'a>(
                 }
                 Some(selected) => *selected != option,
                 None => true,
-            }
-        }).cloned().collect();
+            })
+            .cloned()
+            .collect();
 
         // If PinFunction::None is not included,
         if !config_options.contains(&PinFunction::None) {
@@ -577,13 +580,12 @@ fn create_pin_view_side<'a>(
 
         let selected = selected_function.filter(|&pin_function| *pin_function != PinFunction::None);
 
-
         pin_options_row = pin_options_row.push(
             pick_list(config_options, selected, move |pin_function| {
                 PinFunctionSelected(bcm_pin_number, pin_function)
             })
-                .width(Length::Fixed(PIN_OPTION_WIDTH))
-                .placeholder("Select function"),
+            .width(Length::Fixed(PIN_OPTION_WIDTH))
+            .placeholder("Select function"),
         );
 
         pin_option = pin_option.push(pin_options_row);
