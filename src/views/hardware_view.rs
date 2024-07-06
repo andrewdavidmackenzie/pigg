@@ -533,6 +533,34 @@ fn get_pin_widget<'a>(
         .into()
 }
 
+// Filter options for PickList
+fn filter_options(
+    options: &[PinFunction],
+    selected_function: Option<PinFunction>,
+) -> Vec<PinFunction> {
+    let mut config_options: Vec<_> = options
+        .iter()
+        .filter(|&&option| match selected_function {
+            Some(PinFunction::Input(Some(_))) => {
+                matches!(option, PinFunction::Output(None) | PinFunction::None)
+            }
+            Some(PinFunction::Output(Some(_))) => {
+                matches!(option, PinFunction::Input(None) | PinFunction::None)
+            }
+            Some(selected) => selected != option,
+            None => option != PinFunction::None,
+        })
+        .cloned()
+        .collect();
+
+    if !config_options.contains(&PinFunction::None) && selected_function.is_some() && selected_function != Some(PinFunction::None) {
+        config_options.push(PinFunction::None);
+    }
+
+    config_options
+}
+
+
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side<'a>(
     pin_description: &'a PinDescription,
@@ -551,18 +579,16 @@ fn create_pin_view_side<'a>(
     let mut pin_option = Column::new()
         .width(Length::Fixed(PIN_OPTION_WIDTH))
         .align_items(Alignment::Center);
+
     if pin_description.options.len() > 1 {
         let bcm_pin_number = pin_description.bcm.unwrap();
         let mut pin_options_row = Row::new().align_items(Alignment::Center);
-        let mut config_options = pin_description.options.to_vec();
-        let selected = match selected_function {
-            Some(PinFunction::None) => None,
-            Some(other) => {
-                config_options.push(PinFunction::None);
-                Some(other)
-            }
-            None => None,
-        };
+
+        // Filter options
+        let config_options = filter_options(&pin_description.options, selected_function.cloned());
+
+        
+        let selected = selected_function.filter(|&pin_function| *pin_function != PinFunction::None);
 
         pin_options_row = pin_options_row.push(
             pick_list(config_options, selected, move |pin_function| {
@@ -642,5 +668,32 @@ mod test {
     fn no_hardware_model() {
         let hw_view = HardwareView::new();
         assert_eq!(hw_view.hw_model(), "No Hardware connected");
+    }
+
+    #[test]
+    fn test_filter_options() {
+        use super::*;
+
+        let options = vec![
+            PinFunction::Input(None),
+            PinFunction::Output(None),
+            PinFunction::None,
+        ];
+
+        // Test case: No function selected
+        let result = filter_options(&options, None);
+        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
+
+        // Test case: Input selected
+        let result = filter_options(&options, Some(PinFunction::Input(None)));
+        assert_eq!(result, vec![PinFunction::Output(None), PinFunction::None]);
+
+        // Test case: Output selected
+        let result = filter_options(&options, Some(PinFunction::Output(None)));
+        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::None]);
+
+        // Test case: None selected
+        let result = filter_options(&options, Some(PinFunction::None));
+        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
     }
 }
