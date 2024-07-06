@@ -669,4 +669,31 @@ mod test {
         let hw_view = HardwareView::new();
         assert_eq!(hw_view.hw_model(), "No Hardware connected");
     }
+
+    #[test]
+    fn test_filter_options() {
+        use super::*;
+
+        let options = vec![
+            PinFunction::Input(None),
+            PinFunction::Output(None),
+            PinFunction::None,
+        ];
+
+        // Test case: No function selected
+        let result = filter_options(&options, None);
+        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
+
+        // Test case: Input selected
+        let result = filter_options(&options, Some(PinFunction::Input(None)));
+        assert_eq!(result, vec![PinFunction::Output(None), PinFunction::None]);
+
+        // Test case: Output selected
+        let result = filter_options(&options, Some(PinFunction::Output(None)));
+        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::None]);
+
+        // Test case: None selected
+        let result = filter_options(&options, Some(PinFunction::None));
+        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
+    }
 }
