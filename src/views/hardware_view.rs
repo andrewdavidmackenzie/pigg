@@ -533,6 +533,34 @@ fn get_pin_widget<'a>(
         .into()
 }
 
+// Filter options for PickList
+fn filter_options(
+    options: &[PinFunction],
+    selected_function: Option<PinFunction>,
+) -> Vec<PinFunction> {
+    let mut config_options: Vec<_> = options
+        .iter()
+        .filter(|&&option| match selected_function {
+            Some(PinFunction::Input(Some(_))) => {
+                matches!(option, PinFunction::Output(None) | PinFunction::None)
+            }
+            Some(PinFunction::Output(Some(_))) => {
+                matches!(option, PinFunction::Input(None) | PinFunction::None)
+            }
+            Some(selected) => selected != option,
+            None => option != PinFunction::None,
+        })
+        .cloned()
+        .collect();
+
+    if !config_options.contains(&PinFunction::None) && selected_function.is_some() && selected_function != Some(PinFunction::None) {
+        config_options.push(PinFunction::None);
+    }
+
+    config_options
+}
+
+
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side<'a>(
     pin_description: &'a PinDescription,
@@ -557,27 +585,9 @@ fn create_pin_view_side<'a>(
         let mut pin_options_row = Row::new().align_items(Alignment::Center);
 
         // Filter options
-        let mut config_options: Vec<_> = pin_description
-            .options
-            .iter()
-            .filter(|&&option| match selected_function {
-                Some(Input(Some(_))) => {
-                    matches!(option, Output(None) | PinFunction::None)
-                }
-                Some(Output(Some(_))) => {
-                    matches!(option, Input(Some(_)) | PinFunction::None)
-                }
-                Some(selected) => *selected != option,
-                None => true,
-            })
-            .cloned()
-            .collect();
+        let config_options = filter_options(&pin_description.options, selected_function.cloned());
 
-        // If PinFunction::None is not included,
-        if !config_options.contains(&PinFunction::None) {
-            config_options.push(PinFunction::None);
-        }
-
+        
         let selected = selected_function.filter(|&pin_function| *pin_function != PinFunction::None);
 
         pin_options_row = pin_options_row.push(
