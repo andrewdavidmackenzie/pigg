@@ -12,6 +12,24 @@ use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_aw::menu_bar;
 use iced_futures::Subscription;
 
+const MENU_WIDTH: f32 = 180.0;
+
+const ENABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::TRANSPARENT,
+    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+    hovered_bg_color: Color::TRANSPARENT,
+    hovered_text_color: Color::WHITE,
+    border_radius: 4.0,
+};
+
+const DISABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::TRANSPARENT,  // Dark grey background color
+    text_color: Color::from_rgb(0.5, 0.5, 0.5), // Medium grey text color
+    hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2),
+    hovered_text_color: Color::from_rgb(0.5, 0.5, 0.5),
+    border_radius: 4.0,
+};
+
 pub struct InfoRow {
     message_row: MessageRow,
 }
@@ -35,64 +53,25 @@ impl InfoRow {
         unsaved_changes: bool,
         hardware_view: &'a HardwareView,
     ) -> Element<'a, Message> {
-
-        let enabled_menu_button_style = ButtonStyle {
-            bg_color: Color::TRANSPARENT,
-            text_color: Color::WHITE,
-            hovered_bg_color: Color::TRANSPARENT,
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
-        };
-
-        let disabled_menu_button_style = ButtonStyle {
-            bg_color: Color::TRANSPARENT, // Dark grey background color
-            text_color: Color::from_rgb(0.5, 0.5, 0.5), // Medium grey text color
-            hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2),
-            hovered_text_color: Color::from_rgb(0.5, 0.5, 0.5),
-            border_radius: 4.0,
-        };
-
         let mb = menu_bar!((
-    Button::new(Text::new("Hardware")).style(enabled_menu_button_style.get_button_style()),
-    {
-        menu!(
-            (
-                if cfg!(feature = "pi_hw") {
-                    Button::new(Text::new("Use local Pi Hardware"))
-                        .style(enabled_menu_button_style.get_button_style())
-                        .width(Length::Fill)
-                } else {
-                    Button::new(Text::new("Use local Pi Hardware"))
-                        .style(disabled_menu_button_style.get_button_style())
-                        .width(Length::Fill)
-                }
-            )(
-                if cfg!(feature = "network") {
-                    Button::new(Text::new("Connect to remote Pi"))
-                        .style(enabled_menu_button_style.get_button_style())
-                        .width(Length::Fill)
-                } else {
-                    Button::new(Text::new("Connect to remote Pi"))
-                        .style(disabled_menu_button_style.get_button_style())
-                        .width(Length::Fill)
-                }
-            )(
-                if cfg!(feature = "network") {
-                    Button::new(Text::new("Search for Pi's on local network"))
-                        .style(enabled_menu_button_style.get_button_style())
-                        .width(Length::Fill)
-                } else {
-                    Button::new(Text::new("Search for Pi's on local network"))
-                        .style(disabled_menu_button_style.get_button_style())
-                        .width(Length::Fill)
-                }
-            )(hardware_button::view(hardware_view))
-        )
-        .max_width(180.0)
-        .spacing(2.0)
-        .offset(10.0)
-    }
-));
+            Button::new(Text::new("Hardware")).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
+            {
+                // Conditionally render menu items based on hardware features
+                menu!((menu_button(
+                    "Use local Pi Hardware".to_string(),
+                    cfg!(feature = "pi_hw"),
+                ))(menu_button(
+                    "Connect to remote Pi".to_string(),
+                    cfg!(feature = "network"),
+                ))(menu_button(
+                    "Search for Pi's on local network".to_string(),
+                    cfg!(feature = "network"),
+                ))(hardware_button::view(hardware_view)))
+                .width(MENU_WIDTH)
+                .spacing(2.0)
+                .offset(10.0)
+            }
+        ));
 
         container(
             Row::new()
@@ -111,4 +90,16 @@ impl InfoRow {
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
         self.message_row.subscription()
     }
+}
+
+fn menu_button(text: String, enabled: bool) -> Button<'static, Message> {
+    let button_style = if enabled {
+        ENABLED_MENU_BUTTON_STYLE.get_button_style()
+    } else {
+        DISABLED_MENU_BUTTON_STYLE.get_button_style()
+    };
+
+    Button::new(Text::new(text))
+        .style(button_style)
+        .width(Length::Fill)
 }
