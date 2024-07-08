@@ -35,7 +35,8 @@ impl InfoRow {
         unsaved_changes: bool,
         hardware_view: &'a HardwareView,
     ) -> Element<'a, Message> {
-        let about_button_style = ButtonStyle {
+
+        let enabled_menu_button_style = ButtonStyle {
             bg_color: Color::TRANSPARENT,
             text_color: Color::WHITE,
             hovered_bg_color: Color::TRANSPARENT,
@@ -43,25 +44,55 @@ impl InfoRow {
             border_radius: 4.0,
         };
 
+        let disabled_menu_button_style = ButtonStyle {
+            bg_color: Color::TRANSPARENT, // Dark grey background color
+            text_color: Color::from_rgb(0.5, 0.5, 0.5), // Medium grey text color
+            hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2),
+            hovered_text_color: Color::from_rgb(0.5, 0.5, 0.5),
+            border_radius: 4.0,
+        };
+
         let mb = menu_bar!((
-            Button::new(Text::new("Hardware")).style(about_button_style.get_button_style()),
-            {
-                menu!((Button::new(Text::new("Use local Pi Hardware"))
-                    .style(about_button_style.get_button_style())
-                    .width(Length::Fill))(
+    Button::new(Text::new("Hardware")).style(enabled_menu_button_style.get_button_style()),
+    {
+        menu!(
+            (
+                if cfg!(feature = "pi_hw") {
+                    Button::new(Text::new("Use local Pi Hardware"))
+                        .style(enabled_menu_button_style.get_button_style())
+                        .width(Length::Fill)
+                } else {
+                    Button::new(Text::new("Use local Pi Hardware"))
+                        .style(disabled_menu_button_style.get_button_style())
+                        .width(Length::Fill)
+                }
+            )(
+                if cfg!(feature = "network") {
                     Button::new(Text::new("Connect to remote Pi"))
-                        .style(about_button_style.get_button_style())
+                        .style(enabled_menu_button_style.get_button_style())
                         .width(Length::Fill)
-                )(
+                } else {
+                    Button::new(Text::new("Connect to remote Pi"))
+                        .style(disabled_menu_button_style.get_button_style())
+                        .width(Length::Fill)
+                }
+            )(
+                if cfg!(feature = "network") {
                     Button::new(Text::new("Search for Pi's on local network"))
-                        .style(about_button_style.get_button_style())
+                        .style(enabled_menu_button_style.get_button_style())
                         .width(Length::Fill)
-                )(hardware_button::view(hardware_view)))
-                .max_width(180.0)
-                .spacing(2.0)
-                .offset(10.0)
-            }
-        ));
+                } else {
+                    Button::new(Text::new("Search for Pi's on local network"))
+                        .style(disabled_menu_button_style.get_button_style())
+                        .width(Length::Fill)
+                }
+            )(hardware_button::view(hardware_view))
+        )
+        .max_width(180.0)
+        .spacing(2.0)
+        .offset(10.0)
+    }
+));
 
         container(
             Row::new()
