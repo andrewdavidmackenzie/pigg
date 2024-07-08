@@ -5,11 +5,10 @@ use crate::views::message_row::{MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
-use iced::widget::{container, Button, Column, Row, Text};
+use iced::widget::{container, Button, Row, Text};
 use iced::{Color, Command, Element, Length};
-use iced_aw::menu;
-use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::menu_bar;
+use iced_aw::{menu, menu_bar};
+use iced_aw::menu::Item;
 use iced_futures::Subscription;
 
 const MENU_WIDTH: f32 = 180.0;
