@@ -1,5 +1,5 @@
 use iced::widget::{Button, Text};
-use iced::{Color, Element};
+use iced::{Color, Element, Length};
 
 use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_view::HardwareView;
@@ -16,8 +16,7 @@ pub fn view(hardware_view: &HardwareView) -> Element<Message> {
     };
     Button::new(Text::new(hardware_view.hw_model()))
         .on_press(Message::Toast(ToastMessage::HardwareDetailsToast))
-        .clip(true)
-        .height(iced::Length::Shrink)
+        .width(Length::Fill)
         .style(about_button_style.get_button_style())
         .into()
 }
