@@ -7,22 +7,24 @@ use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
 use iced::widget::{container, Button, Row, Text};
 use iced::{Color, Command, Element, Length};
+use iced_aw::menu::{Item,  StyleSheet};
+use iced_aw::style::MenuBarStyle;
 use iced_aw::{menu, menu_bar};
-use iced_aw::menu::Item;
+use iced_futures::core::Background;
 use iced_futures::Subscription;
 
-const MENU_WIDTH: f32 = 180.0;
+const MENU_WIDTH: f32 = 200.0;
 
 const ENABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::TRANSPARENT,
-    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+    text_color: Color::WHITE,
     hovered_bg_color: Color::TRANSPARENT,
     hovered_text_color: Color::WHITE,
     border_radius: 4.0,
 };
 
 const DISABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::TRANSPARENT,  // Dark grey background color
+    bg_color: Color::TRANSPARENT,
     text_color: Color::from_rgb(0.5, 0.5, 0.5), // Medium grey text color
     hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2),
     hovered_text_color: Color::from_rgb(0.5, 0.5, 0.5),
@@ -53,14 +55,15 @@ impl InfoRow {
         hardware_view: &'a HardwareView,
     ) -> Element<'a, Message> {
         let mb = menu_bar!((
-            Button::new(Text::new("Hardware")).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
+            Button::new(Text::new("Show Hardware Details"))
+                .style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
             {
                 // Conditionally render menu items based on hardware features
                 menu!((menu_button(
                     "Use local Pi Hardware".to_string(),
                     cfg!(feature = "pi_hw"),
                 ))(menu_button(
-                    "Connect to remote Pi".to_string(),
+                    "Connect to remote Pi...".to_string(),
                     cfg!(feature = "network"),
                 ))(menu_button(
                     "Search for Pi's on local network".to_string(),
@@ -70,7 +73,11 @@ impl InfoRow {
                 .spacing(2.0)
                 .offset(10.0)
             }
-        ));
+        ))
+        .style(|theme: &iced::Theme| menu::Appearance {
+            bar_background: Background::Color(Color::TRANSPARENT),
+            ..theme.appearance(&MenuBarStyle::Default)
+        });
 
         container(
             Row::new()
