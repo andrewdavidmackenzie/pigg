@@ -55,7 +55,7 @@ impl InfoRow {
         hardware_view: &'a HardwareView,
     ) -> Element<'a, Message> {
         let mb = menu_bar!((
-            Button::new(Text::new("Show Hardware Details"))
+            Button::new(Text::new(hardware_view.hw_model()))
                 .style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
             {
                 // Conditionally render menu items based on hardware features
@@ -68,7 +68,7 @@ impl InfoRow {
                 ))(menu_button(
                     "Search for Pi's on local network".to_string(),
                     cfg!(feature = "network"),
-                ))(hardware_button::view(hardware_view)))
+                ))(hardware_button::view()))
                 .width(MENU_WIDTH)
                 .spacing(2.0)
                 .offset(10.0)
