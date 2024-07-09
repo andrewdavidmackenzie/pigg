@@ -7,7 +7,6 @@ use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
 use iced::widget::{container, Button, Row, Text};
 use iced::{Color, Command, Element, Length};
-use iced::theme::Svg::Default;
 use iced_aw::menu::{Item, StyleSheet};
 use iced_aw::style::MenuBarStyle;
 use iced_aw::{menu, menu_bar};
