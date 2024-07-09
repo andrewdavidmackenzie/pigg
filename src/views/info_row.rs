@@ -7,7 +7,8 @@ use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
 use iced::widget::{container, Button, Row, Text};
 use iced::{Color, Command, Element, Length};
-use iced_aw::menu::{Item,  StyleSheet};
+use iced::theme::Svg::Default;
+use iced_aw::menu::{Item, StyleSheet};
 use iced_aw::style::MenuBarStyle;
 use iced_aw::{menu, menu_bar};
 use iced_futures::core::Background;
@@ -62,12 +63,6 @@ impl InfoRow {
                 menu!((menu_button(
                     "Use local Pi Hardware".to_string(),
                     cfg!(feature = "pi_hw"),
-                ))(menu_button(
-                    "Connect to remote Pi...".to_string(),
-                    cfg!(feature = "network"),
-                ))(menu_button(
-                    "Search for Pi's on local network".to_string(),
-                    cfg!(feature = "network"),
                 ))(hardware_button::view()))
                 .width(MENU_WIDTH)
                 .spacing(2.0)
@@ -76,6 +71,17 @@ impl InfoRow {
         ))
         .style(|theme: &iced::Theme| menu::Appearance {
             bar_background: Background::Color(Color::TRANSPARENT),
+            menu_shadow: iced::Shadow {
+                color: Color::TRANSPARENT,
+                offset: iced::Vector::new(1.0, 1.0),
+                blur_radius: 0f32,
+            },
+            menu_background_expand: iced::Padding::from([5, 5]),
+            menu_border: iced::Border {
+                color: Color::from_rgb(0.6, 0.6, 0.6),
+                width: 1f32,
+                radius: [3.0; 4].into(),
+            },
             ..theme.appearance(&MenuBarStyle::Default)
         });
 
