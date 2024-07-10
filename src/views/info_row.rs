@@ -76,11 +76,6 @@ impl InfoRow {
                 blur_radius: 0f32,
             },
             menu_background_expand: iced::Padding::from([5, 5]),
-            menu_border: iced::Border {
-                color: Color::from_rgb(0.6, 0.6, 0.6),
-                width: 1f32,
-                radius: [3.0; 4].into(),
-            },
             ..theme.appearance(&MenuBarStyle::Default)
         });
 
