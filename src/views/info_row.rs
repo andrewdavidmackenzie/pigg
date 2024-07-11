@@ -1,12 +1,35 @@
 use crate::styles::background::SetAppearance;
+use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_view::HardwareView;
 use crate::views::message_row::{MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
-use iced::widget::{container, Row};
+use iced::widget::{container, Button, Row, Text};
 use iced::{Color, Command, Element, Length};
+use iced_aw::menu::{Item, StyleSheet};
+use iced_aw::style::MenuBarStyle;
+use iced_aw::{menu, menu_bar};
+use iced_futures::core::Background;
 use iced_futures::Subscription;
+
+const MENU_WIDTH: f32 = 200.0;
+
+const ENABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::TRANSPARENT,
+    text_color: Color::WHITE,
+    hovered_bg_color: Color::TRANSPARENT,
+    hovered_text_color: Color::WHITE,
+    border_radius: 4.0,
+};
+
+const DISABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::TRANSPARENT,
+    text_color: Color::from_rgb(0.5, 0.5, 0.5), // Medium grey text color
+    hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2),
+    hovered_text_color: Color::from_rgb(0.5, 0.5, 0.5),
+    border_radius: 4.0,
+};
 
 pub struct InfoRow {
     message_row: MessageRow,
@@ -31,10 +54,35 @@ impl InfoRow {
         unsaved_changes: bool,
         hardware_view: &'a HardwareView,
     ) -> Element<'a, Message> {
+        let mb = menu_bar!((
+            Button::new(Text::new(hardware_view.hw_model()))
+                .style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
+            {
+                // Conditionally render menu items based on hardware features
+                menu!((menu_button(
+                    "Use local Pi Hardware".to_string(),
+                    cfg!(feature = "pi_hw"),
+                ))(hardware_button::view()))
+                .width(MENU_WIDTH)
+                .spacing(2.0)
+                .offset(10.0)
+            }
+        ))
+        .style(|theme: &iced::Theme| menu::Appearance {
+            bar_background: Background::Color(Color::TRANSPARENT),
+            menu_shadow: iced::Shadow {
+                color: Color::TRANSPARENT,
+                offset: iced::Vector::new(1.0, 1.0),
+                blur_radius: 0f32,
+            },
+            menu_background_expand: iced::Padding::from([5, 5]),
+            ..theme.appearance(&MenuBarStyle::Default)
+        });
+
         container(
             Row::new()
                 .push(version_button())
-                .push(hardware_button::view(hardware_view))
+                .push(mb)
                 .push(unsaved_status::view(unsaved_changes))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
@@ -48,4 +96,16 @@ impl InfoRow {
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
         self.message_row.subscription()
     }
+}
+
+fn menu_button(text: String, enabled: bool) -> Button<'static, Message> {
+    let button_style = if enabled {
+        ENABLED_MENU_BUTTON_STYLE.get_button_style()
+    } else {
+        DISABLED_MENU_BUTTON_STYLE.get_button_style()
+    };
+
+    Button::new(Text::new(text))
+        .style(button_style)
+        .width(Length::Fill)
 }
