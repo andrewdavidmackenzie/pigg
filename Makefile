@@ -17,7 +17,7 @@ $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 all: clippy build test
 
 .PHONY: cross
-cross: cross-clippy cross-build cross-test cross-release-build
+cross: cross-clippy cross-build cross-test cross-release-build cross-build-pi3b cross-release-build-pi3b
 
 release: release-build
 
@@ -39,6 +39,9 @@ cross-clippy:
 	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --release --features "gui","pi_hw" --tests --no-deps --target=aarch64-unknown-linux-gnu
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piglet --release --features "pi_hw" --tests --no-deps --target=aarch64-unknown-linux-gnu
+	# Cross compile for pi3b, targeting real hardware
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --release --features "gui","pi_hw" --tests --no-deps --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piglet --release --features "pi_hw" --tests --no-deps --target=armv7-unknown-linux-gnueabihf
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
 # To build both binaries on a Pi directly, we will need to modify this
@@ -55,11 +58,16 @@ else
 	cargo build --bin piglet --features "fake_hw"
 endif
 
-.PHONY: cross–build
+.PHONY: cross-build cross-build-pi3b
 cross-build:
 	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=aarch64-unknown-linux-gnu
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
+
+cross-build-pi3b:
+	# Cross compile for pi3b, targeting real hardware
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: run
 run:
@@ -97,11 +105,16 @@ else
 	cargo build --bin piglet --release --features "fake_hw"
 endif
 
-.PHONY: cross-release-build
+.PHONY: cross-release-build cross-release-build-pi3b
 cross-release-build:
 	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=aarch64-unknown-linux-gnu
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
+
+cross-release-build-pi3b:
+	# Cross compile for pi3b, targeting real hardware
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
 
 # This will only test GUI tests in piggui on the local host, whatever that is
 # We'd need to think how to run tests on RPi, on piggui with GUI and GPIO functionality, and piglet with GPIO functionality
@@ -128,6 +141,8 @@ cross-test:
 copy: build
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/armv7-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
+	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: ssh
 ssh:
