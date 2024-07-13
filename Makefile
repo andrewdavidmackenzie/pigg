@@ -9,6 +9,8 @@
 # target/debug/piggui - GUI version without GPIO, to enable UI development on a host
 # target/aarch64-unknown-linux-gnu/release/piggui - GUI version for Pi with GPIO, can be run natively from RPi command line
 # target/aarch64-unknown-linux-gnu/release/piglet - Headless version for Pi with GPIO, can be run natively from RPi command line
+# target/armv7-unknown-linux-gnueabihf/release/piggui - GUI version for armv7 based architecture with GPIO, can be run natively
+# target/armv7-unknown-linux-gnueabihf/release/piglet - Headless version for armv7 based architecture with GPIO, can be run natively
 
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
@@ -63,7 +65,7 @@ cross-build:
 
 .PHONY: cross-build-armv7
 cross-build-armv7:
-	# Cross compile for pi3b, targeting real hardware
+	# Cross compile for armv7 based architecture, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=armv7-unknown-linux-gnueabihf
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
 
@@ -111,6 +113,7 @@ cross-release-build:
 
 .PHONY: cross-release-build-armv7
 cross-release-build-armv7:
+	# Cross compile for armv7 based architecture, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=armv7-unknown-linux-gnueabihf
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
 
