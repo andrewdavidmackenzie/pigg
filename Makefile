@@ -36,7 +36,7 @@ else
 	cargo clippy --bin piglet --features "fake_hw" --tests --no-deps
 endif
 
-.PHONY: cross-clippy cross-build cross-release-build
+.PHONY: cross-clippy
 cross-clippy:
 	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --release --features "gui","pi_hw" --tests --no-deps --target=aarch64-unknown-linux-gnu
