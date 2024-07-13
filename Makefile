@@ -9,6 +9,8 @@
 # target/debug/piggui - GUI version without GPIO, to enable UI development on a host
 # target/aarch64-unknown-linux-gnu/release/piggui - GUI version for Pi with GPIO, can be run natively from RPi command line
 # target/aarch64-unknown-linux-gnu/release/piglet - Headless version for Pi with GPIO, can be run natively from RPi command line
+# target/armv7-unknown-linux-gnueabihf/release/piggui - GUI version for armv7 based architecture with GPIO, can be run natively
+# target/armv7-unknown-linux-gnueabihf/release/piglet - Headless version for armv7 based architecture with GPIO, can be run natively
 
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
@@ -17,7 +19,7 @@ $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 all: clippy build test
 
 .PHONY: cross
-cross: cross-clippy cross-build cross-test cross-release-build
+cross: cross-clippy cross-build cross-test cross-release-build cross-build-armv7 cross-release-build-armv7
 
 release: release-build
 
@@ -34,7 +36,7 @@ else
 	cargo clippy --bin piglet --features "fake_hw" --tests --no-deps
 endif
 
-.PHONY: cross-clippy cross-build cross-release-build
+.PHONY: cross-clippy
 cross-clippy:
 	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --release --features "gui","pi_hw" --tests --no-deps --target=aarch64-unknown-linux-gnu
@@ -55,11 +57,17 @@ else
 	cargo build --bin piglet --features "fake_hw"
 endif
 
-.PHONY: cross–build
+.PHONY: cross-build
 cross-build:
 	# Cross compile for pi, targeting real hardware
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=aarch64-unknown-linux-gnu
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
+
+.PHONY: cross-build-armv7
+cross-build-armv7:
+	# Cross compile for armv7 based architecture, targeting real hardware
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: run
 run:
@@ -103,6 +111,12 @@ cross-release-build:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=aarch64-unknown-linux-gnu
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
 
+.PHONY: cross-release-build-armv7
+cross-release-build-armv7:
+	# Cross compile for armv7 based architecture, targeting real hardware
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "gui","pi_hw" --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
+
 # This will only test GUI tests in piggui on the local host, whatever that is
 # We'd need to think how to run tests on RPi, on piggui with GUI and GPIO functionality, and piglet with GPIO functionality
 .PHONY: test
@@ -128,6 +142,12 @@ cross-test:
 copy: build
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+
+
+.PHONY: copy-armv7
+copy-armv7: build
+	scp target/armv7-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
+	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: ssh
 ssh:
