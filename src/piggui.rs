@@ -8,6 +8,7 @@ use iced::{
 
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
+use crate::styles::button_style::ButtonStyle;
 use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareViewMessage::NewConfig;
 use crate::views::hardware_view::{HardwareView, HardwareViewMessage};
@@ -73,6 +74,7 @@ pub enum Message {
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     HardwareLost,
+    MenuBarButtonClicked,
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -132,6 +134,10 @@ impl Application for Piggui {
                         return window::close(window::Id::MAIN);
                     }
                 }
+            }
+
+            MenuBarButtonClicked => {
+                return Command::none();
             }
 
             LayoutChanged(layout) => {
