@@ -73,6 +73,7 @@ pub enum Message {
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     HardwareLost,
+    MenuBarButtonClicked,
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -132,6 +133,10 @@ impl Application for Piggui {
                         return window::close(window::Id::MAIN);
                     }
                 }
+            }
+
+            MenuBarButtonClicked => {
+                return Command::none();
             }
 
             LayoutChanged(layout) => {

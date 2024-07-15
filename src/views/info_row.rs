@@ -54,9 +54,19 @@ impl InfoRow {
         unsaved_changes: bool,
         hardware_view: &'a HardwareView,
     ) -> Element<'a, Message> {
+
+        let menu_bar_button_style = ButtonStyle {
+            bg_color: Color::TRANSPARENT,
+            text_color: Color::new(0.7, 0.7, 0.7, 1.0),
+            hovered_bg_color: Color::TRANSPARENT,
+            hovered_text_color: Color::WHITE,
+            border_radius: 4.0,
+        };
+
         let mb = menu_bar!((
             Button::new(Text::new(hardware_view.hw_model()))
-                .style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
+                .style(menu_bar_button_style.get_button_style())
+                .on_press(Message::MenuBarButtonClicked),
             {
                 // Conditionally render menu items based on hardware features
                 menu!((menu_button(
