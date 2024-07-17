@@ -12,7 +12,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
-  RUSTFLAGS: -Z instrument-coverage
+  RUSTFLAGS: -C instrument-coverage
   LLVM_PROFILE_FILE: pigg-%p-%m.profraw
 
 jobs: 
@@ -106,6 +106,10 @@ jobs:
       - name: Add armv7 Target with Rustup
         run: rustup target add armv7-unknown-linux-gnueabihf
 
+      - name: Add armv7 linker
+        run: |
+            sudo apt install armv7-unknown-linux-gnueabihf
+      
       - name: Install Cross Tool
         run: cargo install cross
 
