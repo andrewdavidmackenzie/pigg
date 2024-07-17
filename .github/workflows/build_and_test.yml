@@ -102,12 +102,9 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-      
-   
 
-      - name: Add armv7 linker
-        run: |
-            sudo apt install gcc-arm-linux-gnueabihf
+      - name: Ensure Required Rust Components
+        run: rustup component add rust-src llvm-tools-preview
 
       - name: Add armv7 Target with Rustup
         run: rustup target add armv7-unknown-linux-gnueabihf
