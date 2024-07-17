@@ -103,12 +103,14 @@ jobs:
           profile: minimal
           override: true
       
-      - name: Add armv7 Target with Rustup
-        run: rustup target add armv7-unknown-linux-gnueabihf
+   
 
       - name: Add armv7 linker
         run: |
-            sudo apt install armv7-unknown-linux-gnueabihf
+            sudo apt install gcc-arm-linux-gnueabihf
+
+      - name: Add armv7 Target with Rustup
+        run: rustup target add armv7-unknown-linux-gnueabihf
       
       - name: Install Cross Tool
         run: cargo install cross
