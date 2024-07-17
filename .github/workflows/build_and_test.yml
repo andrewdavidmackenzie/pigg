@@ -88,3 +88,27 @@ jobs:
       - name: Cross Build for aarch64-unknown-linux-gnu
         run: make cross-build
 
+  cross-build-and-test-for-armv7-unknown-linux-gnueabihf:
+    name: cross-build-and-test-for-armv7-unknown-linux-gnueabihf
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      
+      - name: Add armv7 Target with Rustup
+        run: rustup target add armv7-unknown-linux-gnueabihf
+
+      - name: Install Cross Tool
+        run: cargo install cross
+
+      - name: Cross Build for armv7-unknown-linux-gnueabihf
+        run: make cross-build-armv7
+
