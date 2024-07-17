@@ -64,26 +64,27 @@ jobs:
           name: codecov-umbrella
           verbose: true
   
-  test:
-    name: test
+  cross-build-and-test-for-aarch64-unknown-linux-gnu:
+    name: Cross-build-and-test-for-aarch64-unknown-linux-gnu
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout
         uses: actions/checkout@v1
-      - name: Install rust
+
+      - name: Install Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           override: true
       
-
-      - name: Install Rustup targets
+      - name: Add aarch64 Target with Rustup
         run: rustup target add aarch64-unknown-linux-gnu
 
-      - name: Install cross
+      - name: Install Cross Tool
         run: cargo install cross
 
-      - name: Build
-        run: cross build --bin piggui --features "gui","pi_hw" --target="aarch64-unknown-linux-gnu"  
+      - name: Cross Build for aarch64-unknown-linux-gnu
+        run: make cross-build
+
