@@ -1,4 +1,3 @@
-
 name: Build and Test with Coverage
 
 on:
@@ -15,8 +14,7 @@ env:
   RUSTFLAGS: -C instrument-coverage
   LLVM_PROFILE_FILE: pigg-%p-%m.profraw
 
-jobs: 
-
+jobs:
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -35,27 +33,35 @@ jobs:
           toolchain: stable
 
       - name: InstallCoverageTools
-        if: runner.os == 'macOS'
-        run: |
-          cargo install grcov
+        if: runner.os != 'Windows'
+        run: cargo install grcov
 
-      # lcov on ubuntu-latest (22.04) is still version 1.14 that doesn't have the "--erase-functions" option we want
       - name: Setup LCOV
-        if: runner.os == 'macOS'
+        if: runner.os != 'Windows'
         uses: hrishikesh-kadam/setup-lcov@v1
 
       - name: make
-        run: |
-          make clippy build test
+        run: make clippy build test
 
-      - name: clean up coverage
+      # lcov on ubuntu-latest (22.04) is still version 1.14 that doesn't have the "--erase-functions" option we want
+      - name: clean up coverage Linux
+        if: runner.os == 'Linux'
+        run: |
+          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          lcov --remove lcov.info -o lcov.info
+        run: rustup target add aarch64-unknown-linux-gnu
+        run: cargo install cross
+        run: make cross-build
+
+          
+      - name: clean up coverage MacOS
         if: runner.os == 'macOS'
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
           lcov --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
-        if: runner.os == 'macOS'
+        if: runner.os != 'Windows'
         uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
@@ -63,27 +69,3 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           verbose: true
-  
-  cross-build-and-test-for-aarch64-unknown-linux-gnu:
-    name: cross-build-and-test-for-aarch64-unknown-linux-gnu
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v1
-
-      - name: Install Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-      
-      - name: Add aarch64 Target with Rustup
-        run: rustup target add aarch64-unknown-linux-gnu
-
-      - name: Install Cross Tool
-        run: cargo install cross
-
-      - name: Cross Build for aarch64-unknown-linux-gnu
-        run: make cross-build
