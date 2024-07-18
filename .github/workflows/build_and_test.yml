@@ -51,7 +51,7 @@ jobs:
           lcov --remove lcov.info -o lcov.info
           
       - name: clean up coverage MacOS
-        if: runner.os += 'macOS'
+        if: runner.os == 'macOS'
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
           lcov --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
