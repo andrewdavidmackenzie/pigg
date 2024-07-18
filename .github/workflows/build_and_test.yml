@@ -43,11 +43,17 @@ jobs:
       - name: make
         run: make clippy build test
 
-        # Cross build and test for aarch64-unknown-linux-gnu
-      - name: cross-build-and-test-for-aarch64-unknown-linux-gnu
+    
+      - name: Add aarch64 Target with Rustup
         if: runner.os == 'Linux'
         run: rustup target add aarch64-unknown-linux-gnu
+        
+      - name: Install Cross Tool
+        if: runner.os == 'Linux'
         run: cargo install cross
+
+      - name: Cross Build for aarch64-unknown-linux-gnu
+        if: runner.os == 'Linux'
         run: make cross-build
 
       # lcov on ubuntu-latest (22.04) is still version 1.14 that doesn't have the "--erase-functions" option we want
