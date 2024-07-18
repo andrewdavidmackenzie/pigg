@@ -49,10 +49,6 @@ jobs:
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
           lcov --remove lcov.info -o lcov.info
-        run: rustup target add aarch64-unknown-linux-gnu
-        run: cargo install cross
-        run: make cross-build
-
           
       - name: clean up coverage MacOS
         if: runner.os == 'macOS'
