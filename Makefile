@@ -134,9 +134,9 @@ endif
 
 .PHONY: cross-test
 cross-test:
-	# Cross compile for pi architecture, targeting fake hardware
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piggui --release --features "gui","fake_hw" --target=aarch64-unknown-linux-gnu
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piglet --release --features "fake_hw" --target=aarch64-unknown-linux-gnu
+	# Cross compile for pi architecture, using the rppal lib that is used on real pi hw
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piggui --release --features "gui","pi_hw" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piglet --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
 
 .PHONY: copy
 copy: build
