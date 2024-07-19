@@ -151,6 +151,9 @@ Run `"make"` on macOS, linux, Windows (or in fact RPi also) host to build these 
   line
 - `target/aarch64-unknown-linux-gnu/release/piglet` - Headless version for Pi with GPIO, can be run natively from RPi
   command line
+- `target/armv7-unknown-linux-gnueabihf` - GUI version for Pi with GPIO, can be run natively from RPi command line
+- `target/armv7-unknown-linux-gnueabihf` -  Headless version for Pi with GPIO, can be run natively from RPi
+  command line
 
 Use `"make run"` to start `piggui` on the local machine - for GUI development.
 
@@ -175,7 +178,7 @@ You can set these up in your env, so you always have them, or set them on the co
 #### Make targets
 
 - Use `make` to run `clippy`, build for the Pi using `cross`, build for the local machine using `cargo` and to run tests
-- Use `make pibuild` to build only for the Pi. This will build both `piggui` (with GUI and GPIO) and `piglet` binary
+- Use `make build` to build only for the Pi. This will build both `piggui` (with GUI and GPIO) and `piglet` binary
   with GPIO only
 - Use `make copy` to copy the built binaries to your raspberry pi.
 - Use `make ssh` to ssh into your Pi to be able to run the binaries.
