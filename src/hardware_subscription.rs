@@ -18,10 +18,7 @@ pub enum State {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
-    Connected(
-        Receiver<HardwareConfigMessage>,
-        Sender<HardwareConfigMessage>,
-    ),
+    Connected(Receiver<HardwareConfigMessage>),
 }
 
 fn send_current_input_states(
@@ -71,13 +68,13 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                             .await;
 
                         // We are ready to receive messages from the GUI and send messages to it
-                        state = State::Connected(hardware_event_receiver, hardware_event_sender);
+                        state = State::Connected(hardware_event_receiver);
                     }
 
-                    State::Connected(hardware_event_receiver, _hardware_event_sender) => {
-                        let hardware_event = hardware_event_receiver.select_next_some().await;
+                    State::Connected(config_change_receiver) => {
+                        let config_change = config_change_receiver.select_next_some().await;
 
-                        match hardware_event {
+                        match config_change {
                             NewConfig(config) => {
                                 connected_hardware
                                     .apply_config(&config, move |bcm_pin_number, level| {

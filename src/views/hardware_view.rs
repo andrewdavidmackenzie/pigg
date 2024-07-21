@@ -19,7 +19,6 @@ use crate::hw::pin_function::PinFunction::{Input, Output};
 use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
-#[cfg(feature = "network")]
 use crate::network_subscription;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
@@ -160,7 +159,13 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     }
 }
 
+pub enum HardwareTarget {
+    Local,
+    Remote(String),
+}
+
 pub struct HardwareView {
+    hardware_target: HardwareTarget,
     hardware_config: HardwareConfig,
     hardware_sender: Option<Sender<HardwareConfigMessage>>,
     hardware_description: Option<HardwareDescription>,
@@ -172,8 +177,15 @@ pub struct HardwareView {
 async fn empty() {}
 
 impl HardwareView {
-    pub fn new() -> Self {
+    pub fn new(nodeid: Option<String>) -> Self {
+        let hardware_target = if let Some(node) = nodeid {
+            HardwareTarget::Remote(node)
+        } else {
+            HardwareTarget::Local
+        };
+
         Self {
+            hardware_target,
             hardware_config: HardwareConfig::default(),
             hardware_description: None, // Until listener is ready
             hardware_sender: None,      // Until listener is ready
@@ -341,14 +353,23 @@ impl HardwareView {
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
     pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
-        let subscriptions = [
-            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
-                .map(|_| UpdateCharts),
-            #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
-            hardware_subscription::subscribe().map(HardwareSubscription),
-            #[cfg(feature = "network")]
-            network_subscription::subscribe().map(HardwareSubscription),
-        ];
+        let mut subscriptions =
+            vec![
+                iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                    .map(|_| UpdateCharts),
+            ];
+
+        match &self.hardware_target {
+            HardwareTarget::Local => {
+                #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
+                subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
+            }
+            HardwareTarget::Remote(nodeid) => {
+                subscriptions.push(
+                    network_subscription::subscribe(nodeid.to_string()).map(HardwareSubscription),
+                );
+            }
+        }
 
         Subscription::batch(subscriptions)
     }
@@ -660,13 +681,13 @@ mod test {
 
     #[test]
     fn no_hardware_description() {
-        let hw_view = HardwareView::new();
+        let hw_view = HardwareView::new(None);
         assert_eq!(hw_view.hw_description(), "No Hardware connected");
     }
 
     #[test]
     fn no_hardware_model() {
-        let hw_view = HardwareView::new();
+        let hw_view = HardwareView::new(None);
         assert_eq!(hw_view.hw_model(), "No Hardware connected");
     }
 

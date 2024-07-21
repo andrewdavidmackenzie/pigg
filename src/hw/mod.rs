@@ -35,7 +35,6 @@ pub type BoardPinNumber = u8;
 /// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
 pub type PinLevel = bool;
 
-#[cfg(feature = "network")]
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
