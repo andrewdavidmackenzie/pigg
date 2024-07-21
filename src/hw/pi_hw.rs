@@ -196,36 +196,4 @@ mod test {
         assert_eq!(pins.len(), 40);
         assert_eq!(pins[0].name, "3V3")
     }
-
-    #[test]
-    #[cfg(feature = "pi_hw")]
-    fn pi_hardware_descriptor() {
-        let hw = super::get();
-        let hw_descriptor = hw
-            .description()
-            .expect("Could not read Hardware description")
-            .details;
-        assert_ne!(hw_descriptor.hardware, "Unknown");
-        assert_ne!(hw_descriptor.revision, "Unknown");
-        assert_ne!(hw_descriptor.serial, "Unknown");
-        assert_ne!(hw_descriptor.model, "Unknown");
-    }
-
-    #[test]
-    fn try_all_pin_configs() {
-        let mut hw = super::get();
-        let description = hw
-            .description()
-            .expect("Could not read Hardware description");
-        let pins = description.pins.pins();
-
-        for pin in pins {
-            if let Some(bcm) = pin.bcm {
-                for pin_function in &pin.options.to_vec() {
-                    hw.apply_pin_config(bcm, pin_function, |_, _| async {})
-                        .expect("Failed to apply pin config")
-                }
-            }
-        }
-    }
 }

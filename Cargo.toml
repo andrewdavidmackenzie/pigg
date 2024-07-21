@@ -23,15 +23,15 @@ path = "src/piglet.rs"
 default = []
 pi_hw = ["rppal"]
 fake_hw = ["rand"]
-gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters"]
+gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters", "iced_aw"]
 
 [dependencies]
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
-serde = { version = "1.0.203", default-features = false, features = ["derive"] }
+serde = { version = "1.0.204", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.120", default-features = false, features = ["std"] }
 serde_arrays = "0.1.0"
-clap = { version = "4.5.8", default-features = false, features = ["std"] }
+clap = { version = "4.5.9", default-features = false, features = ["std"] }
 rand = { version = "0.8.5", optional = true }
 iroh-net = { version = "0.19.0" }
 anyhow = { version = "1" }
@@ -47,7 +47,7 @@ env_logger = "0.11.3"
 
 # used by piggui in GUI only
 iced = { version = "0.12.1", default-features = false, features = ["tokio", "debug", "canvas", "advanced"], optional = true }
-iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", ], optional = true }
+iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", "menu"], optional = true }
 iced_futures = { version = "0.12.0", default-features = false, optional = true }
 iced_native = { version = "0.10.3", default-features = false, optional = true }
 rfd = { version = "0.14.1", optional = true }
