@@ -23,7 +23,6 @@ mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
 pub mod hardware_subscription;
 mod hw;
-#[cfg(feature = "network")]
 pub mod network_subscription;
 mod styles;
 mod toast_handler;
@@ -49,6 +48,16 @@ fn get_matches() -> ArgMatches {
     let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
     let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
+
+    let app = app.arg(
+        Arg::new("nodeid")
+            .short('n')
+            .long("nodeid")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("NODEID")
+            .help("Node Id of a piglet instance to connect to"),
+    );
 
     let app = app.arg(
         Arg::new("config-file")
@@ -99,6 +108,11 @@ impl Application for Piggui {
             .get_one::<String>("config-file")
             .map(|s| s.to_string());
 
+        let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
+
+        // TODO this will come from UI entry later. For now copy this from the output of piglet then run piggui
+        //let node_id = "2r7vxyfvkfgwfkcxt5wky72jghy4n6boawnvz5fxes62tqmnnmhq";
+
         (
             Self {
                 config_filename: None,
@@ -106,7 +120,7 @@ impl Application for Piggui {
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 toast_handler: ToastHandler::new(),
-                hardware_view: HardwareView::new(),
+                hardware_view: HardwareView::new(nodeid),
             },
             maybe_load_no_picker(config_filename),
         )

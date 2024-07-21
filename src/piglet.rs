@@ -1,21 +1,14 @@
-#[cfg(feature = "network")]
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::{BCMPinNumber, PinLevel};
-#[cfg(feature = "network")]
 use crate::hw::{LevelChange, PIGLET_ALPN};
-#[cfg(feature = "network")]
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
 use env_logger::Builder;
-#[cfg(feature = "network")]
 use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
-#[cfg(feature = "network")]
 use iroh_net::endpoint::Connection;
-#[cfg(feature = "network")]
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
-#[cfg(feature = "network")]
 use log::error;
 use log::{info, trace, LevelFilter};
 use std::str::FromStr;
@@ -58,17 +51,10 @@ fn local_init() -> io::Result<impl Hardware> {
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
 /// over the network.
-#[cfg(feature = "network")]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let hw = local_init()?;
-    #[cfg(feature = "network")]
     listen(hw).await
-}
-
-#[cfg(not(feature = "network"))]
-fn main() {
-    local_init().unwrap();
 }
 
 /// Callback function that is called when an input changes level
@@ -116,7 +102,6 @@ fn get_matches() -> ArgMatches {
 }
 
 /// Listen for an incoming iroh-net connection
-#[cfg(feature = "network")]
 async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
 
@@ -211,7 +196,6 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
 }
 
 /// Send a detected input level change back to the GUI using the `gui_sender` [SendStream]
-#[cfg(feature = "network")]
 async fn send_input_change(
     connection: Connection,
     bcm: BCMPinNumber,

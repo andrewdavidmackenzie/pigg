@@ -26,7 +26,7 @@ pub enum NetworkState {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe() -> Subscription<HardwareEventMessage> {
+pub fn subscribe(nodeid: String) -> Subscription<HardwareEventMessage> {
     struct Connect;
     subscription::channel(
         std::any::TypeId::of::<Connect>(),
@@ -41,7 +41,7 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                         // Create channel
                         let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
-                        match connect().await {
+                        match connect(&nodeid).await {
                             Ok((hardware_description, connection)) => {
                                 // Send the sender back to the GUI
                                 let _ = gui_sender_clone
@@ -119,9 +119,7 @@ async fn send_config_change(
 }
 
 //noinspection SpellCheckingInspection
-async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
-    // TODO this will come from UI entry later. For now copy this from the output of piglet then run piggui
-    let node_id = NodeId::from_str("2r7vxyfvkfgwfkcxt5wky72jghy4n6boawnvz5fxes62tqmnnmhq").unwrap();
+async fn connect(nodeid: &str) -> anyhow::Result<(HardwareDescription, Connection)> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
@@ -151,7 +149,7 @@ async fn connect() -> anyhow::Result<(HardwareDescription, Connection)> {
     ))?;
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
-    let addr = NodeAddr::from_parts(node_id, Some(relay_url), vec![]);
+    let addr = NodeAddr::from_parts(NodeId::from_str(nodeid).unwrap(), Some(relay_url), vec![]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
     let connection = endpoint.connect(addr, PIGLET_ALPN).await?;
