@@ -18,34 +18,24 @@ use tracing_subscriber::EnvFilter;
 
 mod hw;
 
-fn local_init() -> io::Result<impl Hardware> {
+/// Do initialization of logging, get access to local hardware and apply any config from a local
+/// file that maybe specified on the command line
+fn init() -> io::Result<impl Hardware> {
     let matches = get_matches();
 
     setup_logging(&matches);
 
     let mut hw = hw::get();
     info!("\n{}", hw.description().unwrap().details);
-    trace!("Pin Descriptions:");
-    for pin_description in hw.description().unwrap().pins.iter() {
-        trace!("{pin_description}")
-    }
 
-    // Load any config file specified on the command line, or else the default
-    let config = match matches.get_one::<String>("config-file") {
-        Some(config_filename) => {
-            let config = HardwareConfig::load(config_filename).unwrap();
-            info!("Config loaded from file: {config_filename}");
-            trace!("{config}");
-            config
-        }
-        None => {
-            info!("Default Config loaded");
-            HardwareConfig::default()
-        }
+    // Load any config file specified on the command line
+    if let Some(config_filename) = matches.get_one::<String>("config-file") {
+        let config = HardwareConfig::load(config_filename).unwrap();
+        info!("Config loaded from file: {config_filename}");
+        trace!("{config}");
+        hw.apply_config(&config, input_level_changed)?;
+        trace!("Configuration applied to hardware");
     };
-
-    hw.apply_config(&config, input_level_changed)?;
-    trace!("Configuration applied to hardware");
 
     Ok(hw)
 }
@@ -55,16 +45,16 @@ fn local_init() -> io::Result<impl Hardware> {
 /// over the network.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let hw = local_init()?;
+    let hw = init()?;
     listen(hw).await
 }
 
 /// Callback function that is called when an input changes level
-async fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
+fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
     info!("Pin #{bcm_pin_number} changed level to '{level}'");
 }
 
-/// Setup logging with the requested verbosity level - or default if none specified
+/// Setup logging with the requested verbosity level - or default if none was specified
 fn setup_logging(matches: &ArgMatches) {
     let default: Directive = LevelFilter::from_level(Level::ERROR).into();
     let verbosity_option = matches
@@ -171,28 +161,30 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
                 match serde_json::from_str(&content) {
                     Ok(NewConfig(config)) => {
                         info!("New config applied");
-                        let _ = hardware.apply_config(&config, move |bcm, level| {
-                            let cc = connection_clone.clone();
-                            async move {
-                                let _ = send_input_change(cc, bcm, level).await;
-                            }
-                        });
+                        hardware
+                            .apply_config(&config, move |bcm, level| {
+                                let cc = connection_clone.clone();
+                                let _ = send_input_change(cc, bcm, level);
+                            })
+                            .unwrap()
                     }
                     Ok(NewPinConfig(bcm, pin_function)) => {
                         info!("New pin config for pin #{bcm}: {pin_function}");
-                        let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                            let cc = connection_clone.clone();
-                            async move {
-                                let _ = send_input_change(cc, bcm, level).await;
-                            }
-                        });
+                        hardware
+                            .apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                                let cc = connection_clone.clone();
+                                let _ = send_input_change(cc, bcm, level);
+                            })
+                            .unwrap()
                     }
                     Ok(IOLevelChanged(bcm, level_change)) => {
                         info!("Pin #{bcm} Output level change: {level_change:?}");
-                        let _ = hardware.set_output_level(bcm, level_change.new_level);
+                        hardware
+                            .set_output_level(bcm, level_change.new_level)
+                            .unwrap();
                     }
                     _ => error!("Unknown message: {content}"),
-                }
+                };
             }
         }
     }
@@ -200,17 +192,26 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Send a detected input level change back to the GUI using the `gui_sender` [SendStream]
-async fn send_input_change(
+/// Send a detected input level change back to the GUI using `connection` [Connection],
+/// timestamping with the current time in Utc
+fn send_input_change(
     connection: Connection,
     bcm: BCMPinNumber,
     level: PinLevel,
 ) -> anyhow::Result<()> {
     let level_change = LevelChange::new(level);
-    info!("Pin #{bcm} Input level change: {level_change:?}");
+    trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = serde_json::to_string(&hardware_event)?;
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    rt.block_on(send(connection, message))
+}
+
+async fn send(connection: Connection, message: String) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
     gui_sender.write_all(message.as_bytes()).await?;
-    Ok(gui_sender.finish().await?)
+    gui_sender.finish().await?;
+    Ok(())
 }

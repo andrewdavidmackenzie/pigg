@@ -1,8 +1,6 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
 #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
-use std::future::Future;
-#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 use std::io;
 
 use crate::hw::config::HardwareConfig;
@@ -137,35 +135,27 @@ pub trait Hardware {
     fn description(&self) -> io::Result<HardwareDescription>;
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    fn apply_config<C, F>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
-        F: Future<Output = ()> + Send,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.pins {
-            let callback_clone = callback.clone();
-            self.apply_pin_config(*bcm_pin_number, pin_function, move |pin_number, level| {
-                let mut cc = callback_clone.clone();
-                async move {
-                    cc(pin_number, level).await;
-                }
-            })?;
+            self.apply_pin_config(*bcm_pin_number, pin_function, callback.clone())?;
         }
 
         Ok(())
     }
 
     /// Apply a new config to one specific pin
-    fn apply_pin_config<C, F>(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
         callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
-        F: Future<Output = ()> + Send;
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static;
 
     /// Read the input level of an input using its [BCMPinNumber]
     #[allow(dead_code)] // for piglet

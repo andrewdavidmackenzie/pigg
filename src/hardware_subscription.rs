@@ -78,15 +78,12 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                             NewConfig(config) => {
                                 connected_hardware
                                     .apply_config(&config, move |bcm_pin_number, level| {
-                                        let mut sc = gui_sender_clone.clone();
-                                        async move {
-                                            sc.send(InputChange(
+                                        gui_sender_clone
+                                            .try_send(InputChange(
                                                 bcm_pin_number,
                                                 LevelChange::new(level),
                                             ))
-                                            .await
                                             .unwrap();
-                                        }
                                     })
                                     .unwrap();
 
@@ -101,15 +98,12 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
                                     bcm_pin_number,
                                     &new_function,
                                     move |bcm_pin_number, level| {
-                                        let mut sc = gui_sender_clone.clone();
-                                        async move {
-                                            sc.send(InputChange(
+                                        gui_sender_clone
+                                            .try_send(InputChange(
                                                 bcm_pin_number,
                                                 LevelChange::new(level),
                                             ))
-                                            .await
                                             .unwrap();
-                                        }
                                     },
                                 );
                             }

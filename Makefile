@@ -139,7 +139,7 @@ cross-test:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piglet --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
 
 .PHONY: copy
-copy: build
+copy: cross-release-build
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 

@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::slice::Iter;
 
 /// [PinDescription] is used to describe each pin and possible uses it can be put to
 /// * [board_pin_number] refer to the pins by the number of the pin printed on the board
@@ -34,10 +33,6 @@ impl PinDescriptionSet {
     /// Create a new PinDescriptionSet, from a const array of PinDescriptions
     pub const fn new(pins: [PinDescription; 40]) -> PinDescriptionSet {
         PinDescriptionSet { pins }
-    }
-
-    pub fn iter(&self) -> Iter<PinDescription> {
-        self.pins.iter()
     }
 
     /// Return a slice of PinDescriptions
