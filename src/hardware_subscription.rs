@@ -21,6 +21,7 @@ pub enum State {
     Connected(Receiver<HardwareConfigMessage>),
 }
 
+/// Send the current input state for all inputs configured in the config
 fn send_current_input_states(
     tx: &mut Sender<HardwareEventMessage>,
     config: &HardwareConfig,

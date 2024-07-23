@@ -1,3 +1,4 @@
+use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
 use crate::hw::{LevelChange, PIGLET_ALPN};
@@ -149,8 +150,7 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
         gui_sender.finish().await?;
 
         loop {
-            // accept a bidirectional QUIC connection - use the `quinn` APIs to send and recv content
-            trace!("waiting for a bi-di connection");
+            trace!("waiting for connection");
             let mut config_receiver = connection.accept_uni().await?;
             let connection_clone = connection.clone();
             trace!("Connected, waiting for message");
@@ -178,20 +178,23 @@ fn apply_config_change(
 ) {
     match config_change {
         NewConfig(config) => {
+            let cc = connection.clone();
             info!("New config applied");
             hardware
                 .apply_config(&config, move |bcm, level| {
                     let cc = connection.clone();
-                    let _ = send_input_change(cc, bcm, level);
+                    let _ = send_input_level(cc, bcm, level);
                 })
-                .unwrap()
+                .unwrap();
+
+            send_current_input_states(cc, &config, hardware).unwrap();
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
             hardware
                 .apply_pin_config(bcm, &pin_function, move |bcm, level| {
                     let cc = connection.clone();
-                    let _ = send_input_change(cc, bcm, level);
+                    let _ = send_input_level(cc, bcm, level);
                 })
                 .unwrap()
         }
@@ -204,9 +207,28 @@ fn apply_config_change(
     }
 }
 
+/// Send the current input state for all inputs configured in the config
+fn send_current_input_states(
+    connection: Connection,
+    config: &HardwareConfig,
+    hardware: &impl Hardware,
+) -> anyhow::Result<()> {
+    // Send initial levels
+    for (bcm_pin_number, pin_function) in &config.pins {
+        if let PinFunction::Input(_pullup) = pin_function {
+            // Update UI with initial state
+            if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
+                send_input_level(connection.clone(), *bcm_pin_number, initial_level)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
-fn send_input_change(
+fn send_input_level(
     connection: Connection,
     bcm: BCMPinNumber,
     level: PinLevel,
