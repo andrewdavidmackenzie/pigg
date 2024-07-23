@@ -3,16 +3,18 @@ use crate::hw::{BCMPinNumber, PinLevel};
 use crate::hw::{LevelChange, PIGLET_ALPN};
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
-use env_logger::Builder;
 use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
 use iroh_net::endpoint::Connection;
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
 use log::error;
-use log::{info, trace, LevelFilter};
+use log::{info, trace};
 use std::str::FromStr;
 use std::{env, io};
+use tracing::Level;
+use tracing_subscriber::filter::{Directive, LevelFilter};
+use tracing_subscriber::EnvFilter;
 
 mod hw;
 
@@ -64,12 +66,15 @@ async fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
 
 /// Setup logging with the requested verbosity level - or default if none specified
 fn setup_logging(matches: &ArgMatches) {
-    let default = String::from("error");
-    let verbosity_option = matches.get_one::<String>("verbosity");
-    let verbosity = verbosity_option.unwrap_or(&default);
-    let level = LevelFilter::from_str(verbosity).unwrap_or(LevelFilter::Error);
-    let mut builder = Builder::from_default_env();
-    builder.filter_level(level).init();
+    let default: Directive = LevelFilter::from_level(Level::ERROR).into();
+    let verbosity_option = matches
+        .get_one::<String>("verbosity")
+        .and_then(|v| Directive::from_str(v).ok());
+    let directive = verbosity_option.unwrap_or(default);
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(directive)
+        .from_env_lossy();
+    tracing_subscriber::fmt().with_env_filter(env_filter).init();
 }
 
 /// Parse the command line arguments using clap
