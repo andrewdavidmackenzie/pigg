@@ -56,6 +56,7 @@ pub fn subscribe(nodeid: String) -> Subscription<HardwareEventMessage> {
                                     NetworkState::Connected(hardware_event_receiver, connection);
                             }
                             Err(e) => {
+                                // TODO surface to the UI somehow
                                 eprintln!("Error connecting to piglet: {e}");
                             }
                         }
