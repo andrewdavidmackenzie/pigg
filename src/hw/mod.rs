@@ -23,7 +23,7 @@ mod pi_hw;
 pub(crate) mod pin_description;
 #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
 mod pin_descriptions;
-pub(crate) mod pin_function;
+pub mod pin_function;
 
 /// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number
 pub type BCMPinNumber = u8;
