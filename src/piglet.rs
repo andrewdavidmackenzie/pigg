@@ -1,5 +1,5 @@
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{BCMPinNumber, PinLevel};
+use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
 use crate::hw::{LevelChange, PIGLET_ALPN};
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
@@ -154,42 +154,54 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
             let mut config_receiver = connection.accept_uni().await?;
             let connection_clone = connection.clone();
             trace!("Connected, waiting for message");
-            let message = config_receiver.read_to_end(4096).await?;
+            let payload = config_receiver.read_to_end(4096).await?;
 
-            if !message.is_empty() {
-                let content = String::from_utf8_lossy(&message);
-                match serde_json::from_str(&content) {
-                    Ok(NewConfig(config)) => {
-                        info!("New config applied");
-                        hardware
-                            .apply_config(&config, move |bcm, level| {
-                                let cc = connection_clone.clone();
-                                let _ = send_input_change(cc, bcm, level);
-                            })
-                            .unwrap()
-                    }
-                    Ok(NewPinConfig(bcm, pin_function)) => {
-                        info!("New pin config for pin #{bcm}: {pin_function}");
-                        hardware
-                            .apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                                let cc = connection_clone.clone();
-                                let _ = send_input_change(cc, bcm, level);
-                            })
-                            .unwrap()
-                    }
-                    Ok(IOLevelChanged(bcm, level_change)) => {
-                        info!("Pin #{bcm} Output level change: {level_change:?}");
-                        hardware
-                            .set_output_level(bcm, level_change.new_level)
-                            .unwrap();
-                    }
-                    _ => error!("Unknown message: {content}"),
+            if !payload.is_empty() {
+                let content = String::from_utf8_lossy(&payload);
+                if let Ok(config_message) = serde_json::from_str(&content) {
+                    apply_config_change(&mut hardware, config_message, connection_clone)
+                } else {
+                    error!("Unknown message: {content}");
                 };
             }
         }
     }
 
     Ok(())
+}
+
+/// Apply a config change to the local hardware
+fn apply_config_change(
+    hardware: &mut impl Hardware,
+    config_change: HardwareConfigMessage,
+    connection: Connection,
+) {
+    match config_change {
+        NewConfig(config) => {
+            info!("New config applied");
+            hardware
+                .apply_config(&config, move |bcm, level| {
+                    let cc = connection.clone();
+                    let _ = send_input_change(cc, bcm, level);
+                })
+                .unwrap()
+        }
+        NewPinConfig(bcm, pin_function) => {
+            info!("New pin config for pin #{bcm}: {pin_function}");
+            hardware
+                .apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                    let cc = connection.clone();
+                    let _ = send_input_change(cc, bcm, level);
+                })
+                .unwrap()
+        }
+        IOLevelChanged(bcm, level_change) => {
+            info!("Pin #{bcm} Output level change: {level_change:?}");
+            hardware
+                .set_output_level(bcm, level_change.new_level)
+                .unwrap();
+        }
+    }
 }
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],

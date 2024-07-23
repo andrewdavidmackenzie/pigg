@@ -88,14 +88,14 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
 
 /// Apply a config change to the local hardware
 fn apply_config_change(
-    connected_hardware: &mut impl Hardware,
+    hardware: &mut impl Hardware,
     config_change: HardwareConfigMessage,
     mut gui_sender_clone: Sender<HardwareEventMessage>,
     gui_sender: &mut Sender<HardwareEventMessage>,
 ) {
     match config_change {
         NewConfig(config) => {
-            connected_hardware
+            hardware
                 .apply_config(&config, move |bcm_pin_number, level| {
                     gui_sender_clone
                         .try_send(InputChange(bcm_pin_number, LevelChange::new(level)))
@@ -103,10 +103,10 @@ fn apply_config_change(
                 })
                 .unwrap();
 
-            send_current_input_states(gui_sender, &config, connected_hardware);
+            send_current_input_states(gui_sender, &config, hardware);
         }
         NewPinConfig(bcm_pin_number, new_function) => {
-            let _ = connected_hardware.apply_pin_config(
+            let _ = hardware.apply_pin_config(
                 bcm_pin_number,
                 &new_function,
                 move |bcm_pin_number, level| {
@@ -117,7 +117,7 @@ fn apply_config_change(
             );
         }
         IOLevelChanged(bcm_pin_number, level_change) => {
-            let _ = connected_hardware.set_output_level(bcm_pin_number, level_change.new_level);
+            let _ = hardware.set_output_level(bcm_pin_number, level_change.new_level);
         }
     }
 }
