@@ -19,6 +19,15 @@ use tracing_subscriber::EnvFilter;
 
 mod hw;
 
+/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
+/// in Piggy, but without any GUI or related dependencies, loading a config from file and
+/// over the network.
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let hw = init()?;
+    listen(hw).await
+}
+
 /// Do initialization of logging, get access to local hardware and apply any config from a local
 /// file that maybe specified on the command line
 fn init() -> io::Result<impl Hardware> {
@@ -34,25 +43,13 @@ fn init() -> io::Result<impl Hardware> {
         let config = HardwareConfig::load(config_filename).unwrap();
         info!("Config loaded from file: {config_filename}");
         trace!("{config}");
-        hw.apply_config(&config, input_level_changed)?;
+        hw.apply_config(&config, |bcm_pin_number, level| {
+            info!("Pin #{bcm_pin_number} changed level to '{level}'")
+        })?;
         trace!("Configuration applied to hardware");
     };
 
     Ok(hw)
-}
-
-/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
-/// in Piggy, but without any GUI or related dependencies, loading a config from file and
-/// over the network.
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let hw = init()?;
-    listen(hw).await
-}
-
-/// Callback function that is called when an input changes level
-fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
-    info!("Pin #{bcm_pin_number} changed level to '{level}'");
 }
 
 /// Setup logging with the requested verbosity level - or default if none was specified
@@ -159,7 +156,7 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
             if !payload.is_empty() {
                 let content = String::from_utf8_lossy(&payload);
                 if let Ok(config_message) = serde_json::from_str(&content) {
-                    apply_config_change(&mut hardware, config_message, connection_clone)
+                    apply_config_change(&mut hardware, config_message, connection_clone).await
                 } else {
                     error!("Unknown message: {content}");
                 };
@@ -171,7 +168,7 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
 }
 
 /// Apply a config change to the local hardware
-fn apply_config_change(
+async fn apply_config_change(
     hardware: &mut impl Hardware,
     config_change: HardwareConfigMessage,
     connection: Connection,
@@ -187,28 +184,24 @@ fn apply_config_change(
                 })
                 .unwrap();
 
-            send_current_input_states(cc, &config, hardware).unwrap();
+            let _ = send_current_input_states(cc, &config, hardware).await;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
-            hardware
-                .apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                    let cc = connection.clone();
-                    let _ = send_input_level(cc, bcm, level);
-                })
-                .unwrap()
+            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                let cc = connection.clone();
+                let _ = send_input_level(cc, bcm, level);
+            });
         }
         IOLevelChanged(bcm, level_change) => {
             info!("Pin #{bcm} Output level change: {level_change:?}");
-            hardware
-                .set_output_level(bcm, level_change.new_level)
-                .unwrap();
+            let _ = hardware.set_output_level(bcm, level_change.new_level);
         }
     }
 }
 
 /// Send the current input state for all inputs configured in the config
-fn send_current_input_states(
+async fn send_current_input_states(
     connection: Connection,
     config: &HardwareConfig,
     hardware: &impl Hardware,
@@ -218,12 +211,27 @@ fn send_current_input_states(
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-                send_input_level(connection.clone(), *bcm_pin_number, initial_level)?;
+                let _ = send_input_level_async(connection.clone(), *bcm_pin_number, initial_level)
+                    .await;
             }
         }
     }
 
     Ok(())
+}
+
+/// Send a detected input level change back to the GUI using `connection` [Connection],
+/// timestamping with the current time in Utc
+async fn send_input_level_async(
+    connection: Connection,
+    bcm: BCMPinNumber,
+    level: PinLevel,
+) -> anyhow::Result<()> {
+    let level_change = LevelChange::new(level);
+    trace!("Pin #{bcm} Input level change: {level_change:?}");
+    let hardware_event = IOLevelChanged(bcm, level_change);
+    let message = serde_json::to_string(&hardware_event)?;
+    send(connection, message).await
 }
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],
