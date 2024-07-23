@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fs;
-use std::future::Future;
 use std::io;
 
 use rppal::gpio::Gpio;
@@ -81,15 +80,14 @@ impl Hardware for PiHW {
     }
 
     /// Apply the requested config to one pin, using bcm_pin_number
-    fn apply_pin_config<C, F>(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
-        F: Future<Output = ()>,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);

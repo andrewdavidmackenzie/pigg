@@ -1,5 +1,6 @@
+use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{BCMPinNumber, PinLevel};
+use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
 use crate::hw::{LevelChange, PIGLET_ALPN};
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
@@ -18,53 +19,40 @@ use tracing_subscriber::EnvFilter;
 
 mod hw;
 
-fn local_init() -> io::Result<impl Hardware> {
+/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
+/// in Piggy, but without any GUI or related dependencies, loading a config from file and
+/// over the network.
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let hw = init()?;
+    listen(hw).await
+}
+
+/// Do initialization of logging, get access to local hardware and apply any config from a local
+/// file that maybe specified on the command line
+fn init() -> io::Result<impl Hardware> {
     let matches = get_matches();
 
     setup_logging(&matches);
 
     let mut hw = hw::get();
     info!("\n{}", hw.description().unwrap().details);
-    trace!("Pin Descriptions:");
-    for pin_description in hw.description().unwrap().pins.iter() {
-        trace!("{pin_description}")
-    }
 
-    // Load any config file specified on the command line, or else the default
-    let config = match matches.get_one::<String>("config-file") {
-        Some(config_filename) => {
-            let config = HardwareConfig::load(config_filename).unwrap();
-            info!("Config loaded from file: {config_filename}");
-            trace!("{config}");
-            config
-        }
-        None => {
-            info!("Default Config loaded");
-            HardwareConfig::default()
-        }
+    // Load any config file specified on the command line
+    if let Some(config_filename) = matches.get_one::<String>("config-file") {
+        let config = HardwareConfig::load(config_filename).unwrap();
+        info!("Config loaded from file: {config_filename}");
+        trace!("{config}");
+        hw.apply_config(&config, |bcm_pin_number, level| {
+            info!("Pin #{bcm_pin_number} changed level to '{level}'")
+        })?;
+        trace!("Configuration applied to hardware");
     };
-
-    hw.apply_config(&config, input_level_changed)?;
-    trace!("Configuration applied to hardware");
 
     Ok(hw)
 }
 
-/// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
-/// in Piggy, but without any GUI or related dependencies, loading a config from file and
-/// over the network.
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let hw = local_init()?;
-    listen(hw).await
-}
-
-/// Callback function that is called when an input changes level
-async fn input_level_changed(bcm_pin_number: BCMPinNumber, level: PinLevel) {
-    info!("Pin #{bcm_pin_number} changed level to '{level}'");
-}
-
-/// Setup logging with the requested verbosity level - or default if none specified
+/// Setup logging with the requested verbosity level - or default if none was specified
 fn setup_logging(matches: &ArgMatches) {
     let default: Directive = LevelFilter::from_level(Level::ERROR).into();
     let verbosity_option = matches
@@ -159,40 +147,19 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
         gui_sender.finish().await?;
 
         loop {
-            // accept a bidirectional QUIC connection - use the `quinn` APIs to send and recv content
-            trace!("waiting for a bi-di connection");
+            trace!("waiting for connection");
             let mut config_receiver = connection.accept_uni().await?;
             let connection_clone = connection.clone();
             trace!("Connected, waiting for message");
-            let message = config_receiver.read_to_end(4096).await?;
+            let payload = config_receiver.read_to_end(4096).await?;
 
-            if !message.is_empty() {
-                let content = String::from_utf8_lossy(&message);
-                match serde_json::from_str(&content) {
-                    Ok(NewConfig(config)) => {
-                        info!("New config applied");
-                        let _ = hardware.apply_config(&config, move |bcm, level| {
-                            let cc = connection_clone.clone();
-                            async move {
-                                let _ = send_input_change(cc, bcm, level).await;
-                            }
-                        });
-                    }
-                    Ok(NewPinConfig(bcm, pin_function)) => {
-                        info!("New pin config for pin #{bcm}: {pin_function}");
-                        let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                            let cc = connection_clone.clone();
-                            async move {
-                                let _ = send_input_change(cc, bcm, level).await;
-                            }
-                        });
-                    }
-                    Ok(IOLevelChanged(bcm, level_change)) => {
-                        info!("Pin #{bcm} Output level change: {level_change:?}");
-                        let _ = hardware.set_output_level(bcm, level_change.new_level);
-                    }
-                    _ => error!("Unknown message: {content}"),
-                }
+            if !payload.is_empty() {
+                let content = String::from_utf8_lossy(&payload);
+                if let Ok(config_message) = serde_json::from_str(&content) {
+                    apply_config_change(&mut hardware, config_message, connection_clone).await
+                } else {
+                    error!("Unknown message: {content}");
+                };
             }
         }
     }
@@ -200,17 +167,96 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Send a detected input level change back to the GUI using the `gui_sender` [SendStream]
-async fn send_input_change(
+/// Apply a config change to the local hardware
+/// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
+/// but wasn't working - so this uses a sync callback again to fix that, and an async version of
+/// send_input_level() for use directly from the async context
+async fn apply_config_change(
+    hardware: &mut impl Hardware,
+    config_change: HardwareConfigMessage,
+    connection: Connection,
+) {
+    match config_change {
+        NewConfig(config) => {
+            let cc = connection.clone();
+            info!("New config applied");
+            hardware
+                .apply_config(&config, move |bcm, level| {
+                    let cc = connection.clone();
+                    let _ = send_input_level(cc, bcm, level);
+                })
+                .unwrap();
+
+            let _ = send_current_input_states(cc, &config, hardware).await;
+        }
+        NewPinConfig(bcm, pin_function) => {
+            info!("New pin config for pin #{bcm}: {pin_function}");
+            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                let cc = connection.clone();
+                let _ = send_input_level(cc, bcm, level);
+            });
+        }
+        IOLevelChanged(bcm, level_change) => {
+            trace!("Pin #{bcm} Output level change: {level_change:?}");
+            let _ = hardware.set_output_level(bcm, level_change.new_level);
+        }
+    }
+}
+
+/// Send the current input state for all inputs configured in the config
+async fn send_current_input_states(
+    connection: Connection,
+    config: &HardwareConfig,
+    hardware: &impl Hardware,
+) -> anyhow::Result<()> {
+    // Send initial levels
+    for (bcm_pin_number, pin_function) in &config.pins {
+        if let PinFunction::Input(_pullup) = pin_function {
+            // Update UI with initial state
+            if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
+                let _ = send_input_level_async(connection.clone(), *bcm_pin_number, initial_level)
+                    .await;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Send a detected input level change back to the GUI using `connection` [Connection],
+/// timestamping with the current time in Utc
+async fn send_input_level_async(
     connection: Connection,
     bcm: BCMPinNumber,
     level: PinLevel,
 ) -> anyhow::Result<()> {
     let level_change = LevelChange::new(level);
-    info!("Pin #{bcm} Input level change: {level_change:?}");
+    trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = serde_json::to_string(&hardware_event)?;
+    send(connection, message).await
+}
+
+/// Send a detected input level change back to the GUI using `connection` [Connection],
+/// timestamping with the current time in Utc
+fn send_input_level(
+    connection: Connection,
+    bcm: BCMPinNumber,
+    level: PinLevel,
+) -> anyhow::Result<()> {
+    let level_change = LevelChange::new(level);
+    trace!("Pin #{bcm} Input level change: {level_change:?}");
+    let hardware_event = IOLevelChanged(bcm, level_change);
+    let message = serde_json::to_string(&hardware_event)?;
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    rt.block_on(send(connection, message))
+}
+
+async fn send(connection: Connection, message: String) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
     gui_sender.write_all(message.as_bytes()).await?;
-    Ok(gui_sender.finish().await?)
+    gui_sender.finish().await?;
+    Ok(())
 }

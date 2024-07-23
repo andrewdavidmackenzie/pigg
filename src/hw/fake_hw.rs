@@ -1,10 +1,7 @@
-use std::future::Future;
-/// Fake Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, Windows)
-use std::io;
+use rand::Rng;
 use std::time::Duration;
-
-use tokio::task;
-use tokio::time::sleep;
+/// Fake Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, Windows)
+use std::{io, thread};
 
 use crate::hw::{BCMPinNumber, PinFunction, PinLevel};
 
@@ -42,22 +39,22 @@ impl Hardware for FakeHW {
         })
     }
 
-    fn apply_pin_config<C, F>(
+    fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) -> F + Send + Sync + Clone + 'static,
-        F: Future<Output = ()> + Send,
+        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         if let PinFunction::Input(_) = pin_function {
-            task::spawn(async move {
+            std::thread::spawn(move || {
+                let mut rng = rand::thread_rng();
                 loop {
-                    let level: bool = rand::random::<bool>();
-                    callback(bcm_pin_number, level).await;
-                    sleep(Duration::from_millis(666)).await;
+                    let level: bool = rng.gen();
+                    callback(bcm_pin_number, level);
+                    thread::sleep(Duration::from_millis(666));
                 }
             });
         }

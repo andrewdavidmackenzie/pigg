@@ -21,6 +21,7 @@ pub enum State {
     Connected(Receiver<HardwareConfigMessage>),
 }
 
+/// Send the current input state for all inputs configured in the config
 fn send_current_input_states(
     tx: &mut Sender<HardwareEventMessage>,
     config: &HardwareConfig,
@@ -73,54 +74,51 @@ pub fn subscribe() -> Subscription<HardwareEventMessage> {
 
                     State::Connected(config_change_receiver) => {
                         let config_change = config_change_receiver.select_next_some().await;
-
-                        match config_change {
-                            NewConfig(config) => {
-                                connected_hardware
-                                    .apply_config(&config, move |bcm_pin_number, level| {
-                                        let mut sc = gui_sender_clone.clone();
-                                        async move {
-                                            sc.send(InputChange(
-                                                bcm_pin_number,
-                                                LevelChange::new(level),
-                                            ))
-                                            .await
-                                            .unwrap();
-                                        }
-                                    })
-                                    .unwrap();
-
-                                send_current_input_states(
-                                    &mut gui_sender,
-                                    &config,
-                                    &connected_hardware,
-                                );
-                            }
-                            NewPinConfig(bcm_pin_number, new_function) => {
-                                let _ = connected_hardware.apply_pin_config(
-                                    bcm_pin_number,
-                                    &new_function,
-                                    move |bcm_pin_number, level| {
-                                        let mut sc = gui_sender_clone.clone();
-                                        async move {
-                                            sc.send(InputChange(
-                                                bcm_pin_number,
-                                                LevelChange::new(level),
-                                            ))
-                                            .await
-                                            .unwrap();
-                                        }
-                                    },
-                                );
-                            }
-                            IOLevelChanged(bcm_pin_number, level_change) => {
-                                let _ = connected_hardware
-                                    .set_output_level(bcm_pin_number, level_change.new_level);
-                            }
-                        }
+                        apply_config_change(
+                            &mut connected_hardware,
+                            config_change,
+                            gui_sender_clone,
+                            &mut gui_sender,
+                        );
                     }
                 }
             }
         },
     )
+}
+
+/// Apply a config change to the local hardware
+fn apply_config_change(
+    hardware: &mut impl Hardware,
+    config_change: HardwareConfigMessage,
+    mut gui_sender_clone: Sender<HardwareEventMessage>,
+    gui_sender: &mut Sender<HardwareEventMessage>,
+) {
+    match config_change {
+        NewConfig(config) => {
+            hardware
+                .apply_config(&config, move |bcm_pin_number, level| {
+                    gui_sender_clone
+                        .try_send(InputChange(bcm_pin_number, LevelChange::new(level)))
+                        .unwrap();
+                })
+                .unwrap();
+
+            send_current_input_states(gui_sender, &config, hardware);
+        }
+        NewPinConfig(bcm_pin_number, new_function) => {
+            let _ = hardware.apply_pin_config(
+                bcm_pin_number,
+                &new_function,
+                move |bcm_pin_number, level| {
+                    gui_sender_clone
+                        .try_send(InputChange(bcm_pin_number, LevelChange::new(level)))
+                        .unwrap();
+                },
+            );
+        }
+        IOLevelChanged(bcm_pin_number, level_change) => {
+            let _ = hardware.set_output_level(bcm_pin_number, level_change.new_level);
+        }
+    }
 }
