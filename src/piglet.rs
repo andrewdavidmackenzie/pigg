@@ -168,6 +168,9 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
 }
 
 /// Apply a config change to the local hardware
+/// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
+/// but wasn't working - so this uses a sync callback again to fix that, and an async version of
+/// send_input_level() for use directly from the async context
 async fn apply_config_change(
     hardware: &mut impl Hardware,
     config_change: HardwareConfigMessage,
