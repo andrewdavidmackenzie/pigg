@@ -4137,7 +4137,6 @@ dependencies = [
  "chrono",
  "clap",
  "env_logger",
- "futures",
  "futures-lite 2.3.0",
  "iced",
  "iced_aw",
