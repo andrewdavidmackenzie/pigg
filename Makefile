@@ -73,6 +73,17 @@ else
 	RUST_LOG=piglet=info cargo run --bin piglet --features "fake_hw"
 endif
 
+.PHONY: run-release-piglet
+run-release-piglet:
+ifneq ($(PI),)
+	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
+	RUST_LOG=piglet=info cargo run --bin piglet --release --features "pi_hw"
+else
+	# Compile for host, targeting fake hardware
+	RUST_LOG=piglet=info cargo run --bin piglet --release--features "fake_hw"
+endif
+
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
 .PHONY: release-build
 release-build:
