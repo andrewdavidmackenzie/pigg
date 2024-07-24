@@ -26,11 +26,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           profile: minimal
           components: clippy,llvm-tools-preview
-          toolchain: stable
 
       - name: InstallCoverageTools
         if: runner.os != 'Windows'
