@@ -98,6 +98,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         .context("Could not get exec file name")?
         .to_str()
         .context("Could not get exec file name")?;
+    let info_path = exec_path.with_file_name("piglet.info");
 
     let my_pid = process::id();
     let sys = System::new_all();
@@ -107,16 +108,19 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         .collect();
     if let Some(process) = instances.first() {
         println!(
-            "An instance of {exec_name} is already running with PID='{}' with Path='{}', started by user with {:?}",
+            "An instance of {exec_name} is already running with PID='{}',  Path='{}', started by user with {:?}",
             process.pid(),
             process.exe().context("Could not get path to the running process instance")?.display(),
             process.user_id().context("Could not get the User ID of user who started the running process instance")?,
         );
 
+        println!("You can use the following info to connect to this running instance:");
+        let piglet_info = fs::read_to_string(info_path)?;
+        println!("{}", piglet_info);
+
         exit(1);
     }
 
-    let info_path = exec_path.with_file_name("piglet.info");
     // remove any leftover file from a previous execution - ignore any failure
     let _ = fs::remove_file(&info_path);
 
@@ -236,7 +240,7 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
         let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
-        info!("new connection from {node_id}",);
+        info!("New connection from nodeid: '{node_id}'",);
 
         let mut gui_sender = connection.open_uni().await?;
 
