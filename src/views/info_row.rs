@@ -73,7 +73,7 @@ impl InfoRow {
                     "Use local Pi Hardware".to_string(),
                     cfg!(feature = "pi_hw"),
                 ))
-                (Button::new("Connect to remote Pi").width(Length::Fill).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()))
+                (Button::new("Connect to remote Pi").width(Length::Fill).on_press(Message::ShowModal).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()))
                 (Button::new("Search for Pi's on local network").width(Length::Fill).style(DISABLED_MENU_BUTTON_STYLE.get_button_style()))
                 (hardware_button::view()))
                 .width(MENU_WIDTH)
