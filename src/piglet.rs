@@ -34,15 +34,15 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 /// over the network.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let hw = init()?;
-    listen(hw).await
-}
-
-/// Do initialization of logging, get access to local hardware and apply any config from a local
-/// file that maybe specified on the command line
-fn init() -> anyhow::Result<impl Hardware> {
     let matches = get_matches();
 
+    manage_service(&matches)?;
+
+    run_service(&matches).await
+}
+
+/// Handle any service installation or uninstallation tasks
+fn manage_service(matches: &ArgMatches) -> anyhow::Result<()> {
     let service_name: ServiceLabel = SERVICE_NAME.parse().unwrap();
 
     if matches.get_flag("uninstall") {
@@ -65,7 +65,13 @@ fn init() -> anyhow::Result<impl Hardware> {
         exit(0);
     };
 
-    setup_logging(&matches);
+    Ok(())
+}
+
+/// Run piglet as a service - this could be interactively by a user in foreground or started
+/// by the system as a user service, in background - use logging for output from here on
+async fn run_service(matches: &ArgMatches) -> anyhow::Result<()> {
+    setup_logging(matches);
 
     let mut hw = hw::get();
     info!("\n{}", hw.description().unwrap().details);
@@ -81,7 +87,8 @@ fn init() -> anyhow::Result<impl Hardware> {
         trace!("Configuration applied to hardware");
     };
 
-    Ok(hw)
+    // Then listen for remote connections and "serve" them
+    listen(hw).await
 }
 
 /// CHeck that this is the only instance of piglet running, both user process or system process
@@ -170,22 +177,30 @@ fn get_matches() -> ArgMatches {
     app.get_matches()
 }
 
-/// Listen for an incoming iroh-net connection
+/// Listen for an incoming iroh-net connection and apply any config changes received, and
+/// send to GUI over the connection any input level changes.
+/// This is adapted from the iroh-net example with help from the iroh community
 async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
 
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
+    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
+    // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
+    // connections between nodes when there are NATs or firewalls preventing direct connections.
+    // If no direct connection can be made, packets are relayed over the relay servers.
     let endpoint = Endpoint::builder()
-        // The secret key is used to authenticate with other nodes. The PublicKey portion of this secret key is how we identify nodes, often referred to as the `node_id` in our codebase.
+        // The secret key is used to authenticate with other nodes.
+        // The PublicKey portion of this secret key is how we identify nodes, often referred
+        // to as the `node_id` in our codebase.
         .secret_key(secret_key)
         // set the ALPN protocols this endpoint will accept on incoming connections
         .alpns(vec![PIGLET_ALPN.to_vec()])
         // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
         // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
         // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
-        // If you want to experiment with relaying using your own relay server, you must pass in the same custom relay url to both the `listen` code AND the `connect` code
+        // If you want to experiment with relaying using your own relay server,
+        // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
         .relay_mode(RelayMode::Default)
-        // you can choose a port to bind to, but passing in `0` will bind the socket to a random available port
+        // pass in `0` to bind the socket to a random available port
         .bind(0)
         .await?;
 
@@ -345,7 +360,7 @@ fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
     Ok(manager)
 }
 
-// This will install the binary as a user level service and then start it
+/// Install the binary as a user level service and then start it
 fn install_service(service_name: &ServiceLabel, exec_path: PathBuf) -> Result<(), io::Error> {
     let manager = get_service_manager()?;
     // Run from dir where exec is for now, so it should find the config file in ancestors path
@@ -383,7 +398,7 @@ fn install_service(service_name: &ServiceLabel, exec_path: PathBuf) -> Result<()
     Ok(())
 }
 
-// this will stop any running instance of the service, then uninstall it
+/// Stop any running instance of the service, then uninstall it
 fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
     let manager = get_service_manager()?;
 
