@@ -82,7 +82,13 @@ mod test {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
 
-        config.save(test_file.to_str().unwrap()).unwrap();
+        config
+            .save(
+                test_file
+                    .to_str()
+                    .expect("Could not convert PathBuf to str"),
+            )
+            .expect("Config save failed");
 
         let pin_config = r#"{"pins":{"1":{"Input":null}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
@@ -97,7 +103,9 @@ mod test {
         let mut file = File::create(&test_file).expect("Could not create test file");
         file.write_all(pin_config.as_bytes())
             .expect("Could not write to test file");
-        let config = HardwareConfig::load(test_file.to_str().unwrap()).unwrap();
+        let config =
+            HardwareConfig::load(test_file.to_str().expect("Could not convert path to str"))
+                .expect("Failed to load config");
         assert_eq!(config.pins.len(), 1);
         assert_eq!(config.pins.get(&1), Some(&PinFunction::Input(None)));
     }
@@ -130,7 +138,9 @@ mod test {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
 
-        config.save(test_file.to_str().unwrap()).unwrap();
+        config
+            .save(test_file.to_str().expect("Could not convert path to str"))
+            .expect("Could not save config");
 
         let pin_config = r#"{"pins":{"7":{"Output":true}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
@@ -147,7 +157,9 @@ mod test {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
 
-        config.save(test_file.to_str().unwrap()).unwrap();
+        config
+            .save(test_file.to_str().expect("Could not convert path to str"))
+            .expect("Could not save config");
 
         let pin_config = r#"{"pins":{"7":{"Output":null}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");

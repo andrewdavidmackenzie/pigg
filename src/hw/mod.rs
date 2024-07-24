@@ -176,13 +176,20 @@ mod test {
     fn hw_can_be_got() {
         let hw = hw::get();
         assert!(hw.description().is_ok());
-        println!("{:?}", hw.description().unwrap());
+        println!(
+            "{:?}",
+            hw.description()
+                .expect("Could not get Hardware Description")
+        );
     }
 
     #[test]
     fn forty_board_pins() {
         let hw = hw::get();
-        let pin_set = hw.description().unwrap().pins;
+        let pin_set = hw
+            .description()
+            .expect("Could not get Hardware Description")
+            .pins;
         assert_eq!(pin_set.pins().len(), 40);
     }
 
@@ -191,13 +198,16 @@ mod test {
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = hw::get();
-        let pin_set = hw.description().unwrap().pins;
+        let pin_set = hw
+            .description()
+            .expect("Could not get Hardware Description")
+            .pins;
         let sorted_bcm_pins = pin_set.bcm_pins_sorted();
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
         let mut previous = 1; // we start at GPIO2
         for pin in sorted_bcm_pins {
-            assert_eq!(pin.bcm.unwrap(), previous + 1);
-            previous = pin.bcm.unwrap();
+            assert_eq!(pin.bcm.expect("Could not get BCM pin number"), previous + 1);
+            previous = pin.bcm.expect("Could not get BCM pin number");
         }
     }
 }
