@@ -8,7 +8,8 @@ use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
 use iroh_net::endpoint::Connection;
-use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
+use iroh_net::relay::RelayUrl;
+use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
 use log::error;
 use log::{info, trace};
 use service_manager::{
@@ -16,11 +17,13 @@ use service_manager::{
     ServiceUninstallCtx,
 };
 use std::env::current_exe;
-use std::path::PathBuf;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::str::FromStr;
 use std::time::Duration;
-use std::{env, io, process};
+use std::{env, fs, io, process};
 use sysinfo::{Process, System};
 use tracing::Level;
 use tracing_subscriber::filter::{Directive, LevelFilter};
@@ -35,30 +38,23 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let matches = get_matches();
+    let exec_path = current_exe()?;
 
-    manage_service(&matches)?;
+    manage_service(&exec_path, &matches)?;
 
-    run_service(&matches).await
+    let info_path = check_unique(&exec_path)?;
+
+    run_service(&info_path, &matches).await
 }
 
 /// Handle any service installation or uninstallation tasks
-fn manage_service(matches: &ArgMatches) -> anyhow::Result<()> {
+fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
     let service_name: ServiceLabel = SERVICE_NAME.parse().unwrap();
 
     if matches.get_flag("uninstall") {
         uninstall_service(&service_name)?;
         exit(0);
     }
-
-    let exec_path = current_exe()?;
-
-    check_unique(
-        exec_path
-            .file_name()
-            .context("Could not get exec file name")?
-            .to_str()
-            .context("Could not get exec file name")?,
-    )?;
 
     if matches.get_flag("install") {
         install_service(&service_name, exec_path)?;
@@ -70,7 +66,7 @@ fn manage_service(matches: &ArgMatches) -> anyhow::Result<()> {
 
 /// Run piglet as a service - this could be interactively by a user in foreground or started
 /// by the system as a user service, in background - use logging for output from here on
-async fn run_service(matches: &ArgMatches) -> anyhow::Result<()> {
+async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
     setup_logging(matches);
 
     let mut hw = hw::get();
@@ -88,7 +84,7 @@ async fn run_service(matches: &ArgMatches) -> anyhow::Result<()> {
     };
 
     // Then listen for remote connections and "serve" them
-    listen(hw).await
+    listen(info_path, hw).await
 }
 
 /// CHeck that this is the only instance of piglet running, both user process or system process
@@ -96,7 +92,13 @@ async fn run_service(matches: &ArgMatches) -> anyhow::Result<()> {
 /// - print out that fact, with the process ID
 /// - print out the nodeid of the instance that is running
 /// - exit
-fn check_unique(exec_name: &str) -> anyhow::Result<()> {
+fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
+    let exec_name = exec_path
+        .file_name()
+        .context("Could not get exec file name")?
+        .to_str()
+        .context("Could not get exec file name")?;
+
     let my_pid = process::id();
     let sys = System::new_all();
     let instances: Vec<&Process> = sys
@@ -114,7 +116,11 @@ fn check_unique(exec_name: &str) -> anyhow::Result<()> {
         exit(1);
     }
 
-    Ok(())
+    let info_path = exec_path.with_file_name("piglet.info");
+    // remove any leftover file from a previous execution - ignore any failure
+    let _ = fs::remove_file(&info_path);
+
+    Ok(info_path)
 }
 
 /// Setup logging with the requested verbosity level - or default if none was specified
@@ -180,7 +186,7 @@ fn get_matches() -> ArgMatches {
 /// Listen for an incoming iroh-net connection and apply any config changes received, and
 /// send to GUI over the connection any input level changes.
 /// This is adapted from the iroh-net example with help from the iroh community
-async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
+async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
@@ -204,8 +210,8 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
         .bind(0)
         .await?;
 
-    let me = endpoint.node_id();
-    info!("node id: {me}");
+    let nodeid = endpoint.node_id();
+    info!("node id: {nodeid}");
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -222,6 +228,9 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
         .home_relay()
         .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
     info!("node relay server url: {relay_url}");
+
+    // write the info about the node to the info_path file for use in piggui
+    write_info_file(info_path, &nodeid, &local_addrs, &relay_url)?;
 
     // accept incoming connections, returns a normal QUIC connection
     if let Some(connecting) = endpoint.accept().await {
@@ -255,6 +264,21 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
         }
     }
 
+    Ok(())
+}
+
+/// Write info about the running piglet to the info file
+fn write_info_file(
+    info_path: &Path,
+    nodeid: &NodeId,
+    local_addrs: &str,
+    relay_url: &RelayUrl,
+) -> anyhow::Result<()> {
+    let mut output = File::create(info_path)?;
+    writeln!(output, "nodeid:{nodeid}")?;
+    writeln!(output, "local addresses:{local_addrs}")?;
+    writeln!(output, "relay_url:{relay_url}")?;
+    info!("Info file written at: {info_path:?}");
     Ok(())
 }
 
@@ -361,7 +385,7 @@ fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
 }
 
 /// Install the binary as a user level service and then start it
-fn install_service(service_name: &ServiceLabel, exec_path: PathBuf) -> Result<(), io::Error> {
+fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
     let manager = get_service_manager()?;
     // Run from dir where exec is for now, so it should find the config file in ancestors path
     let exec_dir = exec_path
@@ -375,7 +399,7 @@ fn install_service(service_name: &ServiceLabel, exec_path: PathBuf) -> Result<()
     // Install our service using the underlying service management platform
     manager.install(ServiceInstallCtx {
         label: service_name.clone(),
-        program: exec_path.clone(),
+        program: exec_path.to_path_buf(),
         args: vec![],
         contents: None, // Optional String for system-specific service content.
         username: None, // Optional String for alternative user to run service.
