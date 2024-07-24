@@ -116,7 +116,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         if let Some(path) = process.exe() {
             let info_path = path.with_file_name("piglet.info");
             if info_path.exists() {
-                println!("You can use the following info to connect to this running instance:");
+                println!("You can use the following info to connect to it:");
                 let piglet_info = fs::read_to_string(info_path)?;
                 println!("{}", piglet_info);
             }
