@@ -11,13 +11,23 @@ use iroh_net::endpoint::Connection;
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
 use log::error;
 use log::{info, trace};
+use service_manager::{
+    ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
+    ServiceUninstallCtx,
+};
+use std::env::current_exe;
+use std::path::PathBuf;
+use std::process::exit;
 use std::str::FromStr;
-use std::{env, io};
+use std::time::Duration;
+use std::{env, io, process};
+use sysinfo::{Process, System};
 use tracing::Level;
 use tracing_subscriber::filter::{Directive, LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 mod hw;
+const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
@@ -30,8 +40,30 @@ async fn main() -> anyhow::Result<()> {
 
 /// Do initialization of logging, get access to local hardware and apply any config from a local
 /// file that maybe specified on the command line
-fn init() -> io::Result<impl Hardware> {
+fn init() -> anyhow::Result<impl Hardware> {
     let matches = get_matches();
+
+    let service_name: ServiceLabel = SERVICE_NAME.parse().unwrap();
+
+    if matches.get_flag("uninstall") {
+        uninstall_service(&service_name)?;
+        exit(0);
+    }
+
+    let exec_path = current_exe()?;
+
+    check_unique(
+        exec_path
+            .file_name()
+            .context("Could not get exec file name")?
+            .to_str()
+            .context("Could not get exec file name")?,
+    )?;
+
+    if matches.get_flag("install") {
+        install_service(&service_name, exec_path)?;
+        exit(0);
+    };
 
     setup_logging(&matches);
 
@@ -50,6 +82,32 @@ fn init() -> io::Result<impl Hardware> {
     };
 
     Ok(hw)
+}
+
+/// CHeck that this is the only instance of piglet running, both user process or system process
+/// If another version is detected:
+/// - print out that fact, with the process ID
+/// - print out the nodeid of the instance that is running
+/// - exit
+fn check_unique(exec_name: &str) -> anyhow::Result<()> {
+    let my_pid = process::id();
+    let sys = System::new_all();
+    let instances: Vec<&Process> = sys
+        .processes_by_exact_name(exec_name)
+        .filter(|p| p.pid().as_u32() != my_pid)
+        .collect();
+    if let Some(process) = instances.first() {
+        println!(
+            "An instance of {exec_name} is already running with PID='{}' with Path='{}', started by user with {:?}",
+            process.pid(),
+            process.exe().context("Could not get path to the running process instance")?.display(),
+            process.user_id().context("Could not get the User ID of user who started the running process instance")?,
+        );
+
+        exit(1);
+    }
+
+    Ok(())
 }
 
 /// Setup logging with the requested verbosity level - or default if none was specified
@@ -71,6 +129,24 @@ fn get_matches() -> ArgMatches {
 
     let app = app.about(
         "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
+    );
+
+    let app = app.arg(
+        Arg::new("install")
+            .short('i')
+            .long("install")
+            .action(clap::ArgAction::SetTrue)
+            .help("Install piglet as a System Service that restarts on reboot")
+            .conflicts_with("uninstall"),
+    );
+
+    let app = app.arg(
+        Arg::new("uninstall")
+            .short('u')
+            .long("uninstall")
+            .action(clap::ArgAction::SetTrue)
+            .help("Uninstall any piglet System Service")
+            .conflicts_with("install"),
     );
 
     let app = app.arg(
@@ -258,5 +334,76 @@ async fn send(connection: Connection, message: String) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
     gui_sender.write_all(message.as_bytes()).await?;
     gui_sender.finish().await?;
+    Ok(())
+}
+
+fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
+    // Get generic service by detecting what is available on the platform
+    let manager = <dyn ServiceManager>::native()
+        .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "Could not create ServiceManager"))?;
+
+    Ok(manager)
+}
+
+// This will install the binary as a user level service and then start it
+fn install_service(service_name: &ServiceLabel, exec_path: PathBuf) -> Result<(), io::Error> {
+    let manager = get_service_manager()?;
+    // Run from dir where exec is for now, so it should find the config file in ancestors path
+    let exec_dir = exec_path
+        .parent()
+        .ok_or(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Could not get exec dir",
+        ))?
+        .to_path_buf();
+
+    // Install our service using the underlying service management platform
+    manager.install(ServiceInstallCtx {
+        label: service_name.clone(),
+        program: exec_path.clone(),
+        args: vec![],
+        contents: None, // Optional String for system-specific service content.
+        username: None, // Optional String for alternative user to run service.
+        working_directory: Some(exec_dir),
+        environment: None, // Optional list of environment variables to supply the service process.
+        autostart: true,
+    })?;
+
+    // Start our service using the underlying service management platform
+    manager.start(ServiceStartCtx {
+        label: service_name.clone(),
+    })?;
+
+    println!(
+        "'service '{}' ('{}') installed and started",
+        service_name,
+        exec_path.display()
+    );
+
+    Ok(())
+}
+
+// this will stop any running instance of the service, then uninstall it
+fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
+    let manager = get_service_manager()?;
+
+    // Stop our service using the underlying service management platform
+    manager.stop(ServiceStopCtx {
+        label: service_name.clone(),
+    })?;
+
+    println!(
+        "service '{}' stopped. Waiting for 10s before uninstalling",
+        service_name
+    );
+    std::thread::sleep(Duration::from_secs(10));
+
+    // Uninstall our service using the underlying service management platform
+    manager.uninstall(ServiceUninstallCtx {
+        label: service_name.clone(),
+    })?;
+
+    println!("service '{}' uninstalled", service_name);
+
     Ok(())
 }
