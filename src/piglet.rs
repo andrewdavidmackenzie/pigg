@@ -108,10 +108,12 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         .collect();
     if let Some(process) = instances.first() {
         println!(
-            "An instance of {exec_name} is already running with PID='{}',  Path='{}', started by user with {:?}",
+            "An instance of {exec_name} is already running with PID='{}',  Path='{}'",
             process.pid(),
-            process.exe().context("Could not get path to the running process instance")?.display(),
-            process.user_id().context("Could not get the User ID of user who started the running process instance")?,
+            process
+                .exe()
+                .context("Could not get path to the running process instance")?
+                .display(),
         );
 
         println!("You can use the following info to connect to this running instance:");
