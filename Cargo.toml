@@ -36,7 +36,7 @@ rand = { version = "0.8.5", optional = true }
 iroh-net = { version = "0.19.0" }
 anyhow = { version = "1" }
 futures-lite = { version = "2.3" }
-tokio = { version = "1", default-features = false, features = ["time", "rt"] }
+tokio = { version = "1.39.1", default-features = false, features = ["time", "rt"] }
 
 # for interacting with GPIO on the Raspberry Pi
 rppal = { version = "0.18.0", optional = true }
@@ -44,6 +44,8 @@ rppal = { version = "0.18.0", optional = true }
 # used in piglet only
 log = "0.4.22"
 env_logger = "0.11.4"
+service-manager = "0.7.1"
+sysinfo = "0.30.13"
 
 # used by piggui in GUI only
 iced = { version = "0.12.1", default-features = false, features = ["tokio", "debug", "canvas", "advanced"], optional = true }

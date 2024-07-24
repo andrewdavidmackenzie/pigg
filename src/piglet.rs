@@ -8,32 +8,66 @@ use futures_lite::StreamExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
 use iroh_net::endpoint::Connection;
-use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint};
+use iroh_net::relay::RelayUrl;
+use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
 use log::error;
 use log::{info, trace};
+use service_manager::{
+    ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
+    ServiceUninstallCtx,
+};
+use std::env::current_exe;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::process::exit;
 use std::str::FromStr;
-use std::{env, io};
+use std::time::Duration;
+use std::{env, fs, io, process};
+use sysinfo::{Process, System};
 use tracing::Level;
 use tracing_subscriber::filter::{Directive, LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 mod hw;
+const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
 /// over the network.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let hw = init()?;
-    listen(hw).await
+    let matches = get_matches();
+    let exec_path = current_exe()?;
+
+    manage_service(&exec_path, &matches)?;
+
+    let info_path = check_unique(&exec_path)?;
+
+    run_service(&info_path, &matches).await
 }
 
-/// Do initialization of logging, get access to local hardware and apply any config from a local
-/// file that maybe specified on the command line
-fn init() -> io::Result<impl Hardware> {
-    let matches = get_matches();
+/// Handle any service installation or uninstallation tasks
+fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
+    let service_name: ServiceLabel = SERVICE_NAME.parse().unwrap();
 
-    setup_logging(&matches);
+    if matches.get_flag("uninstall") {
+        uninstall_service(&service_name)?;
+        exit(0);
+    }
+
+    if matches.get_flag("install") {
+        install_service(&service_name, exec_path)?;
+        exit(0);
+    };
+
+    Ok(())
+}
+
+/// Run piglet as a service - this could be interactively by a user in foreground or started
+/// by the system as a user service, in background - use logging for output from here on
+async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
+    setup_logging(matches);
 
     let mut hw = hw::get();
     info!("\n{}", hw.description().unwrap().details);
@@ -49,7 +83,52 @@ fn init() -> io::Result<impl Hardware> {
         trace!("Configuration applied to hardware");
     };
 
-    Ok(hw)
+    // Then listen for remote connections and "serve" them
+    listen(info_path, hw).await
+}
+
+/// CHeck that this is the only instance of piglet running, both user process or system process
+/// If another version is detected:
+/// - print out that fact, with the process ID
+/// - print out the nodeid of the instance that is running
+/// - exit
+fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
+    let exec_name = exec_path
+        .file_name()
+        .context("Could not get exec file name")?
+        .to_str()
+        .context("Could not get exec file name")?;
+    let info_path = exec_path.with_file_name("piglet.info");
+
+    let my_pid = process::id();
+    let sys = System::new_all();
+    let instances: Vec<&Process> = sys
+        .processes_by_exact_name(exec_name)
+        .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)
+        .collect();
+    if let Some(process) = instances.first() {
+        println!(
+            "An instance of {exec_name} is already running with PID='{}'",
+            process.pid(),
+        );
+
+        // If we can find the path to the executable - look for the info file
+        if let Some(path) = process.exe() {
+            let info_path = path.with_file_name("piglet.info");
+            if info_path.exists() {
+                println!("You can use the following info to connect to it:");
+                let piglet_info = fs::read_to_string(info_path)?;
+                println!("{}", piglet_info);
+            }
+        }
+
+        exit(1);
+    }
+
+    // remove any leftover file from a previous execution - ignore any failure
+    let _ = fs::remove_file(&info_path);
+
+    Ok(info_path)
 }
 
 /// Setup logging with the requested verbosity level - or default if none was specified
@@ -74,6 +153,24 @@ fn get_matches() -> ArgMatches {
     );
 
     let app = app.arg(
+        Arg::new("install")
+            .short('i')
+            .long("install")
+            .action(clap::ArgAction::SetTrue)
+            .help("Install piglet as a System Service that restarts on reboot")
+            .conflicts_with("uninstall"),
+    );
+
+    let app = app.arg(
+        Arg::new("uninstall")
+            .short('u')
+            .long("uninstall")
+            .action(clap::ArgAction::SetTrue)
+            .help("Uninstall any piglet System Service")
+            .conflicts_with("install"),
+    );
+
+    let app = app.arg(
         Arg::new("verbosity")
             .short('v')
             .long("verbosity")
@@ -94,27 +191,35 @@ fn get_matches() -> ArgMatches {
     app.get_matches()
 }
 
-/// Listen for an incoming iroh-net connection
-async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
+/// Listen for an incoming iroh-net connection and apply any config changes received, and
+/// send to GUI over the connection any input level changes.
+/// This is adapted from the iroh-net example with help from the iroh community
+async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
 
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct connections between nodes when there are NATs or firewalls preventing direct connections. If no direct connection can be made, packets are relayed over the relay servers.
+    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
+    // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
+    // connections between nodes when there are NATs or firewalls preventing direct connections.
+    // If no direct connection can be made, packets are relayed over the relay servers.
     let endpoint = Endpoint::builder()
-        // The secret key is used to authenticate with other nodes. The PublicKey portion of this secret key is how we identify nodes, often referred to as the `node_id` in our codebase.
+        // The secret key is used to authenticate with other nodes.
+        // The PublicKey portion of this secret key is how we identify nodes, often referred
+        // to as the `node_id` in our codebase.
         .secret_key(secret_key)
         // set the ALPN protocols this endpoint will accept on incoming connections
         .alpns(vec![PIGLET_ALPN.to_vec()])
         // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
         // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
         // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
-        // If you want to experiment with relaying using your own relay server, you must pass in the same custom relay url to both the `listen` code AND the `connect` code
+        // If you want to experiment with relaying using your own relay server,
+        // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
         .relay_mode(RelayMode::Default)
-        // you can choose a port to bind to, but passing in `0` will bind the socket to a random available port
+        // pass in `0` to bind the socket to a random available port
         .bind(0)
         .await?;
 
-    let me = endpoint.node_id();
-    info!("node id: {me}");
+    let nodeid = endpoint.node_id();
+    info!("node id: {nodeid}");
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -132,38 +237,64 @@ async fn listen(mut hardware: impl Hardware) -> anyhow::Result<()> {
         .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
     info!("node relay server url: {relay_url}");
 
-    // accept incoming connections, returns a normal QUIC connection
-    if let Some(connecting) = endpoint.accept().await {
-        let connection = connecting.await?;
-        let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
-        info!("new connection from {node_id}",);
+    // write the info about the node to the info_path file for use in piggui
+    write_info_file(info_path, &nodeid, &local_addrs, &relay_url)?;
 
-        let mut gui_sender = connection.open_uni().await?;
+    loop {
+        // accept incoming connections, returns a normal QUIC connection
+        if let Some(connecting) = endpoint.accept().await {
+            let connection = connecting.await?;
+            let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
+            info!("New connection from nodeid: '{node_id}'",);
 
-        trace!("Sending hardware description");
-        let desc = hardware.description()?;
-        let message = serde_json::to_string(&desc)?;
-        gui_sender.write_all(message.as_bytes()).await?;
-        gui_sender.finish().await?;
+            let mut gui_sender = connection.open_uni().await?;
 
-        loop {
-            trace!("waiting for connection");
-            let mut config_receiver = connection.accept_uni().await?;
-            let connection_clone = connection.clone();
-            trace!("Connected, waiting for message");
-            let payload = config_receiver.read_to_end(4096).await?;
+            trace!("Sending hardware description");
+            let desc = hardware.description()?;
+            let message = serde_json::to_string(&desc)?;
+            gui_sender.write_all(message.as_bytes()).await?;
+            gui_sender.finish().await?;
 
-            if !payload.is_empty() {
-                let content = String::from_utf8_lossy(&payload);
-                if let Ok(config_message) = serde_json::from_str(&content) {
-                    apply_config_change(&mut hardware, config_message, connection_clone).await
-                } else {
-                    error!("Unknown message: {content}");
-                };
+            loop {
+                trace!("waiting for connection");
+                match connection.accept_uni().await {
+                    Ok(mut config_receiver) => {
+                        let connection_clone = connection.clone();
+                        trace!("Connected, waiting for message");
+                        let payload = config_receiver.read_to_end(4096).await?;
+
+                        if !payload.is_empty() {
+                            let content = String::from_utf8_lossy(&payload);
+                            if let Ok(config_message) = serde_json::from_str(&content) {
+                                apply_config_change(&mut hardware, config_message, connection_clone)
+                                    .await
+                            } else {
+                                error!("Unknown message: {content}");
+                            };
+                        }
+                    }
+                    _ => {
+                        info!("Connection lost");
+                        break;
+                    }
+                }
             }
         }
     }
+}
 
+/// Write info about the running piglet to the info file
+fn write_info_file(
+    info_path: &Path,
+    nodeid: &NodeId,
+    local_addrs: &str,
+    relay_url: &RelayUrl,
+) -> anyhow::Result<()> {
+    let mut output = File::create(info_path)?;
+    writeln!(output, "nodeid : {nodeid}")?;
+    writeln!(output, "local addresses : {local_addrs}")?;
+    writeln!(output, "relay_url : {relay_url}")?;
+    info!("Info file written at: {info_path:?}");
     Ok(())
 }
 
@@ -258,5 +389,76 @@ async fn send(connection: Connection, message: String) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
     gui_sender.write_all(message.as_bytes()).await?;
     gui_sender.finish().await?;
+    Ok(())
+}
+
+fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
+    // Get generic service by detecting what is available on the platform
+    let manager = <dyn ServiceManager>::native()
+        .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "Could not create ServiceManager"))?;
+
+    Ok(manager)
+}
+
+/// Install the binary as a user level service and then start it
+fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
+    let manager = get_service_manager()?;
+    // Run from dir where exec is for now, so it should find the config file in ancestors path
+    let exec_dir = exec_path
+        .parent()
+        .ok_or(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Could not get exec dir",
+        ))?
+        .to_path_buf();
+
+    // Install our service using the underlying service management platform
+    manager.install(ServiceInstallCtx {
+        label: service_name.clone(),
+        program: exec_path.to_path_buf(),
+        args: vec![],
+        contents: None, // Optional String for system-specific service content.
+        username: None, // Optional String for alternative user to run service.
+        working_directory: Some(exec_dir),
+        environment: None, // Optional list of environment variables to supply the service process.
+        autostart: true,
+    })?;
+
+    // Start our service using the underlying service management platform
+    manager.start(ServiceStartCtx {
+        label: service_name.clone(),
+    })?;
+
+    println!(
+        "'service '{}' ('{}') installed and started",
+        service_name,
+        exec_path.display()
+    );
+
+    Ok(())
+}
+
+/// Stop any running instance of the service, then uninstall it
+fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
+    let manager = get_service_manager()?;
+
+    // Stop our service using the underlying service management platform
+    manager.stop(ServiceStopCtx {
+        label: service_name.clone(),
+    })?;
+
+    println!(
+        "service '{}' stopped. Waiting for 10s before uninstalling",
+        service_name
+    );
+    std::thread::sleep(Duration::from_secs(10));
+
+    // Uninstall our service using the underlying service management platform
+    manager.uninstall(ServiceUninstallCtx {
+        label: service_name.clone(),
+    })?;
+
+    println!("service '{}' uninstalled", service_name);
+
     Ok(())
 }
