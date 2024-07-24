@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
@@ -49,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
 
 /// Handle any service installation or uninstallation tasks
 fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
-    let service_name: ServiceLabel = SERVICE_NAME.parse().unwrap();
+    let service_name: ServiceLabel = SERVICE_NAME.parse()?;
 
     if matches.get_flag("uninstall") {
         uninstall_service(&service_name)?;
@@ -70,11 +71,11 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     setup_logging(matches);
 
     let mut hw = hw::get();
-    info!("\n{}", hw.description().unwrap().details);
+    info!("\n{}", hw.description()?.details);
 
     // Load any config file specified on the command line
     if let Some(config_filename) = matches.get_one::<String>("config-file") {
-        let config = HardwareConfig::load(config_filename).unwrap();
+        let config = HardwareConfig::load(config_filename)?;
         info!("Config loaded from file: {config_filename}");
         trace!("{config}");
         hw.apply_config(&config, |bcm_pin_number, level| {
@@ -266,8 +267,15 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
                         if !payload.is_empty() {
                             let content = String::from_utf8_lossy(&payload);
                             if let Ok(config_message) = serde_json::from_str(&content) {
-                                apply_config_change(&mut hardware, config_message, connection_clone)
-                                    .await
+                                if let Err(e) = apply_config_change(
+                                    &mut hardware,
+                                    config_message,
+                                    connection_clone,
+                                )
+                                .await
+                                {
+                                    error!("{}", e);
+                                }
                             } else {
                                 error!("Unknown message: {content}");
                             };
@@ -306,17 +314,15 @@ async fn apply_config_change(
     hardware: &mut impl Hardware,
     config_change: HardwareConfigMessage,
     connection: Connection,
-) {
+) -> anyhow::Result<()> {
     match config_change {
         NewConfig(config) => {
             let cc = connection.clone();
             info!("New config applied");
-            hardware
-                .apply_config(&config, move |bcm, level| {
-                    let cc = connection.clone();
-                    let _ = send_input_level(cc, bcm, level);
-                })
-                .unwrap();
+            hardware.apply_config(&config, move |bcm, level| {
+                let cc = connection.clone();
+                let _ = send_input_level(cc, bcm, level);
+            })?;
 
             let _ = send_current_input_states(cc, &config, hardware).await;
         }
@@ -332,6 +338,8 @@ async fn apply_config_change(
             let _ = hardware.set_output_level(bcm, level_change.new_level);
         }
     }
+
+    Ok(())
 }
 
 /// Send the current input state for all inputs configured in the config
