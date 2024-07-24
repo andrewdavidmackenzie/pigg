@@ -108,17 +108,19 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         .collect();
     if let Some(process) = instances.first() {
         println!(
-            "An instance of {exec_name} is already running with PID='{}',  Path='{}'",
+            "An instance of {exec_name} is already running with PID='{}'",
             process.pid(),
-            process
-                .exe()
-                .context("Could not get path to the running process instance")?
-                .display(),
         );
 
-        println!("You can use the following info to connect to this running instance:");
-        let piglet_info = fs::read_to_string(info_path)?;
-        println!("{}", piglet_info);
+        // If we can find the path to the executable - look for the info file
+        if let Some(path) = process.exe() {
+            let info_path = path.with_file_name("piglet.info");
+            if info_path.exists() {
+                println!("You can use the following info to connect to this running instance:");
+                let piglet_info = fs::read_to_string(info_path)?;
+                println!("{}", piglet_info);
+            }
+        }
 
         exit(1);
     }
