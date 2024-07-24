@@ -236,39 +236,47 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
     // write the info about the node to the info_path file for use in piggui
     write_info_file(info_path, &nodeid, &local_addrs, &relay_url)?;
 
-    // accept incoming connections, returns a normal QUIC connection
-    if let Some(connecting) = endpoint.accept().await {
-        let connection = connecting.await?;
-        let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
-        info!("New connection from nodeid: '{node_id}'",);
+    loop {
+        // accept incoming connections, returns a normal QUIC connection
+        if let Some(connecting) = endpoint.accept().await {
+            let connection = connecting.await?;
+            let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
+            info!("New connection from nodeid: '{node_id}'",);
 
-        let mut gui_sender = connection.open_uni().await?;
+            let mut gui_sender = connection.open_uni().await?;
 
-        trace!("Sending hardware description");
-        let desc = hardware.description()?;
-        let message = serde_json::to_string(&desc)?;
-        gui_sender.write_all(message.as_bytes()).await?;
-        gui_sender.finish().await?;
+            trace!("Sending hardware description");
+            let desc = hardware.description()?;
+            let message = serde_json::to_string(&desc)?;
+            gui_sender.write_all(message.as_bytes()).await?;
+            gui_sender.finish().await?;
 
-        loop {
-            trace!("waiting for connection");
-            let mut config_receiver = connection.accept_uni().await?;
-            let connection_clone = connection.clone();
-            trace!("Connected, waiting for message");
-            let payload = config_receiver.read_to_end(4096).await?;
+            loop {
+                trace!("waiting for connection");
+                match connection.accept_uni().await {
+                    Ok(mut config_receiver) => {
+                        let connection_clone = connection.clone();
+                        trace!("Connected, waiting for message");
+                        let payload = config_receiver.read_to_end(4096).await?;
 
-            if !payload.is_empty() {
-                let content = String::from_utf8_lossy(&payload);
-                if let Ok(config_message) = serde_json::from_str(&content) {
-                    apply_config_change(&mut hardware, config_message, connection_clone).await
-                } else {
-                    error!("Unknown message: {content}");
-                };
+                        if !payload.is_empty() {
+                            let content = String::from_utf8_lossy(&payload);
+                            if let Ok(config_message) = serde_json::from_str(&content) {
+                                apply_config_change(&mut hardware, config_message, connection_clone)
+                                    .await
+                            } else {
+                                error!("Unknown message: {content}");
+                            };
+                        }
+                    }
+                    _ => {
+                        info!("Connection lost");
+                        break;
+                    }
+                }
             }
         }
     }
-
-    Ok(())
 }
 
 /// Write info about the running piglet to the info file
@@ -279,9 +287,9 @@ fn write_info_file(
     relay_url: &RelayUrl,
 ) -> anyhow::Result<()> {
     let mut output = File::create(info_path)?;
-    writeln!(output, "nodeid:{nodeid}")?;
-    writeln!(output, "local addresses:{local_addrs}")?;
-    writeln!(output, "relay_url:{relay_url}")?;
+    writeln!(output, "nodeid : {nodeid}")?;
+    writeln!(output, "local addresses : {local_addrs}")?;
+    writeln!(output, "relay_url : {relay_url}")?;
     info!("Info file written at: {info_path:?}");
     Ok(())
 }
