@@ -62,6 +62,17 @@ else
 	cargo run --bin piggui --features "gui","fake_hw"
 endif
 
+.PHONY: run-release
+run-release:
+ifneq ($(PI),)
+	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
+	cargo run --bin piggui --release --features "gui","pi_hw"
+else
+	# Compile for host, targeting fake hardware
+	cargo run --bin piggui --release --features "gui","fake_hw"
+endif
+
 .PHONY: run-piglet
 run-piglet:
 ifneq ($(PI),)
