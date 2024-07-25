@@ -38,6 +38,14 @@ hardware remotely.
   </tr>
 </table>
 
+## Latest NEW Feature!
+
+- The GUI (`piggui`) can connect to a Pi over the network (running `piglet`) to control and view the GPIO hardware
+  from a distance. The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped and source (as
+  close to the hardware as possible) so network delays should not affect the waveforms displayed. Provide us
+  feedback and ideas related to networking in [Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions)
+  or GH issues.
+
 ## Current Features
 
 - Visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
@@ -52,10 +60,33 @@ hardware remotely.
   inversions of the stable level, plus a waveform view showing the recent history of the level set on the Output.
 - GPIO configurations can be loaded at startup with a command line filename option, or loaded via
   file-picker from the UI or saved to file via file picker.
-- The GUI (`piggui`) can connect to a Pi over the network (running `piglet`) to control and view the GPIO hardware
-  from a distance. The GUI can run on Mac, Linux, Windows or Raspberry Pis.
 
 You can see more gifs and videos of features [here](assets/features.md)
+
+## Piggui (pronounced "Piggy")
+
+`piggui` is a GUI for configuring pins, observing input levels and controlling output levels.
+On Raspberry Pi it has a real GPIO hardware backend (via rppal).
+On macOS, Linux and Windows it uses a fake hardware backend (mainly for development) or can connect to a remote
+hardware backend that is running `piglet`.
+
+## Piglet
+
+`piglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
+config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
+level changes to the GUI.
+
+If built on the Pi (with the "pi_hw" feature), then it has a real GPIO hardware backend.
+
+It can be built on macOS/Linux/Windows/Pi with the "fake_hw" feature for a fake hardware backend, mainly used
+for development.
+
+It takes an optional config file as a command line option. It will load the GPIO configuration from the file
+(like `piggui` can) and it will apply it to the hardware then stop.
+
+It offers the ability to interact with the hardware from a remote `piggui`instance.
+It will print out connection info at startup and start listing for Iroh network connections from `piggui` instances,
+then the user can interact with it and visualize inputs level changes from the `piggui` GUI.
 
 ## Input from Raspberry Pi users wanted
 
@@ -85,25 +116,6 @@ many have GH issues.
 - Allow connections between pins [Issue #95](https://github.com/andrewdavidmackenzie/pigg/issues/95)
 - Pico support for a headless hardware backend accessed over the network
 - Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
-
-## Project Structure
-
-### PIGGUI ("Piggy")
-
-A binary that shows a GUI for configuring pins, observing input levels and controlling output
-levels.
-On Raspberry Pi it has a real GPIO hardware backend (via rppal).
-On macOS, linux and windows it uses a fake GPIO hardware backend.
-
-### PIGLET ("Piglet)
-
-A "GUI-less" binary. Currently, it has minimal functionality. It can be built on any platform and will use the fake
-Hardware backend (but not be very useful!).
-
-If built on the Pi (with the "pi_hw" feature), then it has a real GPIO hardware backend.
-
-It takes a file command line option. It will load the GPIO configuration from the file (like "piggui" can) and
-it will apply it to the hardware. But currently there is no way to interact with it after that.
 
 ## Installing
 
