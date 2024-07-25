@@ -10,13 +10,19 @@ use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::Message::*;
 use clap::{Arg, ArgMatches};
-use iced::widget::{column, container, row, text, text_input, Button, Column, Text};
-use iced::{executor, window, Application, Command, Element, Event, Length, Settings, Subscription, Theme, Color};
+use iced::keyboard;
+use iced::keyboard::key;
+use iced::widget::{self, column, container, row, text, text_input, Button, Column, Text};
+use iced::{
+    executor, window, Application, Color, Command, Element, Length, Settings, Subscription, Theme,
+};
 
-use crate::widgets::modal::Modal;
-use views::pin_state::PinState;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
+use crate::widgets::modal::Modal;
+use views::pin_state::PinState;
+
+use iced::event::{self, Event};
 
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
@@ -87,6 +93,7 @@ pub enum Message {
     Submit,
     ConnectionId(String),
     RelayURL(String),
+    ModalKeyEvent(Event),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -161,6 +168,30 @@ impl Application for Piggui {
                     } else {
                         return window::close(window::Id::MAIN);
                     }
+                }
+            }
+
+            ModalKeyEvent(event) => {
+                 match event {
+                    Event::Keyboard(keyboard::Event::KeyPressed {
+                        key: keyboard::Key::Named(key::Named::Tab),
+                        modifiers,
+                        ..
+                    }) => {
+                        if modifiers.shift() {
+                            return widget::focus_previous();
+                        } else {
+                            return widget::focus_next();
+                        }
+                    }
+                    Event::Keyboard(keyboard::Event::KeyPressed {
+                        key: keyboard::Key::Named(key::Named::Escape),
+                        ..
+                    }) => {
+                        self.hide_modal();
+                        return Command::none();
+                    }
+                    _ => return Command::none(),
                 }
             }
 
@@ -296,7 +327,6 @@ impl Application for Piggui {
                 border_radius: 2.0,
             };
 
-
             let modal_container_style = ContainerStyle {
                 border_color: Color::WHITE,
             };
@@ -322,15 +352,20 @@ impl Application for Piggui {
                         ]
                         .spacing(5),
                         row![
-                            Button::new(Text::new("Cancel")).on_press(Message::HideModal).style(modal_cancel_button_style.get_button_style()),
-                            Button::new(Text::new("Connect")).on_press(Message::HideModal).style(modal_connect_button_style.get_button_style())
+                            Button::new(Text::new("Cancel"))
+                                .on_press(Message::HideModal)
+                                .style(modal_cancel_button_style.get_button_style()),
+                            Button::new(Text::new("Connect"))
+                                .on_press(Message::HideModal)
+                                .style(modal_connect_button_style.get_button_style())
                         ]
                         .spacing(360),
                     ]
                     .spacing(10)
                 ]
                 .spacing(20),
-            ).style(modal_container_style.get_container_style())
+            )
+            .style(modal_container_style.get_container_style())
             .width(520)
             .padding(15);
 
@@ -350,6 +385,7 @@ impl Application for Piggui {
     fn subscription(&self) -> Subscription<Message> {
         let subscriptions = vec![
             iced::event::listen().map(WindowEvent),
+            event::listen().map(ModalKeyEvent),
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
         ];
