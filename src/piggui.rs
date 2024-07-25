@@ -172,26 +172,26 @@ impl Application for Piggui {
             }
 
             ModalKeyEvent(event) => {
-                 match event {
+                return match event {
                     Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Tab),
-                        modifiers,
-                        ..
-                    }) => {
+                                        key: keyboard::Key::Named(key::Named::Tab),
+                                        modifiers,
+                                        ..
+                                    }) => {
                         if modifiers.shift() {
-                            return widget::focus_previous();
+                            widget::focus_previous()
                         } else {
-                            return widget::focus_next();
+                            widget::focus_next()
                         }
                     }
                     Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Escape),
-                        ..
-                    }) => {
+                                        key: keyboard::Key::Named(key::Named::Escape),
+                                        ..
+                                    }) => {
                         self.hide_modal();
-                        return Command::none();
+                        Command::none()
                     }
-                    _ => return Command::none(),
+                    _ => Command::none(),
                 }
             }
 
