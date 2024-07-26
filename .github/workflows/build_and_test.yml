@@ -15,6 +15,12 @@ env:
   LLVM_PROFILE_FILE: pigg-%p-%m.profraw
 
 jobs:
+  markdown-link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -45,7 +51,7 @@ jobs:
       - name: Add aarch64 Target with Rustup
         if: runner.os == 'Linux'
         run: rustup target add aarch64-unknown-linux-gnu
-        
+
       - name: Install Cross Tool
         if: runner.os == 'Linux'
         run: cargo install cross
@@ -65,7 +71,7 @@ jobs:
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
           lcov --remove lcov.info -o lcov.info
-        
+
       - name: clean up coverage MacOS
         if: runner.os == 'macOS'
         run: |
