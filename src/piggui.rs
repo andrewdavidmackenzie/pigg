@@ -98,7 +98,7 @@ pub enum Message {
     ConnectionId(String),
     RelayURL(String),
     ModalKeyEvent(Event),
-    ConnectIroh(String, String),
+    ConnectIroh(String, Option<String>),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -120,6 +120,7 @@ impl Piggui {
     fn hide_modal(&mut self) {
         self.show_modal = false;
         self.connection_id.clear();
+        self.relay_url.clear();
     }
 }
 impl Application for Piggui {
@@ -184,15 +185,15 @@ impl Application for Piggui {
                     self.connection_error = String::from("Pls Enter Node Id");
                     return Command::none();
                 }
-                if relay_url.trim().is_empty() {
+                if relay_url.clone().unwrap().trim().is_empty() {
                     self.connection_error = String::from("Pls Enter Relay Url");
                     return Command::none();
                 }
 
-                let node_id_result = NodeId::from_str(connection_id.as_str());
+                let node_id_result = NodeId::from_str(connection_id.as_str().trim());
                 match node_id_result {
                     Ok(_node_id) => {
-                        let relay_url_result = RelayUrl::from_str(relay_url.as_str());
+                        let relay_url_result = RelayUrl::from_str(relay_url.clone().unwrap().as_str().trim());
                         match relay_url_result {
                             Ok(_relay_url) => {
                                 // TODO
@@ -403,7 +404,7 @@ impl Application for Piggui {
                                 .on_press(Message::HideModal)
                                 .style(modal_cancel_button_style.get_button_style()),
                             Button::new(Text::new("Connect"))
-                                .on_press(Message::ConnectIroh(self.connection_id.clone(), self.relay_url.clone()))
+                                .on_press(Message::ConnectIroh(self.connection_id.clone(), Some(self.relay_url.clone())))
                                 .style(modal_connect_button_style.get_button_style())
                         ]
                         .spacing(360),
