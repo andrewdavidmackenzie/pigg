@@ -10,19 +10,18 @@ use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::Message::*;
 use clap::{Arg, ArgMatches};
-use iced::widget::{column, container, row, text, text_input, Button, Column, Text};
+use iced::widget::{column, Column, container, row, text, text_input, Button, Text};
 use iced::Color;
 use iced::{
-    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
+    Application, Command, Element, executor, Length, Settings, Subscription, Theme, window,
 };
-
+use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::widgets::modal::Modal;
 use views::pin_state::PinState;
 
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
-use crate::views::connect_dialog::{ConnectDialog, ConnectDialogMessage};
 
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
@@ -33,6 +32,7 @@ mod styles;
 mod toast_handler;
 mod views;
 mod widgets;
+pub mod connect_dialog_handler;
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
