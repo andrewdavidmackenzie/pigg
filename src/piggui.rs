@@ -10,23 +10,19 @@ use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::Message::*;
 use clap::{Arg, ArgMatches};
-use iced::keyboard;
-use iced::keyboard::key;
-use iced::widget::{self, column, container, row, text, text_input, Button, Column, Text};
+use iced::widget::{column, container, row, text, text_input, Button, Column, Text};
+use iced::Color;
 use iced::{
-    executor, window, Application, Color, Command, Element, Length, Settings, Subscription, Theme,
+    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
-use std::str::FromStr;
 
-use crate::styles::button_style::ButtonStyle;
-use crate::styles::container_style::ContainerStyle;
 use crate::widgets::modal::Modal;
 use views::pin_state::PinState;
 
+use crate::styles::button_style::ButtonStyle;
+use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
-use iced::event::{self, Event};
-use iroh_net::relay::RelayUrl;
-use iroh_net::NodeId;
+use crate::views::connect_dialog::{ConnectDialog, ConnectDialogMessage};
 
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
@@ -92,13 +88,7 @@ pub enum Message {
     WindowEvent(iced::Event),
     HardwareLost,
     MenuBarButtonClicked,
-    ShowModal,
-    HideModal,
-    Submit,
-    NodeId(String),
-    RelayURL(String),
-    ModalKeyEvent(Event),
-    ConnectIroh(String, Option<String>),
+    ConnectDialog(ConnectDialogMessage),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -109,20 +99,11 @@ pub struct Piggui {
     info_row: InfoRow,
     toast_handler: ToastHandler,
     hardware_view: HardwareView,
-    show_modal: bool,
-    node_id: String,
-    relay_url: String,
-    iroh_connection_error: String,
+    connect_dialog: ConnectDialog,
 }
 
 async fn empty() {}
-impl Piggui {
-    fn hide_modal(&mut self) {
-        self.show_modal = false;
-        self.node_id.clear();
-        self.relay_url.clear();
-    }
-}
+impl Piggui {}
 impl Application for Piggui {
     type Executor = executor::Default;
     type Message = Message;
@@ -138,7 +119,7 @@ impl Application for Piggui {
         let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
 
         // TODO this will come from UI entry later. For now copy this from the output of piglet then run piggui
-        //let node_id = "2r7vxyfvkfgwfkcxt5wky72jghy4n6boawnvz5fxes62tqmnnmhq";
+        // let node_id = "2r7vxyfvkfgwfkcxt5wky72jghy4n6boawnvz5fxes62tqmnnmhq";
 
         (
             Self {
@@ -148,10 +129,7 @@ impl Application for Piggui {
                 info_row: InfoRow::new(),
                 toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(nodeid),
-                show_modal: false,
-                node_id: String::new(),
-                relay_url: String::new(),
-                iroh_connection_error: String::new(),
+                connect_dialog: ConnectDialog::new(),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -177,93 +155,6 @@ impl Application for Piggui {
                         return window::close(window::Id::MAIN);
                     }
                 }
-            }
-
-            ConnectIroh(node_id, relay_url) => {
-                if node_id.trim().is_empty() {
-                    self.iroh_connection_error = String::from("Pls Enter Node Id");
-                    return Command::none();
-                }
-                if relay_url.clone().unwrap().trim().is_empty() {
-                    self.iroh_connection_error = String::from("Pls Enter Relay Url");
-                    return Command::none();
-                }
-
-                let node_id_result = NodeId::from_str(node_id.as_str().trim());
-                match node_id_result {
-                    Ok(_node_id) => {
-                        let relay_url_result =
-                            RelayUrl::from_str(relay_url.clone().unwrap().as_str().trim());
-                        match relay_url_result {
-                            Ok(_relay_url) => {
-                                // TODO
-                                // Make iroh connection
-                                // Add spinner when establishing remote connection
-                            }
-                            Err(err) => {
-                                self.iroh_connection_error = format!("{}", err);
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        self.iroh_connection_error = format!("{}", err);
-                    }
-                }
-
-                return Command::none();
-            }
-
-            ModalKeyEvent(event) => {
-                return match event {
-                    // When Pressed `Tab` focuses on previous/next widget
-                    Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Tab),
-                        modifiers,
-                        ..
-                    }) => {
-                        if modifiers.shift() {
-                            widget::focus_previous()
-                        } else {
-                            widget::focus_next()
-                        }
-                    }
-                    // When Pressed `Esc` focuses on previous widget and hide modal
-                    Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Escape),
-                        ..
-                    }) => {
-                        self.hide_modal();
-                        Command::none()
-                    }
-                    _ => Command::none(),
-                };
-            }
-
-            NodeId(node_id) => {
-                self.node_id = node_id;
-                return Command::none();
-            }
-
-            RelayURL(relay_url) => {
-                self.relay_url = relay_url;
-                return Command::none();
-            }
-
-            Submit => {
-                if !self.node_id.is_empty() {
-                    self.hide_modal();
-                }
-                return Command::none();
-            }
-
-            ShowModal => {
-                self.show_modal = true;
-                return widget::focus_next();
-            }
-            HideModal => {
-                self.hide_modal();
-                self.iroh_connection_error.clear();
-                return Command::none();
             }
 
             MenuBarButtonClicked => {
@@ -300,6 +191,10 @@ impl Application for Piggui {
                 return self
                     .toast_handler
                     .update(toast_message, &self.hardware_view);
+            }
+
+            ConnectDialog(connect_dialog_message) => {
+                return self.connect_dialog.update(connect_dialog_message);
             }
 
             InfoRow(msg) => return self.info_row.update(msg),
@@ -355,7 +250,7 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        if self.show_modal {
+        if self.connect_dialog.show_modal {
             let modal_connect_button_style = ButtonStyle {
                 bg_color: Color::new(0.0, 1.0, 1.0, 1.0), // Cyan background color
                 text_color: Color::BLACK,
@@ -385,31 +280,37 @@ impl Application for Piggui {
                     text("Connect To Remote Pi").size(20),
                     column![
                         column![
-                            text(self.iroh_connection_error.clone())
+                            text(self.connect_dialog.iroh_connection_error.clone())
                                 .style(connection_error_display.get_text_color()),
                             text("Node Id").size(12),
-                            text_input("Enter node id", &self.node_id)
-                                .on_input(Message::NodeId)
-                                .on_submit(Message::Submit)
+                            text_input("Enter node id", &self.connect_dialog.node_id)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::NodeId(input)
+                                ))
                                 .padding(5),
                         ]
                         .spacing(5),
                         column![
                             text("Relay URL").size(12),
-                            text_input("Enter Relay Url", &self.relay_url)
-                                .on_input(Message::RelayURL)
-                                .on_submit(Message::Submit)
+                            text_input("Enter Relay Url", &self.connect_dialog.relay_url)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::RelayURL(input)
+                                ))
                                 .padding(5),
                         ]
                         .spacing(5),
                         row![
                             Button::new(Text::new("Cancel"))
-                                .on_press(Message::HideModal)
+                                .on_press(Message::ConnectDialog(
+                                    ConnectDialogMessage::HideConnectDialog
+                                ))
                                 .style(modal_cancel_button_style.get_button_style()),
                             Button::new(Text::new("Connect"))
-                                .on_press(Message::ConnectIroh(
-                                    self.node_id.clone(),
-                                    Some(self.relay_url.clone())
+                                .on_press(Message::ConnectDialog(
+                                    ConnectDialogMessage::ConnectIroh(
+                                        self.connect_dialog.node_id.clone(),
+                                        Some(self.connect_dialog.relay_url.clone())
+                                    )
                                 ))
                                 .style(modal_connect_button_style.get_button_style())
                         ]
@@ -424,7 +325,9 @@ impl Application for Piggui {
             .padding(15);
 
             Modal::new(content, modal)
-                .on_blur(Message::HideModal)
+                .on_blur(Message::ConnectDialog(
+                    ConnectDialogMessage::HideConnectDialog,
+                ))
                 .into()
         } else {
             self.toast_handler.view(content.into())
@@ -439,7 +342,6 @@ impl Application for Piggui {
     fn subscription(&self) -> Subscription<Message> {
         let subscriptions = vec![
             iced::event::listen().map(WindowEvent),
-            event::listen().map(ModalKeyEvent),
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
         ];
