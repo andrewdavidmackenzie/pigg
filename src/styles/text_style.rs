@@ -1,7 +1,6 @@
 use iced::{Color, Theme};
 use iced::widget::text;
 use iced::widget::text::Appearance;
-use crate::styles::button_style::ButtonStyle;
 
 pub struct TextStyle {
     pub text_color: Color,
