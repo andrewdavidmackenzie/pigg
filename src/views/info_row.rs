@@ -84,9 +84,9 @@ impl InfoRow {
         .style(|theme: &iced::Theme| menu::Appearance {
             bar_background: Background::Color(Color::TRANSPARENT),
             menu_shadow: iced::Shadow {
-                color: Color::TRANSPARENT,
+                color: Color::BLACK,
                 offset: iced::Vector::new(1.0, 1.0),
-                blur_radius: 0f32,
+                blur_radius: 10f32,
             },
             menu_background_expand: iced::Padding::from([5, 5]),
             ..theme.appearance(&MenuBarStyle::Default)
