@@ -10,6 +10,7 @@ use iced::{keyboard, Color, Command, Element, Event};
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 use std::str::FromStr;
+use iced_futures::Subscription;
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -40,31 +41,38 @@ impl ConnectDialog {
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         match message {
+            // Handle iroh connections here
             ConnectDialogMessage::ConnectIroh(node_id, relay_url) => {
                 if node_id.trim().is_empty() {
-                    self.iroh_connection_error = String::from("Pls Enter Node Id");
-                    return Command::none();
-                }
-                if relay_url.clone().unwrap().trim().is_empty() {
-                    self.iroh_connection_error = String::from("Pls Enter Relay Url");
+                    self.iroh_connection_error = String::from("Please Enter Node Id");
                     return Command::none();
                 }
 
                 let node_id_result = NodeId::from_str(node_id.as_str().trim());
                 match node_id_result {
                     Ok(_node_id) => {
-                        let relay_url_result =
-                            RelayUrl::from_str(relay_url.clone().unwrap().as_str().trim());
-                        match relay_url_result {
-                            Ok(_relay_url) => {
-                                // TODO
-                                // Make iroh connection
-                                // Add spinner when establishing remote connection
-                            }
-                            Err(err) => {
-                                self.iroh_connection_error = format!("{}", err);
+                        if let Some(url) = relay_url {
+                            if !url.trim().is_empty() {
+                                match RelayUrl::from_str(url.as_str().trim()) {
+                                    Ok(_relay_url) => {
+                                        // TODO
+                                        // Make iroh connection with relay_url
+                                        // Add spinner when establishing remote connection
+                                        // If everything succeeds, clear the error
+                                        self.iroh_connection_error.clear();
+                                    }
+                                    Err(err) => {
+                                        self.iroh_connection_error = format!("{}", err);
+                                        return Command::none();
+                                    }
+                                }
                             }
                         }
+                        // TODO
+                        // Make iroh connection with just node_id (if relay_url is None )
+                        // Add spinner when establishing remote connection
+                        // If everything succeeds, clear the error
+                        self.iroh_connection_error.clear();
                     }
                     Err(err) => {
                         self.iroh_connection_error = format!("{}", err);
@@ -123,8 +131,15 @@ impl ConnectDialog {
     }
 
     fn hide_modal(&mut self) {
-        self.show_modal = false;
-        self.node_id.clear();
-        self.relay_url.clear();
+        self.show_modal = false; // Hide the dialog
+        self.node_id.clear(); // Clear the node id, on Cancel
+        self.iroh_connection_error.clear(); // Clear the error, on Cancel
+        self.relay_url.clear(); // Clear the relay url, on Cancel
+    }
+
+
+    // Handle Keyboard events
+    pub fn subscription(&self) -> Subscription<ConnectDialogMessage> {
+       return iced::event::listen().map(ConnectDialogMessage::ModalKeyEvent);
     }
 }
