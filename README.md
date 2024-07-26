@@ -38,6 +38,14 @@ hardware remotely.
   </tr>
 </table>
 
+## Latest NEW Feature!
+
+- The GUI (`piggui`) can connect to a Pi over the network (running `piglet`) to control and view the GPIO hardware
+  from a distance. The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped and source (as
+  close to the hardware as possible) so network delays should not affect the waveforms displayed. Provide us
+  feedback and ideas related to networking in [Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions)
+  or GH issues.
+
 ## Current Features
 
 - Visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
@@ -55,13 +63,38 @@ hardware remotely.
 
 You can see more gifs and videos of features [here](assets/features.md)
 
+## Piggui (pronounced "Piggy")
+
+`piggui` is a GUI for configuring pins, observing input levels and controlling output levels.
+On Raspberry Pi it has a real GPIO hardware backend (via rppal).
+On macOS, Linux and Windows it uses a fake hardware backend (mainly for development) or can connect to a remote
+hardware backend that is running `piglet`.
+
+## Piglet
+
+`piglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
+config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
+level changes to the GUI.
+
+If built on the Pi (with the "pi_hw" feature), then it has a real GPIO hardware backend.
+
+It can be built on macOS/Linux/Windows/Pi with the "fake_hw" feature for a fake hardware backend, mainly used
+for development.
+
+It takes an optional config file as a command line option. It will load the GPIO configuration from the file
+(like `piggui` can) and it will apply it to the hardware then stop.
+
+It offers the ability to interact with the hardware from a remote `piggui`instance.
+It will print out connection info at startup and start listing for Iroh network connections from `piggui` instances,
+then the user can interact with it and visualize inputs level changes from the `piggui` GUI.
+
 ## Input from Raspberry Pi users wanted
 
 We would like input from Raspberry Pi users to help us decide the order of things to work on in the future,
 and input on how integrate new functionalities (e.g. I2C buses, SPI, UART, etc.).
 
-Please let us know what you think, and suggestions, via GitHub discussions or GH issues, or in threads where we
-communicate its existence (discord, reddit, etc.).
+Please let us know what you think, and suggestions, via
+[Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions) or GH issues.
 
 ## Short-term Roadmap
 
@@ -69,11 +102,6 @@ We have identified a number of areas we would like to work on after this initial
 but would really appreciate your input on what could be most useful or just the coolest,
 many have GH issues.
 
-- The next big one we would like to work on is having the GUI ("piggui") connect to
-  a Pi over the network (running either "piglet" or using the existing Remote GPIO feature
-  of PiOS) to control and view the GPIO hardware from a distance, including on
-  Mac, Linux, Windows machines and other Raspberry
-  Pis. [Issue #106](https://github.com/andrewdavidmackenzie/pigg/issues/106)
 - Automation of release process and publishing
   packages [Issue #85](https://github.com/andrewdavidmackenzie/pigg/issues/85)
 - Pre-built binaries for install on Raspberry Pi [Issue #112](https://github.com/andrewdavidmackenzie/pigg/issues/112)
@@ -89,121 +117,23 @@ many have GH issues.
 - Pico support for a headless hardware backend accessed over the network
 - Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 
-## Project Structure
-
-### PIGGUI ("Piggy")
-
-A binary that shows a GUI for configuring pins, observing input levels and controlling output
-levels.
-On Raspberry Pi it has a real GPIO hardware backend (via rppal).
-On macOS, linux and windows it uses a fake GPIO hardware backend.
-
-### PIGLET ("Piglet)
-
-A "GUI-less" binary. Currently, it has minimal functionality. It can be built on any platform and will use the fake
-Hardware backend (but not be very useful!).
-
-If built on the Pi (with the "pi_hw" feature), then it has a real GPIO hardware backend.
-
-It takes a file command line option. It will load the GPIO configuration from the file (like "piggui" can) and
-it will apply it to the hardware. But currently there is no way to interact with it after that.
-
 ## Installing
 
-### macOS/linux/Windows or Pi (with a fake Hardware backend)
+Until we complete some work to produce pre-built binaries for supported platforms, and ways to install them
+directly, to install `piggui` and `piglet` you will have to build and install them from source.
+See the section on that below for details.
 
-```
-cargo install pigg
-```
+This is an area where we welcome ideas, input and contributions - please post your thoughts to the
+[Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions)
 
-NOTE: `cargo` will build for the machine where you are running it, so you will get a version of `piggui`
-with a fake hardware backend, not real Pi GPIO hardware, but you can play with the GUI.
+## Building Piggui and Piglet from Source
 
-### On Pi with real GPIO hardware backend
+See [BUILDING.md](BUILDING.md)
 
-To be able to interact with real Pi GPIO hardware you have two options:
+## Running Piggui and Piglet
 
-- Run `cargo install --features "pi_hw"` on your Pi
-- Follow the instructions before for Building from Source on your Pi
-    - Use `make` to build on macOS/linux/Windows and cross-compile for your Pi, but you will need `Docker`/`Podman`
-      and `cross`
-      installed
-
-Soon, we will add support for `cargo binstall` to allow you to get a binary for Pi directly.
-
-## Building from Source
-
-### Pre-requisites
-
-We use `"cross"` to cross compile for Raspberry Pi from Linux or macOS or Windows.
-None of the developers currently has a Windows machine, so we have been unable to test this on Windows.
-Install docker or podman and `"cross"` for cross compiling rust on your host for the Raspberry Pi.
-
-If you run `"make"` on a Raspberry Pi, it will not use `"cross"` and just compile natively.
-So, to be clear `"cross"` is not a pre-requisite for Raspberry Pi native building.
-
-### Building on host development machine
-
-Run `"make"` on macOS, linux, Windows (or in fact RPi also) host to build these binaries:
-
-- `target/debug/piggui` - GUI version without GPIO, to enable UI development on a host
-- `target/aarch64-unknown-linux-gnu/release/piggui` - GUI version for Pi with GPIO, can be run natively from RPi command
-  line
-- `target/aarch64-unknown-linux-gnu/release/piglet` - Headless version for Pi with GPIO, can be run natively from RPi
-  command line
-- `target/armv7-unknown-linux-gnueabihf/release/piggui` - GUI version for Pi with GPIO, can be run natively from RPi command line
-- `target/armv7-unknown-linux-gnueabihf/release/piglet` -  Headless version for Pi with GPIO, can be run natively from RPi
-  command line
-
-Use `"make run"` to start `piggui` on the local machine - for GUI development.
-
-### Building for Pi from macOS, linux or Windows
-
-If you use `make` that builds for local host AND pi (using cross).
-
-If you get strange build errors from `cross`, check first that your Docker daemon is running.
-
-#### Helper Env vars
-
-There are a couple of env vars that can be setup to help you interact with your pi.
-
-You can set these up in your env, so you always have them, or set them on the command line when invoking `make`
-
-- `PI_TARGET` Which Pi to copy files to and ssh into
-  `PI_TARGET := pizero2w0.local`
-
-- `PI_USER` The username of your user on the pi, to be able to copy files and ssh into it
-  `PI_USER := andrew`
-
-#### Make targets
-
-- Use `make` to run `clippy`, build for the Pi using `cross`, build for the local machine using `cargo` and to run tests
-- Use `make cross-build` for aarch64-based Raspberry Pi models, and `make cross-build-armv7` for armv7-based Raspberry Pi models to build only for the Pi. 
-- Use `make copy` to copy the built binaries to your raspberry pi.
-- Use `make ssh` to ssh into your Pi to be able to run the binaries.
-
-### Building for Pi on a Pi!
-
-You should be able to use `make` or `make run` directly, and it will build `piggui` with a GUI and
-also build `piglet`
-
-## Running
-
-### Piggui
-
-Use `make run`
-
-One macOS/linux/Windows this will build for the local machine, and start `piggui` with a fake hardware backend.
-
-If you run that on a Raspberry Pi, it will detect that, and build for the Pi, with the real Pi GPIO hardware backend.
-
-Piggui takes an optional filename argument, to attempt to load the code from. If there is an error
-loading a config, the default config will be used.
-
-To do this you can use the equivalent of what `make run` does, adding the filename:
-
-- On a Pi: `cargo run --features "pi_hw" -- <filename>`
-- On macOS, linux or Windows: `cargo run -- <filename>`
+For details on running `piglet` and `piggui` in the foreground or as a system service, on the same machine or with a
+remote GUI to Pi hardware, see [RUNNING.md](RUNNING.md)
 
 ## Contributing
 

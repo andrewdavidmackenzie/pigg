@@ -274,7 +274,7 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
                                 )
                                 .await
                                 {
-                                    error!("{}", e);
+                                    error!("Error applying config to hw: {}", e);
                                 }
                             } else {
                                 error!("Unknown message: {content}");
