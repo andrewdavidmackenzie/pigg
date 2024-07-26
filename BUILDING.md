@@ -1,5 +1,14 @@
 # Building Piggui and Piglet from source
 
+Note that these instructions below apply equally, whether you have cloned the repo or have downloaded and exploded the
+source tarball/zip of a release.
+
+`cd` into the `pigg` project root folder (where you can see `Cargo.toml` for example) and then follow the instructions
+below to build from source.
+
+Note that once we complete some more work to create pre-built, installable, binaries for you, this work will all
+go away and we will document how you install the binaries directly.
+
 ### macOS/linux/Windows or Pi (with a fake Hardware backend)
 
 ```
