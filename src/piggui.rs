@@ -342,6 +342,7 @@ impl Application for Piggui {
     fn subscription(&self) -> Subscription<Message> {
         let subscriptions = vec![
             iced::event::listen().map(WindowEvent),
+            self.connect_dialog.subscription().map(ConnectDialog), // Handle Keyboard events for ConnectDialog
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
         ];
