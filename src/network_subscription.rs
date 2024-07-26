@@ -11,7 +11,7 @@ use iced::futures::{pin_mut, FutureExt};
 use iced::{futures, subscription, Subscription};
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
-use iroh_net::relay::RelayMode;
+use iroh_net::relay::{RelayMode, RelayUrl};
 use iroh_net::{Endpoint, NodeAddr, NodeId};
 use std::io;
 use std::str::FromStr;
@@ -26,7 +26,7 @@ pub enum NetworkState {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe(nodeid: String) -> Subscription<HardwareEventMessage> {
+pub fn subscribe(nodeid: String, relay: Option<RelayUrl>) -> Subscription<HardwareEventMessage> {
     struct Connect;
     subscription::channel(
         std::any::TypeId::of::<Connect>(),
@@ -41,7 +41,7 @@ pub fn subscribe(nodeid: String) -> Subscription<HardwareEventMessage> {
                         // Create channel
                         let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
-                        match connect(&nodeid).await {
+                        match connect(&nodeid, relay.clone()).await {
                             Ok((hardware_description, connection)) => {
                                 // Send the sender back to the GUI
                                 let _ = gui_sender_clone
@@ -120,7 +120,10 @@ async fn send_config_change(
 }
 
 //noinspection SpellCheckingInspection
-async fn connect(nodeid: &str) -> anyhow::Result<(HardwareDescription, Connection)> {
+async fn connect(
+    nodeid: &str,
+    relay: Option<RelayUrl>,
+) -> anyhow::Result<(HardwareDescription, Connection)> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
@@ -144,10 +147,10 @@ async fn connect(nodeid: &str) -> anyhow::Result<(HardwareDescription, Connectio
 
     // find my closest relay - maybe set this as a default in the UI but allow used to
     // override it in a text entry box. Leave black for user if fails to fetch it.
-    let relay_url = endpoint.home_relay().ok_or(io::Error::new(
+    let relay_url = relay.unwrap_or(endpoint.home_relay().ok_or(io::Error::new(
         io::ErrorKind::Other,
         "Could not get home relay",
-    ))?;
+    ))?);
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
     let addr = NodeAddr::from_parts(NodeId::from_str(nodeid).unwrap(), Some(relay_url), vec![]);

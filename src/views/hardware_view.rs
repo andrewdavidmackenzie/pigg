@@ -366,7 +366,8 @@ impl HardwareView {
             }
             HardwareTarget::Remote(nodeid) => {
                 subscriptions.push(
-                    network_subscription::subscribe(nodeid.to_string()).map(HardwareSubscription),
+                    network_subscription::subscribe(nodeid.to_string(), None)
+                        .map(HardwareSubscription),
                 );
             }
         }
@@ -574,13 +575,15 @@ fn filter_options(
         .cloned()
         .collect();
 
-    if !config_options.contains(&PinFunction::None) && selected_function.is_some() && selected_function != Some(PinFunction::None) {
+    if !config_options.contains(&PinFunction::None)
+        && selected_function.is_some()
+        && selected_function != Some(PinFunction::None)
+    {
         config_options.push(PinFunction::None);
     }
 
     config_options
 }
-
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side<'a>(
@@ -608,7 +611,6 @@ fn create_pin_view_side<'a>(
         // Filter options
         let config_options = filter_options(&pin_description.options, selected_function.cloned());
 
-        
         let selected = selected_function.filter(|&pin_function| *pin_function != PinFunction::None);
 
         pin_options_row = pin_options_row.push(
@@ -703,7 +705,10 @@ mod test {
 
         // Test case: No function selected
         let result = filter_options(&options, None);
-        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
+        assert_eq!(
+            result,
+            vec![PinFunction::Input(None), PinFunction::Output(None)]
+        );
 
         // Test case: Input selected
         let result = filter_options(&options, Some(PinFunction::Input(None)));
@@ -715,6 +720,9 @@ mod test {
 
         // Test case: None selected
         let result = filter_options(&options, Some(PinFunction::None));
-        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
+        assert_eq!(
+            result,
+            vec![PinFunction::Input(None), PinFunction::Output(None)]
+        );
     }
 }

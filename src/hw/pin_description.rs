@@ -8,8 +8,8 @@ use std::fmt::{Display, Formatter};
 /// [PinDescription] is used to describe each pin and possible uses it can be put to
 /// * [board_pin_number] refer to the pins by the number of the pin printed on the board
 /// * [bcm_pin_number] refer to the pins by the "Broadcom SOC channel" number. Programmable pins
-/// will have a [BCMPinNumber] and others will not, hence this is optional
-/// * [name] is a human readable label for the pin
+///   will have a [BCMPinNumber] and others will not, hence this is optional
+/// * [name] is a human-readable label for the pin
 /// * [options] is a list of [PinFunction] the pin can be configured as
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PinDescription {
