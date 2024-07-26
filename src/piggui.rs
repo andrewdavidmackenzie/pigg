@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
@@ -23,6 +24,9 @@ use crate::widgets::modal::Modal;
 use views::pin_state::PinState;
 
 use iced::event::{self, Event};
+use iroh_net::NodeId;
+use iroh_net::relay::RelayUrl;
+use crate::styles::text_style::TextStyle;
 
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
@@ -94,6 +98,7 @@ pub enum Message {
     ConnectionId(String),
     RelayURL(String),
     ModalKeyEvent(Event),
+    ConnectIroh(String, String),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -107,6 +112,7 @@ pub struct Piggui {
     show_modal: bool,
     connection_id: String,
     relay_url: String,
+    connection_error: String,
 }
 
 async fn empty() {}
@@ -144,6 +150,7 @@ impl Application for Piggui {
                 show_modal: false,
                 connection_id: String::new(),
                 relay_url: String::new(),
+                connection_error: String::new(),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -169,6 +176,40 @@ impl Application for Piggui {
                         return window::close(window::Id::MAIN);
                     }
                 }
+            }
+
+            ConnectIroh(connection_id, relay_url) => {
+
+                if connection_id.trim().is_empty() {
+                    self.connection_error = String::from("Pls Enter Node Id");
+                    return Command::none();
+                }
+                if relay_url.trim().is_empty() {
+                    self.connection_error = String::from("Pls Enter Relay Url");
+                    return Command::none();
+                }
+
+                let node_id_result = NodeId::from_str(connection_id.as_str());
+                match node_id_result {
+                    Ok(node_id) => {
+                        let relay_url_result = RelayUrl::from_str(relay_url.as_str());
+                        match relay_url_result {
+                            Ok(relay_url) => {
+                                // TODO
+                                // Make iroh connection
+                                // Add spinner when establishing remote connection
+                            }
+                            Err(err) => {
+                                self.connection_error = format!("{}", err);
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        self.connection_error = format!("{}", err);
+                    }
+                }
+
+                return Command::none();
             }
 
             ModalKeyEvent(event) => {
@@ -218,6 +259,7 @@ impl Application for Piggui {
             }
             HideModal => {
                 self.hide_modal();
+                self.connection_error.clear();
                 return Command::none();
             }
 
@@ -331,11 +373,16 @@ impl Application for Piggui {
                 border_color: Color::WHITE,
             };
 
+            let connection_error_style = TextStyle {
+                text_color: Color::new(1.0, 0.0, 0.0, 0.5)
+            };
+
             let modal = container(
                 column![
                     text("Connect To Remote Pi").size(20),
                     column![
                         column![
+                            text(self.connection_error.clone()).style(connection_error_style.get_text_color()),
                             text("Node Id").size(12),
                             text_input("Enter node id", &self.connection_id)
                                 .on_input(Message::ConnectionId)
@@ -356,7 +403,7 @@ impl Application for Piggui {
                                 .on_press(Message::HideModal)
                                 .style(modal_cancel_button_style.get_button_style()),
                             Button::new(Text::new("Connect"))
-                                .on_press(Message::HideModal)
+                                .on_press(Message::ConnectIroh(self.connection_id.clone(), self.relay_url.clone()))
                                 .style(modal_connect_button_style.get_button_style())
                         ]
                         .spacing(360),
