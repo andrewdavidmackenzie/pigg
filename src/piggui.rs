@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
@@ -17,16 +16,17 @@ use iced::widget::{self, column, container, row, text, text_input, Button, Colum
 use iced::{
     executor, window, Application, Color, Command, Element, Length, Settings, Subscription, Theme,
 };
+use std::str::FromStr;
 
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::widgets::modal::Modal;
 use views::pin_state::PinState;
 
-use iced::event::{self, Event};
-use iroh_net::NodeId;
-use iroh_net::relay::RelayUrl;
 use crate::styles::text_style::TextStyle;
+use iced::event::{self, Event};
+use iroh_net::relay::RelayUrl;
+use iroh_net::NodeId;
 
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
@@ -95,7 +95,7 @@ pub enum Message {
     ShowModal,
     HideModal,
     Submit,
-    ConnectionId(String),
+    NodeId(String),
     RelayURL(String),
     ModalKeyEvent(Event),
     ConnectIroh(String, Option<String>),
@@ -110,16 +110,16 @@ pub struct Piggui {
     toast_handler: ToastHandler,
     hardware_view: HardwareView,
     show_modal: bool,
-    connection_id: String,
+    node_id: String,
     relay_url: String,
-    connection_error: String,
+    iroh_connection_error: String,
 }
 
 async fn empty() {}
 impl Piggui {
     fn hide_modal(&mut self) {
         self.show_modal = false;
-        self.connection_id.clear();
+        self.node_id.clear();
         self.relay_url.clear();
     }
 }
@@ -149,9 +149,9 @@ impl Application for Piggui {
                 toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(nodeid),
                 show_modal: false,
-                connection_id: String::new(),
+                node_id: String::new(),
                 relay_url: String::new(),
-                connection_error: String::new(),
+                iroh_connection_error: String::new(),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -179,21 +179,21 @@ impl Application for Piggui {
                 }
             }
 
-            ConnectIroh(connection_id, relay_url) => {
-
-                if connection_id.trim().is_empty() {
-                    self.connection_error = String::from("Pls Enter Node Id");
+            ConnectIroh(node_id, relay_url) => {
+                if node_id.trim().is_empty() {
+                    self.iroh_connection_error = String::from("Pls Enter Node Id");
                     return Command::none();
                 }
                 if relay_url.clone().unwrap().trim().is_empty() {
-                    self.connection_error = String::from("Pls Enter Relay Url");
+                    self.iroh_connection_error = String::from("Pls Enter Relay Url");
                     return Command::none();
                 }
 
-                let node_id_result = NodeId::from_str(connection_id.as_str().trim());
+                let node_id_result = NodeId::from_str(node_id.as_str().trim());
                 match node_id_result {
                     Ok(_node_id) => {
-                        let relay_url_result = RelayUrl::from_str(relay_url.clone().unwrap().as_str().trim());
+                        let relay_url_result =
+                            RelayUrl::from_str(relay_url.clone().unwrap().as_str().trim());
                         match relay_url_result {
                             Ok(_relay_url) => {
                                 // TODO
@@ -201,12 +201,12 @@ impl Application for Piggui {
                                 // Add spinner when establishing remote connection
                             }
                             Err(err) => {
-                                self.connection_error = format!("{}", err);
+                                self.iroh_connection_error = format!("{}", err);
                             }
                         }
                     }
                     Err(err) => {
-                        self.connection_error = format!("{}", err);
+                        self.iroh_connection_error = format!("{}", err);
                     }
                 }
 
@@ -215,6 +215,7 @@ impl Application for Piggui {
 
             ModalKeyEvent(event) => {
                 return match event {
+                    // When Pressed `Tab` focuses on previous/next widget
                     Event::Keyboard(keyboard::Event::KeyPressed {
                         key: keyboard::Key::Named(key::Named::Tab),
                         modifiers,
@@ -226,6 +227,7 @@ impl Application for Piggui {
                             widget::focus_next()
                         }
                     }
+                    // When Pressed `Esc` focuses on previous widget and hide modal
                     Event::Keyboard(keyboard::Event::KeyPressed {
                         key: keyboard::Key::Named(key::Named::Escape),
                         ..
@@ -234,11 +236,11 @@ impl Application for Piggui {
                         Command::none()
                     }
                     _ => Command::none(),
-                }
+                };
             }
 
-            ConnectionId(connection_id) => {
-                self.connection_id = connection_id;
+            NodeId(node_id) => {
+                self.node_id = node_id;
                 return Command::none();
             }
 
@@ -248,7 +250,7 @@ impl Application for Piggui {
             }
 
             Submit => {
-                if !self.connection_id.is_empty() {
+                if !self.node_id.is_empty() {
                     self.hide_modal();
                 }
                 return Command::none();
@@ -256,11 +258,11 @@ impl Application for Piggui {
 
             ShowModal => {
                 self.show_modal = true;
-                return iced::widget::focus_next();
+                return widget::focus_next();
             }
             HideModal => {
                 self.hide_modal();
-                self.connection_error.clear();
+                self.iroh_connection_error.clear();
                 return Command::none();
             }
 
@@ -374,8 +376,8 @@ impl Application for Piggui {
                 border_color: Color::WHITE,
             };
 
-            let connection_error_style = TextStyle {
-                text_color: Color::new(1.0, 0.0, 0.0, 0.5)
+            let connection_error_display = TextStyle {
+                text_color: Color::new(1.0, 0.0, 0.0, 0.5),
             };
 
             let modal = container(
@@ -383,10 +385,11 @@ impl Application for Piggui {
                     text("Connect To Remote Pi").size(20),
                     column![
                         column![
-                            text(self.connection_error.clone()).style(connection_error_style.get_text_color()),
+                            text(self.iroh_connection_error.clone())
+                                .style(connection_error_display.get_text_color()),
                             text("Node Id").size(12),
-                            text_input("Enter node id", &self.connection_id)
-                                .on_input(Message::ConnectionId)
+                            text_input("Enter node id", &self.node_id)
+                                .on_input(Message::NodeId)
                                 .on_submit(Message::Submit)
                                 .padding(5),
                         ]
@@ -404,7 +407,10 @@ impl Application for Piggui {
                                 .on_press(Message::HideModal)
                                 .style(modal_cancel_button_style.get_button_style()),
                             Button::new(Text::new("Connect"))
-                                .on_press(Message::ConnectIroh(self.connection_id.clone(), Some(self.relay_url.clone())))
+                                .on_press(Message::ConnectIroh(
+                                    self.node_id.clone(),
+                                    Some(self.relay_url.clone())
+                                ))
                                 .style(modal_connect_button_style.get_button_style())
                         ]
                         .spacing(360),
