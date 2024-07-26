@@ -12,7 +12,7 @@ use iced_aw::style::MenuBarStyle;
 use iced_aw::{menu, menu_bar};
 use iced_futures::core::Background;
 use iced_futures::Subscription;
-use crate::views::connect_dialog::ConnectDialogMessage;
+use crate::connect_dialog_handler::ConnectDialogMessage;
 
 const MENU_WIDTH: f32 = 200.0;
 
