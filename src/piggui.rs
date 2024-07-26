@@ -191,10 +191,10 @@ impl Application for Piggui {
 
                 let node_id_result = NodeId::from_str(connection_id.as_str());
                 match node_id_result {
-                    Ok(node_id) => {
+                    Ok(_node_id) => {
                         let relay_url_result = RelayUrl::from_str(relay_url.as_str());
                         match relay_url_result {
-                            Ok(relay_url) => {
+                            Ok(_relay_url) => {
                                 // TODO
                                 // Make iroh connection
                                 // Add spinner when establishing remote connection
