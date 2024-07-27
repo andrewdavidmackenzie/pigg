@@ -1,9 +1,16 @@
 #![allow(unused)]
 
+use crate::connect_dialog_handler::ConnectDialogMessage::{
+    ConnectButtonPressed, Connecting, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL,
+    ShowConnectDialog,
+};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
-use crate::Message;
+use crate::views::message_row::MessageMessage;
+use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
+use crate::Message::InfoRow;
+use crate::{empty, Message};
 use iced::keyboard::key;
 use iced::widget::{self, column, container, row, text, text_input, Button, Container, Text};
 use iced::{keyboard, Color, Command, Element, Event};
@@ -21,12 +28,13 @@ pub struct ConnectDialog {
 }
 #[derive(Clone, Debug)]
 pub enum ConnectDialogMessage {
-    NodeId(String),
+    NodeIdEntered(String),
     RelayURL(String),
     ModalKeyEvent(Event),
-    ConnectIroh(String, Option<String>),
+    ConnectButtonPressed(String, String),
     HideConnectDialog,
     ShowConnectDialog,
+    Connecting,
 }
 impl Default for ConnectDialog {
     fn default() -> Self {
@@ -44,60 +52,67 @@ impl ConnectDialog {
         }
     }
 
+    // TODO this is where we should convert to connection types and start a Command
+    // to connect, Add spinner when establishing remote connection
+    // Command in background emits messages for connection error or success.
+    // if connection error show in dialog, if success close the dialog
+    /// Attempt to connect to the remote hardware by configuring the network_subscription with the
+    /// required values
+    async fn connect(nodeid: NodeId, relay_url: Option<RelayUrl>) {
+        // TODO Emit a "Connected" message when successful that will close dialog
+
+        // TODO emit a "ConnectionError" Message if there were problems, this should display
+        // error message
+    }
+
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         return match message {
-            // Handle iroh connections here
-            ConnectDialogMessage::ConnectIroh(node_id, relay_url) => {
+            ConnectButtonPressed(node_id, mut url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
                     return Command::none();
                 }
 
-                let node_id_result = NodeId::from_str(node_id.as_str().trim());
-                match node_id_result {
-                    Ok(_node_id) => {
-                        if let Some(url) = relay_url {
-                            if !url.trim().is_empty() {
-                                match RelayUrl::from_str(url.as_str().trim()) {
-                                    Ok(_relay_url) => {
-                                        // TODO
-                                        // Make iroh connection with relay_url
-                                        // Add spinner when establishing remote connection
-                                        // If everything succeeds, clear the error
-                                        self.iroh_connection_error.clear();
-                                    }
-                                    Err(err) => {
-                                        self.iroh_connection_error = format!("{}", err);
-                                        return Command::none();
-                                    }
+                match NodeId::from_str(node_id.as_str().trim()) {
+                    Ok(nodeid) => {
+                        let url_str = url.trim();
+                        let relay_url = if url_str.is_empty() {
+                            None
+                        } else {
+                            match RelayUrl::from_str(url_str) {
+                                Ok(relay) => {
+                                    self.iroh_connection_error.clear();
+                                    Some(relay)
+                                }
+                                Err(err) => {
+                                    self.iroh_connection_error = format!("{}", err);
+                                    return Command::none();
                                 }
                             }
-                        }
-                        // TODO
-                        // Make iroh connection with just node_id (if relay_url is None )
-                        // Add spinner when establishing remote connection
-                        // If everything succeeds, clear the error
-                        self.iroh_connection_error.clear();
+                        };
+
+                        return Command::perform(Self::connect(nodeid, relay_url), |_| {
+                            Message::ConnectDialog(Connecting)
+                        });
                     }
                     Err(err) => {
                         self.iroh_connection_error = format!("{}", err);
+                        Command::none()
                     }
                 }
-
-                Command::none()
             }
 
-            ConnectDialogMessage::ShowConnectDialog => {
+            ShowConnectDialog => {
                 self.show_modal = true;
                 Command::none()
             }
 
-            ConnectDialogMessage::HideConnectDialog => {
+            HideConnectDialog => {
                 self.hide_modal();
                 Command::none()
             }
 
-            ConnectDialogMessage::ModalKeyEvent(event) => {
+            ModalKeyEvent(event) => {
                 match event {
                     // When Pressed `Tab` focuses on previous/next widget
                     Event::Keyboard(keyboard::Event::KeyPressed {
@@ -123,13 +138,18 @@ impl ConnectDialog {
                 }
             }
 
-            ConnectDialogMessage::NodeId(node_id) => {
+            NodeIdEntered(node_id) => {
                 self.node_id = node_id;
                 Command::none()
             }
 
-            ConnectDialogMessage::RelayURL(relay_url) => {
+            RelayURL(relay_url) => {
                 self.relay_url = relay_url;
+                Command::none()
+            }
+
+            Connecting => {
+                // TODO show a message and/or spinner that we are trying to connect
                 Command::none()
             }
         };
@@ -169,9 +189,9 @@ impl ConnectDialog {
                             .style(connection_error_display.get_text_color()),
                         text("Node Id").size(12),
                         text_input("Enter node id", &self.node_id)
-                            .on_input(|input| Message::ConnectDialog(ConnectDialogMessage::NodeId(
-                                input
-                            )))
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::NodeIdEntered(input)
+                            ))
                             .padding(5),
                     ]
                     .spacing(5),
@@ -191,10 +211,12 @@ impl ConnectDialog {
                             ))
                             .style(modal_cancel_button_style.get_button_style()),
                         Button::new(Text::new("Connect"))
-                            .on_press(Message::ConnectDialog(ConnectDialogMessage::ConnectIroh(
-                                self.node_id.clone(),
-                                Some(self.relay_url.clone())
-                            )))
+                            .on_press(Message::ConnectDialog(
+                                ConnectDialogMessage::ConnectButtonPressed(
+                                    self.node_id.clone(),
+                                    self.relay_url.clone()
+                                )
+                            ))
                             .style(modal_connect_button_style.get_button_style())
                     ]
                     .spacing(360),
@@ -218,6 +240,6 @@ impl ConnectDialog {
 
     // Handle Keyboard events
     pub fn subscription(&self) -> Subscription<ConnectDialogMessage> {
-        iced::event::listen().map(ConnectDialogMessage::ModalKeyEvent)
+        iced::event::listen().map(ModalKeyEvent)
     }
 }
