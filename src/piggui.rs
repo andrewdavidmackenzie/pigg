@@ -1,3 +1,4 @@
+use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
@@ -8,21 +9,21 @@ use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
 use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
+use crate::widgets::modal::Modal;
 use crate::Message::*;
 use clap::{Arg, ArgMatches};
-use iced::widget::{column, Column, container, row, text, text_input, Button, Text};
+use iced::widget::{column, container, Column};
 use iced::Color;
 use iced::{
-    Application, Command, Element, executor, Length, Settings, Subscription, Theme, window,
+    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
-use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
-use crate::widgets::modal::Modal;
 use views::pin_state::PinState;
 
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 
+pub mod connect_dialog_handler;
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
 pub mod hardware_subscription;
@@ -32,7 +33,6 @@ mod styles;
 mod toast_handler;
 mod views;
 mod widgets;
-pub mod connect_dialog_handler;
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
@@ -117,9 +117,6 @@ impl Application for Piggui {
             .map(|s| s.to_string());
 
         let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
-
-        // TODO this will come from UI entry later. For now copy this from the output of piglet then run piggui
-        // let node_id = "2r7vxyfvkfgwfkcxt5wky72jghy4n6boawnvz5fxes62tqmnnmhq";
 
         (
             Self {
