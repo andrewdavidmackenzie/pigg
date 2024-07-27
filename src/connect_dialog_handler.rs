@@ -7,6 +7,7 @@ use crate::connect_dialog_handler::ConnectDialogMessage::{
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
+use crate::views::hardware_view::HardwareTarget::Remote;
 use crate::views::message_row::MessageMessage;
 use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message::InfoRow;
@@ -52,19 +53,6 @@ impl ConnectDialog {
         }
     }
 
-    // TODO this is where we should convert to connection types and start a Command
-    // to connect, Add spinner when establishing remote connection
-    // Command in background emits messages for connection error or success.
-    // if connection error show in dialog, if success close the dialog
-    /// Attempt to connect to the remote hardware by configuring the network_subscription with the
-    /// required values
-    async fn connect(nodeid: NodeId, relay_url: Option<RelayUrl>) {
-        // TODO Emit a "Connected" message when successful that will close dialog
-
-        // TODO emit a "ConnectionError" Message if there were problems, this should display
-        // error message
-    }
-
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         return match message {
             ConnectButtonPressed(node_id, mut url) => {
@@ -91,8 +79,8 @@ impl ConnectDialog {
                             }
                         };
 
-                        return Command::perform(Self::connect(nodeid, relay_url), |_| {
-                            Message::ConnectDialog(Connecting)
+                        return Command::perform(empty(), move |_| {
+                            Message::Connect(Remote(nodeid, relay_url))
                         });
                     }
                     Err(err) => {

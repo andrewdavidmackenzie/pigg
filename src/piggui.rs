@@ -87,6 +87,7 @@ pub enum Message {
     HardwareLost,
     MenuBarButtonClicked,
     ConnectDialog(ConnectDialogMessage),
+    Connect(HardwareTarget),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -102,7 +103,7 @@ pub struct Piggui {
 }
 
 async fn empty() {}
-impl Piggui {}
+
 impl Application for Piggui {
     type Executor = executor::Default;
     type Message = Message;
@@ -115,19 +116,6 @@ impl Application for Piggui {
             .get_one::<String>("config-file")
             .map(|s| s.to_string());
 
-        let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
-        let hardware_target = if let Some(node_str) = nodeid {
-            match NodeId::from_str(&node_str) {
-                Ok(nodeid) => HardwareTarget::Remote(nodeid, None),
-                Err(_) => {
-                    eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
-                    Local
-                }
-            }
-        } else {
-            Local
-        };
-
         (
             Self {
                 config_filename: config_filename.clone(),
@@ -137,7 +125,7 @@ impl Application for Piggui {
                 toast_handler: ToastHandler::new(),
                 hardware_view: HardwareView::new(),
                 connect_dialog: ConnectDialog::new(),
-                hardware_target,
+                hardware_target: get_hardware_target(&matches),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -232,6 +220,9 @@ impl Application for Piggui {
                     )))
                 });
             }
+            Connect(new_target) => {
+                self.hardware_target = new_target;
+            }
         }
 
         Command::none()
@@ -293,6 +284,22 @@ impl Application for Piggui {
         ];
 
         Subscription::batch(subscriptions)
+    }
+}
+
+/// Determine the hardware target based on command line options
+fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
+    let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
+    if let Some(node_str) = nodeid {
+        match NodeId::from_str(&node_str) {
+            Ok(nodeid) => HardwareTarget::Remote(nodeid, None),
+            Err(_) => {
+                eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
+                Local
+            }
+        }
+    } else {
+        Local
     }
 }
 

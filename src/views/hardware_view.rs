@@ -161,6 +161,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum HardwareTarget {
     Local,
     Remote(NodeId, Option<RelayUrl>),

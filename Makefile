@@ -92,7 +92,7 @@ ifneq ($(PI),)
 	RUST_LOG=piglet=info cargo run --bin piglet --release --features "pi_hw"
 else
 	# Compile for host, targeting fake hardware
-	RUST_LOG=piglet=info cargo run --bin piglet --release--features "fake_hw"
+	RUST_LOG=piglet=info cargo run --bin piglet --release --features "fake_hw"
 endif
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
