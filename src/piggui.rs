@@ -12,16 +12,11 @@ use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::widgets::modal::Modal;
 use crate::Message::*;
 use clap::{Arg, ArgMatches};
-use iced::widget::{column, container, Column};
-use iced::Color;
+use iced::widget::{container, Column};
 use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
 use views::pin_state::PinState;
-
-use crate::styles::button_style::ButtonStyle;
-use crate::styles::container_style::ContainerStyle;
-use crate::styles::text_style::TextStyle;
 
 pub mod connect_dialog_handler;
 mod file_helper;
@@ -249,80 +244,7 @@ impl Application for Piggui {
             .center_y();
 
         if self.connect_dialog.show_modal {
-            let modal_connect_button_style = ButtonStyle {
-                bg_color: Color::new(0.0, 1.0, 1.0, 1.0), // Cyan background color
-                text_color: Color::BLACK,
-                hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-                hovered_text_color: Color::WHITE,
-                border_radius: 2.0,
-            };
-
-            let modal_cancel_button_style = ButtonStyle {
-                bg_color: Color::new(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
-                text_color: Color::WHITE,
-                hovered_bg_color: Color::new(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-                hovered_text_color: Color::WHITE,
-                border_radius: 2.0,
-            };
-
-            let modal_container_style = ContainerStyle {
-                border_color: Color::WHITE,
-            };
-
-            let connection_error_display = TextStyle {
-                text_color: Color::new(1.0, 0.0, 0.0, 0.5),
-            };
-
-            let modal = container(
-                column![
-                    text("Connect To Remote Pi").size(20),
-                    column![
-                        column![
-                            text(self.connect_dialog.iroh_connection_error.clone())
-                                .style(connection_error_display.get_text_color()),
-                            text("Node Id").size(12),
-                            text_input("Enter node id", &self.connect_dialog.node_id)
-                                .on_input(|input| Message::ConnectDialog(
-                                    ConnectDialogMessage::NodeId(input)
-                                ))
-                                .padding(5),
-                        ]
-                        .spacing(5),
-                        column![
-                            text("Relay URL").size(12),
-                            text_input("Enter Relay Url", &self.connect_dialog.relay_url)
-                                .on_input(|input| Message::ConnectDialog(
-                                    ConnectDialogMessage::RelayURL(input)
-                                ))
-                                .padding(5),
-                        ]
-                        .spacing(5),
-                        row![
-                            Button::new(Text::new("Cancel"))
-                                .on_press(Message::ConnectDialog(
-                                    ConnectDialogMessage::HideConnectDialog
-                                ))
-                                .style(modal_cancel_button_style.get_button_style()),
-                            Button::new(Text::new("Connect"))
-                                .on_press(Message::ConnectDialog(
-                                    ConnectDialogMessage::ConnectIroh(
-                                        self.connect_dialog.node_id.clone(),
-                                        Some(self.connect_dialog.relay_url.clone())
-                                    )
-                                ))
-                                .style(modal_connect_button_style.get_button_style())
-                        ]
-                        .spacing(360),
-                    ]
-                    .spacing(10)
-                ]
-                .spacing(20),
-            )
-            .style(modal_container_style.get_container_style())
-            .width(520)
-            .padding(15);
-
-            Modal::new(content, modal)
+            Modal::new(content, self.connect_dialog.view())
                 .on_blur(Message::ConnectDialog(
                     ConnectDialogMessage::HideConnectDialog,
                 ))

@@ -28,6 +28,11 @@ pub enum ConnectDialogMessage {
     HideConnectDialog,
     ShowConnectDialog,
 }
+impl Default for ConnectDialog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ConnectDialog {
     pub fn new() -> Self {
@@ -130,6 +135,80 @@ impl ConnectDialog {
         };
     }
 
+    pub fn view<'a>(&self) -> Element<'a, Message> {
+        let modal_connect_button_style = ButtonStyle {
+            bg_color: Color::new(0.0, 1.0, 1.0, 1.0), // Cyan background color
+            text_color: Color::BLACK,
+            hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
+            hovered_text_color: Color::WHITE,
+            border_radius: 2.0,
+        };
+
+        let modal_cancel_button_style = ButtonStyle {
+            bg_color: Color::new(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
+            text_color: Color::WHITE,
+            hovered_bg_color: Color::new(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
+            hovered_text_color: Color::WHITE,
+            border_radius: 2.0,
+        };
+
+        let modal_container_style = ContainerStyle {
+            border_color: Color::WHITE,
+        };
+
+        let connection_error_display = TextStyle {
+            text_color: Color::new(1.0, 0.0, 0.0, 0.5),
+        };
+
+        container(
+            column![
+                text("Connect To Remote Pi").size(20),
+                column![
+                    column![
+                        text(self.iroh_connection_error.clone())
+                            .style(connection_error_display.get_text_color()),
+                        text("Node Id").size(12),
+                        text_input("Enter node id", &self.node_id)
+                            .on_input(|input| Message::ConnectDialog(ConnectDialogMessage::NodeId(
+                                input
+                            )))
+                            .padding(5),
+                    ]
+                    .spacing(5),
+                    column![
+                        text("Relay URL").size(12),
+                        text_input("Enter Relay Url", &self.relay_url)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::RelayURL(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(5),
+                    row![
+                        Button::new(Text::new("Cancel"))
+                            .on_press(Message::ConnectDialog(
+                                ConnectDialogMessage::HideConnectDialog
+                            ))
+                            .style(modal_cancel_button_style.get_button_style()),
+                        Button::new(Text::new("Connect"))
+                            .on_press(Message::ConnectDialog(ConnectDialogMessage::ConnectIroh(
+                                self.node_id.clone(),
+                                Some(self.relay_url.clone())
+                            )))
+                            .style(modal_connect_button_style.get_button_style())
+                    ]
+                    .spacing(360),
+                ]
+                .spacing(10)
+            ]
+            .spacing(20),
+        )
+        .style(modal_container_style.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
+    }
+
     fn hide_modal(&mut self) {
         self.show_modal = false; // Hide the dialog
         self.node_id.clear(); // Clear the node id, on Cancel
@@ -139,6 +218,6 @@ impl ConnectDialog {
 
     // Handle Keyboard events
     pub fn subscription(&self) -> Subscription<ConnectDialogMessage> {
-        return iced::event::listen().map(ConnectDialogMessage::ModalKeyEvent);
+        iced::event::listen().map(ConnectDialogMessage::ModalKeyEvent)
     }
 }
