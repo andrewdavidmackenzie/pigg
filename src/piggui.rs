@@ -2,8 +2,9 @@ use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
+use crate::views::hardware_view::HardwareTarget::Local;
 use crate::views::hardware_view::HardwareViewMessage::NewConfig;
-use crate::views::hardware_view::{HardwareView, HardwareViewMessage};
+use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
@@ -16,6 +17,8 @@ use iced::widget::{container, Column};
 use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
+use iroh_net::NodeId;
+use std::str::FromStr;
 use views::pin_state::PinState;
 
 pub mod connect_dialog_handler;
@@ -95,6 +98,7 @@ pub struct Piggui {
     toast_handler: ToastHandler,
     hardware_view: HardwareView,
     connect_dialog: ConnectDialog,
+    hardware_target: HardwareTarget,
 }
 
 async fn empty() {}
@@ -112,16 +116,28 @@ impl Application for Piggui {
             .map(|s| s.to_string());
 
         let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
+        let hardware_target = if let Some(node_str) = nodeid {
+            match NodeId::from_str(&node_str) {
+                Ok(nodeid) => HardwareTarget::Remote(nodeid, None),
+                Err(_) => {
+                    eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
+                    Local
+                }
+            }
+        } else {
+            Local
+        };
 
         (
             Self {
-                config_filename: None,
+                config_filename: config_filename.clone(),
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 toast_handler: ToastHandler::new(),
-                hardware_view: HardwareView::new(nodeid),
+                hardware_view: HardwareView::new(),
                 connect_dialog: ConnectDialog::new(),
+                hardware_target,
             },
             maybe_load_no_picker(config_filename),
         )
@@ -271,7 +287,9 @@ impl Application for Piggui {
             iced::event::listen().map(WindowEvent),
             self.connect_dialog.subscription().map(ConnectDialog), // Handle Keyboard events for ConnectDialog
             self.info_row.subscription().map(InfoRow),
-            self.hardware_view.subscription().map(Hardware),
+            self.hardware_view
+                .subscription(&self.hardware_target)
+                .map(Hardware),
         ];
 
         Subscription::batch(subscriptions)

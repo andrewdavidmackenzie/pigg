@@ -7,6 +7,8 @@ use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
+use iroh_net::relay::RelayUrl;
+use iroh_net::NodeId;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -161,11 +163,10 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 
 pub enum HardwareTarget {
     Local,
-    Remote(String),
+    Remote(NodeId, Option<RelayUrl>),
 }
 
 pub struct HardwareView {
-    hardware_target: HardwareTarget,
     hardware_config: HardwareConfig,
     hardware_sender: Option<Sender<HardwareConfigMessage>>,
     hardware_description: Option<HardwareDescription>,
@@ -177,15 +178,8 @@ pub struct HardwareView {
 async fn empty() {}
 
 impl HardwareView {
-    pub fn new(nodeid: Option<String>) -> Self {
-        let hardware_target = if let Some(node) = nodeid {
-            HardwareTarget::Remote(node)
-        } else {
-            HardwareTarget::Local
-        };
-
+    pub fn new() -> Self {
         Self {
-            hardware_target,
             hardware_config: HardwareConfig::default(),
             hardware_description: None, // Until listener is ready
             hardware_sender: None,      // Until listener is ready
@@ -352,21 +346,24 @@ impl HardwareView {
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
-    pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
+    pub fn subscription(
+        &self,
+        hardware_target: &HardwareTarget,
+    ) -> Subscription<HardwareViewMessage> {
         let mut subscriptions =
             vec![
                 iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                     .map(|_| UpdateCharts),
             ];
 
-        match &self.hardware_target {
+        match hardware_target {
             HardwareTarget::Local => {
                 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
                 subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
             }
-            HardwareTarget::Remote(nodeid) => {
+            HardwareTarget::Remote(nodeid, relay) => {
                 subscriptions.push(
-                    network_subscription::subscribe(nodeid.to_string(), None)
+                    network_subscription::subscribe(nodeid.to_string(), relay.clone())
                         .map(HardwareSubscription),
                 );
             }
@@ -683,13 +680,13 @@ mod test {
 
     #[test]
     fn no_hardware_description() {
-        let hw_view = HardwareView::new(None);
+        let hw_view = HardwareView::new();
         assert_eq!(hw_view.hw_description(), "No Hardware connected");
     }
 
     #[test]
     fn no_hardware_model() {
-        let hw_view = HardwareView::new(None);
+        let hw_view = HardwareView::new();
         assert_eq!(hw_view.hw_model(), "No Hardware connected");
     }
 
