@@ -5,12 +5,12 @@ use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::{self, column, container, row, text, text_input, Button, Text, Container};
+use iced::widget::{self, column, container, row, text, text_input, Button, Container, Text};
 use iced::{keyboard, Color, Command, Element, Event};
+use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 use std::str::FromStr;
-use iced_futures::Subscription;
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -40,7 +40,7 @@ impl ConnectDialog {
     }
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
-        match message {
+        return match message {
             // Handle iroh connections here
             ConnectDialogMessage::ConnectIroh(node_id, relay_url) => {
                 if node_id.trim().is_empty() {
@@ -79,21 +79,21 @@ impl ConnectDialog {
                     }
                 }
 
-                return Command::none();
+                Command::none()
             }
 
             ConnectDialogMessage::ShowConnectDialog => {
                 self.show_modal = true;
-                return Command::none();
+                Command::none()
             }
 
             ConnectDialogMessage::HideConnectDialog => {
                 self.hide_modal();
-                return Command::none();
+                Command::none()
             }
 
             ConnectDialogMessage::ModalKeyEvent(event) => {
-                return match event {
+                match event {
                     // When Pressed `Tab` focuses on previous/next widget
                     Event::Keyboard(keyboard::Event::KeyPressed {
                         key: keyboard::Key::Named(key::Named::Tab),
@@ -115,19 +115,19 @@ impl ConnectDialog {
                         Command::none()
                     }
                     _ => Command::none(),
-                };
+                }
             }
 
             ConnectDialogMessage::NodeId(node_id) => {
                 self.node_id = node_id;
-                return Command::none();
+                Command::none()
             }
 
             ConnectDialogMessage::RelayURL(relay_url) => {
                 self.relay_url = relay_url;
-                return Command::none();
+                Command::none()
             }
-        }
+        };
     }
 
     fn hide_modal(&mut self) {
@@ -137,9 +137,8 @@ impl ConnectDialog {
         self.relay_url.clear(); // Clear the relay url, on Cancel
     }
 
-
     // Handle Keyboard events
     pub fn subscription(&self) -> Subscription<ConnectDialogMessage> {
-       return iced::event::listen().map(ConnectDialogMessage::ModalKeyEvent);
+        return iced::event::listen().map(ConnectDialogMessage::ModalKeyEvent);
     }
 }
