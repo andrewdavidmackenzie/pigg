@@ -19,6 +19,10 @@ use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 use std::str::FromStr;
+use std::time::Duration;
+
+use crate::widgets::spinner::circular::Circular;
+use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -198,6 +202,11 @@ impl ConnectDialog {
                                 ConnectDialogMessage::HideConnectDialog
                             ))
                             .style(modal_cancel_button_style.get_button_style()),
+                        // Conditionally render spinner when Connecting to remote
+                        Circular::new()
+                        .easing(&EMPHASIZED_ACCELERATE)
+                        .cycle_duration(Duration::from_secs_f32(2.0)),
+
                         Button::new(Text::new("Connect"))
                             .on_press(Message::ConnectDialog(
                                 ConnectDialogMessage::ConnectButtonPressed(
@@ -207,7 +216,8 @@ impl ConnectDialog {
                             ))
                             .style(modal_connect_button_style.get_button_style())
                     ]
-                    .spacing(360),
+                    .spacing(160)
+                    .align_items(iced::Alignment::Center),
                 ]
                 .spacing(10)
             ]
