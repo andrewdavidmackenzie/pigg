@@ -4,14 +4,14 @@ use lyon_algorithms::measure::PathMeasurements;
 use lyon_algorithms::path::{builder::NoAttributes, path::BuilderImpl, Path};
 use once_cell::sync::Lazy;
 
-pub static EMPHASIZED: Lazy<Easing> = Lazy::new(|| {
+pub static _EMPHASIZED: Lazy<Easing> = Lazy::new(|| {
     Easing::builder()
         .cubic_bezier_to([0.05, 0.0], [0.133333, 0.06], [0.166666, 0.4])
         .cubic_bezier_to([0.208333, 0.82], [0.25, 1.0], [1.0, 1.0])
         .build()
 });
 
-pub static EMPHASIZED_DECELERATE: Lazy<Easing> = Lazy::new(|| {
+pub static _EMPHASIZED_DECELERATE: Lazy<Easing> = Lazy::new(|| {
     Easing::builder()
         .cubic_bezier_to([0.05, 0.7], [0.1, 1.0], [1.0, 1.0])
         .build()
@@ -29,13 +29,13 @@ pub static STANDARD: Lazy<Easing> = Lazy::new(|| {
         .build()
 });
 
-pub static STANDARD_DECELERATE: Lazy<Easing> = Lazy::new(|| {
+pub static _STANDARD_DECELERATE: Lazy<Easing> = Lazy::new(|| {
     Easing::builder()
         .cubic_bezier_to([0.0, 0.0], [0.0, 1.0], [1.0, 1.0])
         .build()
 });
 
-pub static STANDARD_ACCELERATE: Lazy<Easing> = Lazy::new(|| {
+pub static _STANDARD_ACCELERATE: Lazy<Easing> = Lazy::new(|| {
     Easing::builder()
         .cubic_bezier_to([0.3, 0.0], [1.0, 1.0], [1.0, 1.0])
         .build()
