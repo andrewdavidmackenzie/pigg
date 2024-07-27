@@ -154,11 +154,12 @@ impl Application for Piggui {
             }
 
             LayoutChanged(layout) => {
-                // Keep overall window management at this level and out of LayoutSelector
                 return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
-            Save => return save(self.hardware_view.get_config()),
+            Save => {
+                return save(self.hardware_view.get_config());
+            }
 
             ConfigSaved => {
                 self.unsaved_changes = false;
@@ -189,11 +190,17 @@ impl Application for Piggui {
                 return self.connect_dialog.update(connect_dialog_message);
             }
 
-            InfoRow(msg) => return self.info_row.update(msg),
+            InfoRow(msg) => {
+                return self.info_row.update(msg);
+            }
 
-            Hardware(msg) => return self.hardware_view.update(msg),
+            Hardware(msg) => {
+                return self.hardware_view.update(msg);
+            }
 
-            ConfigChangesMade => self.unsaved_changes = true,
+            ConfigChangesMade => {
+                self.unsaved_changes = true;
+            }
 
             ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
