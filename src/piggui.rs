@@ -205,6 +205,7 @@ impl Application for Piggui {
                 self.unsaved_changes = false;
                 return Command::perform(empty(), |_| Hardware(NewConfig(config)));
             }
+
             HardwareLost => {
                 return Command::perform(empty(), |_| {
                     InfoRow(ShowStatusMessage(MessageMessage::Error(
