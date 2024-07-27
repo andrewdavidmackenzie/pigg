@@ -1,9 +1,6 @@
 #![allow(unused)]
 
-use crate::connect_dialog_handler::ConnectDialogMessage::{
-    ConnectButtonPressed, Connecting, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL,
-    ShowConnectDialog,
-};
+use crate::connect_dialog_handler::ConnectDialogMessage::{ConnectButtonPressed, Connecting, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL, ShowConnectDialog,};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
@@ -13,7 +10,7 @@ use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message::InfoRow;
 use crate::{empty, Message};
 use iced::keyboard::key;
-use iced::widget::{self, column, container, row, text, text_input, Button, Container, Text};
+use iced::widget::{self, tooltip, column, container, row, text, text_input, Button, Container, Text};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
@@ -188,8 +185,9 @@ impl ConnectDialog {
                     ]
                     .spacing(5),
                     column![
-                        text("Relay URL").size(12),
-                        text_input("Enter Relay Url", &self.relay_url)
+                        text("Relay URL (Optonal) ").size(12),
+
+                        text_input("Enter Relay Url (Optional)", &self.relay_url)
                             .on_input(|input| Message::ConnectDialog(
                                 ConnectDialogMessage::RelayURL(input)
                             ))
