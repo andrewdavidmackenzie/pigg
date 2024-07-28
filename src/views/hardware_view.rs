@@ -161,8 +161,9 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum HardwareTarget {
+    #[default]
     Local,
     Remote(NodeId, Option<RelayUrl>),
 }
@@ -299,6 +300,9 @@ impl HardwareView {
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
+                    return Command::perform(empty(), |_| {
+                        <Piggui as iced::Application>::Message::Connected
+                    });
                 }
                 HardwareEventMessage::InputChange(bcm_pin_number, level_change) => {
                     self.pin_states
@@ -308,7 +312,7 @@ impl HardwareView {
                 }
                 HardwareEventMessage::Disconnected => {
                     return Command::perform(empty(), |_| {
-                        <Piggui as iced::Application>::Message::HardwareLost
+                        <Piggui as iced::Application>::Message::Disconnected
                     });
                 }
             },

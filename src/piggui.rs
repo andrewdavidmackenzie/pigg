@@ -3,11 +3,8 @@ use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
-use crate::views::hardware_view::HardwareTarget::Local;
 use crate::views::hardware_view::HardwareViewMessage::NewConfig;
-use crate::views::hardware_view::{
-    HardwareEventMessage, HardwareTarget, HardwareView, HardwareViewMessage,
-};
+use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
@@ -48,10 +45,11 @@ pub enum Message {
     Toast(ToastMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
-    HardwareLost,
     MenuBarButtonClicked,
     ConnectDialog(ConnectDialogMessage),
     Connect(HardwareTarget),
+    Connected,
+    Disconnected,
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -177,21 +175,6 @@ impl Application for Piggui {
             }
 
             Hardware(msg) => {
-                /*
-                if matches!(
-                    msg,
-                    HardwareViewMessage::HardwareSubscription(HardwareEventMessage::Connected(
-                        _,
-                        _
-                    ))
-                ) {
-                    // TODO maybe also update the info bar, not sure
-                    return Command::perform(empty(), |_| {
-                        Message::ConnectDialog(HideConnectDialog)
-                    });
-                }
-                 */
-
                 return self.hardware_view.update(msg);
             }
 
@@ -205,17 +188,21 @@ impl Application for Piggui {
                 return Command::perform(empty(), |_| Hardware(NewConfig(config)));
             }
 
-            HardwareLost => {
+            Connect(new_target) => {
+                self.hardware_target = new_target;
+            }
+
+            Connected => {
+                return Command::perform(empty(), |_| Message::ConnectDialog(HideConnectDialog));
+            }
+
+            Disconnected => {
                 return Command::perform(empty(), |_| {
                     InfoRow(ShowStatusMessage(MessageMessage::Error(
                         "Connection to Hardware Lost".to_string(),
                         "The connection to GPIO hardware has been lost. Check networking and try to re-connect".to_string()
                     )))
                 });
-            }
-
-            Connect(new_target) => {
-                self.hardware_target = new_target;
             }
         }
 
@@ -283,18 +270,17 @@ impl Application for Piggui {
 
 /// Determine the hardware target based on command line options
 fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
-    let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
-    if let Some(node_str) = nodeid {
-        match NodeId::from_str(&node_str) {
-            Ok(nodeid) => HardwareTarget::Remote(nodeid, None),
-            Err(_) => {
-                eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
-                Local
-            }
+    let mut target = HardwareTarget::default();
+
+    if let Some(node_str) = matches.get_one::<String>("nodeid").map(|s| s.to_string()) {
+        if let Ok(nodeid) = NodeId::from_str(&node_str) {
+            target = HardwareTarget::Remote(nodeid, None);
+        } else {
+            eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }
-    } else {
-        Local
     }
+
+    target
 }
 
 /// Parse the command line arguments using clap
