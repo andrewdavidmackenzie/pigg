@@ -189,10 +189,14 @@ impl Application for Piggui {
             }
 
             ConnectRequest(new_target) => {
+                // Show spinner when connection requested
+                self.connect_dialog.show_spinner = true;
                 self.hardware_target = new_target;
             }
 
             Connected => {
+                // Hide spinner when connected
+                self.connect_dialog.show_spinner = false;
                 return Command::batch(vec![
                     hide_dialog(),
                     info_connected("Connected to remote hardware".to_string()),
@@ -200,6 +204,8 @@ impl Application for Piggui {
             }
 
             ConnectionError(message) => {
+                // Hide spinner when there is connection error
+                self.connect_dialog.show_spinner = false;
                 return Command::batch(vec![
                     info_connection_error(message.clone()),
                     dialog_connection_error(message),
