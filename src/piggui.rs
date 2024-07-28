@@ -49,7 +49,7 @@ pub enum Message {
     ConnectDialog(ConnectDialogMessage),
     Connect(HardwareTarget),
     Connected,
-    Disconnected,
+    Disconnected(String),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -196,11 +196,11 @@ impl Application for Piggui {
                 return Command::perform(empty(), |_| Message::ConnectDialog(HideConnectDialog));
             }
 
-            Disconnected => {
-                return Command::perform(empty(), |_| {
+            Disconnected(message) => {
+                return Command::perform(empty(), move |_| {
                     InfoRow(ShowStatusMessage(MessageMessage::Error(
-                        "Connection to Hardware Lost".to_string(),
-                        "The connection to GPIO hardware has been lost. Check networking and try to re-connect".to_string()
+                        "Connection Error".to_string(),
+                        format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
                     )))
                 });
             }

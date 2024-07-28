@@ -82,7 +82,7 @@ pub enum HardwareEventMessage {
     /// This event indicates that the logic level of an input has just changed
     InputChange(BCMPinNumber, LevelChange),
     /// We have lost the connection to the hardware
-    Disconnected,
+    Disconnected(String),
 }
 
 /// [HardwareViewMessage] covers all messages that are handled by hardware_view
@@ -310,9 +310,9 @@ impl HardwareView {
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HardwareEventMessage::Disconnected => {
+                HardwareEventMessage::Disconnected(message) => {
                     return Command::perform(empty(), |_| {
-                        <Piggui as iced::Application>::Message::Disconnected
+                        <Piggui as iced::Application>::Message::Disconnected(message)
                     });
                 }
             },

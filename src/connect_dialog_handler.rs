@@ -1,6 +1,9 @@
 #![allow(unused)]
 
-use crate::connect_dialog_handler::ConnectDialogMessage::{ConnectButtonPressed, Connecting, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL, ShowConnectDialog,};
+use crate::connect_dialog_handler::ConnectDialogMessage::{
+    ConnectButtonPressed, Connecting, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL,
+    ShowConnectDialog,
+};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
@@ -10,7 +13,9 @@ use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message::InfoRow;
 use crate::{empty, Message};
 use iced::keyboard::key;
-use iced::widget::{self, tooltip, column, container, row, text, text_input, Button, Container, Text};
+use iced::widget::{
+    self, column, container, row, text, text_input, tooltip, Button, Container, Text,
+};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
@@ -37,6 +42,7 @@ pub enum ConnectDialogMessage {
     HideConnectDialog,
     ShowConnectDialog,
     Connecting,
+    ConnectionError(String),
 }
 impl Default for ConnectDialog {
     fn default() -> Self {
@@ -138,7 +144,12 @@ impl ConnectDialog {
             }
 
             Connecting => {
-                // TODO show a message and/or spinner that we are trying to connect
+                // TODO show a message and spinner that we are trying to connect
+                Command::none()
+            }
+
+            ConnectDialogMessage::ConnectionError(error) => {
+                // TODO display error in UI in red text
                 Command::none()
             }
         };
@@ -186,7 +197,6 @@ impl ConnectDialog {
                     .spacing(5),
                     column![
                         text("Relay URL (Optonal) ").size(12),
-
                         text_input("Enter Relay Url (Optional)", &self.relay_url)
                             .on_input(|input| Message::ConnectDialog(
                                 ConnectDialogMessage::RelayURL(input)
@@ -202,9 +212,8 @@ impl ConnectDialog {
                             .style(modal_cancel_button_style.get_button_style()),
                         // Conditionally render spinner when Connecting to remote
                         Circular::new()
-                        .easing(&EMPHASIZED_ACCELERATE)
-                        .cycle_duration(Duration::from_secs_f32(2.0)),
-
+                            .easing(&EMPHASIZED_ACCELERATE)
+                            .cycle_duration(Duration::from_secs_f32(2.0)),
                         Button::new(Text::new("Connect"))
                             .on_press(Message::ConnectDialog(
                                 ConnectDialogMessage::ConnectButtonPressed(
