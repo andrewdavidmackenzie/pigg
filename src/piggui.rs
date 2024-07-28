@@ -197,12 +197,10 @@ impl Application for Piggui {
             }
 
             ConnectionError(message) => {
-                return Command::perform(empty(), move |_| {
-                    InfoRow(ShowStatusMessage(MessageMessage::Error(
-                        "Connection Error".to_string(),
-                        format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
-                    )))
-                });
+                return Command::batch(vec![
+                    info_connection_error(message.clone()),
+                    dialog_connection_error(message),
+                ])
             }
         }
 
@@ -266,6 +264,25 @@ impl Application for Piggui {
 
         Subscription::batch(subscriptions)
     }
+}
+
+/// Send a connection error message to the Info Bar
+pub fn info_connection_error(message: String) -> Command<Message> {
+    Command::perform(empty(), move |_| {
+        InfoRow(ShowStatusMessage(MessageMessage::Error(
+            "Connection Error".to_string(),
+            format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
+        )))
+    })
+}
+
+/// Send a connection error message to the connection dialog
+pub fn dialog_connection_error(message: String) -> Command<Message> {
+    Command::perform(empty(), move |_| {
+        ConnectDialog(ConnectDialogMessage::ConnectionError(format!(
+            "Error connecting: '{message}'. Check networking and try again"
+        )))
+    })
 }
 
 /// Determine the hardware target based on command line options
