@@ -1,8 +1,8 @@
 #![allow(unused)]
 
 use crate::connect_dialog_handler::ConnectDialogMessage::{
-    ConnectButtonPressed, Connecting, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL,
-    ShowConnectDialog,
+    ConnectButtonPressed, Connecting, ConnectionError, HideConnectDialog, ModalKeyEvent,
+    NodeIdEntered, RelayURL, ShowConnectDialog,
 };
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
@@ -148,7 +148,7 @@ impl ConnectDialog {
                 Command::none()
             }
 
-            ConnectDialogMessage::ConnectionError(error) => {
+            ConnectionError(error) => {
                 // TODO display error in UI in red text
                 Command::none()
             }
