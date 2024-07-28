@@ -211,12 +211,10 @@ impl HardwareView {
 
     /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
     #[must_use]
-    pub fn hw_model(&self) -> String {
-        if let Some(hardware_description) = &self.hardware_description {
-            hardware_description.details.model.clone()
-        } else {
-            "No Hardware connected".to_string()
-        }
+    pub fn hw_model(&self) -> Option<String> {
+        self.hardware_description
+            .as_ref()
+            .map(|desc| desc.details.model.clone())
     }
 
     /// Send the GPIOConfig from the GUI to the hardware to have it applied

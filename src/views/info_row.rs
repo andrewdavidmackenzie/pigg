@@ -1,18 +1,19 @@
+use crate::connect_dialog_handler::ConnectDialogMessage;
 use crate::styles::background::SetAppearance;
 use crate::styles::button_style::ButtonStyle;
-use crate::views::hardware_view::HardwareView;
+use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::message_row::{MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
-use iced::widget::{container, Button, Row, Text};
+use iced::widget::tooltip::Position;
+use iced::widget::{container, Button, Row, Text, Tooltip};
 use iced::{Color, Command, Element, Length};
 use iced_aw::menu::{Item, StyleSheet};
 use iced_aw::style::MenuBarStyle;
 use iced_aw::{menu, menu_bar};
 use iced_futures::core::Background;
 use iced_futures::Subscription;
-use crate::connect_dialog_handler::ConnectDialogMessage;
 
 const MENU_WIDTH: f32 = 200.0;
 
@@ -54,8 +55,8 @@ impl InfoRow {
         &'a self,
         unsaved_changes: bool,
         hardware_view: &'a HardwareView,
+        hardware_target: &HardwareTarget,
     ) -> Element<'a, Message> {
-
         let menu_bar_button_style = ButtonStyle {
             bg_color: Color::TRANSPARENT,
             text_color: Color::new(0.7, 0.7, 0.7, 1.0),
@@ -64,19 +65,35 @@ impl InfoRow {
             border_radius: 4.0,
         };
 
+        let model = match hardware_view.hw_model() {
+            None => "No Hardware connected".to_string(),
+            Some(model) => match hardware_target {
+                HardwareTarget::Local => format!("{}@Local", model),
+                HardwareTarget::Remote(_, _) => format!("{}@Remote", model),
+            },
+        };
+
         let mb = menu_bar!((
-            Button::new(Text::new(hardware_view.hw_model()))
+            Button::new(Text::new(model))
                 .style(menu_bar_button_style.get_button_style())
                 .on_press(Message::MenuBarButtonClicked),
             {
                 // Conditionally render menu items based on hardware features
                 menu!((menu_button(
                     "Use local Pi Hardware".to_string(),
-                    cfg!(feature = "pi_hw"),
-                ))
-                (Button::new("Connect to remote Pi").width(Length::Fill).on_press(Message::ConnectDialog(ConnectDialogMessage::ShowConnectDialog)).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()))
-                (Button::new("Search for Pi's on local network").width(Length::Fill).style(DISABLED_MENU_BUTTON_STYLE.get_button_style()))
-                (hardware_button::view()))
+                    cfg!(any(feature = "pi_hw", feature = "fake_hw")),
+                ))(
+                    Button::new("Connect to remote Pi")
+                        .width(Length::Fill)
+                        .on_press(Message::ConnectDialog(
+                            ConnectDialogMessage::ShowConnectDialog
+                        ))
+                        .style(ENABLED_MENU_BUTTON_STYLE.get_button_style())
+                )(
+                    Button::new("Search for Pi's on local network")
+                        .width(Length::Fill)
+                        .style(DISABLED_MENU_BUTTON_STYLE.get_button_style())
+                )(hardware_button::view()))
                 .width(MENU_WIDTH)
                 .spacing(2.0)
                 .offset(10.0)
@@ -93,10 +110,24 @@ impl InfoRow {
             ..theme.appearance(&MenuBarStyle::Default)
         });
 
+        let menu_tooltip = match hardware_view.hw_model() {
+            None => Tooltip::new(
+                mb,
+                "Click menu to connect Local or Remote hardware",
+                Position::Top,
+            ),
+            Some(_) => match hardware_target {
+                HardwareTarget::Local => Tooltip::new(mb, "", Position::Top),
+                HardwareTarget::Remote(nodeid, _) => {
+                    Tooltip::new(mb, Text::new(format!("NodeId: {}", nodeid)), Position::Top)
+                }
+            },
+        };
+
         container(
             Row::new()
                 .push(version_button())
-                .push(mb)
+                .push(menu_tooltip)
                 .push(unsaved_status::view(unsaved_changes))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
