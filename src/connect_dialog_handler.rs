@@ -149,7 +149,7 @@ impl ConnectDialog {
             }
 
             ConnectionError(error) => {
-                // TODO display error in UI in red text
+                // TODO display error in UI in red text, and hide spinner
                 Command::none()
             }
         };
