@@ -312,7 +312,7 @@ impl HardwareView {
                 }
                 HardwareEventMessage::Disconnected(message) => {
                     return Command::perform(empty(), |_| {
-                        <Piggui as iced::Application>::Message::Disconnected(message)
+                        <Piggui as iced::Application>::Message::ConnectionError(message)
                     });
                 }
             },

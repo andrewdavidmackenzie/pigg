@@ -87,7 +87,7 @@ impl ConnectDialog {
                         };
 
                         return Command::perform(empty(), move |_| {
-                            Message::Connect(Remote(nodeid, relay_url))
+                            Message::ConnectRequest(Remote(nodeid, relay_url))
                         });
                     }
                     Err(err) => {

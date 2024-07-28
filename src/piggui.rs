@@ -47,9 +47,9 @@ pub enum Message {
     WindowEvent(iced::Event),
     MenuBarButtonClicked,
     ConnectDialog(ConnectDialogMessage),
-    Connect(HardwareTarget),
+    ConnectRequest(HardwareTarget),
     Connected,
-    Disconnected(String),
+    ConnectionError(String),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -188,7 +188,7 @@ impl Application for Piggui {
                 return Command::perform(empty(), |_| Hardware(NewConfig(config)));
             }
 
-            Connect(new_target) => {
+            ConnectRequest(new_target) => {
                 self.hardware_target = new_target;
             }
 
@@ -196,7 +196,7 @@ impl Application for Piggui {
                 return Command::perform(empty(), |_| Message::ConnectDialog(HideConnectDialog));
             }
 
-            Disconnected(message) => {
+            ConnectionError(message) => {
                 return Command::perform(empty(), move |_| {
                     InfoRow(ShowStatusMessage(MessageMessage::Error(
                         "Connection Error".to_string(),
