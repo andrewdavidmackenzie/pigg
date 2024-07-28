@@ -1,10 +1,13 @@
+use crate::connect_dialog_handler::ConnectDialogMessage::HideConnectDialog;
 use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareTarget::Local;
 use crate::views::hardware_view::HardwareViewMessage::NewConfig;
-use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
+use crate::views::hardware_view::{
+    HardwareEventMessage, HardwareTarget, HardwareView, HardwareViewMessage,
+};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
@@ -199,6 +202,21 @@ impl Application for Piggui {
             }
 
             Hardware(msg) => {
+                /*
+                if matches!(
+                    msg,
+                    HardwareViewMessage::HardwareSubscription(HardwareEventMessage::Connected(
+                        _,
+                        _
+                    ))
+                ) {
+                    // TODO maybe also update the info bar, not sure
+                    return Command::perform(empty(), |_| {
+                        Message::ConnectDialog(HideConnectDialog)
+                    });
+                }
+                 */
+
                 return self.hardware_view.update(msg);
             }
 
@@ -220,6 +238,7 @@ impl Application for Piggui {
                     )))
                 });
             }
+
             Connect(new_target) => {
                 self.hardware_target = new_target;
             }
