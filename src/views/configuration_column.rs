@@ -4,6 +4,8 @@ use crate::Message;
 use iced::widget::{Button, Column, Text};
 use iced::{Alignment, Color, Element, Length};
 
+const TEXT_WIDTH: u16 = 18;
+
 /// Construct the view that represents the configuration column
 pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
     let file_button_style = ButtonStyle {
@@ -14,10 +16,10 @@ pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
         border_radius: 2.0,
     };
 
-    let save_button = Button::new(Text::new("Save Configuration"))
+    let save_button = Button::new(Text::new("Save Configuration").size(TEXT_WIDTH))
         .style(file_button_style.get_button_style())
         .on_press(Message::Save);
-    let load_button = Button::new(Text::new("Load Configuration"))
+    let load_button = Button::new(Text::new("Load Configuration").size(TEXT_WIDTH))
         .style(file_button_style.get_button_style())
         .on_press(Message::Load);
 

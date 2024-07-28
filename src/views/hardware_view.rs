@@ -49,6 +49,8 @@ const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
 
+const PICK_LIST_TEXT_WIDTH: u16 = 15;
+
 // const PIN_VIEW_SIDE_WIDTH: f32 = PIN_BUTTON_WIDTH
 //     + WIDGET_ROW_SPACING
 //     + PIN_ARROW_WIDTH
@@ -455,6 +457,7 @@ fn pullup_picklist(
     pick_list(sub_options, *pull, move |selected_pull| {
         PinFunctionSelected(bcm_pin_number, Input(Some(selected_pull)))
     })
+    .text_size(PICK_LIST_TEXT_WIDTH)
     .width(Length::Fixed(PULLUP_WIDTH))
     .placeholder("Select Pullup")
     .into()
@@ -574,13 +577,15 @@ fn filter_options(
         .cloned()
         .collect();
 
-    if !config_options.contains(&PinFunction::None) && selected_function.is_some() && selected_function != Some(PinFunction::None) {
+    if !config_options.contains(&PinFunction::None)
+        && selected_function.is_some()
+        && selected_function != Some(PinFunction::None)
+    {
         config_options.push(PinFunction::None);
     }
 
     config_options
 }
-
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side<'a>(
@@ -608,7 +613,6 @@ fn create_pin_view_side<'a>(
         // Filter options
         let config_options = filter_options(&pin_description.options, selected_function.cloned());
 
-        
         let selected = selected_function.filter(|&pin_function| *pin_function != PinFunction::None);
 
         pin_options_row = pin_options_row.push(
@@ -616,7 +620,8 @@ fn create_pin_view_side<'a>(
                 PinFunctionSelected(bcm_pin_number, pin_function)
             })
             .width(Length::Fixed(PIN_OPTION_WIDTH))
-            .placeholder("Select function"),
+            .placeholder("Select function")
+            .text_size(PICK_LIST_TEXT_WIDTH),
         );
 
         pin_option = pin_option.push(pin_options_row);
@@ -703,7 +708,10 @@ mod test {
 
         // Test case: No function selected
         let result = filter_options(&options, None);
-        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
+        assert_eq!(
+            result,
+            vec![PinFunction::Input(None), PinFunction::Output(None)]
+        );
 
         // Test case: Input selected
         let result = filter_options(&options, Some(PinFunction::Input(None)));
@@ -715,6 +723,9 @@ mod test {
 
         // Test case: None selected
         let result = filter_options(&options, Some(PinFunction::None));
-        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::Output(None)]);
+        assert_eq!(
+            result,
+            vec![PinFunction::Input(None), PinFunction::Output(None)]
+        );
     }
 }

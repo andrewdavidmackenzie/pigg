@@ -14,6 +14,8 @@ use iced_futures::core::Background;
 use iced_futures::Subscription;
 
 const MENU_WIDTH: f32 = 200.0;
+const TEXT_WIDTH: u16= 16;
+
 
 const ENABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::TRANSPARENT,
@@ -73,8 +75,8 @@ impl InfoRow {
                     "Use local Pi Hardware".to_string(),
                     cfg!(feature = "pi_hw"),
                 ))
-                (Button::new("Connect to remote Pi").width(Length::Fill).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()))
-                (Button::new("Search for Pi's on local network").width(Length::Fill).style(DISABLED_MENU_BUTTON_STYLE.get_button_style()))
+                (Button::new(Text::new("Connect to remote Pi").size(TEXT_WIDTH)).width(Length::Fill).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()))
+                (Button::new(Text::new("Search for Pi's on local network").size(TEXT_WIDTH)).width(Length::Fill).style(DISABLED_MENU_BUTTON_STYLE.get_button_style()))
                 (hardware_button::view()))
                 .width(MENU_WIDTH)
                 .spacing(2.0)
@@ -118,7 +120,7 @@ fn menu_button(text: String, enabled: bool) -> Button<'static, Message> {
         DISABLED_MENU_BUTTON_STYLE.get_button_style()
     };
 
-    Button::new(Text::new(text))
+    Button::new(Text::new(text).size(TEXT_WIDTH))
         .style(button_style)
         .width(Length::Fill)
 }

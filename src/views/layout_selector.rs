@@ -36,6 +36,7 @@ const BCM_LAYOUT_SIZE: Size = Size {
     height: 976.0,
 };
 
+const TEXT_WIDTH: u16 = 18;
 #[derive(Clone, PartialEq, Default)]
 pub struct LayoutSelector {
     selected_layout: Layout,
@@ -74,6 +75,7 @@ impl LayoutSelector {
             Message::LayoutChanged,
         )
         .width(Length::Shrink)
+        .text_size(TEXT_WIDTH)
         .placeholder("Choose Layout")
         .into()
     }

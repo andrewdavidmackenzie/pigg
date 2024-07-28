@@ -4,6 +4,7 @@ use iced::{Color, Element, Length};
 use crate::styles::button_style::ButtonStyle;
 use crate::{Message, ToastMessage};
 
+const TEXT_WIDTH: u16= 16;
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view() -> Element<'static, Message> {
     let hardware_button = ButtonStyle {
@@ -14,7 +15,7 @@ pub fn view() -> Element<'static, Message> {
         border_radius: 4.0,
     };
 
-    Button::new(Text::new("Show Hardware Details"))
+    Button::new(Text::new("Show Hardware Details").size(TEXT_WIDTH))
         .on_press(Message::Toast(ToastMessage::HardwareDetailsToast))
         .width(Length::Fill)
         .style(hardware_button.get_button_style())
