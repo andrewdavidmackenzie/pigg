@@ -199,8 +199,8 @@ impl Application for Piggui {
                 self.connect_dialog.show_spinner = false;
                 return Command::batch(vec![
                     hide_dialog(),
-                    info_connected("Connected to remote hardware".to_string()),
-                ])
+                    info_connected("Connected to hardware".to_string()),
+                ]);
             }
 
             ConnectionError(message) => {
@@ -209,7 +209,7 @@ impl Application for Piggui {
                 return Command::batch(vec![
                     info_connection_error(message.clone()),
                     dialog_connection_error(message),
-                ])
+                ]);
             }
         }
 
