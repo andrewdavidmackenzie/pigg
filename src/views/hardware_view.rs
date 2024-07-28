@@ -364,7 +364,7 @@ impl HardwareView {
             }
             HardwareTarget::Remote(nodeid, relay) => {
                 subscriptions.push(
-                    network_subscription::subscribe(nodeid.to_string(), relay.clone())
+                    network_subscription::subscribe(*nodeid, relay.clone())
                         .map(HardwareSubscription),
                 );
             }
