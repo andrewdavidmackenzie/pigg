@@ -35,45 +35,6 @@ mod toast_handler;
 mod views;
 mod widgets;
 
-fn main() -> Result<(), iced::Error> {
-    let window = window::Settings {
-        resizable: true,
-        exit_on_close_request: false,
-        size: LayoutSelector::get_default_window_size(),
-        ..Default::default()
-    };
-
-    Piggui::run(Settings {
-        window,
-        ..Default::default()
-    })
-}
-
-/// Parse the command line arguments using clap
-fn get_matches() -> ArgMatches {
-    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
-
-    let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
-
-    let app = app.arg(
-        Arg::new("nodeid")
-            .short('n')
-            .long("nodeid")
-            .num_args(1)
-            .number_of_values(1)
-            .value_name("NODEID")
-            .help("Node Id of a piglet instance to connect to"),
-    );
-
-    let app = app.arg(
-        Arg::new("config-file")
-            .num_args(0..)
-            .help("Path of a '.pigg' config file to load"),
-    );
-
-    app.get_matches()
-}
-
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -106,6 +67,20 @@ pub struct Piggui {
 }
 
 async fn empty() {}
+
+fn main() -> Result<(), iced::Error> {
+    let window = window::Settings {
+        resizable: true,
+        exit_on_close_request: false,
+        size: LayoutSelector::get_default_window_size(),
+        ..Default::default()
+    };
+
+    Piggui::run(Settings {
+        window,
+        ..Default::default()
+    })
+}
 
 impl Application for Piggui {
     type Executor = executor::Default;
@@ -320,6 +295,31 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
     } else {
         Local
     }
+}
+
+/// Parse the command line arguments using clap
+fn get_matches() -> ArgMatches {
+    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
+
+    let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
+
+    let app = app.arg(
+        Arg::new("nodeid")
+            .short('n')
+            .long("nodeid")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("NODEID")
+            .help("Node Id of a piglet instance to connect to"),
+    );
+
+    let app = app.arg(
+        Arg::new("config-file")
+            .num_args(0..)
+            .help("Path of a '.pigg' config file to load"),
+    );
+
+    app.get_matches()
 }
 
 #[cfg(test)]
