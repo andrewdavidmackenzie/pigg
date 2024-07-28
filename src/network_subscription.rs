@@ -14,7 +14,6 @@ use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};
 use iroh_net::{Endpoint, NodeAddr, NodeId};
 use std::io;
-use std::str::FromStr;
 
 /// This enum describes the states of the subscription
 pub enum NetworkState {
@@ -31,7 +30,7 @@ pub enum NetworkState {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe(nodeid: String, relay: Option<RelayUrl>) -> Subscription<HardwareEventMessage> {
+pub fn subscribe(nodeid: NodeId, relay: Option<RelayUrl>) -> Subscription<HardwareEventMessage> {
     struct Connect;
     subscription::channel(
         std::any::TypeId::of::<Connect>(),
@@ -126,7 +125,7 @@ async fn send_config_change(
 
 //noinspection SpellCheckingInspection
 async fn connect(
-    nodeid: &str,
+    nodeid: &NodeId,
     relay: Option<RelayUrl>,
 ) -> anyhow::Result<(HardwareDescription, Connection)> {
     let secret_key = SecretKey::generate();
@@ -158,7 +157,7 @@ async fn connect(
     ))?);
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
-    let addr = NodeAddr::from_parts(NodeId::from_str(nodeid).unwrap(), Some(relay_url), vec![]);
+    let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
     let connection = endpoint.connect(addr, PIGLET_ALPN).await?;
