@@ -193,7 +193,10 @@ impl Application for Piggui {
             }
 
             Connected => {
-                return Command::perform(empty(), |_| Message::ConnectDialog(HideConnectDialog));
+                return Command::batch(vec![
+                    hide_dialog(),
+                    info_connected("Connected to remote hardware".to_string()),
+                ])
             }
 
             ConnectionError(message) => {
@@ -266,8 +269,19 @@ impl Application for Piggui {
     }
 }
 
+fn hide_dialog() -> Command<Message> {
+    Command::perform(empty(), |_| Message::ConnectDialog(HideConnectDialog))
+}
+
+/// Send a message about successful connection to the info bar
+fn info_connected(message: String) -> Command<Message> {
+    Command::perform(empty(), move |_| {
+        InfoRow(ShowStatusMessage(MessageMessage::Info(message)))
+    })
+}
+
 /// Send a connection error message to the Info Bar
-pub fn info_connection_error(message: String) -> Command<Message> {
+fn info_connection_error(message: String) -> Command<Message> {
     Command::perform(empty(), move |_| {
         InfoRow(ShowStatusMessage(MessageMessage::Error(
             "Connection Error".to_string(),
@@ -277,7 +291,7 @@ pub fn info_connection_error(message: String) -> Command<Message> {
 }
 
 /// Send a connection error message to the connection dialog
-pub fn dialog_connection_error(message: String) -> Command<Message> {
+fn dialog_connection_error(message: String) -> Command<Message> {
     Command::perform(empty(), move |_| {
         ConnectDialog(ConnectDialogMessage::ConnectionError(format!(
             "Error connecting: '{message}'. Check networking and try again"
