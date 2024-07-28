@@ -242,6 +242,7 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
     write_info_file(info_path, &nodeid, &local_addrs, &relay_url)?;
 
     loop {
+        info!("Waiting for connection");
         // accept incoming connections, returns a normal QUIC connection
         if let Some(connecting) = endpoint.accept().await {
             let connection = connecting.await?;
