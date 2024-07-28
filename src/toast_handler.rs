@@ -177,7 +177,7 @@ mod tests {
         assert!(toast_handler.get_toasts().is_empty());
 
         // Add a toast
-        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new(None));
+        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new());
 
         // Check if a toast was added
         assert_eq!(toast_handler.get_toasts().len(), 1);
@@ -190,13 +190,13 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Add a toast
-        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new(None));
+        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new());
 
         // Ensure the toast was added
         assert_eq!(toast_handler.get_toasts().len(), 1);
 
         // Close the toast
-        let _ = toast_handler.update(ToastMessage::Close(0), &HardwareView::new(None));
+        let _ = toast_handler.update(ToastMessage::Close(0), &HardwareView::new());
 
         // Check if the toast was removed
         assert!(toast_handler.get_toasts().is_empty());
@@ -207,7 +207,7 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Send a timeout message
-        let _ = toast_handler.update(ToastMessage::Timeout(5.0), &HardwareView::new(None));
+        let _ = toast_handler.update(ToastMessage::Timeout(5.0), &HardwareView::new());
 
         // Check the timeout
         assert_eq!(toast_handler.timeout_secs, 5);
@@ -218,14 +218,14 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Add a toast
-        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new(None));
+        let _ = toast_handler.update(ToastMessage::VersionToast, &HardwareView::new());
         assert!(toast_handler.showing_toast);
 
         // Set pending load
         toast_handler.set_pending_load(true);
 
         // Close the toast
-        let _ = toast_handler.update(ToastMessage::Close(0), &HardwareView::new(None));
+        let _ = toast_handler.update(ToastMessage::Close(0), &HardwareView::new());
 
         // Pending load should be false after closing the toast
         assert!(!toast_handler.pending_load);
@@ -236,7 +236,7 @@ mod tests {
         let mut toast_handler = ToastHandler::new();
 
         // Show hardware details toast
-        let _ = toast_handler.update(ToastMessage::HardwareDetailsToast, &HardwareView::new(None));
+        let _ = toast_handler.update(ToastMessage::HardwareDetailsToast, &HardwareView::new());
 
         // Check if a toast was added
         assert_eq!(toast_handler.get_toasts().len(), 1);

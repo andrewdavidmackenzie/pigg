@@ -1,24 +1,27 @@
-use clap::{Arg, ArgMatches};
-use std::env;
-
-use iced::widget::{container, Column};
-use iced::{
-    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
-};
-
+use crate::connect_dialog_handler::ConnectDialogMessage::HideConnectDialog;
+use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
 use crate::views::hardware_view::HardwareViewMessage::NewConfig;
-use crate::views::hardware_view::{HardwareView, HardwareViewMessage};
+use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
 use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
+use crate::widgets::modal::Modal;
 use crate::Message::*;
+use clap::{Arg, ArgMatches};
+use iced::widget::{container, Column};
+use iced::{
+    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
+};
+use iroh_net::NodeId;
+use std::str::FromStr;
 use views::pin_state::PinState;
 
+pub mod connect_dialog_handler;
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
 pub mod hardware_subscription;
@@ -28,6 +31,40 @@ mod styles;
 mod toast_handler;
 mod views;
 mod widgets;
+
+/// These are the messages that Piggui responds to
+#[derive(Debug, Clone)]
+pub enum Message {
+    ConfigLoaded(String, HardwareConfig),
+    ConfigSaved,
+    ConfigChangesMade,
+    Save,
+    Load,
+    LayoutChanged(Layout),
+    Hardware(HardwareViewMessage),
+    Toast(ToastMessage),
+    InfoRow(MessageRowMessage),
+    WindowEvent(iced::Event),
+    MenuBarButtonClicked,
+    ConnectDialog(ConnectDialogMessage),
+    ConnectRequest(HardwareTarget),
+    Connected,
+    ConnectionError(String),
+}
+
+/// [Piggui] Is the struct that holds application state and implements [Application] for Iced
+pub struct Piggui {
+    config_filename: Option<String>,
+    layout_selector: LayoutSelector,
+    unsaved_changes: bool,
+    info_row: InfoRow,
+    toast_handler: ToastHandler,
+    hardware_view: HardwareView,
+    connect_dialog: ConnectDialog,
+    hardware_target: HardwareTarget,
+}
+
+async fn empty() {}
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
@@ -43,60 +80,6 @@ fn main() -> Result<(), iced::Error> {
     })
 }
 
-/// Parse the command line arguments using clap
-fn get_matches() -> ArgMatches {
-    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
-
-    let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
-
-    let app = app.arg(
-        Arg::new("nodeid")
-            .short('n')
-            .long("nodeid")
-            .num_args(1)
-            .number_of_values(1)
-            .value_name("NODEID")
-            .help("Node Id of a piglet instance to connect to"),
-    );
-
-    let app = app.arg(
-        Arg::new("config-file")
-            .num_args(0..)
-            .help("Path of a '.pigg' config file to load"),
-    );
-
-    app.get_matches()
-}
-
-/// These are the messages that Piggui responds to
-#[derive(Debug, Clone)]
-pub enum Message {
-    ConfigLoaded(String, HardwareConfig),
-    ConfigSaved,
-    ConfigChangesMade,
-    Save,
-    Load,
-    LayoutChanged(Layout),
-    Hardware(HardwareViewMessage),
-    Toast(ToastMessage),
-    InfoRow(MessageRowMessage),
-    WindowEvent(iced::Event),
-    HardwareLost,
-    MenuBarButtonClicked,
-}
-
-/// [Piggui] Is the struct that holds application state and implements [Application] for Iced
-pub struct Piggui {
-    config_filename: Option<String>,
-    layout_selector: LayoutSelector,
-    unsaved_changes: bool,
-    info_row: InfoRow,
-    toast_handler: ToastHandler,
-    hardware_view: HardwareView,
-}
-
-async fn empty() {}
-
 impl Application for Piggui {
     type Executor = executor::Default;
     type Message = Message;
@@ -109,19 +92,16 @@ impl Application for Piggui {
             .get_one::<String>("config-file")
             .map(|s| s.to_string());
 
-        let nodeid = matches.get_one::<String>("nodeid").map(|s| s.to_string());
-
-        // TODO this will come from UI entry later. For now copy this from the output of piglet then run piggui
-        //let node_id = "2r7vxyfvkfgwfkcxt5wky72jghy4n6boawnvz5fxes62tqmnnmhq";
-
         (
             Self {
-                config_filename: None,
+                config_filename: config_filename.clone(),
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 toast_handler: ToastHandler::new(),
-                hardware_view: HardwareView::new(nodeid),
+                hardware_view: HardwareView::new(),
+                connect_dialog: ConnectDialog::new(),
+                hardware_target: get_hardware_target(&matches),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -154,11 +134,12 @@ impl Application for Piggui {
             }
 
             LayoutChanged(layout) => {
-                // Keep overall window management at this level and out of LayoutSelector
                 return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
             }
 
-            Save => return save(self.hardware_view.get_config()),
+            Save => {
+                return save(self.hardware_view.get_config());
+            }
 
             ConfigSaved => {
                 self.unsaved_changes = false;
@@ -185,24 +166,50 @@ impl Application for Piggui {
                     .update(toast_message, &self.hardware_view);
             }
 
-            InfoRow(msg) => return self.info_row.update(msg),
+            ConnectDialog(connect_dialog_message) => {
+                return self.connect_dialog.update(connect_dialog_message);
+            }
 
-            Hardware(msg) => return self.hardware_view.update(msg),
+            InfoRow(msg) => {
+                return self.info_row.update(msg);
+            }
 
-            ConfigChangesMade => self.unsaved_changes = true,
+            Hardware(msg) => {
+                return self.hardware_view.update(msg);
+            }
+
+            ConfigChangesMade => {
+                self.unsaved_changes = true;
+            }
 
             ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
                 return Command::perform(empty(), |_| Hardware(NewConfig(config)));
             }
-            HardwareLost => {
-                return Command::perform(empty(), |_| {
-                    InfoRow(ShowStatusMessage(MessageMessage::Error(
-                        "Connection to Hardware Lost".to_string(),
-                        "The connection to GPIO hardware has been lost. Check networking and try to re-connect".to_string()
-                    )))
-                });
+
+            ConnectRequest(new_target) => {
+                // Show spinner when connection requested
+                self.connect_dialog.show_spinner = true;
+                self.hardware_target = new_target;
+            }
+
+            Connected => {
+                // Hide spinner when connected
+                self.connect_dialog.show_spinner = false;
+                return Command::batch(vec![
+                    hide_dialog(),
+                    info_connected("Connected to hardware".to_string()),
+                ]);
+            }
+
+            ConnectionError(message) => {
+                // Hide spinner when there is connection error
+                self.connect_dialog.show_spinner = false;
+                return Command::batch(vec![
+                    info_connection_error(message.clone()),
+                    dialog_connection_error(message),
+                ]);
             }
         }
 
@@ -238,7 +245,15 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        self.toast_handler.view(content.into())
+        if self.connect_dialog.show_modal {
+            Modal::new(content, self.connect_dialog.view())
+                .on_blur(Message::ConnectDialog(
+                    ConnectDialogMessage::HideConnectDialog,
+                ))
+                .into()
+        } else {
+            self.toast_handler.view(content.into())
+        }
     }
 
     fn theme(&self) -> Theme {
@@ -249,12 +264,85 @@ impl Application for Piggui {
     fn subscription(&self) -> Subscription<Message> {
         let subscriptions = vec![
             iced::event::listen().map(WindowEvent),
+            self.connect_dialog.subscription().map(ConnectDialog), // Handle Keyboard events for ConnectDialog
             self.info_row.subscription().map(InfoRow),
-            self.hardware_view.subscription().map(Hardware),
+            self.hardware_view
+                .subscription(&self.hardware_target)
+                .map(Hardware),
         ];
 
         Subscription::batch(subscriptions)
     }
+}
+
+fn hide_dialog() -> Command<Message> {
+    Command::perform(empty(), |_| Message::ConnectDialog(HideConnectDialog))
+}
+
+/// Send a message about successful connection to the info bar
+fn info_connected(message: String) -> Command<Message> {
+    Command::perform(empty(), move |_| {
+        InfoRow(ShowStatusMessage(MessageMessage::Info(message)))
+    })
+}
+
+/// Send a connection error message to the Info Bar
+fn info_connection_error(message: String) -> Command<Message> {
+    Command::perform(empty(), move |_| {
+        InfoRow(ShowStatusMessage(MessageMessage::Error(
+            "Connection Error".to_string(),
+            format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
+        )))
+    })
+}
+
+/// Send a connection error message to the connection dialog
+fn dialog_connection_error(message: String) -> Command<Message> {
+    Command::perform(empty(), move |_| {
+        ConnectDialog(ConnectDialogMessage::ConnectionError(format!(
+            "Error connecting: '{message}'. Check networking and try again"
+        )))
+    })
+}
+
+/// Determine the hardware target based on command line options
+fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
+    let mut target = HardwareTarget::default();
+
+    if let Some(node_str) = matches.get_one::<String>("nodeid").map(|s| s.to_string()) {
+        if let Ok(nodeid) = NodeId::from_str(&node_str) {
+            target = HardwareTarget::Remote(nodeid, None);
+        } else {
+            eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
+        }
+    }
+
+    target
+}
+
+/// Parse the command line arguments using clap
+fn get_matches() -> ArgMatches {
+    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
+
+    let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
+
+    let app = app.arg(
+        Arg::new("nodeid")
+            .short('n')
+            .long("nodeid")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("NODEID")
+            .help("Node Id of a piglet instance to connect to"),
+    );
+
+    let app = app.arg(
+        Arg::new("config-file")
+            .num_args(0..)
+            .help("Path of a '.pigg' config file to load"),
+    );
+
+    app.get_matches()
 }
 
 #[cfg(test)]

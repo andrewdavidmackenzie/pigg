@@ -62,6 +62,17 @@ else
 	cargo run --bin piggui --features "gui","fake_hw"
 endif
 
+.PHONY: run-release
+run-release:
+ifneq ($(PI),)
+	@echo "Detected as running on Raspberry Pi"
+	# Native compile on pi, targeting real hardware
+	cargo run --bin piggui --release --features "gui","pi_hw"
+else
+	# Compile for host, targeting fake hardware
+	cargo run --bin piggui --release --features "gui","fake_hw"
+endif
+
 .PHONY: run-piglet
 run-piglet:
 ifneq ($(PI),)
@@ -81,7 +92,7 @@ ifneq ($(PI),)
 	RUST_LOG=piglet=info cargo run --bin piglet --release --features "pi_hw"
 else
 	# Compile for host, targeting fake hardware
-	RUST_LOG=piglet=info cargo run --bin piglet --release--features "fake_hw"
+	RUST_LOG=piglet=info cargo run --bin piglet --release --features "fake_hw"
 endif
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile

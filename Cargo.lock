@@ -4218,6 +4218,8 @@ dependencies = [
  "iced_native",
  "iroh-net",
  "log",
+ "lyon_algorithms",
+ "once_cell",
  "plotters",
  "plotters-iced",
  "rand",

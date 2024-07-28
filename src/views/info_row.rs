@@ -12,6 +12,7 @@ use iced_aw::style::MenuBarStyle;
 use iced_aw::{menu, menu_bar};
 use iced_futures::core::Background;
 use iced_futures::Subscription;
+use crate::connect_dialog_handler::ConnectDialogMessage;
 
 const MENU_WIDTH: f32 = 200.0;
 
@@ -73,7 +74,7 @@ impl InfoRow {
                     "Use local Pi Hardware".to_string(),
                     cfg!(feature = "pi_hw"),
                 ))
-                (Button::new("Connect to remote Pi").width(Length::Fill).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()))
+                (Button::new("Connect to remote Pi").width(Length::Fill).on_press(Message::ConnectDialog(ConnectDialogMessage::ShowConnectDialog)).style(ENABLED_MENU_BUTTON_STYLE.get_button_style()))
                 (Button::new("Search for Pi's on local network").width(Length::Fill).style(DISABLED_MENU_BUTTON_STYLE.get_button_style()))
                 (hardware_button::view()))
                 .width(MENU_WIDTH)

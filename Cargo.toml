@@ -23,7 +23,7 @@ path = "src/piglet.rs"
 default = []
 pi_hw = ["rppal"]
 fake_hw = ["rand"]
-gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters", "iced_aw"]
+gui = ["iced", "iced_futures", "rfd", "plotters-iced", "plotters", "iced_aw", "lyon_algorithms/default", "once_cell/default"]
 
 [dependencies]
 # use in piggui and piglet
@@ -60,6 +60,8 @@ plotters = { version = "0.3", optional = true, default_features = false, feature
 ] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing = "0.1.40"
+once_cell = "1.19.0"
+lyon_algorithms = "1.0"
 
 [dev-dependencies]
 tempfile = "3"
