@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use crate::connect_dialog_handler::ConnectDialogMessage::{
-    ConnectButtonPressed, Connecting, ConnectionError, HideConnectDialog, ModalKeyEvent,
+    ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent,
     NodeIdEntered, RelayURL, ShowConnectDialog,
 };
 use crate::styles::button_style::ButtonStyle;
@@ -13,9 +13,7 @@ use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message::InfoRow;
 use crate::{empty, Message};
 use iced::keyboard::key;
-use iced::widget::{
-    self, column, container, row, text, text_input, tooltip, Button, Container, Text,
-};
+use iced::widget::{self, column, container, row, text, text_input, tooltip, Button, Container, Text, Row};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
@@ -32,6 +30,7 @@ pub struct ConnectDialog {
     pub relay_url: String,
     pub iroh_connection_error: String,
     pub show_modal: bool,
+    pub show_spinner: bool,
 }
 #[derive(Clone, Debug)]
 pub enum ConnectDialogMessage {
@@ -41,7 +40,6 @@ pub enum ConnectDialogMessage {
     ConnectButtonPressed(String, String),
     HideConnectDialog,
     ShowConnectDialog,
-    Connecting,
     ConnectionError(String),
 }
 impl Default for ConnectDialog {
@@ -57,6 +55,7 @@ impl ConnectDialog {
             relay_url: String::new(),
             iroh_connection_error: String::new(),
             show_modal: false,
+            show_spinner: false,
         }
     }
 
@@ -80,6 +79,7 @@ impl ConnectDialog {
                                     Some(relay)
                                 }
                                 Err(err) => {
+                                    self.show_spinner = false;
                                     self.iroh_connection_error = format!("{}", err);
                                     return Command::none();
                                 }
@@ -92,6 +92,7 @@ impl ConnectDialog {
                     }
                     Err(err) => {
                         self.iroh_connection_error = format!("{}", err);
+                        self.show_spinner = false;
                         Command::none()
                     }
                 }
@@ -143,13 +144,8 @@ impl ConnectDialog {
                 Command::none()
             }
 
-            Connecting => {
-                // TODO show a message and spinner that we are trying to connect
-                Command::none()
-            }
-
             ConnectionError(error) => {
-                // TODO display error in UI in red text, and hide spinner
+                self.iroh_connection_error = error;
                 Command::none()
             }
         };
@@ -180,6 +176,45 @@ impl ConnectDialog {
             text_color: Color::new(1.0, 0.0, 0.0, 0.5),
         };
 
+        let mut connection_row = Row::new();
+
+        let spinner_connection_row = Row::new().push( Button::new(Text::new("Cancel"))
+            .on_press(Message::ConnectDialog(
+                ConnectDialogMessage::HideConnectDialog
+            ))
+            .style(modal_cancel_button_style.get_button_style())).push(Circular::new()
+            .easing(&EMPHASIZED_ACCELERATE)
+            .cycle_duration(Duration::from_secs_f32(2.0))).push( Button::new(Text::new("Connect"))
+            .on_press(Message::ConnectDialog(
+                ConnectDialogMessage::ConnectButtonPressed(
+                    self.node_id.clone(),
+                    self.relay_url.clone()
+                )
+            ))
+            .style(modal_connect_button_style.get_button_style()))  .spacing(160)
+            .align_items(iced::Alignment::Center);
+
+        let without_spinner_connection_row = Row::new().push( Button::new(Text::new("Cancel"))
+            .on_press(Message::ConnectDialog(
+                ConnectDialogMessage::HideConnectDialog
+            ))
+            .style(modal_cancel_button_style.get_button_style())).push( Button::new(Text::new("Connect"))
+            .on_press(Message::ConnectDialog(
+                ConnectDialogMessage::ConnectButtonPressed(
+                    self.node_id.clone(),
+                    self.relay_url.clone()
+                )
+            ))
+            .style(modal_connect_button_style.get_button_style()))  .spacing(360)
+            .align_items(iced::Alignment::Center);
+
+        if self.show_spinner {
+            connection_row = spinner_connection_row;
+        }
+        else {
+            connection_row = without_spinner_connection_row;
+        }
+
         container(
             column![
                 text("Connect To Remote Pi").size(20),
@@ -204,27 +239,7 @@ impl ConnectDialog {
                             .padding(5),
                     ]
                     .spacing(5),
-                    row![
-                        Button::new(Text::new("Cancel"))
-                            .on_press(Message::ConnectDialog(
-                                ConnectDialogMessage::HideConnectDialog
-                            ))
-                            .style(modal_cancel_button_style.get_button_style()),
-                        // Conditionally render spinner when Connecting to remote
-                        Circular::new()
-                            .easing(&EMPHASIZED_ACCELERATE)
-                            .cycle_duration(Duration::from_secs_f32(2.0)),
-                        Button::new(Text::new("Connect"))
-                            .on_press(Message::ConnectDialog(
-                                ConnectDialogMessage::ConnectButtonPressed(
-                                    self.node_id.clone(),
-                                    self.relay_url.clone()
-                                )
-                            ))
-                            .style(modal_connect_button_style.get_button_style())
-                    ]
-                    .spacing(160)
-                    .align_items(iced::Alignment::Center),
+                    connection_row,
                 ]
                 .spacing(10)
             ]
@@ -241,6 +256,7 @@ impl ConnectDialog {
         self.node_id.clear(); // Clear the node id, on Cancel
         self.iroh_connection_error.clear(); // Clear the error, on Cancel
         self.relay_url.clear(); // Clear the relay url, on Cancel
+        self.show_spinner = false; // Hide spinner, on Cancel
     }
 
     // Handle Keyboard events
