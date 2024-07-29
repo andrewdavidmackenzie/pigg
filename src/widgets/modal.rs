@@ -39,7 +39,7 @@ impl<'a, Message, Theme, Renderer> Modal<'a, Message, Theme, Renderer> {
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-for Modal<'a, Message, Theme, Renderer>
+    for Modal<'a, Message, Theme, Renderer>
 where
     Renderer: advanced::Renderer,
     Message: Clone,
@@ -65,11 +65,9 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        self.base.as_widget().layout(
-            &mut tree.children[0],
-            renderer,
-            limits,
-        )
+        self.base
+            .as_widget()
+            .layout(&mut tree.children[0], renderer, limits)
     }
 
     fn on_event(
@@ -156,12 +154,9 @@ where
         renderer: &Renderer,
         operation: &mut dyn widget::Operation<Message>,
     ) {
-        self.base.as_widget().operate(
-            &mut state.children[0],
-            layout,
-            renderer,
-            operation,
-        );
+        self.base
+            .as_widget()
+            .operate(&mut state.children[0], layout, renderer, operation);
     }
 }
 
@@ -173,18 +168,13 @@ struct Overlay<'a, 'b, Message, Theme, Renderer> {
     on_blur: Option<Message>,
 }
 
-impl<'a, 'b, Message, Theme, Renderer>
-overlay::Overlay<Message, Theme, Renderer>
-for Overlay<'a, 'b, Message, Theme, Renderer>
+impl<'a, 'b, Message, Theme, Renderer> overlay::Overlay<Message, Theme, Renderer>
+    for Overlay<'a, 'b, Message, Theme, Renderer>
 where
     Renderer: advanced::Renderer,
     Message: Clone,
 {
-    fn layout(
-        &mut self,
-        renderer: &Renderer,
-        _bounds: Size,
-    ) -> layout::Node {
+    fn layout(&mut self, renderer: &Renderer, _bounds: Size) -> layout::Node {
         let limits = layout::Limits::new(Size::ZERO, self.size)
             .width(Length::Fill)
             .height(Length::Fill);
@@ -195,8 +185,7 @@ where
             .layout(self.tree, renderer, &limits)
             .align(Alignment::Center, Alignment::Center, limits.max());
 
-        layout::Node::with_children(self.size, vec![child])
-            .move_to(self.position)
+        layout::Node::with_children(self.size, vec![child]).move_to(self.position)
     }
 
     fn on_event(
@@ -211,10 +200,7 @@ where
         let content_bounds = layout.children().next().unwrap().bounds();
 
         if let Some(message) = self.on_blur.as_ref() {
-            if let Event::Mouse(mouse::Event::ButtonPressed(
-                                    mouse::Button::Left,
-                                )) = &event
-            {
+            if let Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) = &event {
                 if !cursor.is_over(content_bounds) {
                     shell.publish(message.clone());
                     return event::Status::Captured;
@@ -309,7 +295,7 @@ where
 }
 
 impl<'a, Message, Theme, Renderer> From<Modal<'a, Message, Theme, Renderer>>
-for Element<'a, Message, Theme, Renderer>
+    for Element<'a, Message, Theme, Renderer>
 where
     Theme: 'a,
     Message: 'a + Clone,

@@ -1,8 +1,8 @@
 #![allow(unused)]
 
 use crate::connect_dialog_handler::ConnectDialogMessage::{
-    ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent,
-    NodeIdEntered, RelayURL, ShowConnectDialog,
+    ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
+    RelayURL, ShowConnectDialog,
 };
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
@@ -13,7 +13,9 @@ use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message::InfoRow;
 use crate::{empty, Message};
 use iced::keyboard::key;
-use iced::widget::{self, column, container, row, text, text_input, tooltip, Button, Container, Text, Row};
+use iced::widget::{
+    self, column, container, row, text, text_input, tooltip, Button, Container, Row, Text,
+};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
@@ -23,6 +25,46 @@ use std::time::Duration;
 
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
+
+const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
+
+const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
+    text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
+};
+
+const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
+    text_color: Color::BLACK,
+    hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
+    hovered_text_color: Color::WHITE,
+    border_radius: 2.0,
+};
+
+const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
+    text_color: Color::WHITE,
+    hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
+    hovered_text_color: Color::WHITE,
+    border_radius: 2.0,
+};
+
+const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
+    border_color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
+    background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
+    border_width: 2.0,
+    border_radius: 10.0,
+};
+
+const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
+    border_color: Color::WHITE,
+    background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
+    border_radius: 2.0,
+    border_width: 2.0,
+};
+
+const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
+    text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0),
+};
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -152,100 +194,96 @@ impl ConnectDialog {
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
-        let modal_connect_button_style = ButtonStyle {
-            bg_color: Color::new(0.0, 1.0, 1.0, 1.0), // Cyan background color
-            text_color: Color::BLACK,
-            hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 2.0,
-        };
-
-        let modal_cancel_button_style = ButtonStyle {
-            bg_color: Color::new(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
-            text_color: Color::WHITE,
-            hovered_bg_color: Color::new(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 2.0,
-        };
-
-        let modal_container_style = ContainerStyle {
-            border_color: Color::WHITE,
-        };
-
-        let connection_error_display = TextStyle {
-            text_color: Color::new(1.0, 0.0, 0.0, 0.5),
-        };
-
         let mut connection_row = Row::new();
 
-        let spinner_connection_row = Row::new().push( Button::new(Text::new("Cancel"))
-            .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::HideConnectDialog
-            ))
-            .style(modal_cancel_button_style.get_button_style())).push(Circular::new()
-            .easing(&EMPHASIZED_ACCELERATE)
-            .cycle_duration(Duration::from_secs_f32(2.0))).push( Button::new(Text::new("Connect"))
-            .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::ConnectButtonPressed(
-                    self.node_id.clone(),
-                    self.relay_url.clone()
-                )
-            ))
-            .style(modal_connect_button_style.get_button_style()))  .spacing(160)
+        let spinner_connection_row = Row::new()
+            .push(
+                Button::new(Text::new("Cancel"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::HideConnectDialog,
+                    ))
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+            )
+            .push(
+                Circular::new()
+                    .easing(&EMPHASIZED_ACCELERATE)
+                    .cycle_duration(Duration::from_secs_f32(2.0)),
+            )
+            .push(
+                Button::new(Text::new("Connect"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::ConnectButtonPressed(
+                            self.node_id.clone(),
+                            self.relay_url.clone(),
+                        ),
+                    ))
+                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+            )
+            .spacing(160)
             .align_items(iced::Alignment::Center);
 
-        let without_spinner_connection_row = Row::new().push( Button::new(Text::new("Cancel"))
-            .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::HideConnectDialog
-            ))
-            .style(modal_cancel_button_style.get_button_style())).push( Button::new(Text::new("Connect"))
-            .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::ConnectButtonPressed(
-                    self.node_id.clone(),
-                    self.relay_url.clone()
-                )
-            ))
-            .style(modal_connect_button_style.get_button_style()))  .spacing(360)
+        let without_spinner_connection_row = Row::new()
+            .push(
+                Button::new(Text::new("Cancel"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::HideConnectDialog,
+                    ))
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+            )
+            .push(
+                Button::new(Text::new("Connect"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::ConnectButtonPressed(
+                            self.node_id.clone(),
+                            self.relay_url.clone(),
+                        ),
+                    ))
+                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+            )
+            .spacing(360)
             .align_items(iced::Alignment::Center);
 
         if self.show_spinner {
             connection_row = spinner_connection_row;
-        }
-        else {
+        } else {
             connection_row = without_spinner_connection_row;
         }
 
+        let text_container =
+            container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+                .padding(10)
+                .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
+
         container(
-            column![
+            column![column![
                 text("Connect To Remote Pi").size(20),
                 column![
-                    column![
-                        text(self.iroh_connection_error.clone())
-                            .style(connection_error_display.get_text_color()),
-                        text("Node Id").size(12),
-                        text_input("Enter node id", &self.node_id)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::NodeIdEntered(input)
-                            ))
-                            .padding(5),
-                    ]
-                    .spacing(5),
-                    column![
-                        text("Relay URL (Optonal) ").size(12),
-                        text_input("Enter Relay Url (Optional)", &self.relay_url)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::RelayURL(input)
-                            ))
-                            .padding(5),
-                    ]
-                    .spacing(5),
-                    connection_row,
+                    text_container,
+                    text(self.iroh_connection_error.clone())
+                        .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                    text("Node Id").size(12),
+                    text_input("Enter node id", &self.node_id)
+                        .on_input(|input| Message::ConnectDialog(
+                            ConnectDialogMessage::NodeIdEntered(input)
+                        ))
+                        .padding(5),
                 ]
-                .spacing(10)
+                .spacing(10),
+                column![
+                    text("Relay URL (Optional) ").size(12),
+                    text_input("Enter Relay Url (Optional)", &self.relay_url)
+                        .on_input(
+                            |input| Message::ConnectDialog(ConnectDialogMessage::RelayURL(input))
+                        )
+                        .padding(5),
+                ]
+                .spacing(5),
+                connection_row,
             ]
+            .spacing(10)]
             .spacing(20),
         )
-        .style(modal_container_style.get_container_style())
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
         .width(520)
         .padding(15)
         .into()
