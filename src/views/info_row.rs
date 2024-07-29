@@ -6,8 +6,7 @@ use crate::views::message_row::{MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
-use iced::widget::tooltip::Position;
-use iced::widget::{container, Button, Row, Text, Tooltip};
+use iced::widget::{container, Button, Row, Text};
 use iced::{Color, Command, Element, Length};
 use iced_aw::menu::{Item, StyleSheet};
 use iced_aw::style::MenuBarStyle;
@@ -110,24 +109,10 @@ impl InfoRow {
             ..theme.appearance(&MenuBarStyle::Default)
         });
 
-        let menu_tooltip = match hardware_view.hw_model() {
-            None => Tooltip::new(
-                mb,
-                "Click menu to connect Local or Remote hardware",
-                Position::Top,
-            ),
-            Some(_) => match hardware_target {
-                HardwareTarget::Local => Tooltip::new(mb, "", Position::Top),
-                HardwareTarget::Remote(nodeid, _) => {
-                    Tooltip::new(mb, Text::new(format!("NodeId: {}", nodeid)), Position::Top)
-                }
-            },
-        };
-
         container(
             Row::new()
                 .push(version_button())
-                .push(menu_tooltip)
+                .push(mb)
                 .push(unsaved_status::view(unsaved_changes))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
