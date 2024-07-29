@@ -313,4 +313,14 @@ impl ConnectDialog {
     pub fn subscription(&self) -> Subscription<ConnectDialogMessage> {
         iced::event::listen().map(ModalKeyEvent)
     }
+
+    pub fn disable_widgets_and_load_spinner(&mut self) {
+        self.disable_widgets = true;
+        self.show_spinner = true;
+    }
+
+    pub fn enable_widgets_and_hide_spinner(&mut self) {
+        self.disable_widgets = false;
+        self.show_spinner = false;
+    }
 }
