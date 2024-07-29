@@ -31,39 +31,38 @@ const IROH_INFO_TEXT: TextStyle = TextStyle {
 };
 
 const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
-text_color: Color::BLACK,
-hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-hovered_text_color: Color::WHITE,
-border_radius: 2.0,
+    bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
+    text_color: Color::BLACK,
+    hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
+    hovered_text_color: Color::WHITE,
+    border_radius: 2.0,
 };
 
 const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
-text_color: Color::WHITE,
-hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-hovered_text_color: Color::WHITE,
-border_radius: 2.0,
+    bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
+    text_color: Color::WHITE,
+    hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
+    hovered_text_color: Color::WHITE,
+    border_radius: 2.0,
 };
 
 const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
-border_color: Color::from_rgba(0.5, 0.5, 0.5, 0.1), // A slightly less transparent grey
-background_color: Color::from_rgba(0.3, 0.3, 0.3, 0.5), // Lighter grey with more opacity
-border_width: 2.0,
-border_radius: 2.0,
+    border_color: Color::from_rgba(0.5, 0.5, 0.5, 0.1), // A slightly less transparent grey
+    background_color: Color::from_rgba(0.3, 0.3, 0.3, 0.5), // Lighter grey with more opacity
+    border_width: 2.0,
+    border_radius: 2.0,
 };
 
 const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
-border_color: Color::WHITE,
-background_color: Color::TRANSPARENT,
-border_radius: 2.0,
-border_width: 2.0,
+    border_color: Color::WHITE,
+    background_color: Color::TRANSPARENT,
+    border_radius: 2.0,
+    border_width: 2.0,
 };
 
 const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
-text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red color
+    text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red color
 };
-
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -193,7 +192,6 @@ impl ConnectDialog {
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
-
         let mut connection_row = Row::new();
 
         let spinner_connection_row = Row::new()
@@ -269,7 +267,7 @@ impl ConnectDialog {
                 ]
                 .spacing(10),
                 column![
-                    text("Relay URL (Optonal) ").size(12),
+                    text("Relay URL (Optional) ").size(12),
                     text_input("Enter Relay Url (Optional)", &self.relay_url)
                         .on_input(
                             |input| Message::ConnectDialog(ConnectDialogMessage::RelayURL(input))
