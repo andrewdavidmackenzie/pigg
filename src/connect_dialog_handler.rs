@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use crate::connect_dialog_handler::ConnectDialogMessage::{
     ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
     RelayURL, ShowConnectDialog,
@@ -8,14 +6,9 @@ use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareTarget::Remote;
-use crate::views::message_row::MessageMessage;
-use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
-use crate::Message::InfoRow;
 use crate::{empty, Message};
 use iced::keyboard::key;
-use iced::widget::{
-    self, column, container, row, text, text_input, tooltip, Button, Container, Row, Text,
-};
+use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
@@ -103,7 +96,7 @@ impl ConnectDialog {
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         return match message {
-            ConnectButtonPressed(node_id, mut url) => {
+            ConnectButtonPressed(node_id, url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
                     return Command::none();
@@ -154,10 +147,10 @@ impl ConnectDialog {
                 match event {
                     // When Pressed `Tab` focuses on previous/next widget
                     Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Tab),
-                        modifiers,
-                        ..
-                    }) => {
+                                        key: keyboard::Key::Named(key::Named::Tab),
+                                        modifiers,
+                                        ..
+                                    }) => {
                         if modifiers.shift() {
                             widget::focus_previous()
                         } else {
@@ -166,9 +159,9 @@ impl ConnectDialog {
                     }
                     // When Pressed `Esc` focuses on previous widget and hide modal
                     Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Escape),
-                        ..
-                    }) => {
+                                        key: keyboard::Key::Named(key::Named::Escape),
+                                        ..
+                                    }) => {
                         self.hide_modal();
                         Command::none()
                     }
@@ -194,60 +187,54 @@ impl ConnectDialog {
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
-        let mut connection_row = Row::new();
-
-        let spinner_connection_row = Row::new()
-            .push(
-                Button::new(Text::new("Cancel"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::HideConnectDialog,
-                    ))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-            )
-            .push(
-                Circular::new()
-                    .easing(&EMPHASIZED_ACCELERATE)
-                    .cycle_duration(Duration::from_secs_f32(2.0)),
-            )
-            .push(
-                Button::new(Text::new("Connect"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::ConnectButtonPressed(
-                            self.node_id.clone(),
-                            self.relay_url.clone(),
-                        ),
-                    ))
-                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
-            )
-            .spacing(160)
-            .align_items(iced::Alignment::Center);
-
-        let without_spinner_connection_row = Row::new()
-            .push(
-                Button::new(Text::new("Cancel"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::HideConnectDialog,
-                    ))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-            )
-            .push(
-                Button::new(Text::new("Connect"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::ConnectButtonPressed(
-                            self.node_id.clone(),
-                            self.relay_url.clone(),
-                        ),
-                    ))
-                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
-            )
-            .spacing(360)
-            .align_items(iced::Alignment::Center);
-
-        if self.show_spinner {
-            connection_row = spinner_connection_row;
+        let connection_row = if self.show_spinner {
+            Row::new()
+                .push(
+                    Button::new(Text::new("Cancel"))
+                        .on_press(Message::ConnectDialog(
+                            ConnectDialogMessage::HideConnectDialog,
+                        ))
+                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                )
+                .push(
+                    Circular::new()
+                        .easing(&EMPHASIZED_ACCELERATE)
+                        .cycle_duration(Duration::from_secs_f32(2.0)),
+                )
+                .push(
+                    Button::new(Text::new("Connect"))
+                        .on_press(Message::ConnectDialog(
+                            ConnectDialogMessage::ConnectButtonPressed(
+                                self.node_id.clone(),
+                                self.relay_url.clone(),
+                            ),
+                        ))
+                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                )
+                .spacing(160)
+                .align_items(iced::Alignment::Center)
         } else {
-            connection_row = without_spinner_connection_row;
-        }
+            Row::new()
+                .push(
+                    Button::new(Text::new("Cancel"))
+                        .on_press(Message::ConnectDialog(
+                            ConnectDialogMessage::HideConnectDialog,
+                        ))
+                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                )
+                .push(
+                    Button::new(Text::new("Connect"))
+                        .on_press(Message::ConnectDialog(
+                            ConnectDialogMessage::ConnectButtonPressed(
+                                self.node_id.clone(),
+                                self.relay_url.clone(),
+                            ),
+                        ))
+                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                )
+                .spacing(360)
+                .align_items(iced::Alignment::Center)
+        };
 
         let text_container =
             container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
@@ -281,12 +268,12 @@ impl ConnectDialog {
                 connection_row,
             ]
             .spacing(10)]
-            .spacing(20),
+                .spacing(20),
         )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
-        .width(520)
-        .padding(15)
-        .into()
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
     }
 
     fn hide_modal(&mut self) {
