@@ -26,7 +26,9 @@ use std::time::Duration;
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 
-const IROH_INFO_TEXT: TextStyle = TextStyle {
+const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
+
+const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
 };
 
@@ -47,21 +49,21 @@ const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
 };
 
 const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
-    border_color: Color::from_rgba(0.5, 0.5, 0.5, 0.1), // A slightly less transparent grey
-    background_color: Color::from_rgba(0.3, 0.3, 0.3, 0.5), // Lighter grey with more opacity
+    border_color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
+    background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
     border_width: 2.0,
-    border_radius: 2.0,
+    border_radius: 10.0,
 };
 
 const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_color: Color::WHITE,
-    background_color: Color::TRANSPARENT,
+    background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
     border_radius: 2.0,
     border_width: 2.0,
 };
 
 const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
-    text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red color
+    text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0),
 };
 
 #[derive(Debug, Clone)]
@@ -247,9 +249,10 @@ impl ConnectDialog {
             connection_row = without_spinner_connection_row;
         }
 
-        let text_container =  container(
-            Text::new("To connect to a remote node using iroh-net, ensure piglet is running on the remote node. Retrieve the node id from piglet, enter it below, and optionally provide a Relay URL.").style(IROH_INFO_TEXT.get_text_color())
-        ).padding(5).style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
+        let text_container =
+            container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+                .padding(10)
+                .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
         container(
             column![column![
