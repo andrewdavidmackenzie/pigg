@@ -26,6 +26,45 @@ use std::time::Duration;
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 
+const IROH_INFO_TEXT: TextStyle = TextStyle {
+    text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
+};
+
+const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
+text_color: Color::BLACK,
+hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
+hovered_text_color: Color::WHITE,
+border_radius: 2.0,
+};
+
+const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
+text_color: Color::WHITE,
+hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
+hovered_text_color: Color::WHITE,
+border_radius: 2.0,
+};
+
+const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
+border_color: Color::from_rgba(0.5, 0.5, 0.5, 0.1), // A slightly less transparent grey
+background_color: Color::from_rgba(0.3, 0.3, 0.3, 0.5), // Lighter grey with more opacity
+border_width: 2.0,
+border_radius: 2.0,
+};
+
+const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
+border_color: Color::WHITE,
+background_color: Color::TRANSPARENT,
+border_radius: 2.0,
+border_width: 2.0,
+};
+
+const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
+text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red color
+};
+
+
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
     pub node_id: String,
@@ -154,43 +193,6 @@ impl ConnectDialog {
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
-        let modal_connect_button_style = ButtonStyle {
-            bg_color: Color::new(0.0, 1.0, 1.0, 1.0), // Cyan background color
-            text_color: Color::BLACK,
-            hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 2.0,
-        };
-
-        let modal_cancel_button_style = ButtonStyle {
-            bg_color: Color::new(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
-            text_color: Color::WHITE,
-            hovered_bg_color: Color::new(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 2.0,
-        };
-
-        let text_box_container_style = ContainerStyle {
-            border_color: Color::WHITE,
-            background_color: Color::WHITE,
-            border_width: 0.0,
-            border_radius: 0.0,
-        };
-
-        let modal_container_style = ContainerStyle {
-            border_color: Color::WHITE,
-            background_color: Color::TRANSPARENT,
-            border_radius: 2.0,
-            border_width: 2.0,
-        };
-
-        let connection_error_display = TextStyle {
-            text_color: Color::new(1.0, 0.0, 0.0, 0.5),
-        };
-
-        let iroh_info_text = TextStyle {
-            text_color: Color::BLACK,
-        };
 
         let mut connection_row = Row::new();
 
@@ -200,7 +202,7 @@ impl ConnectDialog {
                     .on_press(Message::ConnectDialog(
                         ConnectDialogMessage::HideConnectDialog,
                     ))
-                    .style(modal_cancel_button_style.get_button_style()),
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
             )
             .push(
                 Circular::new()
@@ -215,7 +217,7 @@ impl ConnectDialog {
                             self.relay_url.clone(),
                         ),
                     ))
-                    .style(modal_connect_button_style.get_button_style()),
+                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
             )
             .spacing(160)
             .align_items(iced::Alignment::Center);
@@ -226,7 +228,7 @@ impl ConnectDialog {
                     .on_press(Message::ConnectDialog(
                         ConnectDialogMessage::HideConnectDialog,
                     ))
-                    .style(modal_cancel_button_style.get_button_style()),
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
             )
             .push(
                 Button::new(Text::new("Connect"))
@@ -236,7 +238,7 @@ impl ConnectDialog {
                             self.relay_url.clone(),
                         ),
                     ))
-                    .style(modal_connect_button_style.get_button_style()),
+                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
             )
             .spacing(360)
             .align_items(iced::Alignment::Center);
@@ -248,8 +250,8 @@ impl ConnectDialog {
         }
 
         let text_container =  container(
-            Text::new("To connect to a remote node using iroh-net, ensure piglet is running on the remote node. Retrieve the node id from piglet, enter it below, and optionally provide a Relay URL.").style(iroh_info_text.get_text_color())
-        ).padding(5).style(text_box_container_style.get_container_style());
+            Text::new("To connect to a remote node using iroh-net, ensure piglet is running on the remote node. Retrieve the node id from piglet, enter it below, and optionally provide a Relay URL.").style(IROH_INFO_TEXT.get_text_color())
+        ).padding(5).style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
         container(
             column![column![
@@ -257,7 +259,7 @@ impl ConnectDialog {
                 column![
                     text_container,
                     text(self.iroh_connection_error.clone())
-                        .style(connection_error_display.get_text_color()),
+                        .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                     text("Node Id").size(12),
                     text_input("Enter node id", &self.node_id)
                         .on_input(|input| Message::ConnectDialog(
@@ -280,7 +282,7 @@ impl ConnectDialog {
             .spacing(10)]
             .spacing(20),
         )
-        .style(modal_container_style.get_container_style())
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
         .width(520)
         .padding(15)
         .into()
