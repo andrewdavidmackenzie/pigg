@@ -24,6 +24,7 @@ use crate::hw::{HardwareDescription, InputPull};
 use crate::network_subscription;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
+use crate::views::hardware_view::HardwareTarget::{Local, NoHW, Remote};
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
@@ -163,7 +164,9 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 
 #[derive(Debug, Clone, Default)]
 pub enum HardwareTarget {
-    #[default]
+    #[cfg_attr(not(any(feature = "pi_hw", feature = "fake_hw")), default)]
+    NoHW,
+    #[cfg_attr(any(feature = "pi_hw", feature = "fake_hw"), default)]
     Local,
     Remote(NodeId, Option<RelayUrl>),
 }
@@ -360,11 +363,12 @@ impl HardwareView {
             ];
 
         match hardware_target {
-            HardwareTarget::Local => {
+            NoHW => {}
+            Local => {
                 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
                 subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
             }
-            HardwareTarget::Remote(nodeid, relay) => {
+            Remote(nodeid, relay) => {
                 subscriptions.push(
                     network_subscription::subscribe(*nodeid, relay.clone())
                         .map(HardwareSubscription),
@@ -690,7 +694,7 @@ mod test {
     #[test]
     fn no_hardware_model() {
         let hw_view = HardwareView::new();
-        assert_eq!(hw_view.hw_model(), "No Hardware connected");
+        assert_eq!(hw_view.hw_model(), None);
     }
 
     #[test]

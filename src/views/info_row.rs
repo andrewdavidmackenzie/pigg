@@ -69,6 +69,7 @@ impl InfoRow {
             Some(model) => match hardware_target {
                 HardwareTarget::Local => format!("{}@Local", model),
                 HardwareTarget::Remote(_, _) => format!("{}@Remote", model),
+                HardwareTarget::NoHW => "No Hardware connected".to_string(),
             },
         };
 
