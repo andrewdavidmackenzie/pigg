@@ -66,6 +66,7 @@ pub struct ConnectDialog {
     pub iroh_connection_error: String,
     pub show_modal: bool,
     pub show_spinner: bool,
+    pub disable_widgets: bool,
 }
 #[derive(Clone, Debug)]
 pub enum ConnectDialogMessage {
@@ -91,6 +92,7 @@ impl ConnectDialog {
             iroh_connection_error: String::new(),
             show_modal: false,
             show_spinner: false,
+            disable_widgets: false,
         }
     }
 
@@ -122,6 +124,7 @@ impl ConnectDialog {
                                 }
                                 Err(err) => {
                                     self.show_spinner = false;
+                                    self.disable_widgets = false;
                                     self.iroh_connection_error = format!("{}", err);
                                     return Command::none();
                                 }
@@ -135,6 +138,7 @@ impl ConnectDialog {
                     Err(err) => {
                         self.iroh_connection_error = format!("{}", err);
                         self.show_spinner = false;
+                        self.disable_widgets = false;
                         Command::none()
                     }
                 }
@@ -188,19 +192,17 @@ impl ConnectDialog {
 
             ConnectionError(error) => {
                 self.set_error(error);
+                self.enable_widgets_and_hide_spinner();
                 Command::none()
             }
         };
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
-        let connection_row = if self.show_spinner {
+        let connection_row = if self.show_spinner && self.disable_widgets {
             Row::new()
                 .push(
                     Button::new(Text::new("Cancel"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::HideConnectDialog,
-                        ))
                         .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
                 )
                 .push(
@@ -210,12 +212,6 @@ impl ConnectDialog {
                 )
                 .push(
                     Button::new(Text::new("Connect"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::ConnectButtonPressed(
-                                self.node_id.clone(),
-                                self.relay_url.clone(),
-                            ),
-                        ))
                         .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
                 .spacing(160)
@@ -248,39 +244,67 @@ impl ConnectDialog {
                 .padding(10)
                 .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
-        container(
-            column![column![
-                text("Connect To Remote Pi").size(20),
-                column![
-                    text_container,
-                    text(self.iroh_connection_error.clone())
-                        .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                    text("Node Id").size(12),
-                    text_input("Enter node id", &self.node_id)
-                        .on_input(|input| Message::ConnectDialog(
-                            ConnectDialogMessage::NodeIdEntered(input)
-                        ))
-                        .padding(5),
+        if self.disable_widgets {
+            container(
+                column![column![
+                    text("Connect To Remote Pi").size(20),
+                    column![
+                        text_container,
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("Node Id").size(12),
+                        text_input("Enter node id", &self.node_id).padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Relay URL (Optional) ").size(12),
+                        text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
+                    ]
+                    .spacing(5),
+                    connection_row,
                 ]
-                .spacing(10),
-                column![
-                    text("Relay URL (Optional) ").size(12),
-                    text_input("Enter Relay Url (Optional)", &self.relay_url)
-                        .on_input(
-                            |input| Message::ConnectDialog(ConnectDialogMessage::RelayURL(input))
-                        )
-                        .padding(5),
+                .spacing(10)]
+                .spacing(20),
+            )
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
+        } else {
+            container(
+                column![column![
+                    text("Connect To Remote Pi").size(20),
+                    column![
+                        text_container,
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("Node Id").size(12),
+                        text_input("Enter node id", &self.node_id)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::NodeIdEntered(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Relay URL (Optional) ").size(12),
+                        text_input("Enter Relay Url (Optional)", &self.relay_url)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::RelayURL(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(5),
+                    connection_row,
                 ]
-                .spacing(5),
-                connection_row,
-            ]
-            .spacing(10)]
-            .spacing(20),
-        )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
-        .width(520)
-        .padding(15)
-        .into()
+                .spacing(10)]
+                .spacing(20),
+            )
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
+        }
     }
 
     pub fn hide_modal(&mut self) {
@@ -289,10 +313,21 @@ impl ConnectDialog {
         self.iroh_connection_error.clear(); // Clear the error, on Cancel
         self.relay_url.clear(); // Clear the relay url, on Cancel
         self.show_spinner = false; // Hide spinner, on Cancel
+        self.disable_widgets = false; // Enable widgets, on Cancel
     }
 
     // Handle Keyboard events
     pub fn subscription(&self) -> Subscription<ConnectDialogMessage> {
         iced::event::listen().map(ModalKeyEvent)
+    }
+
+    pub fn disable_widgets_and_load_spinner(&mut self) {
+        self.disable_widgets = true;
+        self.show_spinner = true;
+    }
+
+    pub fn enable_widgets_and_hide_spinner(&mut self) {
+        self.disable_widgets = false;
+        self.show_spinner = false;
     }
 }

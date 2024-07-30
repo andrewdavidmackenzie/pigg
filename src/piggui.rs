@@ -204,21 +204,21 @@ impl Application for Piggui {
             }
 
             ConnectRequest(new_target) => {
-                // Show spinner when connection requested
-                self.connect_dialog.show_spinner = true;
+                // Load spinner and disable widgets when connection requested
+                self.connect_dialog.disable_widgets_and_load_spinner();
                 self.hardware_target = new_target;
             }
 
             Connected => {
-                // Hide spinner when connected
-                self.connect_dialog.show_spinner = false;
+                // Hide spinner and enable widgets when connected
+                self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.connect_dialog.hide_modal();
                 self.info_connected("Connected to hardware".to_string());
             }
 
             ConnectionError(message) => {
-                // Hide spinner when there is connection error
-                self.connect_dialog.show_spinner = false;
+                // Hide spinner and enable widgets when any connection error
+                self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.info_connection_error(message.clone());
                 self.dialog_connection_error(message);
             }
