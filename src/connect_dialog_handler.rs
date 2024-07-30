@@ -6,7 +6,7 @@ use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareTarget::Remote;
-use crate::{empty, Message};
+use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Color, Command, Element, Event};
@@ -94,6 +94,13 @@ impl ConnectDialog {
         }
     }
 
+    /// Set the error state of the dialog with a message to display
+    pub fn set_error(&mut self, error: String) {
+        self.iroh_connection_error = error;
+    }
+
+    async fn empty() {}
+
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         return match message {
             ConnectButtonPressed(node_id, url) => {
@@ -121,7 +128,7 @@ impl ConnectDialog {
                             }
                         };
 
-                        return Command::perform(empty(), move |_| {
+                        return Command::perform(Self::empty(), move |_| {
                             Message::ConnectRequest(Remote(nodeid, relay_url))
                         });
                     }
@@ -147,10 +154,10 @@ impl ConnectDialog {
                 match event {
                     // When Pressed `Tab` focuses on previous/next widget
                     Event::Keyboard(keyboard::Event::KeyPressed {
-                                        key: keyboard::Key::Named(key::Named::Tab),
-                                        modifiers,
-                                        ..
-                                    }) => {
+                        key: keyboard::Key::Named(key::Named::Tab),
+                        modifiers,
+                        ..
+                    }) => {
                         if modifiers.shift() {
                             widget::focus_previous()
                         } else {
@@ -159,9 +166,9 @@ impl ConnectDialog {
                     }
                     // When Pressed `Esc` focuses on previous widget and hide modal
                     Event::Keyboard(keyboard::Event::KeyPressed {
-                                        key: keyboard::Key::Named(key::Named::Escape),
-                                        ..
-                                    }) => {
+                        key: keyboard::Key::Named(key::Named::Escape),
+                        ..
+                    }) => {
                         self.hide_modal();
                         Command::none()
                     }
@@ -180,7 +187,7 @@ impl ConnectDialog {
             }
 
             ConnectionError(error) => {
-                self.iroh_connection_error = error;
+                self.set_error(error);
                 Command::none()
             }
         };
@@ -268,15 +275,15 @@ impl ConnectDialog {
                 connection_row,
             ]
             .spacing(10)]
-                .spacing(20),
+            .spacing(20),
         )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
     }
 
-    fn hide_modal(&mut self) {
+    pub fn hide_modal(&mut self) {
         self.show_modal = false; // Hide the dialog
         self.node_id.clear(); // Clear the node id, on Cancel
         self.iroh_connection_error.clear(); // Clear the error, on Cancel

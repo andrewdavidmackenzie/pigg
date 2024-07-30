@@ -3,12 +3,11 @@ use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::toast_handler::{ToastHandler, ToastMessage};
-use crate::views::hardware_view::HardwareViewMessage::NewConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
-use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
+use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::widgets::modal::Modal;
 use crate::Message::*;
@@ -64,7 +63,26 @@ pub struct Piggui {
     hardware_target: HardwareTarget,
 }
 
-async fn empty() {}
+impl Piggui {
+    /// Send a connection error message to the Info Bar
+    fn info_connection_error(&mut self, message: String) {
+        self.info_row.add_info_message(
+            MessageMessage::Error(
+                "Connection Error".to_string(),
+                format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
+            ));
+    }
+
+    /// Send a message about successful connection to the info bar
+    fn info_connected(&mut self, message: String) {
+        self.info_row.add_info_message(Info(message));
+    }
+
+    /// Send a connection error message to the connection dialog
+    fn dialog_connection_error(&mut self, message: String) {
+        self.connect_dialog.set_error(message);
+    }
+}
 
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
@@ -143,11 +161,8 @@ impl Application for Piggui {
 
             ConfigSaved => {
                 self.unsaved_changes = false;
-                return Command::perform(empty(), |_| {
-                    InfoRow(ShowStatusMessage(MessageMessage::Info(
-                        "File saved successfully".to_string(),
-                    )))
-                });
+                self.info_row
+                    .add_info_message(Info("File saved successfully".to_string()));
             }
 
             Load => {
@@ -185,7 +200,7 @@ impl Application for Piggui {
             ConfigLoaded(filename, config) => {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
-                return Command::perform(empty(), |_| Hardware(NewConfig(config)));
+                self.hardware_view.new_config(config);
             }
 
             ConnectRequest(new_target) => {
@@ -197,19 +212,15 @@ impl Application for Piggui {
             Connected => {
                 // Hide spinner when connected
                 self.connect_dialog.show_spinner = false;
-                return Command::batch(vec![
-                    hide_dialog(),
-                    info_connected("Connected to hardware".to_string()),
-                ]);
+                self.connect_dialog.hide_modal();
+                self.info_connected("Connected to hardware".to_string());
             }
 
             ConnectionError(message) => {
                 // Hide spinner when there is connection error
                 self.connect_dialog.show_spinner = false;
-                return Command::batch(vec![
-                    info_connection_error(message.clone()),
-                    dialog_connection_error(message),
-                ]);
+                self.info_connection_error(message.clone());
+                self.dialog_connection_error(message);
             }
         }
 
@@ -248,9 +259,7 @@ impl Application for Piggui {
 
         if self.connect_dialog.show_modal {
             Modal::new(content, self.connect_dialog.view())
-                .on_blur(Message::ConnectDialog(
-                    ConnectDialogMessage::HideConnectDialog,
-                ))
+                .on_blur(Message::ConnectDialog(HideConnectDialog))
                 .into()
         } else {
             self.toast_handler.view(content.into())
@@ -274,36 +283,6 @@ impl Application for Piggui {
 
         Subscription::batch(subscriptions)
     }
-}
-
-fn hide_dialog() -> Command<Message> {
-    Command::perform(empty(), |_| Message::ConnectDialog(HideConnectDialog))
-}
-
-/// Send a message about successful connection to the info bar
-fn info_connected(message: String) -> Command<Message> {
-    Command::perform(empty(), move |_| {
-        InfoRow(ShowStatusMessage(MessageMessage::Info(message)))
-    })
-}
-
-/// Send a connection error message to the Info Bar
-fn info_connection_error(message: String) -> Command<Message> {
-    Command::perform(empty(), move |_| {
-        InfoRow(ShowStatusMessage(MessageMessage::Error(
-            "Connection Error".to_string(),
-            format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
-        )))
-    })
-}
-
-/// Send a connection error message to the connection dialog
-fn dialog_connection_error(message: String) -> Command<Message> {
-    Command::perform(empty(), move |_| {
-        ConnectDialog(ConnectDialogMessage::ConnectionError(format!(
-            "Error connecting: '{message}'. Check networking and try again"
-        )))
-    })
 }
 
 /// Determine the hardware target based on command line options

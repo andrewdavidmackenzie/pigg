@@ -88,10 +88,14 @@ impl MessageRow {
         }
     }
 
+    pub fn add_message(&mut self, msg: MessageMessage) {
+        self.message_queue.add_message(msg);
+    }
+
     /// Update the state and do actions depending on the [MessageRowMessage] sent
     pub fn update(&mut self, message: MessageRowMessage) -> Command<Message> {
         match message {
-            MessageRowMessage::ShowStatusMessage(msg) => self.message_queue.add_message(msg),
+            MessageRowMessage::ShowStatusMessage(msg) => self.add_message(msg),
             MessageRowMessage::ClearStatusMessage => self.message_queue.clear_message(),
         }
 
