@@ -22,6 +22,8 @@ pub struct ToastHandler {
 }
 
 impl ToastHandler {
+    async fn empty() {}
+
     pub fn new() -> Self {
         Self {
             toasts: Vec::new(),
@@ -73,7 +75,7 @@ impl ToastHandler {
                 if self.showing_toast {
                     // Close the existing toast if `showing_toast` is true
                     if let Some(index) = self.get_latest_toast_index() {
-                        return Command::perform(crate::empty(), move |_| {
+                        return Command::perform(Self::empty(), move |_| {
                             Message::Toast(ToastMessage::Close(index))
                         });
                     }
@@ -124,8 +126,6 @@ impl ToastHandler {
         .timeout(self.timeout_secs)
         .into()
     }
-
-    async fn empty() {}
 
     pub fn clear_last_toast() -> Command<Message> {
         Command::perform(Self::empty(), |_| {

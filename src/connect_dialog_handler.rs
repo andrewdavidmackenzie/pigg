@@ -6,7 +6,7 @@ use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareTarget::Remote;
-use crate::{empty, Message};
+use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Color, Command, Element, Event};
@@ -96,6 +96,13 @@ impl ConnectDialog {
         }
     }
 
+    /// Set the error state of the dialog with a message to display
+    pub fn set_error(&mut self, error: String) {
+        self.iroh_connection_error = error;
+    }
+
+    async fn empty() {}
+
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         return match message {
             ConnectButtonPressed(node_id, url) => {
@@ -124,7 +131,7 @@ impl ConnectDialog {
                             }
                         };
 
-                        return Command::perform(empty(), move |_| {
+                        return Command::perform(Self::empty(), move |_| {
                             Message::ConnectRequest(Remote(nodeid, relay_url))
                         });
                     }
@@ -184,8 +191,8 @@ impl ConnectDialog {
             }
 
             ConnectionError(error) => {
-                self.iroh_connection_error = error;
-                self.disable_widgets = false;
+                self.set_error(error);
+                self.enable_widgets_and_hide_spinner();
                 Command::none()
             }
         };
@@ -237,7 +244,7 @@ impl ConnectDialog {
                 .padding(10)
                 .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
-        let dialog_container = if self.disable_widgets {
+        if self.disable_widgets {
             container(
                 column![column![
                     text("Connect To Remote Pi").size(20),
@@ -262,6 +269,7 @@ impl ConnectDialog {
             .style(MODAL_CONTAINER_STYLE.get_container_style())
             .width(520)
             .padding(15)
+            .into()
         } else {
             container(
                 column![column![
@@ -295,12 +303,11 @@ impl ConnectDialog {
             .style(MODAL_CONTAINER_STYLE.get_container_style())
             .width(520)
             .padding(15)
-        };
-
-        dialog_container.into()
+            .into()
+        }
     }
 
-    fn hide_modal(&mut self) {
+    pub fn hide_modal(&mut self) {
         self.show_modal = false; // Hide the dialog
         self.node_id.clear(); // Clear the node id, on Cancel
         self.iroh_connection_error.clear(); // Clear the error, on Cancel

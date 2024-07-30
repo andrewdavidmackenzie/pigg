@@ -2,7 +2,7 @@ use crate::connect_dialog_handler::ConnectDialogMessage;
 use crate::styles::background::SetAppearance;
 use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
-use crate::views::message_row::{MessageRow, MessageRowMessage};
+use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
@@ -42,6 +42,11 @@ impl InfoRow {
         Self {
             message_row: MessageRow::new(),
         }
+    }
+
+    /// Add a message to the queue of messages to display in the message_row
+    pub fn add_info_message(&mut self, msg: MessageMessage) {
+        self.message_row.add_message(msg);
     }
 
     /// Update state based on [MessageRowMessage] messages received
