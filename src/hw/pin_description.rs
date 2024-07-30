@@ -43,7 +43,7 @@ impl PinDescriptionSet {
 
     /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
     /// ascending order of [BCMPinNumber]
-    #[cfg(feature = "gui")]
+    #[cfg(any(feature = "gui", test))]
     pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
         let mut pins = self
             .pins
@@ -62,5 +62,121 @@ impl Display for PinDescription {
         writeln!(f, "\tBCM Pin #: {:?}", self.bcm)?;
         writeln!(f, "\tName Pin #: {}", self.name)?;
         writeln!(f, "\tFunctions #: {:?}", self.options)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
+    use crate::hw::pin_function::PinFunction;
+    use std::borrow::Cow;
+
+    #[test]
+    fn display_pin_description() {
+        let pin = PinDescription {
+            bpn: 7,
+            bcm: Some(11),
+            name: Cow::from("Fake Pin"),
+            options: Cow::from(vec![]),
+        };
+
+        println!("Pin: {}", pin);
+    }
+
+    #[test]
+    fn sort_bcm() {
+        let pin7 = PinDescription {
+            bpn: 7,
+            bcm: Some(11),
+            name: Cow::from("Fake Pin"),
+            options: Cow::from(vec![PinFunction::Input(None), PinFunction::Output(None)]),
+        };
+
+        let pin8 = PinDescription {
+            bpn: 8,
+            bcm: Some(1),
+            name: Cow::from("Fake Pin"),
+            options: Cow::from(vec![PinFunction::Input(None), PinFunction::Output(None)]),
+        };
+
+        let pins = [
+            pin7.clone(),
+            pin8,
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+        ];
+        let pin_set = PinDescriptionSet::new(pins);
+        assert_eq!(
+            pin_set
+                .pins
+                .first()
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            11
+        );
+        assert_eq!(
+            pin_set
+                .pins
+                .get(1)
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            1
+        );
+        assert_eq!(
+            pin_set
+                .bcm_pins_sorted()
+                .first()
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            1
+        );
+        assert_eq!(
+            pin_set
+                .bcm_pins_sorted()
+                .get(1)
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            11
+        );
     }
 }
