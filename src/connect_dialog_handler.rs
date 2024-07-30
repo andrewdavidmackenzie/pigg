@@ -332,3 +332,73 @@ impl ConnectDialog {
         self.show_spinner = false;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_show_connect_dialog() {
+        let mut connect_dialog = ConnectDialog::new();
+        assert!(!connect_dialog.show_modal);
+
+        let _ = connect_dialog.update(ShowConnectDialog);
+        assert!(connect_dialog.show_modal);
+    }
+
+    #[test]
+    fn test_hide_connect_dialog() {
+        let mut connect_dialog = ConnectDialog::new();
+        connect_dialog.show_modal = true;
+
+        let _ = connect_dialog.update(HideConnectDialog);
+        assert!(!connect_dialog.show_modal);
+        assert!(connect_dialog.nodeid.is_empty());
+        assert!(connect_dialog.relay_url.is_empty());
+        assert!(connect_dialog.iroh_connection_error.is_empty());
+        assert!(!connect_dialog.show_spinner);
+        assert!(!connect_dialog.disable_widgets);
+    }
+
+    #[test]
+    fn test_node_id_entered() {
+        let mut connect_dialog = ConnectDialog::new();
+        let node_id = "test_node_id".to_string();
+
+        let _ = connect_dialog.update(NodeIdEntered(node_id.clone()));
+        assert_eq!(connect_dialog.nodeid, node_id);
+    }
+
+    #[test]
+    fn test_relay_url_entered() {
+        let mut connect_dialog = ConnectDialog::new();
+        let relay_url = "test_relay_url".to_string();
+
+        let _ = connect_dialog.update(RelayURL(relay_url.clone()));
+        assert_eq!(connect_dialog.relay_url, relay_url);
+    }
+
+    #[test]
+    fn test_connect_button_pressed_empty_node_id() {
+        let mut connect_dialog = ConnectDialog::new();
+        let _ = connect_dialog.update(ConnectButtonPressed("".to_string(), "".to_string()));
+        assert_eq!(connect_dialog.iroh_connection_error, "Please Enter Node Id");
+    }
+
+    #[test]
+    fn test_connect_button_pressed_invalid_node_id() {
+        let mut connect_dialog = ConnectDialog::new();
+        let invalid_node_id = "invalid_node_id".to_string();
+
+        let _ = connect_dialog.update(ConnectButtonPressed(invalid_node_id, "".to_string()));
+        assert!(!connect_dialog.iroh_connection_error.is_empty());
+    }
+
+    #[test]
+    fn test_connection_error() {
+        let mut connect_dialog = ConnectDialog::new();
+        let error_message = "Connection failed".to_string();
+
+        let _ = connect_dialog.update(ConnectionError(error_message.clone()));
+        assert_eq!(connect_dialog.iroh_connection_error, error_message);
+    }
+}
