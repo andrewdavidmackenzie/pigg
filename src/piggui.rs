@@ -21,6 +21,7 @@ use std::str::FromStr;
 use views::pin_state::PinState;
 
 pub mod connect_dialog_handler;
+#[cfg(feature = "files")]
 mod file_helper;
 #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
 pub mod hardware_subscription;
