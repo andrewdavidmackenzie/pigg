@@ -29,7 +29,6 @@ impl Display for HardwareConfig {
 
 impl HardwareConfig {
     /// Load a new GPIOConfig from the file named `filename`
-    // TODO take AsPath/AsRef etc
     pub fn load(filename: &str) -> io::Result<HardwareConfig> {
         let file = File::open(filename)?;
         let reader = BufReader::new(file);
