@@ -61,12 +61,12 @@ const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
-    pub node_id: String,
-    pub relay_url: String,
-    pub iroh_connection_error: String,
+    nodeid: String,
+    relay_url: String,
+    iroh_connection_error: String,
     pub show_modal: bool,
-    pub show_spinner: bool,
-    pub disable_widgets: bool,
+    show_spinner: bool,
+    disable_widgets: bool,
 }
 #[derive(Clone, Debug)]
 pub enum ConnectDialogMessage {
@@ -87,7 +87,7 @@ impl Default for ConnectDialog {
 impl ConnectDialog {
     pub fn new() -> Self {
         Self {
-            node_id: String::new(),
+            nodeid: String::new(),
             relay_url: String::new(),
             iroh_connection_error: String::new(),
             show_modal: false,
@@ -181,7 +181,7 @@ impl ConnectDialog {
             }
 
             NodeIdEntered(node_id) => {
-                self.node_id = node_id;
+                self.nodeid = node_id;
                 Command::none()
             }
 
@@ -229,7 +229,7 @@ impl ConnectDialog {
                     Button::new(Text::new("Connect"))
                         .on_press(Message::ConnectDialog(
                             ConnectDialogMessage::ConnectButtonPressed(
-                                self.node_id.clone(),
+                                self.nodeid.clone(),
                                 self.relay_url.clone(),
                             ),
                         ))
@@ -253,7 +253,7 @@ impl ConnectDialog {
                         text(self.iroh_connection_error.clone())
                             .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                         text("Node Id").size(12),
-                        text_input("Enter node id", &self.node_id).padding(5),
+                        text_input("Enter node id", &self.nodeid).padding(5),
                     ]
                     .spacing(10),
                     column![
@@ -279,7 +279,7 @@ impl ConnectDialog {
                         text(self.iroh_connection_error.clone())
                             .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                         text("Node Id").size(12),
-                        text_input("Enter node id", &self.node_id)
+                        text_input("Enter node id", &self.nodeid)
                             .on_input(|input| Message::ConnectDialog(
                                 ConnectDialogMessage::NodeIdEntered(input)
                             ))
@@ -309,7 +309,7 @@ impl ConnectDialog {
 
     pub fn hide_modal(&mut self) {
         self.show_modal = false; // Hide the dialog
-        self.node_id.clear(); // Clear the node id, on Cancel
+        self.nodeid.clear(); // Clear the node id, on Cancel
         self.iroh_connection_error.clear(); // Clear the error, on Cancel
         self.relay_url.clear(); // Clear the relay url, on Cancel
         self.show_spinner = false; // Hide spinner, on Cancel
