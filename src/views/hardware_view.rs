@@ -273,6 +273,13 @@ impl HardwareView {
         }
     }
 
+    /// Apply a new config to the connected hardware
+    pub fn new_config(&mut self, new_config: HardwareConfig) {
+        self.hardware_config = new_config;
+        self.set_pin_states_after_load();
+        self.update_hw_config();
+    }
+
     pub fn update(&mut self, message: HardwareViewMessage) -> Command<Message> {
         match message {
             UpdateCharts => {
@@ -290,9 +297,7 @@ impl HardwareView {
             }
 
             NewConfig(config) => {
-                self.hardware_config = config;
-                self.set_pin_states_after_load();
-                self.update_hw_config();
+                self.new_config(config);
             }
 
             HardwareSubscription(event) => match event {
