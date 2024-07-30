@@ -1,13 +1,17 @@
 #![deny(clippy::unwrap_used)]
-use crate::hw::pin_function::PinFunction;
-use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
-use crate::hw::{LevelChange, PIGLET_ALPN};
+
+use std::env::current_exe;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::process::exit;
+use std::str::FromStr;
+use std::time::Duration;
+use std::{env, fs, io, process};
+
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
 use futures_lite::StreamExt;
-use hw::config::HardwareConfig;
-use hw::Hardware;
 use iroh_net::endpoint::Connection;
 use iroh_net::relay::RelayUrl;
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
@@ -17,18 +21,18 @@ use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
     ServiceUninstallCtx,
 };
-use std::env::current_exe;
-use std::fs::File;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::process::exit;
-use std::str::FromStr;
-use std::time::Duration;
-use std::{env, fs, io, process};
 use sysinfo::{Process, System};
 use tracing::Level;
 use tracing_subscriber::filter::{Directive, LevelFilter};
 use tracing_subscriber::EnvFilter;
+
+use hw::config::HardwareConfig;
+use hw::Hardware;
+
+use crate::hw::pin_function::PinFunction;
+use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
+use crate::hw::{LevelChange, PIGLET_ALPN};
 
 mod hw;
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
@@ -306,7 +310,7 @@ fn write_info_file(
     Ok(())
 }
 
-/// Apply a config change to the local hardware
+/// Apply a config change to the hardware
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
@@ -469,4 +473,43 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
     println!("service '{}' uninstalled", service_name);
 
     Ok(())
+}
+#[cfg(test)]
+mod test {
+    use std::fs;
+    use std::path::PathBuf;
+    use std::str::FromStr;
+
+    use iroh_net::relay::RelayUrl;
+    use iroh_net::NodeId;
+    use tempfile::tempdir;
+
+    #[test]
+    fn write_info_file() {
+        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let test_file = output_dir.join("test.info");
+        let nodeid = NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
+        let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
+        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+            .expect("Could not create Relay URL");
+        super::write_info_file(&test_file, &nodeid, local_addr, &relay_url)
+            .expect("Writing info file failed");
+        assert!(test_file.exists(), "File was not created as expected");
+        let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
+        assert!(piglet_info.contains(&nodeid.to_string()));
+    }
+
+    #[test]
+    fn write_info_file_non_existent() {
+        let output_dir = PathBuf::from("/foo");
+        let test_file = output_dir.join("test.info");
+        let nodeid = NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
+        let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
+        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+            .expect("Could not create Relay URL");
+        assert!(super::write_info_file(&test_file, &nodeid, local_addr, &relay_url).is_err());
+        assert!(!test_file.exists(), "File was created!");
+    }
 }
