@@ -49,10 +49,10 @@ For now, while we need you to build from source:
 - Use `make run`
 
 One macOS/linux/Windows this will build for the local machine
-(using `cargo run --bin piggui --features "gui","fake_hw"`), and start `piggui` with a fake hardware backend.
+(using `cargo run --bin piggui --features "fake_hw"`), and start `piggui` with a fake hardware backend.
 
 If you run that on a Raspberry Pi, it will detect that, and build for the Pi
-(using `cargo run --bin piggui --features "gui","pi_hw"`), with the real Pi GPIO hardware backend.
+(using `cargo run --bin piggui --features "pi_hw"`), with the real Pi GPIO hardware backend.
 
 `piggui` takes an optional filename argument, to load a config from. If there is an error
 loading a config, the default config will be used.
@@ -61,11 +61,11 @@ To do this you can use the equivalent of what `make run` does, adding the filena
 
 On a Pi:
 
-- `cargo run --bin piggui --features "gui","pi_hw" -- <filename>`
+- `cargo run --bin piggui --features "pi_hw" -- <filename>`
 
 On macOS/Linux/Window:
 
-- On macOS, linux or Windows: `cargo run --bin piggui --features "gui","fake_hw" -- <filename>`
+- On macOS, linux or Windows: `cargo run --bin piggui --features "fake_hw" -- <filename>`
 
 ### Connecting Piggui to a remove Piglet
 
@@ -76,9 +76,9 @@ When building from source, run `piggui` thus (where $nodeid is the value of the 
 
 On a Pi:
 
-- `cargo run --bin piggui --features "gui" -- --nodeid $nodeid` (builds with no hardware backend)
-- `cargo run --bin piggui --features "gui","pi_hw" -- --nodeid $nodeid` (built with a Pi hardware backend)
+- `cargo run --bin piggui -- --nodeid $nodeid` (builds with no hardware backend)
+- `cargo run --bin piggui --features "pi_hw" -- --nodeid $nodeid` (built with a Pi hardware backend)
 
 On macOS/Linux/Windows:
 
-- `cargo run --bin piggui --features "gui" -- --nodeid $nodeid`
+- `cargo run --bin piggui -- --nodeid $nodeid`
