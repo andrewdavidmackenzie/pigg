@@ -64,3 +64,21 @@ impl Display for PinDescription {
         writeln!(f, "\tFunctions #: {:?}", self.options)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::hw::pin_description::PinDescription;
+    use std::borrow::Cow;
+
+    #[test]
+    fn display_pin_description() {
+        let pin = PinDescription {
+            bpn: 7,
+            bcm: Some(11),
+            name: Cow::from("Fake Pin"),
+            options: Cow::from(vec![]),
+        };
+
+        println!("Pin: {}", pin);
+    }
+}
