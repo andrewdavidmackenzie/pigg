@@ -187,7 +187,7 @@ ssh:
 .PHONY: web-build
 web-build:
 	rustup target add wasm32-unknown-unknown
-	cargo build --bin piggui --default-features=false --features "fake_hw" --target wasm32-unknown-unknown
+	cargo build --bin piggui --no-default-features --features "gui","fake_hw" --target wasm32-unknown-unknown
 
 .PHONY: web-run
 web-run: web-build
