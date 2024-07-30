@@ -68,6 +68,7 @@ pub struct ConnectDialog {
     show_spinner: bool,
     disable_widgets: bool,
 }
+
 #[derive(Clone, Debug)]
 pub enum ConnectDialogMessage {
     NodeIdEntered(String),
