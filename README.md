@@ -119,9 +119,13 @@ many have GH issues.
 
 ## Installing
 
-Until we complete some work to produce pre-built binaries for supported platforms, and ways to install them
-directly, to install `piggui` and `piglet` you will have to build and install them from source.
-See the section on that below for details.
+We have work planned to produce pre-built binaries for supported platforms, and ways to install them
+directly.
+
+Prior to that, to install `piggui` and `piglet` you will have to build from source, either using `cargo install`,
+or `cargo build` or `make` from a clone of the repo or a download of a release source tarball/zip.
+
+See the section below for details.
 
 This is an area where we welcome ideas, input and contributions - please post your thoughts to the
 [Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions)
