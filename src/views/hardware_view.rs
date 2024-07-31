@@ -13,7 +13,7 @@ use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
 
-#[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
+#[cfg(feature = "hardware")]
 use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
@@ -379,7 +379,7 @@ impl HardwareView {
         match hardware_target {
             NoHW => {}
             Local => {
-                #[cfg(any(feature = "fake_hw", feature = "pi_hw"))]
+                #[cfg(feature = "hardware")]
                 subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
             }
             Remote(nodeid, relay) => {
