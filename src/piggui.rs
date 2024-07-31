@@ -205,7 +205,15 @@ impl Application for Piggui {
             }
 
             ConnectRequest(new_target) => {
-                self.connect_dialog.disable_widgets_and_load_spinner();
+                match new_target {
+                    HardwareTarget::NoHW => {
+                        self.connect_dialog.enable_widgets_and_hide_spinner();
+                        self.info_connected("Disconnected from hardware".to_string());
+                    }
+                    _ => {
+                        self.connect_dialog.disable_widgets_and_load_spinner();
+                    }
+                }
                 self.hardware_target = new_target;
             }
 
