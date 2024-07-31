@@ -42,7 +42,7 @@ pub fn item<'a>(
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
 
-    #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
+    #[cfg(feature = "hardware")]
     let connect_local: Item<'a, Message, _, _> = Item::new(
         Button::new("Use local GPIO")
             .on_press(Message::ConnectRequest(HardwareTarget::Local))
@@ -53,7 +53,7 @@ pub fn item<'a>(
     match hardware_target {
         NoHW => {
             menu_items.push(connect_remote);
-            #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
+            #[cfg(feature = "hardware")]
             menu_items.push(connect_local);
         }
         HardwareTarget::Local => {
@@ -62,7 +62,7 @@ pub fn item<'a>(
         }
         Remote(_, _) => {
             menu_items.push(disconnect);
-            #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
+            #[cfg(feature = "hardware")]
             menu_items.push(connect_local);
         }
     }
