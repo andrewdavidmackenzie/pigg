@@ -205,20 +205,25 @@ impl Application for Piggui {
             }
 
             ConnectRequest(new_target) => {
-                // Load spinner and disable widgets when connection requested
-                self.connect_dialog.disable_widgets_and_load_spinner();
+                match new_target {
+                    HardwareTarget::NoHW => {
+                        self.connect_dialog.enable_widgets_and_hide_spinner();
+                        self.info_connected("Disconnected from hardware".to_string());
+                    }
+                    _ => {
+                        self.connect_dialog.disable_widgets_and_load_spinner();
+                    }
+                }
                 self.hardware_target = new_target;
             }
 
             Connected => {
-                // Hide spinner and enable widgets when connected
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.connect_dialog.hide_modal();
                 self.info_connected("Connected to hardware".to_string());
             }
 
             ConnectionError(message) => {
-                // Hide spinner and enable widgets when any connection error
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.info_connection_error(message.clone());
                 self.dialog_connection_error(message);
@@ -244,7 +249,11 @@ impl Application for Piggui {
     */
     fn view(&self) -> Element<Message> {
         let main_col = Column::new()
-            .push(main_row::view(&self.hardware_view, &self.layout_selector))
+            .push(main_row::view(
+                &self.hardware_view,
+                &self.layout_selector,
+                &self.hardware_target,
+            ))
             .push(self.info_row.view(
                 self.unsaved_changes,
                 &self.hardware_view,

@@ -9,6 +9,7 @@ use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
+use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -162,7 +163,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum HardwareTarget {
     #[cfg_attr(not(any(feature = "pi_hw", feature = "fake_hw")), default)]
     NoHW,
@@ -342,18 +343,26 @@ impl HardwareView {
         Command::none()
     }
 
-    pub fn view(&self, layout: Layout) -> Element<HardwareViewMessage> {
+    pub fn view(
+        &self,
+        layout: Layout,
+        hardware_target: &HardwareTarget,
+    ) -> Element<HardwareViewMessage> {
+        if hardware_target == &NoHW {
+            return Row::new().into();
+        }
+
         if let Some(hw_description) = &self.hardware_description {
             let pin_layout = match layout {
                 Layout::BoardLayout => self.board_pin_layout_view(&hw_description.pins),
                 Layout::BCMLayout => self.bcm_pin_layout_view(&hw_description.pins),
             };
 
-            pin_layout
-        } else {
-            // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
-            Row::new().into()
+            return pin_layout;
         }
+
+        // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
+        Row::new().into()
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware

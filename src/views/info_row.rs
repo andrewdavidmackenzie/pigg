@@ -1,34 +1,32 @@
-use crate::connect_dialog_handler::ConnectDialogMessage;
+use iced::widget::{container, Row};
+use iced::{Color, Command, Element, Length};
+use iced_aw::menu;
+use iced_aw::menu::{MenuBar, StyleSheet};
+use iced_aw::style::MenuBarStyle;
+use iced_futures::core::Background;
+use iced_futures::Subscription;
+
 use crate::styles::background::SetAppearance;
 use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
-use crate::views::{hardware_button, unsaved_status};
+use crate::views::{hardware_menu, unsaved_status};
 use crate::Message;
-use iced::widget::{container, Button, Row, Text};
-use iced::{Color, Command, Element, Length};
-use iced_aw::menu::{Item, StyleSheet};
-use iced_aw::style::MenuBarStyle;
-use iced_aw::{menu, menu_bar};
-use iced_futures::core::Background;
-use iced_futures::Subscription;
 
-const MENU_WIDTH: f32 = 200.0;
-
-const ENABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+pub(crate) const MENU_BAR_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::TRANSPARENT,
-    text_color: Color::WHITE,
+    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
     hovered_bg_color: Color::TRANSPARENT,
     hovered_text_color: Color::WHITE,
     border_radius: 4.0,
 };
 
-const DISABLED_MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+pub(crate) const MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::TRANSPARENT,
-    text_color: Color::from_rgb(0.5, 0.5, 0.5), // Medium grey text color
-    hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2),
-    hovered_text_color: Color::from_rgb(0.5, 0.5, 0.5),
+    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+    hovered_bg_color: Color::TRANSPARENT,
+    hovered_text_color: Color::WHITE,
     border_radius: 4.0,
 };
 
@@ -61,50 +59,9 @@ impl InfoRow {
         hardware_view: &'a HardwareView,
         hardware_target: &HardwareTarget,
     ) -> Element<'a, Message> {
-        let menu_bar_button_style = ButtonStyle {
-            bg_color: Color::TRANSPARENT,
-            text_color: Color::new(0.7, 0.7, 0.7, 1.0),
-            hovered_bg_color: Color::TRANSPARENT,
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
-        };
+        let hardware_root = hardware_menu::item(hardware_view, hardware_target);
 
-        let model = match hardware_view.hw_model() {
-            None => "No Hardware connected".to_string(),
-            Some(model) => match hardware_target {
-                HardwareTarget::Local => format!("{}@Local", model),
-                HardwareTarget::Remote(_, _) => format!("{}@Remote", model),
-                HardwareTarget::NoHW => "No Hardware connected".to_string(),
-            },
-        };
-
-        let mb = menu_bar!((
-            Button::new(Text::new(model))
-                .style(menu_bar_button_style.get_button_style())
-                .on_press(Message::MenuBarButtonClicked),
-            {
-                // Conditionally render menu items based on hardware features
-                menu!((menu_button(
-                    "Use local Pi Hardware".to_string(),
-                    cfg!(any(feature = "pi_hw", feature = "fake_hw")),
-                ))(
-                    Button::new("Connect to remote Pi")
-                        .width(Length::Fill)
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::ShowConnectDialog
-                        ))
-                        .style(ENABLED_MENU_BUTTON_STYLE.get_button_style())
-                )(
-                    Button::new("Search for Pi's on local network")
-                        .width(Length::Fill)
-                        .style(DISABLED_MENU_BUTTON_STYLE.get_button_style())
-                )(hardware_button::view()))
-                .width(MENU_WIDTH)
-                .spacing(2.0)
-                .offset(10.0)
-            }
-        ))
-        .style(|theme: &iced::Theme| menu::Appearance {
+        let mb = MenuBar::new(vec![hardware_root]).style(|theme: &iced::Theme| menu::Appearance {
             bar_background: Background::Color(Color::TRANSPARENT),
             menu_shadow: iced::Shadow {
                 color: Color::BLACK,
@@ -132,16 +89,4 @@ impl InfoRow {
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
         self.message_row.subscription()
     }
-}
-
-fn menu_button(text: String, enabled: bool) -> Button<'static, Message> {
-    let button_style = if enabled {
-        ENABLED_MENU_BUTTON_STYLE.get_button_style()
-    } else {
-        DISABLED_MENU_BUTTON_STYLE.get_button_style()
-    };
-
-    Button::new(Text::new(text))
-        .style(button_style)
-        .width(Length::Fill)
 }
