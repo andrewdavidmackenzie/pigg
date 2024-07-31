@@ -108,7 +108,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
     let my_pid = process::id();
     let sys = System::new_all();
     let instances: Vec<&Process> = sys
-        .processes_by_exact_name(exec_name)
+        .processes_by_exact_name(exec_name.as_ref())
         .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)
         .collect();
     if let Some(process) = instances.first() {
