@@ -77,6 +77,7 @@ pub enum ConnectDialogMessage {
     ConnectButtonPressed(String, String),
     HideConnectDialog,
     ShowConnectDialog,
+    ConnectLocal,
     ConnectionError(String),
 }
 impl Default for ConnectDialog {
@@ -194,6 +195,11 @@ impl ConnectDialog {
             ConnectionError(error) => {
                 self.set_error(error);
                 self.enable_widgets_and_hide_spinner();
+                Command::none()
+            }
+
+            ConnectDialogMessage::ConnectLocal => {
+                // TODO
                 Command::none()
             }
         };

@@ -25,6 +25,7 @@ pi_hw = ["rppal"]
 fake_hw = ["rand"]
 gui = ["iced", "iced_futures", "plotters-iced", "plotters", "iced_aw", "lyon_algorithms/default", "once_cell/default"]
 files = ["rfd"]
+discovery = []
 
 [dependencies]
 # use in piggui and piglet

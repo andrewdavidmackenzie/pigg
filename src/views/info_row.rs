@@ -8,9 +8,9 @@ use crate::views::{hardware_button, unsaved_status};
 use crate::Message;
 use iced::widget::{container, Button, Row, Text};
 use iced::{Color, Command, Element, Length};
-use iced_aw::menu::{Item, StyleSheet};
+use iced_aw::menu;
+use iced_aw::menu::{Item, Menu, MenuBar, StyleSheet};
 use iced_aw::style::MenuBarStyle;
-use iced_aw::{menu, menu_bar};
 use iced_futures::core::Background;
 use iced_futures::Subscription;
 
@@ -78,33 +78,46 @@ impl InfoRow {
             },
         };
 
-        let mb = menu_bar!((
+        // Conditionally render menu items based on hardware features
+        let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
+
+        #[cfg(any(feature = "pi_hw", feature = "fake_hw"))]
+        menu_items.push(Item::new(
+            Button::new("Use local GPIO")
+                .on_press(Message::ConnectDialog(ConnectDialogMessage::ConnectLocal))
+                .style(ENABLED_MENU_BUTTON_STYLE.get_button_style())
+                .width(Length::Fill),
+        ));
+
+        menu_items.push(Item::new(
+            Button::new("Connect to remote Pi...")
+                .width(Length::Fill)
+                .on_press(Message::ConnectDialog(
+                    ConnectDialogMessage::ShowConnectDialog,
+                ))
+                .style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
+        ));
+
+        #[cfg(feature = "discovery")]
+        menu_items.push(Item::new(
+            Button::new("Search for Pi's on local network...")
+                .width(Length::Fill)
+                .style(ENABLED_MENU_BUTTON_STYLE.get_button_style()),
+        ));
+
+        menu_items.push(Item::new(hardware_button::view()));
+
+        let hardware_root = Item::with_menu(
             Button::new(Text::new(model))
                 .style(menu_bar_button_style.get_button_style())
                 .on_press(Message::MenuBarButtonClicked),
-            {
-                // Conditionally render menu items based on hardware features
-                menu!((menu_button(
-                    "Use local Pi Hardware".to_string(),
-                    cfg!(any(feature = "pi_hw", feature = "fake_hw")),
-                ))(
-                    Button::new("Connect to remote Pi")
-                        .width(Length::Fill)
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::ShowConnectDialog
-                        ))
-                        .style(ENABLED_MENU_BUTTON_STYLE.get_button_style())
-                )(
-                    Button::new("Search for Pi's on local network")
-                        .width(Length::Fill)
-                        .style(DISABLED_MENU_BUTTON_STYLE.get_button_style())
-                )(hardware_button::view()))
+            Menu::new(menu_items)
                 .width(MENU_WIDTH)
                 .spacing(2.0)
-                .offset(10.0)
-            }
-        ))
-        .style(|theme: &iced::Theme| menu::Appearance {
+                .offset(10.0),
+        );
+
+        let mb = MenuBar::new(vec![hardware_root]).style(|theme: &iced::Theme| menu::Appearance {
             bar_background: Background::Color(Color::TRANSPARENT),
             menu_shadow: iced::Shadow {
                 color: Color::BLACK,
@@ -132,16 +145,4 @@ impl InfoRow {
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
         self.message_row.subscription()
     }
-}
-
-fn menu_button(text: String, enabled: bool) -> Button<'static, Message> {
-    let button_style = if enabled {
-        ENABLED_MENU_BUTTON_STYLE.get_button_style()
-    } else {
-        DISABLED_MENU_BUTTON_STYLE.get_button_style()
-    };
-
-    Button::new(Text::new(text))
-        .style(button_style)
-        .width(Length::Fill)
 }
