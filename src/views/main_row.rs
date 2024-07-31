@@ -1,5 +1,5 @@
 use crate::views::configuration_column;
-use crate::views::hardware_view::HardwareView;
+use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_selector::LayoutSelector;
 use crate::Message;
 use iced::widget::{container, Column, Row};
@@ -9,6 +9,7 @@ use iced::{Alignment, Element, Length};
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     layout_selector: &'a LayoutSelector,
+    hardware_target: &'a HardwareTarget,
 ) -> Element<'a, Message> {
     let mut main_row = Row::new();
 
@@ -24,7 +25,7 @@ pub fn view<'a>(
         Column::new()
             .push(
                 hardware_view
-                    .view(layout_selector.get())
+                    .view(layout_selector.get(), hardware_target)
                     .map(Message::Hardware),
             )
             .align_items(Alignment::Center)
