@@ -24,7 +24,7 @@ pub(crate) const MENU_BAR_BUTTON_STYLE: ButtonStyle = ButtonStyle {
 
 pub(crate) const MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::TRANSPARENT,
-    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+    text_color: Color::WHITE,
     hovered_bg_color: Color::TRANSPARENT,
     hovered_text_color: Color::WHITE,
     border_radius: 4.0,
