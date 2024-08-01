@@ -14,6 +14,8 @@ pub mod config;
 /// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
+// TODO do this by having build script detect pi and emitting a feature
+// TODO change method to just modify path to hw module fake/pi
 #[cfg(not(all(target_os = "linux", target_env = "gnu")))]
 mod fake_hw;
 #[cfg(all(target_os = "linux", target_env = "gnu"))]
