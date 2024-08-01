@@ -95,7 +95,7 @@ impl Hardware for PiHW {
         match pin_function {
             PinFunction::Input(pull) => {
                 let pin = Gpio::new()
-                    .unwrap()
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
                     .get(bcm_pin_number)
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
@@ -114,7 +114,7 @@ impl Hardware for PiHW {
             }
             PinFunction::Output(value) => {
                 let pin = Gpio::new()
-                    .unwrap()
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
                     .get(bcm_pin_number)
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
                 let output_pin = match value {
