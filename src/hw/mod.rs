@@ -11,25 +11,39 @@ use crate::hw::pin_function::PinFunction;
 
 pub mod config;
 
-/// There are two implementations of [`Hardware`] trait:
-/// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
-/// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
-// TODO change method to just modify path to hw module fake/pi
-#[cfg(not(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-)))]
-mod fake_hw;
-#[cfg(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-))]
-mod pi_hw;
+/// There are two implementations of the `hw_imp` module that has the `HW` struct that
+/// implements the [`Hardware`] trait:
+/// * fake_hw.rs - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
+/// * pi_hw.rs - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
+///
+/// If we are building on a platform (arm, linux, gnu) that is compatible with a Pi platform
+/// (e.g. "aarch64" for Pi4/400, "arm" (arm7) for Pi3B) then build a binary that includes the
+/// real `pi_hw` version and that would work wif deployed on a real Raspberry Pi. There may
+/// be other arm-based computers out there that support linux and are built using gnu for libc
+/// that do not have Raspberry Pi hardware. This would build for them, and then they will fail
+/// at run-time when trying to access drivers and hardware for GPIO.
+#[cfg_attr(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    path = "pi_hw.rs"
+)]
+#[cfg_attr(
+    not(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    )),
+    path = "fake_hw.rs"
+)]
+mod hw_imp;
 
 pub(crate) mod pin_description;
+
 mod pin_descriptions;
+
 pub mod pin_function;
 
 /// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number
@@ -44,22 +58,8 @@ pub type PinLevel = bool;
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
-#[cfg(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-))]
 pub fn get() -> impl Hardware {
-    pi_hw::get()
-}
-
-#[cfg(not(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-)))]
-pub fn get() -> impl Hardware {
-    fake_hw::get()
+    hw_imp::get()
 }
 
 /// This enum is for hardware config changes initiated in the GUI by the user,
