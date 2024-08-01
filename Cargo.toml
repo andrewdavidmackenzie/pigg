@@ -49,7 +49,6 @@ iced = { version = "0.12.1", default-features = false, features = ["tokio", "deb
 iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", "menu"] }
 iced_futures = { version = "0.12.0", default-features = false }
 iced_native = { version = "0.10.3", default-features = false }
-rfd = { version = "0.14.1", optional = true }
 plotters-iced = { version = "0.10", default-features = false }
 plotters = { version = "0.3", default_features = false, features = [
     "chrono",
@@ -63,7 +62,7 @@ lyon_algorithms = "1.0"
 [dev-dependencies]
 tempfile = "3"
 
-[target.'cfg(not(target_arch = "wasm32")'.dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.14.1"
 
 [target.aarch64-unknown-linux-gnu.dependencies]
