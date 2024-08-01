@@ -16,9 +16,9 @@ pub mod config;
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
 // TODO do this by having build script detect pi and emitting a feature
 // TODO change method to just modify path to hw module fake/pi
-#[cfg(not(all(target_os = "linux", target_env = "gnu")))]
+#[cfg(not(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu")))]
 mod fake_hw;
-#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[cfg(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu"))]
 mod pi_hw;
 pub(crate) mod pin_description;
 mod pin_descriptions;
@@ -36,12 +36,12 @@ pub type PinLevel = bool;
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
-#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[cfg(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu"))]
 pub fn get() -> impl Hardware {
     pi_hw::get()
 }
 
-#[cfg(not(all(target_os = "linux", target_env = "gnu")))]
+#[cfg(not(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu")))]
 pub fn get() -> impl Hardware {
     fake_hw::get()
 }
