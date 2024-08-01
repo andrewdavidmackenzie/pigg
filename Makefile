@@ -28,12 +28,12 @@ clippy:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	cargo clippy --features "pi_hw" --bin piggui --tests --no-deps
-	cargo clippy --features "pi_hw" --bin piglet --tests --no-deps
+	cargo clippy  --bin piggui --tests --no-deps
+	cargo clippy  --bin piglet --tests --no-deps
 else
 	# Compile for host, targeting fake hardware
-	cargo clippy --bin piggui --features "fake_hw" --tests --no-deps
-	cargo clippy --bin piglet --features "fake_hw" --tests --no-deps
+	cargo clippy --bin piggui  --tests --no-deps
+	cargo clippy --bin piglet  --tests --no-deps
 endif
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
@@ -43,12 +43,12 @@ build:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	cargo build --bin piggui --features "pi_hw"
-	cargo build --bin piglet --features "pi_hw"
+	cargo build --bin piggui 
+	cargo build --bin piglet 
 else
 	# Compile for host, targeting fake hardware
-	cargo build --bin piggui --features "fake_hw"
-	cargo build --bin piglet --features "fake_hw"
+	cargo build --bin piggui 
+	cargo build --bin piglet 
 endif
 
 .PHONY: run
@@ -56,10 +56,10 @@ run:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	cargo run --bin piggui --features "pi_hw"
+	cargo run --bin piggui 
 else
 	# Compile for host, targeting fake hardware
-	cargo run --bin piggui --features "fake_hw"
+	cargo run --bin piggui 
 endif
 
 .PHONY: run-release
@@ -67,10 +67,10 @@ run-release:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	cargo run --bin piggui --release --features "pi_hw"
+	cargo run --bin piggui --release 
 else
 	# Compile for host, targeting fake hardware
-	cargo run --bin piggui --release --features "fake_hw"
+	cargo run --bin piggui --release 
 endif
 
 .PHONY: run-piglet
@@ -78,10 +78,10 @@ run-piglet:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	RUST_LOG=piglet=info cargo run --bin piglet --features "pi_hw"
+	RUST_LOG=piglet=info cargo run --bin piglet 
 else
 	# Compile for host, targeting fake hardware
-	RUST_LOG=piglet=info cargo run --bin piglet --features "fake_hw"
+	RUST_LOG=piglet=info cargo run --bin piglet 
 endif
 
 .PHONY: run-release-piglet
@@ -89,10 +89,10 @@ run-release-piglet:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	RUST_LOG=piglet=info cargo run --bin piglet --release --features "pi_hw"
+	RUST_LOG=piglet=info cargo run --bin piglet --release 
 else
 	# Compile for host, targeting fake hardware
-	RUST_LOG=piglet=info cargo run --bin piglet --release --features "fake_hw"
+	RUST_LOG=piglet=info cargo run --bin piglet --release 
 endif
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
@@ -101,12 +101,12 @@ release-build:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	cargo build --bin piggui --release --features "pi_hw"
-	cargo build --bin piglet --release --features "pi_hw"
+	cargo build --bin piggui --release 
+	cargo build --bin piglet --release 
 else
 	# Compile for host, targeting fake hardware
-	cargo build --bin piggui --release --features "fake_hw"
-	cargo build --bin piglet --release --features "fake_hw"
+	cargo build --bin piggui --release 
+	cargo build --bin piglet --release 
 endif
 
 # This will only test GUI tests in piggui on the local host, whatever that is
@@ -116,49 +116,49 @@ test:
 ifneq ($(PI),)
 	@echo "Detected as running on Raspberry Pi"
 	# Native compile on pi, targeting real hardware
-	cargo test --bin piggui --features "pi_hw"
-	cargo test --bin piglet --features "pi_hw"
+	cargo test --bin piggui 
+	cargo test --bin piglet 
 else
 	# Compile for host, targeting fake hardware
-	cargo test --bin piggui --features "fake_hw"
-	cargo test --bin piglet --features "fake_hw"
+	cargo test --bin piggui 
+	cargo test --bin piglet 
 endif
 
 .PHONY: cross-clippy
 cross-clippy:
 	# Cross compile for pi, targeting real hardware
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --features "pi_hw" --tests --no-deps --target=aarch64-unknown-linux-gnu
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piglet --features "pi_hw" --tests --no-deps --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piggui --tests --no-deps --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --bin piglet --tests --no-deps --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-build
 cross-build:
 	# Cross compile for pi, targeting real hardware - debug profile
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --features "pi_hw" --target=aarch64-unknown-linux-gnu
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --features "pi_hw" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-build-armv7
 cross-build-armv7:
 	# Cross compile for armv7 based architecture, targeting real hardware - debug profile
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: cross-release-build
 cross-release-build:
 	# Cross compile for pi, targeting real hardware - release profile
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-release-build-armv7
 cross-release-build-armv7:
 	# Cross compile for armv7 based architecture, targeting real hardware - release profile
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --features "pi_hw" --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piggui --release --target=armv7-unknown-linux-gnueabihf
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --bin piglet --release --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: cross-test
 cross-test:
 	# Cross compile for pi architecture, using the rppal lib that is used on real pi hw
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piggui --features "pi_hw" --target=aarch64-unknown-linux-gnu
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piglet --features "pi_hw" --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piggui --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --bin piglet --target=aarch64-unknown-linux-gnu
 
 .PHONY: copy
 copy: cross-build
@@ -187,8 +187,8 @@ ssh:
 .PHONY: web-build
 web-build:
 	rustup target add wasm32-unknown-unknown
-	cargo build --bin piggui --no-default-features --features "gui","fake_hw" --target wasm32-unknown-unknown
+	cargo build --bin piggui --no-default-features --target wasm32-unknown-unknown
 
 .PHONY: web-run
 web-run: web-build
-	trunk serve --features="fake_hw"
+	trunk serve

@@ -13,7 +13,6 @@ use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
 
-#[cfg(feature = "hardware")]
 use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
@@ -165,9 +164,8 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum HardwareTarget {
-    #[cfg_attr(not(any(feature = "pi_hw", feature = "fake_hw")), default)]
     NoHW,
-    #[cfg_attr(any(feature = "pi_hw", feature = "fake_hw"), default)]
+    #[default]
     Local,
     Remote(NodeId, Option<RelayUrl>),
 }
@@ -379,7 +377,6 @@ impl HardwareView {
         match hardware_target {
             NoHW => {}
             Local => {
-                #[cfg(feature = "hardware")]
                 subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
             }
             Remote(nodeid, relay) => {

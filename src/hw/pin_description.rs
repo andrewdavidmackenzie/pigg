@@ -43,7 +43,6 @@ impl PinDescriptionSet {
 
     /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
     /// ascending order of [BCMPinNumber]
-    #[cfg(any(feature = "gui", test))]
     pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
         let mut pins = self
             .pins

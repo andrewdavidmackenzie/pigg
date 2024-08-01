@@ -13,21 +13,14 @@ readme = "README.md"
 [[bin]]
 name = "piggui"
 path = "src/piggui.rs"
-required-features = ["gui"]
 
 [[bin]]
 name = "piglet"
 path = "src/piglet.rs"
-required-features = ["hardware"]
 
 [features]
-default = ["gui", "files"]
-pi_hw = ["rppal", "hardware"]
-fake_hw = ["rand", "hardware"]
-gui = ["iced", "iced_futures", "plotters-iced", "plotters", "iced_aw", "lyon_algorithms/default", "once_cell/default"]
-files = ["rfd"]
+default = []
 discovery = []
-hardware = []
 
 [dependencies]
 # use in piggui and piglet
@@ -35,8 +28,8 @@ chrono = { version = "0.4", default-features = false, features = ["now", "serde"
 serde = { version = "1.0.204", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.121", default-features = false, features = ["std"] }
 serde_arrays = "0.1.0"
-clap = { version = "4.5.13", default-features = false, features = ["std"] }
-rand = { version = "0.8.5", optional = true }
+clap = { version = "4.5.11", default-features = false, features = ["std"] }
+rand = { version = "0.8.5" }
 iroh-net = { version = "0.19.0" }
 anyhow = { version = "1" }
 futures-lite = { version = "2.3" }
@@ -52,13 +45,13 @@ service-manager = "0.7.1"
 sysinfo = "0.31.1"
 
 # used by piggui in GUI only
-iced = { version = "0.12.1", default-features = false, features = ["tokio", "debug", "canvas", "advanced"], optional = true }
-iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", "menu"], optional = true }
-iced_futures = { version = "0.12.0", default-features = false, optional = true }
-iced_native = { version = "0.10.3", default-features = false, optional = true }
+iced = { version = "0.12.1", default-features = false, features = ["tokio", "debug", "canvas", "advanced"] }
+iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", "menu"] }
+iced_futures = { version = "0.12.0", default-features = false }
+iced_native = { version = "0.10.3", default-features = false }
 rfd = { version = "0.14.1", optional = true }
-plotters-iced = { version = "0.10", default-features = false, optional = true }
-plotters = { version = "0.3", optional = true, default_features = false, features = [
+plotters-iced = { version = "0.10", default-features = false }
+plotters = { version = "0.3", default_features = false, features = [
     "chrono",
     "line_series",
 ] }
@@ -69,3 +62,12 @@ lyon_algorithms = "1.0"
 
 [dev-dependencies]
 tempfile = "3"
+
+[target.'cfg(not(target_arch = "wasm32")'.dependencies]
+rfd = "0.14.1"
+
+[target.aarch64-unknown-linux-gnu.dependencies]
+rppal = "0.18.0"
+
+[target.armv7-unknown-linux-gnueabihf.dependencies]
+rppal = "0.18.0"

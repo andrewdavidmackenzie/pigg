@@ -1,6 +1,5 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
-#[cfg(feature = "hardware")]
 use std::io;
 
 use crate::hw::config::HardwareConfig;
@@ -15,12 +14,11 @@ pub mod config;
 /// There are two implementations of [`Hardware`] trait:
 /// * fake_hw - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
 /// * pi_hw - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
-#[cfg(feature = "fake_hw")]
+#[cfg(not(target_env = "gnu"))]
 mod fake_hw;
-#[cfg(feature = "pi_hw")]
+#[cfg(target_env = "gnu")]
 mod pi_hw;
 pub(crate) mod pin_description;
-#[cfg(feature = "hardware")]
 mod pin_descriptions;
 pub mod pin_function;
 
@@ -35,11 +33,12 @@ pub type PinLevel = bool;
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
-#[cfg(feature = "pi_hw")]
+#[cfg(target_env = "gnu")]
 pub fn get() -> impl Hardware {
     pi_hw::get()
 }
-#[cfg(feature = "fake_hw")]
+
+#[cfg(not(target_env = "gnu"))]
 pub fn get() -> impl Hardware {
     fake_hw::get()
 }
@@ -126,7 +125,6 @@ impl Display for InputPull {
 
 /// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
 /// interact with any possible GPIO hardware on the device to set config and get state
-#[cfg(feature = "hardware")]
 pub trait Hardware {
     /// Return a [HardwareDescription] struct describing the hardware that we are connected to:
     /// * [HardwareDescription] such as revision etc.
@@ -193,7 +191,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "gui")]
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = hw::get();

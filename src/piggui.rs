@@ -23,7 +23,6 @@ use views::pin_state::PinState;
 pub mod connect_dialog_handler;
 #[cfg(feature = "files")]
 mod file_helper;
-#[cfg(feature = "hardware")]
 pub mod hardware_subscription;
 mod hw;
 pub mod network_subscription;
