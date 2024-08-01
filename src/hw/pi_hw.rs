@@ -112,6 +112,7 @@ impl Hardware for PiHW {
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Input(input));
             }
+
             PinFunction::Output(value) => {
                 let pin = Gpio::new()
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
