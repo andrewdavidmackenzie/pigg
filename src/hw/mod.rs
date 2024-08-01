@@ -29,6 +29,7 @@ pub type BCMPinNumber = u8;
 
 /// [BoardPinNumber] is used to refer to a GPIO pin by the numbering of the GPIO header on the Pi
 pub type BoardPinNumber = u8;
+
 /// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
 pub type PinLevel = bool;
 
