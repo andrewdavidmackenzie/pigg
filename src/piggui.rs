@@ -21,9 +21,8 @@ use std::str::FromStr;
 use views::pin_state::PinState;
 
 pub mod connect_dialog_handler;
-#[cfg(feature = "files")]
+#[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
-#[cfg(feature = "hardware")]
 pub mod hardware_subscription;
 mod hw;
 pub mod network_subscription;

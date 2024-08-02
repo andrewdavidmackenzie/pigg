@@ -31,18 +31,18 @@ enum Pin {
     Output(OutputPin),
 }
 
-struct PiHW {
+struct HW {
     configured_pins: HashMap<BCMPinNumber, Pin>,
 }
 
 /// This method is used to get a "handle" onto the Hardware implementation
 pub fn get() -> impl Hardware {
-    PiHW {
+    HW {
         configured_pins: Default::default(),
     }
 }
 
-impl PiHW {
+impl HW {
     fn get_details() -> io::Result<HardwareDetails> {
         let mut details = HardwareDetails {
             hardware: "Unknown".to_string(),
@@ -70,7 +70,7 @@ impl PiHW {
 
 /// Implement the [Hardware] trait for ordinary Pi hardware.
 // -> Result<(), Box<dyn Error>>
-impl Hardware for PiHW {
+impl Hardware for HW {
     /// Find the Pi hardware description
     fn description(&self) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
@@ -112,6 +112,7 @@ impl Hardware for PiHW {
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Input(input));
             }
+
             PinFunction::Output(value) => {
                 let pin = Gpio::new()
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?

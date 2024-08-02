@@ -58,7 +58,6 @@ jobs:
         if: runner.os == 'Linux'
         run: cargo install cross
 
-
       - name: cross
         if: runner.os == 'Linux'
         run: make cross

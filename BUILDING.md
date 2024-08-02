@@ -12,7 +12,7 @@ go away and we will document how you install the binaries directly.
 ### macOS/linux/Windows or Pi (with a fake Hardware backend)
 
 ```
-cargo install pigg --features "fake_hw"
+cargo install pigg
 ```
 
 NOTE: `cargo` will build for the machine where you are running it, so you will get a version of `piggui`
@@ -22,7 +22,7 @@ with a fake hardware backend, not real Pi GPIO hardware, but you can play with t
 
 To be able to interact with real Pi GPIO hardware you have two options:
 
-- Run `cargo install --features "pi_hw"` on your Pi
+- Run `cargo install` on your Pi
 - Follow the instructions before for Building from Source on your Pi
     - Use `make` to build on macOS/linux/Windows and cross-compile for your Pi, but you will need `Docker`/`Podman`
       and `cross` installed
