@@ -33,11 +33,11 @@ build:
 
 .PHONY: run
 run:
-	cargo run --bin piggui
+	cargo run
 
 .PHONY: run-release
 run-release:
-	cargo run --bin piggui --release
+	cargo run --release
 
 .PHONY: run-piglet
 run-piglet:
