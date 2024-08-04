@@ -32,7 +32,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Cache
-        if: runner.os == 'Linux'
         uses: actions@cache@v2
         with:
           path: |
@@ -47,8 +46,6 @@ jobs:
         with:
           profile: minimal
           components: clippy,llvm-tools-preview
-
-
 
 
       - name: InstallCoverageTools
