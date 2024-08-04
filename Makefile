@@ -21,8 +21,6 @@ all: clippy build test
 .PHONY: cross
 cross: cross-clippy cross-build cross-test cross-release-build cross-build-armv7 cross-release-build-armv7
 
-release: release-build
-
 .PHONY: clippy
 clippy:
 	cargo clippy  --tests --no-deps
@@ -43,11 +41,11 @@ run-release:
 
 .PHONY: run-piglet
 run-piglet:
-	RUST_LOG=piglet=info cargo run --bin piglet
+	cargo run --bin piglet
 
 .PHONY: run-release-piglet
 run-release-piglet:
-	RUST_LOG=piglet=info cargo run --bin piglet --release
+	cargo run --bin piglet --release
 
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
 .PHONY: build-release
@@ -55,7 +53,7 @@ build-release:
 	cargo build --release
 
 # This will only test GUI tests in piggui on the local host, whatever that is
-# We'd need to think how to run tests on RPi, on piggui with GUI and GPIO functionality, and piglet with GPIO functionality
+# We'd need to think how to run tests on RºPi, on piggui with GUI and GPIO functionality, and piglet with GPIO functionality
 .PHONY: test
 test:
 	cargo test
