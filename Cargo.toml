@@ -1,6 +1,6 @@
 [package]
 name = "pigg"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 description = "A Graphical User Interface for interacting with local and remote Raspberry Pi Hardware"
 default-run = "piggui"
@@ -67,3 +67,6 @@ rppal = "0.18.0"
 
 [target.armv7-unknown-linux-gnueabihf.dependencies]
 rppal = "0.18.0"
+
+[patch.crates-io]
+derive_more = "1.0.0-beta6"
