@@ -23,6 +23,8 @@ default = []
 discovery = []
 
 [dependencies]
+derive_more = "=1.0.0-beta.6" # To fix iroh-net issue
+
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.204", default-features = false, features = ["derive"] }
@@ -68,5 +70,3 @@ rppal = "0.18.0"
 [target.armv7-unknown-linux-gnueabihf.dependencies]
 rppal = "0.18.0"
 
-[patch.crates-io]
-derive_more = "=1.0.0-beta6"
