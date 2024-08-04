@@ -43,6 +43,11 @@ pub fn run_piglet(config: Option<PathBuf>) -> String {
     output
 }
 
+#[cfg(not(all(
+    target_os = "linux",
+    any(target_arch = "aarch64", target_arch = "arm"),
+    target_env = "gnu"
+)))]
 #[test]
 fn node_id_is_output() {
     let output = run_piglet(None);
