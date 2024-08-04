@@ -224,7 +224,7 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
         .await?;
 
     let nodeid = endpoint.node_id();
-    info!("node id: {nodeid}");
+    println!("nodeid: {nodeid}");
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -235,12 +235,12 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
         .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
-    info!("local Addresses: {local_addrs}");
+    println!("local Addresses: {local_addrs}");
 
     let relay_url = endpoint
         .home_relay()
         .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    info!("node relay server url: {relay_url}");
+    println!("Relay URL: {relay_url}");
 
     // write the info about the node to the info_path file for use in piggui
     write_info_file(info_path, &nodeid, &local_addrs, &relay_url)?;
