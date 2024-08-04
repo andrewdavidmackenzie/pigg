@@ -9,6 +9,7 @@ license = "Apache-2.0"
 documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
 repository = "https://github.com/andrewdavidmackenzie/pigg/"
 readme = "README.md"
+exclude = [".github", "assets/", "codecov.yml", "configs/", "Makefile", ".cargo_vcs_info_.json"]
 
 [[bin]]
 name = "piggui"
@@ -69,4 +70,3 @@ rppal = "0.18.0"
 
 [target.armv7-unknown-linux-gnueabihf.dependencies]
 rppal = "0.18.0"
-
