@@ -224,7 +224,7 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
         .await?;
 
     let nodeid = endpoint.node_id();
-    println!("node id: {nodeid}");
+    println!("nodeid: {nodeid}");
 
     let local_addrs = endpoint
         .direct_addresses()
