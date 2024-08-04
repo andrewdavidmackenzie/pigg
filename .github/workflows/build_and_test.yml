@@ -31,11 +31,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache
+        if: runner.os == 'Linux'
+        uses: actions@cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+
       - name: Install rust
         uses: dtolnay/rust-toolchain@stable
         with:
           profile: minimal
           components: clippy,llvm-tools-preview
+
+
+
 
       - name: InstallCoverageTools
         if: runner.os != 'Windows'
