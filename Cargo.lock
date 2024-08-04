@@ -1473,25 +1473,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "env_filter"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f2c92ceda6ceec50f43169f9ee8424fe2db276791afde7b2cd8bc084cb376ab"
-dependencies = [
- "log",
-]
-
-[[package]]
-name = "env_logger"
-version = "0.11.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e13fa619b91fb2381732789fc5de83b45675e882f66623b7d8cb4f643017018d"
-dependencies = [
- "env_filter",
- "log",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1630,15 +1611,6 @@ name = "fiat-crypto"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28dea519a9695b9977216879a3ebfddf92f1c08c05d984f8996aecd6ecdc811d"
-
-[[package]]
-name = "find-crate"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59a98bbaacea1c0eb6a0876280051b892eb73594fd90cf3b20e9c817029c57d2"
-dependencies = [
- "toml",
-]
 
 [[package]]
 name = "flate2"
@@ -2466,8 +2438,8 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d4eb0fbbefb8c428b70680e77ed9013887b17c1d6be366b40f264f956d1a096"
 dependencies = [
- "iced_core 0.12.3",
- "iced_futures 0.12.0",
+ "iced_core",
+ "iced_futures",
  "iced_renderer",
  "iced_widget",
  "iced_winit",
@@ -2486,17 +2458,6 @@ dependencies = [
 
 [[package]]
 name = "iced_core"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11e1942e28dedee756cc27e67e7a838cdc1e59fb6bf9627ec9f709ab3b135782"
-dependencies = [
- "bitflags 1.3.2",
- "instant",
- "palette 0.6.1",
-]
-
-[[package]]
-name = "iced_core"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d7e6bbd197f311ed3d8b71651876b0ce01318fde52cda862a9a7a4373c9b930"
@@ -2505,7 +2466,7 @@ dependencies = [
  "glam",
  "log",
  "num-traits",
- "palette 0.7.6",
+ "palette",
  "raw-window-handle",
  "smol_str",
  "thiserror",
@@ -2515,24 +2476,12 @@ dependencies = [
 
 [[package]]
 name = "iced_futures"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "215d51fa4f70dbb63775d7141243c4d98d4d525d8949695601f8fbac7dcbc04e"
-dependencies = [
- "futures",
- "log",
- "wasm-bindgen-futures",
- "wasm-timer",
-]
-
-[[package]]
-name = "iced_futures"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "370bad88fb3832cbeeb3fa6c486b4701fb7e8da32a753b3101d4ce81fc1d9497"
 dependencies = [
  "futures",
- "iced_core 0.12.3",
+ "iced_core",
  "log",
  "tokio",
  "wasm-bindgen-futures",
@@ -2549,8 +2498,8 @@ dependencies = [
  "bytemuck",
  "cosmic-text",
  "half",
- "iced_core 0.12.3",
- "iced_futures 0.12.0",
+ "iced_core",
+ "iced_futures",
  "log",
  "lyon_path",
  "once_cell",
@@ -2559,21 +2508,6 @@ dependencies = [
  "thiserror",
  "unicode-segmentation",
  "xxhash-rust",
-]
-
-[[package]]
-name = "iced_native"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d012eb06da490fe46a695b39721c20da9643f35cf2ecb9d30618fdeb96170616"
-dependencies = [
- "iced_core 0.9.0",
- "iced_futures 0.6.0",
- "iced_style 0.8.0",
- "num-traits",
- "thiserror",
- "twox-hash",
- "unicode-segmentation",
 ]
 
 [[package]]
@@ -2595,21 +2529,10 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a79f852c01cc6d61663c94379cb3974ac3ad315a28c504e847d573e094f46822"
 dependencies = [
- "iced_core 0.12.3",
- "iced_futures 0.12.0",
+ "iced_core",
+ "iced_futures",
  "raw-window-handle",
  "thiserror",
-]
-
-[[package]]
-name = "iced_style"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e37333dc2991201140302cd0d4cea051bd37ca3671d5008ec85df86d232ff30"
-dependencies = [
- "iced_core 0.9.0",
- "once_cell",
- "palette 0.6.1",
 ]
 
 [[package]]
@@ -2618,9 +2541,9 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ea42a740915d2a5a9ff9c3aa0bca28b16e9fb660bc8f675eed71d186cadb579"
 dependencies = [
- "iced_core 0.12.3",
+ "iced_core",
  "once_cell",
- "palette 0.7.6",
+ "palette",
 ]
 
 [[package]]
@@ -2667,7 +2590,7 @@ checksum = "7e01b2212adecf1cb80e2267f302c0e0c263e55f97812056949199ccf9f0b908"
 dependencies = [
  "iced_renderer",
  "iced_runtime",
- "iced_style 0.12.1",
+ "iced_style",
  "num-traits",
  "thiserror",
  "unicode-segmentation",
@@ -2681,7 +2604,7 @@ checksum = "63f66831d0e399b93f631739121a6171780d344b275d56808b9504d8ca75c7d2"
 dependencies = [
  "iced_graphics",
  "iced_runtime",
- "iced_style 0.12.1",
+ "iced_style",
  "log",
  "thiserror",
  "tracing",
@@ -3903,38 +3826,14 @@ dependencies = [
 
 [[package]]
 name = "palette"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f9cd68f7112581033f157e56c77ac4a5538ec5836a2e39284e65bd7d7275e49"
-dependencies = [
- "approx",
- "num-traits",
- "palette_derive 0.6.1",
- "phf",
-]
-
-[[package]]
-name = "palette"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cbf71184cc5ecc2e4e1baccdb21026c20e5fc3dcf63028a086131b3ab00b6e6"
 dependencies = [
  "approx",
  "fast-srgb8",
- "palette_derive 0.7.6",
+ "palette_derive",
  "phf",
-]
-
-[[package]]
-name = "palette_derive"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05eedf46a8e7c27f74af0c9cfcdb004ceca158cb1b918c6f68f8d7a549b3e427"
-dependencies = [
- "find-crate",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -4129,12 +4028,10 @@ dependencies = [
  "chrono",
  "clap",
  "derive_more",
- "env_logger",
  "futures-lite 2.3.0",
  "iced",
  "iced_aw",
- "iced_futures 0.12.0",
- "iced_native",
+ "iced_futures",
  "iroh-net",
  "log",
  "lyon_algorithms",
@@ -6130,15 +6027,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml"
-version = "0.5.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "toml_datetime"
 version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6260,16 +6148,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4189890526f0168710b6ee65ceaedf1460c48a14318ceec933cb26baa492096a"
 dependencies = [
  "linked-hash-map",
-]
-
-[[package]]
-name = "twox-hash"
-version = "1.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
-dependencies = [
- "cfg-if",
- "static_assertions",
 ]
 
 [[package]]
