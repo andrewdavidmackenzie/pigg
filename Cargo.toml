@@ -69,4 +69,4 @@ rppal = "0.18.0"
 rppal = "0.18.0"
 
 [patch.crates-io]
-derive_more = "1.0.0-beta6"
+derive_more = "=1.0.0-beta6"
