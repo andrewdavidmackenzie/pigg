@@ -58,7 +58,7 @@ tracing = { version = "0.1.40", default-features = false }
 once_cell = { version = "1.19.0", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 
-[dev-dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
