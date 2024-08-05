@@ -40,6 +40,7 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
 /// over the network.
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let matches = get_matches();
