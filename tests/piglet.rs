@@ -2,6 +2,7 @@ use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run_piglet(config: Option<PathBuf>) -> String {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut piglet_command = Command::new("cargo");
@@ -43,10 +44,13 @@ pub fn run_piglet(config: Option<PathBuf>) -> String {
     output
 }
 
-#[cfg(not(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32"
 )))]
 #[test]
 fn node_id_is_output() {

@@ -58,6 +58,7 @@ mod test {
     use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;
+    #[cfg(not(target_arch = "wasm32"))]
     use tempfile::tempdir;
 
     #[test]
@@ -72,6 +73,7 @@ mod test {
         assert!(level_change.timestamp <= Utc::now())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn save_one_pin_config_input_no_pullup() {
         let mut config = HardwareConfig {
@@ -94,6 +96,7 @@ mod test {
         assert_eq!(contents, pin_config);
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn load_one_pin_config_input_no_pull() {
         let pin_config = r#"{"pins":{"1":{"Input":null}}}"#;
@@ -109,6 +112,7 @@ mod test {
         assert_eq!(config.pins.get(&1), Some(&PinFunction::Input(None)));
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn load_test_file() {
         let root = std::env::var("CARGO_MANIFEST_DIR").expect("Could not get manifest dir");
@@ -127,6 +131,7 @@ mod test {
         );
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn save_one_pin_config_output_with_level() {
         let mut config = HardwareConfig {

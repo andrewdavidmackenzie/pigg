@@ -11,6 +11,7 @@ use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::widgets::modal::Modal;
 use crate::Message::*;
+#[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{
@@ -105,10 +106,14 @@ impl Application for Piggui {
     type Flags = ();
 
     fn new(_flags: ()) -> (Piggui, Command<Message>) {
+        #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
+        #[cfg(not(target_arch = "wasm32"))]
         let config_filename = matches
             .get_one::<String>("config-file")
             .map(|s| s.to_string());
+        #[cfg(target_arch = "wasm32")]
+        let config_filename = None;
 
         (
             Self {
@@ -309,6 +314,7 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
     target
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Parse the command line arguments using clap
 fn get_matches() -> ArgMatches {
     let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));

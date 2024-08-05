@@ -32,7 +32,6 @@ chrono = { version = "0.4", default-features = false, features = ["now", "serde"
 serde = { version = "1.0.204", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.122", default-features = false, features = ["std"] }
 serde_arrays = { version = "0.1.0", default-features = false }
-clap = { version = "4.5.11", default-features = false, features = ["std"] }
 rand = { version = "0.8.5", default-features = false }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
 iroh-net = { version = "0.19.0", default-features = false }
@@ -46,8 +45,8 @@ service-manager = { version = "0.7.1", default-features = false }
 sysinfo = { version = "0.31.2", default-features = false, features = ["system"] }
 
 # used by piggui in GUI only
-iced = { version = "0.12.1", default-features = false, features = ["tokio", "debug", "canvas", "advanced"] }
-iced_aw = { version = "0.9.3", default-features = false, features = ["tabs", "card", "modal", "menu"] }
+iced = { version = "0.12.1", default-features = false, features = ["tokio"] }
+iced_aw = { version = "0.9.3", default-features = false, features = ["menu"] }
 iced_futures = { version = "0.12.0", default-features = false }
 plotters-iced = { version = "0.10", default-features = false }
 plotters = { version = "0.3", default_features = false, features = [
@@ -58,11 +57,12 @@ tracing = { version = "0.1.40", default-features = false }
 once_cell = { version = "1.19.0", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 
-[dev-dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.14.1"
+clap = { version = "4.5.11", default-features = false, features = ["std"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
 rppal = "0.18.0"

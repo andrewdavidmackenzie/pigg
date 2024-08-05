@@ -164,8 +164,9 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum HardwareTarget {
+    #[cfg_attr(target_arch = "wasm32", default)]
     NoHW,
-    #[default]
+    #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
     Remote(NodeId, Option<RelayUrl>),
 }
