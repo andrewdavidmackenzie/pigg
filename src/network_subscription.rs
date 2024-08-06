@@ -60,8 +60,11 @@ pub fn subscribe(nodeid: NodeId, relay: Option<RelayUrl>) -> Subscription<Hardwa
                                     NetworkState::Connected(hardware_event_receiver, connection);
                             }
                             Err(e) => {
-                                // TODO surface to the UI somehow
-                                eprintln!("Error connecting to piglet: {e}");
+                                let _ = gui_sender_clone
+                                    .send(HardwareEventMessage::Disconnected(format!(
+                                        "Error connecting to piglet: {e}"
+                                    )))
+                                    .await;
                             }
                         }
                     }
