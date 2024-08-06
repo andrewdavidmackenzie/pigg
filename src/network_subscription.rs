@@ -23,11 +23,6 @@ pub enum NetworkState {
     Connected(Receiver<HardwareConfigMessage>, Connection),
 }
 
-// TODO Emit a "Connected" message when successful that will close dialog
-
-// TODO emit a "ConnectionError" Message if there were problems, this should display
-// error message
-
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
 pub fn subscribe(nodeid: NodeId, relay: Option<RelayUrl>) -> Subscription<HardwareEventMessage> {
