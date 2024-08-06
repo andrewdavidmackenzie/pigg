@@ -152,24 +152,7 @@ fn setup_logging(matches: &ArgMatches) {
 
 /// Parse the command line arguments using clap
 fn get_matches() -> ArgMatches {
-    let app = clap::Command::new(env!("CARGO_BIN_NAME")).override_help(
-        &format!(
-            "{} v{}\n\
-                {}\n\
-                Usage: {} <opts> <command>\n\n\
-                Options:\n\
-                -h, --help       Display this message\n\
-                -V, --version    Display version info\n\
-                -i, --install    Install piglet as a System Service that restarts on reboot\n\
-                -u, --uninstall  Uninstall any piglet System Service\n\
-                -v, --verbosity  Set verbosity level for output (trace, debug, info, warn, error (default), off)\n\n\
-                ",
-            env!("CARGO_BIN_NAME"),
-            env!("CARGO_PKG_VERSION"),
-            env!("CARGO_PKG_DESCRIPTION"),
-            env!("CARGO_BIN_NAME"),
-        )
-    ).version(env!("CARGO_PKG_VERSION"));
+    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
     let app = app.about(
         "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
