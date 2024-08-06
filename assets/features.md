@@ -34,8 +34,20 @@ Here are some gifs and links to YouTube videos showing some of the features.
 
 <img alt="Version details" src="gifs/version_details.gif" width="400" align="top" />
 
-## Hardware Videos
+## Videos
+
+## Displaying an Inputs level from HW Button
 
 [![Displaying an Inputs level from HW Button](https://img.youtube.com/vi/YZMhHqfmcx4/maxresdefault.jpg)](https://youtu.be/YZMhHqfmcx4)
 
+## Controlling an LED on an Output
+
 [![Controlling an LED on an Output](https://img.youtube.com/vi/HBQWMZNyZw4/maxresdefault.jpg)](https://youtu.be/HBQWMZNyZw4)
+
+## Remote GPIO from piggui to piglet using Command Line option
+
+[![Remote GPIO from piggui to piglet using Command Line option](https://img.youtube.com/vi/zcEa_Oke014/maxresdefault.jpg)](https://youtu.be/zcEa_Oke014)
+
+## Remote GPIO from piggui to piglet using Connect Dialog
+
+[![Remote GPIO from piggui to piglet using Command Line option](https://img.youtube.com/vi/aToJ1aT7NeM/maxresdefault.jpg)](https://youtu.be/aToJ1aT7NeM)
