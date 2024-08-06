@@ -11,7 +11,6 @@ use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::widgets::modal::Modal;
 use crate::Message::*;
-#[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{
@@ -106,14 +105,10 @@ impl Application for Piggui {
     type Flags = ();
 
     fn new(_flags: ()) -> (Piggui, Command<Message>) {
-        #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
-        #[cfg(not(target_arch = "wasm32"))]
         let config_filename = matches
             .get_one::<String>("config-file")
             .map(|s| s.to_string());
-        #[cfg(target_arch = "wasm32")]
-        let config_filename = None;
 
         (
             Self {
@@ -314,10 +309,26 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
     target
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 /// Parse the command line arguments using clap
 fn get_matches() -> ArgMatches {
-    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
+    let app = clap::Command::new(env!("CARGO_BIN_NAME")).override_help(
+        &format!(
+            "{} v{}\n\
+                {}\n\
+                Usage: {} <opts> <command>\n\n\
+                Options:\n\
+                -h, --help       Display this message\n\
+                -V, --version    Display version info\n\
+                -i, --install    Install piglet as a System Service that restarts on reboot\n\
+                -u, --uninstall  Uninstall any piglet System Service\n\
+                -v, --verbosity  Set verbosity level for output (trace, debug, info, warn, error (default), off)\n\n\
+                ",
+            env!("CARGO_BIN_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            env!("CARGO_PKG_DESCRIPTION"),
+            env!("CARGO_BIN_NAME"),
+        )
+    ).version(env!("CARGO_PKG_VERSION"));
 
     let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
 
