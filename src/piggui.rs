@@ -319,9 +319,8 @@ fn get_matches() -> ArgMatches {
                 Options:\n\
                 -h, --help       Display this message\n\
                 -V, --version    Display version info\n\
-                -i, --install    Install piglet as a System Service that restarts on reboot\n\
-                -u, --uninstall  Uninstall any piglet System Service\n\
-                -v, --verbosity  Set verbosity level for output (trace, debug, info, warn, error (default), off)\n\n\
+                -n, --nodeid     Node Id of a piglet instance to connect to\n\
+                --config-file    Path of a '.pigg' config file to load
                 ",
             env!("CARGO_BIN_NAME"),
             env!("CARGO_PKG_VERSION"),
