@@ -12,6 +12,10 @@ readme = "README.md"
 exclude = [".github", "assets/", "codecov.yml", "configs/", "Makefile", ".cargo_vcs_info.json",
     ".gitignore", "tests"]
 
+[package.metadata.wix]
+upgrade-guid = "7DCB054F-6CE0-4914-876E-AEA0C2E91328"
+path-guid = "17155407-8DA8-45BD-8C67-91FE4C7E99AA"
+
 [[bin]]
 name = "piggui"
 path = "src/piggui.rs"
@@ -69,3 +73,25 @@ rppal = "0.18.0"
 
 [target.armv7-unknown-linux-gnueabihf.dependencies]
 rppal = "0.18.0"
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.3.0"
+# CI backends to support
+ci = ["github"]
+# The installers to generate for each app
+installers = ["shell", "homebrew", "msi"]
+# A GitHub repo to push Homebrew formulas to
+tap = "andrewdavidmackenzie/pigg-tap"
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
+# Publish jobs to run in CI
+publish-jobs = ["homebrew"]
+# Publish jobs to run in CI
+pr-run-mode = "plan"
