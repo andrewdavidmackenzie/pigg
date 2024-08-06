@@ -6,9 +6,9 @@
 # * checks for a Git Tag that looks like a release
 # * builds artifacts with cargo-dist (archives, installers, hashes)
 # * uploads those artifacts to temporary workflow zip
-# * on success, uploads the artifacts to a Github Release™
+# * on success, uploads the artifacts to a GitHub Release™
 #
-# Note that the Github Release™ will be created with a generated
+# Note that the GitHub Release™ will be created with a generated
 # title/body based on your changelogs.
 name: Release
 
@@ -30,11 +30,11 @@ permissions:
 # packages versioned/released in lockstep).
 #
 # If you push multiple tags at once, separate instances of this workflow will
-# spin up, creating an independent Github Release™ for each one. However Github
+# spin up, creating an independent GitHub Release™ for each one. However, GitHub
 # will hard limit this to 3 tags per commit, as it will assume more tags is a
 # mistake.
 #
-# If there's a prerelease-style suffix to the version, then the Github Release™
+# If there's a prerelease-style suffix to the version, then the GitHub Release™
 # will be marked as a prerelease.
 on:
   push:
@@ -81,7 +81,7 @@ jobs:
       # Target platforms/runners are computed by cargo-dist in create-release.
       # Each member of the matrix has the following arguments:
       #
-      # - runner: the github runner
+      # - runner: the GitHub runner
       # - dist-args: cli flags to pass to cargo dist
       # - install-dist: expression to run to install cargo-dist on the runner
       #
@@ -100,7 +100,7 @@ jobs:
       - name: Install cargo-dist
         run: ${{ matrix.install_dist }}
       - id: cargo-dist
-        # We force bash here just because github makes it really hard to get values up
+        # We force bash here just because GitHub makes it really hard to get values up
         # to "real" actions without writing to env-vars, and writing to env-vars has
         # inconsistent syntax between shell and powershell. cargo-dist and jq work fine
         # in powershell.
@@ -122,7 +122,7 @@ jobs:
 
   # Build and package all the platform-agnostic(ish) things
   upload-global-artifacts:
-    needs: [plan, upload-local-artifacts]
+    needs: [ plan, upload-local-artifacts ]
     runs-on: "ubuntu-20.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -166,7 +166,7 @@ jobs:
         run: echo "ok we're publishing!"
 
   publish-homebrew-formula:
-    needs: [plan, should-publish]
+    needs: [ plan, should-publish ]
     runs-on: "ubuntu-20.04"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -199,9 +199,9 @@ jobs:
           done
           git push
 
-  # Create a Github Release with all the results once everything is done,
+  # Create a GitHub Release with all the results once everything is done,
   publish-release:
-    needs: [plan, should-publish]
+    needs: [ plan, should-publish ]
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
