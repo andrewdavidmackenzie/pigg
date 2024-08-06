@@ -10,7 +10,7 @@ use std::time::Duration;
 use std::{env, fs, io, process};
 
 use anyhow::Context;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgMatches};
 use futures_lite::StreamExt;
 use iroh_net::endpoint::Connection;
 use iroh_net::relay::RelayUrl;
