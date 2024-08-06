@@ -23,11 +23,6 @@ pub enum NetworkState {
     Connected(Receiver<HardwareConfigMessage>, Connection),
 }
 
-// TODO Emit a "Connected" message when successful that will close dialog
-
-// TODO emit a "ConnectionError" Message if there were problems, this should display
-// error message
-
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
 pub fn subscribe(nodeid: NodeId, relay: Option<RelayUrl>) -> Subscription<HardwareEventMessage> {
@@ -60,8 +55,11 @@ pub fn subscribe(nodeid: NodeId, relay: Option<RelayUrl>) -> Subscription<Hardwa
                                     NetworkState::Connected(hardware_event_receiver, connection);
                             }
                             Err(e) => {
-                                // TODO surface to the UI somehow
-                                eprintln!("Error connecting to piglet: {e}");
+                                let _ = gui_sender_clone
+                                    .send(HardwareEventMessage::Disconnected(format!(
+                                        "Error connecting to piglet: {e}"
+                                    )))
+                                    .await;
                             }
                         }
                     }
