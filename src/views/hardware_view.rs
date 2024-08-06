@@ -72,9 +72,8 @@ const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
-/// This enum is for events created by async events in the hardware that will be sent to the Gui
-// TODO pass PinDescriptions as a reference and handle lifetimes - clone on reception
-#[allow(clippy::large_enum_variant)] // remove when fix todo above
+/// This enum is for async events in the hardware that will be sent to the GUI
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum HardwareEventMessage {
     /// This event indicates that the listener is ready. It conveys a sender to the GUI
