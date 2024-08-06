@@ -37,6 +37,9 @@ jobs:
       - name: cargo install cross tool
         run: cargo install cross
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: make cross
         run: make cross
 
@@ -49,7 +52,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
 
       - name: Install rust
         uses: dtolnay/rust-toolchain@stable
