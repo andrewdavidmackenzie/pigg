@@ -309,25 +309,10 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
     target
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Parse the command line arguments using clap
 fn get_matches() -> ArgMatches {
-    let app = clap::Command::new(env!("CARGO_BIN_NAME")).override_help(
-        &format!(
-            "{} v{}\n\
-                {}\n\
-                Usage: {} <opts> <command>\n\n\
-                Options:\n\
-                -h, --help       Display this message\n\
-                -V, --version    Display version info\n\
-                -n, --nodeid     Node Id of a piglet instance to connect to\n\
-                --config-file    Path of a '.pigg' config file to load
-                ",
-            env!("CARGO_BIN_NAME"),
-            env!("CARGO_PKG_VERSION"),
-            env!("CARGO_PKG_DESCRIPTION"),
-            env!("CARGO_BIN_NAME"),
-        )
-    ).version(env!("CARGO_PKG_VERSION"));
+    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
     let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
 
