@@ -10,7 +10,7 @@ use std::time::Duration;
 use std::{env, fs, io, process};
 
 use anyhow::Context;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgMatches};
 use futures_lite::StreamExt;
 use iroh_net::endpoint::Connection;
 use iroh_net::relay::RelayUrl;
@@ -152,7 +152,7 @@ fn setup_logging(matches: &ArgMatches) {
 
 /// Parse the command line arguments using clap
 fn get_matches() -> ArgMatches {
-    let app = Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
+    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
     let app = app.about(
         "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
