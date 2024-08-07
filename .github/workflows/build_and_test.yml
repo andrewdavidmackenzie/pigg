@@ -56,7 +56,6 @@ jobs:
       - name: Install rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           components: clippy,llvm-tools-preview
 
       - name: InstallCoverageTools
