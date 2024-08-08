@@ -38,28 +38,13 @@ hardware remotely.
   </tr>
 </table>
 
-## Latest NEW Feature - Networked GPIO!
+## Latest NEW Feature - pre-built images and installers
 
-* The GUI (`piggui`) can connect to a Pi (that is running `piglet`) over the network, to control and view the GPIO
-  hardware
-  from a distance. The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped at source (as
-  close to the hardware as possible) so network delays should not affect the waveforms displayed. Provide us
-  feedback and ideas related to networking in Discussions or GH issues.
-* The data required to connect to a remote node via iroh-net is called the `nodeid`. `piglet` prints this out for you if
-  it
-  is started in the foreground. When `piglet` has been started as a system service, start another instance in the
-  foreground and this will detect the background instance and display its `nodeid` for you then exit.
-* Take the `nodeid` and either supply it as a command line option to `piggui` (`--nodeid $nodeid`, prefixed with `-- `
-  if using
-  `cargo run`) or enter it into the GUI. To connect to a remote instance from the GUI, click on the "hardware menu" in
-  the
-  left of the info bar at the bottom of the screen and select the "Connect to remote Pi..:" menu item. Then enter the
-  `nodeid` into the field provided and hit "Connect"
+We have added pre-built images for different OS and CPU architecture, along with installers, to the automated
+release process using `cargo dist`. See [INSTALLING.md](INSTALLING.md) for details.
 
-Here are two videos showing the two ways to use it, with piglet running on a RPi shown via VNC.
-
-* Video with Dialog: https://youtu.be/aToJ1aT7NeM
-* Video using CLI argument: https://youtu.be/zcEa_Oke014
+Up-to-date instructions for installing are also be in the release notes of the
+[latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
 
 ## Other Features
 
@@ -75,6 +60,20 @@ Here are two videos showing the two ways to use it, with piglet running on a RPi
   inversions of the stable level, plus a waveform view showing the recent history of the level set on the Output.
 - GPIO configurations can be loaded at startup with a command line filename option, or loaded via
   file-picker from the UI or saved to file via file picker.
+- The GUI (`piggui`) can connect to a Pi (that is running `piglet`) over the network, to control and view the GPIO
+  hardware from a distance. The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped at source
+  (as close to the hardware as possible) so network delays should not affect the waveforms displayed. Provide us
+  feedback and ideas related to networking in Discussions or GH issues.
+- The data required to connect to a remote node via iroh-net is called the `nodeid`. `piglet` prints this out for you
+  if it is started in the foreground. When `piglet` has been started as a system service, start another instance in the
+  foreground and this will detect the background instance and display its `nodeid` for you then exit.
+- Take the `nodeid` and either supply it as a command line option to `piggui` (`--nodeid $nodeid`, prefixed with `-- `
+  if using `cargo run`) or enter it into the GUI. To connect to a remote instance from the GUI, click on the
+  "hardware menu" in the left of the info bar at the bottom of the screen and select the "Connect to remote Pi..:"
+  menu item. Then enter the `nodeid` into the field provided and hit "Connect"
+- Here are two videos showing the two ways to use it, with piglet running on a RPi shown via VNC.
+    - Video with Dialog: https://youtu.be/aToJ1aT7NeM
+    - Video using CLI argument: https://youtu.be/zcEa_Oke014
 
 You can see more gifs and videos of features [here](assets/features.md)
 
@@ -111,41 +110,27 @@ and input on how integrate new functionalities (e.g. I2C buses, SPI, UART, etc.)
 Please let us know what you think, and suggestions, via
 [Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions) or GH issues.
 
-## Short-term Roadmap
+## Roadmap
 
 We have identified a number of areas we would like to work on after this initial release,
 but would really appreciate your input on what could be most useful or just the coolest,
 many have GH issues.
 
-- Automation of release process and publishing
-  packages [Issue #85](https://github.com/andrewdavidmackenzie/pigg/issues/85)
 - Pre-built binaries for install on Raspberry Pi [Issue #112](https://github.com/andrewdavidmackenzie/pigg/issues/112)
   and easier install [Issue #111](https://github.com/andrewdavidmackenzie/pigg/issues/111)
 - Expand support beyond Inputs and Outputs ( e.g. Clocks, PWM, I2C, UART, SPI etc.).
   Issue [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
   [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
 - True logical layout, grouping pins by function [Issue #94](https://github.com/andrewdavidmackenzie/pigg/issues/94)
-
-## Further out ideas
-
 - Allow connections between pins [Issue #95](https://github.com/andrewdavidmackenzie/pigg/issues/95)
 - Pico support for a headless hardware backend accessed over the network
 - Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 
 ## Installing
 
-We have work planned to produce pre-built binaries for supported platforms, and ways to install them
-directly.
+TODO
 
-Prior to that, to install `piggui` and `piglet` you will have to build from source, either using `cargo install`,
-or `cargo build` or `make` from a clone of the repo or a download of a release source tarball/zip.
-
-See the section below for details.
-
-This is an area where we welcome ideas, input and contributions - please post your thoughts to the
-[Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions)
-
-## Building Piggui and Piglet from Source
+## Building from Source
 
 See [BUILDING.md](BUILDING.md)
 
