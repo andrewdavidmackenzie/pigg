@@ -12,9 +12,6 @@
 # target/armv7-unknown-linux-gnueabihf/release/piggui - GUI version for armv7 based architecture with GPIO, can be run natively
 # target/armv7-unknown-linux-gnueabihf/release/piglet - Headless version for armv7 based architecture with GPIO, can be run natively
 
-# Detect if on a Raspberry Pi
-$(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
-
 .PHONY: all
 all: clippy build test
 
