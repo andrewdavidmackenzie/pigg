@@ -4,8 +4,8 @@ use crate::connect_dialog_handler::{
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareView;
 use crate::Message;
-use iced::widget::{button, column, container, text, Row, Text};
-use iced::{window, Application, Color, Command, Element};
+use iced::widget::{button, column, container, text, Row};
+use iced::{window, Color, Command, Element};
 
 pub struct DisplayModal {
     pub show_modal: bool,
