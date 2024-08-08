@@ -25,7 +25,7 @@ const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
 };
 
-const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+pub(crate) const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
     text_color: Color::BLACK,
     hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
