@@ -72,7 +72,7 @@ pub fn item<'a>(
     ));
 
     menu_items.push(Item::new(
-        Button::new(Text::new("Show Hardware Details"))
+        Button::new(Text::new("Show Hardware Details..."))
             .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
             .style(MENU_BUTTON_STYLE.get_button_style()),
