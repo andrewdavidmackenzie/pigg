@@ -64,7 +64,6 @@ pub fn item<'a>(
         }
     }
 
-    #[cfg(feature = "discovery")]
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
             .width(Length::Fill)
