@@ -293,6 +293,7 @@ impl Application for Piggui {
         let subscriptions = vec![
             iced::event::listen().map(WindowEvent),
             self.connect_dialog.subscription().map(ConnectDialog), // Handle Keyboard events for ConnectDialog
+            self.modal_handler.subscription().map(ModalHandle), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view
                 .subscription(&self.hardware_target)
