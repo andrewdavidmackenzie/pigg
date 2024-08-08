@@ -33,7 +33,7 @@ const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     border_radius: 2.0,
 };
 
-const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+pub(crate) const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
     text_color: Color::WHITE,
     hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
@@ -48,7 +48,7 @@ const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_radius: 10.0,
 };
 
-const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
+pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_color: Color::WHITE,
     background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
     border_radius: 2.0,
