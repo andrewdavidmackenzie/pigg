@@ -65,10 +65,11 @@ lyon_algorithms = { version = "1.0", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
+serial_test = "3.1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.14.1"
-clap = { version = "4.5.13", default-features = false, features = ["std", "help", "error-context"]}
+clap = { version = "4.5.13", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
 rppal = "0.18.0"
