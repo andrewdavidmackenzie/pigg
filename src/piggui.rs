@@ -26,9 +26,9 @@ pub mod connect_dialog_handler;
 mod file_helper;
 pub mod hardware_subscription;
 mod hw;
+mod modal_handler;
 pub mod network_subscription;
 mod styles;
-mod modal_handler;
 mod views;
 mod widgets;
 
@@ -174,7 +174,7 @@ impl Application for Piggui {
                 if self.unsaved_changes {
                     let _ = self
                         .modal_handler
-                        .update(ModalMessage::UnsavedChangesModal, &self.hardware_view);
+                        .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
                 } else {
                     return Command::batch(vec![pick_and_load()]);
                 }
@@ -279,8 +279,7 @@ impl Application for Piggui {
             Modal::new(content, self.modal_handler.view())
                 .on_blur(Message::ModalHandle(ModalMessage::HideModal))
                 .into()
-        }
-        else {
+        } else {
             content.into()
         }
     }
