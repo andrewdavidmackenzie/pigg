@@ -72,10 +72,10 @@ rfd = "0.14.1"
 clap = { version = "4.5.13", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
-rppal = "0.18.0"
+rppal = { version = "0.18.0", git = "https://github.com/golemparts/rppal.git" }
 
 [target.armv7-unknown-linux-gnueabihf.dependencies]
-rppal = "0.18.0"
+rppal = { version = "0.18.0", git = "https://github.com/golemparts/rppal.git" }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
