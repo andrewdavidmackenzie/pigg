@@ -129,3 +129,52 @@ impl DisplayModal {
         .into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::views::hardware_view::HardwareView;
+
+    #[test]
+    fn test_show_modal() {
+        let mut display_modal = DisplayModal::new();
+        assert!(!display_modal.show_modal);
+
+        let _ = display_modal.update(ModalMessage::ShowModal, &HardwareView::new());
+        assert!(display_modal.show_modal);
+    }
+
+    #[test]
+    fn test_hide_modal() {
+        let mut display_modal = DisplayModal::new();
+        display_modal.show_modal = true;
+
+        let _ = display_modal.update(ModalMessage::HideModal, &HardwareView::new());
+        assert!(!display_modal.show_modal);
+        assert!(display_modal.title.is_empty());
+        assert!(display_modal.body.is_empty());
+        assert!(!display_modal.is_warning);
+    }
+
+    #[test]
+    fn test_unsaved_changes_exit_modal() {
+        let mut display_modal = DisplayModal::new();
+
+        let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal, &HardwareView::new());
+        assert!(display_modal.show_modal);
+        assert!(display_modal.is_warning);
+        assert_eq!(display_modal.title, "Unsaved Changes");
+        assert_eq!(display_modal.body, "You have unsaved changes. Do you want to exit without saving?");
+    }
+
+    #[test]
+    fn test_version_modal() {
+        let mut display_modal = DisplayModal::new();
+
+        let _ = display_modal.update(ModalMessage::VersionModal, &HardwareView::new());
+        assert!(display_modal.show_modal);
+        assert!(!display_modal.is_warning);
+        assert_eq!(display_modal.title, "About Piggui");
+        assert_eq!(display_modal.body, crate::views::version::version().to_string());
+    }
+}
