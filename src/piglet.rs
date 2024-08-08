@@ -12,6 +12,7 @@ use std::{env, fs, io, process};
 use anyhow::Context;
 use clap::{Arg, ArgMatches, Command};
 use futures_lite::StreamExt;
+use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
 use iroh_net::endpoint::Connection;
 use iroh_net::relay::RelayUrl;
 use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
@@ -219,7 +220,20 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
         // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
         // If you want to experiment with relaying using your own relay server,
         // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
-        .relay_mode(RelayMode::Default)
+        .relay_mode(RelayMode::Default);
+
+    // Add the local swarm discovery service
+    let discovery = LocalSwarmDiscovery::new(secret_key.public());
+
+    let endpoint = match discovery {
+        Ok(discovery) => endpoint.discovery(Box::new(discovery)),
+        Err(e) => {
+            error!("Could not enable swarm discovery: {e}");
+            endpoint
+        }
+    };
+
+    let endpoint = endpoint
         // pass in `0` to bind the socket to a random available port
         .bind(0)
         .await?;
