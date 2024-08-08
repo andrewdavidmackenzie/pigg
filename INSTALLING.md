@@ -26,9 +26,8 @@ brew install andrewdavidmackenzie/pigg-tap/pigg
 
 ## Install pre-built binaries via "cargo binstall"
 
-If you have installed a rust toolchain, then you can
-install [`cargo-binstall`](https://crates.io/crates/cargo-binstall/1.4.3)
-which you can then use to install the pre-built binaries, without building from source:
+If you have installed a rust toolchain, then you can install `cargo-binstall` from [crates.io](https://crates.io)
+and then use it to install the pre-built binaries, without building from source:
 
 ```sh
 cargo binstall pigg
