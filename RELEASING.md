@@ -19,7 +19,12 @@ The steps to do a full release are:
 - Test as many of the install methods as you can
 - Publish to [crates.io](https://crates.io) also using:
     - `cargo publish`
-- Test that last step with:
     - `cargo install pigg`
-    - `piggui` and check the version number displayed
+    - `piggui` and check the version number displayed or `piggui --version`
     - `piglet --version` and check the correct version number is displayed
+- Test `cargo binstall`
+    - Uninstall the version just installed with `cargo install`
+    - `cargo binstall pigg`
+    - `piggui` and check the version number displayed or `piggui --version`
+    - `piglet --version` and check the correct version number is displayed
+  
