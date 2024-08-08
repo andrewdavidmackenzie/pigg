@@ -99,11 +99,11 @@ impl DisplayModal {
             ); // Exits the application
             button_row = button_row
                 .push(
-                    button("Save")
+                    button("Return to app")
                         .on_press(Message::ModalHandle(ModalMessage::HideModal))
                         .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
-                .spacing(290);
+                .spacing(220);
         } else {
             button_row = button_row.push(
                 button("Close")
@@ -117,7 +117,7 @@ impl DisplayModal {
                 text(self.title.clone())
                     .size(20)
                     .style(text_style.get_text_color()),
-                column![text(self.body.clone()).size(14),].spacing(10),
+                column![text(self.body.clone()),].spacing(10),
                 column![button_row].spacing(5),
             ]
             .spacing(10)]
