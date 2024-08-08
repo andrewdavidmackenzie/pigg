@@ -1,11 +1,11 @@
-use crate::connect_dialog_handler::{
-    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
-};
+use crate::connect_dialog_handler::{MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE};
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareView;
 use crate::Message;
+use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row};
-use iced::{window, Color, Command, Element};
+use iced::{keyboard, window, Color, Command, Element, Event};
+use iced_futures::Subscription;
 
 pub struct DisplayModal {
     pub show_modal: bool,
@@ -22,13 +22,14 @@ pub enum ModalMessage {
     HardwareDetailsModal,
     VersionModal,
     ExitApp,
+    EscKeyEvent(Event),
 }
 
 impl DisplayModal {
     pub fn new() -> Self {
         Self {
             title: String::new(), // Title of the modal
-            body: String::new(), // Body of the modal
+            body: String::new(),  // Body of the modal
             show_modal: false,
             is_warning: false,
         }
@@ -77,9 +78,17 @@ impl DisplayModal {
             }
 
             // Exits the Application
-            ModalMessage::ExitApp => {
-                window::close(window::Id::MAIN)
+            ModalMessage::ExitApp => window::close(window::Id::MAIN),
+
+            // When Pressed `Esc` focuses on previous widget and hide modal
+            ModalMessage::EscKeyEvent(Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(key::Named::Escape),
+                ..
+            })) => {
+                self.show_modal = false;
+                Command::none()
             }
+            _ => Command::none(),
         };
     }
 
@@ -128,6 +137,9 @@ impl DisplayModal {
         .padding(15)
         .into()
     }
+    pub fn subscription(&self) -> Subscription<ModalMessage> {
+        iced::event::listen().map(ModalMessage::EscKeyEvent)
+    }
 }
 
 #[cfg(test)]
@@ -164,7 +176,10 @@ mod tests {
         assert!(display_modal.show_modal);
         assert!(display_modal.is_warning);
         assert_eq!(display_modal.title, "Unsaved Changes");
-        assert_eq!(display_modal.body, "You have unsaved changes. Do you want to exit without saving?");
+        assert_eq!(
+            display_modal.body,
+            "You have unsaved changes. Do you want to exit without saving?"
+        );
     }
 
     #[test]
@@ -175,6 +190,9 @@ mod tests {
         assert!(display_modal.show_modal);
         assert!(!display_modal.is_warning);
         assert_eq!(display_modal.title, "About Piggui");
-        assert_eq!(display_modal.body, crate::views::version::version().to_string());
+        assert_eq!(
+            display_modal.body,
+            crate::views::version::version().to_string()
+        );
     }
 }
