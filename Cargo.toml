@@ -31,7 +31,7 @@ default = []
 discovery = []
 
 [dependencies]
-derive_more = "=1.0.0-beta.6" # To fix iroh-net issue
+derive_more = "=1.0.0" # To fix iroh-net issue
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
