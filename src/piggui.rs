@@ -145,7 +145,6 @@ impl Application for Piggui {
                         let _ = self
                             .modal_handler
                             .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
-                        self.unsaved_changes = false;
                     } else {
                         return window::close(window::Id::MAIN);
                     }
