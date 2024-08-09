@@ -18,7 +18,6 @@ pub struct DisplayModal {
 
 #[derive(Clone, Debug)]
 pub enum ModalMessage {
-    ShowModal,
     HideModal,
     UnsavedChangesExitModal,
     HardwareDetailsModal,
@@ -42,12 +41,7 @@ impl DisplayModal {
         message: ModalMessage,
         hardware_view: &HardwareView,
     ) -> Command<Message> {
-        return match message {
-            ModalMessage::ShowModal => {
-                self.show_modal = true;
-                Command::none()
-            }
-
+        match message {
             ModalMessage::HideModal => {
                 self.show_modal = false;
                 Command::none()
@@ -93,7 +87,7 @@ impl DisplayModal {
                 Command::none()
             }
             _ => Command::none(),
-        };
+        }
     }
 
     pub fn view(&self) -> Element<Message> {
@@ -152,15 +146,6 @@ impl DisplayModal {
 mod tests {
     use super::*;
     use crate::views::hardware_view::HardwareView;
-
-    #[test]
-    fn test_show_modal() {
-        let mut display_modal = DisplayModal::new();
-        assert!(!display_modal.show_modal);
-
-        let _ = display_modal.update(ModalMessage::ShowModal, &HardwareView::new());
-        assert!(display_modal.show_modal);
-    }
 
     #[test]
     fn test_hide_modal() {
