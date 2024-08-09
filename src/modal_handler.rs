@@ -1,4 +1,6 @@
-use crate::connect_dialog_handler::{MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE};
+use crate::connect_dialog_handler::{
+    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
+};
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareView;
 use crate::Message;
@@ -34,6 +36,7 @@ impl DisplayModal {
             is_warning: false,
         }
     }
+
     pub fn update(
         &mut self,
         message: ModalMessage,
@@ -44,6 +47,7 @@ impl DisplayModal {
                 self.show_modal = true;
                 Command::none()
             }
+
             ModalMessage::HideModal => {
                 self.show_modal = false;
                 Command::none()
@@ -138,6 +142,7 @@ impl DisplayModal {
         .padding(15)
         .into()
     }
+
     pub fn subscription(&self) -> Subscription<ModalMessage> {
         iced::event::listen().map(ModalMessage::EscKeyEvent)
     }
