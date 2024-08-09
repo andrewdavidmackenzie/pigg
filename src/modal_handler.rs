@@ -12,6 +12,7 @@ pub struct DisplayModal {
     title: String,
     body: String,
     is_warning: bool,
+    is_saved: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -19,6 +20,7 @@ pub enum ModalMessage {
     ShowModal,
     HideModal,
     UnsavedChangesExitModal,
+    UnsavedChangesModal,
     HardwareDetailsModal,
     VersionModal,
     ExitApp,
@@ -32,6 +34,7 @@ impl DisplayModal {
             body: String::new(),  // Body of the modal
             show_modal: false,
             is_warning: false,
+            is_saved: false,
         }
     }
     pub fn update(
@@ -41,16 +44,19 @@ impl DisplayModal {
     ) -> Command<Message> {
         return match message {
             ModalMessage::ShowModal => {
+                self.is_saved = false;
                 self.show_modal = true;
                 Command::none()
             }
             ModalMessage::HideModal => {
+                self.is_saved = false;
                 self.show_modal = false;
                 Command::none()
             }
 
             // Display warning for unsaved changes
             ModalMessage::UnsavedChangesExitModal => {
+                self.is_saved = false;
                 self.show_modal = true;
                 self.is_warning = true;
                 self.title = "Unsaved Changes".to_string();
@@ -59,8 +65,18 @@ impl DisplayModal {
                 Command::none()
             }
 
+            ModalMessage::UnsavedChangesModal => {
+                self.show_modal = true;
+                self.is_warning = true;
+                self.is_saved = true;
+                self.title = "Unsaved Changes".to_string();
+                self.body = "You have unsaved changes, Do you want to exit without saving?".to_string();
+                Command::none()
+            }
+
             // Display hardware information
             ModalMessage::HardwareDetailsModal => {
+                self.is_saved = false;
                 self.show_modal = true;
                 self.is_warning = false;
                 self.title = "About Connected Hardware".to_string();
@@ -70,6 +86,7 @@ impl DisplayModal {
 
             // Display piggui information
             ModalMessage::VersionModal => {
+                self.is_saved = false;
                 self.show_modal = true;
                 self.is_warning = false;
                 self.title = "About Piggui".to_string();
@@ -97,7 +114,25 @@ impl DisplayModal {
         let mut text_style = TextStyle {
             text_color: Color::new(0.447, 0.624, 0.812, 1.0),
         };
-        if self.is_warning {
+
+        if self.is_saved && self.is_warning {
+            text_style = TextStyle {
+                text_color: Color::new(0.988, 0.686, 0.243, 1.0),
+            };
+            button_row = button_row.push(
+                button("Exit without saving")
+                    .on_press(Message::ModalHandle(ModalMessage::ExitApp))
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+            ); // Exits the application
+            button_row = button_row
+                .push(
+                    button("Save")
+                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                )
+                .spacing(290);
+        }
+        else if !self.is_saved && self.is_warning {
             text_style = TextStyle {
                 text_color: Color::new(0.988, 0.686, 0.243, 1.0),
             };
@@ -109,7 +144,7 @@ impl DisplayModal {
             button_row = button_row
                 .push(
                     button("Return to app")
-                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                        .on_press(Message::ModalHandle(ModalMessage::UnsavedChangesModal))
                         .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
                 .spacing(220);
