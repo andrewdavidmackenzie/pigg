@@ -1,3 +1,11 @@
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32"
+)))]
 use serial_test::serial;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
