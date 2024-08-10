@@ -1,5 +1,5 @@
 use crate::styles::button_style::ButtonStyle;
-use crate::{Message, ToastMessage};
+use crate::{Message, ModalMessage};
 use iced::widget::{Button, Text};
 use iced::{Color, Element};
 
@@ -39,7 +39,7 @@ pub fn version_button() -> Element<'static, Message> {
         border_radius: 4.0,
     };
     Button::new(version_text)
-        .on_press(Message::Toast(ToastMessage::VersionToast))
+        .on_press(Message::ModalHandle(ModalMessage::VersionModal))
         .clip(true)
         .height(iced::Length::Shrink)
         .style(about_button_style.get_button_style())

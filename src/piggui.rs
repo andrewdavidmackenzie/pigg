@@ -2,7 +2,7 @@ use crate::connect_dialog_handler::ConnectDialogMessage::HideConnectDialog;
 use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
-use crate::toast_handler::{ToastHandler, ToastMessage};
+use crate::modal_handler::{DisplayModal, ModalMessage};
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
@@ -26,9 +26,9 @@ pub mod connect_dialog_handler;
 mod file_helper;
 pub mod hardware_subscription;
 mod hw;
+mod modal_handler;
 pub mod network_subscription;
 mod styles;
-mod toast_handler;
 mod views;
 mod widgets;
 
@@ -42,7 +42,7 @@ pub enum Message {
     Load,
     LayoutChanged(Layout),
     Hardware(HardwareViewMessage),
-    Toast(ToastMessage),
+    ModalHandle(ModalMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     MenuBarButtonClicked,
@@ -58,7 +58,7 @@ pub struct Piggui {
     layout_selector: LayoutSelector,
     unsaved_changes: bool,
     info_row: InfoRow,
-    toast_handler: ToastHandler,
+    modal_handler: DisplayModal,
     hardware_view: HardwareView,
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
@@ -121,7 +121,7 @@ impl Application for Piggui {
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
-                toast_handler: ToastHandler::new(),
+                modal_handler: DisplayModal::new(),
                 hardware_view: HardwareView::new(),
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
@@ -143,9 +143,8 @@ impl Application for Piggui {
                 {
                     if self.unsaved_changes {
                         let _ = self
-                            .toast_handler
-                            .update(ToastMessage::UnsavedChangesExitToast, &self.hardware_view);
-                        self.unsaved_changes = false;
+                            .modal_handler
+                            .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
                     } else {
                         return window::close(window::Id::MAIN);
                     }
@@ -173,16 +172,16 @@ impl Application for Piggui {
             Load => {
                 if self.unsaved_changes {
                     let _ = self
-                        .toast_handler
-                        .update(ToastMessage::UnsavedChangesToast, &self.hardware_view);
+                        .modal_handler
+                        .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
                 } else {
-                    return Command::batch(vec![ToastHandler::clear_last_toast(), pick_and_load()]);
+                    return Command::batch(vec![pick_and_load()]);
                 }
             }
 
-            Toast(toast_message) => {
+            ModalHandle(toast_message) => {
                 return self
-                    .toast_handler
+                    .modal_handler
                     .update(toast_message, &self.hardware_view);
             }
 
@@ -275,8 +274,12 @@ impl Application for Piggui {
             Modal::new(content, self.connect_dialog.view())
                 .on_blur(Message::ConnectDialog(HideConnectDialog))
                 .into()
+        } else if self.modal_handler.show_modal {
+            Modal::new(content, self.modal_handler.view())
+                .on_blur(Message::ModalHandle(ModalMessage::HideModal))
+                .into()
         } else {
-            self.toast_handler.view(content.into())
+            content.into()
         }
     }
 
@@ -289,6 +292,7 @@ impl Application for Piggui {
         let subscriptions = vec![
             iced::event::listen().map(WindowEvent),
             self.connect_dialog.subscription().map(ConnectDialog), // Handle Keyboard events for ConnectDialog
+            self.modal_handler.subscription().map(ModalHandle),    // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view
                 .subscription(&self.hardware_target)
@@ -338,52 +342,4 @@ fn get_matches() -> ArgMatches {
     );
 
     app.get_matches()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_window_close_with_unsaved_changes() {
-        let mut app = Piggui::new(()).0;
-
-        // Simulate unsaved changes
-        app.unsaved_changes = true;
-
-        // Send a close window event
-        let _ = app.update(WindowEvent(iced::Event::Window(
-            window::Id::MAIN,
-            window::Event::CloseRequested,
-        )));
-
-        // Check if a warning toast was added
-        assert_eq!(app.toast_handler.get_toasts().len(), 1);
-        let toast = &app.toast_handler.get_toasts()[0];
-        assert_eq!(toast.title, "Unsaved Changes");
-        assert_eq!(
-            toast.body,
-            "You have unsaved changes. Do you want to exit without saving?"
-        );
-    }
-
-    #[test]
-    fn test_load_with_unsaved_changes() {
-        let mut app = Piggui::new(()).0;
-
-        // Simulate unsaved changes
-        app.unsaved_changes = true;
-
-        // Send a load message
-        let _ = app.update(Load);
-
-        // Check if a warning toast was added
-        assert_eq!(app.toast_handler.get_toasts().len(), 1);
-        let toast = &app.toast_handler.get_toasts()[0];
-        assert_eq!(toast.title, "Unsaved Changes");
-        assert_eq!(
-            toast.body,
-            "You have unsaved changes. Do you want to continue without saving?"
-        );
-    }
 }
