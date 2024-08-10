@@ -1,20 +1,23 @@
 #![deny(clippy::unwrap_used)]
+#![cfg(not(target_arch = "wasm32"))]
 
-use std::env::current_exe;
-use std::fs::File;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::process::exit;
-use std::str::FromStr;
-use std::time::Duration;
-use std::{env, fs, io, process};
+use std::{
+    env,
+    env::current_exe,
+    fs,
+    fs::File,
+    io,
+    io::Write,
+    path::{Path, PathBuf},
+    process,
+    process::exit,
+    str::FromStr,
+    time::Duration,
+};
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
 use futures_lite::StreamExt;
-use iroh_net::endpoint::Connection;
-use iroh_net::relay::RelayUrl;
-use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
 use log::error;
 use log::{info, trace};
 use service_manager::{
@@ -28,6 +31,9 @@ use tracing_subscriber::EnvFilter;
 
 use hw::config::HardwareConfig;
 use hw::Hardware;
+use iroh_net::endpoint::Connection;
+use iroh_net::relay::RelayUrl;
+use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
 
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
@@ -40,7 +46,6 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
 /// over the network.
-#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let matches = get_matches();
@@ -481,9 +486,10 @@ mod test {
     use std::path::PathBuf;
     use std::str::FromStr;
 
+    use tempfile::tempdir;
+
     use iroh_net::relay::RelayUrl;
     use iroh_net::NodeId;
-    use tempfile::tempdir;
 
     #[test]
     fn write_info_file() {
