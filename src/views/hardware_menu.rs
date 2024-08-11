@@ -7,7 +7,7 @@ use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use crate::HardwareTarget::NoHW;
 use crate::HardwareTarget::Remote;
-use crate::{Message, ToastMessage};
+use crate::{Message, ModalMessage};
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn item<'a>(
@@ -71,8 +71,8 @@ pub fn item<'a>(
     ));
 
     menu_items.push(Item::new(
-        Button::new(Text::new("Show Hardware Details"))
-            .on_press(Message::Toast(ToastMessage::HardwareDetailsToast))
+        Button::new(Text::new("Show Hardware Details..."))
+            .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
             .style(MENU_BUTTON_STYLE.get_button_style()),
     ));

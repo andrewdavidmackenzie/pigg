@@ -15,6 +15,8 @@ exclude = [".github", "assets/", "codecov.yml", "configs/", "Makefile", ".cargo_
 [package.metadata.wix]
 upgrade-guid = "7DCB054F-6CE0-4914-876E-AEA0C2E91328"
 path-guid = "17155407-8DA8-45BD-8C67-91FE4C7E99AA"
+license = false
+eula = false
 
 [[bin]]
 name = "piggui"
@@ -30,7 +32,7 @@ default = []
 [dependencies]
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
-serde = { version = "1.0.204", default-features = false, features = ["derive"] }
+serde = { version = "1.0.205", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.122", default-features = false, features = ["std"] }
 serde_arrays = { version = "0.1.0", default-features = false }
 rand = { version = "0.8.5", default-features = false }
@@ -60,10 +62,11 @@ lyon_algorithms = { version = "1.0", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
+serial_test = "3.1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.14.1"
-clap = { version = "4.5.11", default-features = false, features = ["std"] }
+clap = { version = "4.5.14", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
 rppal = "0.18.0"
@@ -79,16 +82,27 @@ lto = "thin"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.3.0"
+cargo-dist-version = "0.19.1"
 # CI backends to support
-ci = ["github"]
+ci = "github"
 # The installers to generate for each app
 installers = ["shell", "homebrew", "msi"]
 # A GitHub repo to push Homebrew formulas to
 tap = "andrewdavidmackenzie/pigg-tap"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc",
+    "aarch64-unknown-linux-gnu", "armv7-unknown-linux-gnueabihf"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Publish jobs to run in CI
 pr-run-mode = "plan"
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+# Whether to install an updater program
+install-updater = false
+
+[workspace.metadata.dist.github-custom-runners]
+aarch64-apple-darwin = "macos-14"
+x86_64-apple-darwin = "macos-12"
+x86_64-unknown-linux-gnu = "ubuntu-latest"
+x86_64-pc-windows-msvc = "windows-latest"
