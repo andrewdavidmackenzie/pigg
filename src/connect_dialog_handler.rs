@@ -9,7 +9,7 @@ use crate::views::hardware_view::HardwareTarget::Remote;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Color, Command, Element, Event};
+use iced::{keyboard, Color, Task, Element, Event};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
@@ -104,12 +104,12 @@ impl ConnectDialog {
 
     async fn empty() {}
 
-    pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
+    pub fn update(&mut self, message: ConnectDialogMessage) -> Task<Message> {
         return match message {
             ConnectButtonPressed(node_id, url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
-                    return Command::none();
+                    return Task::none();
                 }
 
                 match NodeId::from_str(node_id.as_str().trim()) {
@@ -127,12 +127,12 @@ impl ConnectDialog {
                                     self.show_spinner = false;
                                     self.disable_widgets = false;
                                     self.iroh_connection_error = format!("{}", err);
-                                    return Command::none();
+                                    return Task::none();
                                 }
                             }
                         };
 
-                        return Command::perform(Self::empty(), move |_| {
+                        return Task::perform(Self::empty(), move |_| {
                             Message::ConnectRequest(Remote(nodeid, relay_url))
                         });
                     }
@@ -140,19 +140,19 @@ impl ConnectDialog {
                         self.iroh_connection_error = format!("{}", err);
                         self.show_spinner = false;
                         self.disable_widgets = false;
-                        Command::none()
+                        Task::none()
                     }
                 }
             }
 
             ShowConnectDialog => {
                 self.show_modal = true;
-                Command::none()
+                Task::none()
             }
 
             HideConnectDialog => {
                 self.hide_modal();
-                Command::none()
+                Task::none()
             }
 
             ModalKeyEvent(event) => {
@@ -175,26 +175,26 @@ impl ConnectDialog {
                         ..
                     }) => {
                         self.hide_modal();
-                        Command::none()
+                        Task::none()
                     }
-                    _ => Command::none(),
+                    _ => Task::none(),
                 }
             }
 
             NodeIdEntered(node_id) => {
                 self.nodeid = node_id;
-                Command::none()
+                Task::none()
             }
 
             RelayURL(relay_url) => {
                 self.relay_url = relay_url;
-                Command::none()
+                Task::none()
             }
 
             ConnectionError(error) => {
                 self.set_error(error);
                 self.enable_widgets_and_hide_spinner();
-                Command::none()
+                Task::none()
             }
         };
     }
@@ -318,7 +318,7 @@ impl ConnectDialog {
     }
 
     // Handle Keyboard events
-    pub fn subscription(&self) -> Subscription<ConnectDialogMessage> {
+    pub fn subscription(&self) -> iced::Subscription<ConnectDialogMessage> {
         iced::event::listen().map(ModalKeyEvent)
     }
 

@@ -8,7 +8,8 @@ use iced::futures::channel::mpsc::Receiver;
 use iced::futures::sink::SinkExt;
 use iced::futures::StreamExt;
 use iced::futures::{pin_mut, FutureExt};
-use iced::{futures, subscription, Subscription};
+use iced::{futures, Subscription};
+use iced_futures::subscription;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};
@@ -25,7 +26,7 @@ pub enum NetworkState {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe(nodeid: NodeId, relay: Option<RelayUrl>) -> Subscription<HardwareEventMessage> {
+pub fn subscribe(nodeid: NodeId, relay: Option<RelayUrl>) -> iced_futures::Subscription<HardwareEventMessage> {
     struct Connect;
     subscription::channel(
         std::any::TypeId::of::<Connect>(),

@@ -15,7 +15,7 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{
-    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
+    executor, window, Application, Task, Element, Length, Settings, Subscription, Theme,
 };
 use iroh_net::NodeId;
 use std::str::FromStr;
@@ -53,6 +53,7 @@ pub enum Message {
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
+#[derive(Default)]
 pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
@@ -93,19 +94,14 @@ fn main() -> Result<(), iced::Error> {
         ..Default::default()
     };
 
-    Piggui::run(Settings {
-        window,
-        ..Default::default()
-    })
+    iced::application("Clock - Iced", Piggui::update, Piggui::view)
+        .subscription(Piggui::subscription)
+        .run()
 }
 
-impl Application for Piggui {
-    type Executor = executor::Default;
-    type Message = Message;
-    type Theme = Theme;
-    type Flags = ();
+impl Piggui {
 
-    fn new(_flags: ()) -> (Piggui, Command<Message>) {
+    fn new(_flags: ()) -> (Piggui, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
         #[cfg(not(target_arch = "wasm32"))]
@@ -136,10 +132,10 @@ impl Application for Piggui {
             .unwrap_or(String::from("Piggui"))
     }
 
-    fn update(&mut self, message: Message) -> Command<Message> {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             WindowEvent(event) => {
-                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
+                if let iced::Event::Window(window::Event::CloseRequested) = event
                 {
                     if self.unsaved_changes {
                         let _ = self
@@ -153,7 +149,7 @@ impl Application for Piggui {
             }
 
             MenuBarButtonClicked => {
-                return Command::none();
+                return Task::none();
             }
 
             LayoutChanged(layout) => {
@@ -176,7 +172,7 @@ impl Application for Piggui {
                         .toast_handler
                         .update(ToastMessage::UnsavedChangesToast, &self.hardware_view);
                 } else {
-                    return Command::batch(vec![ToastHandler::clear_last_toast(), pick_and_load()]);
+                    return Task::batch(vec![ToastHandler::clear_last_toast(), pick_and_load()]);
                 }
             }
 
@@ -234,7 +230,7 @@ impl Application for Piggui {
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
     /*
@@ -267,9 +263,7 @@ impl Application for Piggui {
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
-            .align_x(iced::alignment::Horizontal::Center)
-            .center_x()
-            .center_y();
+            .align_x(iced::alignment::Horizontal::Center);
 
         if self.connect_dialog.show_modal {
             Modal::new(content, self.connect_dialog.view())
@@ -299,7 +293,7 @@ impl Application for Piggui {
     }
 }
 
-/// Determine the hardware target based on command line options
+/// Determine the hardware target based on Task line options
 fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
     let mut target = HardwareTarget::default();
 
@@ -315,7 +309,7 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-/// Parse the command line arguments using clap
+/// Parse the Task line arguments using clap
 fn get_matches() -> ArgMatches {
     let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
@@ -353,7 +347,6 @@ mod tests {
 
         // Send a close window event
         let _ = app.update(WindowEvent(iced::Event::Window(
-            window::Id::MAIN,
             window::Event::CloseRequested,
         )));
 

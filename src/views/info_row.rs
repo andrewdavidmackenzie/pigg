@@ -1,8 +1,8 @@
 use iced::widget::{container, Row};
-use iced::{Color, Command, Element, Length};
+use iced::{Color, Element, Length, Task};
+use iced::widget::text::Catalog;
 use iced_aw::menu;
-use iced_aw::menu::{MenuBar, StyleSheet};
-use iced_aw::style::MenuBarStyle;
+use iced_aw::menu::{MenuBar};
 use iced_futures::core::Background;
 use iced_futures::Subscription;
 
@@ -30,6 +30,7 @@ pub(crate) const MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     border_radius: 4.0,
 };
 
+#[derive(Default)]
 pub struct InfoRow {
     message_row: MessageRow,
 }
@@ -48,7 +49,7 @@ impl InfoRow {
     }
 
     /// Update state based on [MessageRowMessage] messages received
-    pub fn update(&mut self, message: MessageRowMessage) -> Command<Message> {
+    pub fn update(&mut self, message: MessageRowMessage) -> Task<Message> {
         self.message_row.update(message)
     }
 
@@ -69,7 +70,7 @@ impl InfoRow {
                 blur_radius: 10f32,
             },
             menu_background_expand: iced::Padding::from([5, 5]),
-            ..theme.appearance(&MenuBarStyle::Default)
+            ..theme.style(&MenuBarStyle::Default)
         });
 
         container(

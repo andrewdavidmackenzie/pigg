@@ -1,7 +1,7 @@
 use crate::styles::button_style::ButtonStyle;
 use crate::Message;
 use iced::widget::{Button, Text};
-use iced::{Color, Command, Element, Length};
+use iced::{Color, Task, Element, Length};
 use iced_futures::Subscription;
 use std::time::Duration;
 
@@ -76,6 +76,7 @@ impl MessageQueue {
     }
 }
 
+#[derive(Default)]
 pub struct MessageRow {
     message_queue: MessageQueue,
 }
@@ -93,13 +94,13 @@ impl MessageRow {
     }
 
     /// Update the state and do actions depending on the [MessageRowMessage] sent
-    pub fn update(&mut self, message: MessageRowMessage) -> Command<Message> {
+    pub fn update(&mut self, message: MessageRowMessage) -> Task<Message> {
         match message {
             MessageRowMessage::ShowStatusMessage(msg) => self.add_message(msg),
             MessageRowMessage::ClearStatusMessage => self.message_queue.clear_message(),
         }
 
-        Command::none()
+        Task::none()
     }
 
     /// Create the view that represents a status row at the bottom of the screen
@@ -133,7 +134,7 @@ impl MessageRow {
             .into()
     }
 
-    pub fn subscription(&self) -> Subscription<MessageRowMessage> {
+    pub fn subscription(&self) -> iced_futures::Subscription<MessageRowMessage> {
         if self.message_queue.showing_info_message() {
             iced::time::every(Duration::from_secs(3)).map(|_| MessageRowMessage::ClearStatusMessage)
         } else {

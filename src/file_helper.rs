@@ -3,7 +3,7 @@ use crate::views::message_row::MessageMessage::{Error, Info};
 use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message;
 use crate::Message::{ConfigLoaded, InfoRow};
-use iced::Command;
+use iced::Task;
 use std::{env, io};
 
 /// Asynchronously load a .piggui config file from file named `filename` (no picker)
@@ -56,8 +56,8 @@ async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
 
 /// Utility function that saves the [HardwareConfig] to a file using `Command::perform` and uses
 /// the result to return correct [Message]
-pub fn save(gpio_config: HardwareConfig) -> Command<Message> {
-    Command::perform(save_via_picker(gpio_config), |result| match result {
+pub fn save(gpio_config: HardwareConfig) -> Task<Message> {
+    Task::perform(save_via_picker(gpio_config), |result| match result {
         Ok(true) => Message::ConfigSaved,
         Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
         Err(e) => Message::InfoRow(ShowStatusMessage(Error(
@@ -69,8 +69,8 @@ pub fn save(gpio_config: HardwareConfig) -> Command<Message> {
 
 /// Utility function that loads config from a file using `Command::perform` of the load picker
 /// and uses the result to return correct [Message]
-pub fn pick_and_load() -> Command<Message> {
-    Command::perform(load_via_picker(), |result| match result {
+pub fn pick_and_load() -> Task<Message> {
+    Task::perform(load_via_picker(), |result| match result {
         Ok(Some((filename, config))) => ConfigLoaded(filename, config),
         Ok(None) => InfoRow(ShowStatusMessage(Info("File load cancelled".into()))),
         Err(e) => InfoRow(ShowStatusMessage(Error(
@@ -83,15 +83,15 @@ pub fn pick_and_load() -> Command<Message> {
 /// A utility function to asynchronously load a config file if there is an argument supplied
 /// and return the appropriate [Message] depending on the result, and Command:none() if no
 /// arg is supplied
-pub fn maybe_load_no_picker(arg: Option<String>) -> Command<Message> {
+pub fn maybe_load_no_picker(arg: Option<String>) -> Task<Message> {
     match arg {
-        Some(filename) => Command::perform(load(filename), |result| match result {
+        Some(filename) => Task::perform(load(filename), |result| match result {
             Ok((filename, config)) => ConfigLoaded(filename, config),
             Err(e) => Message::InfoRow(ShowStatusMessage(Error(
                 "Error loading config from file".into(),
                 format!("Error loading the file specified on command line: {}", e),
             ))),
         }),
-        None => Command::none(),
+        None => Task::none(),
     }
 }

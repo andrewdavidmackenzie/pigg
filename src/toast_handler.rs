@@ -1,7 +1,7 @@
 use crate::views::hardware_view::HardwareView;
 use crate::widgets::toast::{Manager, Status, Toast};
 use crate::Message;
-use iced::{Command, Element};
+use iced::{Task, Element};
 
 #[derive(Debug, Clone)]
 pub enum ToastMessage {
@@ -14,6 +14,7 @@ pub enum ToastMessage {
     Timeout(f64),
 }
 
+#[derive(Default)]
 pub struct ToastHandler {
     toasts: Vec<Toast>,
     showing_toast: bool,
@@ -37,7 +38,7 @@ impl ToastHandler {
         &mut self,
         message: ToastMessage,
         hardware_view: &HardwareView,
-    ) -> Command<Message> {
+    ) -> Task<Message> {
         match message {
             ToastMessage::UnsavedChangesExitToast => {
                 self.clear_toasts();
@@ -75,7 +76,7 @@ impl ToastHandler {
                 if self.showing_toast {
                     // Close the existing toast if `showing_toast` is true
                     if let Some(index) = self.get_latest_toast_index() {
-                        return Command::perform(Self::empty(), move |_| {
+                        return Task::perform(Self::empty(), move |_| {
                             Message::Toast(ToastMessage::Close(index))
                         });
                     }
@@ -115,7 +116,7 @@ impl ToastHandler {
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
     /// Take an element and wrap it in a Manager for toasts
@@ -127,8 +128,8 @@ impl ToastHandler {
         .into()
     }
 
-    pub fn clear_last_toast() -> Command<Message> {
-        Command::perform(Self::empty(), |_| {
+    pub fn clear_last_toast() -> Task<Message> {
+        Task::perform(Self::empty(), |_| {
             Message::Toast(ToastMessage::CloseLastToast)
         })
     }
