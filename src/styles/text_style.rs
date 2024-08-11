@@ -1,23 +1,27 @@
 use iced::widget::text;
-use iced::widget::text::Appearance;
+use iced::widget::text::{Style};
 use iced::{Color, Theme};
 
 pub struct TextStyle {
     pub text_color: Color,
 }
 
-impl text::StyleSheet for TextStyle {
-    type Style = Theme;
+impl text::Catalog for TextStyle {
+    type Class<'a> = Theme;
 
-    fn appearance(&self, _style: Self::Style) -> Appearance {
-        Appearance {
+    fn default<'a>() -> Self::Class<'a> {
+        todo!()
+    }
+
+    fn style(&self, item: &Self::Class<'_>) -> Style {
+        Style {
             color: Some(self.text_color),
         }
     }
 }
 
 impl TextStyle {
-    pub fn get_text_color(&self) -> iced::widget::theme::Text {
-        iced::widget::theme::Text::Color(self.text_color)
+    pub fn get_text_color(&self) -> iced::widget::text::Style {
+        iced::widget::text::Text::Custom(self.text_color)
     }
 }

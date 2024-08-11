@@ -1,8 +1,8 @@
 use iced::widget::container;
 
 use crate::Message;
-use iced::theme::Container;
 use iced::{Background, Color};
+use iced::widget::container::Style;
 
 #[derive(Default)]
 pub struct BackgroundColor {
@@ -15,11 +15,14 @@ impl BackgroundColor {
     }
 }
 
-impl container::StyleSheet for BackgroundColor {
-    type Style = iced::Theme;
+impl container::Catalog for BackgroundColor {
+    type Class<'a> = iced::Theme;
+    fn default<'a>() -> Self::Class<'a> {
+        todo!()
+    }
 
-    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
-        container::Appearance {
+    fn style(&self, class: &Self::Class<'_>) -> Style {
+        Style {
             background: Some(Background::from(self.color)),
             ..Default::default()
         }
@@ -32,6 +35,6 @@ pub trait SetAppearance {
 
 impl SetAppearance for container::Container<'_, Message> {
     fn set_background(self, color: Color) -> Self {
-        self.style(Container::Custom(Box::new(BackgroundColor::new(color))))
+        self.style(container::Container::Custom(Box::new(BackgroundColor::new(color))))
     }
 }

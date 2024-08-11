@@ -1,4 +1,5 @@
 use iced::{widget::toggler, Color, Theme};
+use iced::widget::toggler::{Status, Style};
 
 pub struct TogglerStyle {
     pub background: Color,
@@ -13,57 +14,43 @@ pub struct TogglerStyle {
     pub active_foreground_border: Color,
 }
 
-impl toggler::StyleSheet for TogglerStyle {
-    type Style = Theme;
+impl toggler::Catalog for TogglerStyle {
+    type Class<'a> = Theme;
 
-    fn active(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
-        if is_active {
-            toggler::Appearance {
-                background: self.active_background,
-                background_border_width: self.background_border_width,
-                background_border_color: self.active_background_border,
-                foreground: self.active_foreground,
-                foreground_border_width: self.foreground_border_width,
-                foreground_border_color: self.active_foreground_border,
-            }
-        } else {
-            toggler::Appearance {
-                background: self.background,
-                background_border_width: self.background_border_width,
-                background_border_color: self.background_border_color,
-                foreground: self.foreground,
-                foreground_border_width: self.foreground_border_width,
-                foreground_border_color: self.foreground_border_color,
-            }
-        }
+    fn default<'a>() -> Self::Class<'a> {
+        todo!()
     }
 
-    fn hovered(&self, _style: &Self::Style, is_active: bool) -> toggler::Appearance {
-        if is_active {
-            toggler::Appearance {
-                background: self.active_background,
-                background_border_width: self.background_border_width,
-                background_border_color: self.active_background_border,
-                foreground: self.active_foreground,
-                foreground_border_width: self.foreground_border_width,
-                foreground_border_color: self.active_foreground_border,
+    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style {
+        match status {
+            Status::Active => {
+                Style {
+                    background: self.active_background,
+                    background_border_width: self.background_border_width,
+                    background_border_color: self.active_background_border,
+                    foreground: self.active_foreground,
+                    foreground_border_width: self.foreground_border_width,
+                    foreground_border_color: self.active_foreground_border,
+                }
             }
-        } else {
-            toggler::Appearance {
-                background: self.background,
-                background_border_width: self.background_border_width,
-                background_border_color: self.background_border_color,
-                foreground: self.foreground,
-                foreground_border_width: self.foreground_border_width,
-                foreground_border_color: self.foreground_border_color,
+
+            Status::Hovered =>{
+                Style {
+                    background: self.active_background,
+                    background_border_width: self.background_border_width,
+                    background_border_color: self.active_background_border,
+                    foreground: self.active_foreground,
+                    foreground_border_width: self.foreground_border_width,
+                    foreground_border_color: self.active_foreground_border,
+                }
             }
         }
     }
 }
 
 impl TogglerStyle {
-    pub fn get_toggler_style(&self) -> iced::widget::theme::Toggler {
-        iced::widget::theme::Toggler::Custom(Box::new(TogglerStyle {
+    pub fn get_toggler_style(&self) -> iced::widget::toggler::Style {
+        iced::widget::toggler::Toggler::Custom(Box::new(TogglerStyle {
             background: self.background,
             background_border_width: 1.0,
             background_border_color: self.background_border_color,
