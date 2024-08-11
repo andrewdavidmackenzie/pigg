@@ -4,7 +4,6 @@ use crate::connect_dialog_handler::ConnectDialogMessage::{
 };
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
-use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareTarget::Remote;
 use crate::Message;
 use iced::keyboard::key;
@@ -21,9 +20,7 @@ use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 
 const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
 
-const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
-    text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
-};
+const IROH_INFO_TEXT_COLOR: Color = Color::from_rgba(0.8, 0.8, 0.8, 1.0); // Slightly grey color
 
 const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
@@ -55,9 +52,7 @@ const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_width: 2.0,
 };
 
-const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
-    text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0),
-};
+const CONNECTION_ERROR_DISPLAY: Color =  Color::from_rgba(0.8, 0.0, 0.0, 1.0);
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -241,7 +236,7 @@ impl ConnectDialog {
         };
 
         let text_container =
-            container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+            container(Text::new(IROH_INFO_TEXT).color(IROH_INFO_TEXT_COLOR))
                 .padding(10)
                 .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
@@ -252,7 +247,7 @@ impl ConnectDialog {
                     column![
                         text_container,
                         text(self.iroh_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            .color(CONNECTION_ERROR_DISPLAY),
                         text("Node Id").size(12),
                         text_input("Enter node id", &self.nodeid).padding(5),
                     ]
