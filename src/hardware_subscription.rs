@@ -1,6 +1,6 @@
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::{Receiver, Sender};
-use iced::{subscription, Subscription};
+use iced::Subscription;
 use iced_futures::futures::sink::SinkExt;
 use iced_futures::futures::StreamExt;
 

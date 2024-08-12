@@ -5,8 +5,8 @@ use crate::views::hardware_view::HardwareView;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row};
+use iced::Subscription;
 use iced::{keyboard, window, Color, Element, Event, Task};
-use iced_futures::Subscription;
 
 #[derive(Default)]
 pub struct DisplayModal {
@@ -76,9 +76,9 @@ impl DisplayModal {
 
             // When Pressed `Esc` focuses on previous widget and hide modal
             ModalMessage::EscKeyEvent(Event::Keyboard(keyboard::Event::KeyPressed {
-                                                          key: keyboard::Key::Named(key::Named::Escape),
-                                                          ..
-                                                      })) => {
+                key: keyboard::Key::Named(key::Named::Escape),
+                ..
+            })) => {
                 self.show_modal = false;
                 Task::none()
             }
@@ -120,12 +120,13 @@ impl DisplayModal {
                 column![text(self.body.clone()),].spacing(10),
                 column![button_row].spacing(5),
             ]
-            .spacing(10)].spacing(20),
+            .spacing(10)]
+            .spacing(20),
         )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
     }
 
     pub fn subscription(&self) -> Subscription<ModalMessage> {

@@ -1,10 +1,10 @@
-use iced::widget::{container, Row};
-use iced::{Color, Element, Length, Task};
 use iced::widget::text::Catalog;
+use iced::widget::{container, Row};
+use iced::Subscription;
+use iced::{Color, Element, Length, Task};
 use iced_aw::menu;
-use iced_aw::menu::{MenuBar};
+use iced_aw::menu::MenuBar;
 use iced_futures::core::Background;
-use iced_futures::Subscription;
 
 use crate::styles::background::SetAppearance;
 use crate::styles::button_style::ButtonStyle;
