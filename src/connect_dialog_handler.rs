@@ -8,7 +8,6 @@ use crate::views::hardware_view::HardwareTarget::Remote;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::Subscription;
 use iced::{keyboard, Color, Element, Event, Task};
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;

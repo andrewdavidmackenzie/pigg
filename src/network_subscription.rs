@@ -24,9 +24,9 @@ pub enum NetworkState {
     Connected(Receiver<HardwareConfigMessage>, Connection),
 }
 
-/// `subscribe` implements an async sender of events from inputs, reading from the hardware and
+/// `connect` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe(
+pub fn connect(
     nodeid: NodeId,
     relay: Option<RelayUrl>,
 ) -> impl Stream<Item = HardwareEventMessage> {

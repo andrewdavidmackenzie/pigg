@@ -1,3 +1,4 @@
+use futures_lite::Stream;
 use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
@@ -33,7 +34,7 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{Message, Piggui, PinState};
+use crate::{Message, PinState};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -291,9 +292,7 @@ impl HardwareView {
 
             PinFunctionSelected(bcm_pin_number, pin_function) => {
                 self.new_pin_function(bcm_pin_number, pin_function);
-                return Task::perform(empty(), |_| {
-                    <Piggui as iced::Application>::Message::ConfigChangesMade
-                });
+                return Task::perform(empty(), |_| Message::ConfigChangesMade);
             }
 
             NewConfig(config) => {
@@ -374,11 +373,13 @@ impl HardwareView {
         match hardware_target {
             NoHW => {}
             Local => {
-                subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
+                subscriptions.push(
+                    Subscription::run(hardware_subscription::connect()).map(HardwareSubscription),
+                );
             }
             Remote(nodeid, relay) => {
                 subscriptions.push(
-                    network_subscription::subscribe(*nodeid, relay.clone())
+                    Subscription::run(network_subscription::connect(*nodeid, relay.clone()))
                         .map(HardwareSubscription),
                 );
             }
@@ -575,11 +576,11 @@ fn filter_options(
     let mut config_options: Vec<_> = options
         .iter()
         .filter(|&&option| match selected_function {
-            Some(PinFunction::Input(Some(_))) => {
-                matches!(option, PinFunction::Output(None) | PinFunction::None)
+            Some(Input(Some(_))) => {
+                matches!(option, Output(None) | PinFunction::None)
             }
-            Some(PinFunction::Output(Some(_))) => {
-                matches!(option, PinFunction::Input(None) | PinFunction::None)
+            Some(Output(Some(_))) => {
+                matches!(option, Input(None) | PinFunction::None)
             }
             Some(selected) => selected != option,
             None => option != PinFunction::None,
@@ -709,32 +710,22 @@ mod test {
     fn test_filter_options() {
         use super::*;
 
-        let options = vec![
-            PinFunction::Input(None),
-            PinFunction::Output(None),
-            PinFunction::None,
-        ];
+        let options = vec![Input(None), Output(None), PinFunction::None];
 
         // Test case: No function selected
         let result = filter_options(&options, None);
-        assert_eq!(
-            result,
-            vec![PinFunction::Input(None), PinFunction::Output(None)]
-        );
+        assert_eq!(result, vec![Input(None), Output(None)]);
 
         // Test case: Input selected
-        let result = filter_options(&options, Some(PinFunction::Input(None)));
-        assert_eq!(result, vec![PinFunction::Output(None), PinFunction::None]);
+        let result = filter_options(&options, Some(Input(None)));
+        assert_eq!(result, vec![Output(None), PinFunction::None]);
 
         // Test case: Output selected
-        let result = filter_options(&options, Some(PinFunction::Output(None)));
-        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::None]);
+        let result = filter_options(&options, Some(Output(None)));
+        assert_eq!(result, vec![Input(None), PinFunction::None]);
 
         // Test case: None selected
         let result = filter_options(&options, Some(PinFunction::None));
-        assert_eq!(
-            result,
-            vec![PinFunction::Input(None), PinFunction::Output(None)]
-        );
+        assert_eq!(result, vec![Input(None), Output(None)]);
     }
 }
