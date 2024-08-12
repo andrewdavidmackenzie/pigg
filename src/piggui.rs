@@ -13,7 +13,6 @@ use crate::widgets::modal::Modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
-use futures_lite::Stream;
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Subscription, Task, Theme};
 use iroh_net::NodeId;

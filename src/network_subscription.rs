@@ -41,7 +41,7 @@ pub fn subscription(
                     // Create channel
                     let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
-                    match connect(nodeid, relay.clone()).await {
+                    match connect(&nodeid, relay.clone()).await {
                         Ok((hardware_description, connection)) => {
                             // Send the sender back to the GUI
                             let _ = gui_sender_clone

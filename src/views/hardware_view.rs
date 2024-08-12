@@ -1,4 +1,3 @@
-use futures_lite::Stream;
 use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
