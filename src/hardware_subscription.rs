@@ -42,9 +42,9 @@ fn send_current_input_states(
     }
 }
 
-/// `connect` implements an async sender of events from inputs, reading from the hardware and
+/// `subscription` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn connect() -> impl Stream<Item = HardwareEventMessage> {
+pub fn subscription() -> impl Stream<Item = HardwareEventMessage> {
     struct Connect;
     stream::channel(100, move |mut gui_sender| async move {
         let mut state = State::Disconnected;

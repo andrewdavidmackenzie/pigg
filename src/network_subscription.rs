@@ -24,9 +24,9 @@ pub enum NetworkState {
     Connected(Receiver<HardwareConfigMessage>, Connection),
 }
 
-/// `connect` implements an async sender of events from inputs, reading from the hardware and
+/// `subscription` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn connect(
+pub fn subscription(
     nodeid: NodeId,
     relay: Option<RelayUrl>,
 ) -> impl Stream<Item = HardwareEventMessage> {
@@ -41,7 +41,7 @@ pub fn connect(
                     // Create channel
                     let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
-                    match connect(&nodeid, relay.clone()).await {
+                    match connect(nodeid, relay.clone()).await {
                         Ok((hardware_description, connection)) => {
                             // Send the sender back to the GUI
                             let _ = gui_sender_clone

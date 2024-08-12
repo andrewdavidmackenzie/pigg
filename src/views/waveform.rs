@@ -7,8 +7,9 @@ use chrono::{DateTime, Utc};
 use iced::advanced::text::editor::Direction;
 use iced::{
     widget::canvas::{Cache, Frame, Geometry},
-    Element, Length, Size,
+    Element, Size,
 };
+use iced_futures::core::Length;
 use plotters::backend::DrawingBackend;
 use plotters::chart::ChartBuilder;
 use plotters::series::LineSeries;

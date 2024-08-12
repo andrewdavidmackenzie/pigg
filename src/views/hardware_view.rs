@@ -376,12 +376,13 @@ impl HardwareView {
             NoHW => {}
             Local => {
                 subscriptions.push(
-                    Subscription::run(hardware_subscription::connect()).map(HardwareSubscription),
+                    Subscription::run(hardware_subscription::subscription())
+                        .map(HardwareSubscription),
                 );
             }
             Remote(nodeid, relay) => {
                 subscriptions.push(
-                    Subscription::run(network_subscription::connect(*nodeid, relay.clone()))
+                    Subscription::run(network_subscription::subscription(*nodeid, relay.clone()))
                         .map(HardwareSubscription),
                 );
             }
