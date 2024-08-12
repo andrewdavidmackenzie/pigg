@@ -241,11 +241,11 @@ impl Piggui {
 
         if self.connect_dialog.show_modal {
             Modal::new(content, self.connect_dialog.view())
-                .on_blur(Message::ConnectDialog(HideConnectDialog))
+                .on_blur(ConnectDialog(HideConnectDialog))
                 .into()
         } else if self.modal_handler.show_modal {
             Modal::new(content, self.modal_handler.view())
-                .on_blur(Message::ModalHandle(ModalMessage::HideModal))
+                .on_blur(ModalHandle(ModalMessage::HideModal))
                 .into()
         } else {
             content.into()
