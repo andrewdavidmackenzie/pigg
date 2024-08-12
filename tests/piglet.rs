@@ -34,7 +34,7 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
     println!("Running Command: cargo {}", args.join(" "));
 
     // spawn the 'piglet' process
-    let mut server = piglet_command
+    let mut piglet = piglet_command
         .args(args)
         .current_dir(crate_dir)
         .stdin(Stdio::piped())
@@ -43,7 +43,7 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
         .spawn()
         .expect("Failed to spawn piglet");
 
-    let stdout = server
+    let stdout = piglet
         .stdout
         .as_mut()
         .expect("Could not read stdout of piglet");
@@ -54,7 +54,10 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
         .expect("Could not read stdout of piglet");
 
     println!("Killing 'piglet'");
-    server.kill().expect("Failed to kill piglet process");
+    piglet.kill().expect("Failed to kill piglet process");
+
+    // wait for the process to be removed
+    piglet.wait().expect("Failed to wait until piglet exited");
 
     output
 }
