@@ -1,6 +1,5 @@
 use crate::styles::button_style::ButtonStyle;
 use crate::Message;
-use futures_lite::Stream;
 use iced::widget::{Button, Text};
 use iced::Subscription;
 use iced::{Color, Element, Length, Task};
@@ -135,7 +134,7 @@ impl MessageRow {
             .into()
     }
 
-    pub fn subscription(&self) -> impl Stream<Item = MessageRowMessage> {
+    pub fn subscription(&self) -> Subscription<MessageRowMessage> {
         if self.message_queue.showing_info_message() {
             iced::time::every(Duration::from_secs(3)).map(|_| MessageRowMessage::ClearStatusMessage)
         } else {
