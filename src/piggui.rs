@@ -14,9 +14,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{
-    executor, window, Application, Task, Element, Length, Settings, Subscription, Theme,
-};
+use iced::{executor, window, Application, Element, Length, Settings, Subscription, Task, Theme};
 use iroh_net::NodeId;
 use std::str::FromStr;
 use views::pin_state::PinState;
@@ -100,7 +98,6 @@ fn main() -> Result<(), iced::Error> {
 }
 
 impl Piggui {
-
     fn new(_flags: ()) -> (Piggui, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
@@ -135,8 +132,7 @@ impl Piggui {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             WindowEvent(event) => {
-                if let iced::Event::Window(window::Event::CloseRequested) = event
-                {
+                if let iced::Event::Window(window::Event::CloseRequested) = event {
                     if self.unsaved_changes {
                         let _ = self
                             .modal_handler

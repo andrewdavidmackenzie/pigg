@@ -1,8 +1,9 @@
-use iced::futures::channel::mpsc;
+use futures::channel::mpsc;
+use futures::sink::SinkExt;
+use futures::stream::{Stream, StreamExt};
+use iced::futures;
 use iced::futures::channel::mpsc::{Receiver, Sender};
-use iced::Subscription;
-use iced_futures::futures::sink::SinkExt;
-use iced_futures::futures::StreamExt;
+use iced::stream;
 
 use crate::hw;
 use crate::hw::config::HardwareConfig;
@@ -43,48 +44,44 @@ fn send_current_input_states(
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe() -> Subscription<HardwareEventMessage> {
+pub fn subscribe() -> impl Stream<Item = HardwareEventMessage> {
     struct Connect;
-    subscription::channel(
-        std::any::TypeId::of::<Connect>(),
-        100,
-        move |mut gui_sender| async move {
-            let mut state = State::Disconnected;
-            let mut connected_hardware = hw::get();
-            let hardware_description = connected_hardware.description().unwrap();
+    stream::channel(100, move |mut gui_sender| async move {
+        let mut state = State::Disconnected;
+        let mut connected_hardware = hw::get();
+        let hardware_description = connected_hardware.description().unwrap();
 
-            loop {
-                let mut gui_sender_clone = gui_sender.clone();
-                match &mut state {
-                    State::Disconnected => {
-                        // Create channel
-                        let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
+        loop {
+            let mut gui_sender_clone = gui_sender.clone();
+            match &mut state {
+                State::Disconnected => {
+                    // Create channel
+                    let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
-                        // Send the sender back to the GUI
-                        let _ = gui_sender_clone
-                            .send(HardwareEventMessage::Connected(
-                                hardware_event_sender.clone(),
-                                hardware_description.clone(),
-                            ))
-                            .await;
+                    // Send the sender back to the GUI
+                    let _ = gui_sender_clone
+                        .send(HardwareEventMessage::Connected(
+                            hardware_event_sender.clone(),
+                            hardware_description.clone(),
+                        ))
+                        .await;
 
-                        // We are ready to receive messages from the GUI and send messages to it
-                        state = State::Connected(hardware_event_receiver);
-                    }
+                    // We are ready to receive messages from the GUI and send messages to it
+                    state = State::Connected(hardware_event_receiver);
+                }
 
-                    State::Connected(config_change_receiver) => {
-                        let config_change = config_change_receiver.select_next_some().await;
-                        apply_config_change(
-                            &mut connected_hardware,
-                            config_change,
-                            gui_sender_clone,
-                            &mut gui_sender,
-                        );
-                    }
+                State::Connected(config_change_receiver) => {
+                    let config_change = config_change_receiver.select_next_some().await;
+                    apply_config_change(
+                        &mut connected_hardware,
+                        config_change,
+                        gui_sender_clone,
+                        &mut gui_sender,
+                    );
                 }
             }
-        },
-    )
+        }
+    })
 }
 
 /// Apply a config change to the local hardware
