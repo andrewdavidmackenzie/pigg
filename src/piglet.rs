@@ -204,6 +204,8 @@ fn get_matches() -> ArgMatches {
 async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result<()> {
     let secret_key = SecretKey::generate();
 
+    let discovery = LocalSwarmDiscovery::new(secret_key.public());
+
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
     // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
     // connections between nodes when there are NATs or firewalls preventing direct connections.
@@ -223,8 +225,6 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
         .relay_mode(RelayMode::Default);
 
     // Add the local swarm discovery service
-    let discovery = LocalSwarmDiscovery::new(secret_key.public());
-
     let endpoint = match discovery {
         Ok(discovery) => endpoint.discovery(Box::new(discovery)),
         Err(e) => {
