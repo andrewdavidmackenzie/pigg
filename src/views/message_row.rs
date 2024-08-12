@@ -1,5 +1,6 @@
 use crate::styles::button_style::ButtonStyle;
 use crate::Message;
+use futures_lite::Stream;
 use iced::widget::{Button, Text};
 use iced::Subscription;
 use iced::{Color, Element, Length, Task};
@@ -110,7 +111,7 @@ impl MessageRow {
             Some(msg) => {
                 let text_color = match msg {
                     MessageMessage::Error(_, _) => Color::from_rgb8(255, 0, 0),
-                    MessageMessage::Warning(_) => iced::Color::new(1.0, 0.647, 0.0, 1.0),
+                    MessageMessage::Warning(_) => Color::new(1.0, 0.647, 0.0, 1.0),
                     MessageMessage::Info(_) => Color::WHITE,
                 };
                 (text_color, msg.text())
@@ -129,12 +130,12 @@ impl MessageRow {
             .on_press(MessageRowMessage::ClearStatusMessage)
             .style(button_style.get_button_style())
             .clip(true)
-            .height(iced::Length::Shrink)
+            .height(Length::Shrink)
             .width(Length::Shrink)
             .into()
     }
 
-    pub fn subscription(&self) -> iced_futures::Subscription<MessageRowMessage> {
+    pub fn subscription(&self) -> impl Stream<Item = MessageRowMessage> {
         if self.message_queue.showing_info_message() {
             iced::time::every(Duration::from_secs(3)).map(|_| MessageRowMessage::ClearStatusMessage)
         } else {

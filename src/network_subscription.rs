@@ -3,13 +3,13 @@ use crate::hw::{HardwareConfigMessage, HardwareDescription, PIGLET_ALPN};
 use crate::views::hardware_view::HardwareEventMessage;
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use anyhow::{ensure, Context};
+use futures_lite::Stream;
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::Receiver;
 use iced::futures::sink::SinkExt;
 use iced::futures::StreamExt;
 use iced::futures::{pin_mut, FutureExt};
-use iced::Subscription;
-use iced::{futures, Subscription};
+use iced::{futures, stream};
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};
@@ -29,69 +29,64 @@ pub enum NetworkState {
 pub fn subscribe(
     nodeid: NodeId,
     relay: Option<RelayUrl>,
-) -> iced_futures::Subscription<HardwareEventMessage> {
+) -> impl Stream<Item = HardwareEventMessage> {
     struct Connect;
-    subscription::channel(
-        std::any::TypeId::of::<Connect>(),
-        100,
-        move |gui_sender| async move {
-            let mut state = NetworkState::Disconnected;
+    stream::channel(100, move |gui_sender| async move {
+        let mut state = NetworkState::Disconnected;
 
-            loop {
-                let mut gui_sender_clone = gui_sender.clone();
-                match &mut state {
-                    NetworkState::Disconnected => {
-                        // Create channel
-                        let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
+        loop {
+            let mut gui_sender_clone = gui_sender.clone();
+            match &mut state {
+                NetworkState::Disconnected => {
+                    // Create channel
+                    let (hardware_event_sender, hardware_event_receiver) = mpsc::channel(100);
 
-                        match connect(&nodeid, relay.clone()).await {
-                            Ok((hardware_description, connection)) => {
-                                // Send the sender back to the GUI
-                                let _ = gui_sender_clone
-                                    .send(HardwareEventMessage::Connected(
-                                        hardware_event_sender.clone(),
-                                        hardware_description.clone(),
-                                    ))
-                                    .await;
+                    match connect(&nodeid, relay.clone()).await {
+                        Ok((hardware_description, connection)) => {
+                            // Send the sender back to the GUI
+                            let _ = gui_sender_clone
+                                .send(HardwareEventMessage::Connected(
+                                    hardware_event_sender.clone(),
+                                    hardware_description.clone(),
+                                ))
+                                .await;
 
-                                // We are ready to receive messages from the GUI
-                                state =
-                                    NetworkState::Connected(hardware_event_receiver, connection);
-                            }
-                            Err(e) => {
-                                let _ = gui_sender_clone
-                                    .send(HardwareEventMessage::Disconnected(format!(
-                                        "Error connecting to piglet: {e}"
-                                    )))
-                                    .await;
-                            }
+                            // We are ready to receive messages from the GUI
+                            state = NetworkState::Connected(hardware_event_receiver, connection);
+                        }
+                        Err(e) => {
+                            let _ = gui_sender_clone
+                                .send(HardwareEventMessage::Disconnected(format!(
+                                    "Error connecting to piglet: {e}"
+                                )))
+                                .await;
                         }
                     }
+                }
 
-                    NetworkState::Connected(config_change_receiver, connection) => {
-                        let mut connection_clone = connection.clone();
-                        let fused_wait_for_remote_message =
-                            wait_for_remote_message(&mut connection_clone).fuse();
-                        pin_mut!(fused_wait_for_remote_message);
+                NetworkState::Connected(config_change_receiver, connection) => {
+                    let mut connection_clone = connection.clone();
+                    let fused_wait_for_remote_message =
+                        wait_for_remote_message(&mut connection_clone).fuse();
+                    pin_mut!(fused_wait_for_remote_message);
 
-                        futures::select! {
-                            // receive a config change from the UI
-                            config_change_message = config_change_receiver.select_next_some() => {
-                                send_config_change(connection, config_change_message).await.unwrap()
-                            }
+                    futures::select! {
+                        // receive a config change from the UI
+                        config_change_message = config_change_receiver.select_next_some() => {
+                            send_config_change(connection, config_change_message).await.unwrap()
+                        }
 
-                            // receive an input level change from remote hardware
-                            remote_event = fused_wait_for_remote_message => {
-                                if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
-                                     gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
-                                 }
-                            }
+                        // receive an input level change from remote hardware
+                        remote_event = fused_wait_for_remote_message => {
+                            if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
+                                 gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
+                             }
                         }
                     }
                 }
             }
-        },
-    )
+        }
+    })
 }
 
 /// Wait until we receive a message from remote hardware
