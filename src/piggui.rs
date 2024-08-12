@@ -63,27 +63,6 @@ pub struct Piggui {
     hardware_target: HardwareTarget,
 }
 
-impl Piggui {
-    /// Send a connection error message to the Info Bar
-    fn info_connection_error(&mut self, message: String) {
-        self.info_row.add_info_message(
-            MessageMessage::Error(
-                "Connection Error".to_string(),
-                format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
-            ));
-    }
-
-    /// Send a message about successful connection to the info bar
-    fn info_connected(&mut self, message: String) {
-        self.info_row.add_info_message(Info(message));
-    }
-
-    /// Send a connection error message to the connection dialog
-    fn dialog_connection_error(&mut self, message: String) {
-        self.connect_dialog.set_error(message);
-    }
-}
-
 fn main() -> Result<(), iced::Error> {
     let window = window::Settings {
         resizable: true,
@@ -290,6 +269,25 @@ impl Piggui {
         ];
 
         Subscription::batch(subscriptions)
+    }
+
+    /// Send a connection error message to the Info Bar
+    fn info_connection_error(&mut self, message: String) {
+        self.info_row.add_info_message(
+            MessageMessage::Error(
+                "Connection Error".to_string(),
+                format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
+            ));
+    }
+
+    /// Send a message about successful connection to the info bar
+    fn info_connected(&mut self, message: String) {
+        self.info_row.add_info_message(Info(message));
+    }
+
+    /// Send a connection error message to the connection dialog
+    fn dialog_connection_error(&mut self, message: String) {
+        self.connect_dialog.set_error(message);
     }
 }
 
