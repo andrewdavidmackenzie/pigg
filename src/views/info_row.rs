@@ -1,4 +1,3 @@
-use iced::widget::text::Catalog;
 use iced::widget::{container, Row};
 use iced::Subscription;
 use iced::{Color, Element, Length, Task};

@@ -14,7 +14,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{executor, window, Application, Element, Length, Settings, Subscription, Task, Theme};
+use iced::{window, Element, Length, Subscription, Task, Theme};
 use iroh_net::NodeId;
 use std::str::FromStr;
 use views::pin_state::PinState;

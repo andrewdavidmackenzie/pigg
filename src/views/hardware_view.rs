@@ -306,9 +306,7 @@ impl HardwareView {
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
-                    return Task::perform(empty(), |_| {
-                        <Piggui as iced::Application>::Message::Connected
-                    });
+                    return Task::perform(empty(), |_| Message::Connected);
                 }
                 HardwareEventMessage::InputChange(bcm_pin_number, level_change) => {
                     self.pin_states
@@ -317,9 +315,7 @@ impl HardwareView {
                         .set_level(level_change);
                 }
                 HardwareEventMessage::Disconnected(message) => {
-                    return Task::perform(empty(), |_| {
-                        <Piggui as iced::Application>::Message::ConnectionError(message)
-                    });
+                    return Task::perform(empty(), |_| Message::ConnectionError(message));
                 }
             },
 
