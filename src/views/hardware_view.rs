@@ -375,7 +375,7 @@ impl HardwareView {
             NoHW => {}
             Local => {
                 subscriptions.push(
-                    Subscription::run(hardware_subscription::subscription())
+                    Subscription::run(hardware_subscription::subscription)
                         .map(HardwareSubscription),
                 );
             }
