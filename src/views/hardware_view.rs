@@ -314,7 +314,9 @@ impl HardwareView {
                         .set_level(level_change);
                 }
                 HardwareEventMessage::Disconnected(message) => {
-                    return Task::perform(empty(), |_| Message::ConnectionError(message));
+                    return Task::perform(empty(), move |_| {
+                        Message::ConnectionError(message.clone())
+                    });
                 }
             },
 

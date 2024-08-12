@@ -127,7 +127,7 @@ impl ConnectDialog {
                         };
 
                         return Task::perform(Self::empty(), move |_| {
-                            Message::ConnectRequest(Remote(nodeid, relay_url))
+                            Message::ConnectRequest(Remote(nodeid, relay_url.clone()))
                         });
                     }
                     Err(err) => {
@@ -215,19 +215,15 @@ impl ConnectDialog {
             Row::new()
                 .push(
                     Button::new(Text::new("Cancel"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::HideConnectDialog,
-                        ))
+                        .on_press(Message::ConnectDialog(HideConnectDialog))
                         .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
                 )
                 .push(
                     Button::new(Text::new("Connect"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::ConnectButtonPressed(
-                                self.nodeid.clone(),
-                                self.relay_url.clone(),
-                            ),
-                        ))
+                        .on_press(Message::ConnectDialog(ConnectButtonPressed(
+                            self.nodeid.clone(),
+                            self.relay_url.clone(),
+                        )))
                         .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
                 .spacing(360)
