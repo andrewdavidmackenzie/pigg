@@ -8,8 +8,8 @@ use crate::views::hardware_view::HardwareTarget::Remote;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Color, Task, Element, Event};
-use iced_futures::Subscription;
+use iced::Subscription;
+use iced::{keyboard, Color, Element, Event, Task};
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 use std::str::FromStr;
@@ -52,7 +52,7 @@ pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_width: 2.0,
 };
 
-const CONNECTION_ERROR_DISPLAY: Color =  Color::from_rgba(0.8, 0.0, 0.0, 1.0);
+const CONNECTION_ERROR_DISPLAY: Color = Color::from_rgba(0.8, 0.0, 0.0, 1.0);
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -235,10 +235,9 @@ impl ConnectDialog {
                 .align_items(iced::Alignment::Center)
         };
 
-        let text_container =
-            container(Text::new(IROH_INFO_TEXT).color(IROH_INFO_TEXT_COLOR))
-                .padding(10)
-                .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
+        let text_container = container(Text::new(IROH_INFO_TEXT).color(IROH_INFO_TEXT_COLOR))
+            .padding(10)
+            .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
         if self.disable_widgets {
             container(
@@ -246,8 +245,7 @@ impl ConnectDialog {
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
-                        text(self.iroh_connection_error.clone())
-                            .color(CONNECTION_ERROR_DISPLAY),
+                        text(self.iroh_connection_error.clone()).color(CONNECTION_ERROR_DISPLAY),
                         text("Node Id").size(12),
                         text_input("Enter node id", &self.nodeid).padding(5),
                     ]

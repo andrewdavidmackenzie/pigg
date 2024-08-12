@@ -1,8 +1,8 @@
 use crate::styles::button_style::ButtonStyle;
 use crate::Message;
 use iced::widget::{Button, Text};
-use iced::{Color, Task, Element, Length};
-use iced_futures::Subscription;
+use iced::Subscription;
+use iced::{Color, Element, Length, Task};
 use std::time::Duration;
 
 /// There are three types of messages we can display in the message text in the status bar.
