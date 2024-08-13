@@ -18,6 +18,6 @@ pub fn view(unsaved_changes: bool) -> Element<'static, Message> {
         false => Button::new(""),
     }
     .width(Length::Fixed(160.0))
-    .style(|theme, status| button_style.get_button_style())
+    .style(move |theme, status| button_style.get_button_style())
     .into()
 }
