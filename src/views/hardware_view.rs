@@ -4,7 +4,7 @@ use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
 use iced::widget::Tooltip;
-use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
+use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
@@ -411,7 +411,15 @@ impl HardwareView {
                 .align_items(Alignment::Center);
         }
 
-        column.into()
+        scrollable(column)
+            .direction({
+                let scrollbar = scrollable::Properties::new().width(10);
+                scrollable::Direction::Both {
+                    horizontal: scrollbar,
+                    vertical: scrollbar,
+                }
+            })
+            .into()
     }
 
     /// View that draws the pins laid out as they are on the physical Pi board
@@ -452,7 +460,15 @@ impl HardwareView {
                 .align_items(Alignment::Center);
         }
 
-        column.into()
+        scrollable(column)
+            .direction({
+                let scrollbar = scrollable::Properties::new().width(10);
+                scrollable::Direction::Both {
+                    horizontal: scrollbar,
+                    vertical: scrollbar,
+                }
+            })
+            .into()
     }
 }
 
