@@ -4,7 +4,7 @@ use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
 use iced::widget::Tooltip;
-use iced::widget::{button, horizontal_space, pick_list, toggler, Column, Row, Text};
+use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use iroh_net::relay::RelayUrl;
@@ -356,7 +356,15 @@ impl HardwareView {
                 Layout::BCMLayout => self.bcm_pin_layout_view(&hw_description.pins),
             };
 
-            return pin_layout;
+            return scrollable(pin_layout)
+                .direction({
+                    let scrollbar = scrollable::Properties::new().width(10);
+                    scrollable::Direction::Both {
+                        horizontal: scrollbar,
+                        vertical: scrollbar,
+                    }
+                })
+                .into();
         }
 
         // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
@@ -453,6 +461,7 @@ impl HardwareView {
         }
 
         column.into()
+
     }
 }
 
