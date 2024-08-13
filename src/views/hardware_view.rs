@@ -356,7 +356,15 @@ impl HardwareView {
                 Layout::BCMLayout => self.bcm_pin_layout_view(&hw_description.pins),
             };
 
-            return pin_layout;
+            return scrollable(pin_layout)
+                .direction({
+                    let scrollbar = scrollable::Properties::new().width(10);
+                    scrollable::Direction::Both {
+                        horizontal: scrollbar,
+                        vertical: scrollbar,
+                    }
+                })
+                .into();
         }
 
         // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
@@ -411,15 +419,7 @@ impl HardwareView {
                 .align_items(Alignment::Center);
         }
 
-        scrollable(column)
-            .direction({
-                let scrollbar = scrollable::Properties::new().width(10);
-                scrollable::Direction::Both {
-                    horizontal: scrollbar,
-                    vertical: scrollbar,
-                }
-            })
-            .into()
+        column.into()
     }
 
     /// View that draws the pins laid out as they are on the physical Pi board
@@ -460,15 +460,8 @@ impl HardwareView {
                 .align_items(Alignment::Center);
         }
 
-        scrollable(column)
-            .direction({
-                let scrollbar = scrollable::Properties::new().width(10);
-                scrollable::Direction::Both {
-                    horizontal: scrollbar,
-                    vertical: scrollbar,
-                }
-            })
-            .into()
+        column.into()
+
     }
 }
 
