@@ -521,7 +521,7 @@ fn get_pin_widget<'a>(
                 move |b| ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
             )
             .size(TOGGLER_SIZE)
-            .style(toggle_button_style.get_toggler_style());
+            .style(|theme, status| toggle_button_style.get_toggler_style());
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
@@ -667,7 +667,7 @@ fn create_pin_view_side<'a>(
     let pin_button =
         button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
             .width(Length::Fixed(PIN_BUTTON_WIDTH))
-            .style(get_pin_style(pin_description).get_button_style())
+            .style(|theme, status| get_pin_style(pin_description).get_button_style())
             .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
