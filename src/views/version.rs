@@ -42,6 +42,6 @@ pub fn version_button() -> Element<'static, Message> {
         .on_press(Message::ModalHandle(ModalMessage::VersionModal))
         .clip(true)
         .height(iced::Length::Shrink)
-        .style(move |theme, status| about_button_style.get_button_style())
+        .style(move |_theme, _status| about_button_style.get_button_style())
         .into()
 }

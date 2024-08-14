@@ -127,7 +127,7 @@ impl MessageRow {
 
         Button::new(Text::new(message_text))
             .on_press(MessageRowMessage::ClearStatusMessage)
-            .style(move |theme, status| button_style.get_button_style())
+            .style(move |_theme, _status| button_style.get_button_style())
             .clip(true)
             .height(Length::Shrink)
             .width(Length::Shrink)

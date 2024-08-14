@@ -1,6 +1,6 @@
 use iced::widget::container;
-use iced::{Background, Border, Color, Theme};
 use iced::widget::container::Style;
+use iced::{Background, Border, Color, Theme};
 
 pub struct ContainerStyle {
     pub border_color: Color,
@@ -15,8 +15,8 @@ impl container::Catalog for ContainerStyle {
         todo!()
     }
 
-    fn style(&self, class: &Self::Class<'_>) -> Style {
-        container::Style {
+    fn style(&self, _class: &Self::Class<'_>) -> Style {
+        Style {
             background: Some(Background::Color(self.background_color)),
             border: Border {
                 color: self.border_color,
@@ -25,12 +25,11 @@ impl container::Catalog for ContainerStyle {
             },
             ..Default::default()
         }
-
     }
 }
 
 impl ContainerStyle {
-    pub fn get_container_style(&self) -> iced::widget::container::Style {
+    pub fn get_container_style(&self) -> Style {
         iced::widget::container::Container::Custom(Box::new(ContainerStyle {
             background_color: self.background_color,
             border_color: self.border_color,

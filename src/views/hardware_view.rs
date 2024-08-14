@@ -521,7 +521,7 @@ fn get_pin_widget<'a>(
                 move |b| ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
             )
             .size(TOGGLER_SIZE)
-            .style(|theme, status| toggle_button_style.get_toggler_style());
+            .style(move |_theme, _status| toggle_button_style.get_toggler_style());
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
