@@ -117,7 +117,7 @@ impl Piggui {
                             .modal_handler
                             .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
                     } else {
-                        return window::close(window::Id::MAIN);
+                        return window::get_oldest().and_then(window::close);
                     }
                 }
             }
@@ -127,7 +127,8 @@ impl Piggui {
             }
 
             LayoutChanged(layout) => {
-                return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
+                return window::get_latest()
+                    .and_then(move |id| window::resize(id, self.layout_selector.update(layout)));
             }
 
             Save => {
