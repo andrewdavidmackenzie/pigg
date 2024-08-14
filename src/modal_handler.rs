@@ -96,7 +96,7 @@ impl DisplayModal {
             button_row = button_row.push(
                 button("Exit without saving")
                     .on_press(Message::ModalHandle(ModalMessage::ExitApp))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                    .style(|_| MODAL_CANCEL_BUTTON_STYLE),
             ); // Exits the application
             button_row = button_row
                 .push(
@@ -109,7 +109,7 @@ impl DisplayModal {
             button_row = button_row.push(
                 button("Close")
                     .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                    .style(MODAL_CANCEL_BUTTON_STYLE),
             );
         }
 

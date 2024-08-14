@@ -2,14 +2,15 @@ use crate::connect_dialog_handler::ConnectDialogMessage::{
     ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
     RelayURL, ShowConnectDialog,
 };
-use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::views::hardware_view::HardwareTarget::Remote;
 use crate::Message;
+use iced::border::Radius;
 use iced::keyboard::key;
+use iced::widget::button::Style;
 use iced::widget::container::Catalog;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Color, Element, Event, Task, Theme};
+use iced::{keyboard, Background, Border, Color, Element, Event, Task, Theme};
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 use std::str::FromStr;
@@ -22,21 +23,33 @@ const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure p
 
 const IROH_INFO_TEXT_COLOR: Color = Color::from_rgba(0.8, 0.8, 0.8, 1.0); // Slightly grey color
 
-pub(crate) const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
+pub(crate) const MODAL_CONNECT_BUTTON_STYLE: Style = Style {
+    background: Some(Background::from(Color::from_rgba(0.0, 1.0, 1.0, 1.0))), // Gnome like Red background color
     text_color: Color::BLACK,
-    hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
+    border: Border {
+        radius: Radius::from(2),
+        color: Default::default(),
+        width: 0.0,
+    },
+    ..Default::default()
 };
+// TODO
+// TODO hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
+// TODO hovered_text_color: Color::WHITE,
 
-pub(crate) const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
+pub(crate) const MODAL_CANCEL_BUTTON_STYLE: Style = Style {
+    background: Some(Background::from(Color::from_rgba(0.8, 0.0, 0.0, 1.0))), // Gnome like Red background color
     text_color: Color::WHITE,
-    hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
+    border: Border {
+        radius: Radius::from(2),
+        color: Default::default(),
+        width: 0.0,
+    },
+    ..Default::default()
 };
+// TODO
+// TODO hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
+// TODO hovered_text_color: Color::WHITE,
 
 const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
@@ -74,6 +87,7 @@ pub enum ConnectDialogMessage {
     ShowConnectDialog,
     ConnectionError(String),
 }
+
 impl Default for ConnectDialog {
     fn default() -> Self {
         Self::new()
@@ -199,7 +213,7 @@ impl ConnectDialog {
             Row::new()
                 .push(
                     Button::new(Text::new("Cancel"))
-                        .style(|theme, status| MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                        .style(|theme, status| MODAL_CANCEL_BUTTON_STYLE),
                 )
                 .push(
                     Circular::new()
@@ -208,7 +222,7 @@ impl ConnectDialog {
                 )
                 .push(
                     Button::new(Text::new("Connect"))
-                        .style(|theme, status| MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                        .style(|theme, status| MODAL_CONNECT_BUTTON_STYLE),
                 )
                 .spacing(160)
                 .align_y(iced::Alignment::Center)

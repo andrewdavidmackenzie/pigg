@@ -67,19 +67,19 @@ pub fn item<'a>(
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
             .width(Length::Fill)
-            .style(|theme, status|MENU_BUTTON_STYLE.get_button_style()),
+            .style(|theme, status| MENU_BUTTON_STYLE.get_button_style()),
     ));
 
     menu_items.push(Item::new(
         Button::new(Text::new("Show Hardware Details..."))
             .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
-            .style(|theme, status|  MENU_BUTTON_STYLE.get_button_style()),
+            .style(|theme, status| MENU_BUTTON_STYLE.get_button_style()),
     ));
 
     Item::with_menu(
         Button::new(Text::new(model))
-            .style(MENU_BAR_BUTTON_STYLE.get_button_style())
+            .style(MENU_BAR_BUTTON_STYLE)
             .on_press(Message::MenuBarButtonClicked),
         Menu::new(menu_items).width(200.0).spacing(2.0).offset(10.0),
     )

@@ -1,7 +1,7 @@
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{self, Tree, Widget};
-use iced::{advanced::Clipboard, advanced::Shell, touch};
+use iced::{advanced::Clipboard, advanced::Shell, touch, Border};
 use iced::{event, mouse, Event};
 use iced::{Color, Element, Length, Rectangle, Size};
 
@@ -77,7 +77,7 @@ where
         renderer.fill_quad(
             renderer::Quad {
                 bounds: layout.bounds(),
-                border: iced::border::Border {
+                border: Border {
                     radius: self.radius.into(),
                     width: 3.0,
                     color: Color::from_rgb8(0, 255, 0),
