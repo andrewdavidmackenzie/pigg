@@ -1,7 +1,7 @@
+use iced::application::Appearance;
 use iced::widget::{container, Row};
 use iced::Subscription;
 use iced::{Color, Element, Length, Task};
-use iced_aw::menu;
 use iced_aw::menu::MenuBar;
 use iced_futures::core::Background;
 
@@ -61,7 +61,7 @@ impl InfoRow {
     ) -> Element<'a, Message> {
         let hardware_root = hardware_menu::item(hardware_view, hardware_target);
 
-        let mb = MenuBar::new(vec![hardware_root]).style(|theme: &iced::Theme| menu::Appearance {
+        let mb = MenuBar::new(vec![hardware_root]).style(|theme: &iced::Theme| Appearance {
             bar_background: Background::Color(Color::TRANSPARENT),
             menu_shadow: iced::Shadow {
                 color: Color::BLACK,
