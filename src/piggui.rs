@@ -64,20 +64,16 @@ pub struct Piggui {
 }
 
 fn main() -> Result<(), iced::Error> {
-    let window = window::Settings {
-        resizable: true,
-        exit_on_close_request: false,
-        size: LayoutSelector::get_default_window_size(),
-        ..Default::default()
-    };
-
     iced::application("Piggui", Piggui::update, Piggui::view)
         .subscription(Piggui::subscription)
-        .run()
+        .exit_on_close_request(false)
+        .resizable(true)
+        .window_size(LayoutSelector::get_default_window_size())
+        .run_with(Piggui::new)
 }
 
 impl Piggui {
-    fn new(_flags: ()) -> (Piggui, Task<Message>) {
+    fn new() -> (Self, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
         #[cfg(not(target_arch = "wasm32"))]
