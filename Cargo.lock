@@ -1993,6 +1993,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "glyphon"
+version = "0.5.0"
+source = "git+https://github.com/hecrj/glyphon.git?rev=feef9f5630c2adb3528937e55f7bfad2da561a65#feef9f5630c2adb3528937e55f7bfad2da561a65"
+dependencies = [
+ "cosmic-text 0.12.1",
+ "etagere",
+ "lru",
+ "rustc-hash 2.0.0",
+ "wgpu",
+]
+
+[[package]]
 name = "governor"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2563,6 +2575,7 @@ dependencies = [
  "iced_core 0.13.0-dev",
  "iced_futures 0.13.0-dev",
  "log",
+ "lyon_path",
  "once_cell",
  "raw-window-handle",
  "rustc-hash 2.0.0",
@@ -2577,8 +2590,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c281e03001d566058f53dec9325bbe61c62da715341206d2627f57a3ecc7f69"
 dependencies = [
  "iced_graphics 0.12.1",
- "iced_tiny_skia",
- "iced_wgpu",
+ "iced_tiny_skia 0.12.1",
+ "iced_wgpu 0.12.1",
  "log",
  "thiserror",
 ]
@@ -2589,6 +2602,8 @@ version = "0.13.0-dev"
 source = "git+https://github.com/iced-rs/iced.git#1c8850023f2bdeae02ec061a49aa76dbb91262ad"
 dependencies = [
  "iced_graphics 0.13.0-dev",
+ "iced_tiny_skia 0.13.0-dev",
+ "iced_wgpu 0.13.0-dev",
  "log",
  "thiserror",
 ]
@@ -2646,6 +2661,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "iced_tiny_skia"
+version = "0.13.0-dev"
+source = "git+https://github.com/iced-rs/iced.git#1c8850023f2bdeae02ec061a49aa76dbb91262ad"
+dependencies = [
+ "bytemuck",
+ "cosmic-text 0.12.1",
+ "iced_graphics 0.13.0-dev",
+ "kurbo",
+ "log",
+ "rustc-hash 2.0.0",
+ "softbuffer",
+ "tiny-skia",
+]
+
+[[package]]
 name = "iced_wgpu"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2655,12 +2685,32 @@ dependencies = [
  "bytemuck",
  "futures",
  "glam",
- "glyphon",
+ "glyphon 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "guillotiere",
  "iced_graphics 0.12.1",
  "log",
  "lyon",
  "once_cell",
+ "wgpu",
+]
+
+[[package]]
+name = "iced_wgpu"
+version = "0.13.0-dev"
+source = "git+https://github.com/iced-rs/iced.git#1c8850023f2bdeae02ec061a49aa76dbb91262ad"
+dependencies = [
+ "bitflags 2.6.0",
+ "bytemuck",
+ "futures",
+ "glam",
+ "glyphon 0.5.0 (git+https://github.com/hecrj/glyphon.git?rev=feef9f5630c2adb3528937e55f7bfad2da561a65)",
+ "guillotiere",
+ "iced_graphics 0.13.0-dev",
+ "log",
+ "lyon",
+ "once_cell",
+ "rustc-hash 2.0.0",
+ "thiserror",
  "wgpu",
 ]
 

@@ -11,6 +11,7 @@ use iced::{Background, Color, Element, Event, Length, Radians, Rectangle, Render
 
 use crate::widgets::spinner::easing::{self, Easing};
 
+use iced::widget::canvas;
 use std::f32::consts::PI;
 use std::time::Duration;
 
@@ -331,8 +332,6 @@ where
         });
 
         renderer.with_translation(Vector::new(bounds.x, bounds.y), |renderer| {
-            use iced::advanced::graphics::geometry::Renderer as _;
-
             renderer.draw(vec![geometry]);
         });
     }

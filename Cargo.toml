@@ -48,7 +48,7 @@ service-manager = { version = "0.7.1", default-features = false }
 sysinfo = { version = "0.31.2", default-features = false, features = ["system"] }
 
 # used by piggui in GUI only
-iced = { version = "0.13.0-dev", git = "https://github.com/iced-rs/iced.git", default-features = false, features = ["tokio"] }
+iced = { version = "0.13.0-dev", git = "https://github.com/iced-rs/iced.git", default-features = false, features = ["tokio", "canvas"] }
 iced_aw = { version = "0.9.3", git = "https://github.com/iced-rs/iced_aw.git", default-features = false, features = ["menu"] }
 iced_futures = { version = "0.12.0", default-features = false }
 plotters-iced = { version = "0.10", default-features = false }

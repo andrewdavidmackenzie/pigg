@@ -241,7 +241,7 @@ impl ConnectDialog {
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
-                        text(self.iroh_connection_error.clone()).color(CONNECTION_ERROR_DISPLAY),
+                        text(self.iroh_connection_error.clone()).color(CONNECTION_ERROR_COLOR),
                         text("Node Id").size(12),
                         text_input("Enter node id", &self.nodeid).padding(5),
                     ]
