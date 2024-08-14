@@ -127,8 +127,8 @@ impl Piggui {
             }
 
             LayoutChanged(layout) => {
-                return window::get_latest()
-                    .and_then(move |id| window::resize(id, self.layout_selector.update(layout)));
+                let size = self.layout_selector.update(layout);
+                return window::get_latest().and_then(move |id| window::resize(id, size));
             }
 
             Save => {
