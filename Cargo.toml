@@ -72,10 +72,10 @@ rfd = "0.14.1"
 clap = { version = "4.5.14", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
-rppal = "0.18.0"
+rppal = "0.19.0"
 
 [target.armv7-unknown-linux-gnueabihf.dependencies]
-rppal = "0.18.0"
+rppal = "0.19.0"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
