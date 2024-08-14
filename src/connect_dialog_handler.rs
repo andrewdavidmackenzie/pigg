@@ -210,7 +210,7 @@ impl ConnectDialog {
                         .style(|theme, status| MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
                 .spacing(160)
-                .align_items(iced::Alignment::Center)
+                .align_y(iced::Alignment::Center)
         } else {
             Row::new()
                 .push(
@@ -227,7 +227,7 @@ impl ConnectDialog {
                         .style(|theme, status| MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
                 .spacing(360)
-                .align_items(iced::Alignment::Center)
+                .align_y(iced::Alignment::Center)
         };
 
         let text_container = container(Text::new(IROH_INFO_TEXT).color(IROH_INFO_TEXT_COLOR))

@@ -16,7 +16,7 @@ pub fn view<'a>(
     main_row = main_row.push(
         Column::new()
             .push(configuration_column::view(layout_selector))
-            .align_items(Alignment::Start)
+            .align_x(Alignment::Start)
             .width(Length::Shrink)
             .height(Length::Shrink),
     );
@@ -28,7 +28,7 @@ pub fn view<'a>(
                     .view(layout_selector.get(), hardware_target)
                     .map(Message::Hardware),
             )
-            .align_items(Alignment::Center)
+            .align_x(Alignment::Center)
             .height(Length::Fill)
             .width(Length::Fill),
     );

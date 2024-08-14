@@ -22,7 +22,7 @@ pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
         .on_press(Message::Load);
 
     let mut configuration_column = Column::new()
-        .align_items(Alignment::Start)
+        .align_x(Alignment::Start)
         .spacing(10)
         .width(Length::Shrink);
     configuration_column = configuration_column.push(layout_selector.view());
