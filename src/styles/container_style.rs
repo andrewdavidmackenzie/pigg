@@ -27,14 +27,3 @@ impl container::Catalog for ContainerStyle {
         }
     }
 }
-
-impl ContainerStyle {
-    pub fn get_container_style(&self) -> Style {
-        iced::widget::container::Container::Custom(Box::new(ContainerStyle {
-            background_color: self.background_color,
-            border_color: self.border_color,
-            border_width: self.border_width,
-            border_radius: self.border_radius,
-        }))
-    }
-}

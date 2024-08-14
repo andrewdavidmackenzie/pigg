@@ -7,8 +7,9 @@ use crate::styles::container_style::ContainerStyle;
 use crate::views::hardware_view::HardwareTarget::Remote;
 use crate::Message;
 use iced::keyboard::key;
+use iced::widget::container::Catalog;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Color, Element, Event, Task};
+use iced::{keyboard, Color, Element, Event, Task, Theme};
 use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 use std::str::FromStr;
@@ -232,7 +233,7 @@ impl ConnectDialog {
 
         let text_container = container(Text::new(IROH_INFO_TEXT).color(IROH_INFO_TEXT_COLOR))
             .padding(10)
-            .style(|theme| TEXT_BOX_CONTAINER_STYLE.get_container_style());
+            .style(|theme| TEXT_BOX_CONTAINER_STYLE.style(&Theme::Dark));
 
         if self.disable_widgets {
             container(
@@ -255,7 +256,7 @@ impl ConnectDialog {
                 .spacing(10)]
                 .spacing(20),
             )
-            .style(|theme| MODAL_CONTAINER_STYLE.get_container_style())
+            .style(|theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
             .width(520)
             .padding(15)
             .into()
@@ -289,7 +290,7 @@ impl ConnectDialog {
                 .spacing(10)]
                 .spacing(20),
             )
-            .style(|theme| MODAL_CONTAINER_STYLE.get_container_style())
+            .style(|theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
             .width(520)
             .padding(15)
             .into()

@@ -4,6 +4,7 @@ use crate::connect_dialog_handler::{
 use crate::views::hardware_view::HardwareView;
 use crate::Message;
 use iced::keyboard::key;
+use iced::widget::container::Catalog;
 use iced::widget::{button, column, container, text, Row};
 use iced::Subscription;
 use iced::{keyboard, window, Color, Element, Event, Task};
@@ -123,7 +124,7 @@ impl DisplayModal {
             .spacing(10)]
             .spacing(20),
         )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .style(MODAL_CONTAINER_STYLE.style())
         .width(520)
         .padding(15)
         .into()
