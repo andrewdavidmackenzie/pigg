@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::io;
+use std::time::Duration;
 
 use rppal::gpio::Gpio;
 use rppal::gpio::OutputPin;
@@ -105,7 +106,7 @@ impl Hardware for HW {
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
                 input
-                    .set_async_interrupt(Trigger::Both, None, move |event| {
+                    .set_async_interrupt(Trigger::Both, Some(Duration::from_millis(1)), move |event| {
                         callback(bcm_pin_number, event.trigger == Trigger::RisingEdge);
                     })
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
