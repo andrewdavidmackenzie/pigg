@@ -80,7 +80,7 @@ impl InfoRow {
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)
-                .padding([0.0, 0.0, 0.0, 0.0]),
+                .padding(0),
         )
         .set_background(Color::from_rgb8(45, 45, 45))
         .into()

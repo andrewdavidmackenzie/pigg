@@ -3,7 +3,7 @@ use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_selector::LayoutSelector;
 use crate::Message;
 use iced::widget::{container, Column, Row};
-use iced::{Alignment, Element, Length};
+use iced::{Alignment, Element, Length, Padding};
 
 /// Construct the view that represents the main row of the app
 pub fn view<'a>(
@@ -33,5 +33,8 @@ pub fn view<'a>(
             .width(Length::Fill),
     );
 
-    container(main_row).padding([10.0, 10.0, 0.0, 10.0]).into()
+    let padding = Padding::new(10.0).bottom(0.0);
+    let container = container(main_row).padding(padding);
+
+    container.into()
 }
