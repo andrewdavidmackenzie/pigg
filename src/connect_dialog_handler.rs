@@ -52,7 +52,7 @@ pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_width: 2.0,
 };
 
-const CONNECTION_ERROR_DISPLAY: Color = Color::from_rgba(0.8, 0.0, 0.0, 1.0);
+const CONNECTION_ERROR_COLOR: Color = Color::from_rgba(0.8, 0.0, 0.0, 1.0);
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -266,8 +266,7 @@ impl ConnectDialog {
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
-                        text(self.iroh_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text(self.iroh_connection_error.clone()).style(CONNECTION_ERROR_COLOR),
                         text("Node Id").size(12),
                         text_input("Enter node id", &self.nodeid)
                             .on_input(|input| Message::ConnectDialog(

@@ -62,7 +62,7 @@ impl InfoRow {
         let hardware_root = hardware_menu::item(hardware_view, hardware_target);
 
         let mb = MenuBar::new(vec![hardware_root]).style(|theme: &iced::Theme| Appearance {
-            bar_background: Background::Color(Color::TRANSPARENT),
+            bar_background: Color::TRANSPARENT,
             menu_shadow: iced::Shadow {
                 color: Color::BLACK,
                 offset: iced::Vector::new(1.0, 1.0),

@@ -6,7 +6,6 @@ use iced::advanced::{self, Clipboard, Layout, Shell, Widget};
 use iced::event;
 use iced::mouse;
 use iced::time::Instant;
-use iced::widget::canvas;
 use iced::window::{self, RedrawRequest};
 use iced::{Background, Color, Element, Event, Length, Radians, Rectangle, Renderer, Size, Vector};
 
