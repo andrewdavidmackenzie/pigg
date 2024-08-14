@@ -1,13 +1,19 @@
 #![deny(clippy::unwrap_used)]
+#![cfg(not(target_arch = "wasm32"))]
 
-use std::env::current_exe;
-use std::fs::File;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::process::exit;
-use std::str::FromStr;
-use std::time::Duration;
-use std::{env, fs, io, process};
+use std::{
+    env,
+    env::current_exe,
+    fs,
+    fs::File,
+    io,
+    io::Write,
+    path::{Path, PathBuf},
+    process,
+    process::exit,
+    str::FromStr,
+    time::Duration,
+};
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
@@ -41,7 +47,6 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
 /// over the network.
-#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let matches = get_matches();
@@ -489,15 +494,17 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
 
     Ok(())
 }
+
 #[cfg(test)]
 mod test {
     use std::fs;
     use std::path::PathBuf;
     use std::str::FromStr;
 
+    use tempfile::tempdir;
+
     use iroh_net::relay::RelayUrl;
     use iroh_net::NodeId;
-    use tempfile::tempdir;
 
     #[test]
     fn write_info_file() {

@@ -105,8 +105,8 @@ impl Hardware for HW {
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
                 input
-                    .set_async_interrupt(Trigger::Both, move |level| {
-                        callback(bcm_pin_number, level == Level::High);
+                    .set_async_interrupt(Trigger::Both, None, move |event| {
+                        callback(bcm_pin_number, event.trigger == Trigger::RisingEdge);
                     })
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
                 self.configured_pins

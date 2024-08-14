@@ -31,11 +31,14 @@ pub mod config;
     path = "pi_hw.rs"
 )]
 #[cfg_attr(
-    not(all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    )),
+    all(
+        not(target_arch = "wasm32"),
+        not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))
+    ),
     path = "fake_hw.rs"
 )]
 mod hw_imp;
