@@ -48,19 +48,19 @@ impl toggler::Catalog for TogglerStyle {
     }
 }
 
-impl TogglerStyle {
-    pub fn get_toggler_style(&self) -> iced::widget::toggler::Style {
-        iced::widget::toggler::Toggler::Custom(Box::new(TogglerStyle {
-            background: self.background,
-            background_border_width: 1.0,
-            background_border_color: self.background_border_color,
-            foreground: self.foreground,
-            foreground_border_width: 1.0,
-            foreground_border_color: self.foreground_border_color,
-            active_background: self.active_background,
-            active_foreground: self.active_foreground,
-            active_background_border: self.active_background_border,
-            active_foreground_border: self.active_foreground_border,
-        }))
-    }
-}
+// impl TogglerStyle {
+//     pub fn get_toggler_style(&self) -> iced::widget::toggler::Style {
+//         iced::widget::toggler::Toggler::Custom(Box::new(TogglerStyle {
+//             background: self.background,
+//             background_border_width: 1.0,
+//             background_border_color: self.background_border_color,
+//             foreground: self.foreground,
+//             foreground_border_width: 1.0,
+//             foreground_border_color: self.foreground_border_color,
+//             active_background: self.active_background,
+//             active_foreground: self.active_foreground,
+//             active_background_border: self.active_background_border,
+//             active_foreground_border: self.active_foreground_border,
+//         }))
+//     }
+// }
