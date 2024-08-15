@@ -28,9 +28,9 @@ impl container::Catalog for BackgroundColor {
     }
 }
 
-pub trait SetAppearance {
-    fn set_background(self, color: Color) -> Self;
-}
+// pub trait SetAppearance {
+//     fn set_background(self, color: Color) -> Self;
+// }
 
 // impl SetAppearance for container::Container<'_, Message> {
 //     fn set_background(self, color: Color) -> Self {
