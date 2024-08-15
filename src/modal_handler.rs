@@ -2,7 +2,6 @@ use crate::connect_dialog_handler::MODAL_CONTAINER_STYLE;
 use crate::views::hardware_view::HardwareView;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::container::Catalog;
 use iced::widget::{button, column, container, text, Row};
 use iced::{Background, Border, Subscription};
 use iced::{keyboard, window, Color, Element, Event, Task};

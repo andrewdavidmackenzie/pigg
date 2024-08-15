@@ -214,7 +214,7 @@ impl ConnectDialog {
             Row::new()
                 .push(
                     Button::new(Text::new("Cancel"))
-                        .style(move |theme, status| modal_cancel_button_style),
+                        .style(move |_theme, _status| modal_cancel_button_style),
                 )
                 .push(
                     Circular::new()
@@ -223,7 +223,7 @@ impl ConnectDialog {
                 )
                 .push(
                     Button::new(Text::new("Connect"))
-                        .style(move |theme, status| modal_connect_button_style),
+                        .style(move |_theme, _status| modal_connect_button_style),
                 )
                 .spacing(160)
                 .align_y(iced::Alignment::Center)
@@ -232,7 +232,7 @@ impl ConnectDialog {
                 .push(
                     Button::new(Text::new("Cancel"))
                         .on_press(Message::ConnectDialog(HideConnectDialog))
-                        .style(move |theme, status| modal_cancel_button_style),
+                        .style(move |_theme, _status| modal_cancel_button_style),
                 )
                 .push(
                     Button::new(Text::new("Connect"))
@@ -240,7 +240,7 @@ impl ConnectDialog {
                             self.nodeid.clone(),
                             self.relay_url.clone(),
                         )))
-                        .style(move |theme, status| modal_connect_button_style),
+                        .style(move |_theme, _status| modal_connect_button_style),
                 )
                 .spacing(360)
                 .align_y(iced::Alignment::Center)
@@ -248,7 +248,7 @@ impl ConnectDialog {
 
         let text_container = container(Text::new(IROH_INFO_TEXT).color(IROH_INFO_TEXT_COLOR))
             .padding(10)
-            .style(|theme| TEXT_BOX_CONTAINER_STYLE.style(&Theme::Dark));
+            .style(|_theme| TEXT_BOX_CONTAINER_STYLE.style(&Theme::Dark));
 
         if self.disable_widgets {
             container(
@@ -271,7 +271,7 @@ impl ConnectDialog {
                 .spacing(10)]
                 .spacing(20),
             )
-            .style(|theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
+            .style(|_theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
             .width(520)
             .padding(15)
             .into()
@@ -304,7 +304,7 @@ impl ConnectDialog {
                 .spacing(10)]
                 .spacing(20),
             )
-            .style(|theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
+            .style(|_theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
             .width(520)
             .padding(15)
             .into()
