@@ -1,24 +1,29 @@
-use crate::styles::button_style::ButtonStyle;
 use crate::views::layout_selector::LayoutSelector;
 use crate::Message;
 use iced::widget::{Button, Column, Text};
-use iced::{Alignment, Color, Element, Length};
+use iced::{Alignment, Background, Border, Color, Element, Length};
+use iced::border::Radius;
+use iced::widget::button::Style;
 
 /// Construct the view that represents the configuration column
 pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
-    let file_button_style = ButtonStyle {
-        bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
+    let file_button_style = Style {
+        background: Some(Background::Color(Color::new(0.0, 1.0, 1.0, 1.0))),
         text_color: Color::BLACK,
-        hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
-        hovered_text_color: Color::WHITE,
-        border_radius: 2.0,
+        border: Border {
+            color: Default::default(),
+            width: 0.0,
+            radius: Radius::from(2),
+        },
+        shadow: Default::default(),
     };
+    
 
     let save_button = Button::new(Text::new("Save Configuration"))
-        .style(file_button_style.get_button_style())
+        .style(move |theme, status| file_button_style)
         .on_press(Message::Save);
     let load_button = Button::new(Text::new("Load Configuration"))
-        .style(file_button_style.get_button_style())
+        .style(move |theme, status| file_button_style)
         .on_press(Message::Load);
 
     let mut configuration_column = Column::new()

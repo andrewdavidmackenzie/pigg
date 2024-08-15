@@ -1,6 +1,4 @@
 use iced::application::Appearance;
-use iced::border::Radius;
-use iced::widget::button::Style;
 use iced::widget::{container, Row};
 use iced::window::Position::Default;
 use iced::{Background, Border, Subscription};
@@ -8,35 +6,18 @@ use iced::{Color, Element, Length, Task};
 use iced_aw::menu::MenuBar;
 
 use crate::styles::background::SetAppearance;
-use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_menu, unsaved_status};
 use crate::Message;
 
-pub(crate) const MENU_BAR_BUTTON_STYLE: Style = Style {
-    background: Some(Background::from(Color::TRANSPARENT)),
-    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
-    border: Border {
-        radius: Radius::from(4),
-        ..Default::default()
-    },
-    shadow: Default::default(),
-};
+
 // TODO
 // TODO hovered_bg_color: Color::TRANSPARENT,
 // TODO hovered_text_color: Color::WHITE,
 
-pub(crate) const MENU_BUTTON_STYLE: Style = Style {
-    background: Some(Background::from(Color::TRANSPARENT)),
-    text_color: Color::WHITE,
-    border: Border {
-        radius: Radius::from(4),
-        ..Default::default()
-    },
-    shadow: Default::default(),
-};
+
 // TODO
 // TODO hovered_bg_color: Color::TRANSPARENT,
 // TODO hovered_text_color: Color::WHITE,
@@ -73,16 +54,7 @@ impl InfoRow {
     ) -> Element<'a, Message> {
         let hardware_root = hardware_menu::item(hardware_view, hardware_target);
 
-        let mb = MenuBar::new(vec![hardware_root]).style(|theme: &iced::Theme| Appearance {
-            background: Color::TRANSPARENT,
-            menu_shadow: iced::Shadow {
-                color: Color::BLACK,
-                offset: iced::Vector::new(1.0, 1.0),
-                blur_radius: 10f32,
-            },
-            menu_background_expand: iced::Padding::from([5, 5]),
-            ..theme.style(&MenuBarStyle::Default)
-        });
+        let mb = MenuBar::new(vec![hardware_root]);
 
         container(
             Row::new()

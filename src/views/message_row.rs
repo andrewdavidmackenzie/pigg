@@ -1,9 +1,10 @@
-use crate::styles::button_style::ButtonStyle;
 use crate::Message;
 use iced::widget::{Button, Text};
-use iced::Subscription;
+use iced::{Background, Border, Subscription};
 use iced::{Color, Element, Length, Task};
 use std::time::Duration;
+use iced::border::Radius;
+use iced::widget::button::Style;
 
 /// There are three types of messages we can display in the message text in the status bar.
 ///
@@ -117,17 +118,20 @@ impl MessageRow {
             }
         };
 
-        let button_style = ButtonStyle {
-            bg_color: Color::TRANSPARENT,
-            text_color,
-            hovered_bg_color: Color::TRANSPARENT,
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
+        let button_style = Style {
+            background: Some(Background::Color(Color::TRANSPARENT)),
+            text_color: Color::BLACK,
+            border: Border {
+                color: Color::BLACK,
+                width: 0.0,
+                radius: Radius::from(4),
+            },
+            shadow: Default::default(),
         };
 
         Button::new(Text::new(message_text))
             .on_press(MessageRowMessage::ClearStatusMessage)
-            .style(move |_theme, _status| button_style.get_button_style())
+            .style(move |_theme, _status| button_style)
             .clip(true)
             .height(Length::Shrink)
             .width(Length::Shrink)

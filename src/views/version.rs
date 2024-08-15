@@ -1,7 +1,9 @@
-use crate::styles::button_style::ButtonStyle;
 use crate::{Message, ModalMessage};
 use iced::widget::{Button, Text};
-use iced::{Color, Element};
+use iced::{Background, Border, Color, Element};
+use iced::border::Radius;
+use iced::widget::button::Style;
+
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const BIN_NAME: &str = env!("CARGO_BIN_NAME");
@@ -31,17 +33,20 @@ pub fn version() -> String {
 
 pub fn version_button() -> Element<'static, Message> {
     let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
-    let about_button_style = ButtonStyle {
-        bg_color: Color::TRANSPARENT,
+    let about_button_style = Style {
+        background: Some(Background::Color(Color::TRANSPARENT)),
         text_color: Color::new(0.7, 0.7, 0.7, 1.0),
-        hovered_bg_color: Color::TRANSPARENT,
-        hovered_text_color: Color::WHITE,
-        border_radius: 4.0,
+        border:  Border {
+            radius: Radius::from(4),
+            color: Default::default(),
+            width: 0.0,
+        },
+        shadow: Default::default(),
     };
     Button::new(version_text)
         .on_press(Message::ModalHandle(ModalMessage::VersionModal))
         .clip(true)
         .height(iced::Length::Shrink)
-        .style(move |_theme, _status| about_button_style.get_button_style())
+        .style(move |_theme, _status| about_button_style)
         .into()
 }

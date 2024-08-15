@@ -4,7 +4,7 @@ use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
 use iced::widget::Tooltip;
-use iced::Subscription;
+use iced::{Background, Border, Subscription};
 use iced::{Alignment, Color, Element, Length, Task};
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iroh_net::relay::RelayUrl;
@@ -12,7 +12,8 @@ use iroh_net::NodeId;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
-
+use iced::border::Radius;
+use iced::widget::button::Style;
 use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
@@ -22,7 +23,6 @@ use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
 use crate::network_subscription;
-use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareTarget::{Local, NoHW, Remote};
 use crate::views::hardware_view::HardwareViewMessage::{
@@ -96,67 +96,91 @@ pub enum HardwareViewMessage {
     UpdateCharts,
 }
 
-fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
+fn get_pin_style(pin_description: &PinDescription) -> Style {
     match pin_description.name.as_ref() {
-        "3V3" => ButtonStyle {
-            bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
+        "3V3" => Style {
+            background: Some(Background::Color(Color::new(1.0, 0.92, 0.016, 1.0))),
             text_color: Color::BLACK,
-            border_radius: 50.0,
-            hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
-            hovered_text_color: Color::BLACK,
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
         },
-        "5V" => ButtonStyle {
-            bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
+        "5V" => Style {
+            background: Some(Background::Color(Color::new(1.0, 0.0, 0.0, 1.0))),
             text_color: Color::BLACK,
-            border_radius: 50.0,
-            hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
-            hovered_text_color: Color::BLACK,
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
         },
-        "Ground" => ButtonStyle {
-            bg_color: Color::BLACK,
+        "Ground" => Style {
+            background: Some(Background::Color(Color::BLACK)),
             text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::BLACK,
-        },
-
-        "GPIO2" | "GPIO3" => ButtonStyle {
-            bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
-            text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
         },
 
-        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => ButtonStyle {
-            bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
+        "GPIO2" | "GPIO3" => Style {
+            background: Some(Background::Color(Color::new(0.678, 0.847, 0.902, 1.0))),
             text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
         },
 
-        "GPIO14" | "GPIO15" => ButtonStyle {
-            bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => Style {
+            background: Some(Background::Color(Color::new(0.933, 0.510, 0.933, 1.0))),
             text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
         },
 
-        "ID_SD" | "ID_SC" => ButtonStyle {
-            bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
+        "GPIO14" | "GPIO15" => Style {
+            background: Some(Background::Color(Color::new(0.0, 0.502, 0.0, 1.0))),
             text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
         },
-        _ => ButtonStyle {
-            bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
+
+        "ID_SD" | "ID_SC" => Style {
+            background: Some(Background::Color(Color::new(0.502, 0.502, 0.502, 1.0))),
             text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
+        },
+        _ => Style {
+            background: Some(Background::Color(Color::new(1.0, 0.647, 0.0, 1.0),)),
+            text_color: Color::WHITE,
+            border: Border {
+                color: Default::default(),
+                width: 0.0,
+                radius: Radius::from(50),
+            },
+            shadow: Default::default(),
         },
     }
 }
@@ -676,7 +700,7 @@ fn create_pin_view_side<'a>(
     let pin_button =
         button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
             .width(Length::Fixed(PIN_BUTTON_WIDTH))
-            .style(|theme, status| get_pin_style(pin_description).get_button_style())
+            .style(|theme, status| get_pin_style(pin_description))
             .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
