@@ -3,7 +3,6 @@ use iced::Subscription;
 use iced::{Color, Element, Length, Task};
 use iced_aw::menu::MenuBar;
 
-use crate::styles::background::SetAppearance;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
