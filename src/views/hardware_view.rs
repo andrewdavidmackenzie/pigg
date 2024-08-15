@@ -693,9 +693,9 @@ fn create_pin_view_side<'a>(
     let mut pin_button_column = Column::new().align_x(Alignment::Center);
     // Create the pin itself, with number and as a button
     let pin_button =
-        button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
+        button(Text::new(pin_description.bpn.to_string()).align_x(Horizontal::Center))
             .width(Length::Fixed(PIN_BUTTON_WIDTH))
-            .style(|theme, status| get_pin_style(pin_description))
+            .style(|_theme, _status| get_pin_style(pin_description))
             .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
