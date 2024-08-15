@@ -42,15 +42,3 @@ impl button::Catalog for ButtonStyle {
         }
     }
 }
-
-impl ButtonStyle {
-    pub fn get_button_style(&self) -> iced::widget::button::Style {
-        iced::widget::button::Button::Custom(Box::new(ButtonStyle {
-            bg_color: self.bg_color,
-            text_color: self.text_color,
-            border_radius: self.border_radius,
-            hovered_bg_color: self.hovered_bg_color,
-            hovered_text_color: self.hovered_text_color,
-        }))
-    }
-}
