@@ -1,5 +1,5 @@
 use iced::widget::{container, Row};
-use iced::Subscription;
+use iced::{Background, Subscription};
 use iced::{Color, Element, Length, Task};
 use iced_aw::menu::MenuBar;
 
@@ -53,6 +53,13 @@ impl InfoRow {
 
         let mb = MenuBar::new(vec![hardware_root]);
 
+        let container_style = container::Style {
+            text_color: None,
+            background: Some(Background::Color(Color::from_rgb8(45, 45, 45))),
+            border: Default::default(),
+            shadow: Default::default(),
+        };
+
         container(
             Row::new()
                 .push(version_button())
@@ -63,7 +70,7 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding(0),
         )
-        .set_background(Color::from_rgb8(45, 45, 45))
+        .style(move |_theme| container_style)
         .into()
     }
 
