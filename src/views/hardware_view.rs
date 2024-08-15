@@ -1,19 +1,3 @@
-use iced::advanced::text::editor::Direction;
-use iced::advanced::text::editor::Direction::{Left, Right};
-use iced::alignment::Horizontal;
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::tooltip::Position;
-use iced::widget::Tooltip;
-use iced::{Background, Border, Subscription};
-use iced::{Alignment, Color, Element, Length, Task};
-use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
-use iroh_net::relay::RelayUrl;
-use iroh_net::NodeId;
-use std::cmp::PartialEq;
-use std::collections::HashMap;
-use std::time::Duration;
-use iced::border::Radius;
-use iced::widget::button::Style;
 use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
@@ -34,6 +18,22 @@ use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::{Message, PinState};
+use iced::advanced::text::editor::Direction;
+use iced::advanced::text::editor::Direction::{Left, Right};
+use iced::alignment::Horizontal;
+use iced::border::Radius;
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::button::Style;
+use iced::widget::tooltip::Position;
+use iced::widget::Tooltip;
+use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
+use iced::{Alignment, Color, Element, Length, Task};
+use iced::{Background, Border, Subscription};
+use iroh_net::relay::RelayUrl;
+use iroh_net::NodeId;
+use std::cmp::PartialEq;
+use std::collections::HashMap;
+use std::time::Duration;
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -173,7 +173,7 @@ fn get_pin_style(pin_description: &PinDescription) -> Style {
             shadow: Default::default(),
         },
         _ => Style {
-            background: Some(Background::Color(Color::new(1.0, 0.647, 0.0, 1.0),)),
+            background: Some(Background::Color(Color::new(1.0, 0.647, 0.0, 1.0))),
             text_color: Color::WHITE,
             border: Border {
                 color: Default::default(),
@@ -379,7 +379,8 @@ impl HardwareView {
 
             return scrollable(pin_layout)
                 .direction({
-                    let scrollbar = scrollable::Properties::new().width(10);
+                    let scrollbar = scrollable::Scrollbar::new().width(10);
+
                     scrollable::Direction::Both {
                         horizontal: scrollbar,
                         vertical: scrollbar,
@@ -485,7 +486,6 @@ impl HardwareView {
         }
 
         column.into()
-
     }
 }
 
