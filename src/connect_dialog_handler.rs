@@ -38,13 +38,6 @@ const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_radius: 10.0,
 };
 
-pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
-    border_color: Color::WHITE,
-    background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
-    border_radius: 2.0,
-    border_width: 2.0,
-};
-
 const CONNECTION_ERROR_COLOR: Color = Color::from_rgba(0.8, 0.0, 0.0, 1.0);
 
 #[derive(Debug, Clone)]
@@ -189,6 +182,16 @@ impl ConnectDialog {
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
+        let modal_container_style: container::Style =  container::Style {
+            text_color: Some(Color::WHITE),
+            background: Some(Background::Color( Color::from_rgba(0.0, 0.0, 0.0, 1.0))),
+            border: Border {
+                color: Default::default(),
+                width: 2.0,
+                radius: Radius::from(2),
+            },
+            shadow: Default::default(),
+        };
         let modal_connect_button_style: Style = Style {
             background: Some(Background::from(Color::from_rgba(0.0, 1.0, 1.0, 1.0))), // Gnome like Red background color
             text_color: Color::BLACK,
@@ -248,7 +251,7 @@ impl ConnectDialog {
 
         let text_container = container(Text::new(IROH_INFO_TEXT).color(IROH_INFO_TEXT_COLOR))
             .padding(10)
-            .style(|_theme| TEXT_BOX_CONTAINER_STYLE.style(&Theme::Dark));
+            .style(move |_theme| TEXT_BOX_CONTAINER_STYLE.style(&Theme::Dark));
 
         if self.disable_widgets {
             container(
@@ -271,7 +274,7 @@ impl ConnectDialog {
                 .spacing(10)]
                 .spacing(20),
             )
-            .style(|_theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
+            .style(move |_theme| modal_container_style)
             .width(520)
             .padding(15)
             .into()
@@ -304,7 +307,7 @@ impl ConnectDialog {
                 .spacing(10)]
                 .spacing(20),
             )
-            .style(|_theme| MODAL_CONTAINER_STYLE.style(&Theme::Dark))
+            .style(move |_theme| modal_container_style)
             .width(520)
             .padding(15)
             .into()
