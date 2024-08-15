@@ -7,7 +7,6 @@ use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
 use crate::network_subscription;
-use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareTarget::{Local, NoHW, Remote};
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
@@ -518,17 +517,13 @@ fn get_pin_widget<'a>(
     pin_state: &'a PinState,
     direction: Direction,
 ) -> Element<'a, HardwareViewMessage> {
-    let toggle_button_style = TogglerStyle {
+    let toggle_button_style = toggler::Style {
         background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
         background_border_width: 1.0,
         background_border_color: Color::new(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
         foreground: Color::new(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
         foreground_border_width: 1.0,
         foreground_border_color: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
-        active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
-        active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
-        active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
-        active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
     };
 
     let row: Row<HardwareViewMessage> = match pin_function {
@@ -554,7 +549,7 @@ fn get_pin_widget<'a>(
                 move |b| ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
             )
             .size(TOGGLER_SIZE)
-            .style(move |_theme, _status| toggle_button_style.get_toggler_style());
+            .style(move |_theme, _status| toggle_button_style);
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
