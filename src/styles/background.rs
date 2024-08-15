@@ -1,6 +1,5 @@
 use iced::widget::container;
 
-use crate::Message;
 use iced::widget::container::Style;
 use iced::{Background, Color};
 
@@ -33,10 +32,10 @@ pub trait SetAppearance {
     fn set_background(self, color: Color) -> Self;
 }
 
-impl SetAppearance for container::Container<'_, Message> {
-    fn set_background(self, color: Color) -> Self {
-        self.style(container::Container::Custom(Box::new(
-            BackgroundColor::new(color),
-        )))
-    }
-}
+// impl SetAppearance for container::Container<'_, Message> {
+//     fn set_background(self, color: Color) -> Self {
+//         self.style(container::Container::Custom(Box::new(
+//             BackgroundColor::new(color),
+//         )))
+//     }
+// }
