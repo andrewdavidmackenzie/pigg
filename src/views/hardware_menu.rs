@@ -39,7 +39,7 @@ pub fn item<'a>(
         Button::new("Disconnect from Hardware")
             .width(Length::Fill)
             .on_press(Message::ConnectRequest(NoHW))
-            .style(move |theme, status| menu_button_style),
+            .style(move |_theme, _status| menu_button_style),
     );
 
     let connect_remote: Item<'a, Message, _, _> = Item::new(
@@ -48,13 +48,13 @@ pub fn item<'a>(
             .on_press(Message::ConnectDialog(
                 ConnectDialogMessage::ShowConnectDialog,
             ))
-            .style(move |theme, status| menu_button_style),
+            .style(move |_theme, _status| menu_button_style),
     );
 
     let connect_local: Item<'a, Message, _, _> = Item::new(
         Button::new("Use local GPIO")
             .on_press(Message::ConnectRequest(HardwareTarget::Local))
-            .style(move |theme, status| menu_button_style)
+            .style(move |_theme, _status| menu_button_style)
             .width(Length::Fill),
     );
 
@@ -76,19 +76,19 @@ pub fn item<'a>(
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
             .width(Length::Fill)
-            .style(move |theme, status| menu_button_style),
+            .style(move |_theme, _status| menu_button_style),
     ));
 
     menu_items.push(Item::new(
         Button::new(Text::new("Show Hardware Details..."))
             .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
-            .style(move |theme, status| menu_button_style),
+            .style(move |_theme, _status| menu_button_style),
     ));
 
     Item::with_menu(
         Button::new(Text::new(model))
-            .style(move |theme, status| menu_button_style)
+            .style(move |__theme, _status| menu_button_style)
             .on_press(Message::MenuBarButtonClicked),
         Menu::new(menu_items).width(200.0).spacing(2.0).offset(10.0),
     )

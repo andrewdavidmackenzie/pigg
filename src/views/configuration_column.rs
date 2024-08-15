@@ -20,10 +20,10 @@ pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
     
 
     let save_button = Button::new(Text::new("Save Configuration"))
-        .style(move |theme, status| file_button_style)
+        .style(move |_theme, _status| file_button_style)
         .on_press(Message::Save);
     let load_button = Button::new(Text::new("Load Configuration"))
-        .style(move |theme, status| file_button_style)
+        .style(move |_theme, _status| file_button_style)
         .on_press(Message::Load);
 
     let mut configuration_column = Column::new()

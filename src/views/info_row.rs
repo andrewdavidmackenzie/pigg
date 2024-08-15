@@ -1,7 +1,5 @@
-use iced::application::Appearance;
 use iced::widget::{container, Row};
-use iced::window::Position::Default;
-use iced::{Background, Border, Subscription};
+use iced::Subscription;
 use iced::{Color, Element, Length, Task};
 use iced_aw::menu::MenuBar;
 
