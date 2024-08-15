@@ -1,13 +1,13 @@
-use crate::connect_dialog_handler::{
-    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
-};
+use crate::connect_dialog_handler::MODAL_CONTAINER_STYLE;
 use crate::views::hardware_view::HardwareView;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::container::Catalog;
 use iced::widget::{button, column, container, text, Row};
-use iced::Subscription;
+use iced::{Background, Border, Subscription};
 use iced::{keyboard, window, Color, Element, Event, Task};
+use iced::border::Radius;
+use iced::widget::button::Style;
 
 #[derive(Default)]
 pub struct DisplayModal {
@@ -88,6 +88,27 @@ impl DisplayModal {
     }
 
     pub fn view(&self) -> Element<Message> {
+        let modal_connect_button_style: Style = Style {
+            background: Some(Background::from(Color::from_rgba(0.0, 1.0, 1.0, 1.0))), // Gnome like Red background color
+            text_color: Color::BLACK,
+            border: Border {
+                radius: Radius::from(2),
+                color: Default::default(),
+                width: 0.0,
+            },
+            ..Default::default()
+        };
+
+        let modal_cancel_button_style: Style = Style {
+            background: Some(Background::from(Color::from_rgba(0.8, 0.0, 0.0, 1.0))), // Gnome like Red background color
+            text_color: Color::WHITE,
+            border: Border {
+                radius: Radius::from(2),
+                color: Default::default(),
+                width: 0.0,
+            },
+            ..Default::default()
+        };
         let mut button_row = Row::new();
         let mut text_style = Color::new(0.447, 0.624, 0.812, 1.0);
 
@@ -96,20 +117,20 @@ impl DisplayModal {
             button_row = button_row.push(
                 button("Exit without saving")
                     .on_press(Message::ModalHandle(ModalMessage::ExitApp))
-                    .style(|_| MODAL_CANCEL_BUTTON_STYLE),
+                    .style(|theme, status| modal_cancel_button_style),
             ); // Exits the application
             button_row = button_row
                 .push(
                     button("Return to app")
                         .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                        .style(|theme, status| modal_connect_button_style),
                 )
                 .spacing(220);
         } else {
             button_row = button_row.push(
                 button("Close")
                     .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                    .style(MODAL_CANCEL_BUTTON_STYLE),
+                    .style(|theme, status| modal_cancel_button_style),
             );
         }
 
@@ -124,7 +145,7 @@ impl DisplayModal {
             .spacing(10)]
             .spacing(20),
         )
-        .style(MODAL_CONTAINER_STYLE.style())
+        .style(|theme| MODAL_CONTAINER_STYLE)
         .width(520)
         .padding(15)
         .into()

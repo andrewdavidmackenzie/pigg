@@ -23,30 +23,10 @@ const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure p
 
 const IROH_INFO_TEXT_COLOR: Color = Color::from_rgba(0.8, 0.8, 0.8, 1.0); // Slightly grey color
 
-pub(crate) const MODAL_CONNECT_BUTTON_STYLE: Style = Style {
-    background: Some(Background::from(Color::from_rgba(0.0, 1.0, 1.0, 1.0))), // Gnome like Red background color
-    text_color: Color::BLACK,
-    border: Border {
-        radius: Radius::from(2),
-        color: Default::default(),
-        width: 0.0,
-    },
-    ..Default::default()
-};
 // TODO
 // TODO hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
 // TODO hovered_text_color: Color::WHITE,
 
-pub(crate) const MODAL_CANCEL_BUTTON_STYLE: Style = Style {
-    background: Some(Background::from(Color::from_rgba(0.8, 0.0, 0.0, 1.0))), // Gnome like Red background color
-    text_color: Color::WHITE,
-    border: Border {
-        radius: Radius::from(2),
-        color: Default::default(),
-        width: 0.0,
-    },
-    ..Default::default()
-};
 // TODO
 // TODO hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
 // TODO hovered_text_color: Color::WHITE,
@@ -209,11 +189,32 @@ impl ConnectDialog {
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
+        let modal_connect_button_style: Style = Style {
+            background: Some(Background::from(Color::from_rgba(0.0, 1.0, 1.0, 1.0))), // Gnome like Red background color
+            text_color: Color::BLACK,
+            border: Border {
+                radius: Radius::from(2),
+                color: Default::default(),
+                width: 0.0,
+            },
+            ..Default::default()
+        };
+
+        let modal_cancel_button_style: Style = Style {
+            background: Some(Background::from(Color::from_rgba(0.8, 0.0, 0.0, 1.0))), // Gnome like Red background color
+            text_color: Color::WHITE,
+            border: Border {
+                radius: Radius::from(2),
+                color: Default::default(),
+                width: 0.0,
+            },
+            ..Default::default()
+        };
         let connection_row = if self.show_spinner && self.disable_widgets {
             Row::new()
                 .push(
                     Button::new(Text::new("Cancel"))
-                        .style(|theme, status| MODAL_CANCEL_BUTTON_STYLE),
+                        .style(move |theme, status| modal_cancel_button_style),
                 )
                 .push(
                     Circular::new()
@@ -222,7 +223,7 @@ impl ConnectDialog {
                 )
                 .push(
                     Button::new(Text::new("Connect"))
-                        .style(|theme, status| MODAL_CONNECT_BUTTON_STYLE),
+                        .style(move |theme, status| modal_connect_button_style),
                 )
                 .spacing(160)
                 .align_y(iced::Alignment::Center)
@@ -231,7 +232,7 @@ impl ConnectDialog {
                 .push(
                     Button::new(Text::new("Cancel"))
                         .on_press(Message::ConnectDialog(HideConnectDialog))
-                        .style(|theme, status| MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                        .style(move |theme, status| modal_cancel_button_style),
                 )
                 .push(
                     Button::new(Text::new("Connect"))
@@ -239,7 +240,7 @@ impl ConnectDialog {
                             self.nodeid.clone(),
                             self.relay_url.clone(),
                         )))
-                        .style(|theme, status| MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                        .style(move |theme, status| modal_connect_button_style),
                 )
                 .spacing(360)
                 .align_y(iced::Alignment::Center)
@@ -280,7 +281,7 @@ impl ConnectDialog {
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
-                        text(self.iroh_connection_error.clone()).style(CONNECTION_ERROR_COLOR),
+                        text(self.iroh_connection_error.clone()).color(CONNECTION_ERROR_COLOR),
                         text("Node Id").size(12),
                         text_input("Enter node id", &self.nodeid)
                             .on_input(|input| Message::ConnectDialog(
