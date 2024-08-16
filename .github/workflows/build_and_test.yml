@@ -46,7 +46,7 @@ jobs:
         uses: taiki-e/setup-cross-toolchain-action@v1
         with:
             target: ${{ matrix.target }}
-      - run: make cross
+      - run: cargo build
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
