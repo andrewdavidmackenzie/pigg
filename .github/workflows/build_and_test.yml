@@ -23,11 +23,6 @@ jobs:
 
   cross:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target:
-          - aarch64-unknown-linux-gnu
-          - armv7-unknown-linux-gnueabihf
     steps:
       - name: clean up files
         run: |
@@ -36,14 +31,17 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      - name: Install rust
-        run: rustup update stable
+      - name: add aarch64 target with rustup
+        run: rustup target add aarch64-unknown-linux-gnu
 
-      - name: Install cross-compilation tools
-        uses: taiki-e/setup-cross-toolchain-action@v1
-        with:
-            target: ${{ matrix.target }}
-      - run: cargo test --verbose
+      - name: cargo install cross tool
+        run: cargo install cross
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: make cross
+        run: make cross
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
