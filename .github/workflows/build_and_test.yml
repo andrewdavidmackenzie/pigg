@@ -53,13 +53,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-
       - name: Install rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy,llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
 
       - name: InstallCoverageTools
         if: runner.os != 'Windows'
