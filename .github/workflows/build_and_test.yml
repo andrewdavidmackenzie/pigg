@@ -45,7 +45,7 @@ jobs:
       - name: Install cross-compilation tools
         uses: taiki-e/setup-cross-toolchain-action@v1
         with:
-            target: aarch64-unknown-linux-gnu
+            target: ${{ matrix.target }}
         run: make cross
 
   clippy-build-and-test:
