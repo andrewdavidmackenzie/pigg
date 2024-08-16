@@ -413,8 +413,11 @@ impl HardwareView {
             }
             Remote(nodeid, relay) => {
                 subscriptions.push(
-                    Subscription::run(network_subscription::subscription(*nodeid, relay.clone()))
-                        .map(HardwareSubscription),
+                    Subscription::batch(vec![network_subscription::subscription(
+                        *nodeid,
+                        relay.clone(),
+                    )])
+                    .map(HardwareSubscription), // TODO remove batch
                 );
             }
         }
@@ -692,11 +695,10 @@ fn create_pin_view_side<'a>(
 
     let mut pin_button_column = Column::new().align_x(Alignment::Center);
     // Create the pin itself, with number and as a button
-    let pin_button =
-        button(Text::new(pin_description.bpn.to_string()).align_x(Horizontal::Center))
-            .width(Length::Fixed(PIN_BUTTON_WIDTH))
-            .style(|_theme, _status| get_pin_style(pin_description))
-            .on_press(Activate(pin_description.bpn));
+    let pin_button = button(Text::new(pin_description.bpn.to_string()).align_x(Horizontal::Center))
+        .width(Length::Fixed(PIN_BUTTON_WIDTH))
+        .style(|_theme, _status| get_pin_style(pin_description))
+        .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
