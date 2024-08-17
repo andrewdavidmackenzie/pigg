@@ -33,7 +33,6 @@ jobs:
 
       - name: add aarch64 target with rustup
         run: rustup target add aarch64-unknown-linux-gnu
-      - uses: Swatinem/rust-cache@v2
 
       - name: cargo install cross tool
         run: cargo install cross
