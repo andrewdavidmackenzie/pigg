@@ -30,6 +30,7 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+      - uses: Swatinem/rust-cache@v2
 
       - name: add aarch64 target with rustup
         run: rustup target add aarch64-unknown-linux-gnu
