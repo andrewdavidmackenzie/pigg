@@ -48,7 +48,7 @@ impl Hardware for HW {
         C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         if let PinFunction::Input(_) = pin_function {
-            std::thread::spawn(move || {
+            thread::spawn(move || {
                 let mut rng = rand::thread_rng();
                 loop {
                     let level: bool = rng.gen();

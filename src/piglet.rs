@@ -4,10 +4,7 @@
 use std::{
     env,
     env::current_exe,
-    fs,
-    fs::File,
-    io,
-    io::Write,
+    fs, io,
     path::{Path, PathBuf},
     process,
     process::exit,
@@ -17,8 +14,6 @@ use std::{
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
-use futures_lite::StreamExt;
-use log::error;
 use log::{info, trace};
 use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
@@ -31,14 +26,29 @@ use tracing_subscriber::EnvFilter;
 
 use hw::config::HardwareConfig;
 use hw::Hardware;
-use iroh_net::endpoint::Connection;
-use iroh_net::relay::RelayUrl;
-use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
 
-use crate::hw::pin_function::PinFunction;
-use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
-use crate::hw::{LevelChange, PIGLET_ALPN};
+#[cfg(feature = "iroh")]
+use crate::hw::{
+    pin_function::PinFunction,
+    BCMPinNumber, HardwareConfigMessage,
+    HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig},
+    PinLevel, {LevelChange, PIGLET_ALPN},
+};
+
+#[cfg(feature = "iroh")]
+use iroh_net::{
+    endpoint::Connection,
+    key::SecretKey,
+    relay::{RelayMode, RelayUrl},
+    Endpoint, NodeId,
+};
+
+#[cfg(feature = "iroh")]
+use futures_lite::StreamExt;
+#[cfg(feature = "iroh")]
+use log::error;
+#[cfg(feature = "iroh")]
+use std::{fs::File, io::Write};
 
 mod hw;
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
@@ -77,6 +87,7 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
 
 /// Run piglet as a service - this could be interactively by a user in foreground or started
 /// by the system as a user service, in background - use logging for output from here on
+#[allow(unused_variables)]
 async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
     setup_logging(matches);
 
@@ -95,7 +106,10 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     };
 
     // Then listen for remote connections and "serve" them
-    listen(info_path, hw).await
+    #[cfg(feature = "iroh")]
+    listen(info_path, hw).await?;
+
+    Ok(())
 }
 
 /// CHeck that this is the only instance of piglet running, both user process or system process
@@ -202,6 +216,7 @@ fn get_matches() -> ArgMatches {
     app.get_matches()
 }
 
+#[cfg(feature = "iroh")]
 /// Listen for an incoming iroh-net connection and apply any config changes received, and
 /// send to GUI over the connection any input level changes.
 /// This is adapted from the iroh-net example with help from the iroh community
@@ -301,6 +316,7 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
     }
 }
 
+#[cfg(feature = "iroh")]
 /// Write info about the running piglet to the info file
 fn write_info_file(
     info_path: &Path,
@@ -316,6 +332,7 @@ fn write_info_file(
     Ok(())
 }
 
+#[cfg(feature = "iroh")]
 /// Apply a config change to the hardware
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
@@ -352,6 +369,7 @@ async fn apply_config_change(
     Ok(())
 }
 
+#[cfg(feature = "iroh")]
 /// Send the current input state for all inputs configured in the config
 async fn send_current_input_states(
     connection: Connection,
@@ -372,6 +390,7 @@ async fn send_current_input_states(
     Ok(())
 }
 
+#[cfg(feature = "iroh")]
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
 async fn send_input_level_async(
@@ -386,6 +405,7 @@ async fn send_input_level_async(
     send(connection, message).await
 }
 
+#[cfg(feature = "iroh")]
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
 fn send_input_level(
@@ -403,6 +423,7 @@ fn send_input_level(
     rt.block_on(send(connection, message))
 }
 
+#[cfg(feature = "iroh")]
 async fn send(connection: Connection, message: String) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
     gui_sender.write_all(message.as_bytes()).await?;
@@ -480,6 +501,7 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
 
     Ok(())
 }
+#[cfg(feature = "iroh")]
 #[cfg(test)]
 mod test {
     use std::fs;
@@ -488,17 +510,15 @@ mod test {
 
     use tempfile::tempdir;
 
-    use iroh_net::relay::RelayUrl;
-    use iroh_net::NodeId;
-
     #[test]
     fn write_info_file() {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.info");
-        let nodeid = NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
+        let nodeid =
+            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+                .expect("Could not create nodeid");
         let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
-        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         super::write_info_file(&test_file, &nodeid, local_addr, &relay_url)
             .expect("Writing info file failed");
@@ -511,10 +531,11 @@ mod test {
     fn write_info_file_non_existent() {
         let output_dir = PathBuf::from("/foo");
         let test_file = output_dir.join("test.info");
-        let nodeid = NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
+        let nodeid =
+            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+                .expect("Could not create nodeid");
         let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
-        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         assert!(super::write_info_file(&test_file, &nodeid, local_addr, &relay_url).is_err());
         assert!(!test_file.exists(), "File was created!");

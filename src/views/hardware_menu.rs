@@ -2,12 +2,13 @@ use iced::widget::{Button, Text};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
-use crate::connect_dialog_handler::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
-use crate::HardwareTarget::Iroh;
-use crate::HardwareTarget::NoHW;
+use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
+
+#[cfg(feature = "iroh")]
+use crate::connect_dialog_handler::ConnectDialogMessage;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn item<'a>(
@@ -18,7 +19,8 @@ pub fn item<'a>(
         None => "No Hardware connected".to_string(),
         Some(model) => match hardware_target {
             NoHW => "No Hardware connected".to_string(),
-            HardwareTarget::Local => format!("{}@Local", model),
+            Local => format!("{}@Local", model),
+            #[cfg(feature = "iroh")]
             Iroh(_, _) => format!("{}@Remote", model),
         },
     };
@@ -33,8 +35,9 @@ pub fn item<'a>(
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
 
+    #[cfg(feature = "iroh")]
     let connect_remote: Item<'a, Message, _, _> = Item::new(
-        Button::new("Connect to remote Pi...")
+        Button::new("Connect to remote Pi using Iroh...")
             .width(Length::Fill)
             .on_press(Message::ConnectDialog(
                 ConnectDialogMessage::ShowConnectDialog,
@@ -51,13 +54,16 @@ pub fn item<'a>(
 
     match hardware_target {
         NoHW => {
+            #[cfg(feature = "iroh")]
             menu_items.push(connect_remote);
             menu_items.push(connect_local);
         }
-        HardwareTarget::Local => {
+        Local => {
             menu_items.push(disconnect);
+            #[cfg(feature = "iroh")]
             menu_items.push(connect_remote);
         }
+        #[cfg(feature = "iroh")]
         Iroh(_, _) => {
             menu_items.push(disconnect);
             menu_items.push(connect_local);

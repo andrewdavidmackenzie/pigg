@@ -27,14 +27,15 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh"]
-iroh = ["iroh-net"]
+default = []
+#default = ["iroh"]
+iroh = ["iroh-net", "derive_more"]
 discovery = []
 
 [dependencies]
-derive_more = "=1.0.0-beta.6" # To fix iroh-net issue
 
 # Optional Dependencies
+derive_more = { version = "=1.0.0-beta.6", optional = true } # To fix iroh-net issue
 iroh-net = { version = "0.19.0", default-features = false, optional = true }
 
 # use in piggui and piglet
@@ -42,11 +43,11 @@ chrono = { version = "0.4", default-features = false, features = ["now", "serde"
 serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.125", default-features = false, features = ["std"] }
 serde_arrays = { version = "0.1.0", default-features = false }
-rand = { version = "0.8.5", default-features = false }
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
-anyhow = { version = "1", default-features = false }
+anyhow = { version = "1", default-features = false, features = ["std"] }
 futures-lite = { version = "2.3", default-features = false }
-tokio = { version = "1.39.2", default-features = false, features = ["time", "rt"] }
+tokio = { version = "1.39.2", default-features = false, features = ["time", "rt", "macros"] }
 
 # used in piglet only
 log = { version = "0.4.22", default-features = false }

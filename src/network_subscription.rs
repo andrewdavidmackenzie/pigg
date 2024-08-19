@@ -1,5 +1,7 @@
 use crate::hw::HardwareConfigMessage::IOLevelChanged;
-use crate::hw::{HardwareConfigMessage, HardwareDescription, PIGLET_ALPN};
+#[cfg(feature = "iroh")]
+use crate::hw::PIGLET_ALPN;
+use crate::hw::{HardwareConfigMessage, HardwareDescription};
 use crate::views::hardware_view::HardwareEventMessage;
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use anyhow::{ensure, Context};

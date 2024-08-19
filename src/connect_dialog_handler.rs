@@ -2,9 +2,13 @@ use crate::connect_dialog_handler::ConnectDialogMessage::{
     ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
     RelayURL, ShowConnectDialog,
 };
-use crate::styles::button_style::ButtonStyle;
+use crate::modal_handler::{
+    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
+};
+
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
+#[cfg(feature = "iroh")]
 use crate::views::hardware_view::HardwareTarget::Iroh;
 use crate::Message;
 use iced::keyboard::key;
@@ -25,34 +29,11 @@ const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
 };
 
-pub(crate) const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
-    text_color: Color::BLACK,
-    hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
-};
-
-pub(crate) const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
-    text_color: Color::WHITE,
-    hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
-};
-
 const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
     background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
     border_width: 2.0,
     border_radius: 10.0,
-};
-
-pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
-    border_color: Color::WHITE,
-    background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
-    border_radius: 2.0,
-    border_width: 2.0,
 };
 
 const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {

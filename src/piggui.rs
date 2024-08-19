@@ -1,5 +1,3 @@
-use crate::connect_dialog_handler::ConnectDialogMessage::HideConnectDialog;
-use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
 use crate::modal_handler::{DisplayModal, ModalMessage};
@@ -17,16 +15,24 @@ use iced::widget::{container, Column};
 use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
-use iroh_net::NodeId;
-use std::str::FromStr;
 use views::pin_state::PinState;
 
+#[cfg(feature = "iroh")]
+use crate::connect_dialog_handler::{
+    ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
+};
+#[cfg(feature = "iroh")]
+use iroh_net::NodeId;
+#[cfg(feature = "iroh")]
+use std::str::FromStr;
+#[cfg(feature = "iroh")]
 pub mod connect_dialog_handler;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 pub mod hardware_subscription;
 mod hw;
 mod modal_handler;
+#[cfg(feature = "iroh")]
 pub mod network_subscription;
 mod styles;
 mod views;
@@ -46,6 +52,7 @@ pub enum Message {
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     MenuBarButtonClicked,
+    #[cfg(feature = "iroh")]
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareTarget),
     Connected,
@@ -60,6 +67,7 @@ pub struct Piggui {
     info_row: InfoRow,
     modal_handler: DisplayModal,
     hardware_view: HardwareView,
+    #[cfg(feature = "iroh")]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
 }
@@ -79,6 +87,7 @@ impl Piggui {
         self.info_row.add_info_message(Info(message));
     }
 
+    #[cfg(feature = "iroh")]
     /// Send a connection error message to the connection dialog
     fn dialog_connection_error(&mut self, message: String) {
         self.connect_dialog.set_error(message);
@@ -123,6 +132,7 @@ impl Application for Piggui {
                 info_row: InfoRow::new(),
                 modal_handler: DisplayModal::new(),
                 hardware_view: HardwareView::new(),
+                #[cfg(feature = "iroh")]
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
             },
@@ -185,6 +195,7 @@ impl Application for Piggui {
                     .update(toast_message, &self.hardware_view);
             }
 
+            #[cfg(feature = "iroh")]
             ConnectDialog(connect_dialog_message) => {
                 return self.connect_dialog.update(connect_dialog_message);
             }
@@ -208,27 +219,30 @@ impl Application for Piggui {
             }
 
             ConnectRequest(new_target) => {
-                match new_target {
-                    HardwareTarget::NoHW => {
-                        self.connect_dialog.enable_widgets_and_hide_spinner();
-                        self.info_connected("Disconnected from hardware".to_string());
-                    }
-                    _ => {
-                        self.connect_dialog.disable_widgets_and_load_spinner();
-                    }
+                if new_target == HardwareTarget::NoHW {
+                    #[cfg(feature = "iroh")]
+                    self.connect_dialog.enable_widgets_and_hide_spinner();
+                    self.info_connected("Disconnected from hardware".to_string());
+                } else {
+                    #[cfg(feature = "iroh")]
+                    self.connect_dialog.disable_widgets_and_load_spinner();
                 }
                 self.hardware_target = new_target;
             }
 
             Connected => {
+                #[cfg(feature = "iroh")]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
+                #[cfg(feature = "iroh")]
                 self.connect_dialog.hide_modal();
                 self.info_connected("Connected to hardware".to_string());
             }
 
             ConnectionError(message) => {
+                #[cfg(feature = "iroh")]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.info_connection_error(message.clone());
+                #[cfg(feature = "iroh")]
                 self.dialog_connection_error(message);
             }
         }
@@ -270,17 +284,20 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
+        #[cfg(feature = "iroh")]
         if self.connect_dialog.show_modal {
-            Modal::new(content, self.connect_dialog.view())
+            return Modal::new(content, self.connect_dialog.view())
                 .on_blur(Message::ConnectDialog(HideConnectDialog))
-                .into()
-        } else if self.modal_handler.show_modal {
-            Modal::new(content, self.modal_handler.view())
-                .on_blur(Message::ModalHandle(ModalMessage::HideModal))
-                .into()
-        } else {
-            content.into()
+                .into();
         }
+
+        if self.modal_handler.show_modal {
+            return Modal::new(content, self.modal_handler.view())
+                .on_blur(Message::ModalHandle(ModalMessage::HideModal))
+                .into();
+        }
+
+        content.into()
     }
 
     fn theme(&self) -> Theme {
@@ -289,24 +306,31 @@ impl Application for Piggui {
 
     /// Subscribe to events from Hardware, from Windows and timings for StatusRow
     fn subscription(&self) -> Subscription<Message> {
-        let subscriptions = vec![
+        #[allow(unused_mut)]
+        let mut subscriptions = vec![
             iced::event::listen().map(WindowEvent),
-            self.connect_dialog.subscription().map(ConnectDialog), // Handle Keyboard events for ConnectDialog
-            self.modal_handler.subscription().map(ModalHandle),    // Handle Esc key event for modal
+            self.modal_handler.subscription().map(ModalHandle), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
         ];
 
+        // Handle Keyboard events for ConnectDialog
+        #[cfg(feature = "iroh")]
+        subscriptions.push(self.connect_dialog.subscription().map(ConnectDialog));
+
         Subscription::batch(subscriptions)
     }
 }
 
 /// Determine the hardware target based on command line options
+#[allow(unused_variables)]
 fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
+    #[allow(unused_mut)]
     let mut target = HardwareTarget::default();
 
+    #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid").map(|s| s.to_string()) {
         if let Ok(nodeid) = NodeId::from_str(&node_str) {
             target = HardwareTarget::Iroh(nodeid, None);

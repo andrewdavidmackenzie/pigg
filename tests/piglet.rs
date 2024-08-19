@@ -68,7 +68,8 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
     ),
-    target_arch = "wasm32"
+    target_arch = "wasm32",
+    not(feature = "iroh")
 )))]
 #[test]
 #[serial]

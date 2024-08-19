@@ -7,8 +7,6 @@ use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
-use iroh_net::relay::RelayUrl;
-use iroh_net::NodeId;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -21,10 +19,9 @@ use crate::hw::pin_function::PinFunction::{Input, Output};
 use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
-use crate::network_subscription;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
-use crate::views::hardware_view::HardwareTarget::{Iroh, Local, NoHW};
+use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
@@ -34,6 +31,11 @@ use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
+
+#[cfg(feature = "iroh")]
+use crate::network_subscription;
+#[cfg(feature = "iroh")]
+use iroh_net::{relay::RelayUrl, NodeId};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -167,6 +169,7 @@ pub enum HardwareTarget {
     NoHW,
     #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
+    #[cfg(feature = "iroh")]
     Iroh(NodeId, Option<RelayUrl>),
 }
 
@@ -387,6 +390,7 @@ impl HardwareView {
             Local => {
                 subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
             }
+            #[cfg(feature = "iroh")]
             Iroh(nodeid, relay) => {
                 subscriptions.push(
                     network_subscription::subscribe(*nodeid, relay.clone())
