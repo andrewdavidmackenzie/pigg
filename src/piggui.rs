@@ -1,12 +1,12 @@
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
-use crate::modal_handler::{DisplayModal, ModalMessage};
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
 use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
+use crate::views::modal_handler::{DisplayModal, ModalMessage};
 use crate::widgets::modal::Modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
@@ -19,7 +19,7 @@ use std::net::IpAddr;
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::connect_dialog_handler::{
+use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
 use anyhow::anyhow;
@@ -28,13 +28,10 @@ use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-pub mod connect_dialog_handler;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
 mod hw;
-mod modal_handler;
 #[cfg(feature = "iroh")]
 #[path = "networking/piggui_iroh_helper.rs"]
 mod piggui_iroh_helper;

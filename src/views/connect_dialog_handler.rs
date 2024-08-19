@@ -1,8 +1,8 @@
-use crate::connect_dialog_handler::ConnectDialogMessage::{
+use crate::views::connect_dialog_handler::ConnectDialogMessage::{
     ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
     RelayURL, ShowConnectDialogIroh, ShowConnectDialogTcp,
 };
-use crate::modal_handler::{
+use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
 };
 

@@ -8,7 +8,7 @@ use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::connect_dialog_handler::ConnectDialogMessage;
+use crate::views::connect_dialog_handler::ConnectDialogMessage;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn item<'a>(
