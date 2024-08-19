@@ -29,10 +29,11 @@ use std::str::FromStr;
 pub mod connect_dialog_handler;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-pub mod hardware_subscription;
+mod hardware_subscription;
 mod hw;
 mod modal_handler;
+#[cfg(feature = "iroh")]
+mod piggui_iroh_helper;
 mod styles;
 mod views;
 mod widgets;

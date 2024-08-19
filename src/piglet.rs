@@ -33,7 +33,7 @@ use std::{fs::File, io::Write};
 
 mod hw;
 #[cfg(feature = "iroh")]
-mod iroh_helper;
+mod piglet_iroh_helper;
 #[cfg(feature = "tcp")]
 mod tcp_helper;
 
@@ -42,7 +42,7 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 #[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
-    pub iroh_info: Option<iroh_helper::piglet::IrohInfo>,
+    pub iroh_info: Option<piglet_iroh_helper::IrohInfo>,
     #[cfg(feature = "tcp")]
     pub tcp_info: Option<tcp_helper::piglet::TcpInfo>,
 }
@@ -114,7 +114,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     };
 
     let listener_info = ListenerInfo {
-        iroh_info: iroh_helper::piglet::get_iroh_listener_info().await.ok(),
+        iroh_info: piglet_iroh_helper::get_iroh_listener_info().await.ok(),
         tcp_info: tcp_helper::piglet::get_tcp_listener_info().await.ok(),
     };
 
@@ -131,7 +131,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     #[cfg(feature = "iroh")]
     if let Some(iroh_info) = listener_info.iroh_info {
         if let Some(endpoint) = iroh_info.endpoint {
-            iroh_helper::piglet::listen_iroh(&endpoint, &mut hw).await?;
+            piglet_iroh_helper::listen_iroh(&endpoint, &mut hw).await?;
         }
     }
 
@@ -346,7 +346,7 @@ mod test {
             .expect("Could not create Relay URL");
 
         let info = ListenerInfo {
-            iroh_info: Some(crate::iroh_helper::piglet::IrohInfo {
+            iroh_info: Some(crate::piglet_iroh_helper::IrohInfo {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
@@ -377,7 +377,7 @@ mod test {
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         let info = ListenerInfo {
-            iroh_info: Some(crate::iroh_helper::piglet::IrohInfo {
+            iroh_info: Some(crate::piglet_iroh_helper::IrohInfo {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
