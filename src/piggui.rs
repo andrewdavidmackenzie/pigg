@@ -25,7 +25,7 @@ use crate::connect_dialog_handler::{
 use anyhow::anyhow;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -354,6 +354,7 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
     target
 }
 
+#[cfg(feature = "tcp")]
 fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareTarget> {
     let (ip_str, port_str) = ip_str
         .split_once(':')
