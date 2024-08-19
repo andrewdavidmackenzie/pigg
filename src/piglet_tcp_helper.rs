@@ -55,8 +55,9 @@ pub(crate) async fn listen_tcp(
 
         let mut payload = vec![0u8; 1024];
         info!("Waiting for message");
-        while stream.read(&mut payload).await? > 0 {
-            if let Ok(config_message) = serde_json::from_slice(&payload) {
+        loop {
+            let length = stream.read(&mut payload).await?;
+            if let Ok(config_message) = serde_json::from_slice(&payload[0..length]) {
                 if let Err(e) = apply_config_change(hardware, config_message, stream.clone()).await
                 {
                     error!("Error applying config to hw: {}", e);

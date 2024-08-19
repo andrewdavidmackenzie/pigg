@@ -37,6 +37,6 @@ pub async fn send_config_change(
 pub async fn connect(ip: IpAddr, port: u16) -> anyhow::Result<(HardwareDescription, TcpStream)> {
     let mut stream = TcpStream::connect(format!("{ip}:{port}")).await?;
     let mut payload = vec![0u8; 2048];
-    stream.read(&mut payload).await?;
-    Ok((serde_json::from_slice(&payload)?, stream))
+    let length = stream.read(&mut payload).await?;
+    Ok((serde_json::from_slice(&payload[0..length])?, stream))
 }

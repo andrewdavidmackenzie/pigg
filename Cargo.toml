@@ -27,7 +27,7 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh", "tcp"]
+default = ["tcp"]
 iroh = ["iroh-net", "derive_more"]
 tcp = ["portpicker", "local-ip-address"]
 discovery = []
