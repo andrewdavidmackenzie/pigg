@@ -15,16 +15,19 @@ use iced::widget::{container, Column};
 use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
+use std::net::IpAddr;
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
+use anyhow::anyhow;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(feature = "iroh")]
 use std::str::FromStr;
+
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 pub mod connect_dialog_handler;
 #[cfg(not(target_arch = "wasm32"))]
@@ -333,15 +336,31 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
     let mut target = HardwareTarget::default();
 
     #[cfg(feature = "iroh")]
-    if let Some(node_str) = matches.get_one::<String>("nodeid").map(|s| s.to_string()) {
-        if let Ok(nodeid) = NodeId::from_str(&node_str) {
+    if let Some(node_str) = matches.get_one::<String>("nodeid") {
+        if let Ok(nodeid) = NodeId::from_str(node_str) {
             target = HardwareTarget::Iroh(nodeid, None);
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }
     }
 
+    #[cfg(feature = "tcp")]
+    if let Some(ip_str) = matches.get_one::<String>("ip") {
+        if let Ok(tcp_target) = parse_ip_string(ip_str) {
+            target = tcp_target;
+        }
+    }
+
     target
+}
+
+fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareTarget> {
+    let (ip_str, port_str) = ip_str
+        .split_once(':')
+        .ok_or(anyhow!("Could not parse ip:port"))?;
+    let ip = IpAddr::from_str(ip_str)?;
+    let port = u16::from_str(port_str)?;
+    Ok(HardwareTarget::Tcp(ip, port))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -351,6 +370,7 @@ fn get_matches() -> ArgMatches {
 
     let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
 
+    #[cfg(feature = "iroh")]
     let app = app.arg(
         Arg::new("nodeid")
             .short('n')
@@ -359,6 +379,17 @@ fn get_matches() -> ArgMatches {
             .number_of_values(1)
             .value_name("NODEID")
             .help("Node Id of a piglet instance to connect to"),
+    );
+
+    #[cfg(feature = "tcp")]
+    let app = app.arg(
+        Arg::new("ip")
+            .short('i')
+            .long("ip")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("IP")
+            .help("'IP:port' of a piglet instance to connect to"),
     );
 
     let app = app.arg(
