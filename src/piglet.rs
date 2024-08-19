@@ -27,7 +27,6 @@ use tracing_subscriber::EnvFilter;
 use hw::config::HardwareConfig;
 use hw::Hardware;
 
-use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 use std::{fs::File, io::Write};
@@ -35,29 +34,17 @@ use std::{fs::File, io::Write};
 mod hw;
 #[cfg(feature = "iroh")]
 mod iroh_helper;
-const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
-
 #[cfg(feature = "tcp")]
-#[derive(Serialize, Deserialize)]
-struct TcpInfo {
-    pub ip: String,
-    pub port: u16,
-}
+mod tcp_helper;
 
-impl Display for TcpInfo {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "IP Address: {}", self.ip)?;
-        writeln!(f, "Port: {}", self.port)?;
-        Ok(())
-    }
-}
+const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
 #[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
     pub iroh_info: Option<iroh_helper::IrohInfo>,
     #[cfg(feature = "tcp")]
-    pub tcp_info: Option<TcpInfo>,
+    pub tcp_info: Option<tcp_helper::TcpInfo>,
 }
 
 impl fmt::Display for ListenerInfo {
@@ -128,7 +115,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
 
     let listener_info = ListenerInfo {
         iroh_info: iroh_helper::get_iroh_listener_info().await.ok(),
-        tcp_info: get_tcp_listener_info().await.ok(),
+        tcp_info: tcp_helper::get_tcp_listener_info().await.ok(),
     };
 
     // write the info about the node to the info_path file for use in piggui
@@ -138,7 +125,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     // TODO listen to both at the same time and chose first
     #[cfg(feature = "tcp")]
     if let Some(tcp_info) = listener_info.tcp_info {
-        listen_tcp(tcp_info, &mut hw).await?;
+        tcp_helper::listen_tcp(tcp_info, &mut hw).await?;
     }
 
     #[cfg(feature = "iroh")]
@@ -254,19 +241,6 @@ fn get_matches() -> ArgMatches {
     );
 
     app.get_matches()
-}
-
-#[cfg(feature = "tcp")]
-async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
-    Ok(TcpInfo {
-        ip: "10.0.0.1".to_string(),
-        port: 9001,
-    })
-}
-
-#[cfg(feature = "tcp")]
-async fn listen_tcp(_tcp_info: TcpInfo, _hardware: &mut impl Hardware) -> anyhow::Result<()> {
-    Ok(())
 }
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
