@@ -42,9 +42,9 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 #[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
-    pub iroh_info: Option<iroh_helper::IrohInfo>,
+    pub iroh_info: Option<iroh_helper::piglet::IrohInfo>,
     #[cfg(feature = "tcp")]
-    pub tcp_info: Option<tcp_helper::TcpInfo>,
+    pub tcp_info: Option<tcp_helper::piglet::TcpInfo>,
 }
 
 impl fmt::Display for ListenerInfo {
@@ -114,8 +114,8 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     };
 
     let listener_info = ListenerInfo {
-        iroh_info: iroh_helper::get_iroh_listener_info().await.ok(),
-        tcp_info: tcp_helper::get_tcp_listener_info().await.ok(),
+        iroh_info: iroh_helper::piglet::get_iroh_listener_info().await.ok(),
+        tcp_info: tcp_helper::piglet::get_tcp_listener_info().await.ok(),
     };
 
     // write the info about the node to the info_path file for use in piggui
@@ -125,13 +125,13 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     // TODO listen to both at the same time and chose first
     #[cfg(feature = "tcp")]
     if let Some(tcp_info) = listener_info.tcp_info {
-        tcp_helper::listen_tcp(tcp_info, &mut hw).await?;
+        tcp_helper::piglet::listen_tcp(tcp_info, &mut hw).await?;
     }
 
     #[cfg(feature = "iroh")]
     if let Some(iroh_info) = listener_info.iroh_info {
         if let Some(endpoint) = iroh_info.endpoint {
-            iroh_helper::listen_iroh(&endpoint, &mut hw).await?;
+            iroh_helper::piglet::listen_iroh(&endpoint, &mut hw).await?;
         }
     }
 
@@ -346,7 +346,7 @@ mod test {
             .expect("Could not create Relay URL");
 
         let info = ListenerInfo {
-            iroh_info: Some(crate::iroh_helper::IrohInfo {
+            iroh_info: Some(crate::iroh_helper::piglet::IrohInfo {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
@@ -377,7 +377,7 @@ mod test {
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         let info = ListenerInfo {
-            iroh_info: Some(crate::iroh_helper::IrohInfo {
+            iroh_info: Some(crate::iroh_helper::piglet::IrohInfo {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,

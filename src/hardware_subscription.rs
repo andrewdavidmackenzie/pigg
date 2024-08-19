@@ -54,7 +54,6 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                         let (hardware_event_sender, hardware_event_receiver) =
                             mpsc::channel::<HardwareConfigMessage>(100);
 
-                        #[allow(clippy::single_match)] // TODO for now
                         match target.clone() {
                             HardwareTarget::Local => {
                                 let mut connected_hardware = hw::get();
