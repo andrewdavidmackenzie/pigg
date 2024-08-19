@@ -51,10 +51,12 @@ struct ListenerInfo {
 
 impl fmt::Display for ListenerInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        #[cfg(feature = "iroh")]
         if let Some(iroh_info) = &self.iroh_info {
             writeln!(f, "{}", iroh_info)?;
         }
 
+        #[cfg(feature = "tcp")]
         if let Some(tcp_info) = &self.tcp_info {
             writeln!(f, "{}", tcp_info)?;
         }
@@ -117,7 +119,9 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     };
 
     let listener_info = ListenerInfo {
+        #[cfg(feature = "iroh")]
         iroh_info: piglet_iroh_helper::get_iroh_listener_info().await.ok(),
+        #[cfg(feature = "tcp")]
         tcp_info: piglet_tcp_helper::get_tcp_listener_info().await.ok(),
     };
 
