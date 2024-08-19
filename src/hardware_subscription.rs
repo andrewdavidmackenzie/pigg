@@ -12,10 +12,9 @@ use iced::futures::StreamExt;
 use iced::futures::{pin_mut, FutureExt};
 use iced::{futures, subscription, Subscription};
 
-use crate::hw::{Hardware, HardwareConfigMessage, LevelChange};
-// TODO remove when implement Tcp
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::{Hardware, HardwareConfigMessage, LevelChange};
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 
