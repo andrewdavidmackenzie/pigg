@@ -11,7 +11,6 @@ use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
@@ -33,7 +32,7 @@ use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::network_subscription;
+use crate::hardware_subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
 
@@ -381,30 +380,11 @@ impl HardwareView {
         &self,
         hardware_target: &HardwareTarget,
     ) -> Subscription<HardwareViewMessage> {
-        let mut subscriptions =
-            vec![
-                iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
-                    .map(|_| UpdateCharts),
-            ];
-
-        match hardware_target {
-            NoHW => {}
-            Local => {
-                subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
-            }
-            #[cfg(feature = "iroh")]
-            Iroh(_, _) => {
-                subscriptions.push(
-                    network_subscription::subscribe(hardware_target).map(HardwareSubscription),
-                );
-            }
-            #[cfg(feature = "tcp")]
-            Tcp(_, _) => {
-                subscriptions.push(
-                    network_subscription::subscribe(hardware_target).map(HardwareSubscription),
-                );
-            }
-        }
+        let subscriptions = vec![
+            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                .map(|_| UpdateCharts),
+            hardware_subscription::subscribe(hardware_target).map(HardwareSubscription),
+        ];
 
         Subscription::batch(subscriptions)
     }
