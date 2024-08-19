@@ -113,14 +113,13 @@ fn version_number() {
 #[test]
 #[serial]
 fn verbosity_level_debug() {
-    let output = run_piglet(vec!["--verbosity".into()], None);
+    let output = run_piglet(vec!["--verbosity".into(), "debug".into()], None);
     println!("Output: {}", output);
     assert!(
-        output.contains(""),
+        output.contains("DEBUG"),
         "Failed to set verbosity level to debug"
     );
 }
-// 'service 'net.mackenzie-serres.pigg.piglet' ('/home/sundaram/pigg/target/debug/piglet') installed and started
 
 #[cfg(not(any(
     all(
@@ -132,11 +131,12 @@ fn verbosity_level_debug() {
 )))]
 #[test]
 #[serial]
-fn test_install_service() {
-    let output = run_piglet(vec!["--install".into(), "debug".into()], None);
+fn help() {
+    let output = run_piglet(vec!["--help".into()], None);
     println!("Output: {}", output);
     assert!(
-        output.contains("installed and started"),
-        "Failed to to install piglet"
+        output.contains("'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'"),
+        "Failed to display help"
     );
 }
+
