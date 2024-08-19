@@ -1,12 +1,9 @@
-#![allow(unused)]
-
 use crate::hw;
 use crate::hw::config::HardwareConfig;
 #[cfg(feature = "iroh")]
 use crate::piggui_iroh_helper;
 #[cfg(feature = "tcp")]
 use crate::piggui_tcp_helper;
-use anyhow::Context;
 use async_std::net::TcpStream;
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::{Receiver, Sender};
@@ -61,7 +58,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 
                         match target.clone() {
                             HardwareTarget::Local => {
-                                let mut connected_hardware = hw::get();
+                                let connected_hardware = hw::get();
                                 let hardware_description =
                                     connected_hardware.description().unwrap();
                                 // Send the sender back to the GUI
