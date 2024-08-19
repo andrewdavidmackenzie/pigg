@@ -34,26 +34,6 @@ pub enum NetworkState {
     ConnectedTcp(Receiver<HardwareConfigMessage>),
 }
 
-/// Send the current input state for all inputs configured in the config
-fn send_current_input_states(
-    tx: &mut Sender<HardwareEventMessage>,
-    config: &HardwareConfig,
-    connected_hardware: &impl Hardware,
-) {
-    // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.pins {
-        if let PinFunction::Input(_pullup) = pin_function {
-            // Update UI with initial state
-            if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
-                let _ = tx.try_send(InputChange(
-                    *bcm_pin_number,
-                    LevelChange::new(initial_level),
-                ));
-            }
-        }
-    }
-}
-
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
 pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessage> {
@@ -203,6 +183,26 @@ fn apply_config_change(
         }
         IOLevelChanged(bcm_pin_number, level_change) => {
             let _ = hardware.set_output_level(bcm_pin_number, level_change.new_level);
+        }
+    }
+}
+
+/// Send the current input state for all inputs configured in the config
+fn send_current_input_states(
+    tx: &mut Sender<HardwareEventMessage>,
+    config: &HardwareConfig,
+    connected_hardware: &impl Hardware,
+) {
+    // Send initial levels
+    for (bcm_pin_number, pin_function) in &config.pins {
+        if let PinFunction::Input(_pullup) = pin_function {
+            // Update UI with initial state
+            if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
+                let _ = tx.try_send(InputChange(
+                    *bcm_pin_number,
+                    LevelChange::new(initial_level),
+                ));
+            }
         }
     }
 }
