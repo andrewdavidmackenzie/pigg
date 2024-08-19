@@ -176,6 +176,25 @@ fn verbosity_level_info() {
         "Failed to set verbosity level to info"
     );
 }
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32"
+)))]
+#[test]
+#[serial]
+fn verbosity_level_error() {
+    let output = run_piglet(vec!["--verbosity".into(), "error".into()], None);
+    println!("Output: {}", output);
+    assert!(
+        output.contains("nodeid"),
+        "Failed to set verbosity level to error"
+    );
+}
 #[cfg(not(any(
     all(
         target_os = "linux",
