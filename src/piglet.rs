@@ -39,6 +39,8 @@ mod tcp_helper;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
+/// The [ListenerInfo] struct captures information about network connections the instance of
+/// `piglet` is listening on, that can be used with `piggui` to start a remote GPIO session
 #[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
@@ -76,7 +78,8 @@ async fn main() -> anyhow::Result<()> {
     run_service(&info_path, &matches).await
 }
 
-/// Handle any service installation or uninstallation tasks
+/// Handle any service installation or uninstallation tasks specified on the command line
+/// continue without doing anything if none were specified
 fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
     let service_name: ServiceLabel = SERVICE_NAME.parse()?;
 
@@ -196,7 +199,7 @@ fn setup_logging(matches: &ArgMatches) {
     tracing_subscriber::fmt().with_env_filter(env_filter).init();
 }
 
-/// Parse the command line arguments using clap
+/// Parse the command line arguments using clap into a set of [ArgMatches]
 fn get_matches() -> ArgMatches {
     let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
@@ -244,7 +247,7 @@ fn get_matches() -> ArgMatches {
 }
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-/// Write info about the running piglet to the info file
+/// Write a [ListenerInfo] file that captures information that can be used to connect to piglet
 fn write_info_file(info_path: &Path, listener_info: &ListenerInfo) -> anyhow::Result<()> {
     let mut output = File::create(info_path)?;
     write!(output, "{}", serde_json::to_string(listener_info)?)?;
@@ -252,6 +255,7 @@ fn write_info_file(info_path: &Path, listener_info: &ListenerInfo) -> anyhow::Re
     Ok(())
 }
 
+/// Get a [ServiceManager] instance to use to install or remove system services
 fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
     // Get generic service by detecting what is available on the platform
     let manager = <dyn ServiceManager>::native()
