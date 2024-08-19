@@ -101,3 +101,42 @@ fn version_number() {
     let version = output.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
 }
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32"
+)))]
+#[test]
+#[serial]
+fn verbosity_level_debug() {
+    let output = run_piglet(vec!["--verbosity".into()], None);
+    println!("Output: {}", output);
+    assert!(
+        output.contains(""),
+        "Failed to set verbosity level to debug"
+    );
+}
+// 'service 'net.mackenzie-serres.pigg.piglet' ('/home/sundaram/pigg/target/debug/piglet') installed and started
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32"
+)))]
+#[test]
+#[serial]
+fn test_install_service() {
+    let output = run_piglet(vec!["--install".into(), "debug".into()], None);
+    println!("Output: {}", output);
+    assert!(
+        output.contains("installed and started"),
+        "Failed to to install piglet"
+    );
+}
