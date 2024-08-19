@@ -32,7 +32,7 @@ use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
 
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::network_subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
@@ -171,6 +171,8 @@ pub enum HardwareTarget {
     Local,
     #[cfg(feature = "iroh")]
     Iroh(NodeId, Option<RelayUrl>),
+    #[cfg(feature = "tcp")]
+    Tcp(String, u16),
 }
 
 pub struct HardwareView {
@@ -391,10 +393,15 @@ impl HardwareView {
                 subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
             }
             #[cfg(feature = "iroh")]
-            Iroh(nodeid, relay) => {
+            Iroh(_, _) => {
                 subscriptions.push(
-                    network_subscription::subscribe(*nodeid, relay.clone())
-                        .map(HardwareSubscription),
+                    network_subscription::subscribe(hardware_target).map(HardwareSubscription),
+                );
+            }
+            #[cfg(feature = "tcp")]
+            Tcp(_, _) => {
+                subscriptions.push(
+                    network_subscription::subscribe(hardware_target).map(HardwareSubscription),
                 );
             }
         }

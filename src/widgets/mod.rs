@@ -3,6 +3,6 @@ pub mod clicker;
 pub mod led;
 pub mod line;
 pub mod modal;
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub mod spinner;
 pub mod toast;

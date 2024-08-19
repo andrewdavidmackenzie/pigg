@@ -17,7 +17,7 @@ use iced::{
 };
 use views::pin_state::PinState;
 
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
@@ -25,14 +25,14 @@ use crate::connect_dialog_handler::{
 use iroh_net::NodeId;
 #[cfg(feature = "iroh")]
 use std::str::FromStr;
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub mod connect_dialog_handler;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 pub mod hardware_subscription;
 mod hw;
 mod modal_handler;
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub mod network_subscription;
 mod styles;
 mod views;
@@ -52,7 +52,7 @@ pub enum Message {
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     MenuBarButtonClicked,
-    #[cfg(feature = "iroh")]
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareTarget),
     Connected,
@@ -67,7 +67,7 @@ pub struct Piggui {
     info_row: InfoRow,
     modal_handler: DisplayModal,
     hardware_view: HardwareView,
-    #[cfg(feature = "iroh")]
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
 }
@@ -87,7 +87,7 @@ impl Piggui {
         self.info_row.add_info_message(Info(message));
     }
 
-    #[cfg(feature = "iroh")]
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     /// Send a connection error message to the connection dialog
     fn dialog_connection_error(&mut self, message: String) {
         self.connect_dialog.set_error(message);
@@ -132,7 +132,7 @@ impl Application for Piggui {
                 info_row: InfoRow::new(),
                 modal_handler: DisplayModal::new(),
                 hardware_view: HardwareView::new(),
-                #[cfg(feature = "iroh")]
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
             },
@@ -195,7 +195,7 @@ impl Application for Piggui {
                     .update(toast_message, &self.hardware_view);
             }
 
-            #[cfg(feature = "iroh")]
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
             ConnectDialog(connect_dialog_message) => {
                 return self.connect_dialog.update(connect_dialog_message);
             }
@@ -220,29 +220,29 @@ impl Application for Piggui {
 
             ConnectRequest(new_target) => {
                 if new_target == HardwareTarget::NoHW {
-                    #[cfg(feature = "iroh")]
+                    #[cfg(any(feature = "iroh", feature = "tcp"))]
                     self.connect_dialog.enable_widgets_and_hide_spinner();
                     self.info_connected("Disconnected from hardware".to_string());
                 } else {
-                    #[cfg(feature = "iroh")]
+                    #[cfg(any(feature = "iroh", feature = "tcp"))]
                     self.connect_dialog.disable_widgets_and_load_spinner();
                 }
                 self.hardware_target = new_target;
             }
 
             Connected => {
-                #[cfg(feature = "iroh")]
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
-                #[cfg(feature = "iroh")]
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
                 self.info_connected("Connected to hardware".to_string());
             }
 
             ConnectionError(message) => {
-                #[cfg(feature = "iroh")]
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.info_connection_error(message.clone());
-                #[cfg(feature = "iroh")]
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.dialog_connection_error(message);
             }
         }
@@ -284,7 +284,7 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
-        #[cfg(feature = "iroh")]
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
         if self.connect_dialog.show_modal {
             return Modal::new(content, self.connect_dialog.view())
                 .on_blur(Message::ConnectDialog(HideConnectDialog))
@@ -317,7 +317,7 @@ impl Application for Piggui {
         ];
 
         // Handle Keyboard events for ConnectDialog
-        #[cfg(feature = "iroh")]
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
         subscriptions.push(self.connect_dialog.subscription().map(ConnectDialog));
 
         Subscription::batch(subscriptions)

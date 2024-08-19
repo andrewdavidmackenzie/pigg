@@ -7,7 +7,7 @@ use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
 
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::connect_dialog_handler::ConnectDialogMessage;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
@@ -22,6 +22,8 @@ pub fn item<'a>(
             Local => format!("{}@Local", model),
             #[cfg(feature = "iroh")]
             Iroh(_, _) => format!("{}@Remote", model),
+            #[cfg(feature = "tcp")]
+            Tcp(_, _) => format!("{}@Remote", model),
         },
     };
 
@@ -36,11 +38,21 @@ pub fn item<'a>(
     );
 
     #[cfg(feature = "iroh")]
-    let connect_remote: Item<'a, Message, _, _> = Item::new(
+    let connect_iroh: Item<'a, Message, _, _> = Item::new(
         Button::new("Connect to remote Pi using Iroh...")
             .width(Length::Fill)
             .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::ShowConnectDialog,
+                ConnectDialogMessage::ShowConnectDialogIroh,
+            ))
+            .style(MENU_BUTTON_STYLE.get_button_style()),
+    );
+
+    #[cfg(feature = "tcp")]
+    let connect_tcp: Item<'a, Message, _, _> = Item::new(
+        Button::new("Connect to remote Pi using TCP...")
+            .width(Length::Fill)
+            .on_press(Message::ConnectDialog(
+                ConnectDialogMessage::ShowConnectDialogIroh,
             ))
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
@@ -55,16 +67,25 @@ pub fn item<'a>(
     match hardware_target {
         NoHW => {
             #[cfg(feature = "iroh")]
-            menu_items.push(connect_remote);
+            menu_items.push(connect_iroh);
+            #[cfg(feature = "tcp")]
+            menu_items.push(connect_tcp);
             menu_items.push(connect_local);
         }
         Local => {
             menu_items.push(disconnect);
             #[cfg(feature = "iroh")]
-            menu_items.push(connect_remote);
+            menu_items.push(connect_iroh);
+            #[cfg(feature = "tcp")]
+            menu_items.push(connect_tcp);
         }
         #[cfg(feature = "iroh")]
         Iroh(_, _) => {
+            menu_items.push(disconnect);
+            menu_items.push(connect_local);
+        }
+        #[cfg(feature = "tcp")]
+        Tcp(_, _) => {
             menu_items.push(disconnect);
             menu_items.push(connect_local);
         }

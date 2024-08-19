@@ -27,8 +27,9 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh"]
+default = ["iroh", "tcp"]
 iroh = ["iroh-net", "derive_more"]
+tcp = []
 discovery = []
 
 [dependencies]

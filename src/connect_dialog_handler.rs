@@ -1,6 +1,6 @@
 use crate::connect_dialog_handler::ConnectDialogMessage::{
     ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
-    RelayURL, ShowConnectDialog,
+    RelayURL, ShowConnectDialogIroh, ShowConnectDialogTcp,
 };
 use crate::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
@@ -9,14 +9,15 @@ use crate::modal_handler::{
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 #[cfg(feature = "iroh")]
-use crate::views::hardware_view::HardwareTarget::Iroh;
+use crate::views::hardware_view::HardwareTarget::*;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
-use iroh_net::relay::RelayUrl;
-use iroh_net::NodeId;
+#[cfg(feature = "iroh")]
+use iroh_net::{relay::RelayUrl, NodeId};
+#[cfg(feature = "iroh")]
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -57,7 +58,8 @@ pub enum ConnectDialogMessage {
     ModalKeyEvent(Event),
     ConnectButtonPressed(String, String),
     HideConnectDialog,
-    ShowConnectDialog,
+    ShowConnectDialogIroh,
+    ShowConnectDialogTcp,
     ConnectionError(String),
 }
 impl Default for ConnectDialog {
@@ -83,16 +85,20 @@ impl ConnectDialog {
         self.iroh_connection_error = error;
     }
 
+    #[allow(unused)] // TODO remove
     async fn empty() {}
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
-        return match message {
+        match message {
+            // TODO handle IP/Port combination
+            #[allow(unused_variables)]
             ConnectButtonPressed(node_id, url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
                     return Command::none();
                 }
 
+                #[cfg(feature = "iroh")]
                 match NodeId::from_str(node_id.as_str().trim()) {
                     Ok(nodeid) => {
                         let url_str = url.trim();
@@ -113,9 +119,9 @@ impl ConnectDialog {
                             }
                         };
 
-                        return Command::perform(Self::empty(), move |_| {
+                        Command::perform(Self::empty(), move |_| {
                             Message::ConnectRequest(Iroh(nodeid, relay_url))
-                        });
+                        })
                     }
                     Err(err) => {
                         self.iroh_connection_error = format!("{}", err);
@@ -124,10 +130,17 @@ impl ConnectDialog {
                         Command::none()
                     }
                 }
+                #[cfg(not(feature = "iroh"))]
+                Command::none()
             }
 
-            ShowConnectDialog => {
+            ShowConnectDialogIroh => {
                 self.show_modal = true;
+                Command::none()
+            }
+
+            ShowConnectDialogTcp => {
+                self.show_modal = true; // TODO
                 Command::none()
             }
 
@@ -177,7 +190,7 @@ impl ConnectDialog {
                 self.enable_widgets_and_hide_spinner();
                 Command::none()
             }
-        };
+        }
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
@@ -322,7 +335,7 @@ mod tests {
         let mut connect_dialog = ConnectDialog::new();
         assert!(!connect_dialog.show_modal);
 
-        let _ = connect_dialog.update(ShowConnectDialog);
+        let _ = connect_dialog.update(ShowConnectDialogIroh);
         assert!(connect_dialog.show_modal);
     }
 
@@ -365,6 +378,7 @@ mod tests {
         assert_eq!(connect_dialog.iroh_connection_error, "Please Enter Node Id");
     }
 
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_connect_button_pressed_invalid_node_id() {
         let mut connect_dialog = ConnectDialog::new();
