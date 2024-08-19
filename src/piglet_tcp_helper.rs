@@ -7,7 +7,7 @@ use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use local_ip_address::local_ip;
-use log::{info, trace};
+use log::{error, info, trace};
 use portpicker::pick_unused_port;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -51,14 +51,25 @@ pub(crate) async fn listen_tcp(
         trace!("Connected, sending hardware description");
         let desc = hardware.description()?;
         let message = serde_json::to_vec(&desc)?;
-        stream.write_all(&message).await?;
+        let _ = stream.write_all(&message).await;
 
         let mut payload = vec![0u8; 1024];
         info!("Waiting for message");
         loop {
-            let length = stream.read(&mut payload).await?;
-            let config_message = serde_json::from_slice(&payload[0..length])?;
-            apply_config_change(hardware, config_message, stream.clone()).await?;
+            match stream.read(&mut payload).await {
+                Ok(length) => {
+                    if length == 0 {
+                        break;
+                    }
+
+                    let config_message = serde_json::from_slice(&payload[0..length])?;
+                    apply_config_change(hardware, config_message, stream.clone()).await?;
+                }
+                Err(e) => {
+                    error!("Error reading payload: {}", e);
+                    break;
+                }
+            }
         }
     }
 

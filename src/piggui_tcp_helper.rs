@@ -2,8 +2,8 @@ use anyhow::ensure;
 use async_std::io::ReadExt;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
+use std::io;
 use std::net::IpAddr;
-use std::{io, mem};
 
 use crate::hw::{HardwareConfigMessage, HardwareDescription};
 
