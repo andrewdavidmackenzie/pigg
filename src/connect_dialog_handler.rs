@@ -5,7 +5,7 @@ use crate::connect_dialog_handler::ConnectDialogMessage::{
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
-use crate::views::hardware_view::HardwareTarget::Remote;
+use crate::views::hardware_view::HardwareTarget::Iroh;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
@@ -133,7 +133,7 @@ impl ConnectDialog {
                         };
 
                         return Command::perform(Self::empty(), move |_| {
-                            Message::ConnectRequest(Remote(nodeid, relay_url))
+                            Message::ConnectRequest(Iroh(nodeid, relay_url))
                         });
                     }
                     Err(err) => {

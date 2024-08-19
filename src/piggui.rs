@@ -309,7 +309,7 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
 
     if let Some(node_str) = matches.get_one::<String>("nodeid").map(|s| s.to_string()) {
         if let Ok(nodeid) = NodeId::from_str(&node_str) {
-            target = HardwareTarget::Remote(nodeid, None);
+            target = HardwareTarget::Iroh(nodeid, None);
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }

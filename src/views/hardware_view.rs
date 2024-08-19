@@ -24,7 +24,7 @@ use crate::hw::{HardwareDescription, InputPull};
 use crate::network_subscription;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
-use crate::views::hardware_view::HardwareTarget::{Local, NoHW, Remote};
+use crate::views::hardware_view::HardwareTarget::{Iroh, Local, NoHW};
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
@@ -167,7 +167,7 @@ pub enum HardwareTarget {
     NoHW,
     #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
-    Remote(NodeId, Option<RelayUrl>),
+    Iroh(NodeId, Option<RelayUrl>),
 }
 
 pub struct HardwareView {
@@ -387,7 +387,7 @@ impl HardwareView {
             Local => {
                 subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
             }
-            Remote(nodeid, relay) => {
+            Iroh(nodeid, relay) => {
                 subscriptions.push(
                     network_subscription::subscribe(*nodeid, relay.clone())
                         .map(HardwareSubscription),
@@ -461,7 +461,6 @@ impl HardwareView {
         }
 
         column.into()
-
     }
 }
 
