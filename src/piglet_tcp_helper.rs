@@ -2,17 +2,20 @@ use crate::hw::config::HardwareConfig;
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::{BCMPinNumber, Hardware, HardwareConfigMessage, LevelChange, PinLevel};
+use anyhow::anyhow;
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
+use local_ip_address::local_ip;
 use log::{error, info, trace};
+use portpicker::pick_unused_port;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct TcpInfo {
-    pub ip: String,
+    pub ip: core::net::IpAddr,
     pub port: u16,
 }
 
@@ -25,10 +28,13 @@ impl Display for TcpInfo {
 }
 
 pub(crate) async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
-    Ok(TcpInfo {
-        ip: "localhost".to_string(),
-        port: 9001,
-    })
+    let ip = local_ip()?;
+    println!("ip: {ip}");
+
+    let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
+    println!("port: {port}");
+
+    Ok(TcpInfo { ip, port })
 }
 
 pub(crate) async fn listen_tcp(
