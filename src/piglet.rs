@@ -4,7 +4,7 @@
 use std::{
     env,
     env::current_exe,
-    fs, io,
+    fmt, fs, io,
     path::{Path, PathBuf},
     process,
     process::exit,
@@ -43,15 +43,73 @@ use iroh_net::{
     Endpoint, NodeId,
 };
 
+use derive_more::Display;
 #[cfg(feature = "iroh")]
 use futures_lite::StreamExt;
 #[cfg(feature = "iroh")]
 use log::error;
-#[cfg(feature = "iroh")]
+use serde::{Deserialize, Serialize};
+use std::fmt::Formatter;
 use std::{fs::File, io::Write};
 
 mod hw;
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
+
+#[cfg(feature = "iroh")]
+#[derive(Serialize, Deserialize)]
+struct IrohInfo {
+    pub nodeid: NodeId,
+    pub local_addrs: String,
+    pub relay_url: RelayUrl,
+    pub alpn: String,
+    #[serde(skip)]
+    pub endpoint: Option<Endpoint>,
+}
+
+impl Display for IrohInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "nodeid: {}", self.nodeid)?;
+        writeln!(f, "relay URL: {}", self.relay_url)?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "tcp")]
+#[derive(Serialize, Deserialize)]
+struct TcpInfo {
+    pub ip: String,
+    pub port: u16,
+}
+
+impl Display for TcpInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "IP Address: {}", self.ip)?;
+        writeln!(f, "Port: {}", self.port)?;
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct ListenerInfo {
+    #[cfg(feature = "iroh")]
+    pub iroh_info: Option<IrohInfo>,
+    #[cfg(feature = "tcp")]
+    pub tcp_info: Option<TcpInfo>,
+}
+
+impl fmt::Display for ListenerInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let Some(iroh_info) = &self.iroh_info {
+            writeln!(f, "{}", iroh_info)?;
+        }
+
+        if let Some(tcp_info) = &self.tcp_info {
+            writeln!(f, "{}", tcp_info)?;
+        }
+
+        Ok(())
+    }
+}
 
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
@@ -105,14 +163,32 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         trace!("Configuration applied to hardware");
     };
 
+    let listener_info = ListenerInfo {
+        iroh_info: get_iroh_listener_info().await.ok(),
+        tcp_info: get_tcp_listener_info().await.ok(),
+    };
+
+    // write the info about the node to the info_path file for use in piggui
+    write_info_file(info_path, &listener_info)?;
+
     // Then listen for remote connections and "serve" them
+    // TODO listen to both at the same time and chose first
+    #[cfg(feature = "tcp")]
+    if let Some(tcp_info) = listener_info.tcp_info {
+        listen_tcp(tcp_info, &mut hw).await?;
+    }
+
     #[cfg(feature = "iroh")]
-    listen(info_path, hw).await?;
+    if let Some(iroh_info) = listener_info.iroh_info {
+        if let Some(endpoint) = iroh_info.endpoint {
+            listen_iroh(&endpoint, &mut hw).await?;
+        }
+    }
 
     Ok(())
 }
 
-/// CHeck that this is the only instance of piglet running, both user process or system process
+/// Check that this is the only instance of piglet running, both user process or system process
 /// If another version is detected:
 /// - print out that fact, with the process ID
 /// - print out the nodeid of the instance that is running
@@ -143,7 +219,8 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
             if info_path.exists() {
                 println!("You can use the following info to connect to it:");
                 let piglet_info = fs::read_to_string(info_path)?;
-                println!("{}", piglet_info);
+                let info: ListenerInfo = serde_json::from_str(&piglet_info)?;
+                println!("{}", info);
             }
         }
 
@@ -216,11 +293,21 @@ fn get_matches() -> ArgMatches {
     app.get_matches()
 }
 
+#[cfg(feature = "tcp")]
+async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
+    Ok(TcpInfo {
+        ip: "10.0.0.1".to_string(),
+        port: 9001,
+    })
+}
+
+#[cfg(feature = "tcp")]
+async fn listen_tcp(_tcp_info: TcpInfo, _hardware: &mut impl Hardware) -> anyhow::Result<()> {
+    Ok(())
+}
+
 #[cfg(feature = "iroh")]
-/// Listen for an incoming iroh-net connection and apply any config changes received, and
-/// send to GUI over the connection any input level changes.
-/// This is adapted from the iroh-net example with help from the iroh community
-async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result<()> {
+async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
@@ -263,9 +350,20 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
         .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
     println!("Relay URL: {relay_url}");
 
-    // write the info about the node to the info_path file for use in piggui
-    write_info_file(info_path, &nodeid, &local_addrs, &relay_url)?;
+    Ok(IrohInfo {
+        nodeid,
+        local_addrs,
+        relay_url,
+        alpn: String::from_utf8_lossy(PIGLET_ALPN).parse()?,
+        endpoint: Some(endpoint),
+    })
+}
 
+#[cfg(feature = "iroh")]
+/// Listen for an incoming iroh-net connection and apply any config changes received, and
+/// send to GUI over the connection any input level changes.
+/// This is adapted from the iroh-net example with help from the iroh community
+async fn listen_iroh(endpoint: &Endpoint, hardware: &mut impl Hardware) -> anyhow::Result<()> {
     loop {
         // accept incoming connections, returns a normal QUIC connection
         if let Some(connecting) = endpoint.accept().await {
@@ -292,12 +390,9 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
                         if !payload.is_empty() {
                             let content = String::from_utf8_lossy(&payload);
                             if let Ok(config_message) = serde_json::from_str(&content) {
-                                if let Err(e) = apply_config_change(
-                                    &mut hardware,
-                                    config_message,
-                                    connection_clone,
-                                )
-                                .await
+                                if let Err(e) =
+                                    apply_config_change(hardware, config_message, connection_clone)
+                                        .await
                                 {
                                     error!("Error applying config to hw: {}", e);
                                 }
@@ -318,16 +413,9 @@ async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result
 
 #[cfg(feature = "iroh")]
 /// Write info about the running piglet to the info file
-fn write_info_file(
-    info_path: &Path,
-    nodeid: &NodeId,
-    local_addrs: &str,
-    relay_url: &RelayUrl,
-) -> anyhow::Result<()> {
+fn write_info_file(info_path: &Path, listener_info: &ListenerInfo) -> anyhow::Result<()> {
     let mut output = File::create(info_path)?;
-    writeln!(output, "nodeid : {nodeid}")?;
-    writeln!(output, "local addresses : {local_addrs}")?;
-    writeln!(output, "relay_url : {relay_url}")?;
+    write!(output, "{}", serde_json::to_string(listener_info)?)?;
     info!("Info file written at: {info_path:?}");
     Ok(())
 }
@@ -508,6 +596,7 @@ mod test {
     use std::path::PathBuf;
     use std::str::FromStr;
 
+    use crate::{IrohInfo, ListenerInfo};
     use tempfile::tempdir;
 
     #[test]
@@ -517,14 +606,28 @@ mod test {
         let nodeid =
             iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
                 .expect("Could not create nodeid");
-        let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
+        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
-        super::write_info_file(&test_file, &nodeid, local_addr, &relay_url)
-            .expect("Writing info file failed");
+
+        let info = ListenerInfo {
+            iroh_info: Some(IrohInfo {
+                nodeid,
+                local_addrs: local_addrs.to_string(),
+                relay_url,
+                alpn: "".to_string(),
+                endpoint: None,
+            }),
+            tcp_info: None,
+        };
+
+        super::write_info_file(&test_file, &info).expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
         let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
         assert!(piglet_info.contains(&nodeid.to_string()));
+        let read_info: ListenerInfo =
+            serde_json::from_str(&piglet_info).expect("Could not parse info file");
+        assert_eq!(nodeid, read_info.iroh_info.expect("No iroh info!").nodeid);
     }
 
     #[test]
@@ -534,10 +637,21 @@ mod test {
         let nodeid =
             iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
                 .expect("Could not create nodeid");
-        let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
+        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
-        assert!(super::write_info_file(&test_file, &nodeid, local_addr, &relay_url).is_err());
+        let info = ListenerInfo {
+            iroh_info: Some(IrohInfo {
+                nodeid,
+                local_addrs: local_addrs.to_string(),
+                relay_url,
+                alpn: "".to_string(),
+                endpoint: None,
+            }),
+            tcp_info: None,
+        };
+
+        assert!(super::write_info_file(&test_file, &info).is_err());
         assert!(!test_file.exists(), "File was created!");
     }
 }
