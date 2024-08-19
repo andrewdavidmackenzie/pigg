@@ -27,11 +27,15 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = []
+default = ["iroh"]
+iroh = ["iroh-net"]
 discovery = []
 
 [dependencies]
 derive_more = "=1.0.0-beta.6" # To fix iroh-net issue
+
+# Optional Dependencies
+iroh-net = { version = "0.19.0", default-features = false, optional = true }
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
@@ -40,7 +44,6 @@ serde_json = { version = "1.0.125", default-features = false, features = ["std"]
 serde_arrays = { version = "0.1.0", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
-iroh-net = { version = "0.19.0", default-features = false }
 anyhow = { version = "1", default-features = false }
 futures-lite = { version = "2.3", default-features = false }
 tokio = { version = "1.39.2", default-features = false, features = ["time", "rt"] }
