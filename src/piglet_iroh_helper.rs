@@ -109,7 +109,7 @@ pub async fn listen_iroh(endpoint: &Endpoint, hardware: &mut impl Hardware) -> a
             gui_sender.finish().await?;
 
             loop {
-                trace!("waiting for connection");
+                info!("Waiting for iroh-net connection");
                 match connection.accept_uni().await {
                     Ok(mut config_receiver) => {
                         let connection_clone = connection.clone();
@@ -212,6 +212,7 @@ async fn send_input_level_async(
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
+// TODO they are looking for testers of async closures! This is the place!
 fn send_input_level(
     connection: Connection,
     bcm: BCMPinNumber,
