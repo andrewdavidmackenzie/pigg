@@ -116,6 +116,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                             ))
                                             .await;
 
+                                        println!("Connected by TCP");
                                         // We are ready to receive messages from the GUI
                                         state = NetworkState::ConnectedTcp(
                                             hardware_event_receiver,

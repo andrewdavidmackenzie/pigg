@@ -7,7 +7,7 @@ use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use local_ip_address::local_ip;
-use log::{error, info, trace};
+use log::{info, trace};
 use portpicker::pick_unused_port;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -57,16 +57,9 @@ pub(crate) async fn listen_tcp(
         info!("Waiting for message");
         loop {
             let length = stream.read(&mut payload).await?;
-            if let Ok(config_message) = serde_json::from_slice(&payload[0..length]) {
-                if let Err(e) = apply_config_change(hardware, config_message, stream.clone()).await
-                {
-                    error!("Error applying config to hw: {}", e);
-                }
-            } else {
-                error!("Unknown message: {}", String::from_utf8_lossy(&payload));
-            };
+            let config_message = serde_json::from_slice(&payload[0..length])?;
+            apply_config_change(hardware, config_message, stream.clone()).await?;
         }
-        info!("Connection lost");
     }
 
     Ok(())

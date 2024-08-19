@@ -2,8 +2,8 @@ use anyhow::ensure;
 use async_std::io::ReadExt;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
-use std::io;
 use std::net::IpAddr;
+use std::{io, mem};
 
 use crate::hw::{HardwareConfigMessage, HardwareDescription};
 
@@ -14,7 +14,7 @@ pub async fn wait_for_remote_message(
     let mut payload = vec![0u8; 1024];
     let length = stream.read(&mut payload).await?;
     ensure!(
-        !length == 0,
+        length != 0,
         io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
     );
 
@@ -36,7 +36,8 @@ pub async fn send_config_change(
 /// return that description plus the [TcpStream] to be used to communicate with it.
 pub async fn connect(ip: IpAddr, port: u16) -> anyhow::Result<(HardwareDescription, TcpStream)> {
     let mut stream = TcpStream::connect(format!("{ip}:{port}")).await?;
-    let mut payload = vec![0u8; 2048];
+    // This array needs to be big enough for HardwareDescription
+    let mut payload = vec![0u8; 4096];
     let length = stream.read(&mut payload).await?;
     Ok((serde_json::from_slice(&payload[0..length])?, stream))
 }
