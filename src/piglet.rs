@@ -35,7 +35,7 @@ mod hw;
 #[cfg(feature = "iroh")]
 mod piglet_iroh_helper;
 #[cfg(feature = "tcp")]
-mod tcp_helper;
+mod piglet_tcp_helper;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
@@ -46,7 +46,7 @@ struct ListenerInfo {
     #[cfg(feature = "iroh")]
     pub iroh_info: Option<piglet_iroh_helper::IrohInfo>,
     #[cfg(feature = "tcp")]
-    pub tcp_info: Option<tcp_helper::piglet::TcpInfo>,
+    pub tcp_info: Option<piglet_tcp_helper::piglet::TcpInfo>,
 }
 
 impl fmt::Display for ListenerInfo {
@@ -118,7 +118,9 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
 
     let listener_info = ListenerInfo {
         iroh_info: piglet_iroh_helper::get_iroh_listener_info().await.ok(),
-        tcp_info: tcp_helper::piglet::get_tcp_listener_info().await.ok(),
+        tcp_info: piglet_tcp_helper::piglet::get_tcp_listener_info()
+            .await
+            .ok(),
     };
 
     // write the info about the node to the info_path file for use in piggui
@@ -128,7 +130,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     // TODO listen to both at the same time and chose first
     #[cfg(feature = "tcp")]
     if let Some(tcp_info) = listener_info.tcp_info {
-        tcp_helper::piglet::listen_tcp(tcp_info, &mut hw).await?;
+        piglet_tcp_helper::piglet::listen_tcp(tcp_info, &mut hw).await?;
     }
 
     #[cfg(feature = "iroh")]
