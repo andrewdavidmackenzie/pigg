@@ -29,10 +29,8 @@ impl Display for TcpInfo {
 
 pub(crate) async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
     let ip = local_ip()?;
-    println!("ip: {ip}");
-
     let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
-    println!("port: {port}");
+    println!("ip: '{ip}:{port}'");
 
     Ok(TcpInfo { ip, port })
 }
