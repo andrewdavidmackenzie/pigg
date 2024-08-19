@@ -19,7 +19,7 @@ pub(crate) const MENU_BAR_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
     hovered_bg_color: Color::TRANSPARENT,
     hovered_text_color: Color::WHITE,
-    border_radius: 4.0,
+    border_radius: 2.0,
 };
 
 pub(crate) const MENU_BUTTON_STYLE: ButtonStyle = ButtonStyle {

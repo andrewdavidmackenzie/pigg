@@ -109,6 +109,6 @@ pub fn item<'a>(
         Button::new(Text::new(model))
             .style(MENU_BAR_BUTTON_STYLE.get_button_style())
             .on_press(Message::MenuBarButtonClicked),
-        Menu::new(menu_items).width(200.0).spacing(2.0).offset(10.0),
+        Menu::new(menu_items).width(235.0).offset(10.0),
     )
 }
