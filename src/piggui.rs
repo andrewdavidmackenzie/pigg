@@ -36,8 +36,10 @@ mod hardware_subscription;
 mod hw;
 mod modal_handler;
 #[cfg(feature = "iroh")]
+#[path = "networking/piggui_iroh_helper.rs"]
 mod piggui_iroh_helper;
 #[cfg(feature = "tcp")]
+#[path = "networking/piggui_tcp_helper.rs"]
 mod piggui_tcp_helper;
 mod styles;
 mod views;

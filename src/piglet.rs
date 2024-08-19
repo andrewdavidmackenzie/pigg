@@ -33,8 +33,10 @@ use std::{fs::File, io::Write};
 
 mod hw;
 #[cfg(feature = "iroh")]
+#[path = "networking/piglet_iroh_helper.rs"]
 mod piglet_iroh_helper;
 #[cfg(feature = "tcp")]
+#[path = "networking/piglet_tcp_helper.rs"]
 mod piglet_tcp_helper;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
