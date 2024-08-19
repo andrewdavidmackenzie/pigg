@@ -34,6 +34,8 @@ mod hw;
 mod modal_handler;
 #[cfg(feature = "iroh")]
 mod piggui_iroh_helper;
+#[cfg(feature = "tcp")]
+mod piggui_tcp_helper;
 mod styles;
 mod views;
 mod widgets;

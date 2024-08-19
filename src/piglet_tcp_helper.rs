@@ -49,22 +49,26 @@ pub(crate) async fn listen_tcp(
     // Accept incoming connections forever
     while let Some(stream) = incoming.next().await {
         let mut stream = stream?;
-        info!("Connected, waiting for message");
-        //        let (reader, writer) = &mut (&stream, &stream);
+
+        trace!("Connected, sending hardware description");
+        let desc = hardware.description()?;
+        let message = serde_json::to_vec(&desc)?;
+        stream.write_all(&message).await?;
 
         let mut payload = vec![0u8; 1024];
-        if stream.read(&mut payload).await? > 0 {
+        info!("Waiting for message");
+        while stream.read(&mut payload).await? > 0 {
             if let Ok(config_message) = serde_json::from_slice(&payload) {
-                if let Err(e) = apply_config_change(hardware, config_message, stream).await {
+                if let Err(e) = apply_config_change(hardware, config_message, stream.clone()).await
+                {
                     error!("Error applying config to hw: {}", e);
                 }
             } else {
                 error!("Unknown message: {}", String::from_utf8_lossy(&payload));
             };
         }
+        info!("Connection lost");
     }
-
-    info!("Connection lost");
 
     Ok(())
 }

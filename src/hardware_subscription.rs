@@ -1,8 +1,13 @@
 #![allow(unused)]
 
+use crate::hw;
 use crate::hw::config::HardwareConfig;
-use crate::{hw, piggui_iroh_helper};
+#[cfg(feature = "iroh")]
+use crate::piggui_iroh_helper;
+#[cfg(feature = "tcp")]
+use crate::piggui_tcp_helper;
 use anyhow::Context;
+use async_std::net::TcpStream;
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::{Receiver, Sender};
 use iced::futures::sink::SinkExt;
@@ -31,7 +36,7 @@ pub enum NetworkState {
     ),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedTcp(Receiver<HardwareConfigMessage>),
+    ConnectedTcp(Receiver<HardwareConfigMessage>, TcpStream),
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
@@ -100,7 +105,32 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                             }
 
                             #[cfg(feature = "tcp")]
-                            HardwareTarget::Tcp(_ip, _port) => {}
+                            HardwareTarget::Tcp(ip, port) => {
+                                match piggui_tcp_helper::connect(ip, port).await {
+                                    Ok((hardware_description, stream)) => {
+                                        // Send the stream back to the GUI
+                                        let _ = gui_sender_clone
+                                            .send(HardwareEventMessage::Connected(
+                                                hardware_event_sender.clone(),
+                                                hardware_description.clone(),
+                                            ))
+                                            .await;
+
+                                        // We are ready to receive messages from the GUI
+                                        state = NetworkState::ConnectedTcp(
+                                            hardware_event_receiver,
+                                            stream,
+                                        );
+                                    }
+                                    Err(e) => {
+                                        let _ = gui_sender_clone
+                                            .send(HardwareEventMessage::Disconnected(format!(
+                                                "Error connecting to piglet: {e}"
+                                            )))
+                                            .await;
+                                    }
+                                }
+                            }
 
                             HardwareTarget::NoHW => {}
                         }
@@ -142,8 +172,24 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                     }
 
                     #[cfg(feature = "tcp")]
-                    NetworkState::ConnectedTcp(config_change_receiver) => {
-                        // TODO
+                    NetworkState::ConnectedTcp(config_change_receiver, stream) => {
+                        let fused_wait_for_remote_message =
+                            piggui_tcp_helper::wait_for_remote_message(stream.clone()).fuse();
+                        pin_mut!(fused_wait_for_remote_message);
+
+                        futures::select! {
+                            // receive a config change from the UI
+                            config_change_message = config_change_receiver.select_next_some() => {
+                                piggui_tcp_helper::send_config_change(stream.clone(), config_change_message).await.unwrap()
+                            }
+
+                            // receive an input level change from remote hardware
+                            remote_event = fused_wait_for_remote_message => {
+                                if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
+                                     gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
+                                 }
+                            }
+                        }
                     }
                 }
             }

@@ -171,7 +171,7 @@ pub enum HardwareTarget {
     #[cfg(feature = "iroh")]
     Iroh(NodeId, Option<RelayUrl>),
     #[cfg(feature = "tcp")]
-    Tcp(String, u16),
+    Tcp(core::net::IpAddr, u16),
 }
 
 pub struct HardwareView {
@@ -577,11 +577,11 @@ fn filter_options(
     let mut config_options: Vec<_> = options
         .iter()
         .filter(|&&option| match selected_function {
-            Some(PinFunction::Input(Some(_))) => {
-                matches!(option, PinFunction::Output(None) | PinFunction::None)
+            Some(Input(Some(_))) => {
+                matches!(option, Output(None) | PinFunction::None)
             }
-            Some(PinFunction::Output(Some(_))) => {
-                matches!(option, PinFunction::Input(None) | PinFunction::None)
+            Some(Output(Some(_))) => {
+                matches!(option, Input(None) | PinFunction::None)
             }
             Some(selected) => selected != option,
             None => option != PinFunction::None,
@@ -711,32 +711,22 @@ mod test {
     fn test_filter_options() {
         use super::*;
 
-        let options = vec![
-            PinFunction::Input(None),
-            PinFunction::Output(None),
-            PinFunction::None,
-        ];
+        let options = vec![Input(None), Output(None), PinFunction::None];
 
         // Test case: No function selected
         let result = filter_options(&options, None);
-        assert_eq!(
-            result,
-            vec![PinFunction::Input(None), PinFunction::Output(None)]
-        );
+        assert_eq!(result, vec![Input(None), Output(None)]);
 
         // Test case: Input selected
-        let result = filter_options(&options, Some(PinFunction::Input(None)));
-        assert_eq!(result, vec![PinFunction::Output(None), PinFunction::None]);
+        let result = filter_options(&options, Some(Input(None)));
+        assert_eq!(result, vec![Output(None), PinFunction::None]);
 
         // Test case: Output selected
-        let result = filter_options(&options, Some(PinFunction::Output(None)));
-        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::None]);
+        let result = filter_options(&options, Some(Output(None)));
+        assert_eq!(result, vec![Input(None), PinFunction::None]);
 
         // Test case: None selected
         let result = filter_options(&options, Some(PinFunction::None));
-        assert_eq!(
-            result,
-            vec![PinFunction::Input(None), PinFunction::Output(None)]
-        );
+        assert_eq!(result, vec![Input(None), Output(None)]);
     }
 }

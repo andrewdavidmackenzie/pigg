@@ -109,7 +109,6 @@ pub async fn listen_iroh(endpoint: &Endpoint, hardware: &mut impl Hardware) -> a
             gui_sender.finish().await?;
 
             loop {
-                info!("Waiting for iroh-net connection");
                 match connection.accept_uni().await {
                     Ok(mut config_receiver) => {
                         let connection_clone = connection.clone();
