@@ -1,7 +1,9 @@
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{BCMPinNumber, Hardware, HardwareConfigMessage, LevelChange, PinLevel};
+use crate::hw::{
+    BCMPinNumber, Hardware, HardwareConfigMessage, HardwareDescription, LevelChange, PinLevel,
+};
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
@@ -52,7 +54,7 @@ async fn tcp_bind(ip: &IpAddr, port: u16) -> anyhow::Result<TcpListener> {
 
 pub(crate) async fn tcp_accept(
     listener: &mut TcpListener,
-    hardware: &impl Hardware,
+    desc: &HardwareDescription,
 ) -> anyhow::Result<TcpStream> {
     debug!("Waiting for connection");
     let mut incoming = listener.incoming();
@@ -61,7 +63,6 @@ pub(crate) async fn tcp_accept(
 
     if let Ok(st) = &mut stream {
         debug!("Connected, sending hardware description");
-        let desc = hardware.description()?;
         let message = serde_json::to_vec(&desc)?;
         let _ = st.write_all(&message).await;
     }

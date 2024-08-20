@@ -4248,7 +4248,6 @@ dependencies = [
  "clap",
  "derive_more",
  "futures",
- "futures-lite 2.3.0",
  "iced",
  "iced_aw",
  "iced_futures",

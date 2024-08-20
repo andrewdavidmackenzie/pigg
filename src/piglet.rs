@@ -14,6 +14,9 @@ use std::{
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
+use futures::FutureExt;
+use hw::config::HardwareConfig;
+use hw::Hardware;
 use log::{info, trace};
 use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
@@ -23,9 +26,6 @@ use sysinfo::{Process, System};
 use tracing::Level;
 use tracing_subscriber::filter::{Directive, LevelFilter};
 use tracing_subscriber::EnvFilter;
-
-use hw::config::HardwareConfig;
-use hw::Hardware;
 
 #[cfg(feature = "iroh")]
 use crate::piglet_iroh_helper::{iroh_accept, iroh_message_loop};
@@ -130,13 +130,15 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     // write the info about the node to the info_path file for use in piggui
     write_info_file(info_path, &listener_info)?;
 
+    let desc = hw.description()?;
+
     // Then listen for remote connections and "serve" them
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
     if let Some(mut listener) = listener_info.tcp_info.listener {
         loop {
-            println!("Waiting for connection");
-            if let Ok(stream) = tcp_accept(&mut listener, &hw).await {
-                println!("Connected");
+            println!("Waiting for TCP connection");
+            if let Ok(stream) = tcp_accept(&mut listener, &desc).await {
+                println!("Connected via TCP");
                 let _ = tcp_message_loop(stream, &mut hw).await;
             }
         }
@@ -145,9 +147,9 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     #[cfg(all(feature = "iroh", not(feature = "tcp")))]
     if let Some(endpoint) = listener_info.iroh_info.endpoint {
         loop {
-            println!("Waiting for connection");
-            if let Ok(connection) = iroh_accept(&endpoint, &hw).await {
-                println!("Connected");
+            println!("Waiting for Iroh connection");
+            if let Ok(connection) = iroh_accept(&endpoint, &desc).await {
+                println!("Connected via Iroh");
                 let _ = iroh_message_loop(connection, &mut hw).await;
             }
         }
@@ -159,15 +161,23 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         listener_info.tcp_info.listener,
         listener_info.iroh_info.endpoint,
     ) {
-        let fused_tcp = tcp_accept(&mut tcp_listener, &hw).fuse();
-        let fused_iroh = iroh_accept(&iroh_endpoint, &hw).fuse();
+        let fused_tcp = tcp_accept(&mut tcp_listener, &desc).fuse();
+        let fused_iroh = iroh_accept(&iroh_endpoint, &desc).fuse();
 
         futures::pin_mut!(fused_tcp, fused_iroh);
 
+        println!("Waiting for Iroh or TCP connection");
         loop {
             futures::select! {
-                tcp_stream = fused_tcp => tcp_message_loop(tcp_stream?, &mut hw).await?,
-                iroh_connection = fused_iroh => iroh_message_loop(iroh_connection?, &mut hw).await?,
+                tcp_stream = fused_tcp => {
+                    println!("Connected via Tcp");
+                    let _ = tcp_message_loop(tcp_stream?, &mut hw).await;
+                },
+                iroh_connection = fused_iroh => {
+                    println!("Connected via Iroh");
+                    let _ = iroh_message_loop(iroh_connection?, &mut hw).await;
+                }
+                complete => {}
             }
         }
     }
@@ -393,7 +403,7 @@ mod test {
             },
             #[cfg(feature = "tcp")]
             tcp_info: crate::piglet_tcp_helper::TcpInfo {
-                ip: IpAddr::from_str("localhost").expect("Could not parse IpAddr"),
+                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
                 port: 9001,
                 listener: None,
             },
@@ -428,7 +438,7 @@ mod test {
             },
             #[cfg(feature = "tcp")]
             tcp_info: crate::piglet_tcp_helper::TcpInfo {
-                ip: IpAddr::from_str("localhost").expect("Could not parse IpAddr"),
+                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
                 port: 9001,
                 listener: None,
             },

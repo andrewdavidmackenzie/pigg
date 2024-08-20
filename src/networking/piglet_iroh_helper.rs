@@ -1,6 +1,7 @@
 use crate::hw::config::HardwareConfig;
-use crate::hw::{Hardware, PIGLET_ALPN};
+use crate::hw::{Hardware, HardwareDescription, PIGLET_ALPN};
 use anyhow::{bail, Context};
+use futures::StreamExt;
 use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
 use std::fmt;
@@ -12,7 +13,6 @@ use crate::hw::{
     HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig},
     LevelChange, PinLevel,
 };
-use futures_lite::StreamExt;
 
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
@@ -92,7 +92,7 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
 /// accept incoming connections, returns a normal QUIC connection
 pub async fn iroh_accept(
     endpoint: &Endpoint,
-    hardware: &impl Hardware,
+    desc: &HardwareDescription,
 ) -> anyhow::Result<Connection> {
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
@@ -101,7 +101,6 @@ pub async fn iroh_accept(
         debug!("New connection from nodeid: '{node_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
-        let desc = hardware.description()?;
         let message = serde_json::to_string(&desc)?;
         gui_sender.write_all(message.as_bytes()).await?;
         gui_sender.finish().await?;
