@@ -2,9 +2,9 @@ use crate::hw::config::HardwareConfig;
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::{BCMPinNumber, Hardware, HardwareConfigMessage, LevelChange, PinLevel};
-use anyhow::anyhow;
-use async_std::net::TcpListener;
+use anyhow::{anyhow, bail};
 use async_std::net::TcpStream;
+use async_std::net::{Incoming, TcpListener};
 use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{error, info, trace};
@@ -35,42 +35,63 @@ pub(crate) async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
     Ok(TcpInfo { ip, port })
 }
 
+async fn bind(tcp_info: &TcpInfo) -> anyhow::Result<TcpListener> {
+    let address = format!("{}:{}", tcp_info.ip, tcp_info.port);
+    info!("Waiting for TCP connection @ {address}");
+    let listener = TcpListener::bind(&address).await?;
+    Ok(listener)
+}
+
+async fn wait_tcp_connection(
+    incoming: &mut Incoming<'_>,
+    hardware: &mut impl Hardware,
+) -> anyhow::Result<TcpStream> {
+    let stream = incoming.next().await;
+    let mut stream = stream.ok_or(anyhow!("No more Tcp streams"))?;
+
+    if let Ok(st) = &mut stream {
+        trace!("Connected, sending hardware description");
+        let desc = hardware.description()?;
+        let message = serde_json::to_vec(&desc)?;
+        let _ = st.write_all(&message).await;
+    }
+
+    Ok(stream?)
+}
+
+async fn process_messages(
+    mut stream: TcpStream,
+    hardware: &mut impl Hardware,
+) -> anyhow::Result<()> {
+    let mut payload = vec![0u8; 1024];
+    info!("Waiting for message");
+    loop {
+        match stream.read(&mut payload).await {
+            Ok(length) => {
+                if length == 0 {
+                    bail!("End of message stream");
+                }
+
+                let config_message = serde_json::from_slice(&payload[0..length])?;
+                apply_config_change(hardware, config_message, stream.clone()).await?;
+            }
+            Err(e) => {
+                error!("Error reading payload: {}", e);
+                bail!("End of message stream");
+            }
+        }
+    }
+}
+
 pub(crate) async fn listen_tcp(
     tcp_info: TcpInfo,
     hardware: &mut impl Hardware,
 ) -> anyhow::Result<()> {
-    let address = format!("{}:{}", tcp_info.ip, tcp_info.port);
-    info!("Waiting for TCP connection @ {address}");
-    let listener = TcpListener::bind(&address).await?;
-    let mut incoming = listener.incoming();
+    let listener = bind(&tcp_info).await?;
 
     // Accept incoming connections forever
-    while let Some(stream) = incoming.next().await {
-        let mut stream = stream?;
-
-        trace!("Connected, sending hardware description");
-        let desc = hardware.description()?;
-        let message = serde_json::to_vec(&desc)?;
-        let _ = stream.write_all(&message).await;
-
-        let mut payload = vec![0u8; 1024];
-        info!("Waiting for message");
-        loop {
-            match stream.read(&mut payload).await {
-                Ok(length) => {
-                    if length == 0 {
-                        break;
-                    }
-
-                    let config_message = serde_json::from_slice(&payload[0..length])?;
-                    apply_config_change(hardware, config_message, stream.clone()).await?;
-                }
-                Err(e) => {
-                    error!("Error reading payload: {}", e);
-                    break;
-                }
-            }
-        }
+    while let Ok(stream) = wait_tcp_connection(&mut listener.incoming(), hardware).await {
+        process_messages(stream, hardware).await?;
     }
 
     Ok(())
