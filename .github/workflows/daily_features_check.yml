@@ -17,8 +17,6 @@ jobs:
 
       - name: Install rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
 
       - uses: Swatinem/rust-cache@v2
 
