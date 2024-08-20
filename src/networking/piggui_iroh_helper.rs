@@ -22,8 +22,7 @@ pub async fn wait_for_remote_message(
         io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
     );
 
-    let content = String::from_utf8_lossy(&message);
-    Ok(serde_json::from_str(&content)?)
+    Ok(serde_json::from_slice(&message)?)
 }
 
 /// Send config change received form the GUI to the remote hardware
@@ -84,8 +83,7 @@ pub async fn connect(
     // create a uni receiver to receive the hardware description on
     let mut gui_receiver = connection.accept_uni().await?;
     let message = gui_receiver.read_to_end(4096).await?;
-    let message = String::from_utf8(message)?;
-    let desc = serde_json::from_str(&message)?;
+    let desc = serde_json::from_slice(&message)?;
 
     Ok((desc, connection))
 }

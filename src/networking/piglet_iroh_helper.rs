@@ -2,7 +2,7 @@ use crate::hw::config::HardwareConfig;
 use crate::hw::{Hardware, PIGLET_ALPN};
 use anyhow::{bail, Context};
 use iroh_net::{Endpoint, NodeId};
-use log::{debug, error, info, trace};
+use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
@@ -99,10 +99,8 @@ pub async fn iroh_accept(
         let connection = connecting.await?;
         let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
         debug!("New connection from nodeid: '{node_id}'",);
-
-        let mut gui_sender = connection.open_uni().await?;
-
         trace!("Sending hardware description");
+        let mut gui_sender = connection.open_uni().await?;
         let desc = hardware.description()?;
         let message = serde_json::to_string(&desc)?;
         gui_sender.write_all(message.as_bytes()).await?;
@@ -113,34 +111,22 @@ pub async fn iroh_accept(
     }
 }
 
+/// Process incoming config change messages from the GUI. On end of stream exit the loop
 pub async fn iroh_message_loop(
     connection: Connection,
     hardware: &mut impl Hardware,
 ) -> anyhow::Result<()> {
     loop {
-        match connection.accept_uni().await {
-            Ok(mut config_receiver) => {
-                let connection_clone = connection.clone();
-                trace!("Connected, waiting for message");
-                let payload = config_receiver.read_to_end(4096).await?;
+        let mut config_receiver = connection.accept_uni().await?;
+        trace!("Receiving config message");
+        let payload = config_receiver.read_to_end(4096).await?;
 
-                if !payload.is_empty() {
-                    let content = String::from_utf8_lossy(&payload);
-                    if let Ok(config_message) = serde_json::from_str(&content) {
-                        if let Err(e) =
-                            apply_config_change(hardware, config_message, connection_clone).await
-                        {
-                            error!("Error applying config to hw: {}", e);
-                        }
-                    } else {
-                        error!("Unknown message: {content}");
-                    };
-                }
-            }
-            _ => {
-                bail!("Connection Lost");
-            }
+        if payload.is_empty() {
+            bail!("End of message stream");
         }
+
+        let config_message = serde_json::from_slice(&payload)?;
+        apply_config_change(hardware, config_message, connection.clone()).await?;
     }
 }
 
@@ -162,18 +148,18 @@ pub async fn apply_config_change(
                 let _ = send_input_level(cc, bcm, level);
             })?;
 
-            let _ = send_current_input_states(cc, &config, hardware).await;
+            send_current_input_states(cc, &config, hardware).await?;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
-            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
+            hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
                 let cc = connection.clone();
                 let _ = send_input_level(cc, bcm, level);
-            });
+            })?;
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
-            let _ = hardware.set_output_level(bcm, level_change.new_level);
+            hardware.set_output_level(bcm, level_change.new_level)?;
         }
     }
 

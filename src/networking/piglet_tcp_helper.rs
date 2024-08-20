@@ -76,20 +76,13 @@ pub(crate) async fn tcp_message_loop(
     let mut payload = vec![0u8; 1024];
     info!("Waiting for message");
     loop {
-        match stream.read(&mut payload).await {
-            Ok(length) => {
-                if length == 0 {
-                    bail!("End of message stream");
-                }
-
-                let config_message = serde_json::from_slice(&payload[0..length])?;
-                apply_config_change(hardware, config_message, stream.clone()).await?;
-            }
-            Err(e) => {
-                error!("Error reading payload: {}", e);
-                bail!("End of message stream");
-            }
+        let length = stream.read(&mut payload).await?;
+        if length == 0 {
+            bail!("End of message stream");
         }
+
+        let config_message = serde_json::from_slice(&payload[0..length])?;
+        apply_config_change(hardware, config_message, stream.clone()).await?;
     }
 }
 

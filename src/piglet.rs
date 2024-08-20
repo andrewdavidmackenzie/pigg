@@ -197,8 +197,8 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
             let info_path = path.with_file_name("piglet.info");
             if info_path.exists() {
                 println!("You can use the following info to connect to it:");
-                let piglet_info = fs::read_to_string(info_path)?;
-                let info: ListenerInfo = serde_json::from_str(&piglet_info)?;
+                let piglet_info = fs::read(info_path)?;
+                let info: ListenerInfo = serde_json::from_slice(&piglet_info)?;
                 println!("{}", info);
             }
         }
@@ -393,10 +393,9 @@ mod test {
 
         super::write_info_file(&test_file, &info).expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
-        let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
-        assert!(piglet_info.contains(&nodeid.to_string()));
+        let piglet_info = fs::read(test_file).expect("Could not read info file");
         let read_info: ListenerInfo =
-            serde_json::from_str(&piglet_info).expect("Could not parse info file");
+            serde_json::from_slice(&piglet_info).expect("Could not parse info file");
         assert_eq!(nodeid, read_info.iroh_info.nodeid);
     }
 
