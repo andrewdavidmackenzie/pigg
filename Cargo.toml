@@ -48,7 +48,7 @@ rand = { version = "0.8.5", default-features = false, features = ["std", "std_rn
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.30", default-features = false }
-tokio = { version = "1.39.2", default-features = false, features = ["time", "rt", "macros"] }
+tokio = { version = "1.39.3", default-features = false, features = ["time", "rt", "macros"] }
 
 # used in piglet only
 log = { version = "0.4.22", default-features = false }
