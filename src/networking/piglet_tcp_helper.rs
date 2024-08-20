@@ -161,6 +161,5 @@ async fn send_input_level_async(
 /// Send a message to the GUI using the `writer` [TcpStream]
 async fn send(mut writer: TcpStream, message: String) -> anyhow::Result<()> {
     writer.write_all(message.as_bytes()).await?;
-    // TODO flush?
     Ok(())
 }
