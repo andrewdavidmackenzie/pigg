@@ -40,8 +40,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: make cross
-        run: make cross
+      - name: make cross-ci
+        run: make cross-ci
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
