@@ -3,8 +3,8 @@ use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use crate::hw::{BCMPinNumber, Hardware, HardwareConfigMessage, LevelChange, PinLevel};
 use anyhow::{anyhow, bail};
+use async_std::net::TcpListener;
 use async_std::net::TcpStream;
-use async_std::net::{Incoming, TcpListener};
 use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{error, info, trace};
@@ -12,11 +12,14 @@ use portpicker::pick_unused_port;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::net::IpAddr;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct TcpInfo {
-    pub ip: core::net::IpAddr,
+    pub ip: IpAddr,
     pub port: u16,
+    #[serde(skip)]
+    pub listener: Option<TcpListener>,
 }
 
 impl Display for TcpInfo {
@@ -31,21 +34,27 @@ pub(crate) async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
     let ip = local_ip()?;
     let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
     println!("ip: '{ip}:{port}'");
+    let listener = tcp_bind(&ip, port).await?;
 
-    Ok(TcpInfo { ip, port })
+    Ok(TcpInfo {
+        ip,
+        port,
+        listener: Some(listener),
+    })
 }
 
-pub(crate) async fn bind(tcp_info: &TcpInfo) -> anyhow::Result<TcpListener> {
-    let address = format!("{}:{}", tcp_info.ip, tcp_info.port);
+async fn tcp_bind(ip: &IpAddr, port: u16) -> anyhow::Result<TcpListener> {
+    let address = format!("{}:{}", ip, port);
     info!("Waiting for TCP connection @ {address}");
     let listener = TcpListener::bind(&address).await?;
     Ok(listener)
 }
 
-pub(crate) async fn wait_tcp_connection(
-    incoming: &mut Incoming<'_>,
+pub(crate) async fn tcp_connect(
+    listener: &mut TcpListener,
     hardware: &mut impl Hardware,
 ) -> anyhow::Result<TcpStream> {
+    let mut incoming = listener.incoming();
     let stream = incoming.next().await;
     let mut stream = stream.ok_or(anyhow!("No more Tcp streams"))?;
 
@@ -59,7 +68,7 @@ pub(crate) async fn wait_tcp_connection(
     Ok(stream?)
 }
 
-pub(crate) async fn process_messages(
+pub(crate) async fn tcp_message_loop(
     mut stream: TcpStream,
     hardware: &mut impl Hardware,
 ) -> anyhow::Result<()> {

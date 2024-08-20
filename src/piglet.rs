@@ -27,8 +27,8 @@ use tracing_subscriber::EnvFilter;
 use hw::config::HardwareConfig;
 use hw::Hardware;
 
-use crate::piglet_tcp_helper::{bind, process_messages, wait_tcp_connection, TcpInfo};
-use async_std::net::TcpListener;
+use crate::piglet_iroh_helper::{iroh_connect, iroh_message_loop};
+use crate::piglet_tcp_helper::{tcp_connect, tcp_message_loop};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 use std::{fs::File, io::Write};
@@ -135,25 +135,21 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     // Then listen for remote connections and "serve" them
     // TODO listen to both at the same time and chose first
     #[cfg(feature = "tcp")]
-    if let Some(tcp_info) = listener_info.tcp_info {
-        let tcp_listener = bind(&tcp_info).await?;
-        listen_tcp(tcp_listener, &mut hw).await?;
+    if let Some(info) = listener_info.tcp_info {
+        if let Some(mut listener) = info.listener {
+            while let Ok(stream) = tcp_connect(&mut listener, &mut hw).await {
+                tcp_message_loop(stream, &mut hw).await?;
+            }
+        }
     }
 
     #[cfg(feature = "iroh")]
     if let Some(iroh_info) = listener_info.iroh_info {
         if let Some(endpoint) = iroh_info.endpoint {
-            piglet_iroh_helper::listen_iroh(&endpoint, &mut hw).await?;
+            while let Ok(connection) = iroh_connect(&endpoint, &mut hw).await {
+                iroh_message_loop(connection, &mut hw).await?;
+            }
         }
-    }
-
-    Ok(())
-}
-
-/// Accept incoming connections forever
-async fn listen_tcp(listener: TcpListener, hardware: &mut impl Hardware) -> anyhow::Result<()> {
-    while let Ok(stream) = wait_tcp_connection(&mut listener.incoming(), hardware).await {
-        process_messages(stream, hardware).await?;
     }
 
     Ok(())

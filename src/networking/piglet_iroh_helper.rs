@@ -1,6 +1,6 @@
 use crate::hw::config::HardwareConfig;
 use crate::hw::{Hardware, PIGLET_ALPN};
-use anyhow::Context;
+use anyhow::{bail, Context};
 use iroh_net::{Endpoint, NodeId};
 use log::{error, info, trace};
 use std::fmt;
@@ -89,51 +89,55 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
     })
 }
 
-/// Listen for an incoming iroh-net connection and apply any config changes received, and
-/// send to GUI over the connection any input level changes.
-/// This is adapted from the iroh-net example with help from the iroh community
-pub async fn listen_iroh(endpoint: &Endpoint, hardware: &mut impl Hardware) -> anyhow::Result<()> {
+/// accept incoming connections, returns a normal QUIC connection
+pub async fn iroh_connect(
+    endpoint: &Endpoint,
+    hardware: &mut impl Hardware,
+) -> anyhow::Result<Connection> {
+    if let Some(connecting) = endpoint.accept().await {
+        let connection = connecting.await?;
+        let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
+        info!("New connection from nodeid: '{node_id}'",);
+
+        let mut gui_sender = connection.open_uni().await?;
+
+        trace!("Sending hardware description");
+        let desc = hardware.description()?;
+        let message = serde_json::to_string(&desc)?;
+        gui_sender.write_all(message.as_bytes()).await?;
+        gui_sender.finish().await?;
+        Ok(connection)
+    } else {
+        bail!("Could not connect to iroh")
+    }
+}
+
+pub async fn iroh_message_loop(
+    connection: Connection,
+    hardware: &mut impl Hardware,
+) -> anyhow::Result<()> {
     loop {
-        // accept incoming connections, returns a normal QUIC connection
-        if let Some(connecting) = endpoint.accept().await {
-            let connection = connecting.await?;
-            let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
-            info!("New connection from nodeid: '{node_id}'",);
+        match connection.accept_uni().await {
+            Ok(mut config_receiver) => {
+                let connection_clone = connection.clone();
+                trace!("Connected, waiting for message");
+                let payload = config_receiver.read_to_end(4096).await?;
 
-            let mut gui_sender = connection.open_uni().await?;
-
-            trace!("Sending hardware description");
-            let desc = hardware.description()?;
-            let message = serde_json::to_string(&desc)?;
-            gui_sender.write_all(message.as_bytes()).await?;
-            gui_sender.finish().await?;
-
-            loop {
-                match connection.accept_uni().await {
-                    Ok(mut config_receiver) => {
-                        let connection_clone = connection.clone();
-                        trace!("Connected, waiting for message");
-                        let payload = config_receiver.read_to_end(4096).await?;
-
-                        if !payload.is_empty() {
-                            let content = String::from_utf8_lossy(&payload);
-                            if let Ok(config_message) = serde_json::from_str(&content) {
-                                if let Err(e) =
-                                    apply_config_change(hardware, config_message, connection_clone)
-                                        .await
-                                {
-                                    error!("Error applying config to hw: {}", e);
-                                }
-                            } else {
-                                error!("Unknown message: {content}");
-                            };
+                if !payload.is_empty() {
+                    let content = String::from_utf8_lossy(&payload);
+                    if let Ok(config_message) = serde_json::from_str(&content) {
+                        if let Err(e) =
+                            apply_config_change(hardware, config_message, connection_clone).await
+                        {
+                            error!("Error applying config to hw: {}", e);
                         }
-                    }
-                    _ => {
-                        info!("Connection lost");
-                        break;
-                    }
+                    } else {
+                        error!("Unknown message: {content}");
+                    };
                 }
+            }
+            _ => {
+                bail!("Connection Lost");
             }
         }
     }
