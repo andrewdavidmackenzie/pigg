@@ -14,7 +14,7 @@ use std::{
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
-#[cfg(feature = "iroh")]
+#[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
@@ -380,7 +380,7 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
     Ok(())
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(feature = "iroh")]
 #[cfg(test)]
 mod test {
     use std::fs;

@@ -22,18 +22,11 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: tcp and iroh
-        run: |
-          cargo clippy --no-default-features --features tcp,iroh
+      - name: Install cargo-all-features
+        run: cargo install cargo-all-features
 
-      - name: tcp only
-        run: |
-          cargo clippy --no-default-features --features tcp
+      - name: cargo build-all-features
+        run: cargo build-all-features
 
-      - name: iroh only
-        run: |
-          cargo clippy --no-default-features --features iroh
-
-      - name: no tcp nor iroh
-        run: |
-          cargo clippy --no-default-features
+      - name: cargo test-all-features
+        run: cargo test-all-features
