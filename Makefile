@@ -19,7 +19,7 @@ $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 all: clippy build test
 
 .PHONY: cross-ci
-cross: cross-clippy cross-build cross-test cross-build-armv7
+cross-ci: cross-clippy cross-build cross-test cross-build-armv7
 
 .PHONY: cross
 cross: cross-clippy cross-build cross-test cross-release-build cross-build-armv7 cross-release-build-armv7
