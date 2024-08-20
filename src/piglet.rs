@@ -4,7 +4,7 @@
 use std::{
     env,
     env::current_exe,
-    fmt, fs, io,
+    fs, io,
     path::{Path, PathBuf},
     process,
     process::exit,
@@ -14,6 +14,7 @@ use std::{
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
+#[cfg(feature = "iroh")]
 use futures::FutureExt;
 use hw::config::HardwareConfig;
 use hw::Hardware;
@@ -31,8 +32,9 @@ use tracing_subscriber::EnvFilter;
 use crate::piglet_iroh_helper::{iroh_accept, iroh_message_loop};
 #[cfg(feature = "tcp")]
 use crate::piglet_tcp_helper::{tcp_accept, tcp_message_loop};
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use serde::{Deserialize, Serialize};
-use std::fmt::Formatter;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::{fs::File, io::Write};
 
 mod hw;
@@ -45,6 +47,7 @@ mod piglet_tcp_helper;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
 /// `piglet` is listening on, that can be used with `piggui` to start a remote GPIO session
 #[derive(Serialize, Deserialize)]
@@ -55,8 +58,9 @@ struct ListenerInfo {
     pub tcp_info: piglet_tcp_helper::TcpInfo,
 }
 
-impl fmt::Display for ListenerInfo {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+impl std::fmt::Display for ListenerInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         #[cfg(feature = "iroh")]
         writeln!(f, "{}", self.iroh_info)?;
 
@@ -120,6 +124,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         trace!("Configuration applied to hardware");
     };
 
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     let listener_info = ListenerInfo {
         #[cfg(feature = "iroh")]
         iroh_info: piglet_iroh_helper::get_iroh_listener_info().await?,
@@ -128,8 +133,10 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     };
 
     // write the info about the node to the info_path file for use in piggui
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     write_info_file(info_path, &listener_info)?;
 
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     let desc = hw.description()?;
 
     // Then listen for remote connections and "serve" them
@@ -211,6 +218,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
             process.pid(),
         );
 
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
         // If we can find the path to the executable - look for the info file
         if let Some(path) = process.exe() {
             let info_path = path.with_file_name("piglet.info");

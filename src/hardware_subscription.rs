@@ -8,8 +8,12 @@ use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::{Receiver, Sender};
 use iced::futures::sink::SinkExt;
 use iced::futures::StreamExt;
-use iced::futures::{pin_mut, FutureExt};
-use iced::{futures, subscription, Subscription};
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use iced::{
+    futures,
+    futures::{pin_mut, FutureExt},
+};
+use iced::{subscription, Subscription};
 
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
@@ -18,7 +22,7 @@ use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 
 /// This enum describes the states of the subscription
-pub enum NetworkState {
+pub enum HWState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
@@ -44,17 +48,19 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
         std::any::TypeId::of::<Connect>(),
         100,
         move |mut gui_sender| async move {
-            let mut state = NetworkState::Disconnected;
+            let mut state = HWState::Disconnected;
 
             loop {
                 let mut gui_sender_clone = gui_sender.clone();
                 match &mut state {
-                    NetworkState::Disconnected => {
+                    HWState::Disconnected => {
                         // Create channel
                         let (hardware_event_sender, hardware_event_receiver) =
                             mpsc::channel::<HardwareConfigMessage>(100);
 
                         match target.clone() {
+                            HardwareTarget::NoHW => {}
+
                             HardwareTarget::Local => {
                                 let connected_hardware = hw::get();
                                 let hardware_description =
@@ -68,7 +74,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                     .await;
 
                                 // We are ready to receive messages from the GUI and send messages to it
-                                state = NetworkState::ConnectedLocal(hardware_event_receiver);
+                                state = HWState::ConnectedLocal(hardware_event_receiver);
                             }
 
                             #[cfg(feature = "iroh")]
@@ -84,7 +90,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                             .await;
 
                                         // We are ready to receive messages from the GUI
-                                        state = NetworkState::ConnectedIroh(
+                                        state = HWState::ConnectedIroh(
                                             hardware_event_receiver,
                                             connection,
                                         );
@@ -112,10 +118,8 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                             .await;
 
                                         // We are ready to receive messages from the GUI
-                                        state = NetworkState::ConnectedTcp(
-                                            hardware_event_receiver,
-                                            stream,
-                                        );
+                                        state =
+                                            HWState::ConnectedTcp(hardware_event_receiver, stream);
                                     }
                                     Err(e) => {
                                         let _ = gui_sender_clone
@@ -126,12 +130,10 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                     }
                                 }
                             }
-
-                            HardwareTarget::NoHW => {}
                         }
                     }
 
-                    NetworkState::ConnectedLocal(config_change_receiver) => {
+                    HWState::ConnectedLocal(config_change_receiver) => {
                         let config_change = config_change_receiver.select_next_some().await;
                         let mut connected_hardware = hw::get();
 
@@ -144,7 +146,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                     }
 
                     #[cfg(feature = "iroh")]
-                    NetworkState::ConnectedIroh(config_change_receiver, connection) => {
+                    HWState::ConnectedIroh(config_change_receiver, connection) => {
                         let mut connection_clone = connection.clone();
                         let fused_wait_for_remote_message =
                             piggui_iroh_helper::wait_for_remote_message(&mut connection_clone)
@@ -167,7 +169,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                     }
 
                     #[cfg(feature = "tcp")]
-                    NetworkState::ConnectedTcp(config_change_receiver, stream) => {
+                    HWState::ConnectedTcp(config_change_receiver, stream) => {
                         let fused_wait_for_remote_message =
                             piggui_tcp_helper::wait_for_remote_message(stream.clone()).fuse();
                         pin_mut!(fused_wait_for_remote_message);

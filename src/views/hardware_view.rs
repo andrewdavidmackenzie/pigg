@@ -31,7 +31,6 @@ use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::hardware_subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};

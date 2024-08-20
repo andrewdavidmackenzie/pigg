@@ -1,0 +1,39 @@
+name: Daily feature combinations test
+
+on:
+  schedule: # Build every day at 5PM UTC
+    - cron: '0 17 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  clippy-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: tcp and iroh
+        run: |
+          cargo clippy --no-default-features --features tcp,iroh
+
+      - name: tcp only
+        run: |
+          cargo clippy --no-default-features --features tcp
+
+      - name: iroh only
+        run: |
+          cargo clippy --no-default-features --features iroh
+
+      - name: no tcp nor iroh
+        run: |
+          cargo clippy --no-default-features
