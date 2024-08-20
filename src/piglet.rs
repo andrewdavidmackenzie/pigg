@@ -161,13 +161,13 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         listener_info.tcp_info.listener,
         listener_info.iroh_info.endpoint,
     ) {
-        let fused_tcp = tcp_accept(&mut tcp_listener, &desc).fuse();
-        let fused_iroh = iroh_accept(&iroh_endpoint, &desc).fuse();
-
-        futures::pin_mut!(fused_tcp, fused_iroh);
-
-        println!("Waiting for Iroh or TCP connection");
         loop {
+            println!("Waiting for Iroh or TCP connection");
+            let fused_tcp = tcp_accept(&mut tcp_listener, &desc).fuse();
+            let fused_iroh = iroh_accept(&iroh_endpoint, &desc).fuse();
+
+            futures::pin_mut!(fused_tcp, fused_iroh);
+
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
@@ -179,6 +179,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
                 }
                 complete => {}
             }
+            println!("Disconnected");
         }
     }
 
