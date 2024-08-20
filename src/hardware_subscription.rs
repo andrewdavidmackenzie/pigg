@@ -4,7 +4,6 @@ use crate::hw::config::HardwareConfig;
 use crate::piggui_iroh_helper;
 #[cfg(feature = "tcp")]
 use crate::piggui_tcp_helper;
-use async_std::net::TcpStream;
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::{Receiver, Sender};
 use iced::futures::sink::SinkExt;
@@ -32,7 +31,7 @@ pub enum NetworkState {
     ),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedTcp(Receiver<HardwareConfigMessage>, TcpStream),
+    ConnectedTcp(Receiver<HardwareConfigMessage>, async_std::net::TcpStream),
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and

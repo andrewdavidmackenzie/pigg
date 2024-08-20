@@ -27,7 +27,9 @@ use tracing_subscriber::EnvFilter;
 use hw::config::HardwareConfig;
 use hw::Hardware;
 
+#[cfg(feature = "iroh")]
 use crate::piglet_iroh_helper::{iroh_connect, iroh_message_loop};
+#[cfg(feature = "tcp")]
 use crate::piglet_tcp_helper::{tcp_connect, tcp_message_loop};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
@@ -48,22 +50,18 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 #[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
-    pub iroh_info: Option<piglet_iroh_helper::IrohInfo>,
+    pub iroh_info: piglet_iroh_helper::IrohInfo,
     #[cfg(feature = "tcp")]
-    pub tcp_info: Option<piglet_tcp_helper::TcpInfo>,
+    pub tcp_info: piglet_tcp_helper::TcpInfo,
 }
 
 impl fmt::Display for ListenerInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         #[cfg(feature = "iroh")]
-        if let Some(iroh_info) = &self.iroh_info {
-            writeln!(f, "{}", iroh_info)?;
-        }
+        writeln!(f, "{}", self.iroh_info)?;
 
         #[cfg(feature = "tcp")]
-        if let Some(tcp_info) = &self.tcp_info {
-            writeln!(f, "{}", tcp_info)?;
-        }
+        writeln!(f, "{}", self.tcp_info)?;
 
         Ok(())
     }
@@ -124,30 +122,44 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
 
     let listener_info = ListenerInfo {
         #[cfg(feature = "iroh")]
-        iroh_info: piglet_iroh_helper::get_iroh_listener_info().await.ok(),
+        iroh_info: piglet_iroh_helper::get_iroh_listener_info().await?,
         #[cfg(feature = "tcp")]
-        tcp_info: piglet_tcp_helper::get_tcp_listener_info().await.ok(),
+        tcp_info: piglet_tcp_helper::get_tcp_listener_info().await?,
     };
 
     // write the info about the node to the info_path file for use in piggui
     write_info_file(info_path, &listener_info)?;
 
     // Then listen for remote connections and "serve" them
-    // TODO listen to both at the same time and chose first
-    #[cfg(feature = "tcp")]
-    if let Some(info) = listener_info.tcp_info {
-        if let Some(mut listener) = info.listener {
-            while let Ok(stream) = tcp_connect(&mut listener, &mut hw).await {
-                tcp_message_loop(stream, &mut hw).await?;
-            }
+    #[cfg(all(feature = "tcp", not(feature = "iroh")))]
+    if let Some(mut listener) = listener_info.tcp_info.listener {
+        while let Ok(stream) = tcp_connect(&mut listener, &hw).await {
+            tcp_message_loop(stream, &mut hw).await?;
         }
     }
 
-    #[cfg(feature = "iroh")]
-    if let Some(iroh_info) = listener_info.iroh_info {
-        if let Some(endpoint) = iroh_info.endpoint {
-            while let Ok(connection) = iroh_connect(&endpoint, &mut hw).await {
-                iroh_message_loop(connection, &mut hw).await?;
+    #[cfg(all(feature = "iroh", not(feature = "tcp")))]
+    if let Some(endpoint) = listener_info.iroh_info.endpoint {
+        while let Ok(connection) = iroh_connect(&endpoint, &hw).await {
+            iroh_message_loop(connection, &mut hw).await?;
+        }
+    }
+
+    // loop forever selecting the next connection made and then process those messages
+    #[cfg(all(feature = "iroh", feature = "tcp"))]
+    if let (Some(mut tcp_listener), Some(iroh_endpoint)) = (
+        listener_info.tcp_info.listener,
+        listener_info.iroh_info.endpoint,
+    ) {
+        let fused_tcp = tcp_connect(&mut tcp_listener, &hw).fuse();
+        let fused_iroh = iroh_connect(&iroh_endpoint, &hw).fuse();
+
+        futures::pin_mut!(fused_tcp, fused_iroh);
+
+        loop {
+            futures::select! {
+                tcp_stream = fused_tcp => tcp_message_loop(tcp_stream?, &mut hw).await?,
+                iroh_connection = fused_iroh => iroh_message_loop(iroh_connection?, &mut hw).await?,
             }
         }
     }
@@ -364,14 +376,19 @@ mod test {
             .expect("Could not create Relay URL");
 
         let info = ListenerInfo {
-            iroh_info: Some(crate::piglet_iroh_helper::IrohInfo {
+            iroh_info: crate::piglet_iroh_helper::IrohInfo {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
                 alpn: "".to_string(),
                 endpoint: None,
-            }),
-            tcp_info: None,
+            },
+            #[cfg(feature = "tcp")]
+            tcp_info: crate::piglet_tcp_helper::TcpInfo {
+                ip: IpAddr::from_str("localhost").expect("Could not parse IpAddr"),
+                port: 9001,
+                listener: None,
+            },
         };
 
         super::write_info_file(&test_file, &info).expect("Writing info file failed");
@@ -380,7 +397,7 @@ mod test {
         assert!(piglet_info.contains(&nodeid.to_string()));
         let read_info: ListenerInfo =
             serde_json::from_str(&piglet_info).expect("Could not parse info file");
-        assert_eq!(nodeid, read_info.iroh_info.expect("No iroh info!").nodeid);
+        assert_eq!(nodeid, read_info.iroh_info.nodeid);
     }
 
     #[cfg(feature = "iroh")]
@@ -395,14 +412,19 @@ mod test {
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         let info = ListenerInfo {
-            iroh_info: Some(crate::piglet_iroh_helper::IrohInfo {
+            iroh_info: crate::piglet_iroh_helper::IrohInfo {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
                 alpn: "".to_string(),
                 endpoint: None,
-            }),
-            tcp_info: None,
+            },
+            #[cfg(feature = "tcp")]
+            tcp_info: crate::piglet_tcp_helper::TcpInfo {
+                ip: IpAddr::from_str("localhost").expect("Could not parse IpAddr"),
+                port: 9001,
+                listener: None,
+            },
         };
 
         assert!(super::write_info_file(&test_file, &info).is_err());

@@ -52,7 +52,7 @@ async fn tcp_bind(ip: &IpAddr, port: u16) -> anyhow::Result<TcpListener> {
 
 pub(crate) async fn tcp_connect(
     listener: &mut TcpListener,
-    hardware: &mut impl Hardware,
+    hardware: &impl Hardware,
 ) -> anyhow::Result<TcpStream> {
     let mut incoming = listener.incoming();
     let stream = incoming.next().await;

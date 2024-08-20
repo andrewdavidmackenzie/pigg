@@ -27,9 +27,9 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh", "tcp"]
+default = ["iroh"]
 iroh = ["iroh-net", "derive_more"]
-tcp = ["portpicker", "local-ip-address"]
+tcp = ["portpicker", "local-ip-address", "futures"]
 discovery = []
 
 [dependencies]
@@ -39,6 +39,7 @@ derive_more = { version = "=1.0.0-beta.6", optional = true } # To fix iroh-net i
 iroh-net = { version = "0.19.0", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.1", default-features = false, optional = true }
+futures = { version = "0.3.30", default-features = false, optional = true }
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }

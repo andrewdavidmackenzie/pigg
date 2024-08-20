@@ -92,7 +92,7 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
 /// accept incoming connections, returns a normal QUIC connection
 pub async fn iroh_connect(
     endpoint: &Endpoint,
-    hardware: &mut impl Hardware,
+    hardware: &impl Hardware,
 ) -> anyhow::Result<Connection> {
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;

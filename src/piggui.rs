@@ -15,14 +15,12 @@ use iced::widget::{container, Column};
 use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
-use std::net::IpAddr;
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-use anyhow::anyhow;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -354,11 +352,11 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
 }
 
 #[cfg(feature = "tcp")]
-fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareTarget> {
+fn parse_ip_string(ip_str: &str) -> anyhow::anyhow::Result<HardwareTarget> {
     let (ip_str, port_str) = ip_str
         .split_once(':')
         .ok_or(anyhow!("Could not parse ip:port"))?;
-    let ip = IpAddr::from_str(ip_str)?;
+    let ip = std::net::IpAddr::from_str(ip_str)?;
     let port = u16::from_str(port_str)?;
     Ok(HardwareTarget::Tcp(ip, port))
 }
