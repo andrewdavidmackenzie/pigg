@@ -19,10 +19,10 @@ $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 all: clippy build test
 
 .PHONY: cross-ci
-cross-ci: cross-clippy cross-build cross-test cross-build-armv7
+cross-ci: cross-clippy cross-build-aarch64 cross-test-aarch64
 
 .PHONY: cross
-cross: cross-clippy cross-build cross-test cross-release-build cross-build-armv7 cross-release-build-armv7
+cross: cross-clippy cross-build-aarch64 cross-test-aarch64 cross-release-build-aarch64 cross-build-armv7 cross-release-build-armv7
 
 .PHONY: clippy
 clippy:
@@ -66,37 +66,37 @@ cross-clippy:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-build
-cross-build:
+cross-build-aarch64:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-build-armv7
 cross-build-armv7:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --target=armv7-unknown-linux-gnueabihf
 
-.PHONY: cross-release-build
-cross-release-build:
+.PHONY: cross-release-build-aarch64
+cross-release-build-aarch64:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-release-build-armv7
 cross-release-build-armv7:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --target=armv7-unknown-linux-gnueabihf
 
-.PHONY: cross-test
-cross-test:
+.PHONY: cross-test-aarch64
+cross-test-aarch64:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --target=aarch64-unknown-linux-gnu
 
-.PHONY: copy
-copy: cross-build
+.PHONY: copy-aarch64
+copy-aarch64: cross-build-aarch64
 	scp target/aarch64-unknown-linux-gnu/debug/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
-.PHONY: copy-release
-copy-release: cross-release-build
+.PHONY: copy-release-aarch64
+copy-release-aarch64: cross-release-build-aarch64
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-armv7
-copy-armv7: cross-build
+copy-armv7: cross-build-armv7
 	scp target/armv7-unknown-linux-gnueabihf/debug/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
