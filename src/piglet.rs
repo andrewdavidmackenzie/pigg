@@ -133,15 +133,23 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     // Then listen for remote connections and "serve" them
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
     if let Some(mut listener) = listener_info.tcp_info.listener {
-        while let Ok(stream) = tcp_accept(&mut listener, &hw).await {
-            tcp_message_loop(stream, &mut hw).await?;
+        loop {
+            println!("Waiting for connection");
+            if let Ok(stream) = tcp_accept(&mut listener, &hw).await {
+                println!("Connected");
+                let _ = tcp_message_loop(stream, &mut hw).await;
+            }
         }
     }
 
     #[cfg(all(feature = "iroh", not(feature = "tcp")))]
     if let Some(endpoint) = listener_info.iroh_info.endpoint {
-        while let Ok(connection) = iroh_accept(&endpoint, &hw).await {
-            iroh_message_loop(connection, &mut hw).await?;
+        loop {
+            println!("Waiting for connection");
+            if let Ok(connection) = iroh_accept(&endpoint, &hw).await {
+                println!("Connected");
+                let _ = iroh_message_loop(connection, &mut hw).await;
+            }
         }
     }
 
