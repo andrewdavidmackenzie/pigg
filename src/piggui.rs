@@ -352,10 +352,10 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
 }
 
 #[cfg(feature = "tcp")]
-fn parse_ip_string(ip_str: &str) -> anyhow::anyhow::Result<HardwareTarget> {
+fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareTarget> {
     let (ip_str, port_str) = ip_str
         .split_once(':')
-        .ok_or(anyhow!("Could not parse ip:port"))?;
+        .ok_or(anyhow::anyhow!("Could not parse ip:port"))?;
     let ip = std::net::IpAddr::from_str(ip_str)?;
     let port = u16::from_str(port_str)?;
     Ok(HardwareTarget::Tcp(ip, port))

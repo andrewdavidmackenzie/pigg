@@ -85,6 +85,7 @@ impl ConnectDialog {
         self.iroh_connection_error = error;
     }
 
+    #[allow(unused)] // TODO #allow remove when implement Tcp
     async fn empty() {}
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {

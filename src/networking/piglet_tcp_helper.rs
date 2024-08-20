@@ -7,7 +7,7 @@ use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use local_ip_address::local_ip;
-use log::{debug, error, info, trace};
+use log::{debug, info, trace};
 use portpicker::pick_unused_port;
 use serde::{Deserialize, Serialize};
 use std::fmt;
