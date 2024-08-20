@@ -35,14 +35,14 @@ pub(crate) async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
     Ok(TcpInfo { ip, port })
 }
 
-async fn bind(tcp_info: &TcpInfo) -> anyhow::Result<TcpListener> {
+pub(crate) async fn bind(tcp_info: &TcpInfo) -> anyhow::Result<TcpListener> {
     let address = format!("{}:{}", tcp_info.ip, tcp_info.port);
     info!("Waiting for TCP connection @ {address}");
     let listener = TcpListener::bind(&address).await?;
     Ok(listener)
 }
 
-async fn wait_tcp_connection(
+pub(crate) async fn wait_tcp_connection(
     incoming: &mut Incoming<'_>,
     hardware: &mut impl Hardware,
 ) -> anyhow::Result<TcpStream> {
@@ -59,7 +59,7 @@ async fn wait_tcp_connection(
     Ok(stream?)
 }
 
-async fn process_messages(
+pub(crate) async fn process_messages(
     mut stream: TcpStream,
     hardware: &mut impl Hardware,
 ) -> anyhow::Result<()> {
@@ -81,20 +81,6 @@ async fn process_messages(
             }
         }
     }
-}
-
-pub(crate) async fn listen_tcp(
-    tcp_info: TcpInfo,
-    hardware: &mut impl Hardware,
-) -> anyhow::Result<()> {
-    let listener = bind(&tcp_info).await?;
-
-    // Accept incoming connections forever
-    while let Ok(stream) = wait_tcp_connection(&mut listener.incoming(), hardware).await {
-        process_messages(stream, hardware).await?;
-    }
-
-    Ok(())
 }
 
 /// Apply a config change to the hardware
