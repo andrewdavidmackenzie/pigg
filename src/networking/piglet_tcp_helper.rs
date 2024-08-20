@@ -7,7 +7,7 @@ use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use local_ip_address::local_ip;
-use log::{error, info, trace};
+use log::{debug, error, info, trace};
 use portpicker::pick_unused_port;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -50,16 +50,17 @@ async fn tcp_bind(ip: &IpAddr, port: u16) -> anyhow::Result<TcpListener> {
     Ok(listener)
 }
 
-pub(crate) async fn tcp_connect(
+pub(crate) async fn tcp_accept(
     listener: &mut TcpListener,
     hardware: &impl Hardware,
 ) -> anyhow::Result<TcpStream> {
+    debug!("Waiting for connection");
     let mut incoming = listener.incoming();
     let stream = incoming.next().await;
     let mut stream = stream.ok_or(anyhow!("No more Tcp streams"))?;
 
     if let Ok(st) = &mut stream {
-        trace!("Connected, sending hardware description");
+        debug!("Connected, sending hardware description");
         let desc = hardware.description()?;
         let message = serde_json::to_vec(&desc)?;
         let _ = st.write_all(&message).await;

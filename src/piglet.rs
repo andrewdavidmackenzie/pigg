@@ -28,9 +28,9 @@ use hw::config::HardwareConfig;
 use hw::Hardware;
 
 #[cfg(feature = "iroh")]
-use crate::piglet_iroh_helper::{iroh_connect, iroh_message_loop};
+use crate::piglet_iroh_helper::{iroh_accept, iroh_message_loop};
 #[cfg(feature = "tcp")]
-use crate::piglet_tcp_helper::{tcp_connect, tcp_message_loop};
+use crate::piglet_tcp_helper::{tcp_accept, tcp_message_loop};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 use std::{fs::File, io::Write};
@@ -133,14 +133,14 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     // Then listen for remote connections and "serve" them
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
     if let Some(mut listener) = listener_info.tcp_info.listener {
-        while let Ok(stream) = tcp_connect(&mut listener, &hw).await {
+        while let Ok(stream) = tcp_accept(&mut listener, &hw).await {
             tcp_message_loop(stream, &mut hw).await?;
         }
     }
 
     #[cfg(all(feature = "iroh", not(feature = "tcp")))]
     if let Some(endpoint) = listener_info.iroh_info.endpoint {
-        while let Ok(connection) = iroh_connect(&endpoint, &hw).await {
+        while let Ok(connection) = iroh_accept(&endpoint, &hw).await {
             iroh_message_loop(connection, &mut hw).await?;
         }
     }
@@ -151,8 +151,8 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         listener_info.tcp_info.listener,
         listener_info.iroh_info.endpoint,
     ) {
-        let fused_tcp = tcp_connect(&mut tcp_listener, &hw).fuse();
-        let fused_iroh = iroh_connect(&iroh_endpoint, &hw).fuse();
+        let fused_tcp = tcp_accept(&mut tcp_listener, &hw).fuse();
+        let fused_iroh = iroh_accept(&iroh_endpoint, &hw).fuse();
 
         futures::pin_mut!(fused_tcp, fused_iroh);
 

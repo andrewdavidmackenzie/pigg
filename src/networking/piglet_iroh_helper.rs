@@ -2,7 +2,7 @@ use crate::hw::config::HardwareConfig;
 use crate::hw::{Hardware, PIGLET_ALPN};
 use anyhow::{bail, Context};
 use iroh_net::{Endpoint, NodeId};
-use log::{error, info, trace};
+use log::{debug, error, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
@@ -90,14 +90,15 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
 }
 
 /// accept incoming connections, returns a normal QUIC connection
-pub async fn iroh_connect(
+pub async fn iroh_accept(
     endpoint: &Endpoint,
     hardware: &impl Hardware,
 ) -> anyhow::Result<Connection> {
+    debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
         let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
-        info!("New connection from nodeid: '{node_id}'",);
+        debug!("New connection from nodeid: '{node_id}'",);
 
         let mut gui_sender = connection.open_uni().await?;
 
