@@ -4,10 +4,7 @@
 use std::{
     env,
     env::current_exe,
-    fs,
-    fs::File,
-    io,
-    io::Write,
+    fs, io,
     path::{Path, PathBuf},
     process,
     process::exit,
@@ -17,8 +14,10 @@ use std::{
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
-use futures_lite::StreamExt;
-use log::error;
+#[cfg(all(feature = "iroh", feature = "tcp"))]
+use futures::FutureExt;
+use hw::config::HardwareConfig;
+use hw::Hardware;
 use log::{info, trace};
 use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
@@ -29,19 +28,48 @@ use tracing::Level;
 use tracing_subscriber::filter::{Directive, LevelFilter};
 use tracing_subscriber::EnvFilter;
 
-use hw::config::HardwareConfig;
-use hw::Hardware;
-use iroh_net::endpoint::Connection;
-use iroh_net::relay::RelayUrl;
-use iroh_net::{key::SecretKey, relay::RelayMode, Endpoint, NodeId};
-
-use crate::hw::pin_function::PinFunction;
-use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{BCMPinNumber, HardwareConfigMessage, PinLevel};
-use crate::hw::{LevelChange, PIGLET_ALPN};
+#[cfg(feature = "iroh")]
+use crate::piglet_iroh_helper::{iroh_accept, iroh_message_loop};
+#[cfg(feature = "tcp")]
+use crate::piglet_tcp_helper::{tcp_accept, tcp_message_loop};
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use serde::{Deserialize, Serialize};
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use std::{fs::File, io::Write};
 
 mod hw;
+#[cfg(feature = "iroh")]
+#[path = "networking/piglet_iroh_helper.rs"]
+mod piglet_iroh_helper;
+#[cfg(feature = "tcp")]
+#[path = "networking/piglet_tcp_helper.rs"]
+mod piglet_tcp_helper;
+
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
+
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+/// The [ListenerInfo] struct captures information about network connections the instance of
+/// `piglet` is listening on, that can be used with `piggui` to start a remote GPIO session
+#[derive(Serialize, Deserialize)]
+struct ListenerInfo {
+    #[cfg(feature = "iroh")]
+    pub iroh_info: piglet_iroh_helper::IrohInfo,
+    #[cfg(feature = "tcp")]
+    pub tcp_info: piglet_tcp_helper::TcpInfo,
+}
+
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+impl std::fmt::Display for ListenerInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        #[cfg(feature = "iroh")]
+        writeln!(f, "{}", self.iroh_info)?;
+
+        #[cfg(feature = "tcp")]
+        writeln!(f, "{}", self.tcp_info)?;
+
+        Ok(())
+    }
+}
 
 /// Piglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from file and
@@ -58,7 +86,8 @@ async fn main() -> anyhow::Result<()> {
     run_service(&info_path, &matches).await
 }
 
-/// Handle any service installation or uninstallation tasks
+/// Handle any service installation or uninstallation tasks specified on the command line
+/// continue without doing anything if none were specified
 fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
     let service_name: ServiceLabel = SERVICE_NAME.parse()?;
 
@@ -77,6 +106,7 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
 
 /// Run piglet as a service - this could be interactively by a user in foreground or started
 /// by the system as a user service, in background - use logging for output from here on
+#[allow(unused_variables)]
 async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
     setup_logging(matches);
 
@@ -94,11 +124,76 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         trace!("Configuration applied to hardware");
     };
 
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    let listener_info = ListenerInfo {
+        #[cfg(feature = "iroh")]
+        iroh_info: piglet_iroh_helper::get_iroh_listener_info().await?,
+        #[cfg(feature = "tcp")]
+        tcp_info: piglet_tcp_helper::get_tcp_listener_info().await?,
+    };
+
+    // write the info about the node to the info_path file for use in piggui
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    write_info_file(info_path, &listener_info)?;
+
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    let desc = hw.description()?;
+
     // Then listen for remote connections and "serve" them
-    listen(info_path, hw).await
+    #[cfg(all(feature = "tcp", not(feature = "iroh")))]
+    if let Some(mut listener) = listener_info.tcp_info.listener {
+        loop {
+            println!("Waiting for TCP connection");
+            if let Ok(stream) = tcp_accept(&mut listener, &desc).await {
+                println!("Connected via TCP");
+                let _ = tcp_message_loop(stream, &mut hw).await;
+            }
+        }
+    }
+
+    #[cfg(all(feature = "iroh", not(feature = "tcp")))]
+    if let Some(endpoint) = listener_info.iroh_info.endpoint {
+        loop {
+            println!("Waiting for Iroh connection");
+            if let Ok(connection) = iroh_accept(&endpoint, &desc).await {
+                println!("Connected via Iroh");
+                let _ = iroh_message_loop(connection, &mut hw).await;
+            }
+        }
+    }
+
+    // loop forever selecting the next connection made and then process those messages
+    #[cfg(all(feature = "iroh", feature = "tcp"))]
+    if let (Some(mut tcp_listener), Some(iroh_endpoint)) = (
+        listener_info.tcp_info.listener,
+        listener_info.iroh_info.endpoint,
+    ) {
+        loop {
+            println!("Waiting for Iroh or TCP connection");
+            let fused_tcp = tcp_accept(&mut tcp_listener, &desc).fuse();
+            let fused_iroh = iroh_accept(&iroh_endpoint, &desc).fuse();
+
+            futures::pin_mut!(fused_tcp, fused_iroh);
+
+            futures::select! {
+                tcp_stream = fused_tcp => {
+                    println!("Connected via Tcp");
+                    let _ = tcp_message_loop(tcp_stream?, &mut hw).await;
+                },
+                iroh_connection = fused_iroh => {
+                    println!("Connected via Iroh");
+                    let _ = iroh_message_loop(iroh_connection?, &mut hw).await;
+                }
+                complete => {}
+            }
+            println!("Disconnected");
+        }
+    }
+
+    Ok(())
 }
 
-/// CHeck that this is the only instance of piglet running, both user process or system process
+/// Check that this is the only instance of piglet running, both user process or system process
 /// If another version is detected:
 /// - print out that fact, with the process ID
 /// - print out the nodeid of the instance that is running
@@ -123,13 +218,15 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
             process.pid(),
         );
 
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
         // If we can find the path to the executable - look for the info file
         if let Some(path) = process.exe() {
             let info_path = path.with_file_name("piglet.info");
             if info_path.exists() {
                 println!("You can use the following info to connect to it:");
-                let piglet_info = fs::read_to_string(info_path)?;
-                println!("{}", piglet_info);
+                let piglet_info = fs::read(info_path)?;
+                let info: ListenerInfo = serde_json::from_slice(&piglet_info)?;
+                println!("{}", info);
             }
         }
 
@@ -155,7 +252,7 @@ fn setup_logging(matches: &ArgMatches) {
     tracing_subscriber::fmt().with_env_filter(env_filter).init();
 }
 
-/// Parse the command line arguments using clap
+/// Parse the command line arguments using clap into a set of [ArgMatches]
 fn get_matches() -> ArgMatches {
     let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
@@ -202,214 +299,16 @@ fn get_matches() -> ArgMatches {
     app.get_matches()
 }
 
-/// Listen for an incoming iroh-net connection and apply any config changes received, and
-/// send to GUI over the connection any input level changes.
-/// This is adapted from the iroh-net example with help from the iroh community
-async fn listen(info_path: &Path, mut hardware: impl Hardware) -> anyhow::Result<()> {
-    let secret_key = SecretKey::generate();
-
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
-    // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
-    // connections between nodes when there are NATs or firewalls preventing direct connections.
-    // If no direct connection can be made, packets are relayed over the relay servers.
-    let endpoint = Endpoint::builder()
-        // The secret key is used to authenticate with other nodes.
-        // The PublicKey portion of this secret key is how we identify nodes, often referred
-        // to as the `node_id` in our codebase.
-        .secret_key(secret_key)
-        // set the ALPN protocols this endpoint will accept on incoming connections
-        .alpns(vec![PIGLET_ALPN.to_vec()])
-        // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
-        // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
-        // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
-        // If you want to experiment with relaying using your own relay server,
-        // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
-        .relay_mode(RelayMode::Default)
-        // pass in `0` to bind the socket to a random available port
-        .bind(0)
-        .await?;
-
-    let nodeid = endpoint.node_id();
-    println!("nodeid: {nodeid}");
-
-    let local_addrs = endpoint
-        .direct_addresses()
-        .next()
-        .await
-        .context("no endpoints")?
-        .into_iter()
-        .map(|endpoint| endpoint.addr.to_string())
-        .collect::<Vec<_>>()
-        .join(" ");
-    println!("local Addresses: {local_addrs}");
-
-    let relay_url = endpoint
-        .home_relay()
-        .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    println!("Relay URL: {relay_url}");
-
-    // write the info about the node to the info_path file for use in piggui
-    write_info_file(info_path, &nodeid, &local_addrs, &relay_url)?;
-
-    loop {
-        // accept incoming connections, returns a normal QUIC connection
-        if let Some(connecting) = endpoint.accept().await {
-            let connection = connecting.await?;
-            let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
-            info!("New connection from nodeid: '{node_id}'",);
-
-            let mut gui_sender = connection.open_uni().await?;
-
-            trace!("Sending hardware description");
-            let desc = hardware.description()?;
-            let message = serde_json::to_string(&desc)?;
-            gui_sender.write_all(message.as_bytes()).await?;
-            gui_sender.finish().await?;
-
-            loop {
-                trace!("waiting for connection");
-                match connection.accept_uni().await {
-                    Ok(mut config_receiver) => {
-                        let connection_clone = connection.clone();
-                        trace!("Connected, waiting for message");
-                        let payload = config_receiver.read_to_end(4096).await?;
-
-                        if !payload.is_empty() {
-                            let content = String::from_utf8_lossy(&payload);
-                            if let Ok(config_message) = serde_json::from_str(&content) {
-                                if let Err(e) = apply_config_change(
-                                    &mut hardware,
-                                    config_message,
-                                    connection_clone,
-                                )
-                                .await
-                                {
-                                    error!("Error applying config to hw: {}", e);
-                                }
-                            } else {
-                                error!("Unknown message: {content}");
-                            };
-                        }
-                    }
-                    _ => {
-                        info!("Connection lost");
-                        break;
-                    }
-                }
-            }
-        }
-    }
-}
-
-/// Write info about the running piglet to the info file
-fn write_info_file(
-    info_path: &Path,
-    nodeid: &NodeId,
-    local_addrs: &str,
-    relay_url: &RelayUrl,
-) -> anyhow::Result<()> {
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+/// Write a [ListenerInfo] file that captures information that can be used to connect to piglet
+fn write_info_file(info_path: &Path, listener_info: &ListenerInfo) -> anyhow::Result<()> {
     let mut output = File::create(info_path)?;
-    writeln!(output, "nodeid : {nodeid}")?;
-    writeln!(output, "local addresses : {local_addrs}")?;
-    writeln!(output, "relay_url : {relay_url}")?;
+    write!(output, "{}", serde_json::to_string(listener_info)?)?;
     info!("Info file written at: {info_path:?}");
     Ok(())
 }
 
-/// Apply a config change to the hardware
-/// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
-/// but wasn't working - so this uses a sync callback again to fix that, and an async version of
-/// send_input_level() for use directly from the async context
-async fn apply_config_change(
-    hardware: &mut impl Hardware,
-    config_change: HardwareConfigMessage,
-    connection: Connection,
-) -> anyhow::Result<()> {
-    match config_change {
-        NewConfig(config) => {
-            let cc = connection.clone();
-            info!("New config applied");
-            hardware.apply_config(&config, move |bcm, level| {
-                let cc = connection.clone();
-                let _ = send_input_level(cc, bcm, level);
-            })?;
-
-            let _ = send_current_input_states(cc, &config, hardware).await;
-        }
-        NewPinConfig(bcm, pin_function) => {
-            info!("New pin config for pin #{bcm}: {pin_function}");
-            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                let cc = connection.clone();
-                let _ = send_input_level(cc, bcm, level);
-            });
-        }
-        IOLevelChanged(bcm, level_change) => {
-            trace!("Pin #{bcm} Output level change: {level_change:?}");
-            let _ = hardware.set_output_level(bcm, level_change.new_level);
-        }
-    }
-
-    Ok(())
-}
-
-/// Send the current input state for all inputs configured in the config
-async fn send_current_input_states(
-    connection: Connection,
-    config: &HardwareConfig,
-    hardware: &impl Hardware,
-) -> anyhow::Result<()> {
-    // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.pins {
-        if let PinFunction::Input(_pullup) = pin_function {
-            // Update UI with initial state
-            if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-                let _ = send_input_level_async(connection.clone(), *bcm_pin_number, initial_level)
-                    .await;
-            }
-        }
-    }
-
-    Ok(())
-}
-
-/// Send a detected input level change back to the GUI using `connection` [Connection],
-/// timestamping with the current time in Utc
-async fn send_input_level_async(
-    connection: Connection,
-    bcm: BCMPinNumber,
-    level: PinLevel,
-) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
-    trace!("Pin #{bcm} Input level change: {level_change:?}");
-    let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
-    send(connection, message).await
-}
-
-/// Send a detected input level change back to the GUI using `connection` [Connection],
-/// timestamping with the current time in Utc
-fn send_input_level(
-    connection: Connection,
-    bcm: BCMPinNumber,
-    level: PinLevel,
-) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
-    trace!("Pin #{bcm} Input level change: {level_change:?}");
-    let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
-    rt.block_on(send(connection, message))
-}
-
-async fn send(connection: Connection, message: String) -> anyhow::Result<()> {
-    let mut gui_sender = connection.open_uni().await?;
-    gui_sender.write_all(message.as_bytes()).await?;
-    gui_sender.finish().await?;
-    Ok(())
-}
-
+/// Get a [ServiceManager] instance to use to install or remove system services
 fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
     // Get generic service by detecting what is available on the platform
     let manager = <dyn ServiceManager>::native()
@@ -480,43 +379,81 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
 
     Ok(())
 }
+
+#[cfg(feature = "iroh")]
 #[cfg(test)]
 mod test {
     use std::fs;
     use std::path::PathBuf;
     use std::str::FromStr;
 
+    use crate::ListenerInfo;
     use tempfile::tempdir;
 
-    use iroh_net::relay::RelayUrl;
-    use iroh_net::NodeId;
-
+    #[cfg(feature = "iroh")]
     #[test]
     fn write_info_file() {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.info");
-        let nodeid = NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
-        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+        let nodeid =
+            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+                .expect("Could not create nodeid");
+        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
+        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
-        super::write_info_file(&test_file, &nodeid, local_addr, &relay_url)
-            .expect("Writing info file failed");
+
+        let info = ListenerInfo {
+            iroh_info: crate::piglet_iroh_helper::IrohInfo {
+                nodeid,
+                local_addrs: local_addrs.to_string(),
+                relay_url,
+                alpn: "".to_string(),
+                endpoint: None,
+            },
+            #[cfg(feature = "tcp")]
+            tcp_info: crate::piglet_tcp_helper::TcpInfo {
+                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
+                port: 9001,
+                listener: None,
+            },
+        };
+
+        super::write_info_file(&test_file, &info).expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
-        let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
-        assert!(piglet_info.contains(&nodeid.to_string()));
+        let piglet_info = fs::read(test_file).expect("Could not read info file");
+        let read_info: ListenerInfo =
+            serde_json::from_slice(&piglet_info).expect("Could not parse info file");
+        assert_eq!(nodeid, read_info.iroh_info.nodeid);
     }
 
+    #[cfg(feature = "iroh")]
     #[test]
     fn write_info_file_non_existent() {
         let output_dir = PathBuf::from("/foo");
         let test_file = output_dir.join("test.info");
-        let nodeid = NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        let local_addr = "79.154.163.213:58604 192.168.1.77:58604";
-        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+        let nodeid =
+            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+                .expect("Could not create nodeid");
+        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
+        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
-        assert!(super::write_info_file(&test_file, &nodeid, local_addr, &relay_url).is_err());
+        let info = ListenerInfo {
+            iroh_info: crate::piglet_iroh_helper::IrohInfo {
+                nodeid,
+                local_addrs: local_addrs.to_string(),
+                relay_url,
+                alpn: "".to_string(),
+                endpoint: None,
+            },
+            #[cfg(feature = "tcp")]
+            tcp_info: crate::piglet_tcp_helper::TcpInfo {
+                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
+                port: 9001,
+                listener: None,
+            },
+        };
+
+        assert!(super::write_info_file(&test_file, &info).is_err());
         assert!(!test_file.exists(), "File was created!");
     }
 }

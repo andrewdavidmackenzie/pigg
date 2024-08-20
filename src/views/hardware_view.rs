@@ -7,13 +7,10 @@ use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
-use iroh_net::relay::RelayUrl;
-use iroh_net::NodeId;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::hardware_subscription;
 use crate::hw::config::HardwareConfig;
 use crate::hw::pin_description::{PinDescription, PinDescriptionSet};
 use crate::hw::pin_function::PinFunction;
@@ -21,10 +18,9 @@ use crate::hw::pin_function::PinFunction::{Input, Output};
 use crate::hw::HardwareConfigMessage;
 use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
 use crate::hw::{HardwareDescription, InputPull};
-use crate::network_subscription;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
-use crate::views::hardware_view::HardwareTarget::{Local, NoHW, Remote};
+use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
@@ -34,6 +30,10 @@ use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
+
+use crate::hardware_subscription;
+#[cfg(feature = "iroh")]
+use iroh_net::{relay::RelayUrl, NodeId};
 
 // WIDTHS
 const PIN_BUTTON_WIDTH: f32 = 30.0;
@@ -167,7 +167,10 @@ pub enum HardwareTarget {
     NoHW,
     #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
-    Remote(NodeId, Option<RelayUrl>),
+    #[cfg(feature = "iroh")]
+    Iroh(NodeId, Option<RelayUrl>),
+    #[cfg(feature = "tcp")]
+    Tcp(core::net::IpAddr, u16),
 }
 
 pub struct HardwareView {
@@ -376,24 +379,11 @@ impl HardwareView {
         &self,
         hardware_target: &HardwareTarget,
     ) -> Subscription<HardwareViewMessage> {
-        let mut subscriptions =
-            vec![
-                iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
-                    .map(|_| UpdateCharts),
-            ];
-
-        match hardware_target {
-            NoHW => {}
-            Local => {
-                subscriptions.push(hardware_subscription::subscribe().map(HardwareSubscription));
-            }
-            Remote(nodeid, relay) => {
-                subscriptions.push(
-                    network_subscription::subscribe(*nodeid, relay.clone())
-                        .map(HardwareSubscription),
-                );
-            }
-        }
+        let subscriptions = vec![
+            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                .map(|_| UpdateCharts),
+            hardware_subscription::subscribe(hardware_target).map(HardwareSubscription),
+        ];
 
         Subscription::batch(subscriptions)
     }
@@ -461,7 +451,6 @@ impl HardwareView {
         }
 
         column.into()
-
     }
 }
 
@@ -587,11 +576,11 @@ fn filter_options(
     let mut config_options: Vec<_> = options
         .iter()
         .filter(|&&option| match selected_function {
-            Some(PinFunction::Input(Some(_))) => {
-                matches!(option, PinFunction::Output(None) | PinFunction::None)
+            Some(Input(Some(_))) => {
+                matches!(option, Output(None) | PinFunction::None)
             }
-            Some(PinFunction::Output(Some(_))) => {
-                matches!(option, PinFunction::Input(None) | PinFunction::None)
+            Some(Output(Some(_))) => {
+                matches!(option, Input(None) | PinFunction::None)
             }
             Some(selected) => selected != option,
             None => option != PinFunction::None,
@@ -721,32 +710,22 @@ mod test {
     fn test_filter_options() {
         use super::*;
 
-        let options = vec![
-            PinFunction::Input(None),
-            PinFunction::Output(None),
-            PinFunction::None,
-        ];
+        let options = vec![Input(None), Output(None), PinFunction::None];
 
         // Test case: No function selected
         let result = filter_options(&options, None);
-        assert_eq!(
-            result,
-            vec![PinFunction::Input(None), PinFunction::Output(None)]
-        );
+        assert_eq!(result, vec![Input(None), Output(None)]);
 
         // Test case: Input selected
-        let result = filter_options(&options, Some(PinFunction::Input(None)));
-        assert_eq!(result, vec![PinFunction::Output(None), PinFunction::None]);
+        let result = filter_options(&options, Some(Input(None)));
+        assert_eq!(result, vec![Output(None), PinFunction::None]);
 
         // Test case: Output selected
-        let result = filter_options(&options, Some(PinFunction::Output(None)));
-        assert_eq!(result, vec![PinFunction::Input(None), PinFunction::None]);
+        let result = filter_options(&options, Some(Output(None)));
+        assert_eq!(result, vec![Input(None), PinFunction::None]);
 
         // Test case: None selected
         let result = filter_options(&options, Some(PinFunction::None));
-        assert_eq!(
-            result,
-            vec![PinFunction::Input(None), PinFunction::Output(None)]
-        );
+        assert_eq!(result, vec![Input(None), Output(None)]);
     }
 }

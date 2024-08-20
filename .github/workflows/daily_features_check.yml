@@ -1,0 +1,30 @@
+name: Daily feature combinations test
+
+on:
+  schedule: # Build every day at 5PM UTC
+    - cron: '0 17 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  clippy-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-all-features
+        run: cargo install cargo-all-features
+
+      - name: cargo build-all-features
+        run: cargo build-all-features
+
+      - name: cargo test-all-features
+        run: cargo test-all-features

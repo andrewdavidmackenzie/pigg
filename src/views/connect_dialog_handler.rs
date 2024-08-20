@@ -1,18 +1,23 @@
-use crate::connect_dialog_handler::ConnectDialogMessage::{
+use crate::views::connect_dialog_handler::ConnectDialogMessage::{
     ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
-    RelayURL, ShowConnectDialog,
+    RelayURL, ShowConnectDialogIroh, ShowConnectDialogTcp,
 };
-use crate::styles::button_style::ButtonStyle;
+use crate::views::modal_handler::{
+    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
+};
+
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
-use crate::views::hardware_view::HardwareTarget::Remote;
+#[cfg(feature = "iroh")]
+use crate::views::hardware_view::HardwareTarget::*;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
-use iroh_net::relay::RelayUrl;
-use iroh_net::NodeId;
+#[cfg(feature = "iroh")]
+use iroh_net::{relay::RelayUrl, NodeId};
+#[cfg(feature = "iroh")]
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -25,34 +30,11 @@ const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
 };
 
-pub(crate) const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
-    text_color: Color::BLACK,
-    hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
-};
-
-pub(crate) const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
-    text_color: Color::WHITE,
-    hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
-};
-
 const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
     background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
     border_width: 2.0,
     border_radius: 10.0,
-};
-
-pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
-    border_color: Color::WHITE,
-    background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
-    border_radius: 2.0,
-    border_width: 2.0,
 };
 
 const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
@@ -76,7 +58,8 @@ pub enum ConnectDialogMessage {
     ModalKeyEvent(Event),
     ConnectButtonPressed(String, String),
     HideConnectDialog,
-    ShowConnectDialog,
+    ShowConnectDialogIroh,
+    ShowConnectDialogTcp,
     ConnectionError(String),
 }
 impl Default for ConnectDialog {
@@ -102,16 +85,20 @@ impl ConnectDialog {
         self.iroh_connection_error = error;
     }
 
+    #[allow(unused)] // TODO #allow remove when implement Tcp
     async fn empty() {}
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
-        return match message {
+        match message {
+            // TODO handle IP/Port combination
+            #[allow(unused_variables)]
             ConnectButtonPressed(node_id, url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
                     return Command::none();
                 }
 
+                #[cfg(feature = "iroh")]
                 match NodeId::from_str(node_id.as_str().trim()) {
                     Ok(nodeid) => {
                         let url_str = url.trim();
@@ -132,9 +119,9 @@ impl ConnectDialog {
                             }
                         };
 
-                        return Command::perform(Self::empty(), move |_| {
-                            Message::ConnectRequest(Remote(nodeid, relay_url))
-                        });
+                        Command::perform(Self::empty(), move |_| {
+                            Message::ConnectRequest(Iroh(nodeid, relay_url))
+                        })
                     }
                     Err(err) => {
                         self.iroh_connection_error = format!("{}", err);
@@ -143,10 +130,17 @@ impl ConnectDialog {
                         Command::none()
                     }
                 }
+                #[cfg(not(feature = "iroh"))]
+                Command::none()
             }
 
-            ShowConnectDialog => {
+            ShowConnectDialogIroh => {
                 self.show_modal = true;
+                Command::none()
+            }
+
+            ShowConnectDialogTcp => {
+                self.show_modal = true; // TODO
                 Command::none()
             }
 
@@ -196,7 +190,7 @@ impl ConnectDialog {
                 self.enable_widgets_and_hide_spinner();
                 Command::none()
             }
-        };
+        }
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
@@ -341,7 +335,7 @@ mod tests {
         let mut connect_dialog = ConnectDialog::new();
         assert!(!connect_dialog.show_modal);
 
-        let _ = connect_dialog.update(ShowConnectDialog);
+        let _ = connect_dialog.update(ShowConnectDialogIroh);
         assert!(connect_dialog.show_modal);
     }
 
@@ -384,6 +378,7 @@ mod tests {
         assert_eq!(connect_dialog.iroh_connection_error, "Please Enter Node Id");
     }
 
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_connect_button_pressed_invalid_node_id() {
         let mut connect_dialog = ConnectDialog::new();

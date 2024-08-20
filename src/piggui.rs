@@ -1,14 +1,12 @@
-use crate::connect_dialog_handler::ConnectDialogMessage::HideConnectDialog;
-use crate::connect_dialog_handler::{ConnectDialog, ConnectDialogMessage};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw::config::HardwareConfig;
-use crate::modal_handler::{DisplayModal, ModalMessage};
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::main_row;
 use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
+use crate::views::modal_handler::{DisplayModal, ModalMessage};
 use crate::widgets::modal::Modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
@@ -17,17 +15,27 @@ use iced::widget::{container, Column};
 use iced::{
     executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
 };
-use iroh_net::NodeId;
-use std::str::FromStr;
 use views::pin_state::PinState;
 
-pub mod connect_dialog_handler;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use crate::views::connect_dialog_handler::{
+    ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
+};
+#[cfg(feature = "iroh")]
+use iroh_net::NodeId;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use std::str::FromStr;
+
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
-pub mod hardware_subscription;
+mod hardware_subscription;
 mod hw;
-mod modal_handler;
-pub mod network_subscription;
+#[cfg(feature = "iroh")]
+#[path = "networking/piggui_iroh_helper.rs"]
+mod piggui_iroh_helper;
+#[cfg(feature = "tcp")]
+#[path = "networking/piggui_tcp_helper.rs"]
+mod piggui_tcp_helper;
 mod styles;
 mod views;
 mod widgets;
@@ -46,6 +54,7 @@ pub enum Message {
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     MenuBarButtonClicked,
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareTarget),
     Connected,
@@ -60,6 +69,7 @@ pub struct Piggui {
     info_row: InfoRow,
     modal_handler: DisplayModal,
     hardware_view: HardwareView,
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
 }
@@ -79,6 +89,7 @@ impl Piggui {
         self.info_row.add_info_message(Info(message));
     }
 
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     /// Send a connection error message to the connection dialog
     fn dialog_connection_error(&mut self, message: String) {
         self.connect_dialog.set_error(message);
@@ -123,6 +134,7 @@ impl Application for Piggui {
                 info_row: InfoRow::new(),
                 modal_handler: DisplayModal::new(),
                 hardware_view: HardwareView::new(),
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
             },
@@ -185,6 +197,7 @@ impl Application for Piggui {
                     .update(toast_message, &self.hardware_view);
             }
 
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
             ConnectDialog(connect_dialog_message) => {
                 return self.connect_dialog.update(connect_dialog_message);
             }
@@ -208,27 +221,30 @@ impl Application for Piggui {
             }
 
             ConnectRequest(new_target) => {
-                match new_target {
-                    HardwareTarget::NoHW => {
-                        self.connect_dialog.enable_widgets_and_hide_spinner();
-                        self.info_connected("Disconnected from hardware".to_string());
-                    }
-                    _ => {
-                        self.connect_dialog.disable_widgets_and_load_spinner();
-                    }
+                if new_target == HardwareTarget::NoHW {
+                    #[cfg(any(feature = "iroh", feature = "tcp"))]
+                    self.connect_dialog.enable_widgets_and_hide_spinner();
+                    self.info_connected("Disconnected from hardware".to_string());
+                } else {
+                    #[cfg(any(feature = "iroh", feature = "tcp"))]
+                    self.connect_dialog.disable_widgets_and_load_spinner();
                 }
                 self.hardware_target = new_target;
             }
 
             Connected => {
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
                 self.info_connected("Connected to hardware".to_string());
             }
 
             ConnectionError(message) => {
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.info_connection_error(message.clone());
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.dialog_connection_error(message);
             }
         }
@@ -270,17 +286,20 @@ impl Application for Piggui {
             .center_x()
             .center_y();
 
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
         if self.connect_dialog.show_modal {
-            Modal::new(content, self.connect_dialog.view())
+            return Modal::new(content, self.connect_dialog.view())
                 .on_blur(Message::ConnectDialog(HideConnectDialog))
-                .into()
-        } else if self.modal_handler.show_modal {
-            Modal::new(content, self.modal_handler.view())
-                .on_blur(Message::ModalHandle(ModalMessage::HideModal))
-                .into()
-        } else {
-            content.into()
+                .into();
         }
+
+        if self.modal_handler.show_modal {
+            return Modal::new(content, self.modal_handler.view())
+                .on_blur(Message::ModalHandle(ModalMessage::HideModal))
+                .into();
+        }
+
+        content.into()
     }
 
     fn theme(&self) -> Theme {
@@ -289,33 +308,57 @@ impl Application for Piggui {
 
     /// Subscribe to events from Hardware, from Windows and timings for StatusRow
     fn subscription(&self) -> Subscription<Message> {
-        let subscriptions = vec![
+        #[allow(unused_mut)]
+        let mut subscriptions = vec![
             iced::event::listen().map(WindowEvent),
-            self.connect_dialog.subscription().map(ConnectDialog), // Handle Keyboard events for ConnectDialog
-            self.modal_handler.subscription().map(ModalHandle),    // Handle Esc key event for modal
+            self.modal_handler.subscription().map(ModalHandle), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
         ];
 
+        // Handle Keyboard events for ConnectDialog
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        subscriptions.push(self.connect_dialog.subscription().map(ConnectDialog));
+
         Subscription::batch(subscriptions)
     }
 }
 
 /// Determine the hardware target based on command line options
+#[allow(unused_variables)]
 fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
+    #[allow(unused_mut)]
     let mut target = HardwareTarget::default();
 
-    if let Some(node_str) = matches.get_one::<String>("nodeid").map(|s| s.to_string()) {
-        if let Ok(nodeid) = NodeId::from_str(&node_str) {
-            target = HardwareTarget::Remote(nodeid, None);
+    #[cfg(feature = "iroh")]
+    if let Some(node_str) = matches.get_one::<String>("nodeid") {
+        if let Ok(nodeid) = NodeId::from_str(node_str) {
+            target = HardwareTarget::Iroh(nodeid, None);
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }
     }
 
+    #[cfg(feature = "tcp")]
+    if let Some(ip_str) = matches.get_one::<String>("ip") {
+        if let Ok(tcp_target) = parse_ip_string(ip_str) {
+            target = tcp_target;
+        }
+    }
+
     target
+}
+
+#[cfg(feature = "tcp")]
+fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareTarget> {
+    let (ip_str, port_str) = ip_str
+        .split_once(':')
+        .ok_or(anyhow::anyhow!("Could not parse ip:port"))?;
+    let ip = std::net::IpAddr::from_str(ip_str)?;
+    let port = u16::from_str(port_str)?;
+    Ok(HardwareTarget::Tcp(ip, port))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -325,6 +368,7 @@ fn get_matches() -> ArgMatches {
 
     let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
 
+    #[cfg(feature = "iroh")]
     let app = app.arg(
         Arg::new("nodeid")
             .short('n')
@@ -333,6 +377,17 @@ fn get_matches() -> ArgMatches {
             .number_of_values(1)
             .value_name("NODEID")
             .help("Node Id of a piglet instance to connect to"),
+    );
+
+    #[cfg(feature = "tcp")]
+    let app = app.arg(
+        Arg::new("ip")
+            .short('i')
+            .long("ip")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("IP")
+            .help("'IP:port' of a piglet instance to connect to"),
     );
 
     let app = app.arg(

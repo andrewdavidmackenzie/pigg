@@ -2,12 +2,13 @@ use iced::widget::{Button, Text};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
-use crate::connect_dialog_handler::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
-use crate::HardwareTarget::NoHW;
-use crate::HardwareTarget::Remote;
+use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
+
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use crate::views::connect_dialog_handler::ConnectDialogMessage;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn item<'a>(
@@ -18,8 +19,11 @@ pub fn item<'a>(
         None => "No Hardware connected".to_string(),
         Some(model) => match hardware_target {
             NoHW => "No Hardware connected".to_string(),
-            HardwareTarget::Local => format!("{}@Local", model),
-            Remote(_, _) => format!("{}@Remote", model),
+            Local => format!("{}@Local", model),
+            #[cfg(feature = "iroh")]
+            Iroh(_, _) => format!("{}@Remote", model),
+            #[cfg(feature = "tcp")]
+            Tcp(_, _) => format!("{}@Remote", model),
         },
     };
 
@@ -33,11 +37,22 @@ pub fn item<'a>(
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
 
-    let connect_remote: Item<'a, Message, _, _> = Item::new(
-        Button::new("Connect to remote Pi...")
+    #[cfg(feature = "iroh")]
+    let connect_iroh: Item<'a, Message, _, _> = Item::new(
+        Button::new("Connect to remote Pi using Iroh...")
             .width(Length::Fill)
             .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::ShowConnectDialog,
+                ConnectDialogMessage::ShowConnectDialogIroh,
+            ))
+            .style(MENU_BUTTON_STYLE.get_button_style()),
+    );
+
+    #[cfg(feature = "tcp")]
+    let connect_tcp: Item<'a, Message, _, _> = Item::new(
+        Button::new("Connect to remote Pi using TCP...")
+            .width(Length::Fill)
+            .on_press(Message::ConnectDialog(
+                ConnectDialogMessage::ShowConnectDialogIroh,
             ))
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
@@ -51,14 +66,26 @@ pub fn item<'a>(
 
     match hardware_target {
         NoHW => {
-            menu_items.push(connect_remote);
+            #[cfg(feature = "iroh")]
+            menu_items.push(connect_iroh);
+            #[cfg(feature = "tcp")]
+            menu_items.push(connect_tcp);
             menu_items.push(connect_local);
         }
-        HardwareTarget::Local => {
+        Local => {
             menu_items.push(disconnect);
-            menu_items.push(connect_remote);
+            #[cfg(feature = "iroh")]
+            menu_items.push(connect_iroh);
+            #[cfg(feature = "tcp")]
+            menu_items.push(connect_tcp);
         }
-        Remote(_, _) => {
+        #[cfg(feature = "iroh")]
+        Iroh(_, _) => {
+            menu_items.push(disconnect);
+            menu_items.push(connect_local);
+        }
+        #[cfg(feature = "tcp")]
+        Tcp(_, _) => {
             menu_items.push(disconnect);
             menu_items.push(connect_local);
         }
@@ -82,6 +109,6 @@ pub fn item<'a>(
         Button::new(Text::new(model))
             .style(MENU_BAR_BUTTON_STYLE.get_button_style())
             .on_press(Message::MenuBarButtonClicked),
-        Menu::new(menu_items).width(200.0).spacing(2.0).offset(10.0),
+        Menu::new(menu_items).width(235.0).offset(10.0),
     )
 }
