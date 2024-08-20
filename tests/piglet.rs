@@ -101,3 +101,51 @@ fn version_number() {
     let version = output.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
 }
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32"
+)))]
+#[test]
+#[serial]
+fn test_verbosity_levels() {
+    let levels = ["debug", "trace", "info"];
+    for &level in &levels {
+        println!("Testing verbosity level: {}", level);
+        let output = run_piglet(vec!["--verbosity".into(), level.into()], None);
+        println!("Output: {}", output);
+        let expected_output = match level {
+            "info" => "nodeid",
+            _ => &level.to_uppercase(),
+        };
+
+        assert!(
+            output.contains(expected_output),
+            "Failed to set verbosity level to {}",
+            level
+        );
+    }
+}
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32"
+)))]
+#[test]
+#[serial]
+fn help() {
+    let output = run_piglet(vec!["--help".into()], None);
+    println!("Output: {}", output);
+    assert!(
+        output.contains("'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'"),
+        "Failed to display help"
+    );
+}
