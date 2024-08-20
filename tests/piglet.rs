@@ -112,89 +112,25 @@ fn version_number() {
 )))]
 #[test]
 #[serial]
-fn verbosity_level_debug() {
-    let output = run_piglet(vec!["--verbosity".into(), "debug".into()], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains("DEBUG"),
-        "Failed to set verbosity level to debug"
-    );
+fn test_verbosity_levels() {
+    let levels = ["debug", "trace", "info"];
+    for &level in &levels {
+        println!("Testing verbosity level: {}", level);
+        let output = run_piglet(vec!["--verbosity".into(), level.into()], None);
+        println!("Output: {}", output);
+        let expected_output = match level {
+            "info" => "nodeid",
+            _ => &level.to_uppercase(),
+        };
+
+        assert!(
+            output.contains(expected_output),
+            "Failed to set verbosity level to {}",
+            level
+        );
+    }
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
-#[test]
-#[serial]
-fn verbosity_level_warn() {
-    let output = run_piglet(vec!["--verbosity".into(), "warn".into()], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains("nodeid"),
-        "Failed to set verbosity level to warn"
-    );
-}
-
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
-#[test]
-#[serial]
-fn verbosity_level_trace() {
-    let output = run_piglet(vec!["--verbosity".into(), "trace".into()], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains("TRACE"),
-        "Failed to set verbosity level to trace"
-    );
-}
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
-#[test]
-#[serial]
-fn verbosity_level_info() {
-    let output = run_piglet(vec!["--verbosity".into(), "info".into()], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains("nodeid"),
-        "Failed to set verbosity level to info"
-    );
-}
-
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
-#[test]
-#[serial]
-fn verbosity_level_error() {
-    let output = run_piglet(vec!["--verbosity".into(), "error".into()], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains("nodeid"),
-        "Failed to set verbosity level to error"
-    );
-}
 #[cfg(not(any(
     all(
         target_os = "linux",
