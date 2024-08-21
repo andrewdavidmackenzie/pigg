@@ -71,15 +71,22 @@ async fn message_loop<'a>(stack: &Stack<NetDriver<'static>>, control: &mut Contr
     let _client = TcpClient::new(stack, &client_state);
     // let mut rx_buf = [0; 4096];
 
+    // wait for an incoming tcp connection
+    //let tcp = tcp_accept(&mut tcp_listener, &desc);
+
+    // send hardware description
+
     info!("Starting message loop");
     loop {
+        // wait for config message
+
         control.gpio_set(LED, ON).await;
 
         Timer::after(Duration::from_secs(1)).await;
 
         control.gpio_set(LED, OFF).await;
     }
-    info!("Exited message loop");
+    // info!("Exited message loop");
 }
 
 async fn join_wifi(
@@ -126,6 +133,22 @@ fn log_device_id(device_id: [u8; 8]) {
         core::str::from_utf8(&device_id_hex).unwrap()
     );
 }
+
+/*
+Wifi scanning
+
+We could use this to program the ssid config with a list of ssids, and when
+it cannot connect via one, it scans to see if another one it knows is available
+and then tries to connect to that.
+
+let mut scanner = control.scan(Default::default()).await;
+while let Some(bss) = scanner.next().await {
+    if let Ok(ssid_str) = str::from_utf8(&bss.ssid) {
+    info!("scanned {} == {:x}", ssid_str, bss.bssid);
+    }
+}
+
+ */
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -181,7 +204,11 @@ async fn main(spawner: Spawner) {
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
 
     if join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
-        message_loop(stack, &mut control).await;
+        loop {
+            info!("Waiting for TCP connection");
+            message_loop(stack, &mut control).await;
+            info!("Disconnected");
+        }
     }
 
     info!("Exiting");
