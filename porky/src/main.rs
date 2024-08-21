@@ -16,6 +16,7 @@ use embassy_net::{
 };
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::Async;
+use embassy_rp::flash::Flash;
 use embassy_rp::gpio::{Level, Output};
 use embassy_rp::peripherals::USB;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
@@ -30,6 +31,11 @@ use static_cell::StaticCell;
 mod ssid {
     include!(concat!(env!("OUT_DIR"), "/ssid.rs"));
 }
+
+const LED: u8 = 0;
+
+const ON: bool = true;
+const OFF: bool = false;
 
 const FLASH_SIZE: usize = 2 * 1024 * 1024;
 
@@ -60,25 +66,20 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) {
     info!("DHCP is now up!");
 }
 
-async fn message_loop<'a>(
-    _device_id_hex: &[u8],
-    stack: &Stack<NetDriver<'static>>,
-    control: &mut Control<'_>,
-) {
+async fn message_loop<'a>(stack: &Stack<NetDriver<'static>>, control: &mut Control<'_>) {
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(stack, &client_state);
     // let mut rx_buf = [0; 4096];
 
     info!("Starting message loop");
     loop {
-        // LED on
-        control.gpio_set(0, true).await;
+        control.gpio_set(LED, ON).await;
 
         Timer::after(Duration::from_secs(1)).await;
 
-        // LED off
-        control.gpio_set(0, false).await;
+        control.gpio_set(LED, OFF).await;
     }
+    info!("Exited message loop");
 }
 
 async fn join_wifi(
@@ -117,6 +118,15 @@ async fn join_wifi(
     false
 }
 
+fn log_device_id(device_id: [u8; 8]) {
+    let mut device_id_hex: [u8; 16] = [0; 16];
+    hex_encode(&device_id, &mut device_id_hex).unwrap();
+    info!(
+        "Device ID = {}",
+        core::str::from_utf8(&device_id_hex).unwrap()
+    );
+}
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
@@ -147,18 +157,13 @@ async fn main(spawner: Spawner) {
         .await;
 
     // Switch on led to show we are up and running
-    control.gpio_set(0, true).await;
+    control.gpio_set(LED, ON).await;
 
     // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
+    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(p.FLASH, p.DMA_CH1);
     let mut device_id = [0; 8];
-    let mut flash = embassy_rp::flash::Flash::<_, Async, { FLASH_SIZE }>::new(p.FLASH, p.DMA_CH1);
     flash.blocking_unique_id(&mut device_id).unwrap();
-    let mut device_id_hex: [u8; 16] = [0; 16];
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
-    info!(
-        "Device ID = {}",
-        core::str::from_utf8(&device_id_hex).unwrap()
-    );
+    log_device_id(device_id);
 
     let dhcp_config = embassy_net::Config::dhcpv4(Default::default());
 
@@ -176,8 +181,9 @@ async fn main(spawner: Spawner) {
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
 
     if join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
-        message_loop(&device_id_hex, stack, &mut control).await;
+        message_loop(stack, &mut control).await;
     }
 
     info!("Exiting");
+    control.gpio_set(LED, OFF).await;
 }
