@@ -1,5 +1,5 @@
 use crate::hw::config::HardwareConfig;
-use crate::hw::{Hardware, HardwareDescription, PIGLET_ALPN};
+use crate::hw::{Hardware, PIGLET_ALPN};
 use anyhow::{bail, Context};
 use futures::StreamExt;
 use iroh_net::{Endpoint, NodeId};
@@ -14,6 +14,7 @@ use crate::hw::{
     LevelChange, PinLevel,
 };
 
+use crate::hw::hardware_description::HardwareDescription;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};

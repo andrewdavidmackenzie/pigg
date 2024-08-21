@@ -1,4 +1,4 @@
-use crate::hw::pin_description::PinDescription;
+use crate::hw::hardware_description::PinDescription;
 use crate::hw::{InputPull, PinFunction};
 use std::borrow::Cow;
 

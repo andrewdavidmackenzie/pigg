@@ -1,9 +1,8 @@
 use crate::hw::config::HardwareConfig;
+use crate::hw::hardware_description::HardwareDescription;
 use crate::hw::pin_function::PinFunction;
 use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{
-    BCMPinNumber, Hardware, HardwareConfigMessage, HardwareDescription, LevelChange, PinLevel,
-};
+use crate::hw::{BCMPinNumber, Hardware, HardwareConfigMessage, LevelChange, PinLevel};
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;

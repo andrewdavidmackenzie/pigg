@@ -3,11 +3,11 @@ use std::time::Duration;
 /// Fake Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, Windows)
 use std::{io, thread};
 
+use crate::hw::hardware_description::{HardwareDetails, PinDescriptionSet};
 use crate::hw::{BCMPinNumber, PinFunction, PinLevel};
 
 use super::Hardware;
-use super::{HardwareDescription, HardwareDetails};
-use crate::hw::pin_description::PinDescriptionSet;
+use super::HardwareDescription;
 use crate::hw::pin_descriptions::*;
 
 /// FakeHW Pins - mimicking Model the 40 pin GPIO

@@ -1,3 +1,4 @@
+use crate::hw::hardware_description::HardwareDescription;
 use anyhow::ensure;
 use async_std::io::ReadExt;
 use async_std::net::TcpStream;
@@ -5,7 +6,7 @@ use async_std::prelude::*;
 use std::io;
 use std::net::IpAddr;
 
-use crate::hw::{HardwareConfigMessage, HardwareDescription};
+use crate::hw::HardwareConfigMessage;
 
 /// Wait until we receive a message from remote hardware over `stream`[TcpStream]
 pub async fn wait_for_remote_message(

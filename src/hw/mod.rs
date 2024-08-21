@@ -3,8 +3,8 @@ use std::fmt::{Display, Formatter};
 use std::io;
 
 use crate::hw::config::HardwareConfig;
+use crate::hw::hardware_description::HardwareDescription;
 use chrono::{DateTime, Utc};
-use pin_description::PinDescriptionSet;
 use serde::{Deserialize, Serialize};
 
 use crate::hw::pin_function::PinFunction;
@@ -46,10 +46,8 @@ pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 )]
 mod hw_imp;
 
-pub(crate) mod pin_description;
-
+pub mod hardware_description;
 mod pin_descriptions;
-
 pub mod pin_function;
 
 /// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number
@@ -60,11 +58,6 @@ pub type BoardPinNumber = u8;
 
 /// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
 pub type PinLevel = bool;
-
-/// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
-pub fn get() -> impl Hardware {
-    hw_imp::get()
-}
 
 /// This enum is for hardware config changes initiated in the GUI by the user,
 /// and sent to the subscription for it to apply to the hardware
@@ -80,32 +73,6 @@ pub enum HardwareConfigMessage {
     NewPinConfig(BCMPinNumber, PinFunction),
     /// The level of a pin has changed
     IOLevelChanged(BCMPinNumber, LevelChange),
-}
-
-/// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HardwareDetails {
-    pub hardware: String,
-    pub revision: String,
-    pub serial: String,
-    /// A Human friendly Hardware Model description
-    pub model: String,
-}
-
-impl Display for HardwareDetails {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Hardware: {}", self.hardware)?;
-        writeln!(f, "Revision: {}", self.revision)?;
-        writeln!(f, "Serial: {}", self.serial)?;
-        write!(f, "Model: {}", self.model)
-    }
-}
-
-/// [HardwareDescription] contains details about the board we are running on and the GPIO pins
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HardwareDescription {
-    pub details: HardwareDetails,
-    pub pins: PinDescriptionSet,
 }
 
 /// LevelChange describes the change in level of an input or Output
@@ -144,6 +111,11 @@ impl Display for InputPull {
             InputPull::None => write!(f, "None"),
         }
     }
+}
+
+/// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
+pub fn get() -> impl Hardware {
+    hw_imp::get()
 }
 
 /// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
@@ -190,7 +162,10 @@ pub trait Hardware {
 #[cfg(test)]
 mod test {
     use crate::hw;
+    use crate::hw::hardware_description::{PinDescription, PinDescriptionSet};
+    use crate::hw::pin_function::PinFunction;
     use crate::hw::Hardware;
+    use std::borrow::Cow;
 
     #[test]
     fn hw_can_be_got() {
@@ -228,5 +203,114 @@ mod test {
             assert_eq!(pin.bcm.expect("Could not get BCM pin number"), previous + 1);
             previous = pin.bcm.expect("Could not get BCM pin number");
         }
+    }
+
+    #[test]
+    fn display_pin_description() {
+        let pin = PinDescription {
+            bpn: 7,
+            bcm: Some(11),
+            name: Cow::from("Fake Pin"),
+            options: Cow::from(vec![]),
+        };
+
+        println!("Pin: {}", pin);
+    }
+
+    #[test]
+    fn sort_bcm() {
+        let pin7 = PinDescription {
+            bpn: 7,
+            bcm: Some(11),
+            name: Cow::from("Fake Pin"),
+            options: Cow::from(vec![PinFunction::Input(None), PinFunction::Output(None)]),
+        };
+
+        let pin8 = PinDescription {
+            bpn: 8,
+            bcm: Some(1),
+            name: Cow::from("Fake Pin"),
+            options: Cow::from(vec![PinFunction::Input(None), PinFunction::Output(None)]),
+        };
+
+        let pins = [
+            pin7.clone(),
+            pin8,
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+            pin7.clone(),
+        ];
+        let pin_set = PinDescriptionSet::new(pins);
+        assert_eq!(
+            pin_set
+                .pins
+                .first()
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            11
+        );
+        assert_eq!(
+            pin_set
+                .pins
+                .get(1)
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            1
+        );
+        assert_eq!(
+            pin_set
+                .bcm_pins_sorted()
+                .first()
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            1
+        );
+        assert_eq!(
+            pin_set
+                .bcm_pins_sorted()
+                .get(1)
+                .expect("Could not get pin")
+                .bcm
+                .expect("Could not get BCM Pin Number"),
+            11
+        );
     }
 }
