@@ -6,7 +6,7 @@ edition = "2021"
 
 [[bin]]
 name = "porky"
-path = "src/main.rs"
+path = "src/porky.rs"
 
 [dependencies]
 embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
