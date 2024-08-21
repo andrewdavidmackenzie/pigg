@@ -34,7 +34,7 @@ jobs:
       - name: add aarch64 target with rustup
         run: rustup target add aarch64-unknown-linux-gnu
 
-      - name: cargo install cross tool
+      - name: install cross tool
         run: cargo install cross
 
       - name: Checkout
