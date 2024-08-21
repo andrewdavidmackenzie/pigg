@@ -1709,8 +1709,3 @@ checksum = "7a4191c47f15cc3ec71fcb4913cb83d58def65dd3787610213c649283b5ce178"
 dependencies = [
  "memchr",
 ]
-
-[[patch.unused]]
-name = "embassy-usb-logger"
-version = "0.2.0"
-source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f#5cd7406054ea8c6d646484ef9c8ba518ef1eb34f"

@@ -37,6 +37,5 @@ embassy-time = { git = "https://github.com/andrewdavidmackenzie/embassy.git", re
 embassy-executor = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
 embassy-rp = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
 embassy-net = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
-embassy-usb-logger = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
 cyw43 = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
 cyw43-pio = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
