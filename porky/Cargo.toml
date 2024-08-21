@@ -4,6 +4,10 @@ version = "0.1.0"
 readme = "README.md"
 edition = "2021"
 
+[[bin]]
+name = "porky"
+path = "src/main.rs"
+
 [dependencies]
 embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.6.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
