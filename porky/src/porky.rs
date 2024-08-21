@@ -4,12 +4,14 @@
 use crate::ssid::{
     MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH, SSID_SECURITY,
 };
+use core::str::from_utf8;
 use cyw43::Control;
 use cyw43::NetDriver;
 use cyw43_pio::PioSpi;
-use defmt::{error, info};
+use defmt::{error, info, warn};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
+use embassy_net::tcp::TcpSocket;
 use embassy_net::{
     tcp::client::{TcpClient, TcpClientState},
     Stack, StackResources,
@@ -23,6 +25,7 @@ use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
+use embedded_io_async::Write;
 use faster_hex::hex_encode;
 use panic_probe as _;
 use static_cell::StaticCell;
@@ -63,27 +66,59 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) {
     while !stack.is_config_up() {
         Timer::after_millis(100).await;
     }
+    if let Some(if_config) = stack.config_v4() {
+        let ip = if_config.address.address();
+        info!("Ip Address: {:?}", ip);
+    }
     info!("DHCP is now up!");
 }
 
 async fn message_loop<'a>(stack: &Stack<NetDriver<'static>>, control: &mut Control<'_>) {
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(stack, &client_state);
-    // let mut rx_buf = [0; 4096];
 
-    // wait for an incoming tcp connection
-    //let tcp = tcp_accept(&mut tcp_listener, &desc);
+    let mut rx_buffer = [0; 4096];
+    let mut tx_buffer = [0; 4096];
+    let mut buf = [0; 4096];
+
+    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+    socket.set_timeout(Some(Duration::from_secs(10)));
+
+    info!("Listening on TCP:1234...");
+    if let Err(e) = socket.accept(1234).await {
+        error!("accept error: {:?}", e);
+        return;
+    }
+
+    info!("Received connection from {:?}", socket.remote_endpoint());
 
     // send hardware description
 
     info!("Starting message loop");
     loop {
         // wait for config message
+        let n = match socket.read(&mut buf).await {
+            Ok(0) => {
+                warn!("read EOF");
+                break;
+            }
+            Ok(n) => n,
+            Err(e) => {
+                warn!("read error: {:?}", e);
+                break;
+            }
+        };
 
         control.gpio_set(LED, ON).await;
+        info!("rxd {}", from_utf8(&buf[..n]).unwrap());
 
-        Timer::after(Duration::from_secs(1)).await;
-
+        match socket.write_all(&buf[..n]).await {
+            Ok(()) => {}
+            Err(e) => {
+                warn!("write error: {:?}", e);
+                break;
+            }
+        };
         control.gpio_set(LED, OFF).await;
     }
     // info!("Exited message loop");
@@ -112,7 +147,6 @@ async fn join_wifi(
             Ok(_) => {
                 info!("Joined wifi network: '{}'", ssid_name);
                 wait_for_dhcp(stack).await;
-                control.gpio_set(0, false).await;
                 return true;
             }
             Err(_) => {
@@ -128,10 +162,7 @@ async fn join_wifi(
 fn log_device_id(device_id: [u8; 8]) {
     let mut device_id_hex: [u8; 16] = [0; 16];
     hex_encode(&device_id, &mut device_id_hex).unwrap();
-    info!(
-        "Device ID = {}",
-        core::str::from_utf8(&device_id_hex).unwrap()
-    );
+    info!("Device ID = {}", from_utf8(&device_id_hex).unwrap());
 }
 
 /*

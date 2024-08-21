@@ -1108,6 +1108,7 @@ dependencies = [
  "embassy-net",
  "embassy-rp",
  "embassy-time",
+ "embedded-io-async",
  "faster-hex",
  "panic-probe",
  "portable-atomic",
