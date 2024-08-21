@@ -18,7 +18,9 @@ of the binary is about half the size of the debug version of the binary, so down
 Pico and re-flash is much faster.
 
 This will build for the Pi Pico device and copy the built binary to it.
-The Pi Pico will reboot and start running your binary.
+
+The Pi Pico will reboot and start running your binary, you should start seeing log messages on the terminal where
+you are running `probe-rs` first from Embassy, then from Porky.
 
 ## Running using a UF2 file
 
@@ -50,35 +52,3 @@ However, this works:
 `ditto --norsrc --noextattr --noacl picomon.uf2 /Volumes/RPI-RP2`
 
 people report that rsync may also work.
-
-## Seeing output from Pico
-
-Use `minicom` on the usbmodem device that should appear in `/dev` by invoking its
-setup with `minicom --setup`
-
-Then run `minicom` in a separate terminal window, and you should see then the log output.
-
-## GDB (not confirmed)
-
-Starting gcb server:
-`sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000"`
-
-starting gdb client:
-
-```commandline
-gdb ../target/thumbv6m-none-eabi/debug/picomon
-target remote localhost:3333
-monitor reset init
-continue
-```
-
-program should start running from boot.
-
-starting lldb client
-`lldb ../target/thumbv6m-none-eabi/debug/picomon`
-
-then to connect to the gdb server:
-
-```commandline
-gdb-remote localhost:3333
-```

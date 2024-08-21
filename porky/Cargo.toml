@@ -9,7 +9,6 @@ embassy-time = { version = "0.3.2", default-features = false, features = ["defmt
 embassy-executor = { version = "0.6.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
 embassy-rp = { version = "0.2.0", default-features = false, features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 embassy-net = { version = "0.4.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"] }
-embassy-usb-logger = { version = "0.2.0", default-features = false }
 cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"] }
 cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"] }
 panic-probe = { version = "0.3", default-features = false, features = ["print-defmt"] }
@@ -18,7 +17,6 @@ defmt = { version = "0.3", default-features = false }
 defmt-rtt = { version = "0.4", default-features = false }
 cortex-m-rt = { version = "0.7.0", default-features = false }
 static_cell = { version = "2", default-features = false }
-log = "0.4"
 
 # To convert device_id into hex for use as a string
 faster-hex = { version = "0.9.0", default-features = false }

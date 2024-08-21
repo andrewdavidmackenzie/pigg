@@ -7,6 +7,7 @@ use crate::ssid::{
 use cyw43::Control;
 use cyw43::NetDriver;
 use cyw43_pio::PioSpi;
+use defmt::{error, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_net::{
@@ -19,10 +20,9 @@ use embassy_rp::gpio::{Level, Output};
 use embassy_rp::peripherals::USB;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
-use embassy_rp::usb::{Driver, InterruptHandler as USBInterruptHandler};
+use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
 use faster_hex::hex_encode;
-use log::{error, info};
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -50,11 +50,6 @@ async fn wifi_task(
 #[embassy_executor::task]
 async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
     stack.run().await
-}
-
-#[embassy_executor::task]
-async fn logger_task(driver: Driver<'static, USB>) {
-    embassy_usb_logger::run!(1024, log::LevelFilter::Info, driver);
 }
 
 async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) {
@@ -112,9 +107,9 @@ async fn join_wifi(
                 control.gpio_set(0, false).await;
                 return true;
             }
-            Err(e) => {
+            Err(_) => {
                 attempt += 1;
-                error!("Error joining wifi: {:?}", e);
+                error!("Error joining wifi");
             }
         }
     }
@@ -125,7 +120,6 @@ async fn join_wifi(
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
-    let driver = Driver::new(p.USB, Irqs);
     let fw = include_bytes!("../assets/43439A0.bin");
     let clm = include_bytes!("../assets/43439A0_clm.bin");
     let pwr = Output::new(p.PIN_23, Level::Low);
@@ -146,7 +140,6 @@ async fn main(spawner: Spawner) {
     let (net_device, mut control, runner) = cyw43::new(state, pwr, spi, fw).await;
 
     spawner.spawn(wifi_task(runner)).unwrap();
-    spawner.spawn(logger_task(driver)).unwrap();
 
     control.init(clm).await;
     control

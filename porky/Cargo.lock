@@ -3,18 +3,6 @@
 version = 3
 
 [[package]]
-name = "ahash"
-version = "0.8.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e89da841a80418a9b391ebaea17f5c112ffaaa96f621d2c285b5174da76b9011"
-dependencies = [
- "cfg-if",
- "once_cell",
- "version_check",
- "zerocopy",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -90,12 +78,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46afbd2983a5d5a7bd740ccb198caf5b82f45c40c09c0eed36052d91cb92e719"
 
 [[package]]
-name = "bitfield"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d7e60934ceec538daadb9d8432424ed043a904d8e0243f3c6446bce549a46ac"
-
-[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -155,7 +137,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ec610d8f49840a5b376c69663b6369e71f4b34484b9b2eb29fb918d92516cb9"
 dependencies = [
  "bare-metal",
- "bitfield 0.13.2",
+ "bitfield",
  "embedded-hal 0.2.7",
  "volatile-register",
 ]
@@ -545,36 +527,11 @@ version = "0.1.0"
 source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f#5cd7406054ea8c6d646484ef9c8ba518ef1eb34f"
 
 [[package]]
-name = "embassy-usb"
-version = "0.3.0"
-source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f#5cd7406054ea8c6d646484ef9c8ba518ef1eb34f"
-dependencies = [
- "embassy-futures",
- "embassy-net-driver-channel",
- "embassy-sync 0.6.0 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f)",
- "embassy-usb-driver",
- "heapless",
- "ssmarshal",
- "usbd-hid",
-]
-
-[[package]]
 name = "embassy-usb-driver"
 version = "0.1.0"
 source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f#5cd7406054ea8c6d646484ef9c8ba518ef1eb34f"
 dependencies = [
  "defmt",
-]
-
-[[package]]
-name = "embassy-usb-logger"
-version = "0.2.0"
-source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f#5cd7406054ea8c6d646484ef9c8ba518ef1eb34f"
-dependencies = [
- "embassy-futures",
- "embassy-sync 0.6.0 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f)",
- "embassy-usb",
- "log",
 ]
 
 [[package]]
@@ -675,12 +632,6 @@ checksum = "c533630cf40e9caa44bd91aadc88a75d75a4c3a12b4cfde353cbed41daa1e1f1"
 dependencies = [
  "log",
 ]
-
-[[package]]
-name = "encode_unicode"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
 name = "equivalent"
@@ -833,15 +784,6 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
-dependencies = [
- "ahash",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
@@ -876,7 +818,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "233cf39063f058ea2caae4091bf4a3ef70a653afbc026f5c4a4135d114e3c177"
 dependencies = [
  "equivalent",
- "hashbrown 0.14.3",
+ "hashbrown",
 ]
 
 [[package]]
@@ -1166,9 +1108,7 @@ dependencies = [
  "embassy-net",
  "embassy-rp",
  "embassy-time",
- "embassy-usb-logger",
  "faster-hex",
- "log",
  "panic-probe",
  "portable-atomic",
  "serde",
@@ -1412,16 +1352,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ssmarshal"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3e6ad23b128192ed337dfa4f1b8099ced0c2bf30d61e551b65fda5916dbb850"
-dependencies = [
- "encode_unicode",
- "serde",
-]
-
-[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1583,53 +1513,6 @@ name = "unicode-xid"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
-
-[[package]]
-name = "usb-device"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98816b1accafbb09085168b90f27e93d790b4bfa19d883466b5e53315b5f06a6"
-dependencies = [
- "heapless",
- "portable-atomic",
-]
-
-[[package]]
-name = "usbd-hid"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6f291ab53d428685cc780f08a2eb9d5d6ff58622db2b36e239a4f715f1e184c"
-dependencies = [
- "serde",
- "ssmarshal",
- "usb-device",
- "usbd-hid-macros",
-]
-
-[[package]]
-name = "usbd-hid-descriptors"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0eee54712c5d778d2fb2da43b1ce5a7b5060886ef7b09891baeb4bf36910a3ed"
-dependencies = [
- "bitfield 0.14.0",
-]
-
-[[package]]
-name = "usbd-hid-macros"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb573c76e7884035ac5e1ab4a81234c187a82b6100140af0ab45757650ccda38"
-dependencies = [
- "byteorder",
- "hashbrown 0.13.2",
- "log",
- "proc-macro2",
- "quote",
- "serde",
- "syn 1.0.109",
- "usbd-hid-descriptors",
-]
 
 [[package]]
 name = "vcell"
@@ -1827,22 +1710,7 @@ dependencies = [
  "memchr",
 ]
 
-[[package]]
-name = "zerocopy"
-version = "0.7.35"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b9b4fd18abc82b8136838da5d50bae7bdea537c574d8dc1a34ed098d6c166f0"
-dependencies = [
- "zerocopy-derive",
-]
-
-[[package]]
-name = "zerocopy-derive"
-version = "0.7.35"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa4f8080344d4671fb4e831a13ad1e68092748387dfc4f55e356242fae12ce3e"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.50",
-]
+[[patch.unused]]
+name = "embassy-usb-logger"
+version = "0.2.0"
+source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=5cd7406054ea8c6d646484ef9c8ba518ef1eb34f#5cd7406054ea8c6d646484ef9c8ba518ef1eb34f"
