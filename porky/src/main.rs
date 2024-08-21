@@ -98,7 +98,7 @@ async fn join_wifi(
         let result = match SSID_SECURITY {
             "open" => control.join_open(ssid_name).await,
             "wpa2" => control.join_wpa2(ssid_name, ssid_pass).await,
-            "wpa3" => control.join_wpa2(ssid_name, ssid_pass).await,
+            "wpa3" => control.join_wpa3(ssid_name, ssid_pass).await,
             _ => {
                 error!("Security '{}' is not supported", SSID_SECURITY);
                 return false;
