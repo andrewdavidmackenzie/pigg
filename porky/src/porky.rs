@@ -12,6 +12,7 @@ use defmt::{error, info, warn};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_net::tcp::TcpSocket;
+use embassy_net::Ipv4Address;
 use embassy_net::{
     tcp::client::{TcpClient, TcpClientState},
     Stack, StackResources,
@@ -61,19 +62,24 @@ async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
     stack.run().await
 }
 
-async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) {
+async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address> {
     info!("Waiting for DHCP...");
     while !stack.is_config_up() {
         Timer::after_millis(100).await;
     }
-    if let Some(if_config) = stack.config_v4() {
-        let ip = if_config.address.address();
-        info!("Ip Address: {:?}", ip);
-    }
     info!("DHCP is now up!");
+    if let Some(if_config) = stack.config_v4() {
+        Some(if_config.address.address())
+    } else {
+        None
+    }
 }
 
-async fn message_loop<'a>(stack: &Stack<NetDriver<'static>>, control: &mut Control<'_>) {
+async fn message_loop<'a>(
+    ip_address: Ipv4Address,
+    stack: &Stack<NetDriver<'static>>,
+    control: &mut Control<'_>,
+) {
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(stack, &client_state);
 
@@ -84,9 +90,9 @@ async fn message_loop<'a>(stack: &Stack<NetDriver<'static>>, control: &mut Contr
     let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
     socket.set_timeout(Some(Duration::from_secs(10)));
 
-    info!("Listening on TCP:1234...");
+    info!("Listening on TCP {}:1234", ip_address);
     if let Err(e) = socket.accept(1234).await {
-        error!("accept error: {:?}", e);
+        error!("TCP accept error: {:?}", e);
         return;
     }
 
@@ -129,7 +135,7 @@ async fn join_wifi(
     stack: &Stack<NetDriver<'static>>,
     ssid_name: &str,
     ssid_pass: &str,
-) -> bool {
+) -> Option<Ipv4Address> {
     let mut attempt = 1;
     while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
         info!("Attempt #{} to join wifi network: '{}'", attempt, ssid_name);
@@ -139,24 +145,27 @@ async fn join_wifi(
             "wpa3" => control.join_wpa3(ssid_name, ssid_pass).await,
             _ => {
                 error!("Security '{}' is not supported", SSID_SECURITY);
-                return false;
+                return None;
             }
         };
 
         match result {
             Ok(_) => {
                 info!("Joined wifi network: '{}'", ssid_name);
-                wait_for_dhcp(stack).await;
-                return true;
+                return wait_for_dhcp(stack).await;
             }
             Err(_) => {
                 attempt += 1;
-                error!("Error joining wifi");
+                warn!("Failed to join wifi, retrying");
             }
         }
     }
 
-    false
+    error!(
+        "Failed to join Wifi after {} reties",
+        WIFI_JOIN_RETRY_ATTEMPT_LIMIT
+    );
+    None
 }
 
 fn log_device_id(device_id: [u8; 8]) {
@@ -234,10 +243,9 @@ async fn main(spawner: Spawner) {
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
 
-    if join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
+    while let Some(ip_address) = join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
-            info!("Waiting for TCP connection");
-            message_loop(stack, &mut control).await;
+            message_loop(ip_address, stack, &mut control).await;
             info!("Disconnected");
         }
     }
