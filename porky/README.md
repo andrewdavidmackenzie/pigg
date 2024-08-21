@@ -13,7 +13,9 @@ USB (for power) then you can use probe-rs to download and debug `picomon`.
 
 [config.toml](./.cargo/config.toml) is where the runner for cargo is set up.
 
-You can use `make run` (which uses `cargo run`).
+You can use `make run`. This uses `cargo run --release` which is better as the release version
+of the binary is about half the size of the debug version of the binary, so download to the
+Pico and re-flash is much faster.
 
 This will build for the Pi Pico device and copy the built binary to it.
 The Pi Pico will reboot and start running your binary.
