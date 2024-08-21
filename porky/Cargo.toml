@@ -1,0 +1,44 @@
+[package]
+name = "porky"
+version = "0.1.0"
+readme = "README.md"
+edition = "2021"
+
+[dependencies]
+embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
+embassy-executor = { version = "0.6.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
+embassy-rp = { version = "0.2.0", default-features = false, features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-net = { version = "0.4.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"] }
+embassy-usb-logger = { version = "0.2.0", default-features = false }
+cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"] }
+cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"] }
+panic-probe = { version = "0.3", default-features = false, features = ["print-defmt"] }
+portable-atomic = { version = "1.5", default-features = false, features = ["critical-section"] }
+defmt = { version = "0.3", default-features = false }
+defmt-rtt = { version = "0.4", default-features = false }
+cortex-m-rt = { version = "0.7.0", default-features = false }
+static_cell = { version = "2", default-features = false }
+log = "0.4"
+
+# To convert device_id into hex for use as a string
+faster-hex = { version = "0.9.0", default-features = false }
+
+# Needed to work around an embassy dns server count bug
+smoltcp = { version = "0.11.0", default-features = false, features = ["dns-max-server-count-4"] }
+
+[build-dependencies]
+# for reading config from a file in build.rs
+serde_derive = "~1.0"
+serde = "~1.0"
+toml = { version = "0.8.8" }
+
+[patch.crates-io]
+# make sure to get the latest git rev from github, you can see the latest one here:
+# https://github.com/embassy-rs/embassy/commits/main/
+embassy-time = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
+embassy-executor = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
+embassy-rp = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
+embassy-net = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
+embassy-usb-logger = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
+cyw43 = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
+cyw43-pio = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "5cd7406054ea8c6d646484ef9c8ba518ef1eb34f" }
