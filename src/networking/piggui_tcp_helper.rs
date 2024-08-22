@@ -40,5 +40,6 @@ pub async fn connect(ip: IpAddr, port: u16) -> anyhow::Result<(HardwareDescripti
     // This array needs to be big enough for HardwareDescription
     let mut payload = vec![0u8; 4096];
     let length = stream.read(&mut payload).await?;
-    Ok((postcard::from_bytes(&payload[0..length])?, stream))
+    let desc = postcard::from_bytes(&payload[0..length])?;
+    Ok((desc, stream))
 }
