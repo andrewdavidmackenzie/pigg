@@ -94,7 +94,7 @@ impl ConnectDialog {
             self.iroh_connection_error = error.clone();
         }
         #[cfg(feature = "tcp")] {
-            self.tcp_connection_error = error;
+            self.tcp_connection_error = error.clone();
         }
     }
 
@@ -178,11 +178,16 @@ impl ConnectDialog {
 
             DisplayTcpTab => {
                 self.display_iroh = false;
+                self.iroh_connection_error.clear();
+                self.nodeid.clear();
+                self.relay_url.clear();
                 Command::none()
             }
 
             DisplayIrohTab => {
                 self.display_iroh = true;
+                self.tcp_connection_error.clear();
+                self.ip_address.clear();
                 Command::none()
             }
             ShowConnectDialogIroh => {
