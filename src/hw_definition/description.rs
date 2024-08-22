@@ -4,6 +4,13 @@ use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
 use std::borrow::Cow;
 
+/// [HardwareDescription] contains details about the board we are running on and the GPIO pins
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HardwareDescription {
+    pub details: HardwareDetails,
+    pub pins: PinDescriptionSet,
+}
+
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDetails {
@@ -14,11 +21,12 @@ pub struct HardwareDetails {
     pub model: String,
 }
 
-/// [HardwareDescription] contains details about the board we are running on and the GPIO pins
+/// [PinDescription] describes a pins in the connected hardware.
+/// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HardwareDescription {
-    pub details: HardwareDetails,
-    pub pins: PinDescriptionSet,
+pub struct PinDescriptionSet {
+    #[serde(with = "serde_arrays")]
+    pub(crate) pins: [PinDescription; 40],
 }
 
 /// [PinDescription] is used to describe each pin and possible uses it can be put to
@@ -34,12 +42,4 @@ pub struct PinDescription {
     pub bcm: Option<BCMPinNumber>,
     pub name: Cow<'static, str>,
     pub options: Cow<'static, [PinFunction]>, // The set of functions the pin can have, chosen by user config
-}
-
-/// Struct describing all the pins for the connected hardware.
-/// Array indexed from 0 so, board_pin_number -1, as pin numbering start at 1
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PinDescriptionSet {
-    #[serde(with = "serde_arrays")]
-    pub(crate) pins: [PinDescription; 40],
 }
