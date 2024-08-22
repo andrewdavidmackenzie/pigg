@@ -10,7 +10,7 @@ use iroh_net::{
 use std::io;
 
 use crate::hw::hardware_description::HardwareDescription;
-use crate::hw::{HardwareConfigMessage, PIGLET_ALPN};
+use crate::hw::{config_message::HardwareConfigMessage, PIGLET_ALPN};
 
 /// Wait until we receive a message from remote hardware
 pub async fn wait_for_remote_message(

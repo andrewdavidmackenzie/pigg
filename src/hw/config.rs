@@ -49,9 +49,9 @@ impl HardwareConfig {
 #[cfg(test)]
 mod test {
     use crate::hw::config::HardwareConfig;
+    use crate::hw::config_message::InputPull::PullUp;
+    use crate::hw::config_message::LevelChange;
     use crate::hw::pin_function::PinFunction;
-    use crate::hw::InputPull::PullUp;
-    use crate::hw::LevelChange;
     use chrono::Utc;
     use std::collections::HashMap;
     use std::fs;

@@ -8,12 +8,11 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 use crate::hw::{
-    pin_function::PinFunction,
-    BCMPinNumber, HardwareConfigMessage,
-    HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig},
-    LevelChange, PinLevel,
+    config_message::BCMPinNumber, config_message::PinLevel, pin_function::PinFunction,
 };
 
+use crate::hw::config_message::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::config_message::{HardwareConfigMessage, LevelChange};
 use crate::hw::hardware_description::HardwareDescription;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;

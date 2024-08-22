@@ -99,6 +99,7 @@ async fn message_loop<'a>(
     info!("Received connection from {:?}", socket.remote_endpoint());
 
     // send hardware description
+    let desc = HardwareDescription::default();
 
     info!("Starting message loop");
     loop {

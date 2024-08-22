@@ -6,7 +6,7 @@ use async_std::prelude::*;
 use std::io;
 use std::net::IpAddr;
 
-use crate::hw::HardwareConfigMessage;
+use crate::hw::config_message::HardwareConfigMessage;
 
 /// Wait until we receive a message from remote hardware over `stream`[TcpStream]
 pub async fn wait_for_remote_message(

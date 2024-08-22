@@ -1,5 +1,8 @@
 use crate::hw;
 use crate::hw::config::HardwareConfig;
+use crate::hw::config_message::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use crate::hw::config_message::{HardwareConfigMessage, LevelChange};
+use crate::hw::Hardware;
 #[cfg(feature = "iroh")]
 use crate::piggui_iroh_helper;
 #[cfg(feature = "tcp")]
@@ -16,8 +19,6 @@ use iced::{
 use iced::{subscription, Subscription};
 
 use crate::hw::pin_function::PinFunction;
-use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{Hardware, HardwareConfigMessage, LevelChange};
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 

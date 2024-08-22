@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+use crate::hw::config_message::{BCMPinNumber, BoardPinNumber};
 use crate::hw::pin_function::PinFunction;
-use crate::hw::{BCMPinNumber, BoardPinNumber};
 use std::borrow::Cow;
 
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to

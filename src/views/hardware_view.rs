@@ -12,11 +12,14 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use crate::hw::config::HardwareConfig;
+use crate::hw::config_message::HardwareConfigMessage;
+use crate::hw::config_message::InputPull;
 use crate::hw::pin_function::PinFunction;
 use crate::hw::pin_function::PinFunction::{Input, Output};
-use crate::hw::HardwareConfigMessage;
-use crate::hw::InputPull;
-use crate::hw::{BCMPinNumber, BoardPinNumber, LevelChange, PinLevel};
+use crate::hw::{
+    config_message::BCMPinNumber, config_message::BoardPinNumber, config_message::LevelChange,
+    config_message::PinLevel,
+};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareTarget::*;
