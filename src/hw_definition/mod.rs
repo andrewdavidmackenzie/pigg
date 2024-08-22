@@ -1,6 +1,6 @@
 //! This module provides definition structs for hardware, hardware events and configuration of hardware
-pub mod config_message;
-pub mod hardware_description;
+pub mod config;
+pub mod description;
 pub mod pin_function;
 
 /// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number

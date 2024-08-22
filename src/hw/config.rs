@@ -1,4 +1,4 @@
-use crate::hw_definition::config_message::{HardwareConfig, InputPull, LevelChange};
+use crate::hw_definition::config::{HardwareConfig, InputPull, LevelChange};
 use crate::hw_definition::PinLevel;
 use chrono::Utc;
 use std::fmt::{Display, Formatter};
@@ -62,9 +62,9 @@ impl Display for InputPull {
 
 #[cfg(test)]
 mod test {
-    use crate::hw_definition::config_message::HardwareConfig;
-    use crate::hw_definition::config_message::InputPull::PullUp;
-    use crate::hw_definition::config_message::LevelChange;
+    use crate::hw_definition::config::HardwareConfig;
+    use crate::hw_definition::config::InputPull::PullUp;
+    use crate::hw_definition::config::LevelChange;
     use crate::hw_definition::pin_function::PinFunction;
     use chrono::Utc;
     use std::collections::HashMap;

@@ -1,10 +1,10 @@
 use crate::hw::Hardware;
-use crate::hw_definition::config_message::HardwareConfig;
-use crate::hw_definition::config_message::HardwareConfigMessage::{
+use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
-use crate::hw_definition::config_message::{HardwareConfigMessage, LevelChange};
-use crate::hw_definition::hardware_description::HardwareDescription;
+use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
+use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 

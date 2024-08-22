@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::fmt::{Display, Formatter};
 
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
@@ -14,15 +12,6 @@ pub struct HardwareDetails {
     pub serial: String,
     /// A Human friendly Hardware Model description
     pub model: String,
-}
-
-impl Display for HardwareDetails {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Hardware: {}", self.hardware)?;
-        writeln!(f, "Revision: {}", self.revision)?;
-        writeln!(f, "Serial: {}", self.serial)?;
-        write!(f, "Model: {}", self.model)
-    }
 }
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
@@ -53,41 +42,4 @@ pub struct PinDescription {
 pub struct PinDescriptionSet {
     #[serde(with = "serde_arrays")]
     pub(crate) pins: [PinDescription; 40],
-}
-
-/// `PinDescriptionSet` describes a set of Pins on a device, using `PinDescription`s
-impl PinDescriptionSet {
-    /// Create a new PinDescriptionSet, from a const array of PinDescriptions
-    pub const fn new(pins: [PinDescription; 40]) -> PinDescriptionSet {
-        PinDescriptionSet { pins }
-    }
-
-    /// Return a slice of PinDescriptions
-    #[allow(dead_code)] // for piglet
-    pub fn pins(&self) -> &[PinDescription] {
-        &self.pins
-    }
-
-    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
-    /// ascending order of [BCMPinNumber]
-    #[allow(dead_code)] // for piglet build
-    pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
-        let mut pins = self
-            .pins
-            .iter()
-            .filter(|pin| pin.options.len() > 1)
-            .filter(|pin| pin.bcm.is_some())
-            .collect::<Vec<&PinDescription>>();
-        pins.sort_by_key(|pin| pin.bcm.expect("Could not get BCM pin number"));
-        pins
-    }
-}
-
-impl Display for PinDescription {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Board Pin #: {}", self.bpn)?;
-        writeln!(f, "\tBCM Pin #: {:?}", self.bcm)?;
-        writeln!(f, "\tName Pin #: {}", self.name)?;
-        writeln!(f, "\tFunctions #: {:?}", self.options)
-    }
 }

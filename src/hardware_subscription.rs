@@ -1,10 +1,10 @@
 use crate::hw;
 use crate::hw::Hardware;
-use crate::hw_definition::config_message::HardwareConfig;
-use crate::hw_definition::config_message::HardwareConfigMessage::{
+use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
-use crate::hw_definition::config_message::{HardwareConfigMessage, LevelChange};
+use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 #[cfg(feature = "iroh")]
 use crate::piggui_iroh_helper;
 #[cfg(feature = "tcp")]

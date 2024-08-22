@@ -1,4 +1,4 @@
-use crate::hw_definition::config_message::HardwareConfig;
+use crate::hw_definition::config::HardwareConfig;
 use crate::views::message_row::MessageMessage::{Error, Info};
 use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
 use crate::Message;

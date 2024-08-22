@@ -1,10 +1,11 @@
 use std::io;
 
-use crate::hw_definition::config_message::HardwareConfig;
-use crate::hw_definition::hardware_description::HardwareDescription;
+use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
+mod hardware_description;
 mod pin_descriptions;
 
 #[cfg(feature = "iroh")]
@@ -93,7 +94,7 @@ pub trait Hardware {
 mod test {
     use crate::hw;
     use crate::hw::Hardware;
-    use crate::hw_definition::hardware_description::{PinDescription, PinDescriptionSet};
+    use crate::hw_definition::description::{PinDescription, PinDescriptionSet};
     use crate::hw_definition::pin_function::PinFunction;
     use std::borrow::Cow;
 

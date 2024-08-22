@@ -1,5 +1,5 @@
-use crate::hw_definition::config_message::InputPull;
-use crate::hw_definition::hardware_description::PinDescription;
+use crate::hw_definition::config::InputPull;
+use crate::hw_definition::description::PinDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use std::borrow::Cow;
 

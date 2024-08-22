@@ -1,5 +1,5 @@
 use crate::hw::{Hardware, PIGLET_ALPN};
-use crate::hw_definition::config_message::HardwareConfig;
+use crate::hw_definition::config::HardwareConfig;
 use anyhow::{bail, Context};
 use futures::StreamExt;
 use iroh_net::{Endpoint, NodeId};
@@ -9,11 +9,11 @@ use std::fmt::{Display, Formatter};
 
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 
-use crate::hw_definition::config_message::HardwareConfigMessage::{
+use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
-use crate::hw_definition::config_message::{HardwareConfigMessage, LevelChange};
-use crate::hw_definition::hardware_description::HardwareDescription;
+use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
+use crate::hw_definition::description::HardwareDescription;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};

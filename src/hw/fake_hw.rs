@@ -4,7 +4,7 @@ use std::time::Duration;
 use std::{io, thread};
 
 use crate::hw::{BCMPinNumber, PinFunction, PinLevel};
-use crate::hw_definition::hardware_description::{HardwareDetails, PinDescriptionSet};
+use crate::hw_definition::description::{HardwareDetails, PinDescriptionSet};
 
 use super::Hardware;
 use super::HardwareDescription;
