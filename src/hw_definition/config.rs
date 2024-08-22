@@ -1,5 +1,6 @@
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
+use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -32,6 +33,7 @@ pub enum HardwareConfigMessage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevelChange {
     pub new_level: PinLevel,
+    #[serde(with = "ts_milliseconds")]
     pub timestamp: DateTime<Utc>,
 }
 
