@@ -1,5 +1,5 @@
 use crate::hw::config::HardwareConfig;
-use crate::hw::pin_function::PinFunction;
+use crate::hw_definition::pin_function::PinFunction;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt;

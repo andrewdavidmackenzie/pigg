@@ -1,5 +1,5 @@
-use crate::hw::pin_function::PinFunction;
 use crate::hw::BCMPinNumber;
+use crate::hw_definition::pin_function::PinFunction;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
@@ -49,9 +49,9 @@ impl HardwareConfig {
 #[cfg(test)]
 mod test {
     use crate::hw::config::HardwareConfig;
-    use crate::hw::config_message::InputPull::PullUp;
-    use crate::hw::config_message::LevelChange;
-    use crate::hw::pin_function::PinFunction;
+    use crate::hw_definition::config_message::InputPull::PullUp;
+    use crate::hw_definition::config_message::LevelChange;
+    use crate::hw_definition::pin_function::PinFunction;
     use chrono::Utc;
     use std::collections::HashMap;
     use std::fs;

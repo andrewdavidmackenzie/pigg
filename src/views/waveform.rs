@@ -15,7 +15,7 @@ use plotters::series::LineSeries;
 use plotters::style::ShapeStyle;
 use plotters_iced::{Chart, ChartWidget, Renderer};
 
-use crate::hw::{config_message::LevelChange, config_message::PinLevel};
+use crate::hw_definition::{config_message::LevelChange, config_message::PinLevel};
 use crate::views::hardware_view::HardwareViewMessage;
 use crate::views::waveform::ChartType::{Squarewave, Verbatim};
 
@@ -237,7 +237,7 @@ mod test {
     use chrono::Utc;
     use plotters::prelude::{RGBAColor, ShapeStyle};
 
-    use crate::hw::{config_message::LevelChange, config_message::PinLevel};
+    use crate::hw_definition::{config_message::LevelChange, config_message::PinLevel};
     use crate::views::waveform::{ChartType, Sample, Waveform};
 
     const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {

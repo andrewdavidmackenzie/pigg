@@ -38,6 +38,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, io::Write};
 
 mod hw;
+mod hw_definition;
 #[cfg(feature = "iroh")]
 #[path = "networking/piglet_iroh_helper.rs"]
 mod piglet_iroh_helper;

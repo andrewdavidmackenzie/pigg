@@ -12,11 +12,11 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use crate::hw::config::HardwareConfig;
-use crate::hw::config_message::HardwareConfigMessage;
-use crate::hw::config_message::InputPull;
-use crate::hw::pin_function::PinFunction;
-use crate::hw::pin_function::PinFunction::{Input, Output};
-use crate::hw::{
+use crate::hw_definition::config_message::HardwareConfigMessage;
+use crate::hw_definition::config_message::InputPull;
+use crate::hw_definition::pin_function::PinFunction;
+use crate::hw_definition::pin_function::PinFunction::{Input, Output};
+use crate::hw_definition::{
     config_message::BCMPinNumber, config_message::BoardPinNumber, config_message::LevelChange,
     config_message::PinLevel,
 };
@@ -34,7 +34,9 @@ use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
 
 use crate::hardware_subscription;
-use crate::hw::hardware_description::{HardwareDescription, PinDescription, PinDescriptionSet};
+use crate::hw_definition::hardware_description::{
+    HardwareDescription, PinDescription, PinDescriptionSet,
+};
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
 

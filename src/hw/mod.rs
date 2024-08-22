@@ -1,12 +1,13 @@
 use std::io;
 
 use crate::hw::config::HardwareConfig;
-use crate::hw::config_message::{BCMPinNumber, PinLevel};
-use crate::hw::hardware_description::HardwareDescription;
-
-use crate::hw::pin_function::PinFunction;
+use crate::hw_definition::config_message::{BCMPinNumber, PinLevel};
+use crate::hw_definition::hardware_description::HardwareDescription;
+use crate::hw_definition::pin_function::PinFunction;
 
 pub mod config;
+
+mod pin_descriptions;
 
 #[cfg(feature = "iroh")]
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
@@ -42,11 +43,6 @@ pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
     path = "fake_hw.rs"
 )]
 mod hw_imp;
-
-pub mod config_message;
-pub mod hardware_description;
-mod pin_descriptions;
-pub mod pin_function;
 
 /// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
 pub fn get() -> impl Hardware {
@@ -97,9 +93,9 @@ pub trait Hardware {
 #[cfg(test)]
 mod test {
     use crate::hw;
-    use crate::hw::hardware_description::{PinDescription, PinDescriptionSet};
-    use crate::hw::pin_function::PinFunction;
     use crate::hw::Hardware;
+    use crate::hw_definition::hardware_description::{PinDescription, PinDescriptionSet};
+    use crate::hw_definition::pin_function::PinFunction;
     use std::borrow::Cow;
 
     #[test]

@@ -1,5 +1,5 @@
-use crate::hw::config_message::InputPull;
-use crate::hw::PinLevel;
+use crate::hw_definition::config_message::InputPull;
+use crate::hw_definition::config_message::PinLevel;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -106,8 +106,8 @@ impl Display for PinFunction {
 
 #[cfg(test)]
 mod test {
-    use crate::hw::config_message::InputPull::{PullDown, PullUp};
-    use crate::hw::pin_function::PinFunction;
+    use crate::hw_definition::config_message::InputPull::{PullDown, PullUp};
+    use crate::hw_definition::pin_function::PinFunction;
 
     #[test]
     fn display_pin_function() {
