@@ -85,12 +85,15 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                 match piggui_iroh_helper::connect(&nodeid, relay.clone()).await {
                                     Ok((hardware_description, connection)) => {
                                         // Send the sender back to the GUI
-                                        let _ = gui_sender_clone
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Connected(
                                                 hardware_event_sender.clone(),
                                                 hardware_description.clone(),
                                             ))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
 
                                         // We are ready to receive messages from the GUI
                                         state = HWState::ConnectedIroh(
@@ -99,11 +102,14 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                         );
                                     }
                                     Err(e) => {
-                                        let _ = gui_sender_clone
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Disconnected(format!(
                                                 "Error connecting to piglet: {e}"
                                             )))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
                                     }
                                 }
                             }
@@ -113,23 +119,29 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                 match piggui_tcp_helper::connect(ip, port).await {
                                     Ok((hardware_description, stream)) => {
                                         // Send the stream back to the GUI
-                                        let _ = gui_sender_clone
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Connected(
                                                 hardware_event_sender.clone(),
                                                 hardware_description.clone(),
                                             ))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
 
                                         // We are ready to receive messages from the GUI
                                         state =
                                             HWState::ConnectedTcp(hardware_event_receiver, stream);
                                     }
                                     Err(e) => {
-                                        let _ = gui_sender_clone
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Disconnected(format!(
                                                 "Error connecting to piglet: {e}"
                                             )))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
                                     }
                                 }
                             }
