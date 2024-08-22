@@ -3,18 +3,17 @@ use std::fs;
 use std::io;
 use std::time::Duration;
 
-use rppal::gpio::Gpio;
-use rppal::gpio::OutputPin;
 /// Implementation of GPIO for raspberry pi - uses rrpal
-use rppal::gpio::{InputPin, Level, Trigger};
+use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
 
-use crate::hw::pin_description::PinDescriptionSet;
+use crate::hw_definition::pin_function::PinFunction;
+use crate::hw_definition::{BCMPinNumber, PinLevel};
+
 use crate::hw::pin_descriptions::*;
-use crate::hw::{BCMPinNumber, PinLevel};
-use crate::hw::{InputPull, PinFunction};
 
 use super::Hardware;
-use super::{HardwareDescription, HardwareDetails};
+use crate::hw_definition::config::InputPull;
+use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 
 /// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
 /// For now, we will use the same descriptions for all hardware

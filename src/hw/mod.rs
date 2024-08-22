@@ -13,6 +13,7 @@ mod pin_function;
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 pub mod config;
+
 /// There are two implementations of the `hw_imp` module that has the `HW` struct that
 /// implements the [`Hardware`] trait:
 /// * fake_hw.rs - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
