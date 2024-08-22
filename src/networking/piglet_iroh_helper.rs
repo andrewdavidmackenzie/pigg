@@ -101,8 +101,8 @@ pub async fn iroh_accept(
         debug!("New connection from nodeid: '{node_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
-        let message = serde_json::to_string(&desc)?;
-        gui_sender.write_all(message.as_bytes()).await?;
+        let message = postcard::to_allocvec(&desc)?;
+        gui_sender.write_all(&message).await?;
         gui_sender.finish().await?;
         Ok(connection)
     } else {
@@ -124,7 +124,7 @@ pub async fn iroh_message_loop(
             bail!("End of message stream");
         }
 
-        let config_message = serde_json::from_slice(&payload)?;
+        let config_message = postcard::from_bytes(&payload)?;
         apply_config_change(hardware, config_message, connection.clone()).await?;
     }
 }
@@ -195,8 +195,8 @@ async fn send_input_level_async(
     let level_change = LevelChange::new(level);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
-    send(connection, message).await
+    let message = postcard::to_allocvec(&hardware_event)?;
+    send(connection, &message).await
 }
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],
@@ -210,16 +210,16 @@ fn send_input_level(
     let level_change = LevelChange::new(level);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
+    let message = postcard::to_allocvec(&hardware_event)?;
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
-    rt.block_on(send(connection, message))
+    rt.block_on(send(connection, &message))
 }
 
-async fn send(connection: Connection, message: String) -> anyhow::Result<()> {
+async fn send(connection: Connection, message: &[u8]) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
-    gui_sender.write_all(message.as_bytes()).await?;
+    gui_sender.write_all(message).await?;
     gui_sender.finish().await?;
     Ok(())
 }

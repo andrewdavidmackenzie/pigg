@@ -67,7 +67,7 @@ pub(crate) async fn tcp_accept(
 
     if let Ok(st) = &mut stream {
         debug!("Connected, sending hardware description");
-        let message = serde_json::to_vec(&desc)?;
+        let message = postcard::to_allocvec(&desc)?;
         let _ = st.write_all(&message).await;
     }
 
@@ -86,7 +86,7 @@ pub(crate) async fn tcp_message_loop(
             bail!("End of message stream");
         }
 
-        let config_message = serde_json::from_slice(&payload[0..length])?;
+        let config_message = postcard::from_bytes(&payload[0..length])?;
         apply_config_change(hardware, config_message, stream.clone()).await?;
     }
 }
@@ -132,11 +132,11 @@ fn send_input_level(writer: TcpStream, bcm: BCMPinNumber, level: PinLevel) -> an
     let level_change = LevelChange::new(level);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
+    let message = postcard::to_allocvec(&hardware_event)?;
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
-    rt.block_on(send(writer, message))
+    rt.block_on(send(writer, &message))
 }
 
 /// Send the current input state for all inputs configured in the config
@@ -169,12 +169,12 @@ async fn send_input_level_async(
     let level_change = LevelChange::new(level);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
-    send(writer, message).await
+    let message = postcard::to_allocvec(&hardware_event)?;
+    send(writer, &message).await
 }
 
 /// Send a message to the GUI using the `writer` [TcpStream]
-async fn send(mut writer: TcpStream, message: String) -> anyhow::Result<()> {
-    writer.write_all(message.as_bytes()).await?;
+async fn send(mut writer: TcpStream, message: &[u8]) -> anyhow::Result<()> {
+    writer.write_all(message).await?;
     Ok(())
 }
