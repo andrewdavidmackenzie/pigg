@@ -68,7 +68,7 @@ pub(crate) async fn tcp_accept(
     if let Ok(st) = &mut stream {
         debug!("Connected, sending hardware description");
         let message = postcard::to_allocvec(&desc)?;
-        let _ = st.write_all(&message).await;
+        st.write_all(&message).await?;
     }
 
     Ok(stream?)
