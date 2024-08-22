@@ -802,6 +802,7 @@ checksum = "0bfb9eb618601c89945a70e254898da93b13be0388091d42117462b265bb3fad"
 dependencies = [
  "defmt",
  "hash32",
+ "serde",
  "stable_deref_trait",
 ]
 
