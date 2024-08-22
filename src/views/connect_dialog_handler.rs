@@ -253,7 +253,7 @@ impl ConnectDialog {
         connection_type_row = connection_type_row.push(Button::new("Iroh").on_press(Message::ConnectDialog(DisplayIrohTab)));
         connection_type_row = connection_type_row.push(Button::new("Tcp").on_press(Message::ConnectDialog(DisplayTcpTab)));
 
-        if self.disable_widgets {
+        if self.disable_widgets && self.display_iroh {
             container(
                 column![
                     connection_type_row,
@@ -281,7 +281,72 @@ impl ConnectDialog {
                 .width(520)
                 .padding(15)
                 .into()
-        } else {
+        } else if self.disable_widgets && !self.display_iroh {
+            container(
+                column![
+                    connection_type_row,
+                    column![
+                    text("Connect To Remote Pi").size(20),
+                    column![
+                        text_container,
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("IP Address").size(12),
+                        text_input("Enter IP Address", &self.nodeid).padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Port Number ").size(12),
+                        text_input("Enter Port Number", &self.relay_url).padding(5),
+                    ]
+                    .spacing(5),
+                    connection_row,
+                ]
+                .spacing(10)]
+                    .spacing(20),
+            )
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+        } else if !self.disable_widgets && !self.display_iroh {
+            container(
+                column![
+                    connection_type_row,
+                    column![
+                    text("Connect To Remote Pi").size(20),
+                    column![
+                        text_container,
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("Ip Address").size(12),
+                        text_input("Enter IP Address", &self.nodeid)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::NodeIdEntered(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Port Number ").size(12),
+                        text_input("Enter Port Number", &self.relay_url)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::RelayURL(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(5),
+                    connection_row,
+                ]
+                .spacing(10)]
+                    .spacing(20),
+            )
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+        }
+        else {
             container(
                 column![
                     connection_type_row,
