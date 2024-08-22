@@ -30,6 +30,8 @@ faster-hex = { version = "0.9.0", default-features = false }
 smoltcp = { version = "0.11.0", default-features = false, features = ["dns-max-server-count-4"] }
 
 serde = { version = "1.0.208", default-features = false }
+postcard = { version = "1.0.10", default-features = false }
+heapless = { version = "0.8.0", default-features = false }
 
 [build-dependencies]
 # for reading config from a file in build.rs
