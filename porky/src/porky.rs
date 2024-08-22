@@ -28,7 +28,7 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
-//use hw_definition::description::HardwareDescription;
+use hw_definition::description::HardwareDescription;
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -37,8 +37,8 @@ mod ssid {
     include!(concat!(env!("OUT_DIR"), "/ssid.rs"));
 }
 
-//#[path = "../../src/hw_definition/mod.rs"]
-//mod hw_definition;
+#[path = "../../src/hw_definition/mod.rs"]
+mod hw_definition;
 
 const LED: u8 = 0;
 
