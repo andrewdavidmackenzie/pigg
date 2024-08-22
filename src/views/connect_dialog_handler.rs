@@ -1,3 +1,4 @@
+use std::net::{AddrParseError, IpAddr, SocketAddr};
 use crate::views::connect_dialog_handler::ConnectDialogMessage::{ConnectButtonPressed, ConnectionError, DisplayIrohTab, DisplayTcpTab, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL, ShowConnectDialogIroh, ShowConnectDialogTcp};
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
@@ -42,7 +43,9 @@ const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
 pub struct ConnectDialog {
     nodeid: String,
     relay_url: String,
+    ip_address: String,
     iroh_connection_error: String,
+    tcp_connection_error: String,
     pub show_modal: bool,
     show_spinner: bool,
     disable_widgets: bool,
@@ -55,12 +58,14 @@ pub enum ConnectDialogMessage {
     RelayURL(String),
     ModalKeyEvent(Event),
     ConnectButtonPressed(String, String),
+    ConnectionButtonPressedTcp(String),
     HideConnectDialog,
     ShowConnectDialogIroh,
     ShowConnectDialogTcp,
     ConnectionError(String),
     DisplayIrohTab,
     DisplayTcpTab,
+    IpAddressEntered(String)
 }
 impl Default for ConnectDialog {
     fn default() -> Self {
@@ -74,16 +79,23 @@ impl ConnectDialog {
             nodeid: String::new(),
             relay_url: String::new(),
             iroh_connection_error: String::new(),
+            tcp_connection_error: String::new(),
             show_modal: false,
             show_spinner: false,
             disable_widgets: false,
             display_iroh: true,
+            ip_address: String::new(),
         }
     }
 
     /// Set the error state of the dialog with a message to display
     pub fn set_error(&mut self, error: String) {
-        self.iroh_connection_error = error;
+        #[cfg(feature = "iroh")] {
+            self.iroh_connection_error = error.clone();
+        }
+        #[cfg(feature = "tcp")] {
+            self.tcp_connection_error = error;
+        }
     }
 
     #[allow(unused)] // TODO #allow remove when implement Tcp
@@ -91,8 +103,38 @@ impl ConnectDialog {
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         match message {
-            // TODO handle IP/Port combination
-            #[allow(unused_variables)]
+            ConnectDialogMessage::ConnectionButtonPressedTcp(ip_address) => {
+                // Display error when ip address field is left empty
+                if ip_address.trim().is_empty() {
+                    self.tcp_connection_error = String::from("Please Enter IP Address");
+                    return Command::none();
+                }
+
+                // Validate Ip Address
+                #[cfg(feature = "tcp")]
+                let _ = match SocketAddr::from_str(ip_address.as_str().trim()) {
+                    Ok(socket_addr) => {
+                        let ip = socket_addr.ip();
+                        let port = socket_addr.port();
+
+                        self.tcp_connection_error.clear();
+
+                        Command::perform(Self::empty(), move |_| {
+                            Message::ConnectRequest(Tcp(ip, port))
+                        })
+                    }
+                    Err(err) => {
+                        // Handle IP address and port parsing error
+                        self.tcp_connection_error = format!("Invalid IP Address or Port: {}", err);
+                        self.show_spinner = false;
+                        self.disable_widgets = false;
+                        Command::none()
+                    }
+                };
+                
+                Command::none()
+            }
+
             ConnectButtonPressed(node_id, url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
@@ -100,7 +142,7 @@ impl ConnectDialog {
                 }
 
                 #[cfg(feature = "iroh")]
-                match NodeId::from_str(node_id.as_str().trim()) {
+                let _ = match NodeId::from_str(node_id.as_str().trim()) {
                     Ok(nodeid) => {
                         let url_str = url.trim();
                         let relay_url = if url_str.is_empty() {
@@ -130,17 +172,16 @@ impl ConnectDialog {
                         self.disable_widgets = false;
                         Command::none()
                     }
-                }
-                #[cfg(not(feature = "iroh"))]
+                };
                 Command::none()
             }
 
-            ConnectDialogMessage::DisplayTcpTab => {
+            DisplayTcpTab => {
                 self.display_iroh = false;
                 Command::none()
             }
 
-            ConnectDialogMessage::DisplayIrohTab => {
+            DisplayIrohTab => {
                 self.display_iroh = true;
                 Command::none()
             }
@@ -183,6 +224,11 @@ impl ConnectDialog {
                     }
                     _ => Command::none(),
                 }
+            }
+
+            ConnectDialogMessage::IpAddressEntered(ip_addr) => {
+                self.ip_address = ip_addr;
+                Command::none()
             }
 
             NodeIdEntered(node_id) => {
@@ -244,6 +290,45 @@ impl ConnectDialog {
                 .align_items(iced::Alignment::Center)
         };
 
+        let connection_row_tcp = if self.show_spinner && self.disable_widgets && !self.display_iroh {
+            Row::new()
+                .push(
+                    Button::new(Text::new("Cancel"))
+                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                )
+                .push(
+                    Circular::new()
+                        .easing(&EMPHASIZED_ACCELERATE)
+                        .cycle_duration(Duration::from_secs_f32(2.0)),
+                )
+                .push(
+                    Button::new(Text::new("Connect"))
+                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                )
+                .spacing(160)
+                .align_items(iced::Alignment::Center)
+        } else {
+            Row::new()
+                .push(
+                    Button::new(Text::new("Cancel"))
+                        .on_press(Message::ConnectDialog(
+                            ConnectDialogMessage::HideConnectDialog,
+                        ))
+                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                )
+                .push(
+                    Button::new(Text::new("Connect"))
+                        .on_press(Message::ConnectDialog(
+                            ConnectDialogMessage::ConnectionButtonPressedTcp(
+                                self.ip_address.clone(),
+                            ),
+                        ))
+                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                )
+                .spacing(360)
+                .align_items(iced::Alignment::Center)
+        };
+
         let text_container =
             container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
                 .padding(10)
@@ -289,13 +374,13 @@ impl ConnectDialog {
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
-                        text(self.iroh_connection_error.clone())
+                        text(self.tcp_connection_error.clone())
                             .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                         text("IP Address").size(12),
-                        text_input("Enter IP Address", &self.nodeid).padding(5),
+                        text_input("Enter IP Address", &self.ip_address).padding(5),
                     ]
                     .spacing(10),
-                    connection_row,
+                    connection_row_tcp,
                 ]
                 .spacing(10)]
                     .spacing(20),
@@ -312,17 +397,17 @@ impl ConnectDialog {
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
-                        text(self.iroh_connection_error.clone())
+                        text(self.tcp_connection_error.clone())
                             .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                         text("Ip Address").size(12),
-                        text_input("Enter IP Address", &self.nodeid)
+                        text_input("Enter IP Address", &self.ip_address)
                             .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::NodeIdEntered(input)
+                                ConnectDialogMessage::IpAddressEntered(input)
                             ))
                             .padding(5),
                     ]
                     .spacing(10),
-                    connection_row,
+                    connection_row_tcp,
                 ]
                 .spacing(10)]
                     .spacing(20),
