@@ -38,7 +38,6 @@ pub struct PinDescriptionSet {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PinDescription {
     pub bpn: BoardPinNumber,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub bcm: Option<BCMPinNumber>,
     pub name: Cow<'static, str>,
     pub options: Cow<'static, [PinFunction]>, // The set of functions the pin can have, chosen by user config
