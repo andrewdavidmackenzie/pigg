@@ -28,7 +28,7 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
-use hw_definition::description::HardwareDescription;
+//use hw_definition::description::HardwareDescription;
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -37,8 +37,8 @@ mod ssid {
     include!(concat!(env!("OUT_DIR"), "/ssid.rs"));
 }
 
-#[path = "../../src/hw_definition/mod.rs"]
-mod hw_definition;
+//#[path = "../../src/hw_definition/mod.rs"]
+//mod hw_definition;
 
 const LED: u8 = 0;
 
@@ -66,6 +66,48 @@ async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
     stack.run().await
 }
 
+async fn join_wifi(
+    control: &mut Control<'_>,
+    stack: &Stack<NetDriver<'static>>,
+    ssid_name: &str,
+    ssid_pass: &str,
+) -> Option<Ipv4Address> {
+    let mut attempt = 1;
+    while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
+        info!(
+            "Attempt #{} to join wifi network: '{}' with security = '{}'",
+            attempt, ssid_name, SSID_SECURITY
+        );
+        let result = match SSID_SECURITY {
+            "open" => control.join_open(ssid_name).await,
+            "wpa2" => control.join_wpa2(ssid_name, ssid_pass).await,
+            "wpa3" => control.join_wpa3(ssid_name, ssid_pass).await,
+            _ => {
+                error!("Security '{}' is not supported", SSID_SECURITY);
+                return None;
+            }
+        };
+
+        match result {
+            Ok(_) => {
+                info!("Joined wifi network: '{}'", ssid_name);
+                return wait_for_dhcp(stack).await;
+            }
+            Err(_) => {
+                attempt += 1;
+                warn!("Failed to join wifi, retrying");
+            }
+        }
+    }
+
+    error!(
+        "Failed to join Wifi after {} reties",
+        WIFI_JOIN_RETRY_ATTEMPT_LIMIT
+    );
+    None
+}
+
+/// Wait for the DHCP service to come up and for us to get an IP address
 async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address> {
     info!("Waiting for DHCP...");
     while !stack.is_config_up() {
@@ -79,6 +121,7 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address>
     }
 }
 
+/// Enter the message loop, processing config change messages from piggui
 async fn message_loop<'a>(
     ip_address: Ipv4Address,
     stack: &Stack<NetDriver<'static>>,
@@ -103,7 +146,7 @@ async fn message_loop<'a>(
     info!("Received connection from {:?}", socket.remote_endpoint());
 
     // send hardware description
-    let desc = HardwareDescription::default();
+    //let desc = HardwareDescription::default();
 
     info!("Starting message loop");
     loop {
@@ -133,44 +176,6 @@ async fn message_loop<'a>(
         control.gpio_set(LED, OFF).await;
     }
     // info!("Exited message loop");
-}
-
-async fn join_wifi(
-    control: &mut Control<'_>,
-    stack: &Stack<NetDriver<'static>>,
-    ssid_name: &str,
-    ssid_pass: &str,
-) -> Option<Ipv4Address> {
-    let mut attempt = 1;
-    while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
-        info!("Attempt #{} to join wifi network: '{}'", attempt, ssid_name);
-        let result = match SSID_SECURITY {
-            "open" => control.join_open(ssid_name).await,
-            "wpa2" => control.join_wpa2(ssid_name, ssid_pass).await,
-            "wpa3" => control.join_wpa3(ssid_name, ssid_pass).await,
-            _ => {
-                error!("Security '{}' is not supported", SSID_SECURITY);
-                return None;
-            }
-        };
-
-        match result {
-            Ok(_) => {
-                info!("Joined wifi network: '{}'", ssid_name);
-                return wait_for_dhcp(stack).await;
-            }
-            Err(_) => {
-                attempt += 1;
-                warn!("Failed to join wifi, retrying");
-            }
-        }
-    }
-
-    error!(
-        "Failed to join Wifi after {} reties",
-        WIFI_JOIN_RETRY_ATTEMPT_LIMIT
-    );
-    None
 }
 
 fn log_device_id(device_id: [u8; 8]) {
