@@ -8,6 +8,10 @@ edition = "2021"
 name = "porky"
 path = "src/porky.rs"
 
+[features]
+default = []
+std = []
+
 [dependencies]
 embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.6.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }

@@ -28,7 +28,8 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
-use hw_definition::description::HardwareDescription;
+use heapless::String;
+use hw_definition::description::HardwareDetails;
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -146,7 +147,12 @@ async fn message_loop<'a>(
     info!("Received connection from {:?}", socket.remote_endpoint());
 
     // send hardware description
-    //let desc = HardwareDescription::default();
+    let _details = HardwareDetails {
+        hardware: String::try_from("foo").unwrap(),
+        revision: String::try_from("foo").unwrap(),
+        serial: String::try_from("foo").unwrap(),
+        model: String::try_from("foo").unwrap(),
+    };
 
     info!("Starting message loop");
     loop {

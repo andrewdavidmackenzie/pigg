@@ -31,10 +31,11 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh", "tcp"]
+default = ["iroh", "tcp", "std"]
 iroh = ["iroh-net", "derive_more"]
 tcp = ["portpicker", "local-ip-address"]
 discovery = []
+std = []
 
 [dependencies]
 # Optional Dependencies

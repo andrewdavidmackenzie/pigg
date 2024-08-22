@@ -3,11 +3,13 @@ use crate::hw_definition::{BCMPinNumber, PinLevel};
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "std")]
 use std::collections::HashMap;
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HardwareConfig {
+    #[cfg(feature = "std")]
     pub pins: HashMap<BCMPinNumber, PinFunction>,
 }
 
