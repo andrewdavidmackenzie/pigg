@@ -1,4 +1,6 @@
-use crate::hw_definition::config_message::HardwareConfig;
+use crate::hw_definition::config_message::{HardwareConfig, InputPull, LevelChange};
+use crate::hw_definition::PinLevel;
+use chrono::Utc;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Write};
@@ -34,6 +36,27 @@ impl HardwareConfig {
         let contents = serde_json::to_string(self)?;
         file.write_all(contents.as_bytes())?;
         Ok(format!("File saved successfully to {}", filename))
+    }
+}
+
+impl LevelChange {
+    /// Create a new LevelChange event with the timestamp for now
+    #[allow(dead_code)] // for piglet
+    pub fn new(new_level: PinLevel) -> Self {
+        Self {
+            new_level,
+            timestamp: Utc::now(),
+        }
+    }
+}
+
+impl Display for InputPull {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            InputPull::PullUp => write!(f, "Pull Up"),
+            InputPull::PullDown => write!(f, "Pull Down"),
+            InputPull::None => write!(f, "None"),
+        }
     }
 }
 

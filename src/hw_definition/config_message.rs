@@ -3,8 +3,6 @@ use crate::hw_definition::{BCMPinNumber, PinLevel};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
-use std::fmt::{Display, Formatter};
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -37,31 +35,10 @@ pub struct LevelChange {
     pub timestamp: DateTime<Utc>,
 }
 
-impl LevelChange {
-    /// Create a new LevelChange event with the timestamp for now
-    #[allow(dead_code)] // for piglet
-    pub fn new(new_level: PinLevel) -> Self {
-        Self {
-            new_level,
-            timestamp: Utc::now(),
-        }
-    }
-}
-
 /// An input can be configured to have an optional pull-up or pull-down
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum InputPull {
     PullUp,
     PullDown,
     None,
-}
-
-impl Display for InputPull {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            InputPull::PullUp => write!(f, "Pull Up"),
-            InputPull::PullDown => write!(f, "Pull Down"),
-            InputPull::None => write!(f, "None"),
-        }
-    }
 }
