@@ -295,11 +295,6 @@ impl ConnectDialog {
                         text_input("Enter IP Address", &self.nodeid).padding(5),
                     ]
                     .spacing(10),
-                    column![
-                        text("Port Number ").size(12),
-                        text_input("Enter Port Number", &self.relay_url).padding(5),
-                    ]
-                    .spacing(5),
                     connection_row,
                 ]
                 .spacing(10)]
@@ -327,15 +322,6 @@ impl ConnectDialog {
                             .padding(5),
                     ]
                     .spacing(10),
-                    column![
-                        text("Port Number ").size(12),
-                        text_input("Enter Port Number", &self.relay_url)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::RelayURL(input)
-                            ))
-                            .padding(5),
-                    ]
-                    .spacing(5),
                     connection_row,
                 ]
                 .spacing(10)]
