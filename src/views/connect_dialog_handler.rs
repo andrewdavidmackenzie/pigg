@@ -1,7 +1,4 @@
-use crate::views::connect_dialog_handler::ConnectDialogMessage::{
-    ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, NodeIdEntered,
-    RelayURL, ShowConnectDialogIroh, ShowConnectDialogTcp,
-};
+use crate::views::connect_dialog_handler::ConnectDialogMessage::{ConnectButtonPressed, ConnectionError, DisplayIrohTab, DisplayTcpTab, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL, ShowConnectDialogIroh, ShowConnectDialogTcp};
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
 };
@@ -49,6 +46,7 @@ pub struct ConnectDialog {
     pub show_modal: bool,
     show_spinner: bool,
     disable_widgets: bool,
+    display_iroh: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -61,6 +59,8 @@ pub enum ConnectDialogMessage {
     ShowConnectDialogIroh,
     ShowConnectDialogTcp,
     ConnectionError(String),
+    DisplayIrohTab,
+    DisplayTcpTab,
 }
 impl Default for ConnectDialog {
     fn default() -> Self {
@@ -77,6 +77,7 @@ impl ConnectDialog {
             show_modal: false,
             show_spinner: false,
             disable_widgets: false,
+            display_iroh: true,
         }
     }
 
@@ -134,6 +135,15 @@ impl ConnectDialog {
                 Command::none()
             }
 
+            ConnectDialogMessage::DisplayTcpTab => {
+                self.display_iroh = false;
+                Command::none()
+            }
+
+            ConnectDialogMessage::DisplayIrohTab => {
+                self.display_iroh = true;
+                Command::none()
+            }
             ShowConnectDialogIroh => {
                 self.show_modal = true;
                 Command::none()
@@ -194,7 +204,7 @@ impl ConnectDialog {
     }
 
     pub fn view<'a>(&self) -> Element<'a, Message> {
-        let connection_row = if self.show_spinner && self.disable_widgets {
+        let connection_row = if self.show_spinner && self.disable_widgets && self.display_iroh {
             Row::new()
                 .push(
                     Button::new(Text::new("Cancel"))
@@ -239,9 +249,15 @@ impl ConnectDialog {
                 .padding(10)
                 .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
+        let mut connection_type_row = Row::new().spacing(5);
+        connection_type_row = connection_type_row.push(Button::new("Iroh").on_press(Message::ConnectDialog(DisplayIrohTab)));
+        connection_type_row = connection_type_row.push(Button::new("Tcp").on_press(Message::ConnectDialog(DisplayTcpTab)));
+
         if self.disable_widgets {
             container(
-                column![column![
+                column![
+                    connection_type_row,
+                    column![
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
@@ -259,15 +275,17 @@ impl ConnectDialog {
                     connection_row,
                 ]
                 .spacing(10)]
-                .spacing(20),
+                    .spacing(20),
             )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
         } else {
             container(
-                column![column![
+                column![
+                    connection_type_row,
+                    column![
                     text("Connect To Remote Pi").size(20),
                     column![
                         text_container,
@@ -293,12 +311,12 @@ impl ConnectDialog {
                     connection_row,
                 ]
                 .spacing(10)]
-                .spacing(20),
+                    .spacing(20),
             )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
         }
     }
 
