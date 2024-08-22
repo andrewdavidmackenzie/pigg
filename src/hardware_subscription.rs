@@ -102,7 +102,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                         );
                                     }
                                     Err(e) => {
-                                        eprintln!("Tcp error: {e}");
+                                        eprintln!("Iroh error: {e}");
                                         if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Disconnected(format!(
                                                 "Error connecting to piglet: {e}"

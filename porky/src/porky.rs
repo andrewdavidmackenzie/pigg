@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use crate::hw_definition::description::PinDescription;
 use crate::ssid::{
     MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH, SSID_SECURITY,
 };
@@ -28,8 +29,8 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
-use heapless::String;
-use hw_definition::description::HardwareDetails;
+use heapless::{String, Vec};
+use hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -41,8 +42,14 @@ mod ssid {
 #[path = "../../src/hw_definition/mod.rs"]
 mod hw_definition;
 
-const LED: u8 = 0;
+const PIN_1: PinDescription = PinDescription {
+    bpn: 1,
+    bcm: None,
+    name: "3V3",
+};
+const PIN_DESCRIPTIONS: [PinDescription; 1] = [PIN_1];
 
+const LED: u8 = 0;
 const ON: bool = true;
 const OFF: bool = false;
 
@@ -147,15 +154,28 @@ async fn message_loop<'a>(
     info!("Received connection from {:?}", socket.remote_endpoint());
 
     // send hardware description
-    let _details = HardwareDetails {
+    let details = HardwareDetails {
         hardware: String::try_from("foo").unwrap(),
         revision: String::try_from("foo").unwrap(),
         serial: String::try_from("foo").unwrap(),
         model: String::try_from("foo").unwrap(),
     };
 
-    info!("Starting message loop");
+    let hw_desc = HardwareDescription {
+        details,
+        pins: PinDescriptionSet {
+            pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
+        },
+    };
+
+    let slice = postcard::to_slice(&hw_desc, &mut buf).unwrap();
+    info!("Sending hardware description (length: {})", slice.len());
+    socket.write_all(slice).await.unwrap();
+
+    Timer::after_millis(1000000).await;
+    info!("Entering message loop");
     loop {
+        /*
         // wait for config message
         let n = match socket.read(&mut buf).await {
             Ok(0) => {
@@ -180,6 +200,7 @@ async fn message_loop<'a>(
             }
         };
         control.gpio_set(LED, OFF).await;
+         */
     }
     // info!("Exited message loop");
 }

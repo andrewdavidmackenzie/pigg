@@ -208,7 +208,9 @@ mod test {
             pin7.clone(),
             pin7.clone(),
         ];
-        let pin_set = PinDescriptionSet::new(pins);
+        let pin_set = PinDescriptionSet {
+            pins: pins.to_vec(),
+        };
         assert_eq!(
             pin_set
                 .pins

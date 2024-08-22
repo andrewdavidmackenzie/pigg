@@ -33,7 +33,7 @@ pub async fn send_config_change(
     Ok(())
 }
 
-/// Connect to a remote piglet and get the initial message with the hardware description,
+/// Connect to a remote piglet and get the initial message with the [HardwareDescription],
 /// return that description plus the [TcpStream] to be used to communicate with it.
 pub async fn connect(ip: IpAddr, port: u16) -> anyhow::Result<(HardwareDescription, TcpStream)> {
     let mut stream = TcpStream::connect(format!("{ip}:{port}")).await?;

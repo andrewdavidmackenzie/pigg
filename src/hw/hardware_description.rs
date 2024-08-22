@@ -14,11 +14,6 @@ impl Display for HardwareDetails {
 
 /// `PinDescriptionSet` describes a set of Pins on a device, using `PinDescription`s
 impl PinDescriptionSet {
-    /// Create a new PinDescriptionSet, from a const array of PinDescriptions
-    pub const fn new(pins: [PinDescription; 40]) -> PinDescriptionSet {
-        PinDescriptionSet { pins }
-    }
-
     /// Return a slice of PinDescriptions
     #[allow(dead_code)] // for piglet
     pub fn pins(&self) -> &[PinDescription] {

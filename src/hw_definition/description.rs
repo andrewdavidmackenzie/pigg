@@ -6,13 +6,18 @@ use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
 #[cfg(feature = "std")]
 use std::borrow::Cow;
 
+#[cfg(not(feature = "std"))]
+use heapless::String;
 #[cfg(feature = "std")]
 use std::string::String;
 
+#[cfg(not(feature = "std"))]
+use heapless::Vec;
+#[cfg(feature = "std")]
+use std::vec::Vec;
+
 #[cfg(feature = "std")]
 use crate::hw_definition::pin_function::PinFunction;
-#[cfg(not(feature = "std"))]
-use heapless::String;
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
 #[derive(Serialize)]
@@ -49,8 +54,10 @@ pub struct HardwareDetails {
 #[derive(Serialize)]
 #[cfg_attr(feature = "std", derive(Debug, Clone, Deserialize))]
 pub struct PinDescriptionSet {
-    #[serde(with = "serde_arrays")]
-    pub(crate) pins: [PinDescription; 40],
+    #[cfg(feature = "std")]
+    pub(crate) pins: Vec<PinDescription>,
+    #[cfg(not(feature = "std"))]
+    pub(crate) pins: Vec<PinDescription, 1>,
 }
 
 #[cfg(feature = "std")]
@@ -69,8 +76,9 @@ pub struct PinDescription {
 }
 
 #[cfg(not(feature = "std"))]
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 pub struct PinDescription {
     pub bpn: BoardPinNumber,
     pub bcm: Option<BCMPinNumber>,
+    pub name: &'static str,
 }
