@@ -1,18 +1,16 @@
-use crate::hw::config::HardwareConfig;
 use crate::hw_definition::pin_function::PinFunction;
+use crate::hw_definition::{BCMPinNumber, PinLevel};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-/// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number
-pub type BCMPinNumber = u8;
-
-/// [BoardPinNumber] is used to refer to a GPIO pin by the numbering of the GPIO header on the Pi
-pub type BoardPinNumber = u8;
-
-/// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
-pub type PinLevel = bool;
+/// [HardwareConfig] captures the current configuration of programmable GPIO pins
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct HardwareConfig {
+    pub pins: HashMap<BCMPinNumber, PinFunction>,
+}
 
 /// This enum is for hardware config changes initiated in the GUI by the user,
 /// and sent to the subscription for it to apply to the hardware

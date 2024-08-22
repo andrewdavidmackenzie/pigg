@@ -1,17 +1,8 @@
-use crate::hw::BCMPinNumber;
-use crate::hw_definition::pin_function::PinFunction;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use crate::hw_definition::config_message::HardwareConfig;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Write};
 use std::{fmt, io};
-
-/// [HardwareConfig] captures the current configuration of programmable GPIO pins
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct HardwareConfig {
-    pub pins: HashMap<BCMPinNumber, PinFunction>,
-}
 
 impl Display for HardwareConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -48,7 +39,7 @@ impl HardwareConfig {
 
 #[cfg(test)]
 mod test {
-    use crate::hw::config::HardwareConfig;
+    use crate::hw_definition::config_message::HardwareConfig;
     use crate::hw_definition::config_message::InputPull::PullUp;
     use crate::hw_definition::config_message::LevelChange;
     use crate::hw_definition::pin_function::PinFunction;

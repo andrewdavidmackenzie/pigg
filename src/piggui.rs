@@ -1,5 +1,5 @@
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
-use crate::hw::config::HardwareConfig;
+use crate::hw_definition::config_message::HardwareConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};

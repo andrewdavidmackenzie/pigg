@@ -1,12 +1,12 @@
-use crate::hw::config::HardwareConfig;
 use crate::hw::Hardware;
+use crate::hw_definition::config_message::HardwareConfig;
 use crate::hw_definition::config_message::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
-use crate::hw_definition::config_message::PinLevel;
-use crate::hw_definition::config_message::{BCMPinNumber, HardwareConfigMessage, LevelChange};
+use crate::hw_definition::config_message::{HardwareConfigMessage, LevelChange};
 use crate::hw_definition::hardware_description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
+use crate::hw_definition::{BCMPinNumber, PinLevel};
 
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;

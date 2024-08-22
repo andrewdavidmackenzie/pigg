@@ -4,7 +4,7 @@ use iced::advanced::widget::{self, Widget};
 use iced::mouse;
 use iced::{Color, Element, Length, Rectangle, Size};
 
-use crate::hw_definition::config_message::PinLevel;
+use crate::hw_definition::PinLevel;
 
 pub struct Led {
     height: f32,

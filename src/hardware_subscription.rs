@@ -1,6 +1,6 @@
 use crate::hw;
-use crate::hw::config::HardwareConfig;
 use crate::hw::Hardware;
+use crate::hw_definition::config_message::HardwareConfig;
 use crate::hw_definition::config_message::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };

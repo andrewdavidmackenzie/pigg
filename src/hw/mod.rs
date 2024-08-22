@@ -1,17 +1,16 @@
 use std::io;
 
-use crate::hw::config::HardwareConfig;
-use crate::hw_definition::config_message::{BCMPinNumber, PinLevel};
+use crate::hw_definition::config_message::HardwareConfig;
 use crate::hw_definition::hardware_description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
-
-pub mod config;
+use crate::hw_definition::{BCMPinNumber, PinLevel};
 
 mod pin_descriptions;
 
 #[cfg(feature = "iroh")]
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
+pub mod config;
 /// There are two implementations of the `hw_imp` module that has the `HW` struct that
 /// implements the [`Hardware`] trait:
 /// * fake_hw.rs - used on host (macOS, Linux, etc.) to show and develop GUI without real HW

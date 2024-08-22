@@ -4,7 +4,7 @@ use iced::advanced::text::editor::Direction;
 use iced::Element;
 use plotters::prelude::{RGBAColor, ShapeStyle};
 
-use crate::hw_definition::{config_message::LevelChange, config_message::PinLevel};
+use crate::hw_definition::{config_message::LevelChange, PinLevel};
 use crate::views::hardware_view::HardwareViewMessage;
 use crate::views::waveform::{ChartType, Waveform};
 

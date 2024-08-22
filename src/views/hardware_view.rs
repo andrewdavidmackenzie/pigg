@@ -11,15 +11,12 @@ use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::hw::config::HardwareConfig;
+use crate::hw_definition::config_message::HardwareConfig;
 use crate::hw_definition::config_message::HardwareConfigMessage;
 use crate::hw_definition::config_message::InputPull;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
-use crate::hw_definition::{
-    config_message::BCMPinNumber, config_message::BoardPinNumber, config_message::LevelChange,
-    config_message::PinLevel,
-};
+use crate::hw_definition::{config_message::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareTarget::*;

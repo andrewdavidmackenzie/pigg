@@ -36,8 +36,8 @@ mod ssid {
     include!(concat!(env!("OUT_DIR"), "/ssid.rs"));
 }
 
-#[path = "../../src/hw"]
-mod hw;
+#[path = "../../src/hw_definition/mod.rs"]
+mod hw_definition;
 
 const LED: u8 = 0;
 

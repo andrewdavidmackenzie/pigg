@@ -1,5 +1,5 @@
 use crate::hw_definition::config_message::InputPull;
-use crate::hw_definition::config_message::PinLevel;
+use crate::hw_definition::PinLevel;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
