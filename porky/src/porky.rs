@@ -28,7 +28,7 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
-use hw_definition::description::HardWareDescription;
+use hw_definition::description::HardwareDescription;
 use panic_probe as _;
 use static_cell::StaticCell;
 
