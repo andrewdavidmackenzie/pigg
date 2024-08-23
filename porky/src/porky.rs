@@ -29,8 +29,9 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
-use heapless::{String, Vec};
+use heapless::Vec;
 use hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+use hw_definition::pin_function::PinFunction;
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -46,8 +47,15 @@ const PIN_1: PinDescription = PinDescription {
     bpn: 1,
     bcm: None,
     name: "3V3",
+    options: &[PinFunction::Power3V3],
 };
-const PIN_DESCRIPTIONS: [PinDescription; 1] = [PIN_1];
+
+const PIN_DESCRIPTIONS: [PinDescription; 40] = [
+    PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1,
+    PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1,
+    PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1, PIN_1,
+    PIN_1,
+];
 
 const LED: u8 = 0;
 const ON: bool = true;
@@ -155,10 +163,10 @@ async fn message_loop<'a>(
 
     // send hardware description
     let details = HardwareDetails {
-        hardware: String::try_from("foo").unwrap(),
-        revision: String::try_from("foo").unwrap(),
-        serial: String::try_from("foo").unwrap(),
-        model: String::try_from("foo").unwrap(),
+        hardware: "foo",
+        revision: "foo",
+        serial: "foo",
+        model: "foo",
     };
 
     let hw_desc = HardwareDescription {
