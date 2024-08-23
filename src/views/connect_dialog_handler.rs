@@ -22,7 +22,7 @@ use iroh_net::{relay::RelayUrl, NodeId};
 #[cfg(feature = "iroh")]
 use std::str::FromStr;
 use std::time::Duration;
-
+use serde::de::Unexpected::Str;
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 
@@ -63,7 +63,7 @@ pub enum ConnectDialogMessage {
     RelayURL(String),
     ModalKeyEvent(Event),
     ConnectButtonPressed(String, String),
-    ConnectionButtonPressedTcp(String),
+    ConnectionButtonPressedTcp(String, String),
     HideConnectDialog,
     ShowConnectDialogIroh,
     ShowConnectDialogTcp,
@@ -112,29 +112,50 @@ impl ConnectDialog {
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         match message {
-            ConnectDialogMessage::ConnectionButtonPressedTcp(ip_address) => {
-                // Display error when ip address field is left empty
+            ConnectDialogMessage::ConnectionButtonPressedTcp(ip_address, port_num) => {
+                // Display error when Ip address field is empty
                 if ip_address.trim().is_empty() {
                     self.tcp_connection_error = String::from("Please Enter IP Address");
                     return Command::none();
                 }
 
-                // Validate Ip Address
+                // Display error when port number field is empty
+                if port_num.trim().is_empty() {
+                    self.tcp_connection_error = String::from("Please Enter Port Number");
+                    return Command::none();
+                }
+
+                // Validate IP address
                 #[cfg(feature = "tcp")]
-                let _ = match SocketAddr::from_str(ip_address.as_str().trim()) {
-                    Ok(socket_addr) => {
-                        let ip = socket_addr.ip();
-                        let port = socket_addr.port();
+                let _ = match IpAddr::from_str(ip_address.as_str().trim()) {
+                    Ok(ip) => {
+                        // Validate port number
+                        match port_num.trim().parse::<u32>() {
+                            Ok(port) if (1..=65535).contains(&port) => {
+                                let port = port as u16;
+                                self.tcp_connection_error.clear();
 
-                        self.tcp_connection_error.clear();
-
-                        Command::perform(Self::empty(), move |_| {
-                            Message::ConnectRequest(Tcp(ip, port))
-                        })
+                                // Proceed to request connection when both fields entered is correct
+                                Command::perform(Self::empty(), move |_| {
+                                    Message::ConnectRequest(Tcp(ip, port))
+                                })
+                            }
+                            Ok(_) => {
+                                self.tcp_connection_error = String::from("Port number must be between 1 and 65535");
+                                self.show_spinner = false;
+                                self.disable_widgets = false;
+                                Command::none()
+                            }
+                            Err(_) => {
+                                self.tcp_connection_error = String::from("Invalid Port Number");
+                                self.show_spinner = false;
+                                self.disable_widgets = false;
+                                Command::none()
+                            }
+                        }
                     }
                     Err(err) => {
-                        // Handle IP address and port parsing error
-                        self.tcp_connection_error = format!("Invalid IP Address or Port: {}", err);
+                        self.tcp_connection_error = format!("Invalid IP Address: {}", err);
                         self.show_spinner = false;
                         self.disable_widgets = false;
                         Command::none()
@@ -342,6 +363,7 @@ impl ConnectDialog {
                         .on_press(Message::ConnectDialog(
                             ConnectDialogMessage::ConnectionButtonPressedTcp(
                                 self.ip_address.clone(),
+                                self.port_number.clone(),
                             ),
                         ))
                         .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
