@@ -108,6 +108,8 @@ impl ConnectDialog {
         }
     }
 
+    async fn empty() {}
+
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         match message {
             ConnectDialogMessage::ConnectionButtonPressedTcp(ip_address, port_num) => {
