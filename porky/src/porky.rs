@@ -44,10 +44,6 @@ mod hw_definition;
 
 mod pin_descriptions;
 
-const LED: u8 = 0;
-const ON: bool = true;
-const OFF: bool = false;
-
 const FLASH_SIZE: usize = 2 * 1024 * 1024;
 
 const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
@@ -147,7 +143,10 @@ async fn message_loop<'a>(
         return;
     }
 
-    info!("Received connection from {:?}", socket.remote_endpoint());
+    info!(
+        "Received connection from {:?}",
+        socket.remote_endpoint().unwrap()
+    );
 
     let mut device_id_hex: [u8; 16] = [0; 16];
     hex_encode(&device_id, &mut device_id_hex).unwrap();
@@ -249,9 +248,6 @@ async fn main(spawner: Spawner) {
         .set_power_management(cyw43::PowerManagementMode::PowerSave)
         .await;
 
-    // Switch on led to show we are up and running
-    control.gpio_set(LED, ON).await;
-
     // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
     let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(p.FLASH, p.DMA_CH1);
     let mut device_id = [0; 8];
@@ -280,5 +276,4 @@ async fn main(spawner: Spawner) {
     }
 
     info!("Exiting");
-    control.gpio_set(LED, OFF).await;
 }
