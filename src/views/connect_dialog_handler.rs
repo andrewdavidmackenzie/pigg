@@ -6,7 +6,7 @@ use crate::views::connect_dialog_handler::ConnectDialogMessage::{
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
 };
-use std::net::{AddrParseError, IpAddr, SocketAddr};
+use std::net::IpAddr;
 
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
@@ -22,7 +22,6 @@ use iroh_net::{relay::RelayUrl, NodeId};
 #[cfg(feature = "iroh")]
 use std::str::FromStr;
 use std::time::Duration;
-use serde::de::Unexpected::Str;
 use crate::styles::button_style::ButtonStyle;
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
