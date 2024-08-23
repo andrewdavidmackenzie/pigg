@@ -1,8 +1,12 @@
-use std::net::{AddrParseError, IpAddr, SocketAddr};
-use crate::views::connect_dialog_handler::ConnectDialogMessage::{ConnectButtonPressed, ConnectionError, DisplayIrohTab, DisplayTcpTab, HideConnectDialog, ModalKeyEvent, NodeIdEntered, RelayURL, ShowConnectDialogIroh, ShowConnectDialogTcp};
+use crate::views::connect_dialog_handler::ConnectDialogMessage::{
+    ConnectButtonPressed, ConnectionError, DisplayIrohTab, DisplayTcpTab, HideConnectDialog,
+    IpAddressEntered, ModalKeyEvent, NodeIdEntered, PortNumberEntered, RelayURL,
+    ShowConnectDialogIroh, ShowConnectDialogTcp,
+};
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
 };
+use std::net::{AddrParseError, IpAddr, SocketAddr};
 
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
@@ -44,6 +48,7 @@ pub struct ConnectDialog {
     nodeid: String,
     relay_url: String,
     ip_address: String,
+    port_number: String,
     iroh_connection_error: String,
     tcp_connection_error: String,
     pub show_modal: bool,
@@ -65,7 +70,8 @@ pub enum ConnectDialogMessage {
     ConnectionError(String),
     DisplayIrohTab,
     DisplayTcpTab,
-    IpAddressEntered(String)
+    IpAddressEntered(String),
+    PortNumberEntered(String),
 }
 impl Default for ConnectDialog {
     fn default() -> Self {
@@ -85,15 +91,18 @@ impl ConnectDialog {
             disable_widgets: false,
             display_iroh: true,
             ip_address: String::new(),
+            port_number: String::new(),
         }
     }
 
     /// Set the error state of the dialog with a message to display
     pub fn set_error(&mut self, error: String) {
-        #[cfg(feature = "iroh")] {
+        #[cfg(feature = "iroh")]
+        {
             self.iroh_connection_error = error.clone();
         }
-        #[cfg(feature = "tcp")] {
+        #[cfg(feature = "tcp")]
+        {
             self.tcp_connection_error = error.clone();
         }
     }
@@ -131,7 +140,7 @@ impl ConnectDialog {
                         Command::none()
                     }
                 };
-                
+
                 Command::none()
             }
 
@@ -188,6 +197,7 @@ impl ConnectDialog {
                 self.display_iroh = true;
                 self.tcp_connection_error.clear();
                 self.ip_address.clear();
+                self.port_number.clear();
                 Command::none()
             }
             ShowConnectDialogIroh => {
@@ -231,8 +241,13 @@ impl ConnectDialog {
                 }
             }
 
-            ConnectDialogMessage::IpAddressEntered(ip_addr) => {
+            IpAddressEntered(ip_addr) => {
                 self.ip_address = ip_addr;
+                Command::none()
+            }
+
+            PortNumberEntered(port_num) => {
+                self.port_number = port_num;
                 Command::none()
             }
 
@@ -295,7 +310,8 @@ impl ConnectDialog {
                 .align_items(iced::Alignment::Center)
         };
 
-        let connection_row_tcp = if self.show_spinner && self.disable_widgets && !self.display_iroh {
+        let connection_row_tcp = if self.show_spinner && self.disable_widgets && !self.display_iroh
+        {
             Row::new()
                 .push(
                     Button::new(Text::new("Cancel"))
@@ -340,124 +356,143 @@ impl ConnectDialog {
                 .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
         let mut connection_type_row = Row::new().spacing(5);
-        connection_type_row = connection_type_row.push(Button::new("Iroh").on_press(Message::ConnectDialog(DisplayIrohTab)));
-        connection_type_row = connection_type_row.push(Button::new("Tcp").on_press(Message::ConnectDialog(DisplayTcpTab)));
+        connection_type_row = connection_type_row
+            .push(Button::new("Iroh").on_press(Message::ConnectDialog(DisplayIrohTab)));
+        connection_type_row = connection_type_row
+            .push(Button::new("Tcp").on_press(Message::ConnectDialog(DisplayTcpTab)));
 
         if self.disable_widgets && self.display_iroh {
             container(
                 column![
                     connection_type_row,
                     column![
-                    text("Connect To Remote Pi").size(20),
-                    column![
-                        text_container,
-                        text(self.iroh_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("Node Id").size(12),
-                        text_input("Enter node id", &self.nodeid).padding(5),
+                        text("Connect To Remote Pi").size(20),
+                        column![
+                            text_container,
+                            text(self.iroh_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("Node Id").size(12),
+                            text_input("Enter node id", &self.nodeid).padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Relay URL (Optional) ").size(12),
+                            text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
+                        ]
+                        .spacing(5),
+                        connection_row,
                     ]
-                    .spacing(10),
-                    column![
-                        text("Relay URL (Optional) ").size(12),
-                        text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
-                    ]
-                    .spacing(5),
-                    connection_row,
+                    .spacing(10)
                 ]
-                .spacing(10)]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
         } else if self.disable_widgets && !self.display_iroh {
             container(
                 column![
                     connection_type_row,
                     column![
-                    text("Connect To Remote Pi").size(20),
-                    column![
-                        text_container,
-                        text(self.tcp_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("IP Address").size(12),
-                        text_input("Enter IP Address", &self.ip_address).padding(5),
+                        text("Connect To Remote Pi").size(20),
+                        column![
+                            text_container,
+                            text(self.tcp_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("IP Address").size(12),
+                            text_input("Enter IP Address", &self.ip_address).padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Port Number").size(12),
+                            text_input("Enter Port Number", &self.port_number).padding(5),
+                        ]
+                        .spacing(5),
+                        connection_row_tcp,
                     ]
-                    .spacing(10),
-                    connection_row_tcp,
+                    .spacing(10)
                 ]
-                .spacing(10)]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
         } else if !self.disable_widgets && !self.display_iroh {
             container(
                 column![
                     connection_type_row,
                     column![
-                    text("Connect To Remote Pi").size(20),
-                    column![
-                        text_container,
-                        text(self.tcp_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("Ip Address").size(12),
-                        text_input("Enter IP Address", &self.ip_address)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::IpAddressEntered(input)
-                            ))
-                            .padding(5),
+                        text("Connect To Remote Pi").size(20),
+                        column![
+                            text_container,
+                            text(self.tcp_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("Ip Address").size(12),
+                            text_input("Enter IP Address", &self.ip_address)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::IpAddressEntered(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Port Number ").size(12),
+                            text_input("Enter Port Number", &self.port_number)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::PortNumberEntered(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(5),
+                        connection_row_tcp,
                     ]
-                    .spacing(10),
-                    connection_row_tcp,
+                    .spacing(10)
                 ]
-                .spacing(10)]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
-        }
-        else {
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
+        } else {
             container(
                 column![
                     connection_type_row,
                     column![
-                    text("Connect To Remote Pi").size(20),
-                    column![
-                        text_container,
-                        text(self.iroh_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("Node Id").size(12),
-                        text_input("Enter node id", &self.nodeid)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::NodeIdEntered(input)
-                            ))
-                            .padding(5),
+                        text("Connect To Remote Pi").size(20),
+                        column![
+                            text_container,
+                            text(self.iroh_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("Node Id").size(12),
+                            text_input("Enter node id", &self.nodeid)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::NodeIdEntered(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Relay URL (Optional) ").size(12),
+                            text_input("Enter Relay Url (Optional)", &self.relay_url)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::RelayURL(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(5),
+                        connection_row,
                     ]
-                    .spacing(10),
-                    column![
-                        text("Relay URL (Optional) ").size(12),
-                        text_input("Enter Relay Url (Optional)", &self.relay_url)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::RelayURL(input)
-                            ))
-                            .padding(5),
-                    ]
-                    .spacing(5),
-                    connection_row,
+                    .spacing(10)
                 ]
-                .spacing(10)]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
         }
     }
 
