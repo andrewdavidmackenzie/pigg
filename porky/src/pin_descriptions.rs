@@ -9,273 +9,273 @@ const PIN_1: PinDescription = PinDescription {
 };
 
 const PIN_2: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 2,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_3: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 3,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_4: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 4,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_5: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 5,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_6: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 6,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_7: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 7,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_8: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 8,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_9: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 9,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_10: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 10,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_11: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 11,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_12: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 12,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_13: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 13,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_14: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 14,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_15: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 15,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_16: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 16,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_17: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 17,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_18: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 18,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_19: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 19,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_20: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 20,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_21: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 21,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_22: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 22,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_23: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 23,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_24: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 24,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_25: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 25,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_26: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 26,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_27: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 27,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_28: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 28,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_29: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 29,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_30: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 30,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_31: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 31,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_32: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 32,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_33: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 33,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_34: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 34,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_35: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 35,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_36: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 36,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_37: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 37,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_38: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 38,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_39: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 39,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
 };
 
 const PIN_40: PinDescription = PinDescription {
-    bpn: 1,
+    bpn: 40,
     bcm: None,
     name: "3V3",
     options: &[PinFunction::Power3V3],
