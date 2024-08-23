@@ -23,10 +23,12 @@ use iroh_net::{relay::RelayUrl, NodeId};
 use std::str::FromStr;
 use std::time::Duration;
 use serde::de::Unexpected::Str;
+use crate::styles::button_style::ButtonStyle;
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 
 const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
+const TCP_INFO_TEXT: &str = "To connect to a remote device using TCP, ensure the device is reachable over the network. Enter the device's IP address and the port number below.";
 
 const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
@@ -377,18 +379,35 @@ impl ConnectDialog {
                 .padding(10)
                 .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
+        let tcp_text_container =
+            container(Text::new(TCP_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+                .padding(10)
+                .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
+
+        let tab_button_style = ButtonStyle {
+            bg_color: Color::TRANSPARENT,
+            text_color: Color::new(0.7, 0.7, 0.7, 1.0),
+            hovered_bg_color: Color::TRANSPARENT,
+            hovered_text_color: Color::WHITE,
+            border_radius: 4.0,
+        };
+
         let mut connection_type_row = Row::new().spacing(5);
         connection_type_row = connection_type_row
-            .push(Button::new("Iroh").on_press(Message::ConnectDialog(DisplayIrohTab)));
+            .push(Button::new(Text::new("Connect using Iroh").size(16)).on_press(Message::ConnectDialog(DisplayIrohTab)).style(tab_button_style.get_button_style()));
         connection_type_row = connection_type_row
-            .push(Button::new("Tcp").on_press(Message::ConnectDialog(DisplayTcpTab)));
+            .push(Button::new(Text::new("Connect using raw TCP").size(16)).on_press(Message::ConnectDialog(DisplayTcpTab)).style(tab_button_style.get_button_style()));
 
+
+        let connection_type_iroh = text("Connect To Remote Pi Using Iroh").size(20);
+
+        let connection_type_tcp = text("Connect To Remote Pi Using Tcp").size(20);
         if self.disable_widgets && self.display_iroh {
             container(
                 column![
                     connection_type_row,
                     column![
-                        text("Connect To Remote Pi").size(20),
+                        connection_type_iroh,
                         column![
                             text_container,
                             text(self.iroh_connection_error.clone())
@@ -417,9 +436,9 @@ impl ConnectDialog {
                 column![
                     connection_type_row,
                     column![
-                        text("Connect To Remote Pi").size(20),
+                        connection_type_tcp,
                         column![
-                            text_container,
+                            tcp_text_container,
                             text(self.tcp_connection_error.clone())
                                 .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                             text("IP Address").size(12),
@@ -446,9 +465,9 @@ impl ConnectDialog {
                 column![
                     connection_type_row,
                     column![
-                        text("Connect To Remote Pi").size(20),
+                        connection_type_tcp,
                         column![
-                            text_container,
+                            tcp_text_container,
                             text(self.tcp_connection_error.clone())
                                 .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                             text("Ip Address").size(12),
@@ -483,7 +502,7 @@ impl ConnectDialog {
                 column![
                     connection_type_row,
                     column![
-                        text("Connect To Remote Pi").size(20),
+                        connection_type_iroh,
                         column![
                             text_container,
                             text(self.iroh_connection_error.clone())
