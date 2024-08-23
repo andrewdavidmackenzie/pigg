@@ -8,10 +8,13 @@ use crate::views::modal_handler::{
 };
 use std::net::IpAddr;
 
+use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 #[cfg(feature = "iroh")]
 use crate::views::hardware_view::HardwareTarget::*;
+use crate::widgets::spinner::circular::Circular;
+use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
@@ -22,9 +25,6 @@ use iroh_net::{relay::RelayUrl, NodeId};
 #[cfg(feature = "iroh")]
 use std::str::FromStr;
 use std::time::Duration;
-use crate::styles::button_style::ButtonStyle;
-use crate::widgets::spinner::circular::Circular;
-use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 
 const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
 const TCP_INFO_TEXT: &str = "To connect to a remote device using TCP, ensure the device is reachable over the network. Enter the device's IP address and the port number below.";
@@ -108,9 +108,6 @@ impl ConnectDialog {
         }
     }
 
-    #[allow(unused)] // TODO #allow remove when implement Tcp
-    async fn empty() {}
-
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         match message {
             ConnectDialogMessage::ConnectionButtonPressedTcp(ip_address, port_num) => {
@@ -142,7 +139,8 @@ impl ConnectDialog {
                                 })
                             }
                             Ok(_) => {
-                                self.tcp_connection_error = String::from("Port number must be between 1 and 65535");
+                                self.tcp_connection_error =
+                                    String::from("Port number must be between 1 and 65535");
                                 self.show_spinner = false;
                                 self.disable_widgets = false;
                                 Command::none()
@@ -392,11 +390,16 @@ impl ConnectDialog {
         };
 
         let mut connection_type_row = Row::new().spacing(5);
-        connection_type_row = connection_type_row
-            .push(Button::new(Text::new("Connect using Iroh").size(16)).on_press(Message::ConnectDialog(DisplayIrohTab)).style(tab_button_style.get_button_style()));
-        connection_type_row = connection_type_row
-            .push(Button::new(Text::new("Connect using raw TCP").size(16)).on_press(Message::ConnectDialog(DisplayTcpTab)).style(tab_button_style.get_button_style()));
-
+        connection_type_row = connection_type_row.push(
+            Button::new(Text::new("Connect using Iroh").size(16))
+                .on_press(Message::ConnectDialog(DisplayIrohTab))
+                .style(tab_button_style.get_button_style()),
+        );
+        connection_type_row = connection_type_row.push(
+            Button::new(Text::new("Connect using raw TCP").size(16))
+                .on_press(Message::ConnectDialog(DisplayTcpTab))
+                .style(tab_button_style.get_button_style()),
+        );
 
         let connection_type_iroh = text("Connect To Remote Pi Using Iroh").size(20);
 
