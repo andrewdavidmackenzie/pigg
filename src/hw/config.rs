@@ -105,7 +105,7 @@ mod test {
             )
             .expect("Config save failed");
 
-        let pin_config = r#"{"pins":{"1":{"Input":null}}}"#;
+        let pin_config = r#"{"pin_functions":{"1":{"Input":null}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
@@ -113,7 +113,7 @@ mod test {
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn load_one_pin_config_input_no_pull() {
-        let pin_config = r#"{"pins":{"1":{"Input":null}}}"#;
+        let pin_config = r#"{"pin_functions":{"1":{"Input":null}}}"#;
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.pigg");
         let mut file = File::create(&test_file).expect("Could not create test file");
@@ -168,7 +168,7 @@ mod test {
             .save(test_file.to_str().expect("Could not convert path to str"))
             .expect("Could not save config");
 
-        let pin_config = r#"{"pins":{"7":{"Output":true}}}"#;
+        let pin_config = r#"{"pin_functions":{"7":{"Output":true}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
@@ -187,7 +187,7 @@ mod test {
             .save(test_file.to_str().expect("Could not convert path to str"))
             .expect("Could not save config");
 
-        let pin_config = r#"{"pins":{"7":{"Output":null}}}"#;
+        let pin_config = r#"{"pin_functions":{"7":{"Output":null}}}"#;
         let contents = fs::read_to_string(test_file).expect("Could not read test file");
         assert_eq!(contents, pin_config);
     }
