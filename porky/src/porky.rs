@@ -122,6 +122,7 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address>
     }
 }
 
+/// Wait for an incoming TCP connection, then respond to it with the [HardwareDescription]
 async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device_id: &[u8; 8]) {
     let mut buf = [0; 4096];
 
@@ -157,6 +158,19 @@ async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device
     let slice = postcard::to_slice(&hw_desc, &mut buf).unwrap();
     info!("Sending hardware description (length: {})", slice.len());
     socket.write_all(slice).await.unwrap();
+}
+
+/// Wait until a message in received on the [TcpSocket] then deserialize it and return it
+async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessage> {
+    let mut buf = [0; 4096]; // TODO needed?
+
+    // wait for hardware config message
+    let n = socket.read(&mut buf).await.ok()?;
+    if n == 0 {
+        return None;
+    }
+
+    postcard::from_bytes(&buf[..n]).ok()
 }
 
 /// Apply a config change to the hardware
@@ -205,7 +219,6 @@ async fn message_loop<'a>(
 
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
-    let mut buf = [0; 4096]; // TODO needed?
 
     let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
     //socket.set_timeout(Some(Duration::from_secs(10)));
@@ -213,26 +226,9 @@ async fn message_loop<'a>(
     // wait for a connection from `piggui`
     tcp_accept(&mut socket, &ip_address, &device_id).await;
 
-    Timer::after_millis(1000000).await;
     info!("Entering message loop");
     loop {
-        // wait for hardware config message
-        let n = match socket.read(&mut buf).await {
-            Ok(0) => {
-                warn!("read EOF");
-                break;
-            }
-            Ok(n) => {
-                info!("Received {} bytes", n);
-                n
-            }
-            Err(e) => {
-                warn!("read error: {:?}", e);
-                break;
-            }
-        };
-
-        if let Ok(config_message) = postcard::from_bytes(&buf[..n]) {
+        if let Some(config_message) = wait_message(&mut socket).await {
             let _ = apply_config_change(config_message, &mut socket).await;
         }
 
