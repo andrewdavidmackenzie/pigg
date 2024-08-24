@@ -179,7 +179,6 @@ pub struct HardwareView {
     hardware_sender: Option<Sender<HardwareConfigMessage>>,
     hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
-    /// Note: Indexed by BoardPinNumber -1 (since BoardPinNumbers start at 1)
     pin_states: HashMap<BCMPinNumber, PinState>,
 }
 
@@ -239,12 +238,12 @@ impl HardwareView {
     fn new_pin_function(&mut self, bcm_pin_number: BCMPinNumber, new_function: PinFunction) {
         let previous_function = self
             .hardware_config
-            .pins
+            .pin_functions
             .get(&bcm_pin_number)
             .unwrap_or(&PinFunction::None);
         if &new_function != previous_function {
             self.hardware_config
-                .pins
+                .pin_functions
                 .insert(bcm_pin_number, new_function);
 
             self.pin_states.insert(bcm_pin_number, PinState::new());
@@ -264,7 +263,7 @@ impl HardwareView {
     /// Go through all the pins in the [HardwareConfig], make sure a pin state exists for the pin
     /// and then set the current level if it was specified for an Output
     fn set_pin_states_after_load(&mut self) {
-        for (bcm_pin_number, function) in &self.hardware_config.pins {
+        for (bcm_pin_number, function) in &self.hardware_config.pin_functions {
             // For output pins, if there is an initial state set then set that in pin state
             // so the toggler will be drawn correctly on first draw
             if let Output(Some(level)) = function {
@@ -404,7 +403,9 @@ impl HardwareView {
         for pin_description in pin_set.bcm_pins_sorted() {
             let pin_row = create_pin_view_side(
                 pin_description,
-                self.hardware_config.pins.get(&pin_description.bcm.unwrap()),
+                self.hardware_config
+                    .pin_functions
+                    .get(&pin_description.bcm.unwrap()),
                 Right,
                 self.pin_states.get(&pin_description.bcm.unwrap_or(0)),
             );
@@ -429,16 +430,20 @@ impl HardwareView {
         for pair in pin_descriptions.pins().chunks(2) {
             let left_row = create_pin_view_side(
                 &pair[0],
-                self.hardware_config.pins.get(&pair[0].bcm.unwrap_or(0)),
+                pair[0]
+                    .bcm
+                    .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
                 Left,
-                self.pin_states.get(&pair[0].bcm.unwrap_or(0)),
+                pair[0].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
             );
 
             let right_row = create_pin_view_side(
                 &pair[1],
-                self.hardware_config.pins.get(&pair[1].bcm.unwrap_or(0)),
+                pair[1]
+                    .bcm
+                    .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
                 Right,
-                self.pin_states.get(&pair[1].bcm.unwrap_or(0)),
+                pair[1].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
             );
 
             let row = Row::new()
@@ -607,13 +612,13 @@ fn filter_options(
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side<'a>(
     pin_description: &'a PinDescription,
-    selected_function: Option<&'a PinFunction>,
+    pin_function: Option<&'a PinFunction>,
     direction: Direction,
     pin_state: Option<&'a PinState>,
 ) -> Row<'a, HardwareViewMessage> {
     let pin_widget = if let Some(state) = pin_state {
         // Create a widget that is either used to visualize an input or control an output
-        get_pin_widget(pin_description.bcm, selected_function, state, direction)
+        get_pin_widget(pin_description.bcm, pin_function, state, direction)
     } else {
         Row::new().width(Length::Fixed(PIN_WIDGET_ROW_WIDTH)).into()
     };
@@ -628,9 +633,9 @@ fn create_pin_view_side<'a>(
         let mut pin_options_row = Row::new().align_items(Alignment::Center);
 
         // Filter options
-        let config_options = filter_options(&pin_description.options, selected_function.cloned());
+        let config_options = filter_options(&pin_description.options, pin_function.cloned());
 
-        let selected = selected_function.filter(|&pin_function| *pin_function != PinFunction::None);
+        let selected = pin_function.filter(|&pin_function| *pin_function != PinFunction::None);
 
         let pick_list = pick_list(config_options, selected, move |pin_function| {
             PinFunctionSelected(bcm_pin_number, pin_function)

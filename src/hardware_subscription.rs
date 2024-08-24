@@ -254,7 +254,7 @@ fn send_current_input_states(
     connected_hardware: &impl Hardware,
 ) {
     // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.pins {
+    for (bcm_pin_number, pin_function) in &config.pin_functions {
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {

@@ -10,7 +10,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HardwareConfig {
     #[cfg(feature = "std")]
-    pub pins: HashMap<BCMPinNumber, PinFunction>,
+    pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
 }
 
 /// This enum is for hardware config changes initiated in the GUI by the user,

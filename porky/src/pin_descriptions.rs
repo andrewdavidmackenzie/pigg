@@ -1,11 +1,15 @@
+use crate::hw_definition::config::InputPull;
 use crate::hw_definition::description::PinDescription;
 use crate::hw_definition::pin_function::PinFunction;
 
 const PIN_1: PinDescription = PinDescription {
     bpn: 1,
-    bcm: None,
-    name: "3V3",
-    options: &[PinFunction::Power3V3],
+    bcm: Some(0),
+    name: "GPIO0/LED",
+    options: &[
+        PinFunction::Output(None),
+        PinFunction::Input(Some(InputPull::PullUp)),
+    ],
 };
 
 const PIN_2: PinDescription = PinDescription {

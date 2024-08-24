@@ -65,7 +65,7 @@ pub trait Hardware {
         C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
-        for (bcm_pin_number, pin_function) in &config.pins {
+        for (bcm_pin_number, pin_function) in &config.pin_functions {
             self.apply_pin_config(*bcm_pin_number, pin_function, callback.clone())?;
         }
 
