@@ -6,6 +6,7 @@ use crate::views::connect_dialog_handler::ConnectDialogMessage::{
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
 };
+#[cfg(feature = "tcp")]
 use std::net::IpAddr;
 
 use crate::styles::button_style::ButtonStyle;
@@ -48,10 +49,13 @@ const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
 pub struct ConnectDialog {
     nodeid: String,
     relay_url: String,
+    #[cfg(feature = "tcp")]
     ip_address: String,
+    #[cfg(feature = "tcp")]
     port_number: String,
-    iroh_connection_error: String,
+    #[cfg(feature = "tcp")]
     tcp_connection_error: String,
+    iroh_connection_error: String,
     pub show_modal: bool,
     show_spinner: bool,
     disable_widgets: bool,
@@ -67,11 +71,15 @@ pub enum ConnectDialogMessage {
     ConnectionButtonPressedTcp(String, String),
     HideConnectDialog,
     ShowConnectDialogIroh,
+    #[cfg(feature = "tcp")]
     ShowConnectDialogTcp,
     ConnectionError(String),
     DisplayIrohTab,
+    #[cfg(feature = "tcp")]
     DisplayTcpTab,
+    #[cfg(feature = "tcp")]
     IpAddressEntered(String),
+    #[cfg(feature = "tcp")]
     PortNumberEntered(String),
 }
 impl Default for ConnectDialog {
@@ -107,11 +115,13 @@ impl ConnectDialog {
             self.tcp_connection_error = error.clone();
         }
     }
-
+    #[cfg(feature = "tcp")]
     async fn empty() {}
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         match message {
+
+            #[cfg(feature = "tcp")]
             ConnectDialogMessage::ConnectionButtonPressedTcp(ip_address, port_num) => {
                 // Display error when Ip address field is empty
                 if ip_address.trim().is_empty() {
@@ -207,6 +217,7 @@ impl ConnectDialog {
                 Command::none()
             }
 
+            #[cfg(feature = "tcp")]
             DisplayTcpTab => {
                 self.display_iroh = false;
                 self.iroh_connection_error.clear();
@@ -222,11 +233,13 @@ impl ConnectDialog {
                 self.port_number.clear();
                 Command::none()
             }
+
             ShowConnectDialogIroh => {
                 self.show_modal = true;
                 Command::none()
             }
 
+            #[cfg(feature = "tcp")]
             ShowConnectDialogTcp => {
                 self.show_modal = true; // TODO
                 Command::none()
@@ -263,11 +276,13 @@ impl ConnectDialog {
                 }
             }
 
+            #[cfg(feature = "tcp")]
             IpAddressEntered(ip_addr) => {
                 self.ip_address = ip_addr;
                 Command::none()
             }
 
+            #[cfg(feature = "tcp")]
             PortNumberEntered(port_num) => {
                 self.port_number = port_num;
                 Command::none()
