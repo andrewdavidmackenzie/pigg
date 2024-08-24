@@ -150,7 +150,7 @@ impl ConnectDialog {
                                 })
                             }
                             Err(e) => {
-                                self.tcp_connection_error = format!("Invalid Port Number Entered: {}", e);
+                                self.tcp_connection_error = format!("Invalid Port Number: {}", e);
                                 self.show_spinner = false;
                                 self.disable_widgets = false;
                                 Command::none()
