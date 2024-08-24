@@ -72,7 +72,7 @@ tempfile = "3"
 serial_test = "3.1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sysinfo = { version = "0.31.2", default-features = false, features = ["system"] }
+sysinfo = { version = "0.31.3", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
 rfd = "0.14.1"
 clap = { version = "4.5.16", default-features = false, features = ["std", "help", "error-context"] }
