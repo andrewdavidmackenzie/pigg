@@ -25,10 +25,12 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
-use embassy_time::{Duration, Timer};
+use embassy_time::Timer;
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
 use heapless::Vec;
+use hw_definition::config::HardwareConfigMessage;
+use hw_definition::config::HardwareConfigMessage::*;
 use hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use panic_probe as _;
 use pin_descriptions::PIN_DESCRIPTIONS;
@@ -120,22 +122,8 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address>
     }
 }
 
-/// Enter the message loop, processing config change messages from piggui
-async fn message_loop<'a>(
-    device_id: [u8; 8],
-    ip_address: Ipv4Address,
-    stack: &Stack<NetDriver<'static>>,
-    control: &mut Control<'_>,
-) {
-    let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
-    let _client = TcpClient::new(stack, &client_state);
-
-    let mut rx_buffer = [0; 4096];
-    let mut tx_buffer = [0; 4096];
+async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device_id: &[u8; 8]) {
     let mut buf = [0; 4096];
-
-    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-    socket.set_timeout(Some(Duration::from_secs(10)));
 
     info!("Listening on TCP {}:1234", ip_address);
     if let Err(e) = socket.accept(1234).await {
@@ -149,7 +137,7 @@ async fn message_loop<'a>(
     );
 
     let mut device_id_hex: [u8; 16] = [0; 16];
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
+    hex_encode(device_id, &mut device_id_hex).unwrap();
 
     // send hardware description
     let details = HardwareDetails {
@@ -169,27 +157,86 @@ async fn message_loop<'a>(
     let slice = postcard::to_slice(&hw_desc, &mut buf).unwrap();
     info!("Sending hardware description (length: {})", slice.len());
     socket.write_all(slice).await.unwrap();
+}
+
+/// Apply a config change to the hardware
+/// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
+/// but wasn't working - so this uses a sync callback again to fix that, and an async version of
+/// send_input_level() for use directly from the async context
+async fn apply_config_change(config_change: HardwareConfigMessage, _socket: &mut TcpSocket<'_>) {
+    match config_change {
+        NewConfig(_config) => {
+            info!("New config applied");
+            /*
+            let wc = writer.clone();
+            hardware.apply_config(&config, move |bcm, level| {
+                let _ = send_input_level(wc.clone(), bcm, level);
+            })?;
+
+            let _ = send_current_input_states(writer.clone(), &config, hardware).await;
+             */
+        }
+        NewPinConfig(bcm, _pin_function) => {
+            info!("New pin config for pin #{}", bcm);
+            /*
+            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                let _ = send_input_level(writer.clone(), bcm, level);
+            });
+             */
+        }
+        IOLevelChanged(bcm, level_change) => {
+            info!(
+                "Pin #{} Output level change: {:?}",
+                bcm, level_change.new_level
+            );
+            //            let _ = hardware.set_output_level(bcm, level_change.new_level);
+        }
+    }
+}
+
+/// Enter the message loop, processing config change messages from piggui
+async fn message_loop<'a>(
+    device_id: [u8; 8],
+    ip_address: Ipv4Address,
+    stack: &Stack<NetDriver<'static>>,
+) {
+    let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
+    let _client = TcpClient::new(stack, &client_state);
+
+    let mut rx_buffer = [0; 4096];
+    let mut tx_buffer = [0; 4096];
+    let mut buf = [0; 4096]; // TODO needed?
+
+    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+    //socket.set_timeout(Some(Duration::from_secs(10)));
+
+    // wait for a connection from `piggui`
+    tcp_accept(&mut socket, &ip_address, &device_id).await;
 
     Timer::after_millis(1000000).await;
     info!("Entering message loop");
     loop {
-        /*
-        // wait for config message
+        // wait for hardware config message
         let n = match socket.read(&mut buf).await {
             Ok(0) => {
                 warn!("read EOF");
                 break;
             }
-            Ok(n) => n,
+            Ok(n) => {
+                info!("Received {} bytes", n);
+                n
+            }
             Err(e) => {
                 warn!("read error: {:?}", e);
                 break;
             }
         };
 
-        control.gpio_set(LED, ON).await;
-        info!("rxd {}", from_utf8(&buf[..n]).unwrap());
+        if let Ok(config_message) = postcard::from_bytes(&buf[..n]) {
+            let _ = apply_config_change(config_message, &mut socket).await;
+        }
 
+        /*
         match socket.write_all(&buf[..n]).await {
             Ok(()) => {}
             Err(e) => {
@@ -197,7 +244,6 @@ async fn message_loop<'a>(
                 break;
             }
         };
-        control.gpio_set(LED, OFF).await;
          */
     }
     // info!("Exited message loop");
@@ -270,7 +316,7 @@ async fn main(spawner: Spawner) {
 
     while let Some(ip_address) = join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
-            message_loop(device_id, ip_address, stack, &mut control).await;
+            message_loop(device_id, ip_address, stack).await;
             info!("Disconnected");
         }
     }
