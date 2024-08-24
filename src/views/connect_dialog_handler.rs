@@ -28,7 +28,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
-const TCP_INFO_TEXT: &str = "To connect to a remote device using TCP, ensure the device is reachable over the network. Enter the device's IP address and the port number below.";
+const TCP_INFO_TEXT: &str = "To connect to a remote Pi using TCP, ensure Pi is reachable over the network. Enter the device's IP address and the port number below.";
 
 const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
@@ -481,7 +481,7 @@ impl ConnectDialog {
                             tcp_text_container,
                             text(self.tcp_connection_error.clone())
                                 .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                            text("Ip Address").size(12),
+                            text("IP Address").size(12),
                             text_input("Enter IP Address", &self.ip_address)
                                 .on_input(|input| Message::ConnectDialog(
                                     ConnectDialogMessage::IpAddressEntered(input)
