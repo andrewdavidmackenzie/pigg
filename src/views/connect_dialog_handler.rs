@@ -140,25 +140,17 @@ impl ConnectDialog {
                 let _ = match IpAddr::from_str(ip_address.as_str().trim()) {
                     Ok(ip) => {
                         // Validate port number
-                        match port_num.trim().parse::<u32>() {
-                            Ok(port) if (1..=65535).contains(&port) => {
-                                let port = port as u16;
+                        match port_num.trim().parse::<u16>() {
+                            Ok(port) => {
                                 self.tcp_connection_error.clear();
 
-                                // Proceed to request connection when both fields entered is correct
+                                // Proceed to request connection when the port number is valid
                                 Command::perform(Self::empty(), move |_| {
                                     Message::ConnectRequest(Tcp(ip, port))
                                 })
                             }
-                            Ok(_) => {
-                                self.tcp_connection_error =
-                                    String::from("Port number must be between 1 and 65535");
-                                self.show_spinner = false;
-                                self.disable_widgets = false;
-                                Command::none()
-                            }
-                            Err(_) => {
-                                self.tcp_connection_error = String::from("Invalid Port Number");
+                            Err(e) => {
+                                self.tcp_connection_error = format!("Invalid Port Number Entered: {}", e);
                                 self.show_spinner = false;
                                 self.disable_widgets = false;
                                 Command::none()
