@@ -46,7 +46,6 @@ pub struct LevelChange {
 
 impl LevelChange {
     /// Create a new LevelChange event with the timestamp for now
-    #[allow(dead_code)] // for piglet
     pub fn new(new_level: PinLevel, timestamp: Duration) -> Self {
         Self {
             new_level,
