@@ -9,7 +9,6 @@ name = "porky"
 path = "src/porky.rs"
 
 [features]
-default = []
 std = []
 
 [dependencies]
