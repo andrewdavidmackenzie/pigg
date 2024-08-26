@@ -1,6 +1,4 @@
 use crate::hw_definition::config::{HardwareConfig, InputPull, LevelChange};
-use crate::hw_definition::PinLevel;
-use chrono::Utc;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Write};
@@ -39,14 +37,10 @@ impl HardwareConfig {
     }
 }
 
-impl LevelChange {
-    /// Create a new LevelChange event with the timestamp for now
-    #[allow(dead_code)] // for piglet
-    pub fn new(new_level: PinLevel) -> Self {
-        Self {
-            new_level,
-            timestamp: Utc::now(),
-        }
+impl Display for LevelChange {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Level: {}", self.new_level)?;
+        writeln!(f, "Timestamp: {:?}", self.timestamp)
     }
 }
 
@@ -66,12 +60,12 @@ mod test {
     use crate::hw_definition::config::InputPull::PullUp;
     use crate::hw_definition::config::LevelChange;
     use crate::hw_definition::pin_function::PinFunction;
-    use chrono::Utc;
     use std::collections::HashMap;
     use std::fs;
     use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
     #[cfg(not(target_arch = "wasm32"))]
     use tempfile::tempdir;
 
@@ -83,8 +77,11 @@ mod test {
 
     #[test]
     fn level_change_time() {
-        let level_change = LevelChange::new(true);
-        assert!(level_change.timestamp <= Utc::now())
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get system time");
+        let level_change = LevelChange::new(true, now);
+        assert_eq!(level_change.timestamp, now)
     }
 
     #[cfg(not(target_arch = "wasm32"))]

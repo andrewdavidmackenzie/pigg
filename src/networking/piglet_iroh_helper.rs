@@ -6,6 +6,7 @@ use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::time::{Duration, Instant};
 
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 
@@ -142,9 +143,9 @@ pub async fn apply_config_change(
         NewConfig(config) => {
             let cc = connection.clone();
             info!("New config applied");
-            hardware.apply_config(&config, move |bcm, level| {
+            hardware.apply_config(&config, move |bcm, level_change| {
                 let cc = connection.clone();
-                let _ = send_input_level(cc, bcm, level);
+                let _ = send_input_level(cc, bcm, level_change);
             })?;
 
             send_current_input_states(cc, &config, hardware).await?;
@@ -176,8 +177,13 @@ pub async fn send_current_input_states(
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-                let _ = send_input_level_async(connection.clone(), *bcm_pin_number, initial_level)
-                    .await;
+                let _ = send_input_level_async(
+                    connection.clone(),
+                    *bcm_pin_number,
+                    initial_level,
+                    Instant::now().elapsed(),
+                )
+                .await;
             }
         }
     }
@@ -191,8 +197,9 @@ async fn send_input_level_async(
     connection: Connection,
     bcm: BCMPinNumber,
     level: PinLevel,
+    timestamp: Duration,
 ) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
+    let level_change = LevelChange::new(level, timestamp);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
@@ -205,9 +212,8 @@ async fn send_input_level_async(
 fn send_input_level(
     connection: Connection,
     bcm: BCMPinNumber,
-    level: PinLevel,
+    level_change: LevelChange,
 ) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;

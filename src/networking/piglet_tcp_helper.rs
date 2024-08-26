@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
+use std::time::{Duration, Instant};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct TcpInfo {
@@ -104,8 +105,8 @@ pub async fn apply_config_change(
         NewConfig(config) => {
             info!("New config applied");
             let wc = writer.clone();
-            hardware.apply_config(&config, move |bcm, level| {
-                let _ = send_input_level(wc.clone(), bcm, level);
+            hardware.apply_config(&config, move |bcm, level_change| {
+                let _ = send_input_level(wc.clone(), bcm, level_change);
             })?;
 
             let _ = send_current_input_states(writer.clone(), &config, hardware).await;
@@ -128,8 +129,11 @@ pub async fn apply_config_change(
 /// Send a detected input level change back to the GUI using `writer` [TcpStream],
 /// timestamping with the current time in Utc
 // TODO they are looking for testers of async closures! This is the place!
-fn send_input_level(writer: TcpStream, bcm: BCMPinNumber, level: PinLevel) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
+fn send_input_level(
+    writer: TcpStream,
+    bcm: BCMPinNumber,
+    level_change: LevelChange,
+) -> anyhow::Result<()> {
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
@@ -150,8 +154,13 @@ pub async fn send_current_input_states(
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-                let _ =
-                    send_input_level_async(writer.clone(), *bcm_pin_number, initial_level).await;
+                let _ = send_input_level_async(
+                    writer.clone(),
+                    *bcm_pin_number,
+                    initial_level,
+                    Instant::now().elapsed(),
+                )
+                .await;
             }
         }
     }
@@ -165,8 +174,9 @@ async fn send_input_level_async(
     writer: TcpStream,
     bcm: BCMPinNumber,
     level: PinLevel,
+    timestamp: Duration,
 ) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
+    let level_change = LevelChange::new(level, timestamp);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;

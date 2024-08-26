@@ -65,14 +65,15 @@ impl PinState {
 mod test {
     use crate::hw_definition::config::LevelChange;
     use crate::views::pin_state::PinState;
+    use std::time::Instant;
 
     #[test]
     fn level_stores_last() {
         let mut state = PinState::new();
-        state.set_level(LevelChange::new(false));
-        state.set_level(LevelChange::new(true));
-        state.set_level(LevelChange::new(false));
-        state.set_level(LevelChange::new(true));
+        state.set_level(LevelChange::new(false, Instant::now().elapsed()));
+        state.set_level(LevelChange::new(true, Instant::now().elapsed()));
+        state.set_level(LevelChange::new(false, Instant::now().elapsed()));
+        state.set_level(LevelChange::new(true, Instant::now().elapsed()));
         assert_eq!(state.get_level(), Some(true));
     }
 }

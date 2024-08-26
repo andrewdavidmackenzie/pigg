@@ -12,7 +12,7 @@ use crate::hw_definition::{BCMPinNumber, PinLevel};
 use crate::hw::pin_descriptions::*;
 
 use super::Hardware;
-use crate::hw_definition::config::InputPull;
+use crate::hw_definition::config::{InputPull, LevelChange};
 use crate::hw_definition::description::{
     HardwareDescription, HardwareDetails, PinDescription, PinDescriptionSet,
 };
@@ -28,7 +28,6 @@ const GPIO_PIN_DESCRIPTIONS: [PinDescription; 40] = [
 ];
 
 enum Pin {
-    // Cache the input level and only report REAL edge changes
     Input(InputPin),
     Output(OutputPin),
 }
@@ -91,7 +90,7 @@ impl Hardware for HW {
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
+        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
@@ -113,7 +112,13 @@ impl Hardware for HW {
                         Trigger::Both,
                         Some(Duration::from_millis(1)),
                         move |event| {
-                            callback(bcm_pin_number, event.trigger == Trigger::RisingEdge);
+                            callback(
+                                bcm_pin_number,
+                                LevelChange::new(
+                                    event.trigger == Trigger::RisingEdge,
+                                    event.timestamp,
+                                ),
+                            );
                         },
                     )
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;

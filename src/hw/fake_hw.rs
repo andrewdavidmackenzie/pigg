@@ -1,5 +1,5 @@
 use rand::Rng;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 /// Fake Implementation of GPIO for hosts that don't have GPIO (Linux, macOS, Windows)
 use std::{io, thread};
 
@@ -9,6 +9,7 @@ use crate::hw_definition::description::{HardwareDetails, PinDescription, PinDesc
 use super::Hardware;
 use super::HardwareDescription;
 use crate::hw::pin_descriptions::*;
+use crate::hw_definition::config::LevelChange;
 
 /// FakeHW Pins - mimicking Model the 40 pin GPIO
 //noinspection DuplicatedCode
@@ -47,14 +48,16 @@ impl Hardware for HW {
         mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
+        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
         if let PinFunction::Input(_) = pin_function {
             thread::spawn(move || {
                 let mut rng = rand::thread_rng();
                 loop {
                     let level: bool = rng.gen();
-                    callback(bcm_pin_number, level);
+                    #[allow(clippy::unwrap_used)]
+                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                    callback(bcm_pin_number, LevelChange::new(level, now));
                     thread::sleep(Duration::from_millis(666));
                 }
             });

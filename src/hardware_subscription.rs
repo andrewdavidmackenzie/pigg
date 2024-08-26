@@ -19,6 +19,7 @@ use iced::{
     futures::{pin_mut, FutureExt},
 };
 use iced::{subscription, Subscription};
+use std::time::Instant;
 
 use crate::hw_definition::pin_function::PinFunction;
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
@@ -221,9 +222,9 @@ fn apply_config_change(
     match config_change {
         NewConfig(config) => {
             hardware
-                .apply_config(&config, move |bcm_pin_number, level| {
+                .apply_config(&config, move |bcm_pin_number, level_change| {
                     gui_sender_clone
-                        .try_send(InputChange(bcm_pin_number, LevelChange::new(level)))
+                        .try_send(InputChange(bcm_pin_number, level_change))
                         .unwrap();
                 })
                 .unwrap();
@@ -234,9 +235,9 @@ fn apply_config_change(
             let _ = hardware.apply_pin_config(
                 bcm_pin_number,
                 &new_function,
-                move |bcm_pin_number, level| {
+                move |bcm_pin_number, level_change| {
                     gui_sender_clone
-                        .try_send(InputChange(bcm_pin_number, LevelChange::new(level)))
+                        .try_send(InputChange(bcm_pin_number, level_change))
                         .unwrap();
                 },
             );
@@ -260,7 +261,7 @@ fn send_current_input_states(
             if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
                 let _ = tx.try_send(InputChange(
                     *bcm_pin_number,
-                    LevelChange::new(initial_level),
+                    LevelChange::new(initial_level, Instant::now().elapsed()),
                 ));
             }
         }

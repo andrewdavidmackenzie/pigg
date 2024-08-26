@@ -1,16 +1,21 @@
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
-use chrono::serde::ts_milliseconds;
-use chrono::{DateTime, Utc};
+#[cfg(not(feature = "std"))]
+use embassy_time::Instant;
+#[cfg(not(feature = "std"))]
+use heapless::FnvIndexMap;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "std")]
 use std::collections::HashMap;
+use std::time::Duration;
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HardwareConfig {
     #[cfg(feature = "std")]
     pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
+    #[cfg(not(feature = "std"))]
+    pub pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 40>,
 }
 
 /// This enum is for hardware config changes initiated in the GUI by the user,
@@ -35,8 +40,18 @@ pub enum HardwareConfigMessage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevelChange {
     pub new_level: PinLevel,
-    #[serde(with = "ts_milliseconds")]
-    pub timestamp: DateTime<Utc>,
+    pub timestamp: Duration,
+}
+
+impl LevelChange {
+    /// Create a new LevelChange event with the timestamp for now
+    #[allow(dead_code)] // for piglet
+    pub fn new(new_level: PinLevel, timestamp: Duration) -> Self {
+        Self {
+            new_level,
+            timestamp,
+        }
+    }
 }
 
 /// An input can be configured to have an optional pull-up or pull-down

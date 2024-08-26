@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
@@ -62,7 +62,7 @@ pub trait Hardware {
     /// This takes the GPIOConfig struct and configures all the pins in it
     fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static,
+        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.pin_functions {
@@ -80,7 +80,7 @@ pub trait Hardware {
         callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, PinLevel) + Send + Sync + Clone + 'static;
+        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static;
 
     /// Read the input level of an input using its [BCMPinNumber]
     #[allow(dead_code)] // for piglet

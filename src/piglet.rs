@@ -119,8 +119,8 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         let config = HardwareConfig::load(config_filename)?;
         info!("Config loaded from file: {config_filename}");
         trace!("{config}");
-        hw.apply_config(&config, |bcm_pin_number, level| {
-            info!("Pin #{bcm_pin_number} changed level to '{level}'")
+        hw.apply_config(&config, |bcm_pin_number, level_change| {
+            info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
         })?;
         trace!("Configuration applied to hardware");
     };

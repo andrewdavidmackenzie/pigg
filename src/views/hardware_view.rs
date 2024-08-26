@@ -9,7 +9,7 @@ use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
@@ -270,7 +270,7 @@ impl HardwareView {
                 self.pin_states
                     .entry(*bcm_pin_number)
                     .or_insert(PinState::new())
-                    .set_level(LevelChange::new(*level));
+                    .set_level(LevelChange::new(*level, Instant::now().elapsed()));
             }
         }
     }
@@ -523,12 +523,13 @@ fn get_pin_widget<'a>(
             }
         }
 
-        Some(Output(_)) => {
-            let output_toggler = toggler(
-                None,
-                pin_state.get_level().unwrap_or(false as PinLevel),
-                move |b| ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b)),
-            )
+        Some(Output(level)) => {
+            let output_toggler = toggler(None, level.unwrap_or(false as PinLevel), move |b| {
+                ChangeOutputLevel(
+                    bcm_pin_number.unwrap(),
+                    LevelChange::new(b, Instant::now().elapsed()),
+                )
+            })
             .size(TOGGLER_SIZE)
             .style(toggle_button_style.get_toggler_style());
 
@@ -536,11 +537,17 @@ fn get_pin_widget<'a>(
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
                     .on_press({
                         let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                        ChangeOutputLevel(
+                            bcm_pin_number.unwrap(),
+                            LevelChange::new(!level, Instant::now().elapsed()),
+                        )
                     })
                     .on_release({
                         let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level))
+                        ChangeOutputLevel(
+                            bcm_pin_number.unwrap(),
+                            LevelChange::new(!level, Instant::now().elapsed()),
+                        )
                     });
 
             let toggle_tooltip =

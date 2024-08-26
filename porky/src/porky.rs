@@ -28,10 +28,13 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_time::Timer;
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
+use heapless::FnvIndexMap;
 use heapless::Vec;
-use hw_definition::config::HardwareConfigMessage;
 use hw_definition::config::HardwareConfigMessage::*;
+use hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+use hw_definition::pin_function::PinFunction;
+use hw_definition::{BCMPinNumber, PinLevel};
 use panic_probe as _;
 use pin_descriptions::PIN_DESCRIPTIONS;
 use static_cell::StaticCell;
@@ -54,6 +57,12 @@ bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
     USBCTRL_IRQ => USBInterruptHandler<USB>;
 });
+
+#[derive(PartialOrd, PartialEq)]
+enum Pin {
+    Input,
+    Output,
+}
 
 #[embassy_executor::task]
 async fn wifi_task(
@@ -122,6 +131,167 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address>
     }
 }
 
+/// Wait until a message in received on the [TcpSocket] then deserialize it and return it
+async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessage> {
+    let mut buf = [0; 4096]; // TODO needed?
+
+    // wait for hardware config message
+    let n = socket.read(&mut buf).await.ok()?;
+    if n == 0 {
+        return None;
+    }
+
+    postcard::from_bytes(&buf[..n]).ok()
+}
+
+/// Read the input level of an input using the bcm pin number
+fn get_input_level(
+    configured_pins: &FnvIndexMap<BCMPinNumber, Pin, 40>,
+    bcm_pin_number: BCMPinNumber,
+) -> Option<bool> {
+    match configured_pins.get(&bcm_pin_number) {
+        Some(Pin::Input) => {
+            // TODO read input value
+            Some(false)
+        }
+        _ => None,
+    }
+}
+
+/// Set an output's level using the bcm pin number
+fn set_output_level(
+    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>,
+    bcm_pin_number: BCMPinNumber,
+    level: PinLevel,
+) {
+    info!("Pin #{} Output level change: {:?}", bcm_pin_number, level);
+
+    match configured_pins.get_mut(&bcm_pin_number) {
+        Some(Pin::Output) => {}
+        /*
+            match level {
+            true => output_pin.write(Level::High),
+            false => output_pin.write(Level::Low),
+        }, */
+        _ => {
+            error!("Could not find a configured output pin")
+        }
+    }
+}
+
+/// Send a detected input level change back to the GUI using `writer` [TcpStream],
+/// timestamping with the current time in Utc
+async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: PinLevel) {
+    let level_change = LevelChange::new(level);
+    let hardware_event = IOLevelChanged(bcm, level_change);
+    let mut buf = [0; 1024];
+    let message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
+    socket.write_all(&message).await.unwrap();
+}
+
+/// Send the current input state for all inputs configured in the config
+async fn send_current_input_states(
+    configured_pins: &FnvIndexMap<BCMPinNumber, Pin, 40>,
+    socket: &mut TcpSocket<'_>,
+) {
+    for (bcm_pin_number, pin) in configured_pins {
+        if pin == &Pin::Input {
+            if let Some(initial_level) = get_input_level(configured_pins, *bcm_pin_number) {
+                let _ = send_input_level(socket, *bcm_pin_number, initial_level).await;
+            }
+        }
+    }
+}
+
+/// Apply the requested config to one pin, using bcm_pin_number
+fn apply_pin_config(
+    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>,
+    bcm_pin_number: BCMPinNumber,
+    pin_function: &PinFunction,
+) {
+    // If it was already configured, remove it
+    configured_pins.remove(&bcm_pin_number);
+
+    match pin_function {
+        PinFunction::Input(_pull) => {
+            /*
+            let pin = Gpio::new()
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+                .get(bcm_pin_number)
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
+            let mut input = match pull {
+                None | Some(InputPull::None) => pin.into_input(),
+                Some(InputPull::PullUp) => pin.into_input_pullup(),
+                Some(InputPull::PullDown) => pin.into_input_pulldown(),
+            };
+            input
+                .set_async_interrupt(
+                    Trigger::Both,
+                    Some(Duration::from_millis(1)),
+                    move |event| {
+                        callback(bcm_pin_number, event.trigger == Trigger::RisingEdge);
+                    },
+                )
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                */
+            configured_pins.insert(bcm_pin_number, Pin::Input);
+        }
+
+        PinFunction::Output(_value) => {
+            /*
+            let pin = Gpio::new()
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+                .get(bcm_pin_number)
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            let output_pin = match value {
+                Some(true) => pin.into_output_high(),
+                Some(false) => pin.into_output_low(),
+                None => pin.into_output(),
+            };
+            */
+            configured_pins.insert(bcm_pin_number, Pin::Output);
+        }
+
+        _ => error!("Unsupported PinFunction"),
+    }
+
+    info!("New pin config for pin #{}", bcm_pin_number);
+}
+
+/// This takes the GPIOConfig struct and configures all the pins in it
+fn apply_config(configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>, config: &HardwareConfig) {
+    // Config only has pins that are configured
+    for (bcm_pin_number, pin_function) in &config.pin_functions {
+        apply_pin_config(configured_pins, *bcm_pin_number, pin_function);
+    }
+    info!("New config applied");
+}
+
+/// Apply a config change to the hardware
+/// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
+/// but wasn't working - so this uses a sync callback again to fix that, and an async version of
+/// send_input_level() for use directly from the async context
+async fn apply_config_change(
+    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>,
+    config_change: HardwareConfigMessage,
+    socket: &mut TcpSocket<'_>,
+) {
+    match config_change {
+        NewConfig(config) => {
+            apply_config(configured_pins, &config);
+
+            let _ = send_current_input_states(configured_pins, socket).await;
+        }
+        NewPinConfig(bcm, pin_function) => {
+            apply_pin_config(configured_pins, bcm, &pin_function);
+        }
+        IOLevelChanged(bcm, level_change) => {
+            set_output_level(configured_pins, bcm, level_change.new_level);
+        }
+    }
+}
+
 /// Wait for an incoming TCP connection, then respond to it with the [HardwareDescription]
 async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device_id: &[u8; 8]) {
     let mut buf = [0; 4096];
@@ -160,54 +330,6 @@ async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device
     socket.write_all(slice).await.unwrap();
 }
 
-/// Wait until a message in received on the [TcpSocket] then deserialize it and return it
-async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessage> {
-    let mut buf = [0; 4096]; // TODO needed?
-
-    // wait for hardware config message
-    let n = socket.read(&mut buf).await.ok()?;
-    if n == 0 {
-        return None;
-    }
-
-    postcard::from_bytes(&buf[..n]).ok()
-}
-
-/// Apply a config change to the hardware
-/// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
-/// but wasn't working - so this uses a sync callback again to fix that, and an async version of
-/// send_input_level() for use directly from the async context
-async fn apply_config_change(config_change: HardwareConfigMessage, _socket: &mut TcpSocket<'_>) {
-    match config_change {
-        NewConfig(_config) => {
-            info!("New config applied");
-            /*
-            let wc = writer.clone();
-            hardware.apply_config(&config, move |bcm, level| {
-                let _ = send_input_level(wc.clone(), bcm, level);
-            })?;
-
-            let _ = send_current_input_states(writer.clone(), &config, hardware).await;
-             */
-        }
-        NewPinConfig(bcm, _pin_function) => {
-            info!("New pin config for pin #{}", bcm);
-            /*
-            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                let _ = send_input_level(writer.clone(), bcm, level);
-            });
-             */
-        }
-        IOLevelChanged(bcm, level_change) => {
-            info!(
-                "Pin #{} Output level change: {:?}",
-                bcm, level_change.new_level
-            );
-            //            let _ = hardware.set_output_level(bcm, level_change.new_level);
-        }
-    }
-}
-
 /// Enter the message loop, processing config change messages from piggui
 async fn message_loop<'a>(
     device_id: [u8; 8],
@@ -226,10 +348,13 @@ async fn message_loop<'a>(
     // wait for a connection from `piggui`
     tcp_accept(&mut socket, &ip_address, &device_id).await;
 
+    let mut configured_pins: FnvIndexMap<BCMPinNumber, Pin, 40> =
+        FnvIndexMap::<BCMPinNumber, Pin, 40>::new();
+
     info!("Entering message loop");
     loop {
         if let Some(config_message) = wait_message(&mut socket).await {
-            let _ = apply_config_change(config_message, &mut socket).await;
+            let _ = apply_config_change(&mut configured_pins, config_message, &mut socket).await;
         }
 
         /*

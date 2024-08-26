@@ -42,8 +42,13 @@ where
 
 impl From<LevelChange> for Sample<PinLevel> {
     fn from(level_change: LevelChange) -> Self {
+        let time = DateTime::from_timestamp(
+            level_change.timestamp.as_secs() as i64,
+            level_change.timestamp.subsec_nanos(),
+        )
+        .unwrap();
         Self {
-            time: level_change.timestamp,
+            time,
             value: level_change.new_level,
         }
     }
@@ -232,10 +237,11 @@ where
 #[cfg(test)]
 mod test {
     use std::ops::Sub;
-    use std::time::Duration;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    use chrono::Utc;
+    use chrono::{DateTime, Utc};
     use plotters::prelude::{RGBAColor, ShapeStyle};
+    use tokio::time::Instant;
 
     use crate::hw_definition::{config::LevelChange, PinLevel};
     use crate::views::waveform::{ChartType, Sample, Waveform};
@@ -256,16 +262,18 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let high_sent_time = Utc::now().sub(Duration::from_secs(2));
-        chart.push_data(Sample {
-            time: high_sent_time,
-            value: true,
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+
+        let high_sent_time = now.sub(Duration::from_secs(2));
+        chart.push_data(LevelChange {
+            timestamp: high_sent_time,
+            new_level: true,
         });
 
-        let low_sent_time = Utc::now().sub(Duration::from_secs(1));
-        chart.push_data(Sample {
-            time: low_sent_time,
-            value: false,
+        let low_sent_time = now.sub(Duration::from_secs(1));
+        chart.push_data(LevelChange {
+            timestamp: low_sent_time,
+            new_level: false,
         });
 
         let data = chart.get_data();
@@ -275,13 +283,13 @@ mod test {
         assert_eq!(data.first().unwrap().1, 0);
 
         // Next most recent value should be "low" value sent
-        assert_eq!(data.get(1).unwrap(), &(low_sent_time, 0));
+        assert_eq!(data.get(1).unwrap(), &(datetime(low_sent_time), 0));
 
         // Next most recent value should be the "high" inserted when "low" was sent
-        assert_eq!(data.get(2).unwrap(), &(low_sent_time, 1));
+        assert_eq!(data.get(2).unwrap(), &(datetime(low_sent_time), 1));
 
         // Next most recent value should be the "high" sent initially
-        assert_eq!(data.get(3).unwrap(), &(high_sent_time, 1));
+        assert_eq!(data.get(3).unwrap(), &(datetime(high_sent_time), 1));
     }
 
     #[test]
@@ -294,16 +302,18 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let low_sent_time = Utc::now().sub(Duration::from_secs(2));
-        chart.push_data(Sample {
-            time: low_sent_time,
-            value: false,
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+
+        let low_sent_time = now.sub(Duration::from_secs(2));
+        chart.push_data(LevelChange {
+            timestamp: low_sent_time,
+            new_level: false,
         });
 
-        let high_sent_time = Utc::now().sub(Duration::from_secs(1));
-        chart.push_data(Sample {
-            time: high_sent_time,
-            value: true,
+        let high_sent_time = now.sub(Duration::from_secs(1));
+        chart.push_data(LevelChange {
+            timestamp: high_sent_time,
+            new_level: true,
         });
 
         let data = chart.get_data();
@@ -313,13 +323,13 @@ mod test {
         assert_eq!(data.first().unwrap().1, 1);
 
         // Next most recent value should be "high" value sent
-        assert_eq!(data.get(1).unwrap(), &(high_sent_time, 1));
+        assert_eq!(data.get(1).unwrap(), &(datetime(high_sent_time), 1));
 
         // Next most recent value should be the "low" inserted when "high" was sent
-        assert_eq!(data.get(2).unwrap(), &(high_sent_time, 0));
+        assert_eq!(data.get(2).unwrap(), &(datetime(high_sent_time), 0));
 
         // Next most recent value should be the "low" sent initially
-        assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
+        assert_eq!(data.get(3).unwrap(), &(datetime(low_sent_time), 0));
     }
 
     #[test]
@@ -333,10 +343,11 @@ mod test {
         );
 
         // create a sample older than the window
-        let sent_time = Utc::now().sub(Duration::from_secs(20));
-        chart.push_data(Sample {
-            time: sent_time,
-            value: false,
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let sent_time = now.sub(Duration::from_secs(20));
+        chart.push_data(LevelChange {
+            timestamp: sent_time,
+            new_level: false,
         });
 
         // Check the raw data still contains it
@@ -352,7 +363,7 @@ mod test {
         assert_eq!(data.first().unwrap().1, 0);
 
         // Next most recent value should be "low" value sent
-        assert_eq!(data.get(1).unwrap(), &(sent_time, 0));
+        assert_eq!(data.get(1).unwrap(), &(datetime(sent_time), 0));
     }
 
     #[test]
@@ -394,8 +405,13 @@ mod test {
         assert_eq!(data.get(1).unwrap(), &(next_oldest, 0));
     }
 
+    fn datetime(timestamp: Duration) -> DateTime<Utc> {
+        DateTime::from_timestamp(timestamp.as_secs() as i64, timestamp.subsec_nanos()).unwrap()
+    }
+
     #[test]
     fn expired_then_new_sample() {
+        // Create a chart that spans the last 10 seconds
         let mut chart = Waveform::<PinLevel>::new(
             ChartType::Squarewave(false, true),
             CHART_LINE_STYLE,
@@ -404,9 +420,9 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = Utc::now();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
-        // create a sample that will be added but then pruned as it's older than the window
+        // create a sample from 20s ago. It should pruned as it's older than the chart window
         let low_sent_time = now.sub(Duration::from_secs(20));
         let low_sample = LevelChange {
             new_level: false,
@@ -417,15 +433,15 @@ mod test {
 
         // Send a sample in the middle of the time window
         let high_sent_time = now.sub(Duration::from_secs(5));
-        let high_sample = Sample {
-            time: high_sent_time,
-            value: true,
+        let high_sample = LevelChange {
+            timestamp: high_sent_time,
+            new_level: true,
         };
         chart.push_data(high_sample.clone());
 
         // Check the raw data has both
         assert_eq!(chart.samples.len(), 2);
-        assert_eq!(chart.samples.front().unwrap(), &high_sample);
+        assert_eq!(chart.samples.front().unwrap(), &high_sample.into());
         assert_eq!(chart.samples.get(1).unwrap(), &low_sample.into());
 
         // Get the chart data
@@ -442,13 +458,13 @@ mod test {
         assert_eq!(data.first().unwrap().1, 1);
 
         // Next most recent value should be "high" value sent
-        assert_eq!(data.get(1).unwrap(), &(high_sent_time, 1));
+        assert_eq!(data.get(1).unwrap(), &(datetime(high_sent_time), 1));
 
         // Next most recent value should be "low" added with same time as "high" sent
-        assert_eq!(data.get(2).unwrap(), &(high_sent_time, 0));
+        assert_eq!(data.get(2).unwrap(), &(datetime(high_sent_time), 0));
 
         // Next most recent value should be "low" that is outside window but kept
-        assert_eq!(data.get(3).unwrap(), &(low_sent_time, 0));
+        assert_eq!(data.get(3).unwrap(), &(datetime(low_sent_time), 0));
     }
 
     #[test]
@@ -468,7 +484,7 @@ mod test {
     fn display_sample() {
         let level_change = LevelChange {
             new_level: false,
-            timestamp: Utc::now(),
+            timestamp: Instant::now().elapsed(),
         };
 
         let sample: Sample<PinLevel> = level_change.into();
@@ -515,7 +531,7 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = Utc::now();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
         // Create an old low sample that is out of the display window
         let old_sample = LevelChange {
@@ -560,7 +576,7 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = Utc::now();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
         // Create an old high sample that is out of the display window
         let old_sample = LevelChange {
@@ -605,7 +621,7 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = Utc::now();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
         // Create a low sample that is in the display window
         let old_sample = LevelChange {
@@ -657,7 +673,7 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = Utc::now();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
         // Create a high sample that is in the display window
         let old_sample = LevelChange {
