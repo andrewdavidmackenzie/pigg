@@ -7,7 +7,10 @@ runner = ["probe-rs",
     "--chip",
     "RP2040",
     "--protocol",
-    "swd"]
+    "swd",
+    "--log-format",
+    "{[{L}]%bold} {s}  {{c}"
+]
 #runner = "probe-rs run --chip RP2040"
 #runner = "elf2uf2-rs -d"
 
