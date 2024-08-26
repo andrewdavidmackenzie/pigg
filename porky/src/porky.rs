@@ -183,7 +183,7 @@ fn set_output_level(
 /// Send a detected input level change back to the GUI using `writer` [TcpStream],
 /// timestamping with the current time in Utc
 async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: PinLevel) {
-    let level_change = LevelChange::new(level, Instant::now().duration_since(Instant::MIN));
+    let level_change = LevelChange::new(level, Instant::now().duration_since(Instant::MIN).into());
     let hardware_event = IOLevelChanged(bcm, level_change);
     let mut buf = [0; 1024];
     let message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
