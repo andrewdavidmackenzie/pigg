@@ -7,6 +7,7 @@ use heapless::FnvIndexMap;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "std")]
 use std::collections::HashMap;
+#[cfg(feature = "std")]
 use std::time::Duration;
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
