@@ -390,7 +390,7 @@ impl ConnectDialog {
                 .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
 
         let active_tab_button_style = ButtonStyle {
-            bg_color: Color::BLACK, // Black background for active tab
+            bg_color: Color::BLACK,   // Black background for active tab
             text_color: Color::WHITE, // White text for contrast
             hovered_bg_color: Color::from_rgb(0.1, 0.1, 0.1), // Slightly lighter black when hovered
             hovered_text_color: Color::WHITE,
@@ -405,7 +405,6 @@ impl ConnectDialog {
             border_radius: 4.0,
         };
 
-
         let connection_type_iroh = text("Connect To Remote Pi Using Iroh").size(20);
 
         let connection_type_tcp = text("Connect To Remote Pi Using Tcp").size(20);
@@ -416,7 +415,7 @@ impl ConnectDialog {
                         Button::new(Text::new("Connect using Iroh").size(16))
                             .on_press(Message::ConnectDialog(DisplayIrohTab))
                             .style(active_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using raw TCP").size(16))
+                        Button::new(Text::new("Connect using TCP").size(16))
                             .on_press(Message::ConnectDialog(DisplayTcpTab))
                             .style(inactive_tab_button_style.get_button_style())
                     ],
@@ -452,7 +451,7 @@ impl ConnectDialog {
                         Button::new(Text::new("Connect using Iroh").size(16))
                             .on_press(Message::ConnectDialog(DisplayIrohTab))
                             .style(inactive_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using raw TCP").size(16))
+                        Button::new(Text::new("Connect using TCP").size(16))
                             .on_press(Message::ConnectDialog(DisplayTcpTab))
                             .style(active_tab_button_style.get_button_style())
                     ],
@@ -484,12 +483,14 @@ impl ConnectDialog {
         } else if !self.disable_widgets && !self.display_iroh {
             container(
                 column![
-                    row![Button::new(Text::new("Connect using Iroh").size(16))
+                    row![
+                        Button::new(Text::new("Connect using Iroh").size(16))
                             .on_press(Message::ConnectDialog(DisplayIrohTab))
                             .style(inactive_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using raw TCP").size(16))
+                        Button::new(Text::new("Connect using TCP").size(16))
                             .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(active_tab_button_style.get_button_style())],
+                            .style(active_tab_button_style.get_button_style())
+                    ],
                     column![
                         connection_type_tcp,
                         column![
@@ -526,12 +527,14 @@ impl ConnectDialog {
         } else {
             container(
                 column![
-                    row![Button::new(Text::new("Connect using Iroh").size(16))
+                    row![
+                        Button::new(Text::new("Connect using Iroh").size(16))
                             .on_press(Message::ConnectDialog(DisplayIrohTab))
                             .style(active_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using raw TCP").size(16))
+                        Button::new(Text::new("Connect using TCP").size(16))
                             .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(inactive_tab_button_style.get_button_style())],
+                            .style(inactive_tab_button_style.get_button_style())
+                    ],
                     column![
                         connection_type_iroh,
                         column![
