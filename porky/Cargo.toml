@@ -35,7 +35,7 @@ smoltcp = { version = "0.11.0", default-features = false, features = ["dns-max-s
 serde = { version = "1.0.208", default-features = false, features = ["derive"] } # no_std
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
-chrono = { version = "0.4", default-features = false, features = ["serde"] }
+#chrono = { version = "0.4", default-features = false, features = ["serde"] }
 
 [build-dependencies]
 # for reading config from a file in build.rs

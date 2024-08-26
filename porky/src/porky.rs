@@ -25,6 +25,7 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
+use embassy_time::Instant;
 use embassy_time::Timer;
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
@@ -146,7 +147,7 @@ async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessag
 
 /// Read the input level of an input using the bcm pin number
 fn get_input_level(
-    configured_pins: &FnvIndexMap<BCMPinNumber, Pin, 40>,
+    configured_pins: &FnvIndexMap<BCMPinNumber, Pin, 64>,
     bcm_pin_number: BCMPinNumber,
 ) -> Option<bool> {
     match configured_pins.get(&bcm_pin_number) {
@@ -160,7 +161,7 @@ fn get_input_level(
 
 /// Set an output's level using the bcm pin number
 fn set_output_level(
-    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>,
+    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>,
     bcm_pin_number: BCMPinNumber,
     level: PinLevel,
 ) {
@@ -182,7 +183,7 @@ fn set_output_level(
 /// Send a detected input level change back to the GUI using `writer` [TcpStream],
 /// timestamping with the current time in Utc
 async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: PinLevel) {
-    let level_change = LevelChange::new(level);
+    let level_change = LevelChange::new(level, Instant::now().duration_since(Instant::MIN));
     let hardware_event = IOLevelChanged(bcm, level_change);
     let mut buf = [0; 1024];
     let message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
@@ -191,7 +192,7 @@ async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: 
 
 /// Send the current input state for all inputs configured in the config
 async fn send_current_input_states(
-    configured_pins: &FnvIndexMap<BCMPinNumber, Pin, 40>,
+    configured_pins: &FnvIndexMap<BCMPinNumber, Pin, 64>,
     socket: &mut TcpSocket<'_>,
 ) {
     for (bcm_pin_number, pin) in configured_pins {
@@ -205,7 +206,7 @@ async fn send_current_input_states(
 
 /// Apply the requested config to one pin, using bcm_pin_number
 fn apply_pin_config(
-    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>,
+    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>,
     bcm_pin_number: BCMPinNumber,
     pin_function: &PinFunction,
 ) {
@@ -235,7 +236,7 @@ fn apply_pin_config(
                 )
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
                 */
-            configured_pins.insert(bcm_pin_number, Pin::Input);
+            let _ = configured_pins.insert(bcm_pin_number, Pin::Input);
         }
 
         PinFunction::Output(_value) => {
@@ -250,7 +251,7 @@ fn apply_pin_config(
                 None => pin.into_output(),
             };
             */
-            configured_pins.insert(bcm_pin_number, Pin::Output);
+            let _ = configured_pins.insert(bcm_pin_number, Pin::Output);
         }
 
         _ => error!("Unsupported PinFunction"),
@@ -260,7 +261,7 @@ fn apply_pin_config(
 }
 
 /// This takes the GPIOConfig struct and configures all the pins in it
-fn apply_config(configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>, config: &HardwareConfig) {
+fn apply_config(configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>, config: &HardwareConfig) {
     // Config only has pins that are configured
     for (bcm_pin_number, pin_function) in &config.pin_functions {
         apply_pin_config(configured_pins, *bcm_pin_number, pin_function);
@@ -273,7 +274,7 @@ fn apply_config(configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>, config
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
 async fn apply_config_change(
-    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 40>,
+    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>,
     config_change: HardwareConfigMessage,
     socket: &mut TcpSocket<'_>,
 ) {
@@ -348,8 +349,7 @@ async fn message_loop<'a>(
     // wait for a connection from `piggui`
     tcp_accept(&mut socket, &ip_address, &device_id).await;
 
-    let mut configured_pins: FnvIndexMap<BCMPinNumber, Pin, 40> =
-        FnvIndexMap::<BCMPinNumber, Pin, 40>::new();
+    let mut configured_pins = FnvIndexMap::<BCMPinNumber, Pin, 64>::new();
 
     info!("Entering message loop");
     loop {

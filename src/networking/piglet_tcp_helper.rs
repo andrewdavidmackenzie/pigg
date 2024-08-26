@@ -113,8 +113,8 @@ pub async fn apply_config_change(
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
-            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                let _ = send_input_level(writer.clone(), bcm, level);
+            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level_change| {
+                let _ = send_input_level(writer.clone(), bcm, level_change);
             });
         }
         IOLevelChanged(bcm, level_change) => {
