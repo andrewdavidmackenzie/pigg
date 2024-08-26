@@ -52,6 +52,13 @@ impl From<embassy_time::Duration> for Duration {
     }
 }
 
+#[cfg(not(feature = "std"))]
+impl From<Duration> for embassy_time::Duration {
+    fn from(duration: Duration) -> Self {
+        embassy_time::Duration::from_nanos((duration.secs * 1_000_000_000) + duration.nanos as u64)
+    }
+}
+
 /// LevelChange describes the change in level of an input or Output
 /// - `new_level` : [PinLevel]
 /// - `timestamp` : [DateTime<Utc>]
