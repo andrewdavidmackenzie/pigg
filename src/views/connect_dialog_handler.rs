@@ -232,7 +232,7 @@ impl ConnectDialog {
 
             #[cfg(feature = "tcp")]
             ShowConnectDialogTcp => {
-                self.show_modal = true; // TODO
+                self.show_modal = true;
                 Command::none()
             }
 
@@ -598,7 +598,9 @@ impl ConnectDialog {
 
 #[cfg(test)]
 mod tests {
+    use crate::views::connect_dialog_handler::ConnectDialogMessage::ConnectionButtonPressedTcp;
     use super::*;
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_show_connect_dialog() {
         let mut connect_dialog = ConnectDialog::new();
@@ -607,7 +609,7 @@ mod tests {
         let _ = connect_dialog.update(ShowConnectDialogIroh);
         assert!(connect_dialog.show_modal);
     }
-
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_hide_connect_dialog() {
         let mut connect_dialog = ConnectDialog::new();
@@ -622,6 +624,7 @@ mod tests {
         assert!(!connect_dialog.disable_widgets);
     }
 
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_node_id_entered() {
         let mut connect_dialog = ConnectDialog::new();
@@ -631,6 +634,7 @@ mod tests {
         assert_eq!(connect_dialog.nodeid, node_id);
     }
 
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_relay_url_entered() {
         let mut connect_dialog = ConnectDialog::new();
@@ -640,6 +644,7 @@ mod tests {
         assert_eq!(connect_dialog.relay_url, relay_url);
     }
 
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_connect_button_pressed_empty_node_id() {
         let mut connect_dialog = ConnectDialog::new();
@@ -664,5 +669,67 @@ mod tests {
 
         let _ = connect_dialog.update(ConnectionError(error_message.clone()));
         assert_eq!(connect_dialog.iroh_connection_error, error_message);
+    }
+
+    #[cfg(feature = "tcp")]
+    #[test]
+    fn test_ip_address_entered() {
+        let mut connect_dialog = ConnectDialog::new();
+        let ip_address = "192.168.1.1".to_string();
+
+        let _ = connect_dialog.update(IpAddressEntered(ip_address.clone()));
+        assert_eq!(connect_dialog.ip_address, ip_address);
+    }
+
+    #[cfg(feature = "tcp")]
+    #[test]
+    fn test_port_number_entered() {
+        let mut connect_dialog = ConnectDialog::new();
+        let port_number = "8080".to_string();
+
+        let _ = connect_dialog.update(PortNumberEntered(port_number.clone()));
+        assert_eq!(connect_dialog.port_number, port_number);
+    }
+
+    #[cfg(feature = "tcp")]
+    #[test]
+    fn test_connection_button_pressed_tcp_empty_ip() {
+        let mut connect_dialog = ConnectDialog::new();
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp("".to_string(), "8080".to_string()));
+        assert_eq!(connect_dialog.tcp_connection_error, "Please Enter IP Address");
+    }
+
+    #[cfg(feature = "tcp")]
+    #[test]
+    fn test_connection_button_pressed_tcp_empty_port() {
+        let mut connect_dialog = ConnectDialog::new();
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp("192.168.1.1".to_string(), "".to_string()));
+        assert_eq!(connect_dialog.tcp_connection_error, "Please Enter Port Number");
+    }
+
+    #[cfg(feature = "tcp")]
+    #[test]
+    fn test_connection_button_pressed_tcp_invalid_ip() {
+        let mut connect_dialog = ConnectDialog::new();
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp("invalid_ip".to_string(), "8080".to_string()));
+        assert_eq!(connect_dialog.tcp_connection_error, "Invalid IP Address: invalid IP address syntax");
+    }
+
+    #[cfg(feature = "tcp")]
+    #[test]
+    fn test_connection_button_pressed_tcp_invalid_port() {
+        let mut connect_dialog = ConnectDialog::new();
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp("192.168.1.1".to_string(), "invalid_port".to_string()));
+        assert_eq!(connect_dialog.tcp_connection_error, "Invalid Port Number: invalid digit found in string");
+    }
+
+    #[cfg(feature = "tcp")]
+    #[test]
+    fn test_connection_button_pressed_tcp_valid_ip_and_port() {
+        let mut connect_dialog = ConnectDialog::new();
+        let _ = connect_dialog.update(IpAddressEntered("192.168.1.1".to_string()));
+        let _ = connect_dialog.update(PortNumberEntered("8080".to_string()));
+
+        assert!(connect_dialog.tcp_connection_error.is_empty());
     }
 }
