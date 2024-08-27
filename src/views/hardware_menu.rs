@@ -37,22 +37,12 @@ pub fn item<'a>(
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
 
-    #[cfg(feature = "iroh")]
-    let connect_iroh: Item<'a, Message, _, _> = Item::new(
-        Button::new("Connect to remote Pi using Iroh...")
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    let connect: Item<'a, Message, _, _> = Item::new(
+        Button::new("Connect to remote Pi ...")
             .width(Length::Fill)
             .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::ShowConnectDialogIroh,
-            ))
-            .style(MENU_BUTTON_STYLE.get_button_style()),
-    );
-
-    #[cfg(feature = "tcp")]
-    let connect_tcp: Item<'a, Message, _, _> = Item::new(
-        Button::new("Connect to remote Pi using TCP...")
-            .width(Length::Fill)
-            .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::ShowConnectDialogIroh,
+                ConnectDialogMessage::ShowConnectDialog,
             ))
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
@@ -66,18 +56,14 @@ pub fn item<'a>(
 
     match hardware_target {
         NoHW => {
-            #[cfg(feature = "iroh")]
-            menu_items.push(connect_iroh);
-            #[cfg(feature = "tcp")]
-            menu_items.push(connect_tcp);
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
+            menu_items.push(connect);
             menu_items.push(connect_local);
         }
         Local => {
             menu_items.push(disconnect);
-            #[cfg(feature = "iroh")]
-            menu_items.push(connect_iroh);
-            #[cfg(feature = "tcp")]
-            menu_items.push(connect_tcp);
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
+            menu_items.push(connect);
         }
         #[cfg(feature = "iroh")]
         Iroh(_, _) => {
