@@ -8,7 +8,7 @@ use core::str::from_utf8;
 use cyw43::Control;
 use cyw43::NetDriver;
 use cyw43_pio::PioSpi;
-use defmt::{error, info, warn};
+use defmt::{debug, error, info, warn};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_net::tcp::TcpSocket;
@@ -166,7 +166,7 @@ async fn set_output_level(
     bcm_pin_number: BCMPinNumber,
     level: PinLevel,
 ) {
-    info!("Pin #{} Output level change: {:?}", bcm_pin_number, level);
+    debug!("Pin #{} Output level change: {:?}", bcm_pin_number, level);
 
     match configured_pins.get_mut(&bcm_pin_number) {
         Some(Pin::Output) => {
