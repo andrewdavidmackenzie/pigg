@@ -451,7 +451,7 @@ impl ConnectDialog {
             .into()
     }
 
-    fn create_iroh_container(&self, enable_input: bool) -> Element<'_, Message> {
+    fn create_iroh_container(&self, input_enabled: bool) -> Element<'_, Message> {
         container(
             column![
             self.create_tab_buttons(true),
@@ -464,7 +464,7 @@ impl ConnectDialog {
                     text("Node Id").size(12),
                     {
                         let mut node_input = text_input("Enter node id", &self.nodeid).padding(5);
-                        if enable_input {
+                        if input_enabled {
                             node_input = node_input.on_input(|input| Message::ConnectDialog(
                                 ConnectDialogMessage::NodeIdEntered(input)
                             ));
@@ -477,7 +477,7 @@ impl ConnectDialog {
                     text("Relay URL (Optional)").size(12),
                     {
                         let mut relay_input = text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5);
-                        if enable_input {
+                        if input_enabled {
                             relay_input = relay_input.on_input(|input| Message::ConnectDialog(
                                 ConnectDialogMessage::RelayURL(input)
                             ));
