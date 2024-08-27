@@ -1,7 +1,6 @@
 use crate::views::connect_dialog_handler::ConnectDialogMessage::{
     ConnectButtonPressed, ConnectionError, DisplayIrohTab, DisplayTcpTab, HideConnectDialog,
-    IpAddressEntered, ModalKeyEvent, NodeIdEntered, PortNumberEntered, RelayURL,
-    ShowConnectDialogIroh, ShowConnectDialogTcp,
+    IpAddressEntered, ModalKeyEvent, NodeIdEntered, PortNumberEntered, RelayURL, ShowConnectDialog,
 };
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
@@ -93,9 +92,7 @@ pub enum ConnectDialogMessage {
     ConnectButtonPressed(String, String),
     ConnectionButtonPressedTcp(String, String),
     HideConnectDialog,
-    ShowConnectDialogIroh,
-    #[cfg(feature = "tcp")]
-    ShowConnectDialogTcp,
+    ShowConnectDialog,
     ConnectionError(String),
     DisplayIrohTab,
     #[cfg(feature = "tcp")]
@@ -248,13 +245,7 @@ impl ConnectDialog {
                 Command::none()
             }
 
-            ShowConnectDialogIroh => {
-                self.show_modal = true;
-                Command::none()
-            }
-
-            #[cfg(feature = "tcp")]
-            ShowConnectDialogTcp => {
+            ShowConnectDialog => {
                 self.show_modal = true;
                 Command::none()
             }
@@ -320,7 +311,7 @@ impl ConnectDialog {
         }
     }
 
-    pub fn view<'a>(&self) -> Element<'_, Message> {
+    pub fn view(&self) -> Element<'_, Message> {
         if self.disable_widgets && self.display_iroh {
             self.create_iroh_container(false)
         } else if self.disable_widgets && !self.display_iroh {
@@ -454,95 +445,99 @@ impl ConnectDialog {
     fn create_iroh_container(&self, input_enabled: bool) -> Element<'_, Message> {
         container(
             column![
-            self.create_tab_buttons(true),
-            column![
-                text("Connect To Remote Pi Using Iroh").size(20),
+                self.create_tab_buttons(true),
                 column![
-                    self.create_text_container(),
-                    text(self.iroh_connection_error.clone())
-                        .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                    text("Node Id").size(12),
-                    {
-                        let mut node_input = text_input("Enter node id", &self.nodeid).padding(5);
-                        if input_enabled {
-                            node_input = node_input.on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::NodeIdEntered(input)
-                            ));
+                    text("Connect To Remote Pi Using Iroh").size(20),
+                    column![
+                        self.create_text_container(),
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("Node Id").size(12),
+                        {
+                            let mut node_input =
+                                text_input("Enter node id", &self.nodeid).padding(5);
+                            if input_enabled {
+                                node_input = node_input.on_input(|input| {
+                                    Message::ConnectDialog(ConnectDialogMessage::NodeIdEntered(
+                                        input,
+                                    ))
+                                });
+                            }
+                            node_input
                         }
-                        node_input
-                    }
-                ]
-                .spacing(10),
-                column![
-                    text("Relay URL (Optional)").size(12),
-                    {
-                        let mut relay_input = text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5);
+                    ]
+                    .spacing(10),
+                    column![text("Relay URL (Optional)").size(12), {
+                        let mut relay_input =
+                            text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5);
                         if input_enabled {
-                            relay_input = relay_input.on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::RelayURL(input)
-                            ));
+                            relay_input = relay_input.on_input(|input| {
+                                Message::ConnectDialog(ConnectDialogMessage::RelayURL(input))
+                            });
                         }
                         relay_input
-                    }
+                    }]
+                    .spacing(5),
+                    self.create_connection_row(),
                 ]
-                .spacing(5),
-                self.create_connection_row(),
+                .spacing(10)
             ]
-            .spacing(10)
-        ]
-                .spacing(20),
+            .spacing(20),
         )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
     }
 
     fn create_tcp_container(&self, input_enabled: bool) -> Element<'_, Message> {
         container(
             column![
-            self.create_tab_buttons(false),
-            column![
-                text("Connect To Remote Pi Using Tcp").size(20),
+                self.create_tab_buttons(false),
                 column![
-                    self.create_tcp_text_container(),
-                    text(self.tcp_connection_error.clone())
-                        .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                    text("IP Address").size(12),
-                    {
-                        let mut ip_input = text_input("Enter IP Address", &self.ip_address).padding(5);
-                        if input_enabled {
-                            ip_input = ip_input.on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::IpAddressEntered(input)
-                            ));
+                    text("Connect To Remote Pi Using Tcp").size(20),
+                    column![
+                        self.create_tcp_text_container(),
+                        text(self.tcp_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("IP Address").size(12),
+                        {
+                            let mut ip_input =
+                                text_input("Enter IP Address", &self.ip_address).padding(5);
+                            if input_enabled {
+                                ip_input = ip_input.on_input(|input| {
+                                    Message::ConnectDialog(ConnectDialogMessage::IpAddressEntered(
+                                        input,
+                                    ))
+                                });
+                            }
+                            ip_input
                         }
-                        ip_input
-                    }
-                ]
-                .spacing(10),
-                column![
-                    text("Port Number").size(12),
-                    {
-                        let mut port_input = text_input("Enter Port Number", &self.port_number).padding(5);
+                    ]
+                    .spacing(10),
+                    column![text("Port Number").size(12), {
+                        let mut port_input =
+                            text_input("Enter Port Number", &self.port_number).padding(5);
                         if input_enabled {
-                            port_input = port_input.on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::PortNumberEntered(input)
-                            ));
+                            port_input = port_input.on_input(|input| {
+                                Message::ConnectDialog(ConnectDialogMessage::PortNumberEntered(
+                                    input,
+                                ))
+                            });
                         }
                         port_input
-                    }
+                    }]
+                    .spacing(5),
+                    self.create_connection_row_tcp(),
                 ]
-                .spacing(5),
-                self.create_connection_row_tcp(),
+                .spacing(10)
             ]
-            .spacing(10)
-        ]
-                .spacing(20),
+            .spacing(20),
         )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
     }
 
     fn create_tab_buttons(&self, is_iroh_active: bool) -> Element<'_, Message> {
@@ -562,7 +557,8 @@ impl ConnectDialog {
                             .width(Length::Fixed(260f32)),
                     )
                     .spacing(5),
-            ).style(TAB_BAR_STYLE.get_container_style())
+            )
+            .style(TAB_BAR_STYLE.get_container_style())
             .into()
         } else {
             container(
@@ -580,7 +576,8 @@ impl ConnectDialog {
                             .width(Length::Fixed(260f32)),
                     )
                     .spacing(5),
-            ).style(TAB_BAR_STYLE.get_container_style())
+            )
+            .style(TAB_BAR_STYLE.get_container_style())
             .into()
         }
     }
@@ -590,13 +587,13 @@ impl ConnectDialog {
 mod tests {
     use super::*;
     use crate::views::connect_dialog_handler::ConnectDialogMessage::ConnectionButtonPressedTcp;
-    #[cfg(feature = "iroh")]
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     #[test]
     fn test_show_connect_dialog() {
         let mut connect_dialog = ConnectDialog::new();
         assert!(!connect_dialog.show_modal);
 
-        let _ = connect_dialog.update(ShowConnectDialogIroh);
+        let _ = connect_dialog.update(ShowConnectDialog);
         assert!(connect_dialog.show_modal);
     }
     #[cfg(feature = "iroh")]

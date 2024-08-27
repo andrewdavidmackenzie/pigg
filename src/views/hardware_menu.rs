@@ -41,7 +41,7 @@ pub fn item<'a>(
         Button::new("Connect to remote Pi ...")
             .width(Length::Fill)
             .on_press(Message::ConnectDialog(
-                ConnectDialogMessage::ShowConnectDialogIroh,
+                ConnectDialogMessage::ShowConnectDialog,
             ))
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
