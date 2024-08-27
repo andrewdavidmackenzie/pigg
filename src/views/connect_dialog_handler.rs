@@ -1,13 +1,19 @@
-use self::ConnectDialogMessage::{
-    ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, ShowConnectDialog,
-};
 #[cfg(feature = "iroh")]
-use self::ConnectDialogMessage::{DisplayIrohTab, NodeIdEntered, RelayURL};
+use self::ConnectDialogMessage::{
+    ConnectButtonPressedIroh, DisplayIrohTab, NodeIdEntered, RelayURL,
+};
 #[cfg(feature = "tcp")]
-use self::ConnectDialogMessage::{DisplayTcpTab, IpAddressEntered, PortNumberEntered};
+use self::ConnectDialogMessage::{
+    ConnectionButtonPressedTcp, DisplayTcpTab, IpAddressEntered, PortNumberEntered,
+};
+use self::ConnectDialogMessage::{
+    ConnectionError, HideConnectDialog, ModalKeyEvent, ShowConnectDialog,
+};
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
 };
+#[cfg(feature = "tcp")]
+use crate::HardwareTarget::Tcp;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
 
@@ -25,14 +31,16 @@ use iced::{keyboard, Color, Command, Element, Event, Length};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
-#[cfg(feature = "iroh")]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 use std::time::Duration;
 
+#[cfg(feature = "iroh")]
 const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
+#[cfg(feature = "tcp")]
 const TCP_INFO_TEXT: &str = "To connect to a remote Pi using TCP, ensure Pi is reachable over the network. Enter the device's IP address and the port number below.";
 
-const IROH_INFO_TEXT_STYLE: TextStyle = TextStyle {
+const INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
 };
 
@@ -72,7 +80,9 @@ const TAB_BAR_STYLE: ContainerStyle = ContainerStyle {
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
+    #[cfg(feature = "iroh")]
     nodeid: String,
+    #[cfg(feature = "iroh")]
     relay_url: String,
     #[cfg(feature = "tcp")]
     ip_address: String,
@@ -80,6 +90,7 @@ pub struct ConnectDialog {
     port_number: String,
     #[cfg(feature = "tcp")]
     tcp_connection_error: String,
+    #[cfg(feature = "iroh")]
     iroh_connection_error: String,
     pub show_modal: bool,
     show_spinner: bool,
@@ -89,14 +100,19 @@ pub struct ConnectDialog {
 
 #[derive(Clone, Debug)]
 pub enum ConnectDialogMessage {
+    #[cfg(feature = "iroh")]
     NodeIdEntered(String),
+    #[cfg(feature = "iroh")]
     RelayURL(String),
     ModalKeyEvent(Event),
-    ConnectButtonPressed(String, String),
+    #[cfg(feature = "iroh")]
+    ConnectButtonPressedIroh(String, String),
+    #[cfg(feature = "tcp")]
     ConnectionButtonPressedTcp(String, String),
     HideConnectDialog,
     ShowConnectDialog,
     ConnectionError(String),
+    #[cfg(feature = "iroh")]
     DisplayIrohTab,
     #[cfg(feature = "tcp")]
     DisplayTcpTab,
@@ -114,15 +130,21 @@ impl Default for ConnectDialog {
 impl ConnectDialog {
     pub fn new() -> Self {
         Self {
+            #[cfg(feature = "iroh")]
             nodeid: String::new(),
+            #[cfg(feature = "iroh")]
             relay_url: String::new(),
+            #[cfg(feature = "iroh")]
             iroh_connection_error: String::new(),
+            #[cfg(feature = "tcp")]
             tcp_connection_error: String::new(),
             show_modal: false,
             show_spinner: false,
             disable_widgets: false,
             display_iroh: true,
+            #[cfg(feature = "tcp")]
             ip_address: String::new(),
+            #[cfg(feature = "tcp")]
             port_number: String::new(),
         }
     }
@@ -138,13 +160,13 @@ impl ConnectDialog {
             self.tcp_connection_error = error.clone();
         }
     }
-    #[cfg(feature = "tcp")]
+
     async fn empty() {}
 
     pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
         match message {
             #[cfg(feature = "tcp")]
-            ConnectDialogMessage::ConnectionButtonPressedTcp(ip_address, port_num) => {
+            ConnectionButtonPressedTcp(ip_address, port_num) => {
                 // Display error when Ip address field is empty
                 if ip_address.trim().is_empty() {
                     self.tcp_connection_error = String::from("Please Enter IP Address");
@@ -158,7 +180,6 @@ impl ConnectDialog {
                 }
 
                 // Validate IP address
-                #[cfg(feature = "tcp")]
                 let _ = match IpAddr::from_str(ip_address.as_str().trim()) {
                     Ok(ip) => {
                         // Validate port number
@@ -190,13 +211,13 @@ impl ConnectDialog {
                 Command::none()
             }
 
-            ConnectButtonPressed(node_id, url) => {
+            #[cfg(feature = "iroh")]
+            ConnectButtonPressedIroh(node_id, url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
                     return Command::none();
                 }
 
-                #[cfg(feature = "iroh")]
                 let _ = match NodeId::from_str(node_id.as_str().trim()) {
                     Ok(nodeid) => {
                         let url_str = url.trim();
@@ -233,17 +254,27 @@ impl ConnectDialog {
 
             #[cfg(feature = "tcp")]
             DisplayTcpTab => {
-                self.display_iroh = false;
+                #[cfg(feature = "iroh")]
+                {
+                    self.display_iroh = false;
+                }
+                #[cfg(feature = "iroh")]
                 self.iroh_connection_error.clear();
+                #[cfg(feature = "iroh")]
                 self.nodeid.clear();
+                #[cfg(feature = "iroh")]
                 self.relay_url.clear();
                 Command::none()
             }
 
+            #[cfg(feature = "iroh")]
             DisplayIrohTab => {
                 self.display_iroh = true;
+                #[cfg(feature = "tcp")]
                 self.tcp_connection_error.clear();
+                #[cfg(feature = "tcp")]
                 self.ip_address.clear();
+                #[cfg(feature = "tcp")]
                 self.port_number.clear();
                 Command::none()
             }
@@ -296,11 +327,13 @@ impl ConnectDialog {
                 Command::none()
             }
 
+            #[cfg(feature = "iroh")]
             NodeIdEntered(node_id) => {
                 self.nodeid = node_id;
                 Command::none()
             }
 
+            #[cfg(feature = "iroh")]
             RelayURL(relay_url) => {
                 self.relay_url = relay_url;
                 Command::none()
@@ -315,21 +348,41 @@ impl ConnectDialog {
     }
 
     pub fn view(&self) -> Element<'_, Message> {
-        if self.disable_widgets && self.display_iroh {
-            self.create_iroh_container(false)
-        } else if self.disable_widgets && !self.display_iroh {
-            self.create_tcp_container(false)
-        } else if !self.disable_widgets && !self.display_iroh {
-            self.create_tcp_container(true)
-        } else {
-            self.create_iroh_container(true)
+        match (self.disable_widgets, self.display_iroh) {
+            (true, true) => {
+                #[cfg(feature = "iroh")]
+                return self.create_iroh_container(false);
+                #[cfg(not(feature = "iroh"))]
+                return self.create_tcp_container(false);
+            }
+            (true, false) => {
+                #[cfg(feature = "tcp")]
+                return self.create_tcp_container(false);
+                #[cfg(not(feature = "tcp"))]
+                return self.create_iroh_container(false);
+            }
+            (false, false) => {
+                #[cfg(feature = "tcp")]
+                return self.create_tcp_container(true);
+                #[cfg(not(feature = "tcp"))]
+                return self.create_iroh_container(true);
+            }
+            (false, true) => {
+                #[cfg(feature = "iroh")]
+                return self.create_iroh_container(true);
+                #[cfg(not(feature = "iroh"))]
+                return self.create_tcp_container(true);
+            }
         }
     }
 
     pub fn hide_modal(&mut self) {
         self.show_modal = false; // Hide the dialog
+        #[cfg(feature = "iroh")]
         self.nodeid.clear(); // Clear the node id, on Cancel
+        #[cfg(feature = "iroh")]
         self.iroh_connection_error.clear(); // Clear the error, on Cancel
+        #[cfg(feature = "iroh")]
         self.relay_url.clear(); // Clear the relay url, on Cancel
         self.show_spinner = false; // Hide spinner, on Cancel
         self.disable_widgets = false; // Enable widgets, on Cancel
@@ -350,7 +403,8 @@ impl ConnectDialog {
         self.show_spinner = false;
     }
 
-    fn create_connection_row(&self) -> Row<'_, Message> {
+    #[cfg(feature = "iroh")]
+    fn create_connection_row_iroh(&self) -> Row<'_, Message> {
         if self.show_spinner && self.disable_widgets && self.display_iroh {
             self.create_spinner_row()
         } else {
@@ -358,6 +412,7 @@ impl ConnectDialog {
         }
     }
 
+    #[cfg(feature = "tcp")]
     fn create_connection_row_tcp(&self) -> Row<'_, Message> {
         if self.show_spinner && self.disable_widgets && !self.display_iroh {
             self.create_spinner_row()
@@ -385,6 +440,7 @@ impl ConnectDialog {
             .align_items(iced::Alignment::Center)
     }
 
+    #[cfg(feature = "iroh")]
     fn create_default_iroh_row(&self) -> Row<'_, Message> {
         Row::new()
             .push(
@@ -397,7 +453,7 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Connect"))
                     .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::ConnectButtonPressed(
+                        ConnectDialogMessage::ConnectButtonPressedIroh(
                             self.nodeid.clone(),
                             self.relay_url.clone(),
                         ),
@@ -408,6 +464,7 @@ impl ConnectDialog {
             .align_items(iced::Alignment::Center)
     }
 
+    #[cfg(feature = "tcp")]
     fn create_default_tcp_row(&self) -> Row<'_, Message> {
         Row::new()
             .push(
@@ -431,20 +488,23 @@ impl ConnectDialog {
             .align_items(iced::Alignment::Center)
     }
 
-    fn create_text_container(&self) -> Element<'_, Message> {
-        container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+    #[cfg(feature = "iroh")]
+    fn create_text_container_iroh(&self) -> Element<'_, Message> {
+        container(Text::new(IROH_INFO_TEXT).style(INFO_TEXT_STYLE.get_text_color()))
             .padding(10)
             .style(TEXT_BOX_CONTAINER_STYLE.get_container_style())
             .into()
     }
 
+    #[cfg(feature = "tcp")]
     fn create_tcp_text_container(&self) -> Element<'_, Message> {
-        container(Text::new(TCP_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+        container(Text::new(TCP_INFO_TEXT).style(INFO_TEXT_STYLE.get_text_color()))
             .padding(10)
             .style(TEXT_BOX_CONTAINER_STYLE.get_container_style())
             .into()
     }
 
+    #[cfg(feature = "iroh")]
     fn create_iroh_container(&self, input_enabled: bool) -> Element<'_, Message> {
         container(
             column![
@@ -452,7 +512,7 @@ impl ConnectDialog {
                 column![
                     text("Connect To Remote Pi Using Iroh").size(20),
                     column![
-                        self.create_text_container(),
+                        self.create_text_container_iroh(),
                         text(self.iroh_connection_error.clone())
                             .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
                         text("Node Id").size(12),
@@ -481,7 +541,7 @@ impl ConnectDialog {
                         relay_input
                     }]
                     .spacing(5),
-                    self.create_connection_row(),
+                    self.create_connection_row_iroh(),
                 ]
                 .spacing(10)
             ]
@@ -493,6 +553,7 @@ impl ConnectDialog {
         .into()
     }
 
+    #[cfg(feature = "tcp")]
     fn create_tcp_container(&self, input_enabled: bool) -> Element<'_, Message> {
         container(
             column![
@@ -544,6 +605,7 @@ impl ConnectDialog {
     }
 
     fn create_tab_buttons(&self, is_iroh_active: bool) -> Element<'_, Message> {
+        #[allow(unused_variables)]
         let (iroh_style, tcp_style) = if is_iroh_active {
             (
                 ACTIVE_TAB_BUTTON_STYLE.get_button_style(),
@@ -633,7 +695,7 @@ mod tests {
     #[test]
     fn test_connect_button_pressed_empty_node_id() {
         let mut connect_dialog = ConnectDialog::new();
-        let _ = connect_dialog.update(ConnectButtonPressed("".to_string(), "".to_string()));
+        let _ = connect_dialog.update(ConnectButtonPressedIroh("".to_string(), "".to_string()));
         assert_eq!(connect_dialog.iroh_connection_error, "Please Enter Node Id");
     }
 
@@ -643,7 +705,7 @@ mod tests {
         let mut connect_dialog = ConnectDialog::new();
         let invalid_node_id = "invalid_node_id".to_string();
 
-        let _ = connect_dialog.update(ConnectButtonPressed(invalid_node_id, "".to_string()));
+        let _ = connect_dialog.update(ConnectButtonPressedIroh(invalid_node_id, "".to_string()));
         assert!(!connect_dialog.iroh_connection_error.is_empty());
     }
 
