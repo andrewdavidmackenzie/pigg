@@ -1,7 +1,10 @@
-use crate::views::connect_dialog_handler::ConnectDialogMessage::{
-    ConnectButtonPressed, ConnectionError, DisplayIrohTab, DisplayTcpTab, HideConnectDialog,
-    IpAddressEntered, ModalKeyEvent, NodeIdEntered, PortNumberEntered, RelayURL, ShowConnectDialog,
+use self::ConnectDialogMessage::{
+    ConnectButtonPressed, ConnectionError, HideConnectDialog, ModalKeyEvent, ShowConnectDialog,
 };
+#[cfg(feature = "iroh")]
+use self::ConnectDialogMessage::{DisplayIrohTab, NodeIdEntered, RelayURL};
+#[cfg(feature = "tcp")]
+use self::ConnectDialogMessage::{DisplayTcpTab, IpAddressEntered, PortNumberEntered};
 use crate::views::modal_handler::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
 };
@@ -541,45 +544,36 @@ impl ConnectDialog {
     }
 
     fn create_tab_buttons(&self, is_iroh_active: bool) -> Element<'_, Message> {
-        if is_iroh_active {
-            container(
-                Row::new()
-                    .push(
-                        Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
-                            .on_press(Message::ConnectDialog(DisplayIrohTab))
-                            .style(ACTIVE_TAB_BUTTON_STYLE.get_button_style())
-                            .width(Length::Fixed(260f32)),
-                    )
-                    .push(
-                        Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
-                            .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(INACTIVE_TAB_BUTTON_STYLE.get_button_style())
-                            .width(Length::Fixed(260f32)),
-                    )
-                    .spacing(5),
+        let (iroh_style, tcp_style) = if is_iroh_active {
+            (
+                ACTIVE_TAB_BUTTON_STYLE.get_button_style(),
+                INACTIVE_TAB_BUTTON_STYLE.get_button_style(),
             )
-            .style(TAB_BAR_STYLE.get_container_style())
-            .into()
         } else {
-            container(
-                Row::new()
-                    .push(
-                        Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
-                            .on_press(Message::ConnectDialog(DisplayIrohTab))
-                            .style(INACTIVE_TAB_BUTTON_STYLE.get_button_style())
-                            .width(Length::Fixed(260f32)),
-                    )
-                    .push(
-                        Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
-                            .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(ACTIVE_TAB_BUTTON_STYLE.get_button_style())
-                            .width(Length::Fixed(260f32)),
-                    )
-                    .spacing(5),
+            (
+                INACTIVE_TAB_BUTTON_STYLE.get_button_style(),
+                ACTIVE_TAB_BUTTON_STYLE.get_button_style(),
             )
-            .style(TAB_BAR_STYLE.get_container_style())
-            .into()
-        }
+        };
+
+        container(
+            Row::new()
+                .push(
+                    Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
+                        .on_press(Message::ConnectDialog(DisplayIrohTab))
+                        .style(iroh_style)
+                        .width(Length::Fixed(260f32)),
+                )
+                .push(
+                    Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
+                        .on_press(Message::ConnectDialog(DisplayTcpTab))
+                        .style(tcp_style)
+                        .width(Length::Fixed(260f32)),
+                )
+                .spacing(5),
+        )
+        .style(TAB_BAR_STYLE.get_container_style())
+        .into()
     }
 }
 
