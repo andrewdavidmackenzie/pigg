@@ -21,7 +21,6 @@ const PIN_2: PinDescription = PinDescription {
     name: "GP1",
     options: &[
         PinFunction::Output(None),
-        PinFunction::Input(Some(InputPull::PullUp)),
         // SPI0 SCL
         // I2C0 SCL
         // UART0 RX
@@ -40,7 +39,6 @@ const PIN_4: PinDescription = PinDescription {
     bcm: Some(2),
     name: "GP2",
     options: &[
-        PinFunction::Output(None),
         PinFunction::Input(Some(InputPull::PullUp)),
         // SPI0 SCK
         // I2C1 SDA
