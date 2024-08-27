@@ -299,13 +299,13 @@ impl ConnectDialog {
 
     pub fn view<'a>(&self) -> Element<'_, Message> {
         if self.disable_widgets && self.display_iroh {
-            self.create_iroh_container()
+            self.create_iroh_container(false)
         } else if self.disable_widgets && !self.display_iroh {
-            self.create_tcp_container()
+            self.create_tcp_container(false)
         } else if !self.disable_widgets && !self.display_iroh {
-            self.create_tcp_container_with_input()
+            self.create_tcp_container(true)
         } else {
-            self.create_iroh_container_with_input()
+            self.create_iroh_container(true)
         }
     }
 
@@ -428,71 +428,10 @@ impl ConnectDialog {
             .into()
     }
 
-    fn create_iroh_container(&self) -> Element<'_, Message> {
-        container(
-            column![
-                self.create_tab_buttons(true),
+    fn create_iroh_container(&self, enable_input: bool) -> Element<'_, Message> {
+        if enable_input {
+            container(
                 column![
-                    text("Connect To Remote Pi Using Iroh").size(20),
-                    column![
-                        self.create_text_container(),
-                        text(self.iroh_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("Node Id").size(12),
-                        text_input("Enter node id", &self.nodeid).padding(5),
-                    ]
-                    .spacing(10),
-                    column![
-                        text("Relay URL (Optional)").size(12),
-                        text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
-                    ]
-                    .spacing(5),
-                    self.create_connection_row(),
-                ]
-                .spacing(10)
-            ]
-            .spacing(20),
-        )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
-        .width(520)
-        .padding(15)
-        .into()
-    }
-
-    fn create_tcp_container(&self) -> Element<'_, Message> {
-        container(
-            column![
-                self.create_tab_buttons(false),
-                column![
-                    text("Connect To Remote Pi Using Tcp").size(20),
-                    column![
-                        self.create_tcp_text_container(),
-                        text(self.tcp_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("IP Address").size(12),
-                        text_input("Enter IP Address", &self.ip_address).padding(5),
-                    ]
-                    .spacing(10),
-                    column![
-                        text("Port Number").size(12),
-                        text_input("Enter Port Number", &self.port_number).padding(5),
-                    ]
-                    .spacing(5),
-                    self.create_connection_row_tcp(),
-                ]
-                .spacing(10)
-            ]
-            .spacing(20),
-        )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
-        .width(520)
-        .padding(15)
-        .into()
-    }
-
-    fn create_iroh_container_with_input(&self) -> Element<'_, Message> {
-        container(
-            column![
                 self.create_tab_buttons(true),
                 column![
                     text("Connect To Remote Pi Using Iroh").size(20),
@@ -521,17 +460,50 @@ impl ConnectDialog {
                 ]
                 .spacing(10)
             ]
-            .spacing(20),
-        )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
-        .width(520)
-        .padding(15)
-        .into()
+                    .spacing(20),
+            )
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+        }
+        else {
+            container(
+                column![
+                self.create_tab_buttons(false),
+                column![
+                    text("Connect To Remote Pi Using Iroh").size(20),
+                    column![
+                        self.create_text_container(),
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("Node Id").size(12),
+                        text_input("Enter node id", &self.nodeid).padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Relay URL (Optional)").size(12),
+                        text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
+                    ]
+                    .spacing(5),
+                    self.create_connection_row(),
+                ]
+                .spacing(10)
+            ]
+                    .spacing(20),
+            )
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+        }
+
     }
 
-    fn create_tcp_container_with_input(&self) -> Element<'_, Message> {
-        container(
-            column![
+    fn create_tcp_container(&self, enable_input: bool) -> Element<'_, Message> {
+        if enable_input {
+            container(
+                column![
                 self.create_tab_buttons(false),
                 column![
                     text("Connect To Remote Pi Using Tcp").size(20),
@@ -560,14 +532,45 @@ impl ConnectDialog {
                 ]
                 .spacing(10)
             ]
-            .spacing(20),
-        )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
-        .width(520)
-        .padding(15)
-        .into()
-    }
+                    .spacing(20),
+            )
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+        }
+        else {
+            container(
+                column![
+                self.create_tab_buttons(true),
+                column![
+                    text("Connect To Remote Pi Using Tcp").size(20),
+                    column![
+                        self.create_tcp_text_container(),
+                        text(self.tcp_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("IP Address").size(12),
+                        text_input("Enter IP Address", &self.ip_address).padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Port Number").size(12),
+                        text_input("Enter Port Number", &self.port_number).padding(5),
+                    ]
+                    .spacing(5),
+                    self.create_connection_row_tcp(),
+                ]
+                .spacing(10)
+            ]
+                    .spacing(20),
+            )
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+        }
 
+    }
     fn create_tab_buttons(&self, is_iroh_active: bool) -> Row<'_, Message> {
         let active_tab_button_style = ButtonStyle {
             bg_color: Color::BLACK,   // Black background for active tab
