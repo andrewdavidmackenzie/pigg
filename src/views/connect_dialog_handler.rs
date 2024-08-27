@@ -18,7 +18,7 @@ use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::{self, column, container, row, text, text_input, Button, Row, Text};
+use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Color, Command, Element, Event};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
@@ -297,277 +297,15 @@ impl ConnectDialog {
         }
     }
 
-    pub fn view<'a>(&self) -> Element<'a, Message> {
-        let connection_row = if self.show_spinner && self.disable_widgets && self.display_iroh {
-            Row::new()
-                .push(
-                    Button::new(Text::new("Cancel"))
-                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-                )
-                .push(
-                    Circular::new()
-                        .easing(&EMPHASIZED_ACCELERATE)
-                        .cycle_duration(Duration::from_secs_f32(2.0)),
-                )
-                .push(
-                    Button::new(Text::new("Connect"))
-                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
-                )
-                .spacing(160)
-                .align_items(iced::Alignment::Center)
-        } else {
-            Row::new()
-                .push(
-                    Button::new(Text::new("Cancel"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::HideConnectDialog,
-                        ))
-                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-                )
-                .push(
-                    Button::new(Text::new("Connect"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::ConnectButtonPressed(
-                                self.nodeid.clone(),
-                                self.relay_url.clone(),
-                            ),
-                        ))
-                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
-                )
-                .spacing(360)
-                .align_items(iced::Alignment::Center)
-        };
-
-        let connection_row_tcp = if self.show_spinner && self.disable_widgets && !self.display_iroh
-        {
-            Row::new()
-                .push(
-                    Button::new(Text::new("Cancel"))
-                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-                )
-                .push(
-                    Circular::new()
-                        .easing(&EMPHASIZED_ACCELERATE)
-                        .cycle_duration(Duration::from_secs_f32(2.0)),
-                )
-                .push(
-                    Button::new(Text::new("Connect"))
-                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
-                )
-                .spacing(160)
-                .align_items(iced::Alignment::Center)
-        } else {
-            Row::new()
-                .push(
-                    Button::new(Text::new("Cancel"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::HideConnectDialog,
-                        ))
-                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-                )
-                .push(
-                    Button::new(Text::new("Connect"))
-                        .on_press(Message::ConnectDialog(
-                            ConnectDialogMessage::ConnectionButtonPressedTcp(
-                                self.ip_address.clone(),
-                                self.port_number.clone(),
-                            ),
-                        ))
-                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
-                )
-                .spacing(360)
-                .align_items(iced::Alignment::Center)
-        };
-
-        let text_container =
-            container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
-                .padding(10)
-                .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
-
-        let tcp_text_container =
-            container(Text::new(TCP_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
-                .padding(10)
-                .style(TEXT_BOX_CONTAINER_STYLE.get_container_style());
-
-        let active_tab_button_style = ButtonStyle {
-            bg_color: Color::BLACK,   // Black background for active tab
-            text_color: Color::WHITE, // White text for contrast
-            hovered_bg_color: Color::from_rgb(0.1, 0.1, 0.1), // Slightly lighter black when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
-        };
-
-        let inactive_tab_button_style = ButtonStyle {
-            bg_color: Color::TRANSPARENT, // Transparent background for inactive tab
-            text_color: Color::new(0.7, 0.7, 0.7, 1.0), // Gray text color to show it's inactive
-            hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
-        };
-
-        let connection_type_iroh = text("Connect To Remote Pi Using Iroh").size(20);
-
-        let connection_type_tcp = text("Connect To Remote Pi Using Tcp").size(20);
+    pub fn view<'a>(&self) -> Element<'_, Message> {
         if self.disable_widgets && self.display_iroh {
-            container(
-                column![
-                    row![
-                        Button::new(Text::new("Connect using Iroh").size(16))
-                            .on_press(Message::ConnectDialog(DisplayIrohTab))
-                            .style(active_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using TCP").size(16))
-                            .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(inactive_tab_button_style.get_button_style())
-                    ],
-                    column![
-                        connection_type_iroh,
-                        column![
-                            text_container,
-                            text(self.iroh_connection_error.clone())
-                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                            text("Node Id").size(12),
-                            text_input("Enter node id", &self.nodeid).padding(5),
-                        ]
-                        .spacing(10),
-                        column![
-                            text("Relay URL (Optional) ").size(12),
-                            text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
-                        ]
-                        .spacing(5),
-                        connection_row,
-                    ]
-                    .spacing(10)
-                ]
-                .spacing(20),
-            )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+            self.create_iroh_container()
         } else if self.disable_widgets && !self.display_iroh {
-            container(
-                column![
-                    row![
-                        Button::new(Text::new("Connect using Iroh").size(16))
-                            .on_press(Message::ConnectDialog(DisplayIrohTab))
-                            .style(inactive_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using TCP").size(16))
-                            .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(active_tab_button_style.get_button_style())
-                    ],
-                    column![
-                        connection_type_tcp,
-                        column![
-                            tcp_text_container,
-                            text(self.tcp_connection_error.clone())
-                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                            text("IP Address").size(12),
-                            text_input("Enter IP Address", &self.ip_address).padding(5),
-                        ]
-                        .spacing(10),
-                        column![
-                            text("Port Number").size(12),
-                            text_input("Enter Port Number", &self.port_number).padding(5),
-                        ]
-                        .spacing(5),
-                        connection_row_tcp,
-                    ]
-                    .spacing(10)
-                ]
-                .spacing(20),
-            )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+            self.create_tcp_container()
         } else if !self.disable_widgets && !self.display_iroh {
-            container(
-                column![
-                    row![
-                        Button::new(Text::new("Connect using Iroh").size(16))
-                            .on_press(Message::ConnectDialog(DisplayIrohTab))
-                            .style(inactive_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using TCP").size(16))
-                            .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(active_tab_button_style.get_button_style())
-                    ],
-                    column![
-                        connection_type_tcp,
-                        column![
-                            tcp_text_container,
-                            text(self.tcp_connection_error.clone())
-                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                            text("IP Address").size(12),
-                            text_input("Enter IP Address", &self.ip_address)
-                                .on_input(|input| Message::ConnectDialog(
-                                    ConnectDialogMessage::IpAddressEntered(input)
-                                ))
-                                .padding(5),
-                        ]
-                        .spacing(10),
-                        column![
-                            text("Port Number ").size(12),
-                            text_input("Enter Port Number", &self.port_number)
-                                .on_input(|input| Message::ConnectDialog(
-                                    ConnectDialogMessage::PortNumberEntered(input)
-                                ))
-                                .padding(5),
-                        ]
-                        .spacing(5),
-                        connection_row_tcp,
-                    ]
-                    .spacing(10)
-                ]
-                .spacing(20),
-            )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+            self.create_tcp_container_with_input()
         } else {
-            container(
-                column![
-                    row![
-                        Button::new(Text::new("Connect using Iroh").size(16))
-                            .on_press(Message::ConnectDialog(DisplayIrohTab))
-                            .style(active_tab_button_style.get_button_style()),
-                        Button::new(Text::new("Connect using TCP").size(16))
-                            .on_press(Message::ConnectDialog(DisplayTcpTab))
-                            .style(inactive_tab_button_style.get_button_style())
-                    ],
-                    column![
-                        connection_type_iroh,
-                        column![
-                            text_container,
-                            text(self.iroh_connection_error.clone())
-                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                            text("Node Id").size(12),
-                            text_input("Enter node id", &self.nodeid)
-                                .on_input(|input| Message::ConnectDialog(
-                                    ConnectDialogMessage::NodeIdEntered(input)
-                                ))
-                                .padding(5),
-                        ]
-                        .spacing(10),
-                        column![
-                            text("Relay URL (Optional) ").size(12),
-                            text_input("Enter Relay Url (Optional)", &self.relay_url)
-                                .on_input(|input| Message::ConnectDialog(
-                                    ConnectDialogMessage::RelayURL(input)
-                                ))
-                                .padding(5),
-                        ]
-                        .spacing(5),
-                        connection_row,
-                    ]
-                    .spacing(10)
-                ]
-                .spacing(20),
-            )
-            .style(MODAL_CONTAINER_STYLE.get_container_style())
-            .width(520)
-            .padding(15)
-            .into()
+            self.create_iroh_container_with_input()
         }
     }
 
@@ -594,12 +332,291 @@ impl ConnectDialog {
         self.disable_widgets = false;
         self.show_spinner = false;
     }
+
+    fn create_connection_row(&self) -> Row<'_, Message> {
+        if self.show_spinner && self.disable_widgets && self.display_iroh {
+            self.create_spinner_row()
+        } else {
+            self.create_default_iroh_row()
+        }
+    }
+
+    fn create_connection_row_tcp(&self) -> Row<'_, Message> {
+        if self.show_spinner && self.disable_widgets && !self.display_iroh {
+            self.create_spinner_row()
+        } else {
+            self.create_default_tcp_row()
+        }
+    }
+
+    fn create_spinner_row(&self) -> Row<'_, Message> {
+        Row::new()
+            .push(
+                Button::new(Text::new("Cancel"))
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+            )
+            .push(
+                Circular::new()
+                    .easing(&EMPHASIZED_ACCELERATE)
+                    .cycle_duration(Duration::from_secs_f32(2.0)),
+            )
+            .push(
+                Button::new(Text::new("Connect"))
+                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+            )
+            .spacing(160)
+            .align_items(iced::Alignment::Center)
+    }
+
+    fn create_default_iroh_row(&self) -> Row<'_, Message> {
+        Row::new()
+            .push(
+                Button::new(Text::new("Cancel"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::HideConnectDialog,
+                    ))
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+            )
+            .push(
+                Button::new(Text::new("Connect"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::ConnectButtonPressed(
+                            self.nodeid.clone(),
+                            self.relay_url.clone(),
+                        ),
+                    ))
+                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+            )
+            .spacing(360)
+            .align_items(iced::Alignment::Center)
+    }
+
+    fn create_default_tcp_row(&self) -> Row<'_, Message> {
+        Row::new()
+            .push(
+                Button::new(Text::new("Cancel"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::HideConnectDialog,
+                    ))
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+            )
+            .push(
+                Button::new(Text::new("Connect"))
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::ConnectionButtonPressedTcp(
+                            self.ip_address.clone(),
+                            self.port_number.clone(),
+                        ),
+                    ))
+                    .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+            )
+            .spacing(360)
+            .align_items(iced::Alignment::Center)
+    }
+
+    fn create_text_container(&self) -> Element<'_, Message> {
+        container(Text::new(IROH_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+            .padding(10)
+            .style(TEXT_BOX_CONTAINER_STYLE.get_container_style())
+            .into()
+    }
+
+    fn create_tcp_text_container(&self) -> Element<'_, Message> {
+        container(Text::new(TCP_INFO_TEXT).style(IROH_INFO_TEXT_STYLE.get_text_color()))
+            .padding(10)
+            .style(TEXT_BOX_CONTAINER_STYLE.get_container_style())
+            .into()
+    }
+
+    fn create_iroh_container(&self) -> Element<'_, Message> {
+        container(
+            column![
+                self.create_tab_buttons(true),
+                column![
+                    text("Connect To Remote Pi Using Iroh").size(20),
+                    column![
+                        self.create_text_container(),
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("Node Id").size(12),
+                        text_input("Enter node id", &self.nodeid).padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Relay URL (Optional)").size(12),
+                        text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
+                    ]
+                    .spacing(5),
+                    self.create_connection_row(),
+                ]
+                .spacing(10)
+            ]
+            .spacing(20),
+        )
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
+    }
+
+    fn create_tcp_container(&self) -> Element<'_, Message> {
+        container(
+            column![
+                self.create_tab_buttons(false),
+                column![
+                    text("Connect To Remote Pi Using Tcp").size(20),
+                    column![
+                        self.create_tcp_text_container(),
+                        text(self.tcp_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("IP Address").size(12),
+                        text_input("Enter IP Address", &self.ip_address).padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Port Number").size(12),
+                        text_input("Enter Port Number", &self.port_number).padding(5),
+                    ]
+                    .spacing(5),
+                    self.create_connection_row_tcp(),
+                ]
+                .spacing(10)
+            ]
+            .spacing(20),
+        )
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
+    }
+
+    fn create_iroh_container_with_input(&self) -> Element<'_, Message> {
+        container(
+            column![
+                self.create_tab_buttons(true),
+                column![
+                    text("Connect To Remote Pi Using Iroh").size(20),
+                    column![
+                        self.create_text_container(),
+                        text(self.iroh_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("Node Id").size(12),
+                        text_input("Enter node id", &self.nodeid)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::NodeIdEntered(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Relay URL (Optional)").size(12),
+                        text_input("Enter Relay Url (Optional)", &self.relay_url)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::RelayURL(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(5),
+                    self.create_connection_row(),
+                ]
+                .spacing(10)
+            ]
+            .spacing(20),
+        )
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
+    }
+
+    fn create_tcp_container_with_input(&self) -> Element<'_, Message> {
+        container(
+            column![
+                self.create_tab_buttons(false),
+                column![
+                    text("Connect To Remote Pi Using Tcp").size(20),
+                    column![
+                        self.create_tcp_text_container(),
+                        text(self.tcp_connection_error.clone())
+                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                        text("IP Address").size(12),
+                        text_input("Enter IP Address", &self.ip_address)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::IpAddressEntered(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(10),
+                    column![
+                        text("Port Number").size(12),
+                        text_input("Enter Port Number", &self.port_number)
+                            .on_input(|input| Message::ConnectDialog(
+                                ConnectDialogMessage::PortNumberEntered(input)
+                            ))
+                            .padding(5),
+                    ]
+                    .spacing(5),
+                    self.create_connection_row_tcp(),
+                ]
+                .spacing(10)
+            ]
+            .spacing(20),
+        )
+        .style(MODAL_CONTAINER_STYLE.get_container_style())
+        .width(520)
+        .padding(15)
+        .into()
+    }
+
+    fn create_tab_buttons(&self, is_iroh_active: bool) -> Row<'_, Message> {
+        let active_tab_button_style = ButtonStyle {
+            bg_color: Color::BLACK,   // Black background for active tab
+            text_color: Color::WHITE, // White text for contrast
+            hovered_bg_color: Color::from_rgb(0.1, 0.1, 0.1), // Slightly lighter black when hovered
+            hovered_text_color: Color::WHITE,
+            border_radius: 4.0,
+        };
+
+        let inactive_tab_button_style = ButtonStyle {
+            bg_color: Color::TRANSPARENT, // Transparent background for inactive tab
+            text_color: Color::new(0.7, 0.7, 0.7, 1.0), // Gray text color to show it's inactive
+            hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
+            hovered_text_color: Color::WHITE,
+            border_radius: 4.0,
+        };
+
+        if is_iroh_active {
+            Row::new()
+                .push(
+                    Button::new(Text::new("Connect using Iroh").size(16))
+                        .on_press(Message::ConnectDialog(DisplayIrohTab))
+                        .style(active_tab_button_style.get_button_style()),
+                )
+                .push(
+                    Button::new(Text::new("Connect using TCP").size(16))
+                        .on_press(Message::ConnectDialog(DisplayTcpTab))
+                        .style(inactive_tab_button_style.get_button_style()),
+                )
+        } else {
+            Row::new()
+                .push(
+                    Button::new(Text::new("Connect using Iroh").size(16))
+                        .on_press(Message::ConnectDialog(DisplayIrohTab))
+                        .style(inactive_tab_button_style.get_button_style()),
+                )
+                .push(
+                    Button::new(Text::new("Connect using TCP").size(16))
+                        .on_press(Message::ConnectDialog(DisplayTcpTab))
+                        .style(active_tab_button_style.get_button_style()),
+                )
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::views::connect_dialog_handler::ConnectDialogMessage::ConnectionButtonPressedTcp;
     use super::*;
+    use crate::views::connect_dialog_handler::ConnectDialogMessage::ConnectionButtonPressedTcp;
     #[cfg(feature = "iroh")]
     #[test]
     fn test_show_connect_dialog() {
@@ -695,32 +712,56 @@ mod tests {
     #[test]
     fn test_connection_button_pressed_tcp_empty_ip() {
         let mut connect_dialog = ConnectDialog::new();
-        let _ = connect_dialog.update(ConnectionButtonPressedTcp("".to_string(), "8080".to_string()));
-        assert_eq!(connect_dialog.tcp_connection_error, "Please Enter IP Address");
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp(
+            "".to_string(),
+            "8080".to_string(),
+        ));
+        assert_eq!(
+            connect_dialog.tcp_connection_error,
+            "Please Enter IP Address"
+        );
     }
 
     #[cfg(feature = "tcp")]
     #[test]
     fn test_connection_button_pressed_tcp_empty_port() {
         let mut connect_dialog = ConnectDialog::new();
-        let _ = connect_dialog.update(ConnectionButtonPressedTcp("192.168.1.1".to_string(), "".to_string()));
-        assert_eq!(connect_dialog.tcp_connection_error, "Please Enter Port Number");
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp(
+            "192.168.1.1".to_string(),
+            "".to_string(),
+        ));
+        assert_eq!(
+            connect_dialog.tcp_connection_error,
+            "Please Enter Port Number"
+        );
     }
 
     #[cfg(feature = "tcp")]
     #[test]
     fn test_connection_button_pressed_tcp_invalid_ip() {
         let mut connect_dialog = ConnectDialog::new();
-        let _ = connect_dialog.update(ConnectionButtonPressedTcp("invalid_ip".to_string(), "8080".to_string()));
-        assert_eq!(connect_dialog.tcp_connection_error, "Invalid IP Address: invalid IP address syntax");
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp(
+            "invalid_ip".to_string(),
+            "8080".to_string(),
+        ));
+        assert_eq!(
+            connect_dialog.tcp_connection_error,
+            "Invalid IP Address: invalid IP address syntax"
+        );
     }
 
     #[cfg(feature = "tcp")]
     #[test]
     fn test_connection_button_pressed_tcp_invalid_port() {
         let mut connect_dialog = ConnectDialog::new();
-        let _ = connect_dialog.update(ConnectionButtonPressedTcp("192.168.1.1".to_string(), "invalid_port".to_string()));
-        assert_eq!(connect_dialog.tcp_connection_error, "Invalid Port Number: invalid digit found in string");
+        let _ = connect_dialog.update(ConnectionButtonPressedTcp(
+            "192.168.1.1".to_string(),
+            "invalid_port".to_string(),
+        ));
+        assert_eq!(
+            connect_dialog.tcp_connection_error,
+            "Invalid Port Number: invalid digit found in string"
+        );
     }
 
     #[cfg(feature = "tcp")]
