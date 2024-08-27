@@ -445,19 +445,15 @@ impl ConnectDialog {
         Row::new()
             .push(
                 Button::new(Text::new("Cancel"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::HideConnectDialog,
-                    ))
+                    .on_press(Message::ConnectDialog(HideConnectDialog))
                     .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
             )
             .push(
                 Button::new(Text::new("Connect"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::ConnectButtonPressedIroh(
-                            self.nodeid.clone(),
-                            self.relay_url.clone(),
-                        ),
-                    ))
+                    .on_press(Message::ConnectDialog(ConnectButtonPressedIroh(
+                        self.nodeid.clone(),
+                        self.relay_url.clone(),
+                    )))
                     .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
             )
             .spacing(360)
@@ -469,19 +465,15 @@ impl ConnectDialog {
         Row::new()
             .push(
                 Button::new(Text::new("Cancel"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::HideConnectDialog,
-                    ))
+                    .on_press(Message::ConnectDialog(HideConnectDialog))
                     .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
             )
             .push(
                 Button::new(Text::new("Connect"))
-                    .on_press(Message::ConnectDialog(
-                        ConnectDialogMessage::ConnectionButtonPressedTcp(
-                            self.ip_address.clone(),
-                            self.port_number.clone(),
-                        ),
-                    ))
+                    .on_press(Message::ConnectDialog(ConnectionButtonPressedTcp(
+                        self.ip_address.clone(),
+                        self.port_number.clone(),
+                    )))
                     .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
             )
             .spacing(360)
