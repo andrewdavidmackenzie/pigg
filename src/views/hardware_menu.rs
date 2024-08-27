@@ -37,6 +37,7 @@ pub fn item<'a>(
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
 
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
     let connect: Item<'a, Message, _, _> = Item::new(
         Button::new("Connect to remote Pi ...")
             .width(Length::Fill)
@@ -55,11 +56,13 @@ pub fn item<'a>(
 
     match hardware_target {
         NoHW => {
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(connect_local);
         }
         Local => {
             menu_items.push(disconnect);
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
         }
         #[cfg(feature = "iroh")]
