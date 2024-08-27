@@ -556,24 +556,27 @@ impl ConnectDialog {
             )
         };
 
-        container(
-            Row::new()
-                .push(
-                    Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
-                        .on_press(Message::ConnectDialog(DisplayIrohTab))
-                        .style(iroh_style)
-                        .width(Length::Fixed(260f32)),
-                )
-                .push(
-                    Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
-                        .on_press(Message::ConnectDialog(DisplayTcpTab))
-                        .style(tcp_style)
-                        .width(Length::Fixed(260f32)),
-                )
-                .spacing(5),
-        )
-        .style(TAB_BAR_STYLE.get_container_style())
-        .into()
+        let button_row = Row::new().spacing(5);
+
+        #[cfg(feature = "iroh")]
+        let button_row = button_row.push(
+            Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
+                .on_press(Message::ConnectDialog(DisplayIrohTab))
+                .style(iroh_style)
+                .width(Length::Fixed(260f32)),
+        );
+
+        #[cfg(feature = "tcp")]
+        let button_row = button_row.push(
+            Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
+                .on_press(Message::ConnectDialog(DisplayTcpTab))
+                .style(tcp_style)
+                .width(Length::Fixed(260f32)),
+        );
+
+        container(button_row)
+            .style(TAB_BAR_STYLE.get_container_style())
+            .into()
     }
 }
 
@@ -590,6 +593,7 @@ mod tests {
         let _ = connect_dialog.update(ShowConnectDialog);
         assert!(connect_dialog.show_modal);
     }
+
     #[cfg(feature = "iroh")]
     #[test]
     fn test_hide_connect_dialog() {
