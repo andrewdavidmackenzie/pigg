@@ -482,9 +482,11 @@ mod test {
 
     #[test]
     fn display_sample() {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+
         let level_change = LevelChange {
             new_level: false,
-            timestamp: Instant::now().elapsed(),
+            timestamp: now,
         };
 
         let sample: Sample<PinLevel> = level_change.into();

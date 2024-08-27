@@ -19,7 +19,7 @@ use iced::{
     futures::{pin_mut, FutureExt},
 };
 use iced::{subscription, Subscription};
-use std::time::Instant;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::hw_definition::pin_function::PinFunction;
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
@@ -254,6 +254,8 @@ fn send_current_input_states(
     config: &HardwareConfig,
     connected_hardware: &impl Hardware,
 ) {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+
     // Send initial levels
     for (bcm_pin_number, pin_function) in &config.pin_functions {
         if let PinFunction::Input(_pullup) = pin_function {
@@ -261,7 +263,7 @@ fn send_current_input_states(
             if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
                 let _ = tx.try_send(InputChange(
                     *bcm_pin_number,
-                    LevelChange::new(initial_level, Instant::now().elapsed()),
+                    LevelChange::new(initial_level, now),
                 ));
             }
         }

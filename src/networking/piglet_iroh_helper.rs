@@ -6,7 +6,7 @@ use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 
@@ -172,18 +172,16 @@ pub async fn send_current_input_states(
     config: &HardwareConfig,
     hardware: &impl Hardware,
 ) -> anyhow::Result<()> {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+
     // Send initial levels
     for (bcm_pin_number, pin_function) in &config.pin_functions {
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-                let _ = send_input_level_async(
-                    connection.clone(),
-                    *bcm_pin_number,
-                    initial_level,
-                    Instant::now().elapsed(),
-                )
-                .await;
+                let _ =
+                    send_input_level_async(connection.clone(), *bcm_pin_number, initial_level, now)
+                        .await;
             }
         }
     }

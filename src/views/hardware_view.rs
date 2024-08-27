@@ -9,7 +9,7 @@ use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
@@ -267,10 +267,12 @@ impl HardwareView {
             // For output pins, if there is an initial state set then set that in pin state
             // so the toggler will be drawn correctly on first draw
             if let Output(Some(level)) = function {
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+
                 self.pin_states
                     .entry(*bcm_pin_number)
                     .or_insert(PinState::new())
-                    .set_level(LevelChange::new(*level, Instant::now().elapsed()));
+                    .set_level(LevelChange::new(*level, now));
             }
         }
     }
@@ -525,10 +527,8 @@ fn get_pin_widget<'a>(
 
         Some(Output(level)) => {
             let output_toggler = toggler(None, level.unwrap_or(false as PinLevel), move |b| {
-                ChangeOutputLevel(
-                    bcm_pin_number.unwrap(),
-                    LevelChange::new(b, Instant::now().elapsed()),
-                )
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
             })
             .size(TOGGLER_SIZE)
             .style(toggle_button_style.get_toggler_style());
@@ -537,17 +537,13 @@ fn get_pin_widget<'a>(
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
                     .on_press({
                         let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        ChangeOutputLevel(
-                            bcm_pin_number.unwrap(),
-                            LevelChange::new(!level, Instant::now().elapsed()),
-                        )
+                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
                     })
                     .on_release({
                         let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        ChangeOutputLevel(
-                            bcm_pin_number.unwrap(),
-                            LevelChange::new(!level, Instant::now().elapsed()),
-                        )
+                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
                     });
 
             let toggle_tooltip =
