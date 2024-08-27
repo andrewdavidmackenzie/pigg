@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct TcpInfo {
@@ -149,7 +149,7 @@ pub async fn send_current_input_states(
     config: &HardwareConfig,
     hardware: &impl Hardware,
 ) -> anyhow::Result<()> {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
     // Send initial levels
     for (bcm_pin_number, pin_function) in &config.pin_functions {

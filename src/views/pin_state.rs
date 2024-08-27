@@ -65,7 +65,7 @@ impl PinState {
 mod test {
     use crate::hw_definition::config::LevelChange;
     use crate::views::pin_state::PinState;
-    use std::time::{Instant, SystemTime, UNIX_EPOCH};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
     fn level_stores_last() {

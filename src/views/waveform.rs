@@ -241,7 +241,6 @@ mod test {
 
     use chrono::{DateTime, Utc};
     use plotters::prelude::{RGBAColor, ShapeStyle};
-    use tokio::time::Instant;
 
     use crate::hw_definition::{config::LevelChange, PinLevel};
     use crate::views::waveform::{ChartType, Sample, Waveform};

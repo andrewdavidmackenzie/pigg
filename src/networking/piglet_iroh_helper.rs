@@ -6,7 +6,7 @@ use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 
@@ -172,7 +172,7 @@ pub async fn send_current_input_states(
     config: &HardwareConfig,
     hardware: &impl Hardware,
 ) -> anyhow::Result<()> {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
     // Send initial levels
     for (bcm_pin_number, pin_function) in &config.pin_functions {
