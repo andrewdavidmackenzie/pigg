@@ -19,7 +19,7 @@ use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Color, Command, Element, Event};
+use iced::{keyboard, Color, Command, Element, Event, Length};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
@@ -43,6 +43,29 @@ const TEXT_BOX_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
 
 const CONNECTION_ERROR_DISPLAY: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0),
+};
+
+const ACTIVE_TAB_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::BLACK,   // Black background for active tab
+    text_color: Color::WHITE, // White text for contrast
+    hovered_bg_color: Color::BLACK,
+    hovered_text_color: Color::WHITE,
+    border_radius: 4.0,
+};
+
+const INACTIVE_TAB_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::TRANSPARENT, // Transparent background for inactive tab
+    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0), // Gray text color to show it's inactive
+    hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
+    hovered_text_color: Color::WHITE,
+    border_radius: 4.0,
+};
+
+const TAB_BAR_STYLE: ContainerStyle = ContainerStyle {
+    border_color: Color::TRANSPARENT,
+    background_color: Color::from_rgb(0.2, 0.2, 0.2),
+    border_width: 0.0,
+    border_radius: 0.0,
 };
 
 #[derive(Debug, Clone)]
@@ -432,186 +455,178 @@ impl ConnectDialog {
         if enable_input {
             container(
                 column![
-                self.create_tab_buttons(true),
-                column![
-                    text("Connect To Remote Pi Using Iroh").size(20),
+                    self.create_tab_buttons(true),
                     column![
-                        self.create_text_container(),
-                        text(self.iroh_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("Node Id").size(12),
-                        text_input("Enter node id", &self.nodeid)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::NodeIdEntered(input)
-                            ))
-                            .padding(5),
+                        text("Connect To Remote Pi Using Iroh").size(20),
+                        column![
+                            self.create_text_container(),
+                            text(self.iroh_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("Node Id").size(12),
+                            text_input("Enter node id", &self.nodeid)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::NodeIdEntered(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Relay URL (Optional)").size(12),
+                            text_input("Enter Relay Url (Optional)", &self.relay_url)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::RelayURL(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(5),
+                        self.create_connection_row(),
                     ]
-                    .spacing(10),
-                    column![
-                        text("Relay URL (Optional)").size(12),
-                        text_input("Enter Relay Url (Optional)", &self.relay_url)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::RelayURL(input)
-                            ))
-                            .padding(5),
-                    ]
-                    .spacing(5),
-                    self.create_connection_row(),
+                    .spacing(10)
                 ]
-                .spacing(10)
-            ]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
-        }
-        else {
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
+        } else {
             container(
                 column![
-                self.create_tab_buttons(false),
-                column![
-                    text("Connect To Remote Pi Using Iroh").size(20),
+                    self.create_tab_buttons(false),
                     column![
-                        self.create_text_container(),
-                        text(self.iroh_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("Node Id").size(12),
-                        text_input("Enter node id", &self.nodeid).padding(5),
+                        text("Connect To Remote Pi Using Iroh").size(20),
+                        column![
+                            self.create_text_container(),
+                            text(self.iroh_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("Node Id").size(12),
+                            text_input("Enter node id", &self.nodeid).padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Relay URL (Optional)").size(12),
+                            text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
+                        ]
+                        .spacing(5),
+                        self.create_connection_row(),
                     ]
-                    .spacing(10),
-                    column![
-                        text("Relay URL (Optional)").size(12),
-                        text_input("Enter Relay Url (Optional)", &self.relay_url).padding(5),
-                    ]
-                    .spacing(5),
-                    self.create_connection_row(),
+                    .spacing(10)
                 ]
-                .spacing(10)
-            ]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
         }
-
     }
 
     fn create_tcp_container(&self, enable_input: bool) -> Element<'_, Message> {
         if enable_input {
             container(
                 column![
-                self.create_tab_buttons(false),
-                column![
-                    text("Connect To Remote Pi Using Tcp").size(20),
+                    self.create_tab_buttons(false),
                     column![
-                        self.create_tcp_text_container(),
-                        text(self.tcp_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("IP Address").size(12),
-                        text_input("Enter IP Address", &self.ip_address)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::IpAddressEntered(input)
-                            ))
-                            .padding(5),
+                        text("Connect To Remote Pi Using Tcp").size(20),
+                        column![
+                            self.create_tcp_text_container(),
+                            text(self.tcp_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("IP Address").size(12),
+                            text_input("Enter IP Address", &self.ip_address)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::IpAddressEntered(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Port Number").size(12),
+                            text_input("Enter Port Number", &self.port_number)
+                                .on_input(|input| Message::ConnectDialog(
+                                    ConnectDialogMessage::PortNumberEntered(input)
+                                ))
+                                .padding(5),
+                        ]
+                        .spacing(5),
+                        self.create_connection_row_tcp(),
                     ]
-                    .spacing(10),
-                    column![
-                        text("Port Number").size(12),
-                        text_input("Enter Port Number", &self.port_number)
-                            .on_input(|input| Message::ConnectDialog(
-                                ConnectDialogMessage::PortNumberEntered(input)
-                            ))
-                            .padding(5),
-                    ]
-                    .spacing(5),
-                    self.create_connection_row_tcp(),
+                    .spacing(10)
                 ]
-                .spacing(10)
-            ]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
-        }
-        else {
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
+        } else {
             container(
                 column![
-                self.create_tab_buttons(true),
-                column![
-                    text("Connect To Remote Pi Using Tcp").size(20),
+                    self.create_tab_buttons(true),
                     column![
-                        self.create_tcp_text_container(),
-                        text(self.tcp_connection_error.clone())
-                            .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
-                        text("IP Address").size(12),
-                        text_input("Enter IP Address", &self.ip_address).padding(5),
+                        text("Connect To Remote Pi Using Tcp").size(20),
+                        column![
+                            self.create_tcp_text_container(),
+                            text(self.tcp_connection_error.clone())
+                                .style(CONNECTION_ERROR_DISPLAY.get_text_color()),
+                            text("IP Address").size(12),
+                            text_input("Enter IP Address", &self.ip_address).padding(5),
+                        ]
+                        .spacing(10),
+                        column![
+                            text("Port Number").size(12),
+                            text_input("Enter Port Number", &self.port_number).padding(5),
+                        ]
+                        .spacing(5),
+                        self.create_connection_row_tcp(),
                     ]
-                    .spacing(10),
-                    column![
-                        text("Port Number").size(12),
-                        text_input("Enter Port Number", &self.port_number).padding(5),
-                    ]
-                    .spacing(5),
-                    self.create_connection_row_tcp(),
+                    .spacing(10)
                 ]
-                .spacing(10)
-            ]
-                    .spacing(20),
+                .spacing(20),
             )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
-                .width(520)
-                .padding(15)
-                .into()
+            .style(MODAL_CONTAINER_STYLE.get_container_style())
+            .width(520)
+            .padding(15)
+            .into()
         }
-
     }
-    fn create_tab_buttons(&self, is_iroh_active: bool) -> Row<'_, Message> {
-        let active_tab_button_style = ButtonStyle {
-            bg_color: Color::BLACK,   // Black background for active tab
-            text_color: Color::WHITE, // White text for contrast
-            hovered_bg_color: Color::from_rgb(0.1, 0.1, 0.1), // Slightly lighter black when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
-        };
-
-        let inactive_tab_button_style = ButtonStyle {
-            bg_color: Color::TRANSPARENT, // Transparent background for inactive tab
-            text_color: Color::new(0.7, 0.7, 0.7, 1.0), // Gray text color to show it's inactive
-            hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
-        };
-
+    fn create_tab_buttons(&self, is_iroh_active: bool) -> Element<'_, Message> {
         if is_iroh_active {
-            Row::new()
-                .push(
-                    Button::new(Text::new("Connect using Iroh").size(16))
-                        .on_press(Message::ConnectDialog(DisplayIrohTab))
-                        .style(active_tab_button_style.get_button_style()),
-                )
-                .push(
-                    Button::new(Text::new("Connect using TCP").size(16))
-                        .on_press(Message::ConnectDialog(DisplayTcpTab))
-                        .style(inactive_tab_button_style.get_button_style()),
-                )
+            container(
+                Row::new()
+                    .push(
+                        Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
+                            .on_press(Message::ConnectDialog(DisplayIrohTab))
+                            .style(ACTIVE_TAB_BUTTON_STYLE.get_button_style())
+                            .width(Length::Fixed(260f32)),
+                    )
+                    .push(
+                        Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
+                            .on_press(Message::ConnectDialog(DisplayTcpTab))
+                            .style(INACTIVE_TAB_BUTTON_STYLE.get_button_style())
+                            .width(Length::Fixed(260f32)),
+                    )
+                    .spacing(5),
+            ).style(TAB_BAR_STYLE.get_container_style())
+            .into()
         } else {
-            Row::new()
-                .push(
-                    Button::new(Text::new("Connect using Iroh").size(16))
-                        .on_press(Message::ConnectDialog(DisplayIrohTab))
-                        .style(inactive_tab_button_style.get_button_style()),
-                )
-                .push(
-                    Button::new(Text::new("Connect using TCP").size(16))
-                        .on_press(Message::ConnectDialog(DisplayTcpTab))
-                        .style(active_tab_button_style.get_button_style()),
-                )
+            container(
+                Row::new()
+                    .push(
+                        Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
+                            .on_press(Message::ConnectDialog(DisplayIrohTab))
+                            .style(INACTIVE_TAB_BUTTON_STYLE.get_button_style())
+                            .width(Length::Fixed(260f32)),
+                    )
+                    .push(
+                        Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
+                            .on_press(Message::ConnectDialog(DisplayTcpTab))
+                            .style(ACTIVE_TAB_BUTTON_STYLE.get_button_style())
+                            .width(Length::Fixed(260f32)),
+                    )
+                    .spacing(5),
+            ).style(TAB_BAR_STYLE.get_container_style())
+            .into()
         }
     }
 }
