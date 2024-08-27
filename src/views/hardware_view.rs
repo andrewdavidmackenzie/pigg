@@ -525,11 +525,15 @@ fn get_pin_widget<'a>(
             }
         }
 
-        Some(Output(level)) => {
-            let output_toggler = toggler(None, level.unwrap_or(false as PinLevel), move |b| {
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
-            })
+        Some(Output(_)) => {
+            let output_toggler = toggler(
+                None,
+                pin_state.get_level().unwrap_or(false as PinLevel),
+                move |b| {
+                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
+                },
+            )
             .size(TOGGLER_SIZE)
             .style(toggle_button_style.get_toggler_style());
 
