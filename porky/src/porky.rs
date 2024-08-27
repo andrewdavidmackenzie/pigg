@@ -160,7 +160,8 @@ fn get_input_level(
 }
 
 /// Set an output's level using the bcm pin number
-fn set_output_level(
+async fn set_output_level(
+    control: &mut Control<'_>,
     configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>,
     bcm_pin_number: BCMPinNumber,
     level: PinLevel,
@@ -168,7 +169,9 @@ fn set_output_level(
     info!("Pin #{} Output level change: {:?}", bcm_pin_number, level);
 
     match configured_pins.get_mut(&bcm_pin_number) {
-        Some(Pin::Output) => {}
+        Some(Pin::Output) => {
+            control.gpio_set(bcm_pin_number, level).await;
+        }
         /*
             match level {
             true => output_pin.write(Level::High),
@@ -205,7 +208,8 @@ async fn send_current_input_states(
 }
 
 /// Apply the requested config to one pin, using bcm_pin_number
-fn apply_pin_config(
+async fn apply_pin_config(
+    control: &mut Control<'_>,
     configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>,
     bcm_pin_number: BCMPinNumber,
     pin_function: &PinFunction,
@@ -239,19 +243,11 @@ fn apply_pin_config(
             let _ = configured_pins.insert(bcm_pin_number, Pin::Input);
         }
 
-        PinFunction::Output(_value) => {
-            /*
-            let pin = Gpio::new()
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
-                .get(bcm_pin_number)
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-            let output_pin = match value {
-                Some(true) => pin.into_output_high(),
-                Some(false) => pin.into_output_low(),
-                None => pin.into_output(),
-            };
-            */
+        PinFunction::Output(level) => {
             let _ = configured_pins.insert(bcm_pin_number, Pin::Output);
+            if let Some(l) = level {
+                set_output_level(control, configured_pins, bcm_pin_number, *l).await;
+            }
         }
 
         _ => error!("Unsupported PinFunction"),
@@ -261,10 +257,14 @@ fn apply_pin_config(
 }
 
 /// This takes the GPIOConfig struct and configures all the pins in it
-fn apply_config(configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>, config: &HardwareConfig) {
+async fn apply_config(
+    control: &mut Control<'_>,
+    configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>,
+    config: &HardwareConfig,
+) {
     // Config only has pins that are configured
     for (bcm_pin_number, pin_function) in &config.pin_functions {
-        apply_pin_config(configured_pins, *bcm_pin_number, pin_function);
+        apply_pin_config(control, configured_pins, *bcm_pin_number, pin_function).await;
     }
     info!("New config applied");
 }
@@ -274,21 +274,21 @@ fn apply_config(configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>, config
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
 async fn apply_config_change(
+    control: &mut Control<'_>,
     configured_pins: &mut FnvIndexMap<BCMPinNumber, Pin, 64>,
     config_change: HardwareConfigMessage,
     socket: &mut TcpSocket<'_>,
 ) {
     match config_change {
         NewConfig(config) => {
-            apply_config(configured_pins, &config);
-
+            apply_config(control, configured_pins, &config).await;
             let _ = send_current_input_states(configured_pins, socket).await;
         }
         NewPinConfig(bcm, pin_function) => {
-            apply_pin_config(configured_pins, bcm, &pin_function);
+            apply_pin_config(control, configured_pins, bcm, &pin_function).await;
         }
         IOLevelChanged(bcm, level_change) => {
-            set_output_level(configured_pins, bcm, level_change.new_level);
+            set_output_level(control, configured_pins, bcm, level_change.new_level).await;
         }
     }
 }
@@ -333,6 +333,7 @@ async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device
 
 /// Enter the message loop, processing config change messages from piggui
 async fn message_loop<'a>(
+    control: &mut Control<'_>,
     device_id: [u8; 8],
     ip_address: Ipv4Address,
     stack: &Stack<NetDriver<'static>>,
@@ -354,7 +355,8 @@ async fn message_loop<'a>(
     info!("Entering message loop");
     loop {
         if let Some(config_message) = wait_message(&mut socket).await {
-            let _ = apply_config_change(&mut configured_pins, config_message, &mut socket).await;
+            let _ = apply_config_change(control, &mut configured_pins, config_message, &mut socket)
+                .await;
         }
 
         /*
@@ -437,7 +439,7 @@ async fn main(spawner: Spawner) {
 
     while let Some(ip_address) = join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
-            message_loop(device_id, ip_address, stack).await;
+            message_loop(&mut control, device_id, ip_address, stack).await;
             info!("Disconnected");
         }
     }
