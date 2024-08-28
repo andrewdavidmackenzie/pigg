@@ -48,10 +48,17 @@ pub fn item<'a>(
     );
 
     let connect_local: Item<'a, Message, _, _> = Item::new(
-        Button::new("Use local GPIO")
-            .on_press(Message::ConnectRequest(HardwareTarget::Local))
+        Button::new("Connect to local Hardware")
+            .on_press(Message::ConnectRequest(Local))
             .style(MENU_BUTTON_STYLE.get_button_style())
             .width(Length::Fill),
+    );
+
+    let show_details = Item::new(
+        Button::new(Text::new("Show Hardware Details..."))
+            .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
+            .width(Length::Fill)
+            .style(MENU_BUTTON_STYLE.get_button_style()),
     );
 
     match hardware_target {
@@ -64,29 +71,25 @@ pub fn item<'a>(
             menu_items.push(disconnect);
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
+            menu_items.push(show_details);
         }
         #[cfg(feature = "iroh")]
         Iroh(_, _) => {
             menu_items.push(disconnect);
             menu_items.push(connect_local);
+            menu_items.push(show_details);
         }
         #[cfg(feature = "tcp")]
         Tcp(_, _) => {
             menu_items.push(disconnect);
             menu_items.push(connect_local);
+            menu_items.push(show_details);
         }
     }
 
     #[cfg(feature = "discovery")]
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
-            .width(Length::Fill)
-            .style(MENU_BUTTON_STYLE.get_button_style()),
-    ));
-
-    menu_items.push(Item::new(
-        Button::new(Text::new("Show Hardware Details..."))
-            .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
             .style(MENU_BUTTON_STYLE.get_button_style()),
     ));
