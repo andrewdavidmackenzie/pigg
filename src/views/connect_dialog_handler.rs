@@ -26,6 +26,7 @@ use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::Message;
 use iced::keyboard::key;
+#[allow(unused_imports)]
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Color, Command, Element, Event, Length};
 use iced_futures::Subscription;
@@ -347,6 +348,7 @@ impl ConnectDialog {
         }
     }
 
+    //noinspection RsLift
     pub fn view(&self) -> Element<'_, Message> {
         match (self.disable_widgets, self.display_iroh) {
             (true, true) => {
@@ -496,6 +498,7 @@ impl ConnectDialog {
             .into()
     }
 
+    //noinspection RsLiveness
     #[cfg(feature = "iroh")]
     fn create_iroh_container(&self, input_enabled: bool) -> Element<'_, Message> {
         container(
@@ -545,6 +548,7 @@ impl ConnectDialog {
         .into()
     }
 
+    //noinspection RsLiveness
     #[cfg(feature = "tcp")]
     fn create_tcp_container(&self, input_enabled: bool) -> Element<'_, Message> {
         container(
