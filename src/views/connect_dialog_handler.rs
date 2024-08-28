@@ -638,6 +638,7 @@ impl ConnectDialog {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "tcp")]
     use crate::views::connect_dialog_handler::ConnectDialogMessage::ConnectionButtonPressedTcp;
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     #[test]
@@ -702,6 +703,7 @@ mod tests {
         assert!(!connect_dialog.iroh_connection_error.is_empty());
     }
 
+    #[cfg(feature = "iroh")]
     #[test]
     fn test_connection_error() {
         let mut connect_dialog = ConnectDialog::new();
