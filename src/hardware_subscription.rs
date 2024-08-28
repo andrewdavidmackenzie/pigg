@@ -54,13 +54,13 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                 let mut gui_sender_clone = gui_sender.clone();
                 match &mut state {
                     HWState::Disconnected => {
-                        // Create channel
                         let (hardware_event_sender, hardware_event_receiver) =
                             mpsc::channel::<HardwareConfigMessage>(100);
 
                         match target.clone() {
                             HardwareTarget::NoHW => {}
 
+                            #[cfg(not(target_arch = "wasm32"))]
                             HardwareTarget::Local => {
                                 let connected_hardware = hw::get();
                                 let hardware_description =
