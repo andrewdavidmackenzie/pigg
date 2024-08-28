@@ -169,16 +169,9 @@ async fn set_output_level(
     debug!("Pin #{} Output level change: {:?}", bcm_pin_number, level);
 
     match configured_pins.get_mut(&bcm_pin_number) {
-        Some(Pin::Output) => {
-            control.gpio_set(bcm_pin_number, level).await;
-        }
-        /*
-            match level {
-            true => output_pin.write(Level::High),
-            false => output_pin.write(Level::Low),
-        }, */
+        Some(Pin::Output) => control.gpio_set(bcm_pin_number, level).await,
         _ => {
-            error!("Could not find a configured output pin")
+            error!("Pin {} is not configured as an Output", bcm_pin_number)
         }
     }
 }
@@ -358,18 +351,7 @@ async fn message_loop<'a>(
             let _ = apply_config_change(control, &mut configured_pins, config_message, &mut socket)
                 .await;
         }
-
-        /*
-        match socket.write_all(&buf[..n]).await {
-            Ok(()) => {}
-            Err(e) => {
-                warn!("write error: {:?}", e);
-                break;
-            }
-        };
-         */
     }
-    // info!("Exited message loop");
 }
 
 /*
