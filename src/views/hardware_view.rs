@@ -380,11 +380,16 @@ impl HardwareView {
         &self,
         hardware_target: &HardwareTarget,
     ) -> Subscription<HardwareViewMessage> {
-        let subscriptions = vec![
-            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
-                .map(|_| UpdateCharts),
-            hardware_subscription::subscribe(hardware_target).map(HardwareSubscription),
-        ];
+        let mut subscriptions =
+            vec![
+                iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                    .map(|_| UpdateCharts),
+            ];
+
+        if hardware_target != &NoHW {
+            subscriptions
+                .push(hardware_subscription::subscribe(hardware_target).map(HardwareSubscription));
+        }
 
         Subscription::batch(subscriptions)
     }
