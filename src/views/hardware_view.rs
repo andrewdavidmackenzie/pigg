@@ -165,6 +165,7 @@ fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
 pub enum HardwareTarget {
     #[cfg_attr(target_arch = "wasm32", default)]
     NoHW,
+    #[cfg(not(target_arch = "wasm32"))]
     #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
     #[cfg(feature = "iroh")]
@@ -379,11 +380,16 @@ impl HardwareView {
         &self,
         hardware_target: &HardwareTarget,
     ) -> Subscription<HardwareViewMessage> {
-        let subscriptions = vec![
-            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
-                .map(|_| UpdateCharts),
-            hardware_subscription::subscribe(hardware_target).map(HardwareSubscription),
-        ];
+        let mut subscriptions =
+            vec![
+                iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                    .map(|_| UpdateCharts),
+            ];
+
+        if hardware_target != &NoHW {
+            subscriptions
+                .push(hardware_subscription::subscribe(hardware_target).map(HardwareSubscription));
+        }
 
         Subscription::batch(subscriptions)
     }
@@ -627,20 +633,18 @@ fn create_pin_view_side<'a>(
         let selected = selected_function.filter(|&pin_function| *pin_function != PinFunction::None);
 
         let pick_list = pick_list(config_options, selected, move |pin_function| {
-                PinFunctionSelected(bcm_pin_number, pin_function)
-            })
-            .width(Length::Fixed(PIN_OPTION_WIDTH))
-            .placeholder("Select function");
+            PinFunctionSelected(bcm_pin_number, pin_function)
+        })
+        .width(Length::Fixed(PIN_OPTION_WIDTH))
+        .placeholder("Select function");
 
         // select a slightly small font on RPi, to make it fit within pick_list
-        #[cfg(
-            all(
-                target_os = "linux",
-                any(target_arch = "aarch64", target_arch = "arm"),
-                target_env = "gnu"
-            )
-        )]
-        let pick_list = pick_list.text_size(14);            
+        #[cfg(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))]
+        let pick_list = pick_list.text_size(14);
         pin_options_row = pin_options_row.push(pick_list);
 
         pin_option = pin_option.push(pin_options_row);

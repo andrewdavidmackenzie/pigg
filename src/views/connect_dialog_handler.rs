@@ -181,7 +181,7 @@ impl ConnectDialog {
                 }
 
                 // Validate IP address
-                let _ = match IpAddr::from_str(ip_address.as_str().trim()) {
+                return match IpAddr::from_str(ip_address.as_str().trim()) {
                     Ok(ip) => {
                         // Validate port number
                         match port_num.trim().parse::<u16>() {
@@ -208,8 +208,6 @@ impl ConnectDialog {
                         Command::none()
                     }
                 };
-
-                Command::none()
             }
 
             #[cfg(feature = "iroh")]
@@ -219,7 +217,7 @@ impl ConnectDialog {
                     return Command::none();
                 }
 
-                let _ = match NodeId::from_str(node_id.as_str().trim()) {
+                return match NodeId::from_str(node_id.as_str().trim()) {
                     Ok(nodeid) => {
                         let url_str = url.trim();
                         let relay_url = if url_str.is_empty() {
@@ -250,7 +248,6 @@ impl ConnectDialog {
                         Command::none()
                     }
                 };
-                Command::none()
             }
 
             #[cfg(feature = "tcp")]
