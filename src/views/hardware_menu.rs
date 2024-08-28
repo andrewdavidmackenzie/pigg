@@ -47,6 +47,7 @@ pub fn item<'a>(
             .style(MENU_BUTTON_STYLE.get_button_style()),
     );
 
+    #[cfg(not(target_arch = "wasm32"))]
     let connect_local: Item<'a, Message, _, _> = Item::new(
         Button::new("Connect to local Hardware")
             .on_press(Message::ConnectRequest(Local))
@@ -65,8 +66,10 @@ pub fn item<'a>(
         NoHW => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
+            #[cfg(not(target_arch = "wasm32"))]
             menu_items.push(connect_local);
         }
+        #[cfg(not(target_arch = "wasm32"))]
         Local => {
             menu_items.push(disconnect);
             #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -76,12 +79,14 @@ pub fn item<'a>(
         #[cfg(feature = "iroh")]
         Iroh(_, _) => {
             menu_items.push(disconnect);
+            #[cfg(not(target_arch = "wasm32"))]
             menu_items.push(connect_local);
             menu_items.push(show_details);
         }
         #[cfg(feature = "tcp")]
         Tcp(_, _) => {
             menu_items.push(disconnect);
+            #[cfg(not(target_arch = "wasm32"))]
             menu_items.push(connect_local);
             menu_items.push(show_details);
         }
