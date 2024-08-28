@@ -289,13 +289,13 @@ impl Application for Piggui {
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         if self.connect_dialog.show_modal {
             return Modal::new(content, self.connect_dialog.view())
-                .on_blur(Message::ConnectDialog(HideConnectDialog))
+                .on_blur(ConnectDialog(HideConnectDialog))
                 .into();
         }
 
         if self.modal_handler.show_modal {
             return Modal::new(content, self.modal_handler.view())
-                .on_blur(Message::ModalHandle(ModalMessage::HideModal))
+                .on_blur(ModalHandle(ModalMessage::HideModal))
                 .into();
         }
 
