@@ -119,3 +119,7 @@ x86_64-pc-windows-msvc = "windows-latest"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
+
+[workspace.metadata.dist.dependencies.apt]
+gcc-aarch64-linux-gnu = { version = '*', targets = ["aarch64-unknown-linux-gnu", "aarch64-unknown-linux-musl"] }
+gcc-armv7-linux-gnu = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }
