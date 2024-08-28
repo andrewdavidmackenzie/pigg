@@ -219,7 +219,7 @@ impl ConnectDialog {
                     return Command::none();
                 }
 
-                let _ = match NodeId::from_str(node_id.as_str().trim()) {
+                return match NodeId::from_str(node_id.as_str().trim()) {
                     Ok(nodeid) => {
                         let url_str = url.trim();
                         let relay_url = if url_str.is_empty() {
@@ -250,7 +250,6 @@ impl ConnectDialog {
                         Command::none()
                     }
                 };
-                Command::none()
             }
 
             #[cfg(feature = "tcp")]
