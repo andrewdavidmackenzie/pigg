@@ -14,7 +14,7 @@ use crate::hw::pin_descriptions::*;
 use super::Hardware;
 use crate::hw_definition::config::{InputPull, LevelChange};
 use crate::hw_definition::description::{
-    HardwareDescription, HardwareDetails, PinDescription, PinDescriptionSet,
+    HardwareDescription, HardwareDetails, PinDescription, PinDescriptionSet, PinNumberingScheme,
 };
 
 /// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
@@ -97,6 +97,8 @@ impl Hardware for HW {
         self.configured_pins.remove(&bcm_pin_number);
 
         match pin_function {
+            PinFunction::None => {}
+
             PinFunction::Input(pull) => {
                 let pin = Gpio::new()
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
@@ -140,23 +142,6 @@ impl Hardware for HW {
                 self.configured_pins
                     .insert(bcm_pin_number, Pin::Output(output_pin));
             }
-
-            // HAT EEPROM ID functions, only used at boot and not configurable
-            PinFunction::I2C_EEPROM_ID_SD | PinFunction::I2C_EEPROM_ID_SC => {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "I2C_EEPROM_ID_SD and SC pins cannot be configured",
-                ));
-            }
-
-            PinFunction::Ground | PinFunction::Power3V3 | PinFunction::Power5V => {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Ground, 3V3 or 5V pins cannot be configured",
-                ));
-            }
-
-            _ => {}
         }
 
         Ok(())
