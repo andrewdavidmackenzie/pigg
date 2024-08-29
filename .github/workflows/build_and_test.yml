@@ -35,7 +35,9 @@ jobs:
         run: rustup target add aarch64-unknown-linux-gnu
 
       - name: Install zig
-        run: sudo snap install zig --classic --beta
+        uses: korandoru/setup-zig@v1
+        with:
+          zig-version: 0.9.1
 
       - name: Install cargo zigbuild
         run: cargo install cargo-zigbuild
