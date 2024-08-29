@@ -168,10 +168,13 @@ async fn set_output_level(
 ) {
     debug!("Pin #{} Output level change: {:?}", bcm_pin_number, level);
 
-    match configured_pins.get_mut(&bcm_pin_number) {
-        Some(Pin::Output) => control.gpio_set(bcm_pin_number, level).await,
-        _ => {
-            error!("Pin {} is not configured as an Output", bcm_pin_number)
+    // GPIO 0 and 1 are connected via cyw43 wifi chip
+    if bcm_pin_number == 0 || bcm_pin_number == 1 {
+        match configured_pins.get_mut(&bcm_pin_number) {
+            Some(Pin::Output) => control.gpio_set(bcm_pin_number, level).await,
+            _ => {
+                error!("Pin {} is not configured as an Output", bcm_pin_number)
+            }
         }
     }
 }

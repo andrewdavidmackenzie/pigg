@@ -8,7 +8,6 @@ const PIN_1: PinDescription = PinDescription {
     name: "GP0",
     options: &[
         PinFunction::Output(None),
-        PinFunction::Input(Some(InputPull::PullUp)),
         // SPI0 RX
         // I2C0 SDA
         // UART0 TX
