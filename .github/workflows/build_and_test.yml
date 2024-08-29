@@ -38,7 +38,7 @@ jobs:
         run: sudo snap install zig --classic --beta
 
       - name: Install cargo zigbuild
-        run: cargo install --locked cargo-zigbuild
+        run: cargo install cargo-zigbuild
 
       - name: Checkout
         uses: actions/checkout@v4
