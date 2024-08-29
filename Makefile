@@ -64,11 +64,11 @@ test:
 
 .PHONY: cross-clippy
 cross-clippy:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64"  cargo-zigbuild clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-build
 cross-build-aarch64:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --target=aarch64-unknown-linux-gnu
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cargo-zigbuild build --target=aarch64-unknown-linux-gnu
 
 .PHONY: cross-build-armv7
 cross-build-armv7:
@@ -84,8 +84,7 @@ cross-release-build-armv7:
 
 .PHONY: cross-test-aarch64
 cross-test-aarch64:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --target=aarch64-unknown-linux-gnu
-
+	CROSS_CONTAINER_OPTS="--platform linux/amd64" cargo zigbuild --bins --tests --target=aarch64-unknown-linux-gnu
 .PHONY: copy-aarch64
 copy-aarch64: cross-build-aarch64
 	scp target/aarch64-unknown-linux-gnu/debug/piggui $(PI_USER)@$(PI_TARGET):~/
