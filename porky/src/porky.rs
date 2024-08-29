@@ -270,8 +270,6 @@ async fn apply_pin_config<'a>(
                 set_output_level(control, gpio_pins, bcm_pin_number, *l).await;
             }
         }
-
-        _ => error!("Unsupported Pin Function"),
     }
 
     info!("New pin config for pin #{}", bcm_pin_number);

@@ -27,7 +27,6 @@ impl PinDescriptionSet {
         let mut pins = self
             .pins
             .iter()
-            .filter(|pin| pin.options.len() > 1)
             .filter(|pin| pin.bcm.is_some())
             .collect::<Vec<&PinDescription>>();
         pins.sort_by_key(|pin| pin.bcm.expect("Could not get BCM pin number"));

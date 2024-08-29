@@ -30,7 +30,7 @@ const PIN_3: PinDescription = PinDescription {
     bpn: 3,
     bcm: None,
     name: "Ground",
-    options: &[PinFunction::Ground],
+    options: &[],
 };
 
 const PIN_4: PinDescription = PinDescription {
@@ -86,7 +86,7 @@ const PIN_8: PinDescription = PinDescription {
     bpn: 8,
     bcm: None,
     name: "Ground",
-    options: &[PinFunction::Ground],
+    options: &[],
 };
 
 const PIN_9: PinDescription = PinDescription {
@@ -143,7 +143,7 @@ const PIN_13: PinDescription = PinDescription {
     bpn: 13,
     bcm: None,
     name: "Ground",
-    options: &[PinFunction::Ground],
+    options: &[],
 };
 
 const PIN_14: PinDescription = PinDescription {
@@ -200,7 +200,7 @@ const PIN_18: PinDescription = PinDescription {
     bpn: 18,
     bcm: None,
     name: "Ground",
-    options: &[PinFunction::Ground],
+    options: &[],
 };
 
 const PIN_19: PinDescription = PinDescription {
@@ -257,7 +257,7 @@ const PIN_23: PinDescription = PinDescription {
     bpn: 23,
     bcm: None,
     name: "Ground",
-    options: &[PinFunction::Ground],
+    options: &[],
 };
 
 const PIN_24: PinDescription = PinDescription {
@@ -310,7 +310,7 @@ const PIN_28: PinDescription = PinDescription {
     bpn: 28,
     bcm: None,
     name: "Ground",
-    options: &[PinFunction::Ground],
+    options: &[],
 };
 
 const PIN_29: PinDescription = PinDescription {
@@ -358,7 +358,7 @@ const PIN_33: PinDescription = PinDescription {
     bpn: 33,
     bcm: None,
     name: "3V3",
-    options: &[PinFunction::Power3V3],
+    options: &[],
 };
 
 const PIN_34: PinDescription = PinDescription {
@@ -383,21 +383,21 @@ const PIN_36: PinDescription = PinDescription {
     bpn: 36,
     bcm: None,
     name: "3V3(OUT)",
-    options: &[PinFunction::Power3V3],
+    options: &[],
 };
 
 const PIN_37: PinDescription = PinDescription {
     bpn: 37,
     bcm: None,
     name: "3V3_EN",
-    options: &[PinFunction::Power3V3],
+    options: &[],
 };
 
 const PIN_38: PinDescription = PinDescription {
     bpn: 38,
     bcm: None,
     name: "Ground",
-    options: &[PinFunction::Ground],
+    options: &[],
 };
 
 const PIN_39: PinDescription = PinDescription {

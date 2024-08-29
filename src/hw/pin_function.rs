@@ -18,19 +18,13 @@ mod test {
     #[test]
     fn display_pin_function() {
         let functions = vec![
-            PinFunction::Ground,
             PinFunction::None,
-            PinFunction::Power3V3,
             PinFunction::Output(None),
             PinFunction::Output(Some(true)),
             PinFunction::Output(Some(false)),
             PinFunction::Input(None),
             PinFunction::Input(Some(PullUp)),
             PinFunction::Input(Some(PullDown)),
-            PinFunction::I2C_EEPROM_ID_SC,
-            PinFunction::I2C_EEPROM_ID_SD,
-            PinFunction::Power3V3,
-            PinFunction::Power5V,
         ];
 
         for function in functions {

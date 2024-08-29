@@ -635,8 +635,7 @@ fn create_pin_view_side<'a>(
         .width(Length::Fixed(PIN_OPTION_WIDTH))
         .align_items(Alignment::Center);
 
-    if pin_description.options.len() > 1 {
-        let bcm_pin_number = pin_description.bcm.unwrap();
+    if let Some(bcm_pin_number) = pin_description.bcm {
         let mut pin_options_row = Row::new().align_items(Alignment::Center);
 
         // Filter options

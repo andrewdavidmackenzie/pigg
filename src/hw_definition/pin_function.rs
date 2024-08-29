@@ -24,15 +24,6 @@ use serde::{Deserialize, Serialize};
 pub enum PinFunction {
     None,
 
-    /// HAT ID related functions - two pins to talk to HAT EEPROM via I2C
-    I2C_EEPROM_ID_SD,
-    I2C_EEPROM_ID_SC,
-
-    /// Power and Ground functions
-    Power3V3,
-    Power5V,
-    Ground,
-
     /// GPIO functions
     Input(Option<InputPull>),
     Output(Option<PinLevel>),
