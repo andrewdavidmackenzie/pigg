@@ -4,7 +4,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{io, thread};
 
 use crate::hw::{BCMPinNumber, PinFunction, PinLevel};
-use crate::hw_definition::description::{HardwareDetails, PinDescription, PinDescriptionSet};
+use crate::hw_definition::description::{
+    HardwareDetails, PinDescription, PinDescriptionSet, PinNumberingScheme,
+};
 
 use super::Hardware;
 use super::HardwareDescription;
@@ -36,6 +38,7 @@ impl Hardware for HW {
                 model: "Fake Hardware".to_string(),
             },
             pins: PinDescriptionSet {
+                pin_numbering: PinNumberingScheme::Rows,
                 pins: FAKE_PIN_DESCRIPTIONS.to_vec(),
             },
         })

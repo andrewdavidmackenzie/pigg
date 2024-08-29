@@ -77,6 +77,7 @@ impl Hardware for HW {
         Ok(HardwareDescription {
             details: Self::get_details()?,
             pins: PinDescriptionSet {
+                pin_numbering: PinNumberingScheme::Rows,
                 pins: GPIO_PIN_DESCRIPTIONS.to_vec(),
             },
         })

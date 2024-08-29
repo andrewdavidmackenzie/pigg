@@ -96,7 +96,9 @@ pub trait Hardware {
 mod test {
     use crate::hw;
     use crate::hw::Hardware;
-    use crate::hw_definition::description::{PinDescription, PinDescriptionSet};
+    use crate::hw_definition::description::{
+        PinDescription, PinDescriptionSet, PinNumberingScheme,
+    };
     use crate::hw_definition::pin_function::PinFunction;
     use std::borrow::Cow;
 
@@ -209,6 +211,7 @@ mod test {
             pin7.clone(),
         ];
         let pin_set = PinDescriptionSet {
+            pin_numbering: PinNumberingScheme::Rows,
             pins: pins.to_vec(),
         };
         assert_eq!(
