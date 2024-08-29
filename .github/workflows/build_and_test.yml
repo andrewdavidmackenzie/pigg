@@ -40,8 +40,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and test for cross
-        run: make cross-ci
+      - name: Clippy build and test
+        run: cargo-zigbuild clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
