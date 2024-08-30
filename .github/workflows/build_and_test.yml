@@ -34,6 +34,9 @@ jobs:
       - name: Add aarch64 target with rustup
         run: rustup target add aarch64-unknown-linux-gnu
 
+      - name: Install llvm-tools-preview
+        run: rustup component add llvm-tools-preview
+
       - name: Install zig
         uses: korandoru/setup-zig@v1
         with:
