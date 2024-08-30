@@ -639,11 +639,7 @@ fn create_pin_view_side<'a>(
         .placeholder("Select function");
 
         // select a slightly small font on RPi, to make it fit within pick_list
-        #[cfg(all(
-            target_os = "linux",
-            any(target_arch = "aarch64", target_arch = "arm"),
-            target_env = "gnu"
-        ))]
+        #[cfg(target_os = "linux")]
         let pick_list = pick_list.text_size(14);
         pin_options_row = pin_options_row.push(pick_list);
 
