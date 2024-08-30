@@ -11,6 +11,7 @@ use cyw43_pio::PioSpi;
 use defmt::{error, info, warn};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
+use embassy_futures::select::{select, Either};
 use embassy_net::tcp::TcpSocket;
 use embassy_net::Ipv4Address;
 use embassy_net::{
@@ -27,6 +28,8 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
+use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
+use embassy_sync::channel::{Channel, Receiver, Sender};
 use embassy_time::Instant;
 use embassy_time::Timer;
 use embedded_io_async::Write;
@@ -63,11 +66,21 @@ bind_interrupts!(struct Irqs {
     USBCTRL_IRQ => USBInterruptHandler<USB>;
 });
 
-/// The configured/not-configured state of the GPIO Pins on on the Pi Pico, and how to access them
+static RETURNER: Channel<ThreadModeRawMutex, Flex, 1> = Channel::new();
+static SIGNALLER: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
+
+static mut GPIO_PINS: FnvIndexMap<BCMPinNumber, GPIOPin, 32> = FnvIndexMap::new();
+
+/// The configured/not-configured state of the GPIO Pins on the Pi Pico, and how to access them
 /// as 3 of them are accessed via Cyw43 and others via gpio API
 enum GPIOPin<'a> {
     Available(Flex<'a>),
-    GPIOInput(Flex<'a>),
+    GPIOInput(
+        (
+            Sender<'a, ThreadModeRawMutex, bool, 1>,
+            Receiver<'a, ThreadModeRawMutex, Flex<'a>, 1>,
+        ),
+    ),
     CYW43Input,
     CYW43Output,
     GPIOOutput(Flex<'a>),
@@ -111,20 +124,32 @@ async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
     stack.run().await
 }
 
-/*
 /// Wait until a level change on an input occurs and then send it via TCP to GUI
 #[embassy_executor::task]
 async fn monitor_input(
-    bcm_pin_number: BCMPinNumber,
-    socket: &'static mut TcpSocket<'_>,
-    flex: &'static mut Flex<'static>,
+    _bcm_pin_number: BCMPinNumber,
+    //    socket: &mut TcpSocket<'_>,
+    signaller: Receiver<'static, ThreadModeRawMutex, bool, 1>,
+    returner: Sender<'static, ThreadModeRawMutex, Flex<'static>, 1>,
+    mut flex: Flex<'static>,
 ) {
+    //    let _ = send_input_level(socket, bcm_pin_number, flex.get_level()).await;
+
     loop {
-        let _ = flex.wait_for_any_edge().await;
-        send_input_level(socket, bcm_pin_number, flex.get_level());
+        match select(flex.wait_for_any_edge(), signaller.receive()).await {
+            Either::First(()) => {
+                info!("Level change detected");
+                // send_input_level(socket, bcm_pin_number, flex.get_level()).await
+            }
+            Either::Second(_) => {
+                info!("Monitor returning Pin");
+                // Return the Flex pin and exit the task
+                let _ = returner.send(flex);
+                break;
+            }
+        }
     }
 }
- */
 
 async fn join_wifi(
     control: &mut Control<'_>,
@@ -181,19 +206,6 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address>
     }
 }
 
-/// Wait until a message in received on the [TcpSocket] then deserialize it and return it
-async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessage> {
-    let mut buf = [0; 4096]; // TODO needed?
-
-    // wait for hardware config message
-    let n = socket.read(&mut buf).await.ok()?;
-    if n == 0 {
-        return None;
-    }
-
-    postcard::from_bytes(&buf[..n]).ok()
-}
-
 fn into_level(value: PinLevel) -> Level {
     match value {
         true => Level::High,
@@ -204,7 +216,6 @@ fn into_level(value: PinLevel) -> Level {
 /// Set an output's level using the bcm pin number
 async fn set_output_level<'a>(
     control: &mut Control<'_>,
-    gpio_pins: &mut FnvIndexMap<BCMPinNumber, GPIOPin<'a>, 32>,
     bcm_pin_number: BCMPinNumber,
     pin_level: PinLevel,
 ) {
@@ -214,10 +225,12 @@ async fn set_output_level<'a>(
     );
 
     // GPIO 0 and 1 are connected via cyw43 wifi chip
-    match gpio_pins.get_mut(&bcm_pin_number) {
-        Some(GPIOPin::CYW43Output) => control.gpio_set(bcm_pin_number, pin_level).await,
-        Some(GPIOPin::GPIOOutput(flex)) => flex.set_level(into_level(pin_level)),
-        _ => error!("Pin {} is not configured as an Output", bcm_pin_number),
+    unsafe {
+        match GPIO_PINS.get_mut(&bcm_pin_number) {
+            Some(GPIOPin::CYW43Output) => control.gpio_set(bcm_pin_number, pin_level).await,
+            Some(GPIOPin::GPIOOutput(flex)) => flex.set_level(into_level(pin_level)),
+            _ => error!("Pin {} is not configured as an Output", bcm_pin_number),
+        }
     }
 }
 
@@ -234,55 +247,45 @@ async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: 
     socket.write_all(&message).await.unwrap();
 }
 
-/// Send the current input state for all inputs configured in the config
-async fn send_current_input_levels<'a>(
-    gpio_pins: &FnvIndexMap<BCMPinNumber, GPIOPin<'a>, 32>,
-    socket: &mut TcpSocket<'_>,
-) {
-    for (bcm_pin_number, pin) in gpio_pins {
-        if let GPIOPin::GPIOInput(flex) = pin {
-            let _ = send_input_level(socket, *bcm_pin_number, flex.get_level()).await;
-        }
-    }
-}
-
 /// Apply the requested config to one pin, using bcm_pin_number
 async fn apply_pin_config<'a>(
     control: &mut Control<'_>,
-    gpio_pins: &mut FnvIndexMap<BCMPinNumber, GPIOPin<'a>, 32>,
-    _spawner: &Spawner,
+    spawner: &Spawner,
     bcm_pin_number: BCMPinNumber,
     new_pin_function: &PinFunction,
     _socket: &mut TcpSocket<'_>,
 ) {
-    let Some(entry) = gpio_pins.remove(&bcm_pin_number) else {
-        error!("Could not find pin #{}", bcm_pin_number);
-        return;
-    };
-
-    let gpio_pin = match entry {
-        GPIOPin::Available(flex) | GPIOPin::GPIOInput(flex) | GPIOPin::GPIOOutput(flex) => {
-            Some(flex)
+    let gpio_pin = unsafe {
+        match GPIO_PINS.remove(&bcm_pin_number) {
+            Some(GPIOPin::GPIOInput((signaller, returner))) => {
+                // Signal to pin monitor to exit
+                signaller.send(true).await;
+                // Recover the Flex
+                Some(returner.receive().await)
+            }
+            Some(GPIOPin::Available(flex)) | Some(GPIOPin::GPIOOutput(flex)) => Some(flex),
+            Some(GPIOPin::CYW43Input) | Some(GPIOPin::CYW43Output) => None,
+            _ => {
+                error!("Could not find pin #{}", bcm_pin_number);
+                return;
+            }
         }
-        GPIOPin::CYW43Input | GPIOPin::CYW43Output => None,
     };
 
     match new_pin_function {
         PinFunction::None => {
             // if pin 0, 1 or 2 - then have been removed and so are considered unconfigured
             if let Some(flex) = gpio_pin {
-                let _ = gpio_pins.insert(bcm_pin_number, GPIOPin::Available(flex));
+                unsafe {
+                    let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::Available(flex));
+                }
             }
             info!("Pin #{} - Unconfigured", bcm_pin_number);
         }
 
         PinFunction::Input(pull) => {
-            // GPIO 2 is connected via cyw43 wifi chip
-            if bcm_pin_number == 2 {
-                let _ = gpio_pins.insert(bcm_pin_number, GPIOPin::CYW43Input);
-                info!("Pin #{} - Configured as input via cyw43", bcm_pin_number);
-            } else {
-                if let Some(mut flex) = gpio_pin {
+            match gpio_pin {
+                Some(mut flex) => {
                     flex.set_as_input();
                     info!("Pin #{} Configured as GPIO input", bcm_pin_number);
 
@@ -292,31 +295,36 @@ async fn apply_pin_config<'a>(
                         Some(InputPull::PullDown) => flex.set_pull(Pull::Down),
                     };
 
-                    /*
                     spawner
-                        .spawn(wait_for_level_change(bcm_pin_number, socket, &mut flex))
+                        .spawn(monitor_input(
+                            bcm_pin_number,
+                            //                            socket,
+                            SIGNALLER.receiver(),
+                            RETURNER.sender(),
+                            flex,
+                        ))
                         .unwrap();
-                     */
-                    let _ = gpio_pins.insert(bcm_pin_number, GPIOPin::GPIOInput(flex));
+
+                    unsafe {
+                        let _ = GPIO_PINS.insert(
+                            bcm_pin_number,
+                            GPIOPin::GPIOInput((SIGNALLER.sender(), RETURNER.receiver())),
+                        );
+                    }
+                }
+                None => {
+                    // Must be GPIO 2 is connected via cyw43 wifi chip
+                    unsafe {
+                        let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Input);
+                    }
+                    info!("Pin #{} - Configured as input via cyw43", bcm_pin_number);
                 }
             }
         }
 
         PinFunction::Output(pin_level) => {
-            // GPIO 0 and 1 are connected via cyw43 wifi chip
-            if bcm_pin_number == 0 || bcm_pin_number == 1 {
-                info!("Pin #{} Configured as output via cyw43", bcm_pin_number);
-
-                if let Some(l) = pin_level {
-                    control.gpio_set(bcm_pin_number, *l).await;
-                    info!(
-                        "Pin #{} - output level set to '{}'",
-                        bcm_pin_number, pin_level
-                    );
-                }
-                let _ = gpio_pins.insert(bcm_pin_number, GPIOPin::CYW43Output);
-            } else {
-                if let Some(mut flex) = gpio_pin {
+            match gpio_pin {
+                Some(mut flex) => {
                     flex.set_as_output();
                     info!("Pin #{} Configured as GPIO output", bcm_pin_number);
 
@@ -325,7 +333,24 @@ async fn apply_pin_config<'a>(
                         info!("Pin #{} - output level set to '{}'", bcm_pin_number, l);
                     }
 
-                    let _ = gpio_pins.insert(bcm_pin_number, GPIOPin::GPIOOutput(flex));
+                    unsafe {
+                        let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::GPIOOutput(flex));
+                    }
+                }
+                None => {
+                    // Must be GPIO 0 and 1 are connected via cyw43 wifi chip
+                    info!("Pin #{} Configured as output via cyw43", bcm_pin_number);
+
+                    if let Some(l) = pin_level {
+                        control.gpio_set(bcm_pin_number, *l).await;
+                        info!(
+                            "Pin #{} - output level set to '{}'",
+                            bcm_pin_number, pin_level
+                        );
+                    }
+                    unsafe {
+                        let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Output);
+                    }
                 }
             }
         }
@@ -335,22 +360,13 @@ async fn apply_pin_config<'a>(
 /// This takes the GPIOConfig struct and configures all the pins in it
 async fn apply_config<'a>(
     control: &mut Control<'_>,
-    gpio_pins: &mut FnvIndexMap<BCMPinNumber, GPIOPin<'a>, 32>,
     spawner: &Spawner,
     config: &HardwareConfig,
     socket: &mut TcpSocket<'_>,
 ) {
     // Config only has pins that are configured
     for (bcm_pin_number, pin_function) in &config.pin_functions {
-        apply_pin_config(
-            control,
-            gpio_pins,
-            spawner,
-            *bcm_pin_number,
-            pin_function,
-            socket,
-        )
-        .await;
+        apply_pin_config(control, spawner, *bcm_pin_number, pin_function, socket).await;
     }
     info!("New config applied");
 }
@@ -361,21 +377,17 @@ async fn apply_config<'a>(
 /// send_input_level() for use directly from the async context
 async fn apply_config_change<'a>(
     control: &mut Control<'_>,
-    gpio_pins: &mut FnvIndexMap<BCMPinNumber, GPIOPin<'a>, 32>,
     spawner: &Spawner,
     config_change: HardwareConfigMessage,
     socket: &mut TcpSocket<'_>,
 ) {
     match config_change {
-        NewConfig(config) => {
-            apply_config(control, gpio_pins, spawner, &config, socket).await;
-            let _ = send_current_input_levels(gpio_pins, socket).await;
-        }
+        NewConfig(config) => apply_config(control, spawner, &config, socket).await,
         NewPinConfig(bcm, pin_function) => {
-            apply_pin_config(control, gpio_pins, spawner, bcm, &pin_function, socket).await;
+            apply_pin_config(control, spawner, bcm, &pin_function, socket).await
         }
         IOLevelChanged(bcm, level_change) => {
-            set_output_level(control, gpio_pins, bcm, level_change.new_level).await;
+            set_output_level(control, bcm, level_change.new_level).await;
         }
     }
 }
@@ -419,15 +431,29 @@ async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device
     socket.write_all(slice).await.unwrap();
 }
 
+/// Wait until a config message in received on the [TcpSocket] then deserialize it and return it
+/// or return `None` if the connection was broken
+async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessage> {
+    let mut buf = [0; 4096]; // TODO needed?
+
+    let n = socket.read(&mut buf).await.ok()?;
+    if n == 0 {
+        info!("Connection broken");
+        return None;
+    }
+
+    postcard::from_bytes(&buf[..n]).ok()
+}
+
 /// Enter the message loop, processing config change messages from piggui
 async fn message_loop<'a>(
     control: &mut Control<'_>,
-    gpio_pins: &mut FnvIndexMap<BCMPinNumber, GPIOPin<'a>, 32>,
     spawner: &Spawner,
     device_id: [u8; 8],
     ip_address: Ipv4Address,
     stack: &Stack<NetDriver<'static>>,
 ) {
+    // TODO check these are needed
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(stack, &client_state);
 
@@ -441,16 +467,14 @@ async fn message_loop<'a>(
     tcp_accept(&mut socket, &ip_address, &device_id).await;
 
     info!("Entering message loop");
-    loop {
-        if let Some(config_message) = wait_message(&mut socket).await {
-            let _ =
-                apply_config_change(control, gpio_pins, spawner, config_message, &mut socket).await;
-        }
+    // TODO should be a while let - so that we exit when connection is broken?
+    while let Some(config_message) = wait_message(&mut socket).await {
+        apply_config_change(control, spawner, config_message, &mut socket).await;
     }
 }
 
 /*
-Wifi scanning
+Wi-Fi scanning
 
 We could use this to program the ssid config with a list of ssids, and when
 it cannot connect via one, it scans to see if another one it knows is available
@@ -465,39 +489,38 @@ while let Some(bss) = scanner.next().await {
 
  */
 
-fn setup_gpio_pins<'a>(
-    available_pins: AvailablePins,
-) -> FnvIndexMap<BCMPinNumber, GPIOPin<'a>, 32> {
-    let mut gpio_pins = FnvIndexMap::<BCMPinNumber, GPIOPin<'a>, 32>::new();
-
-    let _ = gpio_pins.insert(0, GPIOPin::CYW43Output); // GP0 connected to CYW43 chip
-    let _ = gpio_pins.insert(1, GPIOPin::CYW43Output); // GP1 connected to CYW43 chip
-    let _ = gpio_pins.insert(2, GPIOPin::CYW43Input); // GP2 connected to CYW43 chip
-    let _ = gpio_pins.insert(3, GPIOPin::Available(Flex::new(available_pins.pin_3)));
-    let _ = gpio_pins.insert(4, GPIOPin::Available(Flex::new(available_pins.pin_4)));
-    let _ = gpio_pins.insert(5, GPIOPin::Available(Flex::new(available_pins.pin_5)));
-    let _ = gpio_pins.insert(6, GPIOPin::Available(Flex::new(available_pins.pin_6)));
-    let _ = gpio_pins.insert(7, GPIOPin::Available(Flex::new(available_pins.pin_7)));
-    let _ = gpio_pins.insert(8, GPIOPin::Available(Flex::new(available_pins.pin_8)));
-    let _ = gpio_pins.insert(9, GPIOPin::Available(Flex::new(available_pins.pin_9)));
-    let _ = gpio_pins.insert(10, GPIOPin::Available(Flex::new(available_pins.pin_10)));
-    let _ = gpio_pins.insert(11, GPIOPin::Available(Flex::new(available_pins.pin_11)));
-    let _ = gpio_pins.insert(12, GPIOPin::Available(Flex::new(available_pins.pin_12)));
-    let _ = gpio_pins.insert(13, GPIOPin::Available(Flex::new(available_pins.pin_13)));
-    let _ = gpio_pins.insert(14, GPIOPin::Available(Flex::new(available_pins.pin_14)));
-    let _ = gpio_pins.insert(15, GPIOPin::Available(Flex::new(available_pins.pin_15)));
-    let _ = gpio_pins.insert(16, GPIOPin::Available(Flex::new(available_pins.pin_16)));
-    let _ = gpio_pins.insert(17, GPIOPin::Available(Flex::new(available_pins.pin_17)));
-    let _ = gpio_pins.insert(18, GPIOPin::Available(Flex::new(available_pins.pin_18)));
-    let _ = gpio_pins.insert(19, GPIOPin::Available(Flex::new(available_pins.pin_19)));
-    let _ = gpio_pins.insert(20, GPIOPin::Available(Flex::new(available_pins.pin_20)));
-    let _ = gpio_pins.insert(21, GPIOPin::Available(Flex::new(available_pins.pin_21)));
-    let _ = gpio_pins.insert(22, GPIOPin::Available(Flex::new(available_pins.pin_22)));
-    let _ = gpio_pins.insert(26, GPIOPin::Available(Flex::new(available_pins.pin_26)));
-    let _ = gpio_pins.insert(27, GPIOPin::Available(Flex::new(available_pins.pin_27)));
-    let _ = gpio_pins.insert(28, GPIOPin::Available(Flex::new(available_pins.pin_28)));
-
-    gpio_pins
+/// Take the set of available pins not used by other functions, including the three pins that
+/// are connected via the CYW43 Wi-Fi chip. Create [Flex] Pins out of each of the GPIO pins.
+/// Put them all into the GPIO_PINS map, marking them as available
+fn setup_gpio_pins<'a>(available_pins: AvailablePins) {
+    unsafe {
+        let _ = GPIO_PINS.insert(0, GPIOPin::CYW43Output); // GP0 connected to CYW43 chip
+        let _ = GPIO_PINS.insert(1, GPIOPin::CYW43Output); // GP1 connected to CYW43 chip
+        let _ = GPIO_PINS.insert(2, GPIOPin::CYW43Input); // GP2 connected to CYW43 chip
+        let _ = GPIO_PINS.insert(3, GPIOPin::Available(Flex::new(available_pins.pin_3)));
+        let _ = GPIO_PINS.insert(4, GPIOPin::Available(Flex::new(available_pins.pin_4)));
+        let _ = GPIO_PINS.insert(5, GPIOPin::Available(Flex::new(available_pins.pin_5)));
+        let _ = GPIO_PINS.insert(6, GPIOPin::Available(Flex::new(available_pins.pin_6)));
+        let _ = GPIO_PINS.insert(7, GPIOPin::Available(Flex::new(available_pins.pin_7)));
+        let _ = GPIO_PINS.insert(8, GPIOPin::Available(Flex::new(available_pins.pin_8)));
+        let _ = GPIO_PINS.insert(9, GPIOPin::Available(Flex::new(available_pins.pin_9)));
+        let _ = GPIO_PINS.insert(10, GPIOPin::Available(Flex::new(available_pins.pin_10)));
+        let _ = GPIO_PINS.insert(11, GPIOPin::Available(Flex::new(available_pins.pin_11)));
+        let _ = GPIO_PINS.insert(12, GPIOPin::Available(Flex::new(available_pins.pin_12)));
+        let _ = GPIO_PINS.insert(13, GPIOPin::Available(Flex::new(available_pins.pin_13)));
+        let _ = GPIO_PINS.insert(14, GPIOPin::Available(Flex::new(available_pins.pin_14)));
+        let _ = GPIO_PINS.insert(15, GPIOPin::Available(Flex::new(available_pins.pin_15)));
+        let _ = GPIO_PINS.insert(16, GPIOPin::Available(Flex::new(available_pins.pin_16)));
+        let _ = GPIO_PINS.insert(17, GPIOPin::Available(Flex::new(available_pins.pin_17)));
+        let _ = GPIO_PINS.insert(18, GPIOPin::Available(Flex::new(available_pins.pin_18)));
+        let _ = GPIO_PINS.insert(19, GPIOPin::Available(Flex::new(available_pins.pin_19)));
+        let _ = GPIO_PINS.insert(20, GPIOPin::Available(Flex::new(available_pins.pin_20)));
+        let _ = GPIO_PINS.insert(21, GPIOPin::Available(Flex::new(available_pins.pin_21)));
+        let _ = GPIO_PINS.insert(22, GPIOPin::Available(Flex::new(available_pins.pin_22)));
+        let _ = GPIO_PINS.insert(26, GPIOPin::Available(Flex::new(available_pins.pin_26)));
+        let _ = GPIO_PINS.insert(27, GPIOPin::Available(Flex::new(available_pins.pin_27)));
+        let _ = GPIO_PINS.insert(28, GPIOPin::Available(Flex::new(available_pins.pin_28)));
+    }
 }
 
 #[embassy_executor::main]
@@ -576,19 +599,11 @@ async fn main(spawner: Spawner) {
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
 
-    let mut gpio_pins = setup_gpio_pins(available_pins);
+    setup_gpio_pins(available_pins);
 
     while let Some(ip_address) = join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
-            message_loop(
-                &mut control,
-                &mut gpio_pins,
-                &spawner,
-                device_id,
-                ip_address,
-                stack,
-            )
-            .await;
+            message_loop(&mut control, &spawner, device_id, ip_address, stack).await;
             info!("Disconnected");
         }
     }

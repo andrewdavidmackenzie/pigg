@@ -198,7 +198,7 @@ dependencies = [
  "cortex-m",
  "cortex-m-rt",
  "defmt",
- "embassy-futures",
+ "embassy-futures 0.1.1 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
  "embassy-net-driver-channel",
  "embassy-sync 0.6.0 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
  "embassy-time",
@@ -352,7 +352,7 @@ name = "embassy-embedded-hal"
 version = "0.2.0"
 source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865#12381a6078921bdefc5f8ccd8b25aa1ba67a5865"
 dependencies = [
- "embassy-futures",
+ "embassy-futures 0.1.1 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
  "embassy-sync 0.6.0 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
  "embassy-time",
  "embedded-hal 0.2.7",
@@ -387,6 +387,12 @@ dependencies = [
  "quote",
  "syn 2.0.50",
 ]
+
+[[package]]
+name = "embassy-futures"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f878075b9794c1e4ac788c95b728f26aa6366d32eeb10c7051389f898f7d067"
 
 [[package]]
 name = "embassy-futures"
@@ -434,7 +440,7 @@ name = "embassy-net-driver-channel"
 version = "0.3.0"
 source = "git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865#12381a6078921bdefc5f8ccd8b25aa1ba67a5865"
 dependencies = [
- "embassy-futures",
+ "embassy-futures 0.1.1 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
  "embassy-net-driver",
  "embassy-sync 0.6.0 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
 ]
@@ -452,7 +458,7 @@ dependencies = [
  "defmt",
  "document-features",
  "embassy-embedded-hal",
- "embassy-futures",
+ "embassy-futures 0.1.1 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
  "embassy-hal-internal",
  "embassy-sync 0.6.0 (git+https://github.com/andrewdavidmackenzie/embassy.git?rev=12381a6078921bdefc5f8ccd8b25aa1ba67a5865)",
  "embassy-time",
@@ -1135,8 +1141,10 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "embassy-executor",
+ "embassy-futures 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "embassy-net",
  "embassy-rp",
+ "embassy-sync 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embassy-time",
  "embedded-io-async",
  "faster-hex",
