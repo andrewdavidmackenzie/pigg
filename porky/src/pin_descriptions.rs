@@ -382,7 +382,7 @@ const PIN_35: PinDescription = PinDescription {
 const PIN_36: PinDescription = PinDescription {
     bpn: 36,
     bcm: None,
-    name: "3V3(OUT)",
+    name: "3V3",
     options: &[],
 };
 

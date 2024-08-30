@@ -15,7 +15,7 @@ pub struct HardwareConfig {
     #[cfg(feature = "std")]
     pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
     #[cfg(not(feature = "std"))]
-    pub pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 64>,
+    pub pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 32>,
 }
 
 /// This enum is for hardware config changes initiated in the GUI by the user,
