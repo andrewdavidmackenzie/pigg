@@ -59,6 +59,9 @@ jobs:
           components: clippy,llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
 
+      - name: Run fmt check
+        run: cargo fmt --all -- --check
+
       - name: InstallCoverageTools
         if: runner.os != 'Windows'
         run: cargo install grcov
