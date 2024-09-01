@@ -185,7 +185,7 @@ impl Application for Piggui {
                 if self.unsaved_changes {
                     let _ = self
                         .modal_handler
-                        .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
+                        .update(ModalMessage::UnsavedLoadConfigChangesModal, &self.hardware_view);
                 } else {
                     return Command::batch(vec![pick_and_load()]);
                 }
