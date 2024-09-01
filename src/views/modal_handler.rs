@@ -7,18 +7,22 @@ use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row};
 use iced::{keyboard, window, Color, Command, Element, Event};
 use iced_futures::Subscription;
+use crate::file_helper::pick_and_load;
 
 pub struct DisplayModal {
     pub show_modal: bool,
     title: String,
     body: String,
     is_warning: bool,
+    is_load: bool,
 }
 
 #[derive(Clone, Debug)]
 pub enum ModalMessage {
     HideModal,
     UnsavedChangesExitModal,
+    UnsavedLoadConfigChangesModal,
+    LoadFile,
     HardwareDetailsModal,
     VersionModal,
     ExitApp,
@@ -55,6 +59,7 @@ impl DisplayModal {
             body: String::new(),  // Body of the modal
             show_modal: false,
             is_warning: false,
+            is_load: false,
         }
     }
 
@@ -73,6 +78,7 @@ impl DisplayModal {
             ModalMessage::UnsavedChangesExitModal => {
                 self.show_modal = true;
                 self.is_warning = true;
+                self.is_load = false;
                 self.title = "Unsaved Changes".to_string();
                 self.body =
                     "You have unsaved changes. Do you want to exit without saving?".to_string();
@@ -83,15 +89,32 @@ impl DisplayModal {
             ModalMessage::HardwareDetailsModal => {
                 self.show_modal = true;
                 self.is_warning = false;
+                self.is_load = false;
                 self.title = "About Connected Hardware".to_string();
                 self.body = hardware_view.hw_description().to_string();
                 Command::none()
+            }
+
+            ModalMessage::LoadFile => {
+                self.show_modal = false;
+                return Command::batch(vec![pick_and_load()])
+            }
+
+            ModalMessage::UnsavedLoadConfigChangesModal => {
+                self.show_modal = true;
+                self.is_warning = true;
+                self.is_load = true;
+                self.title = "Unsaved Changes".to_string();
+                self.body = "You have unsaved changes, loading a new config will overwrite them".to_string();
+                Command::none()
+
             }
 
             // Display piggui information
             ModalMessage::VersionModal => {
                 self.show_modal = true;
                 self.is_warning = false;
+                self.is_load = false;
                 self.title = "About Piggui".to_string();
                 self.body = crate::views::version::version().to_string();
                 Command::none()
@@ -118,7 +141,7 @@ impl DisplayModal {
             text_color: Color::new(0.447, 0.624, 0.812, 1.0),
         };
 
-        if self.is_warning {
+        if self.is_warning && !self.is_load {
             text_style = TextStyle {
                 text_color: Color::new(0.988, 0.686, 0.243, 1.0),
             };
@@ -134,6 +157,22 @@ impl DisplayModal {
                         .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
                 .spacing(220);
+        } else if self.is_warning && self.is_load {
+            text_style = TextStyle {
+                text_color: Color::new(0.988, 0.686, 0.243, 1.0),
+            };
+            button_row = button_row.push(
+                button("Continue and load a new config")
+                    .on_press(Message::ModalHandle(ModalMessage::LoadFile))
+                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+            );
+            button_row = button_row
+                .push(
+                    button("Return to app")
+                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                )
+                .spacing(120);
         } else {
             button_row = button_row.push(
                 button("Close")
