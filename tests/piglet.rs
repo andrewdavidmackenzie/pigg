@@ -146,7 +146,9 @@ fn help() {
     let output = run_piglet(vec!["--help".into()], None);
     println!("Output: {}", output);
     assert!(
-        output.contains("'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'"),
+        output.contains(
+            "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'"
+        ),
         "Failed to display help"
     );
 }
