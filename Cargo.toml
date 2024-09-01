@@ -100,14 +100,7 @@ installers = ["shell", "homebrew", "msi"]
 # A GitHub repo to push Homebrew formulas to
 tap = "andrewdavidmackenzie/pigg-tap"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = [
-    "aarch64-apple-darwin",
-    "aarch64-unknown-linux-gnu",
-    "armv7-unknown-linux-gnueabihf",
-    "x86_64-apple-darwin",
-    "x86_64-unknown-linux-gnu",
-    "x86_64-pc-windows-msvc",
-]
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "armv7-unknown-linux-gnueabihf", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Which actions to run on pull requests
