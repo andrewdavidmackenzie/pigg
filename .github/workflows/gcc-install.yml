@@ -1,4 +1,2 @@
 - name: Install GCC for arm
-  run: |
-    sudo apt-get install gcc-arm-linux-gnueabihf
-    sudo apt-get install arm-linux-gnueabihf-gcc
+  run: sudo apt-get install gcc-arm-linux-gnueabihf
