@@ -1,3 +1,4 @@
+use crate::file_helper::pick_and_load;
 use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
@@ -7,14 +8,21 @@ use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row};
 use iced::{keyboard, window, Color, Command, Element, Event};
 use iced_futures::Subscription;
-use crate::file_helper::pick_and_load;
 
 pub struct DisplayModal {
     pub show_modal: bool,
-    title: String,
-    body: String,
-    is_warning: bool,
-    is_load: bool,
+    modal_type: Option<ModalType>,
+}
+pub enum ModalType {
+    Warning {
+        title: String,
+        body: String,
+        load_config: bool,
+    },
+    Info {
+        title: String,
+        body: String,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -55,11 +63,8 @@ pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
 impl DisplayModal {
     pub fn new() -> Self {
         Self {
-            title: String::new(), // Title of the modal
-            body: String::new(),  // Body of the modal
             show_modal: false,
-            is_warning: false,
-            is_load: false,
+            modal_type: None,
         }
     }
 
@@ -77,46 +82,48 @@ impl DisplayModal {
             // Display warning for unsaved changes
             ModalMessage::UnsavedChangesExitModal => {
                 self.show_modal = true;
-                self.is_warning = true;
-                self.is_load = false;
-                self.title = "Unsaved Changes".to_string();
-                self.body =
-                    "You have unsaved changes. Do you want to exit without saving?".to_string();
+                self.modal_type = Some(ModalType::Warning {
+                    title: "Unsaved Changes".to_string(),
+                    body: "You have unsaved changes. Do you want to exit without saving?"
+                        .to_string(),
+                    load_config: false,
+                });
                 Command::none()
             }
 
             // Display hardware information
             ModalMessage::HardwareDetailsModal => {
                 self.show_modal = true;
-                self.is_warning = false;
-                self.is_load = false;
-                self.title = "About Connected Hardware".to_string();
-                self.body = hardware_view.hw_description().to_string();
+                self.modal_type = Some(ModalType::Info {
+                    title: "About Connected Hardware".to_string(),
+                    body: hardware_view.hw_description().to_string(),
+                });
                 Command::none()
             }
 
             ModalMessage::LoadFile => {
                 self.show_modal = false;
-                return Command::batch(vec![pick_and_load()])
+                return Command::batch(vec![pick_and_load()]);
             }
 
             ModalMessage::UnsavedLoadConfigChangesModal => {
                 self.show_modal = true;
-                self.is_warning = true;
-                self.is_load = true;
-                self.title = "Unsaved Changes".to_string();
-                self.body = "You have unsaved changes, loading a new config will overwrite them".to_string();
+                self.modal_type = Some(ModalType::Warning {
+                    title: "Unsaved Changes".to_string(),
+                    body: "You have unsaved changes, loading a new config will overwrite them"
+                        .to_string(),
+                    load_config: true,
+                });
                 Command::none()
-
             }
 
             // Display piggui information
             ModalMessage::VersionModal => {
                 self.show_modal = true;
-                self.is_warning = false;
-                self.is_load = false;
-                self.title = "About Piggui".to_string();
-                self.body = crate::views::version::version().to_string();
+                self.modal_type = Some(ModalType::Info {
+                    title: "About Piggui".to_string(),
+                    body: crate::views::version::version().to_string(),
+                });
                 Command::none()
             }
 
@@ -136,66 +143,90 @@ impl DisplayModal {
     }
 
     pub fn view(&self) -> Element<Message> {
-        let mut button_row = Row::new();
-        let mut text_style = TextStyle {
-            text_color: Color::new(0.447, 0.624, 0.812, 1.0),
-        };
+        match &self.modal_type {
+            Some(ModalType::Warning {
+                title,
+                body,
+                load_config,
+            }) => {
+                let mut button_row = Row::new();
+                let text_style = TextStyle {
+                    text_color: Color::new(0.988, 0.686, 0.243, 1.0),
+                };
 
-        if self.is_warning && !self.is_load {
-            text_style = TextStyle {
-                text_color: Color::new(0.988, 0.686, 0.243, 1.0),
-            };
-            button_row = button_row.push(
-                button("Exit without saving")
-                    .on_press(Message::ModalHandle(ModalMessage::ExitApp))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-            ); // Exits the application
-            button_row = button_row
-                .push(
-                    button("Return to app")
-                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                if *load_config {
+                    button_row = button_row
+                        .push(
+                            button("Continue and load a new config")
+                                .on_press(Message::ModalHandle(ModalMessage::LoadFile))
+                                .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                        )
+                        .push(
+                            button("Return to app")
+                                .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                                .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                        )
+                        .spacing(120);
+                } else {
+                    button_row = button_row
+                        .push(
+                            button("Exit without saving")
+                                .on_press(Message::ModalHandle(ModalMessage::ExitApp))
+                                .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                        )
+                        .push(
+                            button("Return to app")
+                                .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                                .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                        )
+                        .spacing(220);
+                }
+
+                container(
+                    column![column![
+                        text(title.clone())
+                            .size(20)
+                            .style(text_style.get_text_color()),
+                        column![text(body.clone()),].spacing(10),
+                        column![button_row].spacing(5),
+                    ]
+                    .spacing(10)]
+                    .spacing(20),
                 )
-                .spacing(220);
-        } else if self.is_warning && self.is_load {
-            text_style = TextStyle {
-                text_color: Color::new(0.988, 0.686, 0.243, 1.0),
-            };
-            button_row = button_row.push(
-                button("Continue and load a new config")
-                    .on_press(Message::ModalHandle(ModalMessage::LoadFile))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-            );
-            button_row = button_row
-                .push(
-                    button("Return to app")
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+            }
+            Some(ModalType::Info { title, body }) => {
+                let text_style = TextStyle {
+                    text_color: Color::new(0.447, 0.624, 0.812, 1.0),
+                };
+
+                let button_row = Row::new().push(
+                    button("Close")
                         .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                        .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                );
+
+                container(
+                    column![column![
+                        text(title.clone())
+                            .size(20)
+                            .style(text_style.get_text_color()),
+                        column![text(body.clone()),].spacing(10),
+                        column![button_row].spacing(5),
+                    ]
+                    .spacing(10)]
+                    .spacing(20),
                 )
-                .spacing(120);
-        } else {
-            button_row = button_row.push(
-                button("Close")
-                    .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-            );
+                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .width(520)
+                .padding(15)
+                .into()
+            }
+            None => container(column![]).into(), // Render empty container
         }
-
-        container(
-            column![column![
-                text(self.title.clone())
-                    .size(20)
-                    .style(text_style.get_text_color()),
-                column![text(self.body.clone()),].spacing(10),
-                column![button_row].spacing(5),
-            ]
-            .spacing(10)]
-            .spacing(20),
-        )
-        .style(MODAL_CONTAINER_STYLE.get_container_style())
-        .width(520)
-        .padding(15)
-        .into()
     }
 
     pub fn subscription(&self) -> Subscription<ModalMessage> {
@@ -212,12 +243,13 @@ mod tests {
     fn test_hide_modal() {
         let mut display_modal = DisplayModal::new();
         display_modal.show_modal = true;
+        display_modal.modal_type = Some(ModalType::Info {
+            title: "Test".to_string(),
+            body: "Test body".to_string(),
+        });
 
         let _ = display_modal.update(ModalMessage::HideModal, &HardwareView::new());
         assert!(!display_modal.show_modal);
-        assert!(display_modal.title.is_empty());
-        assert!(display_modal.body.is_empty());
-        assert!(!display_modal.is_warning);
     }
 
     #[test]
@@ -226,12 +258,22 @@ mod tests {
 
         let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal, &HardwareView::new());
         assert!(display_modal.show_modal);
-        assert!(display_modal.is_warning);
-        assert_eq!(display_modal.title, "Unsaved Changes");
-        assert_eq!(
-            display_modal.body,
-            "You have unsaved changes. Do you want to exit without saving?"
-        );
+
+        if let Some(ModalType::Warning {
+            title,
+            body,
+            load_config,
+        }) = &display_modal.modal_type
+        {
+            assert_eq!(title, "Unsaved Changes");
+            assert_eq!(
+                body,
+                "You have unsaved changes. Do you want to exit without saving?"
+            );
+            assert!(!*load_config);
+        } else {
+            panic!("ModalType should be Warning");
+        }
     }
 
     #[test]
@@ -240,11 +282,12 @@ mod tests {
 
         let _ = display_modal.update(ModalMessage::VersionModal, &HardwareView::new());
         assert!(display_modal.show_modal);
-        assert!(!display_modal.is_warning);
-        assert_eq!(display_modal.title, "About Piggui");
-        assert_eq!(
-            display_modal.body,
-            crate::views::version::version().to_string()
-        );
+
+        if let Some(ModalType::Info { title, body }) = &display_modal.modal_type {
+            assert_eq!(title, "About Piggui");
+            assert_eq!(body, &crate::views::version::version().to_string());
+        } else {
+            panic!("ModalType should be Info");
+        }
     }
 }
