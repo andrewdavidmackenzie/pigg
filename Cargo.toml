@@ -38,12 +38,12 @@ discovery = []
 derive_more = { version = "=1.0.0-beta.6", optional = true } # To fix iroh-net issue
 iroh-net = { version = "0.19.0", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
-local-ip-address = { version = "0.6.1", default-features = false, optional = true }
+local-ip-address = { version = "0.6.2", default-features = false, optional = true }
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.209", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0.127", default-features = false, features = ["std"] }
+serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
 serde_arrays = { version = "0.1.0", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
@@ -77,7 +77,7 @@ serial_test = "3.1.1"
 sysinfo = { version = "0.31.4", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
 rfd = "0.14.1"
-clap = { version = "4.5.16", default-features = false, features = ["std", "help", "error-context"] }
+clap = { version = "4.5.17", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
 rppal = "0.19.0"
