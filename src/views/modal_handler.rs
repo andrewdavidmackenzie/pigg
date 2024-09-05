@@ -51,6 +51,13 @@ pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_radius: 2.0,
     border_width: 2.0,
 };
+const HYPERLINK_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::TRANSPARENT,
+    text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0),
+    border_radius: 2.0,
+    hovered_bg_color: Color::TRANSPARENT,
+    hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0)
+};
 
 impl DisplayModal {
     pub fn new() -> Self {
@@ -134,14 +141,6 @@ impl DisplayModal {
             text_color: Color::new(0.447, 0.624, 0.812, 1.0),
         };
 
-        let hyperlink = ButtonStyle {
-            bg_color: Color::TRANSPARENT,
-            text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0), // Slightly darker blue
-            border_radius: 2.0, // Slight rounding of corners
-            hovered_bg_color: Color::TRANSPARENT,
-            hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0)
-        };
-
         if self.is_warning {
             text_style = TextStyle {
                 text_color: Color::new(0.988, 0.686, 0.243, 1.0),
@@ -161,7 +160,7 @@ impl DisplayModal {
         } else if self.is_version {
             let mut hyperlink_row = Row::new();
             hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
-            hyperlink_row = hyperlink_row.push(button(Text::new("Project Repository")).on_press(Message::ModalHandle(ModalMessage::OpenRepoLink)).style(hyperlink.get_button_style())
+            hyperlink_row = hyperlink_row.push(button(Text::new("Project Repository")).on_press(Message::ModalHandle(ModalMessage::OpenRepoLink)).style(HYPERLINK_BUTTON_STYLE.get_button_style())
             ).align_items(Alignment::Center);
             button_row = button_row.push(hyperlink_row);
         } else {
