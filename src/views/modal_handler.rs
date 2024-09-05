@@ -113,8 +113,7 @@ impl DisplayModal {
             }
 
             ModalMessage::OpenRepoLink => {
-                let url = env!("CARGO_PKG_REPOSITORY");
-                if let Err(e) = webbrowser::open(url) {
+                if let Err(e) = webbrowser::open(REPOSITORY) {
                     eprintln!("failed to open project repository: {}", e);
                 }
                 Command::none()
