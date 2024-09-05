@@ -6,6 +6,7 @@ use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row, Text};
 use iced::{keyboard, window, Color, Command, Element, Event};
+use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 use crate::views::version::REPOSITORY;
 
@@ -133,6 +134,14 @@ impl DisplayModal {
             text_color: Color::new(0.447, 0.624, 0.812, 1.0),
         };
 
+        let hyperlink = ButtonStyle {
+            bg_color: Color::TRANSPARENT,
+            text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0), // Slightly darker blue
+            border_radius: 2.0, // Slight rounding of corners
+            hovered_bg_color: Color::TRANSPARENT,
+            hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0)
+        };
+
         if self.is_warning {
             text_style = TextStyle {
                 text_color: Color::new(0.988, 0.686, 0.243, 1.0),
@@ -150,10 +159,11 @@ impl DisplayModal {
                 )
                 .spacing(220);
         } else if self.is_version {
-            button_row = button_row.push("Full source available at: ");
-            button_row = button_row.push(
-                button(Text::new("repo link")).on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
-            )
+            let mut hyperlink_row = Row::new();
+            hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
+            hyperlink_row = hyperlink_row.push(button(Text::new("Project Repository")).on_press(Message::ModalHandle(ModalMessage::OpenRepoLink)).style(hyperlink.get_button_style())
+            ).align_items(Alignment::Center);
+            button_row = button_row.push(hyperlink_row);
         } else {
             button_row = button_row.push(
                 button("Close")
