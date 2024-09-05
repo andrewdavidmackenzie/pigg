@@ -4,15 +4,17 @@ use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareView;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::{button, column, container, text, Row};
+use iced::widget::{button, column, container, text, Row, Text};
 use iced::{keyboard, window, Color, Command, Element, Event};
 use iced_futures::Subscription;
+use crate::views::version::REPOSITORY;
 
 pub struct DisplayModal {
     pub show_modal: bool,
     title: String,
     body: String,
     is_warning: bool,
+    is_version: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -23,6 +25,7 @@ pub enum ModalMessage {
     VersionModal,
     ExitApp,
     EscKeyEvent(Event),
+    OpenRepoLink,
 }
 
 pub(crate) const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
@@ -55,6 +58,7 @@ impl DisplayModal {
             body: String::new(),  // Body of the modal
             show_modal: false,
             is_warning: false,
+            is_version: false,
         }
     }
 
@@ -73,6 +77,7 @@ impl DisplayModal {
             ModalMessage::UnsavedChangesExitModal => {
                 self.show_modal = true;
                 self.is_warning = true;
+                self.is_version = false;
                 self.title = "Unsaved Changes".to_string();
                 self.body =
                     "You have unsaved changes. Do you want to exit without saving?".to_string();
@@ -83,6 +88,7 @@ impl DisplayModal {
             ModalMessage::HardwareDetailsModal => {
                 self.show_modal = true;
                 self.is_warning = false;
+                self.is_version = false;
                 self.title = "About Connected Hardware".to_string();
                 self.body = hardware_view.hw_description().to_string();
                 Command::none()
@@ -92,8 +98,17 @@ impl DisplayModal {
             ModalMessage::VersionModal => {
                 self.show_modal = true;
                 self.is_warning = false;
+                self.is_version = true;
                 self.title = "About Piggui".to_string();
                 self.body = crate::views::version::version().to_string();
+                Command::none()
+            }
+
+            ModalMessage::OpenRepoLink => {
+                let url = env!("CARGO_PKG_REPOSITORY");
+                if let Err(e) = webbrowser::open(url) {
+                    eprintln!("failed to open project repository: {}", e);
+                }
                 Command::none()
             }
 
@@ -134,6 +149,11 @@ impl DisplayModal {
                         .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                 )
                 .spacing(220);
+        } else if self.is_version {
+            button_row = button_row.push("Full source available at: ");
+            button_row = button_row.push(
+                button(Text::new("repo link")).on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
+            )
         } else {
             button_row = button_row.push(
                 button("Close")
