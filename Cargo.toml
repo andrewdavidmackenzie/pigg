@@ -93,7 +93,7 @@ lto = "thin"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.19.1"
+cargo-dist-version = "0.22.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -101,17 +101,15 @@ installers = ["shell", "homebrew", "msi"]
 # A GitHub repo to push Homebrew formulas to
 tap = "andrewdavidmackenzie/pigg-tap"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc",
-    "aarch64-unknown-linux-gnu", "armv7-unknown-linux-gnueabihf"]
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "armv7-unknown-linux-gnueabihf", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
-# Publish jobs to run in CI
+# Which actions to run on pull requests
 pr-run-mode = "plan"
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
-github-build-setup = "gcc-install.yml"
 
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
@@ -123,5 +121,5 @@ x86_64-pc-windows-msvc = "windows-latest"
 skip_optional_dependencies = true
 
 [workspace.metadata.dist.dependencies.apt]
-gcc-aarch64-linux-gnu = { version = '*', targets = ["aarch64-unknown-linux-gnu", "aarch64-unknown-linux-musl"] }
+gcc-aarch64-linux-gnu = { version = '*', targets = ["aarch64-unknown-linux-gnu"] }
 gcc-arm-linux-gnueabihf = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }
