@@ -2,13 +2,13 @@ use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareView;
+use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row, Text};
 use iced::{keyboard, window, Color, Command, Element, Event};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
-use crate::views::version::REPOSITORY;
 
 pub struct DisplayModal {
     pub show_modal: bool,
@@ -56,7 +56,7 @@ const HYPERLINK_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0),
     border_radius: 2.0,
     hovered_bg_color: Color::TRANSPARENT,
-    hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0)
+    hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0),
 };
 
 impl DisplayModal {
@@ -159,8 +159,13 @@ impl DisplayModal {
         } else if self.is_version {
             let mut hyperlink_row = Row::new();
             hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
-            hyperlink_row = hyperlink_row.push(button(Text::new("Project Repository")).on_press(Message::ModalHandle(ModalMessage::OpenRepoLink)).style(HYPERLINK_BUTTON_STYLE.get_button_style())
-            ).align_items(Alignment::Center);
+            hyperlink_row = hyperlink_row
+                .push(
+                    button(Text::new("Project Repository"))
+                        .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
+                        .style(HYPERLINK_BUTTON_STYLE.get_button_style()),
+                )
+                .align_items(Alignment::Center);
             button_row = button_row.push(hyperlink_row);
         } else {
             button_row = button_row.push(
