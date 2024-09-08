@@ -64,6 +64,7 @@ pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_radius: 2.0,
     border_width: 2.0,
 };
+
 const HYPERLINK_BUTTON_STYLE: ButtonStyle = ButtonStyle {
     bg_color: Color::TRANSPARENT,
     text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0),
