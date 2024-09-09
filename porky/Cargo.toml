@@ -48,9 +48,9 @@ toml = { version = "0.8.8" }
 [patch.crates-io]
 # make sure to get the latest git rev from github, you can see the latest one here:
 # https://github.com/embassy-rs/embassy/commits/main/
-embassy-time = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "12381a6078921bdefc5f8ccd8b25aa1ba67a5865" }
-embassy-executor = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "12381a6078921bdefc5f8ccd8b25aa1ba67a5865" }
-embassy-rp = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "12381a6078921bdefc5f8ccd8b25aa1ba67a5865" }
-embassy-net = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "12381a6078921bdefc5f8ccd8b25aa1ba67a5865" }
-cyw43 = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "12381a6078921bdefc5f8ccd8b25aa1ba67a5865" }
-cyw43-pio = { git = "https://github.com/andrewdavidmackenzie/embassy.git", rev = "12381a6078921bdefc5f8ccd8b25aa1ba67a5865" }
+embassy-time = { git = "https://github.com/embassy-rs/embassy.git" }
+embassy-executor = { git = "https://github.com/embassy-rs/embassy.git" }
+embassy-rp = { git = "https://github.com/embassy-rs/embassy.git" }
+embassy-net = { git = "https://github.com/embassy-rs/embassy.git" }
+cyw43 = { git = "https://github.com/embassy-rs/embassy.git" }
+cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }

@@ -7,6 +7,7 @@ use crate::ssid::{
 use core::str::from_utf8;
 use cyw43::Control;
 use cyw43::NetDriver;
+use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
 use defmt::{error, info, warn};
 use defmt_rtt as _;
@@ -163,17 +164,21 @@ async fn join_wifi(
             "Attempt #{} to join wifi network: '{}' with security = '{}'",
             attempt, ssid_name, SSID_SECURITY
         );
-        let result = match SSID_SECURITY {
-            "open" => control.join_open(ssid_name).await,
-            "wpa2" => control.join_wpa2(ssid_name, ssid_pass).await,
-            "wpa3" => control.join_wpa3(ssid_name, ssid_pass).await,
+
+        let mut join_options = JoinOptions::new(ssid_pass.as_bytes());
+
+        match SSID_SECURITY {
+            "open" => join_options.auth = JoinAuth::Open,
+            "wpa" => join_options.auth = JoinAuth::Wpa,
+            "wpa2" => join_options.auth = JoinAuth::Wpa2,
+            "wpa3" => join_options.auth = JoinAuth::Wpa3,
             _ => {
                 error!("Security '{}' is not supported", SSID_SECURITY);
                 return None;
             }
         };
 
-        match result {
+        match control.join(ssid_name, join_options).await {
             Ok(_) => {
                 info!("Joined wifi network: '{}'", ssid_name);
                 return wait_for_dhcp(stack).await;
@@ -186,7 +191,7 @@ async fn join_wifi(
     }
 
     error!(
-        "Failed to join Wifi after {} reties",
+        "Failed to join Wifi after {} retries",
         WIFI_JOIN_RETRY_ATTEMPT_LIMIT
     );
     None
@@ -234,6 +239,7 @@ async fn set_output_level<'a>(
     }
 }
 
+#[allow(dead_code)] // TODO remove when finish sending input levels
 /// Send a detected input level change back to the GUI using `writer` [TcpStream],
 /// timestamping with the current time in Utc
 async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: Level) {
@@ -593,13 +599,12 @@ async fn main(spawner: Spawner) {
     let seed = 0x0123_4567_89ab_cdef;
     static STACK: StaticCell<Stack<NetDriver<'static>>> = StaticCell::new();
     let stack = STACK.init(Stack::new(net_device, dhcp_config, resources, seed));
-
     spawner.spawn(net_task(stack)).unwrap();
+
+    setup_gpio_pins(available_pins);
 
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
-
-    setup_gpio_pins(available_pins);
 
     while let Some(ip_address) = join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
