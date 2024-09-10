@@ -13,14 +13,14 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::str::FromStr;
 
-fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> Child {
+fn run_piglet(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut piglet_command = Command::new("cargo");
 
     let mut args = vec![
         "run".to_string(),
         "--bin".to_string(),
-        "piglet".to_string(),
+        binary.to_string(),
         "--".into(),
     ];
 
@@ -53,6 +53,24 @@ fn kill(mut piglet: Child) {
     // wait for the process to be removed
     piglet.wait().expect("Failed to wait until piglet exited");
 }
+fn get_output(piglet: &mut Child) -> String {
+    let stdout = piglet
+        .stdout
+        .as_mut()
+        .expect("Could not read stdout of piglet");
+    let mut reader = BufReader::new(stdout);
+    let mut output = String::new();
+    let mut line = String::new();
+
+    while let Ok(count) = reader.read_line(&mut line) {
+        if count == 0 || line.contains("Waiting") {
+            break;
+        }
+        output.push_str(&line);
+    }
+
+    output
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 fn ip_port(output: &str) -> (IpAddr, u16) {
@@ -69,26 +87,10 @@ fn ip_port(output: &str) -> (IpAddr, u16) {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub fn run_then_kill_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
-    let mut piglet = run_piglet(options, config);
-
-    let stdout = piglet
-        .stdout
-        .as_mut()
-        .expect("Could not read stdout of piglet");
-    let mut reader = BufReader::new(stdout);
-    let mut output = String::new();
-    let mut line = String::new();
-
-    while let Ok(count) = reader.read_line(&mut line) {
-        if count == 0 || line.contains("Waiting") {
-            break;
-        }
-        output.push_str(&line);
-    }
-
+pub fn run_then_kill(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> String {
+    let mut piglet = run_piglet(binary, options, config);
+    let output = get_output(&mut piglet);
     kill(piglet);
-
     output
 }
 
@@ -104,7 +106,7 @@ pub fn run_then_kill_piglet(options: Vec<String>, config: Option<PathBuf>) -> St
 #[test]
 #[serial]
 fn node_id_is_output() {
-    let output = run_then_kill_piglet(vec![], None);
+    let output = run_then_kill("piglet", vec![], None);
     assert!(
         output.contains("nodeid:"),
         "Output of piglet does not contain nodeid"
@@ -123,8 +125,8 @@ fn node_id_is_output() {
 #[test]
 #[serial]
 fn ip_is_output() {
-    let output = run_then_kill_piglet(vec![], None);
-    ip_port(&output);
+    let output = run_then_kill("piglet", vec![], None);
+    let (_, _) = ip_port(&output);
 }
 
 #[cfg(not(any(
@@ -138,7 +140,7 @@ fn ip_is_output() {
 #[test]
 #[serial]
 fn version_number() {
-    let output = run_then_kill_piglet(vec!["--version".into()], None);
+    let output = run_then_kill("piglet", vec!["--version".into()], None);
     println!("Output: {}", output);
     assert!(
         output.contains("piglet"),
@@ -162,7 +164,7 @@ fn test_verbosity_levels() {
     let levels = ["debug", "trace", "info"];
     for &level in &levels {
         println!("Testing verbosity level: {}", level);
-        let output = run_then_kill_piglet(vec!["--verbosity".into(), level.into()], None);
+        let output = run_then_kill("piglet", vec!["--verbosity".into(), level.into()], None);
         println!("Output: {}", output);
         let expected_output = match level {
             "info" => "nodeid",
@@ -188,7 +190,7 @@ fn test_verbosity_levels() {
 #[test]
 #[serial]
 fn help() {
-    let output = run_then_kill_piglet(vec!["--help".into()], None);
+    let output = run_then_kill("piglet", vec!["--help".into()], None);
     println!("Output: {}", output);
     assert!(
         output.contains(
