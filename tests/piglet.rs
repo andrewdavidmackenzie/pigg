@@ -8,8 +8,10 @@
 )))]
 use serial_test::serial;
 use std::io::{BufRead, BufReader};
+use std::net::IpAddr;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::str::FromStr;
 
 fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -108,10 +110,15 @@ fn node_id_is_output() {
 #[serial]
 fn ip_is_output() {
     let output = run_then_kill_piglet(vec![], None);
-    assert!(
-        output.contains("ip:"),
-        "Output of piglet does not contain ip"
-    );
+    let ip = output
+        .split("ip:")
+        .nth(1)
+        .expect("Output of piglet does not contain ip")
+        .trim();
+    let ip = ip.trim_matches('\'');
+    let (address, port) = ip.split_once(":").expect("Could not find colon");
+    IpAddr::from_str(address).expect("Could not parse valid IP Address");
+    let _ = port.parse::<u16>().expect("Not a valid port number");
 }
 
 #[cfg(not(any(
