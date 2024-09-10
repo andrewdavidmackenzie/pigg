@@ -164,6 +164,34 @@ fn connect_via_ip() {
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
     ),
+    target_arch = "wasm32",
+    not(feature = "iroh")
+)))]
+#[test]
+#[serial]
+fn connect_via_iroh() {
+    let mut piglet = run("piglet", vec![], None);
+    let line = wait_for_output(&mut piglet, "nodeid:").expect("Could not get IP address");
+    let nodeid = line.split_once(":").expect("Couldn't fine ':'").1;
+
+    let mut piggui = run(
+        "piggui",
+        vec!["--nodeid".to_string(), nodeid.to_string()],
+        None,
+    );
+
+    assert!(wait_for_output(&mut piggui, "Connected to hardware").is_some());
+
+    kill(piggui);
+    kill(piglet);
+}
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
     target_arch = "wasm32"
 )))]
 #[test]
