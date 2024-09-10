@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::str::FromStr;
 
-fn run_piglet(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
+fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut piglet_command = Command::new("cargo");
 
@@ -53,6 +53,7 @@ fn kill(mut piglet: Child) {
     // wait for the process to be removed
     piglet.wait().expect("Failed to wait until piglet exited");
 }
+
 fn get_output(piglet: &mut Child) -> String {
     let stdout = piglet
         .stdout
@@ -88,7 +89,7 @@ fn ip_port(output: &str) -> (IpAddr, u16) {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_then_kill(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> String {
-    let mut piglet = run_piglet(binary, options, config);
+    let mut piglet = run(binary, options, config);
     let output = get_output(&mut piglet);
     kill(piglet);
     output
@@ -120,7 +121,7 @@ fn node_id_is_output() {
         target_env = "gnu"
     ),
     target_arch = "wasm32",
-    not(feature = "iroh")
+    not(feature = "tcp")
 )))]
 #[test]
 #[serial]
