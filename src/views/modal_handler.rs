@@ -120,7 +120,7 @@ impl DisplayModal {
 
             ModalMessage::LoadFile => {
                 self.show_modal = false;
-                return Command::batch(vec![pick_and_load()]);
+                Command::batch(vec![pick_and_load()])
             }
 
             ModalMessage::UnsavedLoadConfigChangesModal => {
