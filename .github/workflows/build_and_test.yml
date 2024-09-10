@@ -13,6 +13,7 @@ env:
   CARGO_INCREMENTAL: 0
   RUSTFLAGS: -C instrument-coverage
   LLVM_PROFILE_FILE: pigg-%p-%m.profraw
+  RUST_BACKTRACE: 1
 
 jobs:
   markdown-link-check:
@@ -79,7 +80,7 @@ jobs:
           ref: HEAD
 
       - name: Clippy build and test
-        run: RUST_BACKTRACE=1 make clippy build test
+        run: make clippy build test
 
       - name: Clean up coverage
         if: runner.os != 'Windows'
