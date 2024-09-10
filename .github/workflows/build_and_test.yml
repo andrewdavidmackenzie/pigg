@@ -79,7 +79,7 @@ jobs:
           ref: HEAD
 
       - name: Clippy build and test
-        run: make clippy build test
+        run: RUST_BACKTRACE=long make clippy build test
 
       - name: Clean up coverage
         if: runner.os != 'Windows'
