@@ -3,14 +3,17 @@ use crate::styles::button_style::ButtonStyle;
 use crate::styles::container_style::ContainerStyle;
 use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareView;
+use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::{button, column, container, text, Row};
-use iced::{keyboard, window, Color, Command, Element, Event};
+use iced::widget::{button, column, container, text, Row, Text};
+use iced::{keyboard, window, Color, Command, Element, Event, Length};
+use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
 pub struct DisplayModal {
     pub show_modal: bool,
+    is_warning: bool,
     modal_type: Option<ModalType>,
 }
 pub enum ModalType {
@@ -22,6 +25,7 @@ pub enum ModalType {
     Info {
         title: String,
         body: String,
+        is_version: bool,
     },
 }
 
@@ -35,6 +39,7 @@ pub enum ModalMessage {
     VersionModal,
     ExitApp,
     EscKeyEvent(Event),
+    OpenRepoLink,
 }
 
 pub(crate) const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
@@ -60,10 +65,19 @@ pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
     border_width: 2.0,
 };
 
+const HYPERLINK_BUTTON_STYLE: ButtonStyle = ButtonStyle {
+    bg_color: Color::TRANSPARENT,
+    text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0),
+    border_radius: 2.0,
+    hovered_bg_color: Color::TRANSPARENT,
+    hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0),
+};
+
 impl DisplayModal {
     pub fn new() -> Self {
         Self {
             show_modal: false,
+            is_warning: false,
             modal_type: None,
         }
     }
@@ -82,6 +96,7 @@ impl DisplayModal {
             // Display warning for unsaved changes
             ModalMessage::UnsavedChangesExitModal => {
                 self.show_modal = true;
+                self.is_warning = true;
                 self.modal_type = Some(ModalType::Warning {
                     title: "Unsaved Changes".to_string(),
                     body: "You have unsaved changes. Do you want to exit without saving?"
@@ -94,9 +109,11 @@ impl DisplayModal {
             // Display hardware information
             ModalMessage::HardwareDetailsModal => {
                 self.show_modal = true;
+                self.is_warning = false;
                 self.modal_type = Some(ModalType::Info {
                     title: "About Connected Hardware".to_string(),
                     body: hardware_view.hw_description().to_string(),
+                    is_version: false,
                 });
                 Command::none()
             }
@@ -120,10 +137,19 @@ impl DisplayModal {
             // Display piggui information
             ModalMessage::VersionModal => {
                 self.show_modal = true;
+                self.is_warning = false;
                 self.modal_type = Some(ModalType::Info {
                     title: "About Piggui".to_string(),
                     body: crate::views::version::version().to_string(),
+                    is_version: true,
                 });
+                Command::none()
+            }
+
+            ModalMessage::OpenRepoLink => {
+                if let Err(e) = webbrowser::open(REPOSITORY) {
+                    eprintln!("failed to open project repository: {}", e);
+                }
                 Command::none()
             }
 
@@ -198,16 +224,38 @@ impl DisplayModal {
                 .padding(15)
                 .into()
             }
-            Some(ModalType::Info { title, body }) => {
+            Some(ModalType::Info {
+                title,
+                body,
+                is_version,
+            }) => {
                 let text_style = TextStyle {
                     text_color: Color::new(0.447, 0.624, 0.812, 1.0),
                 };
-
-                let button_row = Row::new().push(
-                    button("Close")
-                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                        .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
-                );
+                let mut hyperlink_row = Row::new().width(Length::Fill);
+                let mut button_row = Row::new();
+                if *is_version {
+                    hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
+                    hyperlink_row = hyperlink_row
+                        .push(
+                            button(Text::new("github"))
+                                .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
+                                .style(HYPERLINK_BUTTON_STYLE.get_button_style()),
+                        )
+                        .align_items(Alignment::Center);
+                    button_row = button_row.push(hyperlink_row);
+                    button_row = button_row.push(
+                        button("Close")
+                            .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                            .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                    );
+                } else {
+                    button_row = button_row.push(
+                        button("Close")
+                            .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                            .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                    );
+                }
 
                 container(
                     column![column![
@@ -246,6 +294,7 @@ mod tests {
         display_modal.modal_type = Some(ModalType::Info {
             title: "Test".to_string(),
             body: "Test body".to_string(),
+            is_version: false,
         });
 
         let _ = display_modal.update(ModalMessage::HideModal, &HardwareView::new());
@@ -283,7 +332,12 @@ mod tests {
         let _ = display_modal.update(ModalMessage::VersionModal, &HardwareView::new());
         assert!(display_modal.show_modal);
 
-        if let Some(ModalType::Info { title, body }) = &display_modal.modal_type {
+        if let Some(ModalType::Info {
+            title,
+            body,
+            is_version,
+        }) = &display_modal.modal_type
+        {
             assert_eq!(title, "About Piggui");
             assert_eq!(body, &crate::views::version::version().to_string());
         } else {
