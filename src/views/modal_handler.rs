@@ -238,7 +238,7 @@ impl DisplayModal {
                     hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
                     hyperlink_row = hyperlink_row
                         .push(
-                            button(Text::new("Project Repository"))
+                            button(Text::new("github"))
                                 .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
                                 .style(HYPERLINK_BUTTON_STYLE.get_button_style()),
                         )
