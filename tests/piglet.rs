@@ -55,6 +55,20 @@ fn kill(mut piglet: Child) {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+fn ip_port(output: &str) -> (IpAddr, u16) {
+    let ip = output
+        .split("ip:")
+        .nth(1)
+        .expect("Output of piglet does not contain ip")
+        .trim();
+    let ip = ip.trim_matches('\'');
+    let (address, port) = ip.split_once(":").expect("Could not find colon");
+    let a = IpAddr::from_str(address).expect("Could not parse valid IP Address");
+    let p = port.parse::<u16>().expect("Not a valid port number");
+    (a, p)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run_then_kill_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
     let mut piglet = run_piglet(options, config);
 
@@ -110,15 +124,7 @@ fn node_id_is_output() {
 #[serial]
 fn ip_is_output() {
     let output = run_then_kill_piglet(vec![], None);
-    let ip = output
-        .split("ip:")
-        .nth(1)
-        .expect("Output of piglet does not contain ip")
-        .trim();
-    let ip = ip.trim_matches('\'');
-    let (address, port) = ip.split_once(":").expect("Could not find colon");
-    IpAddr::from_str(address).expect("Could not parse valid IP Address");
-    let _ = port.parse::<u16>().expect("Not a valid port number");
+    ip_port(&output);
 }
 
 #[cfg(not(any(
