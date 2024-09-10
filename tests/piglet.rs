@@ -47,7 +47,6 @@ fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn kill(mut piglet: Child) {
-    println!("Killing 'piglet'");
     piglet.kill().expect("Failed to kill piglet process");
 
     // wait for the process to be removed
@@ -216,14 +215,13 @@ fn version_number() {
 fn test_verbosity_levels() {
     let levels = ["debug", "trace", "info"];
     for &level in &levels {
-        println!("Testing verbosity level: {}", level);
         let output = run_then_kill(
             "piglet",
             vec!["--verbosity".into(), level.into()],
             None,
             &level.to_uppercase(),
         )
-        .expect("Failed to find expected output");
+        .expect("Failed to find output of expected verbosity");
 
         assert!(
             output.contains(&level.to_uppercase()),
