@@ -9,10 +9,9 @@
 use serial_test::serial;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 
-#[cfg(not(target_arch = "wasm32"))]
-pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
+fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut piglet_command = Command::new("cargo");
 
@@ -34,14 +33,28 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
     println!("Running Command: cargo {}", args.join(" "));
 
     // spawn the 'piglet' process
-    let mut piglet = piglet_command
+    piglet_command
         .args(args)
         .current_dir(crate_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn piglet");
+        .expect("Failed to spawn piglet")
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn kill(mut piglet: Child) {
+    println!("Killing 'piglet'");
+    piglet.kill().expect("Failed to kill piglet process");
+
+    // wait for the process to be removed
+    piglet.wait().expect("Failed to wait until piglet exited");
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn run_then_kill_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
+    let mut piglet = run_piglet(options, config);
 
     let stdout = piglet
         .stdout
@@ -49,15 +62,16 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
         .expect("Could not read stdout of piglet");
     let mut reader = BufReader::new(stdout);
     let mut output = String::new();
-    reader
-        .read_line(&mut output)
-        .expect("Could not read stdout of piglet");
+    let mut line = String::new();
 
-    println!("Killing 'piglet'");
-    piglet.kill().expect("Failed to kill piglet process");
+    while let Ok(count) = reader.read_line(&mut line) {
+        if count == 0 || line.contains("Waiting") {
+            break;
+        }
+        output.push_str(&line);
+    }
 
-    // wait for the process to be removed
-    piglet.wait().expect("Failed to wait until piglet exited");
+    kill(piglet);
 
     output
 }
@@ -74,11 +88,29 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
 #[test]
 #[serial]
 fn node_id_is_output() {
-    let output = run_piglet(vec![], None);
-    println!("Output: {}", output);
+    let output = run_then_kill_piglet(vec![], None);
     assert!(
-        output.contains("nodeid"),
+        output.contains("nodeid:"),
         "Output of piglet does not contain nodeid"
+    );
+}
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32",
+    not(feature = "iroh")
+)))]
+#[test]
+#[serial]
+fn ip_is_output() {
+    let output = run_then_kill_piglet(vec![], None);
+    assert!(
+        output.contains("ip:"),
+        "Output of piglet does not contain ip"
     );
 }
 
@@ -93,7 +125,7 @@ fn node_id_is_output() {
 #[test]
 #[serial]
 fn version_number() {
-    let output = run_piglet(vec!["--version".into()], None);
+    let output = run_then_kill_piglet(vec!["--version".into()], None);
     println!("Output: {}", output);
     assert!(
         output.contains("piglet"),
@@ -117,7 +149,7 @@ fn test_verbosity_levels() {
     let levels = ["debug", "trace", "info"];
     for &level in &levels {
         println!("Testing verbosity level: {}", level);
-        let output = run_piglet(vec!["--verbosity".into(), level.into()], None);
+        let output = run_then_kill_piglet(vec!["--verbosity".into(), level.into()], None);
         println!("Output: {}", output);
         let expected_output = match level {
             "info" => "nodeid",
@@ -143,7 +175,7 @@ fn test_verbosity_levels() {
 #[test]
 #[serial]
 fn help() {
-    let output = run_piglet(vec!["--help".into()], None);
+    let output = run_then_kill_piglet(vec!["--help".into()], None);
     println!("Output: {}", output);
     assert!(
         output.contains(
