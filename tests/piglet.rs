@@ -15,7 +15,7 @@ use std::str::FromStr;
 
 fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let mut command = Command::new("cargo");
+    let mut command = Command::new(env!("CARGO"));
 
     let mut args = vec![
         "run".to_string(),
