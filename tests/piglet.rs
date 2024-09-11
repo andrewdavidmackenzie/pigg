@@ -15,7 +15,7 @@ use std::str::FromStr;
 
 fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let mut piglet_command = Command::new("cargo");
+    let mut command = Command::new("cargo");
 
     let mut args = vec![
         "run".to_string(),
@@ -35,14 +35,14 @@ fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     println!("Running Command: cargo {}", args.join(" "));
 
     // spawn the 'piglet' process
-    piglet_command
+    command
         .args(args)
         .current_dir(crate_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn piglet")
+        .expect("Failed to spawn command")
 }
 
 #[cfg(not(target_arch = "wasm32"))]
