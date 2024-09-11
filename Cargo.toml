@@ -42,7 +42,7 @@ local-ip-address = { version = "0.6.2", default-features = false, optional = tru
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
-serde = { version = "1.0.209", default-features = false, features = ["derive"] }
+serde = { version = "1.0.210", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
 serde_arrays = { version = "0.1.0", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
