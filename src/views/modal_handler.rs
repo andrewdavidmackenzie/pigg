@@ -338,6 +338,7 @@ mod tests {
             is_version,
         }) = &display_modal.modal_type
         {
+            assert!(is_version);
             assert_eq!(title, "About Piggui");
             assert_eq!(body, &crate::views::version::version().to_string());
         } else {
