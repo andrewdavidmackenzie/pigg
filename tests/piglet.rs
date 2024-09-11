@@ -46,11 +46,11 @@ fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn kill(mut piglet: Child) {
-    piglet.kill().expect("Failed to kill piglet process");
+fn kill(mut child: Child) {
+    child.kill().expect("Failed to kill child process");
 
     // wait for the process to be removed
-    piglet.wait().expect("Failed to wait until piglet exited");
+    child.wait().expect("Failed to wait until child exited");
 }
 
 fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
