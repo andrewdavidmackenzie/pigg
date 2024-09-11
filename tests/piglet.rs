@@ -85,19 +85,6 @@ fn ip_port(output: &str) -> (IpAddr, u16) {
     (a, p)
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-pub fn run_then_kill(
-    binary: &str,
-    options: Vec<String>,
-    config: Option<PathBuf>,
-    token: &str,
-) -> Option<String> {
-    let mut child = run(binary, options, config);
-    let line = wait_for_output(&mut child, token);
-    kill(child);
-    line
-}
-
 #[cfg(not(any(
     all(
         target_os = "linux",
@@ -110,7 +97,9 @@ pub fn run_then_kill(
 #[test]
 #[serial]
 fn node_id_is_output() {
-    run_then_kill("piglet", vec![], None, "nodeid:").expect("Could not get nodeid");
+    let mut child = run("piglet", vec![], None);
+    wait_for_output(&mut child, "nodeid:").expect("Could not get nodeid");
+    kill(child);
 }
 
 #[cfg(not(any(
@@ -125,7 +114,9 @@ fn node_id_is_output() {
 #[test]
 #[serial]
 fn ip_is_output() {
-    let line = run_then_kill("piglet", vec![], None, "ip:").expect("Could not get ip");
+    let mut child = run("piglet", vec![], None);
+    let line = wait_for_output(&mut child, "ip:").expect("Could not get ip");
+    kill(child);
     let (_, _) = ip_port(&line);
 }
 
@@ -196,9 +187,10 @@ fn connect_via_iroh() {
 #[test]
 #[serial]
 fn version_number() {
-    let output = run_then_kill("piglet", vec!["--version".into()], None, "piglet")
-        .expect("Failed to get expected output");
-    let version = output.split(' ').nth(1).unwrap().trim();
+    let mut child = run("piglet", vec!["--version".into()], None);
+    let line = wait_for_output(&mut child, "piglet").expect("Failed to get expected output");
+    kill(child);
+    let version = line.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
 }
 
@@ -215,16 +207,13 @@ fn version_number() {
 fn test_verbosity_levels() {
     let levels = ["debug", "trace", "info"];
     for &level in &levels {
-        let output = run_then_kill(
-            "piglet",
-            vec!["--verbosity".into(), level.into()],
-            None,
-            &level.to_uppercase(),
-        )
-        .expect("Failed to find output of expected verbosity");
+        let mut child = run("piglet", vec!["--verbosity".into(), level.into()], None);
+        let line = wait_for_output(&mut child, &level.to_uppercase())
+            .expect("Failed to get expected output");
+        kill(child);
 
         assert!(
-            output.contains(&level.to_uppercase()),
+            line.contains(&level.to_uppercase()),
             "Failed to set verbosity level to {}",
             level
         );
@@ -242,11 +231,11 @@ fn test_verbosity_levels() {
 #[test]
 #[serial]
 fn help() {
-    run_then_kill(
-        "piglet",
-        vec!["--help".into()],
-        None,
+    let mut child = run("piglet", vec!["--help".into()], None);
+    wait_for_output(
+        &mut child,
         "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
     )
-    .expect("Failed to find expected output");
+    .expect("Failed to get expected output");
+    kill(child);
 }
