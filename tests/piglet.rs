@@ -151,7 +151,7 @@ fn connect_via_ip() {
         None,
     );
 
-    assert!(wait_for_output(&mut piggui, "Connected to hardware").is_some());
+    wait_for_output(&mut piggui, "Connected to hardware").expect("Did not get connected message");
 
     kill(piggui);
     kill(piglet);
@@ -179,7 +179,7 @@ fn connect_via_iroh() {
         None,
     );
 
-    assert!(wait_for_output(&mut piggui, "Connected to hardware").is_some());
+    wait_for_output(&mut piggui, "Connected to hardware").expect("Did not get connected message");
 
     kill(piggui);
     kill(piglet);
