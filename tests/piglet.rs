@@ -38,9 +38,9 @@ fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     command
         .args(args)
         .current_dir(crate_dir)
-        .stdin(Stdio::piped())
+        .stdin(Stdio::inherit())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::inherit())
         .spawn()
         .expect("Failed to spawn command")
 }
