@@ -69,12 +69,6 @@ jobs:
           components: clippy,llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install X11
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install xorg openbox
-
       - name: InstallCoverageTools
         if: runner.os != 'Windows'
         run: cargo install grcov
