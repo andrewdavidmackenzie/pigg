@@ -14,6 +14,7 @@ env:
   RUSTFLAGS: -C instrument-coverage
   LLVM_PROFILE_FILE: pigg-%p-%m.profraw
   RUST_BACKTRACE: 1
+  WAYLAND_DISPLAY: wayland-0
 
 jobs:
   markdown-link-check:
