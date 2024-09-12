@@ -87,6 +87,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           make clippy build
+          sudo apt-get install weston
           weston -Bheadless -Sweston &
           make test
         env:
