@@ -38,7 +38,7 @@ fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     command
         .args(args)
         .current_dir(crate_dir)
-        .stdin(Stdio::inherit())
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()
