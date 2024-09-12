@@ -86,8 +86,9 @@ jobs:
       - name: Clippy build and test - Linux
         if: runner.os == 'Linux'
         run: |
+          make clippy build
           weston -Bheadless -Sweston &
-          make clippy build test
+          make test
         env:
           WAYLAND_DISPLAY: weston
 
