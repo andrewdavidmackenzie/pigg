@@ -71,7 +71,9 @@ jobs:
 
       - name: Install X11
         if: runner.os == 'Linux'
-        run: sudo apt-get install xorg openbox
+        run: |
+          sudo apt-get update
+          sudo apt-get install xorg openbox
 
       - name: InstallCoverageTools
         if: runner.os != 'Windows'
