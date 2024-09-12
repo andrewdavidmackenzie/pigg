@@ -14,7 +14,6 @@ env:
   RUSTFLAGS: -C instrument-coverage
   LLVM_PROFILE_FILE: pigg-%p-%m.profraw
   RUST_BACKTRACE: 1
-  WAYLAND_DISPLAY: wayland-0
 
 jobs:
   markdown-link-check:
@@ -69,6 +68,10 @@ jobs:
         with:
           components: clippy,llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
+
+      - name: Install X11
+        if: runner.os == 'Linux'
+        run: sudo apt-get install xorg openbox
 
       - name: InstallCoverageTools
         if: runner.os != 'Windows'
