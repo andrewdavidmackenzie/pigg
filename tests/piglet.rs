@@ -58,11 +58,7 @@ fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
     let mut reader = BufReader::new(stdout);
     let mut line = String::new();
 
-    while let Ok(count) = reader.read_line(&mut line) {
-        if count == 0 {
-            return None;
-        }
-
+    while let Ok(_) = reader.read_line(&mut line) {
         if line.contains(token) {
             return Some(line);
         }
