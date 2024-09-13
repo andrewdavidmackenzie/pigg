@@ -8,18 +8,19 @@
 )))]
 use serial_test::serial;
 use std::io::{BufRead, BufReader};
+use std::net::IpAddr;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
+use std::str::FromStr;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
+fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let mut piglet_command = Command::new("cargo");
+    let mut command = Command::new(env!("CARGO"));
 
     let mut args = vec![
         "run".to_string(),
         "--bin".to_string(),
-        "piglet".to_string(),
+        binary.to_string(),
         "--".into(),
     ];
 
@@ -34,32 +35,50 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
     println!("Running Command: cargo {}", args.join(" "));
 
     // spawn the 'piglet' process
-    let mut piglet = piglet_command
+    command
         .args(args)
         .current_dir(crate_dir)
-        .stdin(Stdio::piped())
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::inherit())
         .spawn()
-        .expect("Failed to spawn piglet");
+        .expect("Failed to spawn command")
+}
 
-    let stdout = piglet
-        .stdout
-        .as_mut()
-        .expect("Could not read stdout of piglet");
-    let mut reader = BufReader::new(stdout);
-    let mut output = String::new();
-    reader
-        .read_line(&mut output)
-        .expect("Could not read stdout of piglet");
-
-    println!("Killing 'piglet'");
-    piglet.kill().expect("Failed to kill piglet process");
+#[cfg(not(target_arch = "wasm32"))]
+fn kill(mut child: Child) {
+    child.kill().expect("Failed to kill child process");
 
     // wait for the process to be removed
-    piglet.wait().expect("Failed to wait until piglet exited");
+    child.wait().expect("Failed to wait until child exited");
+}
 
-    output
+fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
+    let stdout = piglet.stdout.as_mut().expect("Could not read stdout");
+    let mut reader = BufReader::new(stdout);
+    let mut line = String::new();
+
+    while reader.read_line(&mut line).is_ok() {
+        if line.contains(token) {
+            return Some(line);
+        }
+    }
+
+    None
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn ip_port(output: &str) -> (IpAddr, u16) {
+    let ip = output
+        .split("ip:")
+        .nth(1)
+        .expect("Output of piglet does not contain ip")
+        .trim();
+    let ip = ip.trim_matches('\'');
+    let (address, port) = ip.split_once(":").expect("Could not find colon");
+    let a = IpAddr::from_str(address).expect("Could not parse valid IP Address");
+    let p = port.parse::<u16>().expect("Not a valid port number");
+    (a, p)
 }
 
 #[cfg(not(any(
@@ -74,12 +93,83 @@ pub fn run_piglet(options: Vec<String>, config: Option<PathBuf>) -> String {
 #[test]
 #[serial]
 fn node_id_is_output() {
-    let output = run_piglet(vec![], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains("nodeid"),
-        "Output of piglet does not contain nodeid"
+    let mut child = run("piglet", vec![], None);
+    wait_for_output(&mut child, "nodeid:").expect("Could not get nodeid");
+    kill(child);
+}
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32",
+    not(feature = "tcp")
+)))]
+#[test]
+#[serial]
+fn ip_is_output() {
+    let mut child = run("piglet", vec![], None);
+    let line = wait_for_output(&mut child, "ip:").expect("Could not get ip");
+    kill(child);
+    let (_, _) = ip_port(&line);
+}
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32",
+    not(feature = "tcp")
+)))]
+#[test]
+#[serial]
+fn connect_via_ip() {
+    let mut piglet = run("piglet", vec![], None);
+    let line = wait_for_output(&mut piglet, "ip:").expect("Could not get IP address");
+    let (a, p) = ip_port(&line);
+
+    let mut piggui = run(
+        "piggui",
+        vec!["--ip".to_string(), format!("{}:{}", a, p)],
+        None,
     );
+
+    wait_for_output(&mut piggui, "Connected to hardware").expect("Did not get connected message");
+
+    kill(piggui);
+    kill(piglet);
+}
+
+#[cfg(not(any(
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ),
+    target_arch = "wasm32",
+    not(feature = "iroh")
+)))]
+#[test]
+#[serial]
+fn connect_via_iroh() {
+    let mut piglet = run("piglet", vec![], None);
+    let line = wait_for_output(&mut piglet, "nodeid:").expect("Could not get IP address");
+    let nodeid = line.split_once(":").expect("Couldn't fine ':'").1;
+
+    let mut piggui = run(
+        "piggui",
+        vec!["--nodeid".to_string(), nodeid.to_string()],
+        None,
+    );
+
+    wait_for_output(&mut piggui, "Connected to hardware").expect("Did not get connected message");
+
+    kill(piggui);
+    kill(piglet);
 }
 
 #[cfg(not(any(
@@ -93,13 +183,10 @@ fn node_id_is_output() {
 #[test]
 #[serial]
 fn version_number() {
-    let output = run_piglet(vec!["--version".into()], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains("piglet"),
-        "Output of piglet does not contain version"
-    );
-    let version = output.split(' ').nth(1).unwrap().trim();
+    let mut child = run("piglet", vec!["--version".into()], None);
+    let line = wait_for_output(&mut child, "piglet").expect("Failed to get expected output");
+    kill(child);
+    let version = line.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
 }
 
@@ -116,16 +203,13 @@ fn version_number() {
 fn test_verbosity_levels() {
     let levels = ["debug", "trace", "info"];
     for &level in &levels {
-        println!("Testing verbosity level: {}", level);
-        let output = run_piglet(vec!["--verbosity".into(), level.into()], None);
-        println!("Output: {}", output);
-        let expected_output = match level {
-            "info" => "nodeid",
-            _ => &level.to_uppercase(),
-        };
+        let mut child = run("piglet", vec!["--verbosity".into(), level.into()], None);
+        let line = wait_for_output(&mut child, &level.to_uppercase())
+            .expect("Failed to get expected output");
+        kill(child);
 
         assert!(
-            output.contains(expected_output),
+            line.contains(&level.to_uppercase()),
             "Failed to set verbosity level to {}",
             level
         );
@@ -143,12 +227,11 @@ fn test_verbosity_levels() {
 #[test]
 #[serial]
 fn help() {
-    let output = run_piglet(vec!["--help".into()], None);
-    println!("Output: {}", output);
-    assert!(
-        output.contains(
-            "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'"
-        ),
-        "Failed to display help"
-    );
+    let mut child = run("piglet", vec!["--help".into()], None);
+    wait_for_output(
+        &mut child,
+        "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
+    )
+    .expect("Failed to get expected output");
+    kill(child);
 }

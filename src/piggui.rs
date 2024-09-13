@@ -86,6 +86,8 @@ impl Piggui {
 
     /// Send a message about successful connection to the info bar
     fn info_connected(&mut self, message: String) {
+        #[cfg(debug_assertions)]
+        println!("{message}");
         self.info_row.add_info_message(Info(message));
     }
 

@@ -120,7 +120,7 @@ impl DisplayModal {
 
             ModalMessage::LoadFile => {
                 self.show_modal = false;
-                return Command::batch(vec![pick_and_load()]);
+                Command::batch(vec![pick_and_load()])
             }
 
             ModalMessage::UnsavedLoadConfigChangesModal => {
@@ -338,6 +338,7 @@ mod tests {
             is_version,
         }) = &display_modal.modal_type
         {
+            assert!(is_version);
             assert_eq!(title, "About Piggui");
             assert_eq!(body, &crate::views::version::version().to_string());
         } else {
