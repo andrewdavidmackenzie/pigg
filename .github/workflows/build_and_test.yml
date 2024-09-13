@@ -42,8 +42,9 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
       - name: Install Linker
-        run: sudo apt update
-             sudo apt install gcc-aarch64-linux-gnu
+        run: |
+             sudo apt update
+             sudo apt install -y gcc-aarch64-linux-gnu
 
       - name: Add aarch64 target with rustup
         run: rustup target add aarch64-unknown-linux-gnu
