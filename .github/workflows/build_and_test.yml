@@ -31,27 +31,27 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --all -- --check
 
-    cross:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Clean up files
-          run: |
-            sudo rm -rf /usr/share/dotnet
-            sudo rm -rf /opt/ghc
-            sudo rm -rf "/usr/local/share/boost"
-            sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+  cross:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-        - name: Add aarch64 target with rustup
-          run: rustup target add aarch64-unknown-linux-gnu
+      - name: Add aarch64 target with rustup
+        run: rustup target add aarch64-unknown-linux-gnu
 
-        - name: Install cross tool
-          run: cargo install cross
+      - name: Install cross tool
+        run: cargo install cross
 
-        - name: Checkout
-          uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-        - name: Build and test for cross
-          run: make cross-ci
+      - name: Build and test for cross
+        run: make cross-ci
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
@@ -67,6 +67,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy,llvm-tools-preview
+
       - uses: Swatinem/rust-cache@v2
 
       - name: InstallCoverageTools
