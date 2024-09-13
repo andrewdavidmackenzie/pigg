@@ -32,7 +32,7 @@ jobs:
         run: cargo fmt --all -- --check
 
   cross:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Clean up files
         run: |
