@@ -41,10 +41,10 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-#      - name: Install Linker
-#        run: |
-#             sudo apt update
-#             sudo apt install -y gcc-aarch64-linux-gnu
+      - name: Install Linker
+        run: |
+             sudo apt update
+             sudo apt install -y gcc-aarch64-linux-gnu
 
       - name: Add armv7 target with rustup
         run: rustup target add armv7-unknown-linux-gnueabihf
