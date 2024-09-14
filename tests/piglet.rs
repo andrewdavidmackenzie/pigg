@@ -8,6 +8,7 @@
 )))]
 use serial_test::serial;
 use std::io::{BufRead, BufReader};
+#[cfg(feature = "tcp")]
 use std::net::IpAddr;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -67,7 +68,7 @@ fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
     None
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "tcp"))]
 fn ip_port(output: &str) -> (IpAddr, u16) {
     let ip = output
         .split("ip:")
