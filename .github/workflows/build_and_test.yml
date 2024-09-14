@@ -31,7 +31,7 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --all -- --check
 
-  cross:
+  cross-compile-and-test-armv7:
     runs-on: ubuntu-latest
     steps:
       - name: Clean up files
@@ -56,7 +56,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build and test for cross
-        run: make cross-ci
+        run: make cross-ci-armv7
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
