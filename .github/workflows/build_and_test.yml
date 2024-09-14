@@ -55,6 +55,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Clean the cargo build
+        run: cargo clean
+
       - name: Build and test for cross
         run: make cross-ci
 
