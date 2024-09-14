@@ -26,5 +26,15 @@ jobs:
       - name: cargo build-all-features
         run: cargo build-all-features
 
-      - name: cargo test-all-features
+      - name: cargo test all features - non-Linux
+        if: runner.os != 'Linux'
         run: cargo test-all-features
+
+      - name: cargo test all features - Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install weston
+          weston -Bheadless -Sweston &
+          cargo test-all-features
+        env:
+          WAYLAND_DISPLAY: weston
