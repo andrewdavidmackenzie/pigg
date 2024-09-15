@@ -12,6 +12,7 @@ use std::io::{BufRead, BufReader};
 use std::net::IpAddr;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+#[cfg(feature = "tcp")]
 use std::str::FromStr;
 
 fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
