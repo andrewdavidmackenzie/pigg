@@ -63,7 +63,7 @@ jobs:
         run: make cross-armv7
 
       - name: Build and test for aarch64 using cross
-        run: RUSTFLAGS = "" make cross-aarch64
+        run: RUSTFLAGS= make cross-aarch64
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
