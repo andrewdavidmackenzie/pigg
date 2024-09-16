@@ -67,7 +67,7 @@ tracing = { version = "0.1.40", default-features = false }
 once_cell = { version = "1.20.0", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13.0"
-webbrowser = { version = "1.0.1", default-features = false}
+webbrowser = { version = "1.0.2", default-features = false}
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
