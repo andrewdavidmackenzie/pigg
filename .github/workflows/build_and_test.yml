@@ -46,9 +46,8 @@ jobs:
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu
 
-      # TODO Try binstall of cross or from shell
-      - name: Install cross tool
-        run: cargo install cross
+      - name: Install cross
+        run: cargo binstall cross -y --force
 
       - name: Checkout
         uses: actions/checkout@v4
