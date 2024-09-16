@@ -31,7 +31,7 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --all -- --check
 
-  cross-compile-and-test-armv7:
+  cross-compile-and-test-arm:
     runs-on: ubuntu-latest
     steps:
       - name: Clean up files
@@ -43,20 +43,34 @@ jobs:
 
       - name: Install Linker
         run: |
-             sudo apt update
-             sudo apt install -y gcc-aarch64-linux-gnu
+          sudo apt update
+          sudo apt install -y gcc-aarch64-linux-gnu
 
-      - name: Add armv7 target with rustup
-        run: rustup target add armv7-unknown-linux-gnueabihf
+      - name: Setup cargo-binstall (Non-Windows)
+        if: runner.os != 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
-      - name: Install cross tool
-        run: cargo install cross
+      - name: Setup cargo-binstall (Windows)
+        if: runner.os == 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Set-ExecutionPolicy Unrestricted -Scope Process; iex (iwr "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.ps1").Content
+
+      - name: Install cross
+        run: cargo binstall cross -y --force
 
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and test for cross
-        run: make cross-ci-armv7
+      - name: Build and test for armv7 using cross
+        run: make cross-armv7
+
+      - name: Build and test for aarch64 using cross
+        run: RUSTFLAGS= make cross-aarch64
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}

@@ -1,4 +1,4 @@
-#[cfg(not(any(
+#![cfg(not(any(
     all(
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "arm"),
@@ -6,6 +6,7 @@
     ),
     target_arch = "wasm32"
 )))]
+
 use serial_test::serial;
 use std::io::{BufRead, BufReader};
 #[cfg(feature = "tcp")]
@@ -47,7 +48,6 @@ fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
         .expect("Failed to spawn command")
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn kill(mut child: Child) {
     child.kill().expect("Failed to kill child process");
 
@@ -69,7 +69,7 @@ fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
     None
 }
 
-#[cfg(all(not(target_arch = "wasm32"), feature = "tcp"))]
+#[cfg(feature = "tcp")]
 fn ip_port(output: &str) -> (IpAddr, u16) {
     let ip = output
         .split("ip:")
@@ -83,15 +83,7 @@ fn ip_port(output: &str) -> (IpAddr, u16) {
     (a, p)
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32",
-    not(feature = "iroh")
-)))]
+#[cfg(feature = "iroh")]
 #[test]
 #[serial]
 fn node_id_is_output() {
@@ -100,15 +92,7 @@ fn node_id_is_output() {
     kill(child);
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32",
-    not(feature = "tcp")
-)))]
+#[cfg(feature = "tcp")]
 #[test]
 #[serial]
 fn ip_is_output() {
@@ -118,15 +102,7 @@ fn ip_is_output() {
     let (_, _) = ip_port(&line);
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32",
-    not(feature = "tcp")
-)))]
+#[cfg(feature = "tcp")]
 #[test]
 #[serial]
 fn connect_via_ip() {
@@ -146,15 +122,7 @@ fn connect_via_ip() {
     kill(piglet);
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32",
-    not(feature = "iroh")
-)))]
+#[cfg(feature = "iroh")]
 #[test]
 #[serial]
 fn connect_via_iroh() {
@@ -174,14 +142,6 @@ fn connect_via_iroh() {
     kill(piglet);
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
 #[test]
 #[serial]
 fn version_number() {
@@ -192,14 +152,6 @@ fn version_number() {
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
 #[test]
 #[serial]
 fn test_verbosity_levels() {
@@ -218,14 +170,6 @@ fn test_verbosity_levels() {
     }
 }
 
-#[cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
 #[test]
 #[serial]
 fn help() {
