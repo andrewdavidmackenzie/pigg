@@ -46,12 +46,13 @@ jobs:
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu
 
-      # Are these needed, as this installs on the local machine, not the Image running cross
+      # TODO Are these needed, as this installs on the local machine, not the Image running cross
       - name: Add arm targets with rustup
         run: |
           rustup target add armv7-unknown-linux-gnueabihf
           rustup target add aarch64-unknown-linux-gnu
 
+      # TODO Try binstall of cross or from shell
       - name: Install cross tool
         run: cargo install cross
 
