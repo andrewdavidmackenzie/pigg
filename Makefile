@@ -18,18 +18,6 @@ $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 .PHONY: all
 all: clippy build test
 
-.PHONY: cross-armv7
-cross-armv7: cross-build-armv7 cross-test-armv7
-
-.PHONY: cross-aarch64
-cross-aarch64: cross-build-aarch64 cross-test-aarch64
-
-.PHONY: cross-ci
-cross-ci: cross-clippy cross-armv7
-
-.PHONY: cross
-cross: cross-clippy cross-armv7 cross-aarch64
-
 .PHONY: clippy
 clippy:
 	cargo clippy  --tests --no-deps
@@ -71,6 +59,15 @@ test:
 .PHONY: cross-clippy
 cross-clippy:
 	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
+
+.PHONY: cross-armv7
+cross-armv7: cross-build-armv7 cross-test-armv7
+
+.PHONY: cross-aarch64
+cross-aarch64: cross-build-aarch64 cross-test-aarch64
+
+.PHONY: cross
+cross: cross-clippy cross-armv7 cross-aarch64
 
 .PHONY: cross-build
 cross-build-aarch64:
