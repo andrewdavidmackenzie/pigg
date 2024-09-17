@@ -67,7 +67,7 @@ tracing = { version = "0.1.40", default-features = false }
 once_cell = { version = "1.20.0", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13.0"
-webbrowser = { version = "1.0.2", default-features = false}
+webbrowser = { version = "1.0.2", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
@@ -123,3 +123,5 @@ skip_optional_dependencies = true
 [workspace.metadata.dist.dependencies.apt]
 gcc-aarch64-linux-gnu = { version = '*', targets = ["aarch64-unknown-linux-gnu"] }
 gcc-arm-linux-gnueabihf = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }
+# Try this variation to see if it works
+arm-linux-gnueabihf-gcc = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }
