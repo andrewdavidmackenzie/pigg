@@ -313,7 +313,8 @@ impl ConnectDialog {
                     Event::Keyboard(keyboard::Event::KeyPressed {
                         key: keyboard::Key::Named(key::Named::Enter),
                         ..
-                    }) => {
+                    }) =>
+                    {
                         #[cfg(feature = "iroh")]
                         return if self.display_iroh {
                             {
