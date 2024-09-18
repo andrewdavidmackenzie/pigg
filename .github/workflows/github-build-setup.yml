@@ -1,0 +1,4 @@
+- name: Install armv7 and aarch64 Linkers
+  run: |
+    sudo apt-get install gcc-aarch64-linux-gnu
+    sudo apt-get install gcc-arm-linux-gnueabihf
