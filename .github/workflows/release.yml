@@ -117,6 +117,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: "Install armv7 and aarch64 Linkers"
+        run: |
+          sudo apt-get install gcc-aarch64-linux-gnu
+          sudo apt-get install gcc-arm-linux-gnueabihf
       - name: Install cargo-dist
         run: ${{ matrix.install_dist }}
       # Get the dist-manifest
