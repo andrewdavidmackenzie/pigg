@@ -31,7 +31,7 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --all -- --check
 
-  cross-compile-and-test-arm:
+  arm7-build:
     runs-on: ubuntu-latest
     steps:
       - name: Clean up files
@@ -44,33 +44,34 @@ jobs:
       - name: Install Linker
         run: |
           sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu
-
-      - name: Setup cargo-binstall (Non-Windows)
-        if: runner.os != 'Windows'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-
-      - name: Setup cargo-binstall (Windows)
-        if: runner.os == 'Windows'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Set-ExecutionPolicy Unrestricted -Scope Process; iex (iwr "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.ps1").Content
-
-      - name: Install cross
-        run: cargo binstall cross -y --force
+          sudo apt install -y gcc-arm-linux-gnueabihf
 
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and test for armv7 using cross
-        run: make cross-armv7
+      - name: Clippy and Build for armv7
+        run: make armv7
 
-      - name: Build and test for aarch64 using cross
-        run: RUSTFLAGS= make cross-aarch64
+  aarch64-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Install Linkers
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-aarch64-linux-gnu
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clippy and Build for aarch64
+        run: make aarch64
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
