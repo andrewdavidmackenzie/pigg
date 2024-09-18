@@ -110,7 +110,7 @@ pr-run-mode = "plan"
 install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
-github-build-setup = "github-build-setup.yml"
+github-build-setup = "install-arm-linkers.yml"
 
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
