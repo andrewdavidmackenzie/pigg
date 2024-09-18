@@ -118,6 +118,7 @@ jobs:
         with:
           submodules: recursive
       - name: "Install armv7 and aarch64 Linkers"
+        if: "runner.os == 'Linux'"
         run: |
           sudo apt install gcc-aarch64-linux-gnu
           sudo apt install gcc-arm-linux-gnueabihf
