@@ -41,6 +41,9 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
+      - name: Add target
+        run: rustup target add armv7-unknown-linux-gnueabihf
+
       - name: Install Linker
         run: |
           sudo apt update
@@ -61,6 +64,9 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Add target
+        run: rustup target add aarch64-unknown-linux-gnu
 
       - name: Install Linkers
         run: |
