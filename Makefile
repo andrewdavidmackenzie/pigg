@@ -18,9 +18,13 @@ $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 .PHONY: all
 all: clippy build test
 
+.PHONY: clean
+clean:
+    @cargo clean
+
 .PHONY: clippy
 clippy:
-	cargo clippy  --tests --no-deps
+	cargo clippy --tests --no-deps
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
 # To build both binaries on a Pi directly, we will need to modify this
