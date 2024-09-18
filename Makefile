@@ -20,7 +20,7 @@ all: clippy build test
 
 .PHONY: clean
 clean:
-    @cargo clean
+	@cargo clean
 
 .PHONY: clippy
 clippy:
