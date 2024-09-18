@@ -27,7 +27,12 @@ struct SsidSpec {
 }
 
 fn read_ssid(ssid_filename: &str) -> Result<SsidSpec, io::Error> {
-    let ssid_string = std::fs::read_to_string(ssid_filename)?;
+    let ssid_string = std::fs::read_to_string(ssid_filename).map_err(|_| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Could read {} file", ssid_filename),
+        )
+    })?;
     toml::from_str(&ssid_string)
         .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "Could not parse toml ssid file"))
 }
