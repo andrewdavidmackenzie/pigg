@@ -58,7 +58,7 @@ test:
 
 #### armv7 targets
 .PHONY: armv7
-armv7: clippy-armv7 build-armv7 test-armv7
+armv7: clippy-armv7 build-armv7
 
 .PHONY: clippy-armv7
 clippy-armv7:
@@ -72,6 +72,7 @@ build-armv7:
 release-build-armv7:
 	cargo build --release --target=armv7-unknown-linux-gnueabihf
 
+# NOTE: The tests will be built for armv7 architecture, so tests can only be run on that architecture
 .PHONY: test-armv7
 test-armv7:
 	cargo test --target=armv7-unknown-linux-gnueabihf
@@ -89,7 +90,7 @@ copy-release-armv7: build-armv7
 
 #### aarch64 targets
 .PHONY: aarch64
-aarch64: clippy-aarch64 build-aarch64 test-aarch64
+aarch64: clippy-aarch64 build-aarch64
 
 .PHONY: clippy-aarch64
 clippy-aarch64:
@@ -103,6 +104,7 @@ build-aarch64:
 release-build-aarch64:
 	cargo build --release --target=aarch64-unknown-linux-gnu
 
+# NOTE: The tests will be built for aarch64 architecture, so tests can only be run on that architecture
 .PHONY: test-aarch64
 test-aarch64:
 	cargo test --target=aarch64-unknown-linux-gnu
