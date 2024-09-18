@@ -123,5 +123,3 @@ skip_optional_dependencies = true
 [workspace.metadata.dist.dependencies.apt]
 gcc-aarch64-linux-gnu = { version = '*', targets = ["aarch64-unknown-linux-gnu"] }
 gcc-arm-linux-gnueabihf = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }
-# Try this variation to see if it works
-arm-linux-gnueabihf-gcc = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }

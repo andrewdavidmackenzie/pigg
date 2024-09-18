@@ -18,9 +18,13 @@ $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 .PHONY: all
 all: clippy build test
 
+.PHONY: clean
+clean:
+	@cargo clean
+
 .PHONY: clippy
 clippy:
-	cargo clippy  --tests --no-deps
+	cargo clippy --tests --no-deps
 
 # Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
 # To build both binaries on a Pi directly, we will need to modify this
@@ -56,62 +60,68 @@ build-release:
 test:
 	cargo test
 
-.PHONY: cross-clippy
-cross-clippy:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
+#### armv7 targets
+.PHONY: armv7
+armv7: clippy-armv7 build-armv7
 
-.PHONY: cross-armv7
-cross-armv7: cross-build-armv7 cross-test-armv7
+.PHONY: clippy-armv7
+clippy-armv7:
+	cargo clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
 
-.PHONY: cross-aarch64
-cross-aarch64: cross-build-aarch64 cross-test-aarch64
+.PHONY: build-armv7
+build-armv7:
+	cargo build --target=armv7-unknown-linux-gnueabihf
 
-.PHONY: cross
-cross: cross-clippy cross-armv7 cross-aarch64
+.PHONY: release-build-armv7
+release-build-armv7:
+	cargo build --release --target=armv7-unknown-linux-gnueabihf
 
-.PHONY: cross-build
-cross-build-aarch64:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --target=aarch64-unknown-linux-gnu
-
-.PHONY: cross-build-armv7
-cross-build-armv7:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --target=armv7-unknown-linux-gnueabihf
-
-.PHONY: cross-release-build-aarch64
-cross-release-build-aarch64:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --target=aarch64-unknown-linux-gnu
-
-.PHONY: cross-release-build-armv7
-cross-release-build-armv7:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross build --release --target=armv7-unknown-linux-gnueabihf
-
-.PHONY: cross-test-armv7
-cross-test-armv7:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --target=armv7-unknown-linux-gnueabihf
-
-.PHONY: cross-test-aarch64
-cross-test-aarch64:
-	CROSS_CONTAINER_OPTS="--platform linux/amd64" cross test --target=aarch64-unknown-linux-gnu
-
-.PHONY: copy-aarch64
-copy-aarch64: cross-build-aarch64
-	scp target/aarch64-unknown-linux-gnu/debug/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
-
-.PHONY: copy-release-aarch64
-copy-release-aarch64: cross-release-build-aarch64
-	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+# NOTE: The tests will be built for armv7 architecture, so tests can only be run on that architecture
+.PHONY: test-armv7
+test-armv7:
+	cargo test --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: copy-armv7
-copy-armv7: cross-build-armv7
+copy-armv7: build-armv7
 	scp target/armv7-unknown-linux-gnueabihf/debug/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-armv7
-copy-release-armv7: cross-build-armv7
+copy-release-armv7: build-armv7
 	scp target/armv7-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+
+
+#### aarch64 targets
+.PHONY: aarch64
+aarch64: clippy-aarch64 build-aarch64
+
+.PHONY: clippy-aarch64
+clippy-aarch64:
+	cargo clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
+
+.PHONY: build-aarch64
+build-aarch64:
+	cargo build --target=aarch64-unknown-linux-gnu
+
+.PHONY: release-build-aarch64
+release-build-aarch64:
+	cargo build --release --target=aarch64-unknown-linux-gnu
+
+# NOTE: The tests will be built for aarch64 architecture, so tests can only be run on that architecture
+.PHONY: test-aarch64
+test-aarch64:
+	cargo test --target=aarch64-unknown-linux-gnu
+
+.PHONY: copy-aarch64
+copy-aarch64: build-aarch64
+	scp target/aarch64-unknown-linux-gnu/debug/piggui $(PI_USER)@$(PI_TARGET):~/
+	scp target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+
+.PHONY: copy-release-aarch64
+copy-release-aarch64: release-build-aarch64
+	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
+	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: ssh
 ssh:
