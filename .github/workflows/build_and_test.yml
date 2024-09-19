@@ -82,6 +82,12 @@ jobs:
   porky-release-build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: add thumbv6m-none-eabi target
+        run: rustup target add thumbv6m-none-eabi
+        
       - name: Release build of porky for Pico
         run: cd porky && cargo build --release
 
