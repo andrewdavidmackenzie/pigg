@@ -41,6 +41,10 @@ const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure p
 #[cfg(feature = "tcp")]
 const TCP_INFO_TEXT: &str = "To connect to a remote Pi using TCP, ensure Pi is reachable over the network. Enter the device's IP address and the port number below.";
 
+use std::sync::LazyLock;
+static TCP_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
+static IROH_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
+
 const INFO_TEXT_STYLE: TextStyle = TextStyle {
     text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
 };
@@ -262,7 +266,7 @@ impl ConnectDialog {
                 self.nodeid.clear();
                 #[cfg(feature = "iroh")]
                 self.relay_url.clear();
-                Command::none()
+                text_input::focus(TCP_INPUT_ID.clone())
             }
 
             #[cfg(feature = "iroh")]
@@ -274,12 +278,12 @@ impl ConnectDialog {
                 self.ip_address.clear();
                 #[cfg(feature = "tcp")]
                 self.port_number.clear();
-                Command::none()
+                text_input::focus(IROH_INPUT_ID.clone())
             }
 
             ShowConnectDialog => {
                 self.show_modal = true;
-                Command::none()
+                text_input::focus(IROH_INPUT_ID.clone())
             }
 
             HideConnectDialog => {
@@ -512,6 +516,7 @@ impl ConnectDialog {
                         {
                             let mut node_input = text_input("Enter node id", &self.nodeid)
                                 .padding(5)
+                                .id(IROH_INPUT_ID.clone())
                                 .on_submit(Message::ConnectDialog(
                                     ConnectDialogMessage::ConnectButtonPressedIroh(
                                         self.nodeid.clone(),
@@ -575,6 +580,7 @@ impl ConnectDialog {
                         {
                             let mut ip_input = text_input("Enter IP Address", &self.ip_address)
                                 .padding(5)
+                                .id(TCP_INPUT_ID.clone())
                                 .on_submit(Message::ConnectDialog(
                                     ConnectDialogMessage::ConnectionButtonPressedTcp(
                                         self.ip_address.clone(),
