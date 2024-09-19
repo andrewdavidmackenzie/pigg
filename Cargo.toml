@@ -67,7 +67,7 @@ log = { version = "0.4.22", default-features = false }
 # used by piggui in GUI only
 iced = { version = "0.12.1", default-features = false, features = ["tokio"] }
 iced_aw = { version = "0.9.3", default-features = false, features = ["menu"] }
-iced_futures = { version = "0.12.0", default-features = false }
+iced_futures = { version = "0.13.1", default-features = false }
 plotters-iced = { version = "0.10", default-features = false }
 plotters = { version = "0.3", default_features = false, features = [
     "chrono",

@@ -2586,8 +2586,8 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d4eb0fbbefb8c428b70680e77ed9013887b17c1d6be366b40f264f956d1a096"
 dependencies = [
- "iced_core",
- "iced_futures",
+ "iced_core 0.12.3",
+ "iced_futures 0.12.0",
  "iced_renderer",
  "iced_widget",
  "iced_winit",
@@ -2618,8 +2618,27 @@ dependencies = [
  "raw-window-handle",
  "smol_str",
  "thiserror",
- "web-time",
+ "web-time 0.2.4",
  "xxhash-rust",
+]
+
+[[package]]
+name = "iced_core"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "afa341b914c93e1afc651c8b5c5b6c88aa68aa92e7d9923366b97a85a7f2ba46"
+dependencies = [
+ "bitflags 2.6.0",
+ "bytes",
+ "glam",
+ "log",
+ "num-traits",
+ "once_cell",
+ "palette",
+ "rustc-hash 2.0.0",
+ "smol_str",
+ "thiserror",
+ "web-time 1.1.0",
 ]
 
 [[package]]
@@ -2629,9 +2648,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "370bad88fb3832cbeeb3fa6c486b4701fb7e8da32a753b3101d4ce81fc1d9497"
 dependencies = [
  "futures",
- "iced_core",
+ "iced_core 0.12.3",
  "log",
  "tokio",
+ "wasm-bindgen-futures",
+ "wasm-timer",
+]
+
+[[package]]
+name = "iced_futures"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b9b08fd632f5131344702869eea35fdebef9e548ab504942ac6b44fb42c90e2"
+dependencies = [
+ "futures",
+ "iced_core 0.13.1",
+ "log",
+ "rustc-hash 2.0.0",
  "wasm-bindgen-futures",
  "wasm-timer",
 ]
@@ -2646,8 +2679,8 @@ dependencies = [
  "bytemuck",
  "cosmic-text",
  "half",
- "iced_core",
- "iced_futures",
+ "iced_core 0.12.3",
+ "iced_futures 0.12.0",
  "log",
  "lyon_path",
  "once_cell",
@@ -2677,8 +2710,8 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a79f852c01cc6d61663c94379cb3974ac3ad315a28c504e847d573e094f46822"
 dependencies = [
- "iced_core",
- "iced_futures",
+ "iced_core 0.12.3",
+ "iced_futures 0.12.0",
  "raw-window-handle",
  "thiserror",
 ]
@@ -2689,7 +2722,7 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ea42a740915d2a5a9ff9c3aa0bca28b16e9fb660bc8f675eed71d186cadb579"
 dependencies = [
- "iced_core",
+ "iced_core 0.12.3",
  "once_cell",
  "palette",
 ]
@@ -4259,7 +4292,7 @@ dependencies = [
  "heapless 0.8.0",
  "iced",
  "iced_aw",
- "iced_futures",
+ "iced_futures 0.13.1",
  "iroh-net",
  "local-ip-address",
  "log",
@@ -6901,6 +6934,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "web-time"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "webbrowser"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7502,7 +7545,7 @@ dependencies = [
  "wayland-protocols 0.31.2",
  "wayland-protocols-plasma",
  "web-sys",
- "web-time",
+ "web-time 0.2.4",
  "windows-sys 0.48.0",
  "x11-dl",
  "x11rb",
