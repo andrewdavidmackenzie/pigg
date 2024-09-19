@@ -310,36 +310,6 @@ impl ConnectDialog {
                         Command::none()
                     }
 
-                    Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Enter),
-                        ..
-                    }) =>
-                    {
-                        #[cfg(feature = "iroh")]
-                        return if self.display_iroh {
-                            {
-                                let message_iroh = Message::ConnectDialog(
-                                    ConnectDialogMessage::ConnectButtonPressedIroh(
-                                        self.nodeid.clone(),
-                                        self.relay_url.clone(),
-                                    ),
-                                );
-                                Command::perform(async { message_iroh }, |msg| msg)
-                            }
-                        } else {
-                            #[cfg(feature = "tcp")]
-                            {
-                                let message = Message::ConnectDialog(
-                                    ConnectDialogMessage::ConnectionButtonPressedTcp(
-                                        self.ip_address.clone(),
-                                        self.port_number.clone(),
-                                    ),
-                                );
-                                Command::perform(async { message }, |msg| msg)
-                            }
-                        }
-                    }
-
                     _ => Command::none(),
                 }
             }
