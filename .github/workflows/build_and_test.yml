@@ -79,6 +79,12 @@ jobs:
       - name: Clippy and Build for aarch64
         run: make aarch64
 
+  porky-release-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release build of porky for Pico
+        run: cd porky && cargo build --release
+
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
