@@ -1,5 +1,10 @@
 use crate::hw;
-use crate::hw::config::HardwareConfig;
+use crate::hw::Hardware;
+use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::HardwareConfigMessage::{
+    IOLevelChanged, NewConfig, NewPinConfig,
+};
+use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 #[cfg(feature = "iroh")]
 use crate::piggui_iroh_helper;
 #[cfg(feature = "tcp")]
@@ -14,10 +19,9 @@ use iced::{
     futures::{pin_mut, FutureExt},
 };
 use iced::{subscription, Subscription};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::hw::pin_function::PinFunction;
-use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{Hardware, HardwareConfigMessage, LevelChange};
+use crate::hw_definition::pin_function::PinFunction;
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 
@@ -82,12 +86,15 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                 match piggui_iroh_helper::connect(&nodeid, relay.clone()).await {
                                     Ok((hardware_description, connection)) => {
                                         // Send the sender back to the GUI
-                                        let _ = gui_sender_clone
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Connected(
                                                 hardware_event_sender.clone(),
                                                 hardware_description.clone(),
                                             ))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
 
                                         // We are ready to receive messages from the GUI
                                         state = HWState::ConnectedIroh(
@@ -96,11 +103,15 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                         );
                                     }
                                     Err(e) => {
-                                        let _ = gui_sender_clone
+                                        eprintln!("Iroh error: {e}");
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Disconnected(format!(
                                                 "Error connecting to piglet: {e}"
                                             )))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
                                     }
                                 }
                             }
@@ -110,23 +121,30 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                                 match piggui_tcp_helper::connect(ip, port).await {
                                     Ok((hardware_description, stream)) => {
                                         // Send the stream back to the GUI
-                                        let _ = gui_sender_clone
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Connected(
                                                 hardware_event_sender.clone(),
                                                 hardware_description.clone(),
                                             ))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
 
                                         // We are ready to receive messages from the GUI
                                         state =
                                             HWState::ConnectedTcp(hardware_event_receiver, stream);
                                     }
                                     Err(e) => {
-                                        let _ = gui_sender_clone
+                                        eprintln!("Tcp error: {e}");
+                                        if let Err(e) = gui_sender_clone
                                             .send(HardwareEventMessage::Disconnected(format!(
                                                 "Error connecting to piglet: {e}"
                                             )))
-                                            .await;
+                                            .await
+                                        {
+                                            eprintln!("Send error: {e}");
+                                        }
                                     }
                                 }
                             }
@@ -204,9 +222,9 @@ fn apply_config_change(
     match config_change {
         NewConfig(config) => {
             hardware
-                .apply_config(&config, move |bcm_pin_number, level| {
+                .apply_config(&config, move |bcm_pin_number, level_change| {
                     gui_sender_clone
-                        .try_send(InputChange(bcm_pin_number, LevelChange::new(level)))
+                        .try_send(InputChange(bcm_pin_number, level_change))
                         .unwrap();
                 })
                 .unwrap();
@@ -217,9 +235,9 @@ fn apply_config_change(
             let _ = hardware.apply_pin_config(
                 bcm_pin_number,
                 &new_function,
-                move |bcm_pin_number, level| {
+                move |bcm_pin_number, level_change| {
                     gui_sender_clone
-                        .try_send(InputChange(bcm_pin_number, LevelChange::new(level)))
+                        .try_send(InputChange(bcm_pin_number, level_change))
                         .unwrap();
                 },
             );
@@ -236,14 +254,16 @@ fn send_current_input_states(
     config: &HardwareConfig,
     connected_hardware: &impl Hardware,
 ) {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+
     // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.pins {
+    for (bcm_pin_number, pin_function) in &config.pin_functions {
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
                 let _ = tx.try_send(InputChange(
                     *bcm_pin_number,
-                    LevelChange::new(initial_level),
+                    LevelChange::new(initial_level, now),
                 ));
             }
         }

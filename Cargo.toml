@@ -13,6 +13,9 @@ readme = "README.md"
 exclude = [".github", "assets/", "codecov.yml", "configs/", "Makefile", ".cargo_vcs_info.json",
     ".gitignore", "tests"]
 
+[workspace]
+exclude = ["porky"]
+
 [package.metadata.wix]
 upgrade-guid = "7DCB054F-6CE0-4914-876E-AEA0C2E91328"
 path-guid = "17155407-8DA8-45BD-8C67-91FE4C7E99AA"
@@ -28,10 +31,11 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh", "tcp"]
+default = ["iroh", "tcp", "std"]
 iroh = ["iroh-net", "derive_more"]
 tcp = ["portpicker", "local-ip-address"]
 discovery = []
+std = []
 
 [dependencies]
 # Optional Dependencies
@@ -43,8 +47,14 @@ local-ip-address = { version = "0.6.3", default-features = false, optional = tru
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.210", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
 serde_arrays = { version = "0.1.0", default-features = false }
+
+# for config serialization to/from file
+serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
+# for alloc/no_alloc over the wire serialization/deserialization
+postcard = { version = "1.0.10", features = ["alloc"] }
+heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
+
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }

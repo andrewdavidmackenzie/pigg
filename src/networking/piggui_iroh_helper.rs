@@ -9,7 +9,9 @@ use iroh_net::{
 };
 use std::io;
 
-use crate::hw::{HardwareConfigMessage, HardwareDescription, PIGLET_ALPN};
+use crate::hw::PIGLET_ALPN;
+use crate::hw_definition::config::HardwareConfigMessage;
+use crate::hw_definition::description::HardwareDescription;
 
 /// Wait until we receive a message from remote hardware
 pub async fn wait_for_remote_message(
@@ -22,7 +24,7 @@ pub async fn wait_for_remote_message(
         io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
     );
 
-    Ok(serde_json::from_slice(&message)?)
+    Ok(postcard::from_bytes(&message)?)
 }
 
 /// Send config change received form the GUI to the remote hardware
@@ -33,9 +35,9 @@ pub async fn send_config_change(
     // open a quick stream to the connected hardware
     let mut config_sender = connection.open_uni().await?;
     // serialize the message
-    let content = serde_json::to_string(&config_change_message)?;
+    let content = postcard::to_allocvec(&config_change_message)?;
     // send it to the remotely connected hardware
-    config_sender.write_all(content.as_bytes()).await?;
+    config_sender.write_all(&content).await?;
     // close and flush the stream to ensure the message is sent
     config_sender.finish().await?;
     Ok(())
@@ -83,7 +85,7 @@ pub async fn connect(
     // create a uni receiver to receive the hardware description on
     let mut gui_receiver = connection.accept_uni().await?;
     let message = gui_receiver.read_to_end(4096).await?;
-    let desc = serde_json::from_slice(&message)?;
+    let desc = postcard::from_bytes(&message)?;
 
     Ok((desc, connection))
 }

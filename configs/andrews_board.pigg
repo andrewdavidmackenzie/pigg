@@ -1,1 +1,1 @@
-{"pins":{"26":{"Input":"PullUp"},"17":{"Output":true}}}
+{"pin_functions":{"26":{"Input":"PullUp"},"17":{"Output":true}}}

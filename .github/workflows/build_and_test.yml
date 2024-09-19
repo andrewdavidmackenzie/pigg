@@ -79,6 +79,18 @@ jobs:
       - name: Clippy and Build for aarch64
         run: make aarch64
 
+  porky-release-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: add thumbv6m-none-eabi target
+        run: rustup target add thumbv6m-none-eabi
+
+      - name: Release build of porky for Pico
+        run: cd porky && RUSTFLAGS= cargo build --release
+
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -124,7 +136,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-          lcov --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
+          lcov --ignore-errors empty --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
         if: runner.os != 'Windows'

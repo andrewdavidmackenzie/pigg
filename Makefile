@@ -16,7 +16,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build test
+all: clippy build build-porky test
 
 .PHONY: clean
 clean:
@@ -52,6 +52,10 @@ run-release-piglet:
 .PHONY: build-release
 build-release:
 	cargo build --release
+
+.PHONY: build-porky
+build-porky:
+	cd porky && $(MAKE)
 
 # This will only test GUI tests in piggui on the local host, whatever that is
 # We'd need to think how to run tests on RºPi, on piggui with GUI and GPIO functionality,
