@@ -87,9 +87,9 @@ jobs:
 
       - name: add thumbv6m-none-eabi target
         run: rustup target add thumbv6m-none-eabi
-        
+
       - name: Release build of porky for Pico
-        run: cd porky && cargo build --release
+        run: RUSTFLAGS= cd porky && cargo build --release
 
   clippy-build-and-test:
     runs-on: ${{ matrix.os }}
