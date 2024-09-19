@@ -13,6 +13,9 @@ readme = "README.md"
 exclude = [".github", "assets/", "codecov.yml", "configs/", "Makefile", ".cargo_vcs_info.json",
     ".gitignore", "tests"]
 
+[workspace]
+exclude = ["porky"]
+
 [package.metadata.wix]
 upgrade-guid = "7DCB054F-6CE0-4914-876E-AEA0C2E91328"
 path-guid = "17155407-8DA8-45BD-8C67-91FE4C7E99AA"
@@ -28,10 +31,11 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh", "tcp"]
+default = ["iroh", "tcp", "std"]
 iroh = ["iroh-net", "derive_more"]
 tcp = ["portpicker", "local-ip-address"]
 discovery = []
+std = []
 
 [dependencies]
 # Optional Dependencies
@@ -43,8 +47,14 @@ local-ip-address = { version = "0.6.3", default-features = false, optional = tru
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.210", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
 serde_arrays = { version = "0.1.0", default-features = false }
+
+# for config serialization to/from file
+serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
+# for alloc/no_alloc over the wire serialization/deserialization
+postcard = { version = "1.0.10", features = ["alloc"] }
+heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
+
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
@@ -76,7 +86,7 @@ serial_test = "3.1.1"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 sysinfo = { version = "0.31.4", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
-rfd = "0.14.1"
+rfd = "0.15.0"
 clap = { version = "4.5.17", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
@@ -93,7 +103,7 @@ lto = "thin"
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.22.0"
+cargo-dist-version = "0.22.1"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -110,6 +120,7 @@ pr-run-mode = "plan"
 install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
+github-build-setup = "install-arm-linkers.yml"
 
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
@@ -119,9 +130,3 @@ x86_64-pc-windows-msvc = "windows-latest"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-
-[workspace.metadata.dist.dependencies.apt]
-gcc-aarch64-linux-gnu = { version = '*', targets = ["aarch64-unknown-linux-gnu"] }
-gcc-arm-linux-gnueabihf = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }
-# Try this variation to see if it works
-arm-linux-gnueabihf-gcc = { version = '*', targets = ["armv7-unknown-linux-gnueabihf"] }

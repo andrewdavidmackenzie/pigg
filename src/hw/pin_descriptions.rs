@@ -1,5 +1,6 @@
-use crate::hw::pin_description::PinDescription;
-use crate::hw::{InputPull, PinFunction};
+use crate::hw_definition::config::InputPull;
+use crate::hw_definition::description::PinDescription;
+use crate::hw_definition::pin_function::PinFunction;
 use std::borrow::Cow;
 
 /// This module codifies the descriptions if the Raspberry Pi GPIO hardware
@@ -27,14 +28,14 @@ pub(crate) const PIN_1: PinDescription = PinDescription {
     bpn: 1,
     bcm: None,
     name: Cow::Borrowed("3V3"),
-    options: Cow::Borrowed(&[PinFunction::Power3V3]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_2: PinDescription = PinDescription {
     bpn: 2,
     bcm: None,
     name: Cow::Borrowed("5V"),
-    options: Cow::Borrowed(&[PinFunction::Power5V]),
+    options: Cow::Borrowed(&[]),
 };
 
 /// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
@@ -58,7 +59,7 @@ pub(crate) const PIN_4: PinDescription = PinDescription {
     bpn: 4,
     bcm: None,
     name: Cow::Borrowed("5V"),
-    options: Cow::Borrowed(&[PinFunction::Power5V]),
+    options: Cow::Borrowed(&[]),
 };
 
 /// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
@@ -82,7 +83,7 @@ pub(crate) const PIN_6: PinDescription = PinDescription {
     bpn: 6,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_7: PinDescription = PinDescription {
@@ -121,7 +122,7 @@ pub(crate) const PIN_9: PinDescription = PinDescription {
     bpn: 9,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_10: PinDescription = PinDescription {
@@ -192,7 +193,7 @@ pub(crate) const PIN_14: PinDescription = PinDescription {
     bpn: 14,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_15: PinDescription = PinDescription {
@@ -231,7 +232,7 @@ pub(crate) const PIN_17: PinDescription = PinDescription {
     bpn: 17,
     bcm: None,
     name: Cow::Borrowed("3V3"),
-    options: Cow::Borrowed(&[PinFunction::Power3V3]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_18: PinDescription = PinDescription {
@@ -271,7 +272,7 @@ pub(crate) const PIN_20: PinDescription = PinDescription {
     bpn: 20,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
@@ -345,7 +346,7 @@ pub(crate) const PIN_25: PinDescription = PinDescription {
     bpn: 25,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
@@ -413,7 +414,7 @@ pub(crate) const PIN_30: PinDescription = PinDescription {
     bpn: 30,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_31: PinDescription = PinDescription {
@@ -468,7 +469,7 @@ pub(crate) const PIN_34: PinDescription = PinDescription {
     bpn: 34,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_35: PinDescription = PinDescription {
@@ -539,7 +540,7 @@ pub(crate) const PIN_39: PinDescription = PinDescription {
     bpn: 39,
     bcm: None,
     name: Cow::Borrowed("Ground"),
-    options: Cow::Borrowed(&[PinFunction::Ground]),
+    options: Cow::Borrowed(&[]),
 };
 
 pub(crate) const PIN_40: PinDescription = PinDescription {

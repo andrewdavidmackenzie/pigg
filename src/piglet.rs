@@ -16,8 +16,8 @@ use anyhow::Context;
 use clap::{Arg, ArgMatches};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
-use hw::config::HardwareConfig;
 use hw::Hardware;
+use hw_definition::config::HardwareConfig;
 use log::{info, trace};
 use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
@@ -38,6 +38,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, io::Write};
 
 mod hw;
+mod hw_definition;
 #[cfg(feature = "iroh")]
 #[path = "networking/piglet_iroh_helper.rs"]
 mod piglet_iroh_helper;
@@ -118,8 +119,8 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         let config = HardwareConfig::load(config_filename)?;
         info!("Config loaded from file: {config_filename}");
         trace!("{config}");
-        hw.apply_config(&config, |bcm_pin_number, level| {
-            info!("Pin #{bcm_pin_number} changed level to '{level}'")
+        hw.apply_config(&config, |bcm_pin_number, level_change| {
+            info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
         })?;
         trace!("Configuration applied to hardware");
     };
@@ -178,11 +179,15 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
-                    let _ = tcp_message_loop(tcp_stream?, &mut hw).await;
+                    if let Err(e) = tcp_message_loop(tcp_stream?, &mut hw).await {
+                        eprintln!("Tcp connection error: '{e}'");
+                    }
                 },
                 iroh_connection = fused_iroh => {
                     println!("Connected via Iroh");
-                    let _ = iroh_message_loop(iroh_connection?, &mut hw).await;
+                    if let Err(e) = iroh_message_loop(iroh_connection?, &mut hw).await {
+                        eprintln!("Iroh connection error: '{e}'");
+                    }
                 }
                 complete => {}
             }

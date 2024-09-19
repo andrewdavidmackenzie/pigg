@@ -1,5 +1,5 @@
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
-use crate::hw::config::HardwareConfig;
+use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
@@ -30,6 +30,7 @@ use std::str::FromStr;
 mod file_helper;
 mod hardware_subscription;
 mod hw;
+mod hw_definition;
 #[cfg(feature = "iroh")]
 #[path = "networking/piggui_iroh_helper.rs"]
 mod piggui_iroh_helper;

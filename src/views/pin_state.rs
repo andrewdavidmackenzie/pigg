@@ -4,7 +4,7 @@ use iced::advanced::text::editor::Direction;
 use iced::Element;
 use plotters::prelude::{RGBAColor, ShapeStyle};
 
-use crate::hw::{LevelChange, PinLevel};
+use crate::hw_definition::{config::LevelChange, PinLevel};
 use crate::views::hardware_view::HardwareViewMessage;
 use crate::views::waveform::{ChartType, Waveform};
 
@@ -63,16 +63,18 @@ impl PinState {
 
 #[cfg(test)]
 mod test {
-    use crate::hw::LevelChange;
+    use crate::hw_definition::config::LevelChange;
     use crate::views::pin_state::PinState;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
     fn level_stores_last() {
         let mut state = PinState::new();
-        state.set_level(LevelChange::new(false));
-        state.set_level(LevelChange::new(true));
-        state.set_level(LevelChange::new(false));
-        state.set_level(LevelChange::new(true));
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        state.set_level(LevelChange::new(false, now));
+        state.set_level(LevelChange::new(true, now));
+        state.set_level(LevelChange::new(false, now));
+        state.set_level(LevelChange::new(true, now));
         assert_eq!(state.get_level(), Some(true));
     }
 }

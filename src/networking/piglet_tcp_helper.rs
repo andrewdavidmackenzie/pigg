@@ -1,9 +1,13 @@
-use crate::hw::config::HardwareConfig;
-use crate::hw::pin_function::PinFunction;
-use crate::hw::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::hw::{
-    BCMPinNumber, Hardware, HardwareConfigMessage, HardwareDescription, LevelChange, PinLevel,
+use crate::hw::Hardware;
+use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::HardwareConfigMessage::{
+    IOLevelChanged, NewConfig, NewPinConfig,
 };
+use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
+use crate::hw_definition::description::HardwareDescription;
+use crate::hw_definition::pin_function::PinFunction;
+use crate::hw_definition::{BCMPinNumber, PinLevel};
+
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
@@ -15,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct TcpInfo {
@@ -63,8 +68,8 @@ pub(crate) async fn tcp_accept(
 
     if let Ok(st) = &mut stream {
         debug!("Connected, sending hardware description");
-        let message = serde_json::to_vec(&desc)?;
-        let _ = st.write_all(&message).await;
+        let message = postcard::to_allocvec(&desc)?;
+        st.write_all(&message).await?;
     }
 
     Ok(stream?)
@@ -82,7 +87,7 @@ pub(crate) async fn tcp_message_loop(
             bail!("End of message stream");
         }
 
-        let config_message = serde_json::from_slice(&payload[0..length])?;
+        let config_message = postcard::from_bytes(&payload[0..length])?;
         apply_config_change(hardware, config_message, stream.clone()).await?;
     }
 }
@@ -100,16 +105,16 @@ pub async fn apply_config_change(
         NewConfig(config) => {
             info!("New config applied");
             let wc = writer.clone();
-            hardware.apply_config(&config, move |bcm, level| {
-                let _ = send_input_level(wc.clone(), bcm, level);
+            hardware.apply_config(&config, move |bcm, level_change| {
+                let _ = send_input_level(wc.clone(), bcm, level_change);
             })?;
 
             let _ = send_current_input_states(writer.clone(), &config, hardware).await;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
-            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                let _ = send_input_level(writer.clone(), bcm, level);
+            let _ = hardware.apply_pin_config(bcm, &pin_function, move |bcm, level_change| {
+                let _ = send_input_level(writer.clone(), bcm, level_change);
             });
         }
         IOLevelChanged(bcm, level_change) => {
@@ -124,15 +129,18 @@ pub async fn apply_config_change(
 /// Send a detected input level change back to the GUI using `writer` [TcpStream],
 /// timestamping with the current time in Utc
 // TODO they are looking for testers of async closures! This is the place!
-fn send_input_level(writer: TcpStream, bcm: BCMPinNumber, level: PinLevel) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
+fn send_input_level(
+    writer: TcpStream,
+    bcm: BCMPinNumber,
+    level_change: LevelChange,
+) -> anyhow::Result<()> {
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
+    let message = postcard::to_allocvec(&hardware_event)?;
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
-    rt.block_on(send(writer, message))
+    rt.block_on(send(writer, &message))
 }
 
 /// Send the current input state for all inputs configured in the config
@@ -141,13 +149,15 @@ pub async fn send_current_input_states(
     config: &HardwareConfig,
     hardware: &impl Hardware,
 ) -> anyhow::Result<()> {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
+
     // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.pins {
+    for (bcm_pin_number, pin_function) in &config.pin_functions {
         if let PinFunction::Input(_pullup) = pin_function {
             // Update UI with initial state
             if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-                let _ =
-                    send_input_level_async(writer.clone(), *bcm_pin_number, initial_level).await;
+                let _ = send_input_level_async(writer.clone(), *bcm_pin_number, initial_level, now)
+                    .await;
             }
         }
     }
@@ -161,16 +171,17 @@ async fn send_input_level_async(
     writer: TcpStream,
     bcm: BCMPinNumber,
     level: PinLevel,
+    timestamp: Duration,
 ) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level);
+    let level_change = LevelChange::new(level, timestamp);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = serde_json::to_string(&hardware_event)?;
-    send(writer, message).await
+    let message = postcard::to_allocvec(&hardware_event)?;
+    send(writer, &message).await
 }
 
 /// Send a message to the GUI using the `writer` [TcpStream]
-async fn send(mut writer: TcpStream, message: String) -> anyhow::Result<()> {
-    writer.write_all(message.as_bytes()).await?;
+async fn send(mut writer: TcpStream, message: &[u8]) -> anyhow::Result<()> {
+    writer.write_all(message).await?;
     Ok(())
 }
