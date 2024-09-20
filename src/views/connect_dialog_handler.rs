@@ -602,7 +602,7 @@ impl ConnectDialog {
                         let mut port_input = text_input("Enter Port Number", &self.port_number)
                             .padding(5)
                             .on_submit(Message::ConnectDialog(
-                                ConnectDialogMessage::ConnectButtonPressedIroh(
+                                ConnectDialogMessage::ConnectionButtonPressedTcp(
                                     self.ip_address.clone(),
                                     self.port_number.clone(),
                                 ),
