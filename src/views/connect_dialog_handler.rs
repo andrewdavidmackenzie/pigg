@@ -262,10 +262,6 @@ impl ConnectDialog {
                 }
                 #[cfg(feature = "iroh")]
                 self.iroh_connection_error.clear();
-                #[cfg(feature = "iroh")]
-                self.nodeid.clear();
-                #[cfg(feature = "iroh")]
-                self.relay_url.clear();
                 text_input::focus(TCP_INPUT_ID.clone())
             }
 
@@ -274,10 +270,6 @@ impl ConnectDialog {
                 self.display_iroh = true;
                 #[cfg(feature = "tcp")]
                 self.tcp_connection_error.clear();
-                #[cfg(feature = "tcp")]
-                self.ip_address.clear();
-                #[cfg(feature = "tcp")]
-                self.port_number.clear();
                 text_input::focus(IROH_INPUT_ID.clone())
             }
 
