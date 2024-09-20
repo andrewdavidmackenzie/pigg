@@ -158,11 +158,11 @@ impl ConnectDialog {
     pub fn set_error(&mut self, error: String) {
         #[cfg(feature = "iroh")]
         {
-            self.iroh_connection_error = error.clone();
+            self.iroh_connection_error.clone_from(&error);
         }
         #[cfg(feature = "tcp")]
         {
-            self.tcp_connection_error = error.clone();
+            self.tcp_connection_error.clone_from(&error);
         }
     }
 
