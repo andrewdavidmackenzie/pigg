@@ -42,6 +42,7 @@ const IROH_INFO_TEXT: &str = "To connect to a remote Pi using iroh-net, ensure p
 const TCP_INFO_TEXT: &str = "To connect to a remote Pi using TCP, ensure Pi is reachable over the network. Enter the device's IP address and the port number below.";
 
 use std::sync::LazyLock;
+#[cfg(feature = "tcp")]
 static TCP_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
 static IROH_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
 
