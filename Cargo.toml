@@ -87,7 +87,7 @@ serial_test = "3.1.1"
 sysinfo = { version = "0.31.4", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
 rfd = "0.15.0"
-clap = { version = "4.5.17", default-features = false, features = ["std", "help", "error-context"] }
+clap = { version = "4.5.18", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
 rppal = "0.19.0"
