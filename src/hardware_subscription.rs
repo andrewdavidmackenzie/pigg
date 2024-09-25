@@ -53,6 +53,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
         100,
         move |mut gui_sender| async move {
             let mut state = HWState::Disconnected;
+            let mut connected_hardware = hw::get();
 
             loop {
                 let mut gui_sender_clone = gui_sender.clone();
@@ -66,7 +67,6 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 
                             #[cfg(not(target_arch = "wasm32"))]
                             HardwareTarget::Local => {
-                                let connected_hardware = hw::get();
                                 let hardware_description =
                                     connected_hardware.description().unwrap();
                                 // Send the sender back to the GUI
@@ -153,7 +153,6 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 
                     HWState::ConnectedLocal(config_change_receiver) => {
                         let config_change = config_change_receiver.select_next_some().await;
-                        let mut connected_hardware = hw::get();
 
                         apply_config_change(
                             &mut connected_hardware,

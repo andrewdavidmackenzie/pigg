@@ -12,6 +12,7 @@ homepage = "https://github.com/andrewdavidmackenzie/pigg/"
 readme = "README.md"
 exclude = [".github", "assets/", "codecov.yml", "configs/", "Makefile", ".cargo_vcs_info.json",
     ".gitignore", "tests"]
+rust-version = "1.80"
 
 [workspace]
 exclude = ["porky"]
