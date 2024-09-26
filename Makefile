@@ -86,12 +86,12 @@ test-armv7:
 	cargo test --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: copy-armv7
-copy-armv7: build-armv7
+copy-armv7:
 	scp target/armv7-unknown-linux-gnueabihf/debug/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-armv7
-copy-release-armv7: build-armv7
+copy-release-armv7:
 	scp target/armv7-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
@@ -118,12 +118,12 @@ test-aarch64:
 	cargo test --target=aarch64-unknown-linux-gnu
 
 .PHONY: copy-aarch64
-copy-aarch64: build-aarch64
+copy-aarch64:
 	scp target/aarch64-unknown-linux-gnu/debug/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-aarch64
-copy-release-aarch64: release-build-aarch64
+copy-release-aarch64:
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
