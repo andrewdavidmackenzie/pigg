@@ -59,9 +59,9 @@ impl From<Duration> for embassy_time::Duration {
     }
 }
 
-/// LevelChange describes the change in level of an input or Output
+/// LevelChange describes the change in level of an input or Output and when it occurred
 /// - `new_level` : [PinLevel]
-/// - `timestamp` : [DateTime<Utc>]
+/// - `timestamp` : [Duration]
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LevelChange {
@@ -70,7 +70,7 @@ pub struct LevelChange {
 }
 
 impl LevelChange {
-    /// Create a new LevelChange event with the timestamp for now
+    /// Create a new LevelChange event
     pub fn new(new_level: PinLevel, timestamp: Duration) -> Self {
         Self {
             new_level,
@@ -79,7 +79,7 @@ impl LevelChange {
     }
 }
 
-/// An input can be configured to have an optional pull-up or pull-down
+/// An input can be configured to have an optional pull-up or pull-down or neither
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum InputPull {
     PullUp,
