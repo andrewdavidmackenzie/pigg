@@ -479,12 +479,17 @@ fn pullup_picklist(
         sub_options.retain(|&option| option != *selected_pull);
     }
 
-    pick_list(sub_options, *pull, move |selected_pull| {
+    let pick_list = pick_list(sub_options, *pull, move |selected_pull| {
         PinFunctionSelected(bcm_pin_number, Input(Some(selected_pull)))
     })
     .width(Length::Fixed(PULLUP_WIDTH))
-    .placeholder("Select Pullup")
-    .into()
+    .placeholder("Select Pullup");
+
+    // select a slightly small font on RPi, to make it fit within pick_list
+    #[cfg(target_os = "linux")]
+    let pick_list = pick_list.text_size(14);
+
+    pick_list.into()
 }
 
 /// Create the widget that either shows an input pin's state,
