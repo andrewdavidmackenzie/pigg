@@ -473,7 +473,6 @@ async fn message_loop<'a>(
     tcp_accept(&mut socket, &ip_address, &device_id).await;
 
     info!("Entering message loop");
-    // TODO should be a while let - so that we exit when connection is broken?
     while let Some(config_message) = wait_message(&mut socket).await {
         apply_config_change(control, spawner, config_message, &mut socket).await;
     }
