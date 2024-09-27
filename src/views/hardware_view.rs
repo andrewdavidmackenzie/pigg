@@ -261,14 +261,13 @@ impl HardwareView {
     }
 
     /// Go through all the pins in the [HardwareConfig], make sure a pin state exists for the pin
-    /// and then set the current level if it was specified for an Output
+    /// and then set the current level if pin is an Output and the level was specified.
     fn set_pin_states_after_load(&mut self) {
-        for (bcm_pin_number, function) in &self.hardware_config.pin_functions {
+        for (bcm_pin_number, pin_function) in &self.hardware_config.pin_functions {
             // For output pins, if there is an initial state set then set that in pin state
             // so the toggler will be drawn correctly on first draw
-            if let Output(Some(level)) = function {
+            if let Output(Some(level)) = pin_function {
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-
                 self.pin_states
                     .entry(*bcm_pin_number)
                     .or_insert(PinState::new())
@@ -403,19 +402,21 @@ impl HardwareView {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         for pin_description in pin_set.bcm_pins_sorted() {
-            let pin_row = create_pin_view_side(
-                pin_description,
-                self.hardware_config
-                    .pin_functions
-                    .get(&pin_description.bcm.unwrap()),
-                Right,
-                self.pin_states.get(&pin_description.bcm.unwrap_or(0)),
-            );
+            if let Some(bcm_pin_number) = &pin_description.bcm {
+                let pin_row = create_pin_view_side(
+                    pin_description,
+                    self.hardware_config
+                        .pin_functions
+                        .get(&pin_description.bcm.unwrap()),
+                    Right,
+                    self.pin_states.get(bcm_pin_number),
+                );
 
-            column = column
-                .push(pin_row)
-                .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
-                .align_items(Alignment::Center);
+                column = column
+                    .push(pin_row)
+                    .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
+                    .align_items(Alignment::Center);
+            }
         }
 
         column.into()
