@@ -75,7 +75,6 @@ impl PinState {
         self.current_level = Some(level_change.new_level);
 
         let dt = self.chart.date_time(level_change.timestamp);
-
         let mut sample: Sample<PinLevel> = level_change.into();
         sample.time = dt;
 
