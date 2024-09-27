@@ -67,9 +67,20 @@ impl HW {
 
         Ok(details)
     }
+
+    /// Get the time since boot as a [Duration] that should be synced with timestamp of
+    /// `rppal` generated events
+    fn get_time_since_boot() -> Duration {
+        let mut time = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut time) };
+        Duration::new(time.tv_sec as u64, time.tv_nsec as u32)
+    }
 }
 
-/// Implement the [Hardware] trait for ordinary Pi hardware.
+/// Implement the [Hardware] trait for Pi hardware.
 // -> Result<(), Box<dyn Error>>
 impl Hardware for HW {
     /// Find the Pi hardware description
@@ -110,6 +121,14 @@ impl Hardware for HW {
                     Some(InputPull::PullUp) => pin.into_input_pullup(),
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
+
+                // Send current input level back via callback
+                let timestamp = Self::get_time_since_boot();
+                callback(
+                    bcm_pin_number,
+                    LevelChange::new(input.read() == Level::High, timestamp),
+                );
+
                 input
                     .set_async_interrupt(
                         Trigger::Both,
