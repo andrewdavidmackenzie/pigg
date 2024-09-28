@@ -235,7 +235,7 @@ impl HW {
     /// Read the input level of an input using the bcm pin number
     // Only used by piglet hence the #allow
     #[allow(dead_code)]
-    fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
+    pub fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         match self.configured_pins.get(&bcm_pin_number) {
             Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
             _ => Err(io::Error::new(
