@@ -1,4 +1,3 @@
-use crate::hw::Hardware;
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
@@ -8,6 +7,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
+use crate::hw::HW;
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
@@ -77,7 +77,7 @@ pub(crate) async fn tcp_accept(
 
 pub(crate) async fn tcp_message_loop(
     mut stream: TcpStream,
-    hardware: &mut impl Hardware,
+    hardware: &mut HW,
 ) -> anyhow::Result<()> {
     let mut payload = vec![0u8; 1024];
     info!("Waiting for message");
@@ -97,7 +97,7 @@ pub(crate) async fn tcp_message_loop(
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
 pub async fn apply_config_change(
-    hardware: &mut impl Hardware,
+    hardware: &mut HW,
     config_change: HardwareConfigMessage,
     writer: TcpStream,
 ) -> anyhow::Result<()> {
@@ -147,7 +147,7 @@ fn send_input_level(
 pub async fn send_current_input_states(
     writer: TcpStream,
     config: &HardwareConfig,
-    hardware: &impl Hardware,
+    hardware: &HW,
 ) -> anyhow::Result<()> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
