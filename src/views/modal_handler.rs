@@ -205,7 +205,7 @@ impl DisplayModal {
                                 .on_press(Message::ModalHandle(ModalMessage::HideModal))
                                 .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
                         )
-                        .spacing(220);
+                        .spacing(215);
                 }
 
                 container(
