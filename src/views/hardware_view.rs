@@ -261,14 +261,13 @@ impl HardwareView {
     }
 
     /// Go through all the pins in the [HardwareConfig], make sure a pin state exists for the pin
-    /// and then set the current level if it was specified for an Output
+    /// and then set the current level if pin is an Output and the level was specified.
     fn set_pin_states_after_load(&mut self) {
-        for (bcm_pin_number, function) in &self.hardware_config.pin_functions {
+        for (bcm_pin_number, pin_function) in &self.hardware_config.pin_functions {
             // For output pins, if there is an initial state set then set that in pin state
             // so the toggler will be drawn correctly on first draw
-            if let Output(Some(level)) = function {
+            if let Output(Some(level)) = pin_function {
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-
                 self.pin_states
                     .entry(*bcm_pin_number)
                     .or_insert(PinState::new())
@@ -403,19 +402,21 @@ impl HardwareView {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         for pin_description in pin_set.bcm_pins_sorted() {
-            let pin_row = create_pin_view_side(
-                pin_description,
-                self.hardware_config
-                    .pin_functions
-                    .get(&pin_description.bcm.unwrap()),
-                Right,
-                self.pin_states.get(&pin_description.bcm.unwrap_or(0)),
-            );
+            if let Some(bcm_pin_number) = &pin_description.bcm {
+                let pin_row = create_pin_view_side(
+                    pin_description,
+                    self.hardware_config
+                        .pin_functions
+                        .get(&pin_description.bcm.unwrap()),
+                    Right,
+                    self.pin_states.get(bcm_pin_number),
+                );
 
-            column = column
-                .push(pin_row)
-                .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
-                .align_items(Alignment::Center);
+                column = column
+                    .push(pin_row)
+                    .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
+                    .align_items(Alignment::Center);
+            }
         }
 
         column.into()
@@ -479,12 +480,17 @@ fn pullup_picklist(
         sub_options.retain(|&option| option != *selected_pull);
     }
 
-    pick_list(sub_options, *pull, move |selected_pull| {
+    let pick_list = pick_list(sub_options, *pull, move |selected_pull| {
         PinFunctionSelected(bcm_pin_number, Input(Some(selected_pull)))
     })
     .width(Length::Fixed(PULLUP_WIDTH))
-    .placeholder("Select Pullup")
-    .into()
+    .placeholder("Select Pullup");
+
+    // select a slightly small font on RPi, to make it fit within pick_list
+    #[cfg(target_os = "linux")]
+    let pick_list = pick_list.text_size(14);
+
+    pick_list.into()
 }
 
 /// Create the widget that either shows an input pin's state,

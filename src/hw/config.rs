@@ -39,8 +39,11 @@ impl HardwareConfig {
 
 impl Display for LevelChange {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Level: {}", self.new_level)?;
-        writeln!(f, "Timestamp: {:?}", self.timestamp)
+        writeln!(
+            f,
+            "Level: {}, Timestamp: {:?}",
+            self.new_level, self.timestamp
+        )
     }
 }
 

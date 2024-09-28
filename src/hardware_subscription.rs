@@ -1,14 +1,15 @@
 use crate::hw;
 use crate::hw::Hardware;
-use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
-use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 #[cfg(feature = "iroh")]
 use crate::piggui_iroh_helper;
 #[cfg(feature = "tcp")]
 use crate::piggui_tcp_helper;
+use crate::views::hardware_view::HardwareEventMessage::InputChange;
+use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::{Receiver, Sender};
 use iced::futures::sink::SinkExt;
@@ -19,11 +20,6 @@ use iced::{
     futures::{pin_mut, FutureExt},
 };
 use iced::{subscription, Subscription};
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use crate::hw_definition::pin_function::PinFunction;
-use crate::views::hardware_view::HardwareEventMessage::InputChange;
-use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 
 /// This enum describes the states of the subscription
 pub enum HWState {
@@ -51,8 +47,9 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
     subscription::channel(
         std::any::TypeId::of::<Connect>(),
         100,
-        move |mut gui_sender| async move {
+        move |gui_sender| async move {
             let mut state = HWState::Disconnected;
+            let mut connected_hardware = hw::get();
 
             loop {
                 let mut gui_sender_clone = gui_sender.clone();
@@ -66,7 +63,6 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 
                             #[cfg(not(target_arch = "wasm32"))]
                             HardwareTarget::Local => {
-                                let connected_hardware = hw::get();
                                 let hardware_description =
                                     connected_hardware.description().unwrap();
                                 // Send the sender back to the GUI
@@ -153,13 +149,10 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 
                     HWState::ConnectedLocal(config_change_receiver) => {
                         let config_change = config_change_receiver.select_next_some().await;
-                        let mut connected_hardware = hw::get();
-
                         apply_config_change(
                             &mut connected_hardware,
                             config_change,
                             gui_sender_clone,
-                            &mut gui_sender,
                         );
                     }
 
@@ -217,7 +210,6 @@ fn apply_config_change(
     hardware: &mut impl Hardware,
     config_change: HardwareConfigMessage,
     mut gui_sender_clone: Sender<HardwareEventMessage>,
-    gui_sender: &mut Sender<HardwareEventMessage>,
 ) {
     match config_change {
         NewConfig(config) => {
@@ -228,8 +220,6 @@ fn apply_config_change(
                         .unwrap();
                 })
                 .unwrap();
-
-            send_current_input_states(gui_sender, &config, hardware);
         }
         NewPinConfig(bcm_pin_number, new_function) => {
             let _ = hardware.apply_pin_config(
@@ -244,28 +234,6 @@ fn apply_config_change(
         }
         IOLevelChanged(bcm_pin_number, level_change) => {
             let _ = hardware.set_output_level(bcm_pin_number, level_change.new_level);
-        }
-    }
-}
-
-/// Send the current input state for all inputs configured in the config
-fn send_current_input_states(
-    tx: &mut Sender<HardwareEventMessage>,
-    config: &HardwareConfig,
-    connected_hardware: &impl Hardware,
-) {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-
-    // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.pin_functions {
-        if let PinFunction::Input(_pullup) = pin_function {
-            // Update UI with initial state
-            if let Ok(initial_level) = connected_hardware.get_input_level(*bcm_pin_number) {
-                let _ = tx.try_send(InputChange(
-                    *bcm_pin_number,
-                    LevelChange::new(initial_level, now),
-                ));
-            }
         }
     }
 }

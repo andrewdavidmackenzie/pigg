@@ -1,3 +1,4 @@
+use chrono::DateTime;
 use std::time::Duration;
 
 use iced::advanced::text::editor::Direction;
@@ -6,7 +7,7 @@ use plotters::prelude::{RGBAColor, ShapeStyle};
 
 use crate::hw_definition::{config::LevelChange, PinLevel};
 use crate::views::hardware_view::HardwareViewMessage;
-use crate::views::waveform::{ChartType, Waveform};
+use crate::views::waveform::{ChartType, Sample, Waveform};
 
 pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 pub const CHART_WIDTH: f32 = 256.0;
@@ -23,17 +24,32 @@ const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
     stroke_width: 1,
 };
 
-/// PinState captures the state of a pin, including a history of previous states set/read
+/// PinState captures the logical level of a pin, including a history of previous states
 pub struct PinState {
-    level: Option<PinLevel>,
+    // Cache the level of the last recorded level_change as the current level
+    current_level: Option<PinLevel>,
     pub(crate) chart: Waveform<PinLevel>,
+}
+
+impl From<LevelChange> for Sample<PinLevel> {
+    fn from(level_change: LevelChange) -> Self {
+        let time = DateTime::from_timestamp(
+            level_change.timestamp.as_secs() as i64,
+            level_change.timestamp.subsec_nanos(),
+        )
+        .unwrap();
+        Self {
+            time,
+            value: level_change.new_level,
+        }
+    }
 }
 
 impl PinState {
     /// Create a new PinState with an unknown level and a new Waveform chart of it
     pub fn new() -> Self {
         PinState {
-            level: None,
+            current_level: None,
             chart: Waveform::new(
                 ChartType::Squarewave(false, true),
                 CHART_LINE_STYLE,
@@ -51,13 +67,18 @@ impl PinState {
     /// Try and get the last reported level of the pin, which could be considered "current level"
     /// if everything is working correctly.
     pub fn get_level(&self) -> Option<PinLevel> {
-        self.level
+        self.current_level
     }
 
     /// Add a LevelChange to the history of this pin's state
     pub fn set_level(&mut self, level_change: LevelChange) {
-        self.level = Some(level_change.new_level);
-        self.chart.push_data(level_change)
+        self.current_level = Some(level_change.new_level);
+
+        let dt = self.chart.date_time(level_change.timestamp);
+        let mut sample: Sample<PinLevel> = level_change.into();
+        sample.time = dt;
+
+        self.chart.push_data(sample)
     }
 }
 

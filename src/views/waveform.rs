@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::ops::Range;
 use std::{collections::VecDeque, time::Duration};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeDelta, Utc};
 use iced::advanced::text::editor::Direction;
 use iced::{
     widget::canvas::{Cache, Frame, Geometry},
@@ -15,7 +15,6 @@ use plotters::series::LineSeries;
 use plotters::style::ShapeStyle;
 use plotters_iced::{Chart, ChartWidget, Renderer};
 
-use crate::hw_definition::{config::LevelChange, PinLevel};
 use crate::views::hardware_view::HardwareViewMessage;
 use crate::views::waveform::ChartType::{Squarewave, Verbatim};
 
@@ -37,20 +36,6 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.time, self.value)
-    }
-}
-
-impl From<LevelChange> for Sample<PinLevel> {
-    fn from(level_change: LevelChange) -> Self {
-        let time = DateTime::from_timestamp(
-            level_change.timestamp.as_secs() as i64,
-            level_change.timestamp.subsec_nanos(),
-        )
-        .unwrap();
-        Self {
-            time,
-            value: level_change.new_level,
-        }
     }
 }
 
@@ -78,6 +63,7 @@ where
     direction: RefCell<Direction>,
     cache: Cache,
     timespan: Duration,
+    offset: Option<TimeDelta>,
     samples: VecDeque<Sample<T>>,
 }
 
@@ -106,15 +92,43 @@ where
             height,
             direction: RefCell::new(Direction::Right),
             cache: Cache::new(),
-            samples: VecDeque::new(),
             timespan,
+            offset: None,
+            samples: VecDeque::new(),
         }
     }
 
-    /// Add a new [Sample] to the data set to be displayed in the chart
-    pub fn push_data(&mut self, sample: impl Into<Sample<T>>) {
-        self.samples.push_front(sample.into());
+    /// Add a new datapoint to be displayed in the chart
+    pub fn push_data(&mut self, sample: Sample<T>) {
+        self.samples.push_front(sample);
         self.trim_data();
+    }
+
+    /// Convert a [Duration] to a [DateTime<Utc>] in the timeframe of this graph.
+    ///
+    /// Adjust the time to bring it into the present timespan for graph display, while
+    /// preserving relative time between samples
+    ///
+    /// If it is the first sample we receive - calculate the time offset between source timestamps
+    /// and the DateTime Now. Use Now as the DateTime of this first sample.
+    /// If it is a subsequent samples, then add the offset to the origin timestamp to bring the
+    /// sample into the present time, but preserving the relative time between the two samples.
+    pub fn date_time(&mut self, duration: Duration) -> DateTime<Utc> {
+        match self.offset {
+            None => {
+                let dt = Utc::now();
+                self.offset = Some(dt - Self::duration_to_dt(duration));
+                dt
+            }
+            Some(offset) => Self::duration_to_dt(duration) + offset,
+        }
+    }
+
+    /// Convert a Duration timestamp into a DateTime<Utc> (0 will be start of epoch in 1970)
+    /// Timestamps that are Durations, usually time since system start/reboot, will be converted
+    /// to a DateTime<Utc> that is start of epoc + time since start/reboot
+    fn duration_to_dt(d: Duration) -> DateTime<Utc> {
+        DateTime::from_timestamp(d.as_secs() as i64, d.subsec_nanos()).unwrap()
     }
 
     /// Trim samples outside the timespan of the chart, except the most recent one
@@ -142,6 +156,7 @@ where
         self.cache.clear();
     }
 
+    /// Get the Vector of (DateTime, u32) samples to be displayed in the chart
     fn get_data(&self) -> Vec<(DateTime<Utc>, u32)> {
         match &self.chart_type {
             Squarewave(_, _) => {
@@ -158,8 +173,9 @@ where
                             graph_data.push((previous.time, sample.value.clone().into()));
                         }
                     } else {
-                        // last value added, at the start of the dequeue
-                        // Insert a value at current time, with the same value as previous one
+                        // (first) most recently added value. Insert a value at current time,
+                        // with the same value, to stretch the line out to the right hand side
+                        // of the graph
                         graph_data.push((Utc::now(), sample.value.clone().into()));
                     }
                     graph_data.push((sample.time, sample.value.clone().into()));
@@ -175,6 +191,7 @@ where
         }
     }
 
+    /// Determine the vertical (Y) axis range of values for the chart
     fn range(&self) -> Range<u32> {
         let (min, max) = match &self.chart_type {
             Squarewave(min, max) => (
@@ -264,16 +281,22 @@ mod test {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
         let high_sent_time = now.sub(Duration::from_secs(2));
-        chart.push_data(LevelChange {
-            timestamp: high_sent_time,
-            new_level: true,
-        });
+        chart.push_data(
+            LevelChange {
+                timestamp: high_sent_time,
+                new_level: true,
+            }
+            .into(),
+        );
 
         let low_sent_time = now.sub(Duration::from_secs(1));
-        chart.push_data(LevelChange {
-            timestamp: low_sent_time,
-            new_level: false,
-        });
+        chart.push_data(
+            LevelChange {
+                timestamp: low_sent_time,
+                new_level: false,
+            }
+            .into(),
+        );
 
         let data = chart.get_data();
         assert_eq!(data.len(), 4);
@@ -304,16 +327,22 @@ mod test {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
 
         let low_sent_time = now.sub(Duration::from_secs(2));
-        chart.push_data(LevelChange {
-            timestamp: low_sent_time,
-            new_level: false,
-        });
+        chart.push_data(
+            LevelChange {
+                timestamp: low_sent_time,
+                new_level: false,
+            }
+            .into(),
+        );
 
         let high_sent_time = now.sub(Duration::from_secs(1));
-        chart.push_data(LevelChange {
-            timestamp: high_sent_time,
-            new_level: true,
-        });
+        chart.push_data(
+            LevelChange {
+                timestamp: high_sent_time,
+                new_level: true,
+            }
+            .into(),
+        );
 
         let data = chart.get_data();
         assert_eq!(data.len(), 4);
@@ -344,10 +373,13 @@ mod test {
         // create a sample older than the window
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
         let sent_time = now.sub(Duration::from_secs(20));
-        chart.push_data(LevelChange {
-            timestamp: sent_time,
-            new_level: false,
-        });
+        chart.push_data(
+            LevelChange {
+                timestamp: sent_time,
+                new_level: false,
+            }
+            .into(),
+        );
 
         // Check the raw data still contains it
         assert_eq!(chart.samples.len(), 1);
@@ -423,25 +455,27 @@ mod test {
 
         // create a sample from 20s ago. It should pruned as it's older than the chart window
         let low_sent_time = now.sub(Duration::from_secs(20));
-        let low_sample = LevelChange {
+        let low_sample: Sample<PinLevel> = LevelChange {
             new_level: false,
             timestamp: low_sent_time,
-        };
+        }
+        .into();
         chart.push_data(low_sample.clone());
         assert_eq!(chart.samples.len(), 1);
 
         // Send a sample in the middle of the time window
         let high_sent_time = now.sub(Duration::from_secs(5));
-        let high_sample = LevelChange {
+        let high_sample: Sample<PinLevel> = LevelChange {
             timestamp: high_sent_time,
             new_level: true,
-        };
+        }
+        .into();
         chart.push_data(high_sample.clone());
 
         // Check the raw data has both
         assert_eq!(chart.samples.len(), 2);
-        assert_eq!(chart.samples.front().unwrap(), &high_sample.into());
-        assert_eq!(chart.samples.get(1).unwrap(), &low_sample.into());
+        assert_eq!(chart.samples.front().unwrap(), &high_sample);
+        assert_eq!(chart.samples.get(1).unwrap(), &low_sample);
 
         // Get the chart data
         let data = chart.get_data();
@@ -539,14 +573,14 @@ mod test {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(20)),
         };
-        chart.push_data(old_sample.clone());
+        chart.push_data(old_sample.into());
 
         // create a new high sample that is in the window
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(2)),
         };
-        chart.push_data(new_sample.clone());
+        chart.push_data(new_sample.into());
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 2);
@@ -584,14 +618,14 @@ mod test {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(20)),
         };
-        chart.push_data(old_sample.clone());
+        chart.push_data(old_sample.into());
 
         // create a new low sample that is in the window
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(2)),
         };
-        chart.push_data(new_sample.clone());
+        chart.push_data(new_sample.into());
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 2);
@@ -629,19 +663,19 @@ mod test {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(9)),
         };
-        chart.push_data(old_sample.clone());
+        chart.push_data(old_sample.into());
 
         // create a pulse, up and down
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(5)),
         };
-        chart.push_data(new_sample.clone());
+        chart.push_data(new_sample.into());
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(4)),
         };
-        chart.push_data(new_sample.clone());
+        chart.push_data(new_sample.into());
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 3);
@@ -681,19 +715,19 @@ mod test {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(9)),
         };
-        chart.push_data(old_sample.clone());
+        chart.push_data(old_sample.into());
 
         // create a pulse, down then back up
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(5)),
         };
-        chart.push_data(new_sample.clone());
+        chart.push_data(new_sample.into());
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(4)),
         };
-        chart.push_data(new_sample.clone());
+        chart.push_data(new_sample.into());
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 3);
