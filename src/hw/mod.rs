@@ -6,11 +6,10 @@ use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
+use crate::hw::pin_descriptions::*;
 use crate::hw_definition::description::{
     HardwareDescription, HardwareDetails, PinDescription, PinDescriptionSet, PinNumberingScheme,
 };
-
-use crate::hw::pin_descriptions::*;
 
 mod hardware_description;
 mod pin_descriptions;
@@ -70,6 +69,7 @@ enum Pin {
 ///
 /// The second for hosts (macOS, Linux, etc.) to show and develop GUI without real HW, and is
 /// provided mainly to aid GUI development and demoing it.
+#[derive(Default)]
 pub struct HW {
     #[cfg(all(
         target_os = "linux",
@@ -79,16 +79,9 @@ pub struct HW {
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
 }
 
-/// This method is used to get a "handle" onto the Hardware implementation
+/// Create a new HW instance - should only be called once
 pub fn get() -> HW {
-    HW {
-        #[cfg(all(
-            target_os = "linux",
-            any(target_arch = "aarch64", target_arch = "arm"),
-            target_env = "gnu"
-        ))]
-        configured_pins: Default::default(),
-    }
+    HW::default()
 }
 
 /// Common implementation code for pi and fake hardware
