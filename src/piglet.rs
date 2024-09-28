@@ -16,7 +16,6 @@ use anyhow::Context;
 use clap::{Arg, ArgMatches};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
-use hw::Hardware;
 use hw_definition::config::HardwareConfig;
 use log::{info, trace};
 use service_manager::{

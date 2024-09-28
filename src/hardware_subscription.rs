@@ -1,5 +1,5 @@
 use crate::hw;
-use crate::hw::Hardware;
+use crate::hw::HW;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
@@ -207,7 +207,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 
 /// Apply a config change to the local hardware
 fn apply_config_change(
-    hardware: &mut impl Hardware,
+    hardware: &mut HW,
     config_change: HardwareConfigMessage,
     mut gui_sender_clone: Sender<HardwareEventMessage>,
 ) {

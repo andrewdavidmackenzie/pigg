@@ -1,9 +1,16 @@
 use std::io;
 
+use std::time::Duration;
+
 use crate::hw_definition::config::{HardwareConfig, LevelChange};
-use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
+
+use crate::hw_definition::description::{
+    HardwareDescription, HardwareDetails, PinDescription, PinDescriptionSet, PinNumberingScheme,
+};
+
+use crate::hw::pin_descriptions::*;
 
 mod hardware_description;
 mod pin_descriptions;
@@ -14,53 +21,91 @@ pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 pub mod config;
 
-/// There are two implementations of the `hw_imp` module that has the `HW` struct that
-/// implements the [`Hardware`] trait:
-/// * fake_hw.rs - used on host (macOS, Linux, etc.) to show and develop GUI without real HW
-/// * pi_hw.rs - Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
+/// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
+/// For now, we will use the same descriptions for all hardware
+//noinspection DuplicatedCode
+const GPIO_PIN_DESCRIPTIONS: [PinDescription; 40] = [
+    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
+    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
+    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
+    PIN_38, PIN_39, PIN_40,
+];
+
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "aarch64", target_arch = "arm"),
+    target_env = "gnu"
+))]
+use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
+
+#[cfg(all(
+    not(target_arch = "wasm32"),
+    not(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))
+))]
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "aarch64", target_arch = "arm"),
+    target_env = "gnu"
+))]
+enum Pin {
+    Input(InputPin),
+    Output(OutputPin),
+}
+
+/// There are two implementations of the `HW` struct.
 ///
+/// The first for Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
 /// If we are building on a platform (arm, linux, gnu) that is compatible with a Pi platform
 /// (e.g. "aarch64" for Pi4/400, "arm" (arm7) for Pi3B) then build a binary that includes the
 /// real `pi_hw` version and that would work wif deployed on a real Raspberry Pi. There may
 /// be other arm-based computers out there that support linux and are built using gnu for libc
 /// that do not have Raspberry Pi hardware. This would build for them, and then they will fail
 /// at run-time when trying to access drivers and hardware for GPIO.
-#[cfg_attr(
-    all(
+///
+/// The second for hosts (macOS, Linux, etc.) to show and develop GUI without real HW, and is
+/// provided mainly to aid GUI development and demoing it.
+pub struct HW {
+    #[cfg(all(
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
-    ),
-    path = "pi_hw.rs"
-)]
-#[cfg_attr(
-    all(
-        not(target_arch = "wasm32"),
-        not(all(
+    ))]
+    configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
+}
+
+/// This method is used to get a "handle" onto the Hardware implementation
+pub fn get() -> HW {
+    HW {
+        #[cfg(all(
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "arm"),
             target_env = "gnu"
-        ))
-    ),
-    path = "fake_hw.rs"
-)]
-mod hw_imp;
-
-/// Get the implementation we will use to access the underlying hardware via the [Hardware] trait
-pub fn get() -> impl Hardware {
-    hw_imp::get()
+        ))]
+        configured_pins: Default::default(),
+    }
 }
 
-/// [`Hardware`] is a trait to be implemented depending on the hardware we are running on, to
-/// interact with any possible GPIO hardware on the device to set config and get state
-pub trait Hardware {
-    /// Return a [HardwareDescription] struct describing the hardware that we are connected to:
-    /// * [HardwareDescription] such as revision etc.
-    /// * [PinDescriptionSet] describing all the pins
-    fn description(&self) -> io::Result<HardwareDescription>;
+/// Common implementation code for pi and fake hardware
+impl HW {
+    /// Find the Pi hardware description
+    pub fn description(&self) -> io::Result<HardwareDescription> {
+        Ok(HardwareDescription {
+            details: Self::get_details()?,
+            pins: PinDescriptionSet {
+                pin_numbering: PinNumberingScheme::Rows,
+                pins: GPIO_PIN_DESCRIPTIONS.to_vec(),
+            },
+        })
+    }
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    pub fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
@@ -72,35 +117,233 @@ pub trait Hardware {
         Ok(())
     }
 
-    /// Apply a new config to one specific pin
-    fn apply_pin_config<C>(
+    fn get_details() -> io::Result<HardwareDetails> {
+        #[allow(unused_mut)]
+        let mut details = HardwareDetails {
+            hardware: "Unknown".to_string(),
+            revision: "Unknown".to_string(),
+            serial: "Unknown".to_string(),
+            model: "Unknown".to_string(),
+        };
+
+        #[cfg(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))]
+        for line in std::fs::read_to_string("/proc/cpuinfo")?.lines() {
+            match line
+                .split_once(':')
+                .map(|(key, value)| (key.trim(), value.trim()))
+            {
+                Some(("Hardware", hw)) => details.hardware = hw.to_string(),
+                Some(("Revision", revision)) => details.revision = revision.to_string(),
+                Some(("Serial", serial)) => details.serial = serial.to_string(),
+                Some(("Model", model)) => details.model = model.to_string(),
+                _ => {}
+            }
+        }
+
+        Ok(details)
+    }
+}
+
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "aarch64", target_arch = "arm"),
+    target_env = "gnu"
+))]
+impl HW {
+    /// Get the time since boot as a [Duration] that should be synced with timestamp of
+    /// `rppal` generated events
+    fn get_time_since_boot() -> Duration {
+        let mut time = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut time) };
+        Duration::new(time.tv_sec as u64, time.tv_nsec as u32)
+    }
+
+    /// Apply the requested config to one pin, using bcm_pin_number
+    pub fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
-        callback: C,
+        mut callback: C,
     ) -> io::Result<()>
     where
-        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static;
+        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
+    {
+        use crate::hw_definition::config::InputPull;
 
-    /// Read the input level of an input using its [BCMPinNumber]
-    #[allow(dead_code)] // for piglet
-    fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel>;
+        // If it was already configured, remove it
+        self.configured_pins.remove(&bcm_pin_number);
 
-    /// Write the output level of an output using its [BCMPinNumber]
-    #[allow(dead_code)] // for piglet
-    fn set_output_level(&mut self, bcm_pin_number: BCMPinNumber, level: PinLevel)
-        -> io::Result<()>;
+        match pin_function {
+            PinFunction::None => {}
+
+            PinFunction::Input(pull) => {
+                let pin = Gpio::new()
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+                    .get(bcm_pin_number)
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
+                let mut input = match pull {
+                    None | Some(InputPull::None) => pin.into_input(),
+                    Some(InputPull::PullUp) => pin.into_input_pullup(),
+                    Some(InputPull::PullDown) => pin.into_input_pulldown(),
+                };
+
+                // Send current input level back via callback
+                let timestamp = Self::get_time_since_boot();
+                callback(
+                    bcm_pin_number,
+                    LevelChange::new(input.read() == Level::High, timestamp),
+                );
+
+                input
+                    .set_async_interrupt(
+                        Trigger::Both,
+                        Some(Duration::from_millis(1)),
+                        move |event| {
+                            callback(
+                                bcm_pin_number,
+                                LevelChange::new(
+                                    event.trigger == Trigger::RisingEdge,
+                                    event.timestamp,
+                                ),
+                            );
+                        },
+                    )
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                self.configured_pins
+                    .insert(bcm_pin_number, Pin::Input(input));
+            }
+
+            PinFunction::Output(value) => {
+                let pin = Gpio::new()
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+                    .get(bcm_pin_number)
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+                let output_pin = match value {
+                    Some(true) => pin.into_output_high(),
+                    Some(false) => pin.into_output_low(),
+                    None => pin.into_output(),
+                };
+                self.configured_pins
+                    .insert(bcm_pin_number, Pin::Output(output_pin));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Read the input level of an input using the bcm pin number
+    // Only used by piglet hence the #allow
+    #[allow(dead_code)]
+    fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
+        match self.configured_pins.get(&bcm_pin_number) {
+            Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
+            _ => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Could not find a configured input pin",
+            )),
+        }
+    }
+
+    /// Write the output level of an output using the bcm pin number
+    pub fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level: PinLevel,
+    ) -> io::Result<()> {
+        match self.configured_pins.get_mut(&bcm_pin_number) {
+            Some(Pin::Output(output_pin)) => match level {
+                true => output_pin.write(Level::High),
+                false => output_pin.write(Level::Low),
+            },
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Could not find a configured output pin",
+                ))
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(all(
+    not(target_arch = "wasm32"),
+    not(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))
+))]
+impl HW {
+    pub fn apply_pin_config<C>(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        pin_function: &PinFunction,
+        mut callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
+    {
+        use rand::Rng;
+
+        if let PinFunction::Input(_) = pin_function {
+            std::thread::spawn(move || {
+                let mut rng = rand::thread_rng();
+                loop {
+                    let level: bool = rng.gen();
+                    #[allow(clippy::unwrap_used)]
+                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                    callback(bcm_pin_number, LevelChange::new(level, now));
+                    std::thread::sleep(Duration::from_millis(666));
+                }
+            });
+        }
+        Ok(())
+    }
+
+    /// Read the input level of an input using the bcm pin number
+    #[allow(dead_code)]
+    pub fn get_input_level(&self, _bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel> {
+        Ok(true)
+    }
+
+    /// Set the level of a Hardware Output using the bcm pin number
+    pub fn set_output_level(
+        &mut self,
+        _bcm_pin_number: BCMPinNumber,
+        _level: PinLevel,
+    ) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod test {
     use crate::hw;
-    use crate::hw::Hardware;
     use crate::hw_definition::description::{
         PinDescription, PinDescriptionSet, PinNumberingScheme,
     };
     use crate::hw_definition::pin_function::PinFunction;
     use std::borrow::Cow;
+
+    #[test]
+    fn get_hardware() {
+        let hw = super::get();
+        let description = hw
+            .description()
+            .expect("Could not read Hardware description");
+        let pins = description.pins.pins();
+        assert_eq!(pins.len(), 40);
+        assert_eq!(pins[0].name, "3V3")
+    }
 
     #[test]
     fn hw_can_be_got() {

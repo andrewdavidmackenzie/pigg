@@ -1,4 +1,4 @@
-use crate::hw::{Hardware, PIGLET_ALPN};
+use crate::hw::{HW, PIGLET_ALPN};
 use crate::hw_definition::config::HardwareConfig;
 use anyhow::{bail, Context};
 use futures::StreamExt;
@@ -112,10 +112,7 @@ pub async fn iroh_accept(
 }
 
 /// Process incoming config change messages from the GUI. On end of stream exit the loop
-pub async fn iroh_message_loop(
-    connection: Connection,
-    hardware: &mut impl Hardware,
-) -> anyhow::Result<()> {
+pub async fn iroh_message_loop(connection: Connection, hardware: &mut HW) -> anyhow::Result<()> {
     loop {
         let mut config_receiver = connection.accept_uni().await?;
         trace!("Receiving config message");
@@ -135,7 +132,7 @@ pub async fn iroh_message_loop(
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
 pub async fn apply_config_change(
-    hardware: &mut impl Hardware,
+    hardware: &mut HW,
     config_change: HardwareConfigMessage,
     connection: Connection,
 ) -> anyhow::Result<()> {
@@ -170,7 +167,7 @@ pub async fn apply_config_change(
 pub async fn send_current_input_states(
     connection: Connection,
     config: &HardwareConfig,
-    hardware: &impl Hardware,
+    hardware: &HW,
 ) -> anyhow::Result<()> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
