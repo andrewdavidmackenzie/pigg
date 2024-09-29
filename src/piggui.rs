@@ -12,9 +12,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{
-    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
-};
+use iced::{executor, window, Application, Command, Element, Length, Settings, Subscription, Theme, Pixels};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -111,6 +109,7 @@ fn main() -> Result<(), iced::Error> {
 
     Piggui::run(Settings {
         window,
+        default_text_size: Pixels(14.0),
         ..Default::default()
     })
 }
