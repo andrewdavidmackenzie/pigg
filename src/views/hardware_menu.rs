@@ -72,22 +72,16 @@ pub fn item<'a>(
         #[cfg(not(target_arch = "wasm32"))]
         Local => {
             menu_items.push(disconnect);
-            #[cfg(any(feature = "iroh", feature = "tcp"))]
-            menu_items.push(connect);
             menu_items.push(show_details);
         }
         #[cfg(feature = "iroh")]
         Iroh(_, _) => {
             menu_items.push(disconnect);
-            #[cfg(not(target_arch = "wasm32"))]
-            menu_items.push(connect_local);
             menu_items.push(show_details);
         }
         #[cfg(feature = "tcp")]
         Tcp(_, _) => {
             menu_items.push(disconnect);
-            #[cfg(not(target_arch = "wasm32"))]
-            menu_items.push(connect_local);
             menu_items.push(show_details);
         }
     }
