@@ -491,8 +491,6 @@ fn pullup_picklist(
     .placeholder("Select Pullup");
 
     // select a slightly small font on RPi, to make it fit within pick_list
-    #[cfg(target_os = "linux")]
-    let pick_list = pick_list.text_size(14);
 
     pick_list.into()
 }
@@ -660,8 +658,6 @@ fn create_pin_view_side<'a>(
         .placeholder("Select function");
 
         // select a slightly small font on RPi, to make it fit within pick_list
-        #[cfg(target_os = "linux")]
-        let pick_list = pick_list.text_size(14);
         pin_options_row = pin_options_row.push(pick_list);
 
         pin_option = pin_option.push(pin_options_row);
