@@ -6,7 +6,7 @@ use crate::views::hardware_view::HardwareView;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::{button, column, container, text, Row, Text, Space};
+use iced::widget::{button, column, container, text, Row, Space, Text};
 use iced::{keyboard, window, Color, Command, Element, Event, Length};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
@@ -198,7 +198,7 @@ impl DisplayModal {
                         .push(
                             button("Exit without saving")
                                 .on_press(Message::ModalHandle(ModalMessage::ExitApp))
-                                .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style())
+                                .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
                         )
                         .push(Space::new(235, 10))
                         .push(

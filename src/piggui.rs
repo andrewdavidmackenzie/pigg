@@ -12,7 +12,9 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{executor, window, Application, Command, Element, Length, Settings, Subscription, Theme, Pixels};
+use iced::{
+    executor, window, Application, Command, Element, Length, Pixels, Settings, Subscription, Theme,
+};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
