@@ -284,6 +284,7 @@ impl HW {
         use rand::Rng;
 
         if let PinFunction::Input(_) = pin_function {
+            // TODO try and use tokio spawn and make an async task
             std::thread::spawn(move || {
                 let mut rng = rand::thread_rng();
                 loop {
