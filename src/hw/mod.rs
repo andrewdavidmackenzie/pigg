@@ -99,7 +99,9 @@ impl HW {
     )))]
     fn get_time_since_boot() -> Duration {
         use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
     }
 
     /// Find the Pi hardware description

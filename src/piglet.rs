@@ -1,5 +1,4 @@
-// TODO
-// #![deny(clippy::unwrap_used)]
+#![deny(clippy::unwrap_used)]
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::{
