@@ -153,7 +153,8 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
                             &mut connected_hardware,
                             config_change,
                             gui_sender_clone,
-                        );
+                        )
+                        .await;
                     }
 
                     #[cfg(feature = "iroh")]
@@ -206,7 +207,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 }
 
 /// Apply a config change to the local hardware
-fn apply_config_change(
+async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
     mut gui_sender_clone: Sender<HardwareEventMessage>,
@@ -219,18 +220,22 @@ fn apply_config_change(
                         .try_send(InputChange(bcm_pin_number, level_change))
                         .unwrap();
                 })
+                .await
                 .unwrap();
         }
         NewPinConfig(bcm_pin_number, new_function) => {
-            let _ = hardware.apply_pin_config(
-                bcm_pin_number,
-                &new_function,
-                move |bcm_pin_number, level_change| {
-                    gui_sender_clone
-                        .try_send(InputChange(bcm_pin_number, level_change))
-                        .unwrap();
-                },
-            );
+            hardware
+                .apply_pin_config(
+                    bcm_pin_number,
+                    &new_function,
+                    move |bcm_pin_number, level_change| {
+                        gui_sender_clone
+                            .try_send(InputChange(bcm_pin_number, level_change))
+                            .unwrap();
+                    },
+                )
+                .await
+                .unwrap();
         }
         IOLevelChanged(bcm_pin_number, level_change) => {
             let _ = hardware.set_output_level(bcm_pin_number, level_change.new_level);

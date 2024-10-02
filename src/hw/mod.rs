@@ -35,17 +35,7 @@ const GPIO_PIN_DESCRIPTIONS: [PinDescription; 40] = [
     any(target_arch = "aarch64", target_arch = "arm"),
     target_env = "gnu"
 ))]
-use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
-
-#[cfg(all(
-    not(target_arch = "wasm32"),
-    not(all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ))
-))]
-use std::time::{SystemTime, UNIX_EPOCH};
+use rppal::gpio::{Gpio, Level, OutputPin, Trigger};
 
 #[cfg(all(
     target_os = "linux",
@@ -53,7 +43,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
     target_env = "gnu"
 ))]
 enum Pin {
-    Input(InputPin),
+    Input,
     Output(OutputPin),
 }
 
@@ -86,6 +76,32 @@ pub fn get() -> HW {
 
 /// Common implementation code for pi and fake hardware
 impl HW {
+    /// Get the time since boot as a [Duration] that should be synced with timestamp of
+    /// `rppal` generated events
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))]
+    fn get_time_since_boot() -> Duration {
+        let mut time = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut time) };
+        Duration::new(time.tv_sec as u64, time.tv_nsec as u32)
+    }
+
+    #[cfg(not(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    )))]
+    fn get_time_since_boot() -> Duration {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
+    }
+
     /// Find the Pi hardware description
     pub fn description(&self) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
@@ -98,15 +114,43 @@ impl HW {
     }
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    pub fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    pub async fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.pin_functions {
-            self.apply_pin_config(*bcm_pin_number, pin_function, callback.clone())?;
+            self.apply_pin_config(*bcm_pin_number, pin_function, callback.clone())
+                .await?;
         }
 
+        Ok(())
+    }
+
+    /// Write the output level of an output using the bcm pin number
+    #[allow(unused_variables)]
+    pub fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level: PinLevel,
+    ) -> io::Result<()> {
+        #[cfg(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))]
+        match self.configured_pins.get_mut(&bcm_pin_number) {
+            Some(Pin::Output(output_pin)) => match level {
+                true => output_pin.write(Level::High),
+                false => output_pin.write(Level::Low),
+            },
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Could not find a configured output pin",
+                ))
+            }
+        }
         Ok(())
     }
 
@@ -139,27 +183,14 @@ impl HW {
 
         Ok(details)
     }
-}
 
-#[cfg(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-))]
-impl HW {
-    /// Get the time since boot as a [Duration] that should be synced with timestamp of
-    /// `rppal` generated events
-    fn get_time_since_boot() -> Duration {
-        let mut time = libc::timespec {
-            tv_sec: 0,
-            tv_nsec: 0,
-        };
-        unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut time) };
-        Duration::new(time.tv_sec as u64, time.tv_nsec as u32)
-    }
-
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))]
     /// Apply the requested config to one pin, using bcm_pin_number
-    pub fn apply_pin_config<C>(
+    pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
@@ -177,6 +208,7 @@ impl HW {
             PinFunction::None => {}
 
             PinFunction::Input(pull) => {
+                println!("Configuring input pin #{bcm_pin_number}");
                 let pin = Gpio::new()
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
                     .get(bcm_pin_number)
@@ -187,13 +219,6 @@ impl HW {
                     Some(InputPull::PullUp) => pin.into_input_pullup(),
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
-
-                // Send current input level back via callback
-                let timestamp = Self::get_time_since_boot();
-                callback(
-                    bcm_pin_number,
-                    LevelChange::new(input.read() == Level::High, timestamp),
-                );
 
                 input
                     .set_async_interrupt(
@@ -210,8 +235,16 @@ impl HW {
                         },
                     )
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-                self.configured_pins
-                    .insert(bcm_pin_number, Pin::Input(input));
+
+                std::thread::spawn(move || {
+                    // Send current input level back via callback
+                    let timestamp = Self::get_time_since_boot();
+                    let new_level = input.read() == Level::High;
+                    println!("calling callback");
+                    callback(bcm_pin_number, LevelChange::new(new_level, timestamp));
+                });
+
+                self.configured_pins.insert(bcm_pin_number, Pin::Input);
             }
 
             PinFunction::Output(value) => {
@@ -232,51 +265,12 @@ impl HW {
         Ok(())
     }
 
-    /// Read the input level of an input using the bcm pin number
-    // Only used by piglet hence the #allow
-    #[allow(dead_code)]
-    pub fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
-        match self.configured_pins.get(&bcm_pin_number) {
-            Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
-            _ => Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Could not find a configured input pin",
-            )),
-        }
-    }
-
-    /// Write the output level of an output using the bcm pin number
-    pub fn set_output_level(
-        &mut self,
-        bcm_pin_number: BCMPinNumber,
-        level: PinLevel,
-    ) -> io::Result<()> {
-        match self.configured_pins.get_mut(&bcm_pin_number) {
-            Some(Pin::Output(output_pin)) => match level {
-                true => output_pin.write(Level::High),
-                false => output_pin.write(Level::Low),
-            },
-            _ => {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Could not find a configured output pin",
-                ))
-            }
-        }
-        Ok(())
-    }
-}
-
-#[cfg(all(
-    not(target_arch = "wasm32"),
-    not(all(
+    #[cfg(not(all(
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
-    ))
-))]
-impl HW {
-    pub fn apply_pin_config<C>(
+    )))]
+    pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
@@ -292,28 +286,14 @@ impl HW {
                 let mut rng = rand::thread_rng();
                 loop {
                     let level: bool = rng.gen();
-                    #[allow(clippy::unwrap_used)]
-                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                    callback(bcm_pin_number, LevelChange::new(level, now));
+                    callback(
+                        bcm_pin_number,
+                        LevelChange::new(level, Self::get_time_since_boot()),
+                    );
                     std::thread::sleep(Duration::from_millis(666));
                 }
             });
         }
-        Ok(())
-    }
-
-    /// Read the input level of an input using the bcm pin number
-    #[allow(dead_code)]
-    pub fn get_input_level(&self, _bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel> {
-        Ok(true)
-    }
-
-    /// Set the level of a Hardware Output using the bcm pin number
-    pub fn set_output_level(
-        &mut self,
-        _bcm_pin_number: BCMPinNumber,
-        _level: PinLevel,
-    ) -> io::Result<()> {
         Ok(())
     }
 }

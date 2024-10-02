@@ -29,6 +29,8 @@ use std::str::FromStr;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
+
+#[cfg(not(target_arch = "wasm32"))]
 mod hw;
 mod hw_definition;
 #[cfg(feature = "iroh")]
