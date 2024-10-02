@@ -222,11 +222,23 @@ impl HW {
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
 
+                // Send current input level back via callback
+                /*
+                let timestamp = Self::get_time_since_boot();
+                let new_level = input.read() == Level::High;
+                let mut cc = callback.clone();
+                std::thread::spawn(move || {
+                    println!("calling callback");
+                    cc(bcm_pin_number, LevelChange::new(new_level, timestamp));
+                });
+                 */
+
                 input
                     .set_async_interrupt(
                         Trigger::Both,
                         Some(Duration::from_millis(1)),
                         move |event| {
+                            println!("calling callback");
                             callback(
                                 bcm_pin_number,
                                 LevelChange::new(
@@ -237,14 +249,6 @@ impl HW {
                         },
                     )
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-
-                std::thread::spawn(move || {
-                    // Send current input level back via callback
-                    let timestamp = Self::get_time_since_boot();
-                    let new_level = input.read() == Level::High;
-                    println!("calling callback");
-                    callback(bcm_pin_number, LevelChange::new(new_level, timestamp));
-                });
 
                 self.configured_pins.insert(bcm_pin_number, Pin::Input);
             }
