@@ -120,7 +120,8 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
         trace!("{config}");
         hw.apply_config(&config, |bcm_pin_number, level_change| {
             info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
-        })?;
+        })
+        .await?;
         trace!("Configuration applied to hardware");
     };
 

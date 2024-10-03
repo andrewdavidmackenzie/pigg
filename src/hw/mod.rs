@@ -98,13 +98,14 @@ impl HW {
     }
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    pub fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    pub async fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.pin_functions {
-            self.apply_pin_config(*bcm_pin_number, pin_function, callback.clone())?;
+            self.apply_pin_config(*bcm_pin_number, pin_function, callback.clone())
+                .await?;
         }
 
         Ok(())
@@ -149,7 +150,8 @@ impl HW {
 impl HW {
     /// Get the time since boot as a [Duration] that should be synced with timestamp of
     /// `rppal` generated events
-    fn get_time_since_boot() -> Duration {
+    #[allow(dead_code)] // not used by piggui currently
+    pub fn get_time_since_boot(&self) -> Duration {
         let mut time = libc::timespec {
             tv_sec: 0,
             tv_nsec: 0,
@@ -159,7 +161,7 @@ impl HW {
     }
 
     /// Apply the requested config to one pin, using bcm_pin_number
-    pub fn apply_pin_config<C>(
+    pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
@@ -187,13 +189,6 @@ impl HW {
                     Some(InputPull::PullUp) => pin.into_input_pullup(),
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
-
-                // Send current input level back via callback
-                let timestamp = Self::get_time_since_boot();
-                callback(
-                    bcm_pin_number,
-                    LevelChange::new(input.read() == Level::High, timestamp),
-                );
 
                 input
                     .set_async_interrupt(
@@ -276,7 +271,14 @@ impl HW {
     ))
 ))]
 impl HW {
-    pub fn apply_pin_config<C>(
+    #[allow(dead_code)] // not used by piggui currently
+    pub fn get_time_since_boot(&self) -> Duration {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+    }
+
+    pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
