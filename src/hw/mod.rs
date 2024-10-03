@@ -2,7 +2,7 @@ use std::io;
 
 use std::time::Duration;
 
-use crate::hw_definition::config::{HardwareConfig, LevelChange};
+use crate::hw_definition::config::{HardwareConfig, InputPull, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
@@ -186,87 +186,66 @@ impl HW {
         Ok(details)
     }
 
-    #[cfg(all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ))]
     /// Apply the requested config to one pin, using bcm_pin_number
     pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &PinFunction,
+        callback: C,
+    ) -> io::Result<()>
+    where
+        C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
+    {
+        match pin_function {
+            PinFunction::None => Ok(()),
+            PinFunction::Input(pull) => self.monitor_input(bcm_pin_number, pull, callback),
+            PinFunction::Output(value) => self.control_output(bcm_pin_number, value),
+        }
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))]
+    fn monitor_input<C>(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        pull: &Option<InputPull>,
         mut callback: C,
     ) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        use crate::hw_definition::config::InputPull;
-
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
 
-        match pin_function {
-            PinFunction::None => {}
+        let pin = Gpio::new()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .get(bcm_pin_number)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-            PinFunction::Input(pull) => {
-                println!("Configuring input pin #{bcm_pin_number}");
-                let pin = Gpio::new()
-                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
-                    .get(bcm_pin_number)
-                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        let mut input = match pull {
+            None | Some(InputPull::None) => pin.into_input(),
+            Some(InputPull::PullUp) => pin.into_input_pullup(),
+            Some(InputPull::PullDown) => pin.into_input_pulldown(),
+        };
 
-                let mut input = match pull {
-                    None | Some(InputPull::None) => pin.into_input(),
-                    Some(InputPull::PullUp) => pin.into_input_pullup(),
-                    Some(InputPull::PullDown) => pin.into_input_pulldown(),
-                };
-
-                /*
-                // Send current input level back via callback
-                let timestamp = Self::get_time_since_boot();
-                let new_level = input.read() == Level::High;
-                let mut cc = callback.clone();
-                std::thread::spawn(move || {
+        input
+            .set_async_interrupt(
+                Trigger::Both,
+                Some(Duration::from_millis(1)),
+                move |event| {
                     println!("calling callback");
-                    cc(bcm_pin_number, LevelChange::new(new_level, timestamp));
-                });
-                 */
+                    callback(
+                        bcm_pin_number,
+                        LevelChange::new(event.trigger == Trigger::RisingEdge, event.timestamp),
+                    );
+                },
+            )
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
 
-                input
-                    .set_async_interrupt(
-                        Trigger::Both,
-                        Some(Duration::from_millis(1)),
-                        move |event| {
-                            println!("calling callback");
-                            callback(
-                                bcm_pin_number,
-                                LevelChange::new(
-                                    event.trigger == Trigger::RisingEdge,
-                                    event.timestamp,
-                                ),
-                            );
-                        },
-                    )
-                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-
-                self.configured_pins.insert(bcm_pin_number, Pin::Input);
-            }
-
-            PinFunction::Output(value) => {
-                let pin = Gpio::new()
-                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
-                    .get(bcm_pin_number)
-                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-                let output_pin = match value {
-                    Some(true) => pin.into_output_high(),
-                    Some(false) => pin.into_output_low(),
-                    None => pin.into_output(),
-                };
-                self.configured_pins
-                    .insert(bcm_pin_number, Pin::Output(output_pin));
-            }
-        }
+        self.configured_pins.insert(bcm_pin_number, Pin::Input);
 
         Ok(())
     }
@@ -276,10 +255,10 @@ impl HW {
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
     )))]
-    pub async fn apply_pin_config<C>(
+    fn monitor_input<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        pin_function: &PinFunction,
+        _pull: &Option<InputPull>,
         mut callback: C,
     ) -> io::Result<()>
     where
@@ -287,24 +266,62 @@ impl HW {
     {
         use rand::Rng;
 
-        if let PinFunction::Input(_) = pin_function {
-            // TODO try and use tokio spawn and make an async task
-            std::thread::spawn(move || {
-                let mut rng = rand::thread_rng();
-                loop {
-                    let level: bool = rng.gen();
-                    callback(
-                        bcm_pin_number,
-                        LevelChange::new(level, Self::get_time_since_boot()),
-                    );
-                    std::thread::sleep(Duration::from_millis(666));
-                }
-            });
-        }
+        std::thread::spawn(move || {
+            let mut rng = rand::thread_rng();
+            loop {
+                let level: bool = rng.gen();
+                callback(
+                    bcm_pin_number,
+                    LevelChange::new(level, Self::get_time_since_boot()),
+                );
+                std::thread::sleep(Duration::from_millis(666));
+            }
+        });
+
+        Ok(())
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))]
+    fn control_output(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        value: &Option<PinLevel>,
+    ) -> io::Result<()> {
+        // If it was already configured, remove it
+        self.configured_pins.remove(&bcm_pin_number);
+
+        let pin = Gpio::new()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .get(bcm_pin_number)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        let output_pin = match value {
+            Some(true) => pin.into_output_high(),
+            Some(false) => pin.into_output_low(),
+            None => pin.into_output(),
+        };
+        self.configured_pins
+            .insert(bcm_pin_number, Pin::Output(output_pin));
+
+        Ok(())
+    }
+
+    #[cfg(not(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    )))]
+    fn control_output(
+        &mut self,
+        _bcm_pin_number: BCMPinNumber,
+        _value: &Option<PinLevel>,
+    ) -> io::Result<()> {
         Ok(())
     }
 }
-
 #[cfg(test)]
 mod test {
     use crate::hw;
