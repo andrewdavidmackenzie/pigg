@@ -222,8 +222,8 @@ impl HW {
                     Some(InputPull::PullDown) => pin.into_input_pulldown(),
                 };
 
-                // Send current input level back via callback
                 /*
+                // Send current input level back via callback
                 let timestamp = Self::get_time_since_boot();
                 let new_level = input.read() == Level::High;
                 let mut cc = callback.clone();
