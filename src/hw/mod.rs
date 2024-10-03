@@ -111,6 +111,33 @@ impl HW {
         Ok(())
     }
 
+    /// Write the output level of an output using the bcm pin number
+    #[allow(unused_variables)]
+    pub fn set_output_level(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        level: PinLevel,
+    ) -> io::Result<()> {
+        #[cfg(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))]
+        match self.configured_pins.get_mut(&bcm_pin_number) {
+            Some(Pin::Output(output_pin)) => match level {
+                true => output_pin.write(Level::High),
+                false => output_pin.write(Level::Low),
+            },
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Could not find a configured output pin",
+                ))
+            }
+        }
+        Ok(())
+    }
+
     fn get_details() -> io::Result<HardwareDetails> {
         #[allow(unused_mut)]
         let mut details = HardwareDetails {
@@ -140,14 +167,12 @@ impl HW {
 
         Ok(details)
     }
-}
 
-#[cfg(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-))]
-impl HW {
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))]
     /// Get the time since boot as a [Duration] that should be synced with timestamp of
     /// `rppal` generated events
     #[allow(dead_code)] // not used by piggui currently
@@ -160,6 +185,26 @@ impl HW {
         Duration::new(time.tv_sec as u64, time.tv_nsec as u32)
     }
 
+    #[cfg(all(
+        not(target_arch = "wasm32"),
+        not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))
+    ))]
+    #[allow(dead_code)] // not used by piggui currently
+    pub fn get_time_since_boot(&self) -> Duration {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    ))]
     /// Apply the requested config to one pin, using bcm_pin_number
     pub async fn apply_pin_config<C>(
         &mut self,
@@ -227,57 +272,14 @@ impl HW {
         Ok(())
     }
 
-    /// Read the input level of an input using the bcm pin number
-    // Only used by piglet hence the #allow
-    #[allow(dead_code)]
-    pub fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
-        match self.configured_pins.get(&bcm_pin_number) {
-            Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
-            _ => Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Could not find a configured input pin",
-            )),
-        }
-    }
-
-    /// Write the output level of an output using the bcm pin number
-    pub fn set_output_level(
-        &mut self,
-        bcm_pin_number: BCMPinNumber,
-        level: PinLevel,
-    ) -> io::Result<()> {
-        match self.configured_pins.get_mut(&bcm_pin_number) {
-            Some(Pin::Output(output_pin)) => match level {
-                true => output_pin.write(Level::High),
-                false => output_pin.write(Level::Low),
-            },
-            _ => {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Could not find a configured output pin",
-                ))
-            }
-        }
-        Ok(())
-    }
-}
-
-#[cfg(all(
-    not(target_arch = "wasm32"),
-    not(all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ))
-))]
-impl HW {
-    #[allow(dead_code)] // not used by piggui currently
-    pub fn get_time_since_boot(&self) -> Duration {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-    }
-
+    #[cfg(all(
+        not(target_arch = "wasm32"),
+        not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))
+    ))]
     pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
@@ -305,18 +307,27 @@ impl HW {
     }
 
     /// Read the input level of an input using the bcm pin number
-    #[allow(dead_code)]
-    pub fn get_input_level(&self, _bcm_pin_number: BCMPinNumber) -> io::Result<PinLevel> {
+    #[allow(unused_variables)] // pin number not used in fake hw
+    #[allow(dead_code)] // Only used by piglet hence the #allow
+    pub fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
+        #[cfg(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))]
+        match self.configured_pins.get(&bcm_pin_number) {
+            Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
+            _ => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Could not find a configured input pin",
+            )),
+        }
+        #[cfg(not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        )))]
         Ok(true)
-    }
-
-    /// Set the level of a Hardware Output using the bcm pin number
-    pub fn set_output_level(
-        &mut self,
-        _bcm_pin_number: BCMPinNumber,
-        _level: PinLevel,
-    ) -> io::Result<()> {
-        Ok(())
     }
 }
 
