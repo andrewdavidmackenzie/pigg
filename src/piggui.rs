@@ -13,7 +13,7 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{
-    executor, window, Application, Command, Element, Length, Settings, Subscription, Theme,
+    executor, window, Application, Command, Element, Length, Pixels, Settings, Subscription, Theme,
 };
 use views::pin_state::PinState;
 
@@ -111,6 +111,7 @@ fn main() -> Result<(), iced::Error> {
 
     Piggui::run(Settings {
         window,
+        default_text_size: Pixels(14.0),
         ..Default::default()
     })
 }

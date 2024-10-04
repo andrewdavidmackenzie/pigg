@@ -4,6 +4,11 @@ We use `cargo dist` to automate our release and package publishing process.
 
 The steps to do a full release are:
 
+- Merge all pending PRs planned for the release
+- Create a new issue in GitHub based on the "release-manual-testing-template.md" and assign it to the milestone
+  for the release.
+- Go through that new issue for manual testing, performing the manual tests in the matrix and checking them
+  off as done as you go, until all pass.
 - Update the version number (e.g. "1.2.3") in `Cargo.toml` in a new branch, push it, create a PR,
   wait for test sto pass, then merge that PR into master
 - checkout master, pull the latest version
