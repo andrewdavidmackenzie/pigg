@@ -262,6 +262,10 @@ impl HardwareView {
 
     /// Go through all the pins in the [HardwareConfig], make sure a pin state exists for the pin
     /// and then set the current level if pin is an Output and the level was specified.
+    /// TODO check if still needed - or should we add level reading to apply_config_change()
+    /// TODO at the end of hardware_subscription.rs and keep this out of the UI code.
+    /// TODO that should take care of states for outputs also. If we move that in there, then
+    /// TODO it should use hardware::get_time_since_boot()
     fn set_pin_states_after_load(&mut self) {
         for (bcm_pin_number, pin_function) in &self.hardware_config.pin_functions {
             // For output pins, if there is an initial state set then set that in pin state

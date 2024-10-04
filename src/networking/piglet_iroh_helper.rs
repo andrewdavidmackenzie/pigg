@@ -6,7 +6,7 @@ use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 
@@ -140,23 +140,31 @@ pub async fn apply_config_change(
         NewConfig(config) => {
             let cc = connection.clone();
             info!("New config applied");
-            hardware.apply_config(&config, move |bcm, level_change| {
-                let cc = connection.clone();
-                let _ = send_input_level(cc, bcm, level_change);
-            })?;
+            hardware
+                .apply_config(&config, move |bcm, level_change| {
+                    let cc = connection.clone();
+                    let _ = send_input_level(cc, bcm, level_change);
+                })
+                .await?;
 
             send_current_input_states(cc, &config, hardware).await?;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
-            hardware.apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                let cc = connection.clone();
-                let _ = send_input_level(cc, bcm, level);
-            })?;
+            let cc = connection.clone();
+            hardware
+                .apply_pin_config(bcm, &pin_function, move |bcm, level| {
+                    let _ = send_input_level(connection.clone(), bcm, level);
+                })
+                .await?;
+
+            send_current_input_state(&bcm, &pin_function, cc, hardware).await?;
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
+            // No need to send to UI, as this change came from the UI, less we take out of
+            // new_pin_function() in hardware view
         }
     }
 
@@ -164,22 +172,34 @@ pub async fn apply_config_change(
 }
 
 /// Send the current input state for all inputs configured in the config
-pub async fn send_current_input_states(
+async fn send_current_input_states(
     connection: Connection,
     config: &HardwareConfig,
     hardware: &HW,
 ) -> anyhow::Result<()> {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
+    for (bcm_pin_number, pin_function) in &config.pin_functions {
+        send_current_input_state(bcm_pin_number, pin_function, connection.clone(), hardware)
+            .await?;
+    }
+
+    Ok(())
+}
+
+/// Send the current input state for one input - with timestamp matching future LevelChanges
+async fn send_current_input_state(
+    bcm_pin_number: &BCMPinNumber,
+    pin_function: &PinFunction,
+    connection: Connection,
+    hardware: &HW,
+) -> anyhow::Result<()> {
+    let now = hardware.get_time_since_boot();
 
     // Send initial levels
-    for (bcm_pin_number, pin_function) in &config.pin_functions {
-        if let PinFunction::Input(_pullup) = pin_function {
-            // Update UI with initial state
-            if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-                let _ =
-                    send_input_level_async(connection.clone(), *bcm_pin_number, initial_level, now)
-                        .await;
-            }
+    if let PinFunction::Input(_pullup) = pin_function {
+        // Update UI with initial state
+        if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
+            let _ = send_input_level_async(connection.clone(), *bcm_pin_number, initial_level, now)
+                .await;
         }
     }
 
@@ -203,7 +223,6 @@ async fn send_input_level_async(
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
-// TODO they are looking for testers of async closures! This is the place!
 fn send_input_level(
     connection: Connection,
     bcm: BCMPinNumber,

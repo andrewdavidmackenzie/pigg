@@ -1,9 +1,8 @@
-use crate::hw;
-use crate::hw::HW;
+use crate::{hw, piggui_local_helper};
+
 use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::config::HardwareConfigMessage::{
-    IOLevelChanged, NewConfig, NewPinConfig,
-};
+use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
+
 #[cfg(feature = "iroh")]
 use crate::piggui_iroh_helper;
 #[cfg(feature = "tcp")]
@@ -11,7 +10,7 @@ use crate::piggui_tcp_helper;
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 use iced::futures::channel::mpsc;
-use iced::futures::channel::mpsc::{Receiver, Sender};
+use iced::futures::channel::mpsc::Receiver;
 use iced::futures::sink::SinkExt;
 use iced::futures::StreamExt;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -149,11 +148,13 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
 
                     HWState::ConnectedLocal(config_change_receiver) => {
                         let config_change = config_change_receiver.select_next_some().await;
-                        apply_config_change(
+                        piggui_local_helper::apply_config_change(
                             &mut connected_hardware,
                             config_change,
                             gui_sender_clone,
-                        );
+                        )
+                        .await
+                        .unwrap();
                     }
 
                     #[cfg(feature = "iroh")]
@@ -203,37 +204,4 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
             }
         },
     )
-}
-
-/// Apply a config change to the local hardware
-fn apply_config_change(
-    hardware: &mut HW,
-    config_change: HardwareConfigMessage,
-    mut gui_sender_clone: Sender<HardwareEventMessage>,
-) {
-    match config_change {
-        NewConfig(config) => {
-            hardware
-                .apply_config(&config, move |bcm_pin_number, level_change| {
-                    gui_sender_clone
-                        .try_send(InputChange(bcm_pin_number, level_change))
-                        .unwrap();
-                })
-                .unwrap();
-        }
-        NewPinConfig(bcm_pin_number, new_function) => {
-            let _ = hardware.apply_pin_config(
-                bcm_pin_number,
-                &new_function,
-                move |bcm_pin_number, level_change| {
-                    gui_sender_clone
-                        .try_send(InputChange(bcm_pin_number, level_change))
-                        .unwrap();
-                },
-            );
-        }
-        IOLevelChanged(bcm_pin_number, level_change) => {
-            let _ = hardware.set_output_level(bcm_pin_number, level_change.new_level);
-        }
-    }
 }
