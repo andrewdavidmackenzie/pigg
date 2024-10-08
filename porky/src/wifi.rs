@@ -5,9 +5,26 @@ use cyw43::{JoinAuth, JoinOptions};
 use defmt::{error, info, warn};
 use embassy_net::Ipv4Address;
 use embassy_net::Stack;
+use embassy_rp::gpio::Output;
 use embassy_time::Timer;
 
+use cyw43_pio::PioSpi;
+
+use embassy_rp::peripherals::{DMA_CH0, PIO0};
+
 const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
+
+#[embassy_executor::task]
+pub async fn wifi_task(
+    runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
+) -> ! {
+    runner.run().await
+}
+
+#[embassy_executor::task]
+pub async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
+    stack.run().await
+}
 
 pub async fn join(
     control: &mut Control<'_>,
@@ -55,7 +72,7 @@ pub async fn join(
 }
 
 /// Wait for the DHCP service to come up and for us to get an IP address
-pub async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address> {
+async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address> {
     info!("Waiting for DHCP...");
     while !stack.is_config_up() {
         Timer::after_millis(100).await;

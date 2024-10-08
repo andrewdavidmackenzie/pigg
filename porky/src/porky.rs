@@ -8,7 +8,6 @@ use cyw43_pio::PioSpi;
 use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
-use embassy_net::tcp::TcpSocket;
 use embassy_rp::gpio::{Level, Output};
 
 use embassy_net::{Stack, StackResources};
@@ -16,11 +15,11 @@ use embassy_rp::bind_interrupts;
 use embassy_rp::flash::Async;
 use embassy_rp::flash::Flash;
 
+use embassy_rp::peripherals::DMA_CH0;
+use embassy_rp::peripherals::PIO0;
 use embassy_rp::peripherals::USB;
-use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
-
 use panic_probe as _;
 
 use static_cell::StaticCell;
@@ -53,34 +52,47 @@ bind_interrupts!(struct Irqs {
     USBCTRL_IRQ => USBInterruptHandler<USB>;
 });
 
-#[embassy_executor::task]
-async fn wifi_task(
-    runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
-) -> ! {
-    runner.run().await
-}
+async fn start_net<'a>(
+    spawner: Spawner,
+    pin_23: embassy_rp::peripherals::PIN_23,
+    spi: PioSpi<'static, PIO0, 0, DMA_CH0>,
+) -> (Control<'a>, &'static Stack<NetDriver<'static>>) {
+    let fw = include_bytes!("../assets/43439A0.bin");
+    let clm = include_bytes!("../assets/43439A0_clm.bin");
+    let pwr = Output::new(pin_23, Level::Low);
 
-#[embassy_executor::task]
-async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
-    stack.run().await
-}
+    static STATE: StaticCell<cyw43::State> = StaticCell::new();
+    let state = STATE.init(cyw43::State::new());
+    let (net_device, mut control, runner) = cyw43::new(state, pwr, spi, fw).await;
+    spawner.spawn(wifi::wifi_task(runner)).unwrap();
 
-/// Enter the message loop, processing config change messages received over TCP
-async fn message_loop<'a>(control: &mut Control<'_>, spawner: &Spawner, mut socket: TcpSocket<'_>) {
-    info!("Entering message loop");
-    while let Some(config_message) = tcp::wait_message(&mut socket).await {
-        gpio::apply_config_change(control, spawner, config_message, &mut socket).await;
-    }
+    control.init(clm).await;
+    control
+        .set_power_management(cyw43::PowerManagementMode::PowerSave)
+        .await;
+
+    let dhcp_config = embassy_net::Config::dhcpv4(Default::default());
+
+    static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
+    let resources = RESOURCES.init(StackResources::new());
+
+    // Generate random seed
+    let seed = 0x0123_4567_89ab_cdef;
+    static STACK: StaticCell<Stack<NetDriver<'static>>> = StaticCell::new();
+    let stack = STACK.init(Stack::new(net_device, dhcp_config, resources, seed));
+    spawner.spawn(wifi::net_task(stack)).unwrap();
+
+    (control, stack)
 }
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let peripherals = embassy_rp::init(Default::default());
-    let fw = include_bytes!("../assets/43439A0.bin");
-    let clm = include_bytes!("../assets/43439A0_clm.bin");
-    let pwr = Output::new(peripherals.PIN_23, Level::Low);
     let cs = Output::new(peripherals.PIN_25, Level::High);
     let mut pio = Pio::new(peripherals.PIO0, Irqs);
+
+    // Initialize the cyw43 and start the network
+    //    let pwr = Output::new(peripherals.PIN_23, Level::Low);
     let spi = PioSpi::new(
         &mut pio.common,
         pio.sm0,
@@ -90,6 +102,7 @@ async fn main(spawner: Spawner) {
         peripherals.PIN_29,
         peripherals.DMA_CH0,
     );
+    let (mut control, stack) = start_net(spawner, peripherals.PIN_23, spi).await;
 
     // Take the following pins out of peripherals for use a GPIO
     let available_pins = gpio::AvailablePins {
@@ -117,35 +130,12 @@ async fn main(spawner: Spawner) {
         pin_27: peripherals.PIN_27,
         pin_28: peripherals.PIN_28,
     };
-
-    static STATE: StaticCell<cyw43::State> = StaticCell::new();
-    let state = STATE.init(cyw43::State::new());
-    let (net_device, mut control, runner) = cyw43::new(state, pwr, spi, fw).await;
-
-    spawner.spawn(wifi_task(runner)).unwrap();
-
-    control.init(clm).await;
-    control
-        .set_power_management(cyw43::PowerManagementMode::PowerSave)
-        .await;
+    gpio::setup_pins(available_pins);
 
     // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
     let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(peripherals.FLASH, peripherals.DMA_CH1);
     let mut device_id = [0; 8];
     flash.blocking_unique_id(&mut device_id).unwrap();
-
-    let dhcp_config = embassy_net::Config::dhcpv4(Default::default());
-
-    static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
-    let resources = RESOURCES.init(StackResources::new());
-
-    // Generate random seed
-    let seed = 0x0123_4567_89ab_cdef;
-    static STACK: StaticCell<Stack<NetDriver<'static>>> = StaticCell::new();
-    let stack = STACK.init(Stack::new(net_device, dhcp_config, resources, seed));
-    spawner.spawn(net_task(stack)).unwrap();
-
-    gpio::setup_pins(available_pins);
 
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
@@ -155,11 +145,20 @@ async fn main(spawner: Spawner) {
 
     while let Some(ip_address) = wifi::join(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
-            let socket =
-                tcp::wait_connection(stack, device_id, ip_address, &mut tx_buffer, &mut rx_buffer)
+            let mut socket = tcp::wait_connection(
+                &stack,
+                device_id,
+                ip_address,
+                &mut tx_buffer,
+                &mut rx_buffer,
+            )
+            .await;
+            info!("Entering message loop");
+            while let Some(config_message) = tcp::wait_message(&mut socket).await {
+                gpio::apply_config_change(&mut control, &spawner, config_message, &mut socket)
                     .await;
-            message_loop(&mut control, &spawner, socket).await;
-            info!("Disconnected");
+            }
+            info!("Disconnected - Exiting Message Loop");
         }
     }
 
