@@ -7,9 +7,7 @@ use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
 use crate::hw::pin_descriptions::*;
-use crate::hw_definition::description::{
-    HardwareDescription, HardwareDetails, PinDescription, PinDescriptionSet, PinNumberingScheme,
-};
+use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 
 mod hardware_description;
 mod pin_descriptions;
@@ -19,16 +17,6 @@ mod pin_function;
 pub const PIGLET_ALPN: &[u8] = b"pigg/piglet/0";
 
 pub mod config;
-
-/// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
-/// For now, we will use the same descriptions for all hardware
-//noinspection DuplicatedCode
-const GPIO_PIN_DESCRIPTIONS: [PinDescription; 40] = [
-    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
-    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
-    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
-    PIN_38, PIN_39, PIN_40,
-];
 
 #[cfg(all(
     target_os = "linux",
@@ -91,7 +79,6 @@ impl HW {
         Ok(HardwareDescription {
             details: Self::get_details()?,
             pins: PinDescriptionSet {
-                pin_numbering: PinNumberingScheme::Rows,
                 pins: GPIO_PIN_DESCRIPTIONS.to_vec(),
             },
         })
@@ -334,9 +321,7 @@ impl HW {
 #[cfg(test)]
 mod test {
     use crate::hw;
-    use crate::hw_definition::description::{
-        PinDescription, PinDescriptionSet, PinNumberingScheme,
-    };
+    use crate::hw_definition::description::{PinDescription, PinDescriptionSet};
     use crate::hw_definition::pin_function::PinFunction;
     use std::borrow::Cow;
 
@@ -460,7 +445,6 @@ mod test {
             pin7.clone(),
         ];
         let pin_set = PinDescriptionSet {
-            pin_numbering: PinNumberingScheme::Rows,
             pins: pins.to_vec(),
         };
         assert_eq!(

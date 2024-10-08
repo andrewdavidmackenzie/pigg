@@ -59,7 +59,6 @@ pub struct HardwareDetails<'a> {
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize, Debug, Clone, Deserialize)]
 pub struct PinDescriptionSet {
-    pub(crate) pin_numbering: PinNumberingScheme,
     pub(crate) pins: Vec<PinDescription>,
 }
 
@@ -68,7 +67,6 @@ pub struct PinDescriptionSet {
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize)]
 pub struct PinDescriptionSet<'a> {
-    pub(crate) pin_numbering: PinNumberingScheme,
     pub(crate) pins: Vec<PinDescription<'a>, 40>,
 }
 
@@ -94,27 +92,4 @@ pub struct PinDescription<'a> {
     pub bcm: Option<BCMPinNumber>,
     pub name: &'static str,
     pub options: &'a [PinFunction],
-}
-
-/// RaspberryPi and Raspberry Pi Pico use two different pin numbering schemes
-///
-/// RPi uses "Rows":
-///     - top-left is pin 1
-///     - top-right is pin 2
-/// and so on down row-by-row
-///     - bottom-left is pin 39
-///     - bottom-right is pin 40
-///
-/// RPi Pico numbers pins from one (top left) down the left column then up the right column
-/// ending at 40 at the top right
-///     - top-left is pin 1
-///     - bottom-left is pin 20
-///     - bottom-right is pin 21
-///     - top-right is pin 40
-#[derive(Serialize)]
-#[cfg_attr(feature = "std", derive(Debug, Clone, Deserialize))]
-#[allow(dead_code)] // for porky
-pub enum PinNumberingScheme {
-    Rows,
-    CounterClockwise,
 }

@@ -24,14 +24,14 @@ use std::borrow::Cow;
 /// assignments on certain GPIO pins. For more information, see the BCM2711 Arm peripherals
 /// datasheet."
 
-pub(crate) const PIN_1: PinDescription = PinDescription {
+const PIN_1: PinDescription = PinDescription {
     bpn: 1,
     bcm: None,
     name: Cow::Borrowed("3V3"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_2: PinDescription = PinDescription {
+const PIN_2: PinDescription = PinDescription {
     bpn: 2,
     bcm: None,
     name: Cow::Borrowed("5V"),
@@ -39,7 +39,7 @@ pub(crate) const PIN_2: PinDescription = PinDescription {
 };
 
 /// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
-pub(crate) const PIN_3: PinDescription = PinDescription {
+const PIN_3: PinDescription = PinDescription {
     bpn: 3,
     bcm: Some(2),
     name: Cow::Borrowed("GPIO2"),
@@ -55,7 +55,7 @@ pub(crate) const PIN_3: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_4: PinDescription = PinDescription {
+const PIN_4: PinDescription = PinDescription {
     bpn: 4,
     bcm: None,
     name: Cow::Borrowed("5V"),
@@ -63,7 +63,7 @@ pub(crate) const PIN_4: PinDescription = PinDescription {
 };
 
 /// "Pins GPIO2 and GPIO3 have fixed pull-up resistors"
-pub(crate) const PIN_5: PinDescription = PinDescription {
+const PIN_5: PinDescription = PinDescription {
     bpn: 5,
     bcm: Some(3),
     name: Cow::Borrowed("GPIO3"),
@@ -79,14 +79,14 @@ pub(crate) const PIN_5: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_6: PinDescription = PinDescription {
+const PIN_6: PinDescription = PinDescription {
     bpn: 6,
     bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_7: PinDescription = PinDescription {
+const PIN_7: PinDescription = PinDescription {
     bpn: 7,
     bcm: Some(4),
     name: Cow::Borrowed("GPIO4"),
@@ -102,7 +102,7 @@ pub(crate) const PIN_7: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_8: PinDescription = PinDescription {
+const PIN_8: PinDescription = PinDescription {
     bpn: 8,
     bcm: Some(14),
     name: Cow::Borrowed("GPIO14"),
@@ -118,14 +118,14 @@ pub(crate) const PIN_8: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_9: PinDescription = PinDescription {
+const PIN_9: PinDescription = PinDescription {
     bpn: 9,
     bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_10: PinDescription = PinDescription {
+const PIN_10: PinDescription = PinDescription {
     bpn: 10,
     bcm: Some(15),
     name: Cow::Borrowed("GPIO15"),
@@ -141,7 +141,7 @@ pub(crate) const PIN_10: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_11: PinDescription = PinDescription {
+const PIN_11: PinDescription = PinDescription {
     bpn: 11,
     bcm: Some(17),
     name: Cow::Borrowed("GPIO17"),
@@ -157,7 +157,7 @@ pub(crate) const PIN_11: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_12: PinDescription = PinDescription {
+const PIN_12: PinDescription = PinDescription {
     bpn: 12,
     bcm: Some(18),
     name: Cow::Borrowed("GPIO18"),
@@ -173,7 +173,7 @@ pub(crate) const PIN_12: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_13: PinDescription = PinDescription {
+const PIN_13: PinDescription = PinDescription {
     bpn: 13,
     bcm: Some(27),
     name: Cow::Borrowed("GPIO27"),
@@ -189,14 +189,14 @@ pub(crate) const PIN_13: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_14: PinDescription = PinDescription {
+const PIN_14: PinDescription = PinDescription {
     bpn: 14,
     bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_15: PinDescription = PinDescription {
+const PIN_15: PinDescription = PinDescription {
     bpn: 15,
     bcm: Some(22),
     name: Cow::Borrowed("GPIO22"),
@@ -212,7 +212,7 @@ pub(crate) const PIN_15: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_16: PinDescription = PinDescription {
+const PIN_16: PinDescription = PinDescription {
     bpn: 16,
     bcm: Some(23),
     name: Cow::Borrowed("GPIO23"),
@@ -228,14 +228,14 @@ pub(crate) const PIN_16: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_17: PinDescription = PinDescription {
+const PIN_17: PinDescription = PinDescription {
     bpn: 17,
     bcm: None,
     name: Cow::Borrowed("3V3"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_18: PinDescription = PinDescription {
+const PIN_18: PinDescription = PinDescription {
     bpn: 18,
     bcm: Some(24),
     name: Cow::Borrowed("GPIO24"),
@@ -252,7 +252,7 @@ pub(crate) const PIN_18: PinDescription = PinDescription {
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
-pub(crate) const PIN_19: PinDescription = PinDescription {
+const PIN_19: PinDescription = PinDescription {
     bpn: 19,
     bcm: Some(10),
     name: Cow::Borrowed("GPIO10"),
@@ -268,7 +268,7 @@ pub(crate) const PIN_19: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_20: PinDescription = PinDescription {
+const PIN_20: PinDescription = PinDescription {
     bpn: 20,
     bcm: None,
     name: Cow::Borrowed("Ground"),
@@ -276,7 +276,7 @@ pub(crate) const PIN_20: PinDescription = PinDescription {
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
-pub(crate) const PIN_21: PinDescription = PinDescription {
+const PIN_21: PinDescription = PinDescription {
     bpn: 21,
     bcm: Some(9),
     name: Cow::Borrowed("GPIO9"),
@@ -292,7 +292,7 @@ pub(crate) const PIN_21: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_22: PinDescription = PinDescription {
+const PIN_22: PinDescription = PinDescription {
     bpn: 22,
     bcm: Some(25),
     name: Cow::Borrowed("GPIO25"),
@@ -309,7 +309,7 @@ pub(crate) const PIN_22: PinDescription = PinDescription {
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
-pub(crate) const PIN_23: PinDescription = PinDescription {
+const PIN_23: PinDescription = PinDescription {
     bpn: 23,
     bcm: Some(11),
     name: Cow::Borrowed("GPIO11"),
@@ -326,7 +326,7 @@ pub(crate) const PIN_23: PinDescription = PinDescription {
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
-pub(crate) const PIN_24: PinDescription = PinDescription {
+const PIN_24: PinDescription = PinDescription {
     bpn: 24,
     bcm: Some(8),
     name: Cow::Borrowed("GPIO8"),
@@ -342,7 +342,7 @@ pub(crate) const PIN_24: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_25: PinDescription = PinDescription {
+const PIN_25: PinDescription = PinDescription {
     bpn: 25,
     bcm: None,
     name: Cow::Borrowed("Ground"),
@@ -350,7 +350,7 @@ pub(crate) const PIN_25: PinDescription = PinDescription {
 };
 
 /// See [SPI Interface description](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
-pub(crate) const PIN_26: PinDescription = PinDescription {
+const PIN_26: PinDescription = PinDescription {
     bpn: 26,
     bcm: Some(7),
     name: Cow::Borrowed("GPIO7"),
@@ -366,7 +366,7 @@ pub(crate) const PIN_26: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_27: PinDescription = PinDescription {
+const PIN_27: PinDescription = PinDescription {
     bpn: 27,
     bcm: None,
     name: Cow::Borrowed("GPIO0"), // EEPROM ID_SD for HAT identification
@@ -380,7 +380,7 @@ pub(crate) const PIN_27: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_28: PinDescription = PinDescription {
+const PIN_28: PinDescription = PinDescription {
     bpn: 28,
     bcm: None,
     name: Cow::Borrowed("GPIO1"), // EEPROM ID_SCL for HAT identification
@@ -394,7 +394,7 @@ pub(crate) const PIN_28: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_29: PinDescription = PinDescription {
+const PIN_29: PinDescription = PinDescription {
     bpn: 29,
     bcm: Some(5),
     name: Cow::Borrowed("GPIO5"),
@@ -410,14 +410,14 @@ pub(crate) const PIN_29: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_30: PinDescription = PinDescription {
+const PIN_30: PinDescription = PinDescription {
     bpn: 30,
     bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_31: PinDescription = PinDescription {
+const PIN_31: PinDescription = PinDescription {
     bpn: 31,
     bcm: Some(6),
     name: Cow::Borrowed("GPIO6"),
@@ -433,7 +433,7 @@ pub(crate) const PIN_31: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_32: PinDescription = PinDescription {
+const PIN_32: PinDescription = PinDescription {
     bpn: 32,
     bcm: Some(12),
     name: Cow::Borrowed("GPIO12"),
@@ -449,7 +449,7 @@ pub(crate) const PIN_32: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_33: PinDescription = PinDescription {
+const PIN_33: PinDescription = PinDescription {
     bpn: 33,
     bcm: Some(13),
     name: Cow::Borrowed("GPIO13"),
@@ -465,14 +465,14 @@ pub(crate) const PIN_33: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_34: PinDescription = PinDescription {
+const PIN_34: PinDescription = PinDescription {
     bpn: 34,
     bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_35: PinDescription = PinDescription {
+const PIN_35: PinDescription = PinDescription {
     bpn: 35,
     bcm: Some(19),
     name: Cow::Borrowed("GPIO19"),
@@ -488,7 +488,7 @@ pub(crate) const PIN_35: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_36: PinDescription = PinDescription {
+const PIN_36: PinDescription = PinDescription {
     bpn: 36,
     bcm: Some(16),
     name: Cow::Borrowed("GPIO16"),
@@ -504,7 +504,7 @@ pub(crate) const PIN_36: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_37: PinDescription = PinDescription {
+const PIN_37: PinDescription = PinDescription {
     bpn: 37,
     bcm: Some(26),
     name: Cow::Borrowed("GPIO26"),
@@ -520,7 +520,7 @@ pub(crate) const PIN_37: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_38: PinDescription = PinDescription {
+const PIN_38: PinDescription = PinDescription {
     bpn: 38,
     bcm: Some(20),
     name: Cow::Borrowed("GPIO20"),
@@ -536,14 +536,14 @@ pub(crate) const PIN_38: PinDescription = PinDescription {
     ]),
 };
 
-pub(crate) const PIN_39: PinDescription = PinDescription {
+const PIN_39: PinDescription = PinDescription {
     bpn: 39,
     bcm: None,
     name: Cow::Borrowed("Ground"),
     options: Cow::Borrowed(&[]),
 };
 
-pub(crate) const PIN_40: PinDescription = PinDescription {
+const PIN_40: PinDescription = PinDescription {
     bpn: 40,
     bcm: Some(21),
     name: Cow::Borrowed("GPIO21"),
@@ -558,3 +558,19 @@ pub(crate) const PIN_40: PinDescription = PinDescription {
         // ALT5: GPCLK1
     ]),
 };
+
+/// Model the 40 pin GPIO connections - including Ground, 3.3V and 5V outputs
+/// For now, we will use the same descriptions for all hardware
+/// NOTE: They are ordered by rows in the physical layout, so the rows go like this:
+///  1   -   2
+///  3   -   4
+///  5   -   6
+/// ...
+/// 39   -  40
+//noinspection DuplicatedCode
+pub(crate) const GPIO_PIN_DESCRIPTIONS: [PinDescription; 40] = [
+    PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13,
+    PIN_14, PIN_15, PIN_16, PIN_17, PIN_18, PIN_19, PIN_20, PIN_21, PIN_22, PIN_23, PIN_24, PIN_25,
+    PIN_26, PIN_27, PIN_28, PIN_29, PIN_30, PIN_31, PIN_32, PIN_33, PIN_34, PIN_35, PIN_36, PIN_37,
+    PIN_38, PIN_39, PIN_40,
+];

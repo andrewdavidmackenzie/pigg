@@ -51,3 +51,7 @@ Here are some gifs and links to YouTube videos showing some of the features.
 ## Remote GPIO from piggui to piglet using Connect Dialog
 
 [![Remote GPIO from piggui to piglet using Command Line option](https://img.youtube.com/vi/aToJ1aT7NeM/maxresdefault.jpg)](https://youtu.be/aToJ1aT7NeM)
+
+## Piggui controlling a Pi Pico with porky
+
+[![Piggui controlling a remote Pi Pico via porky](images/porky.png)](https://youtube.com/shorts/-u8HXCff3Pc?feature=share)

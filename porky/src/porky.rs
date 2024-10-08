@@ -39,9 +39,7 @@ use heapless::FnvIndexMap;
 use heapless::Vec;
 use hw_definition::config::HardwareConfigMessage::*;
 use hw_definition::config::{HardwareConfig, HardwareConfigMessage, InputPull, LevelChange};
-use hw_definition::description::{
-    HardwareDescription, HardwareDetails, PinDescriptionSet, PinNumberingScheme,
-};
+use hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use hw_definition::pin_function::PinFunction;
 use hw_definition::{BCMPinNumber, PinLevel};
 use panic_probe as _;
@@ -427,7 +425,6 @@ async fn tcp_accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device
     let hw_desc = HardwareDescription {
         details,
         pins: PinDescriptionSet {
-            pin_numbering: PinNumberingScheme::CounterClockwise,
             pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
         },
     };
