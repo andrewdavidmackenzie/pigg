@@ -209,6 +209,18 @@ async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address>
     }
 }
 
+/* Wi-Fi scanning
+We could use this to program the ssid config with a list of ssids, and when
+it cannot connect via one, it scans to see if another one it knows is available
+and then tries to connect to that.
+
+let mut scanner = control.scan(Default::default()).await;
+while let Some(bss) = scanner.next().await {
+    if let Ok(ssid_str) = str::from_utf8(&bss.ssid) {
+    info!("scanned {} == {:x}", ssid_str, bss.bssid);
+    }
+} */
+
 fn into_level(value: PinLevel) -> Level {
     match value {
         true => Level::High,
@@ -448,48 +460,35 @@ async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessag
     postcard::from_bytes(&buf[..n]).ok()
 }
 
-/// Enter the message loop, processing config change messages from piggui
-async fn message_loop<'a>(
-    control: &mut Control<'_>,
-    spawner: &Spawner,
+/// Wait for a TCP connection to be made to this device
+async fn wait_for_connection<'a>(
+    stack: &'a Stack<NetDriver<'static>>,
     device_id: [u8; 8],
     ip_address: Ipv4Address,
-    stack: &Stack<NetDriver<'static>>,
-) {
+    rx_buffer: &'a mut [u8],
+    tx_buffer: &'a mut [u8],
+) -> TcpSocket<'a> {
     // TODO check these are needed
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(stack, &client_state);
 
-    let mut rx_buffer = [0; 4096];
-    let mut tx_buffer = [0; 4096];
-
-    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+    let mut socket = TcpSocket::new(stack, tx_buffer, rx_buffer);
     //socket.set_timeout(Some(Duration::from_secs(10)));
 
-    // wait for a connection from `piggui`
+    // wait for an incoming TCP connection
     tcp_accept(&mut socket, &ip_address, &device_id).await;
 
+    info!("Received incoming TCP connection");
+    socket
+}
+
+/// Enter the message loop, processing config change messages received over TCP
+async fn message_loop<'a>(control: &mut Control<'_>, spawner: &Spawner, mut socket: TcpSocket<'_>) {
     info!("Entering message loop");
     while let Some(config_message) = wait_message(&mut socket).await {
         apply_config_change(control, spawner, config_message, &mut socket).await;
     }
 }
-
-/*
-Wi-Fi scanning
-
-We could use this to program the ssid config with a list of ssids, and when
-it cannot connect via one, it scans to see if another one it knows is available
-and then tries to connect to that.
-
-let mut scanner = control.scan(Default::default()).await;
-while let Some(bss) = scanner.next().await {
-    if let Ok(ssid_str) = str::from_utf8(&bss.ssid) {
-    info!("scanned {} == {:x}", ssid_str, bss.bssid);
-    }
-}
-
- */
 
 /// Take the set of available pins not used by other functions, including the three pins that
 /// are connected via the CYW43 Wi-Fi chip. Create [Flex] Pins out of each of the GPIO pins.
@@ -602,9 +601,15 @@ async fn main(spawner: Spawner) {
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
 
+    let mut rx_buffer = [0; 4096];
+    let mut tx_buffer = [0; 4096];
+
     while let Some(ip_address) = join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
-            message_loop(&mut control, &spawner, device_id, ip_address, stack).await;
+            let socket =
+                wait_for_connection(stack, device_id, ip_address, &mut tx_buffer, &mut rx_buffer)
+                    .await;
+            message_loop(&mut control, &spawner, socket).await;
             info!("Disconnected");
         }
     }
