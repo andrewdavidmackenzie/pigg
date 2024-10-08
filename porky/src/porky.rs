@@ -1,15 +1,12 @@
 #![no_std]
 #![no_main]
 
-use crate::ssid::{
-    MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH, SSID_SECURITY,
-};
+use crate::ssid::{MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH};
 use core::str::from_utf8;
 use cyw43::Control;
 use cyw43::NetDriver;
-use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
-use defmt::{error, info, warn};
+use defmt::{error, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
@@ -32,7 +29,6 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::{Channel, Receiver, Sender};
 use embassy_time::Instant;
-use embassy_time::Timer;
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
 use heapless::FnvIndexMap;
@@ -51,14 +47,15 @@ mod ssid {
     include!(concat!(env!("OUT_DIR"), "/ssid.rs"));
 }
 
+/// Wifi related functions
+mod wifi;
+
 #[path = "../../src/hw_definition/mod.rs"]
 mod hw_definition;
 
 mod pin_descriptions;
 
 const FLASH_SIZE: usize = 2 * 1024 * 1024;
-
-const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
@@ -149,77 +146,6 @@ async fn monitor_input(
         }
     }
 }
-
-async fn join_wifi(
-    control: &mut Control<'_>,
-    stack: &Stack<NetDriver<'static>>,
-    ssid_name: &str,
-    ssid_pass: &str,
-) -> Option<Ipv4Address> {
-    let mut attempt = 1;
-    while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
-        info!(
-            "Attempt #{} to join wifi network: '{}' with security = '{}'",
-            attempt, ssid_name, SSID_SECURITY
-        );
-
-        let mut join_options = JoinOptions::new(ssid_pass.as_bytes());
-
-        match SSID_SECURITY {
-            "open" => join_options.auth = JoinAuth::Open,
-            "wpa" => join_options.auth = JoinAuth::Wpa,
-            "wpa2" => join_options.auth = JoinAuth::Wpa2,
-            "wpa3" => join_options.auth = JoinAuth::Wpa3,
-            _ => {
-                error!("Security '{}' is not supported", SSID_SECURITY);
-                return None;
-            }
-        };
-
-        match control.join(ssid_name, join_options).await {
-            Ok(_) => {
-                info!("Joined wifi network: '{}'", ssid_name);
-                return wait_for_dhcp(stack).await;
-            }
-            Err(_) => {
-                attempt += 1;
-                warn!("Failed to join wifi, retrying");
-            }
-        }
-    }
-
-    error!(
-        "Failed to join Wifi after {} retries",
-        WIFI_JOIN_RETRY_ATTEMPT_LIMIT
-    );
-    None
-}
-
-/// Wait for the DHCP service to come up and for us to get an IP address
-async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address> {
-    info!("Waiting for DHCP...");
-    while !stack.is_config_up() {
-        Timer::after_millis(100).await;
-    }
-    info!("DHCP is now up!");
-    if let Some(if_config) = stack.config_v4() {
-        Some(if_config.address.address())
-    } else {
-        None
-    }
-}
-
-/* Wi-Fi scanning
-We could use this to program the ssid config with a list of ssids, and when
-it cannot connect via one, it scans to see if another one it knows is available
-and then tries to connect to that.
-
-let mut scanner = control.scan(Default::default()).await;
-while let Some(bss) = scanner.next().await {
-    if let Ok(ssid_str) = str::from_utf8(&bss.ssid) {
-    info!("scanned {} == {:x}", ssid_str, bss.bssid);
-    }
-} */
 
 fn into_level(value: PinLevel) -> Level {
     match value {
@@ -604,7 +530,7 @@ async fn main(spawner: Spawner) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
 
-    while let Some(ip_address) = join_wifi(&mut control, &stack, ssid_name, ssid_pass).await {
+    while let Some(ip_address) = wifi::join(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
             let socket =
                 wait_for_connection(stack, device_id, ip_address, &mut tx_buffer, &mut rx_buffer)
