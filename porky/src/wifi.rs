@@ -2,27 +2,28 @@ use crate::ssid::SSID_SECURITY;
 use cyw43::Control;
 use cyw43::NetDriver;
 use cyw43::{JoinAuth, JoinOptions};
-use defmt::{error, info, warn};
-use embassy_net::Ipv4Address;
-use embassy_net::Stack;
-use embassy_rp::gpio::Output;
-use embassy_time::Timer;
-
 use cyw43_pio::PioSpi;
-
+use defmt::{error, info, warn};
+use embassy_executor::Spawner;
+use embassy_net::Ipv4Address;
+use embassy_net::{Stack, StackResources};
+use embassy_rp::gpio::Level;
+use embassy_rp::gpio::Output;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
+use embassy_time::Timer;
+use static_cell::StaticCell;
 
 const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
 
 #[embassy_executor::task]
-pub async fn wifi_task(
+async fn wifi_task(
     runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
 ) -> ! {
     runner.run().await
 }
 
 #[embassy_executor::task]
-pub async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
+async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
     stack.run().await
 }
 
@@ -96,3 +97,37 @@ while let Some(bss) = scanner.next().await {
     info!("scanned {} == {:x}", ssid_str, bss.bssid);
     }
 } */
+
+/// Initialize the cyw43 chip and start networking
+pub async fn start_net<'a>(
+    spawner: Spawner,
+    pin_23: embassy_rp::peripherals::PIN_23,
+    spi: PioSpi<'static, PIO0, 0, DMA_CH0>,
+) -> (Control<'a>, &'static Stack<NetDriver<'static>>) {
+    let fw = include_bytes!("../assets/43439A0.bin");
+    let clm = include_bytes!("../assets/43439A0_clm.bin");
+    let pwr = Output::new(pin_23, Level::Low);
+
+    static STATE: StaticCell<cyw43::State> = StaticCell::new();
+    let state = STATE.init(cyw43::State::new());
+    let (net_device, mut control, runner) = cyw43::new(state, pwr, spi, fw).await;
+    spawner.spawn(wifi_task(runner)).unwrap();
+
+    control.init(clm).await;
+    control
+        .set_power_management(cyw43::PowerManagementMode::PowerSave)
+        .await;
+
+    let dhcp_config = embassy_net::Config::dhcpv4(Default::default());
+
+    static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
+    let resources = RESOURCES.init(StackResources::new());
+
+    // Generate random seed
+    let seed = 0x0123_4567_89ab_cdef;
+    static STACK: StaticCell<Stack<NetDriver<'static>>> = StaticCell::new();
+    let stack = STACK.init(Stack::new(net_device, dhcp_config, resources, seed));
+    spawner.spawn(net_task(stack)).unwrap();
+
+    (control, stack)
+}
