@@ -30,7 +30,6 @@ pub async fn wait_connection<'a>(
     // wait for an incoming TCP connection
     accept(&mut socket, &ip_address, &device_id).await;
 
-    info!("Received incoming TCP connection");
     socket
 }
 
@@ -54,8 +53,8 @@ async fn accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device_id:
 
     // send hardware description
     let details = HardwareDetails {
-        hardware: "foo",
-        revision: "foo",
+        hardware: "foo", // TODO
+        revision: "foo", // TODO
         serial: from_utf8(&device_id_hex).unwrap(),
         model: "Pi Pico W",
     };

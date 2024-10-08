@@ -130,13 +130,18 @@ async fn apply_pin_config<'a>(
 ) {
     let gpio_pin = unsafe {
         match GPIO_PINS.remove(&bcm_pin_number) {
+            // Pin was setup as an Input - recover it for use
             Some(GPIOPin::GPIOInput((signaller, returner))) => {
                 // Signal to pin monitor to exit
                 signaller.send(true).await;
                 // Recover the Flex
                 Some(returner.receive().await)
             }
-            Some(GPIOPin::Available(flex)) | Some(GPIOPin::GPIOOutput(flex)) => Some(flex),
+            // Pin is available - was unassigned
+            Some(GPIOPin::Available(flex)) => Some(flex),
+            // Was assigned as an output - so recover it
+            Some(GPIOPin::GPIOOutput(flex)) => Some(flex),
+            // The cyw43 pins cannot be changed - just used
             Some(GPIOPin::CYW43Input) | Some(GPIOPin::CYW43Output) => None,
             _ => {
                 error!("Could not find pin #{}", bcm_pin_number);
@@ -147,7 +152,7 @@ async fn apply_pin_config<'a>(
 
     match new_pin_function {
         PinFunction::None => {
-            // if pin 0, 1 or 2 - then have been removed and so are considered unconfigured
+            // if we recovered a pin above - then leave it as
             if let Some(flex) = gpio_pin {
                 unsafe {
                     let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::Available(flex));
