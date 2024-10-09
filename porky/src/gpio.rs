@@ -92,6 +92,20 @@ pub async fn monitor_input(
     }
 }
 
+#[allow(dead_code)] // TODO remove when finish sending input levels
+/// Send a detected input level change back to the GUI using `writer` [TcpStream],
+/// timestamping with the current time in Utc
+async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: Level) {
+    let level_change = LevelChange::new(
+        level == Level::High,
+        Instant::now().duration_since(Instant::MIN).into(),
+    );
+    let hardware_event = IOLevelChanged(bcm, level_change);
+    let mut buf = [0; 1024];
+    let message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
+    socket.write_all(&message).await.unwrap();
+}
+
 fn into_level(value: PinLevel) -> Level {
     match value {
         true => Level::High,
@@ -113,8 +127,14 @@ async fn set_output_level<'a>(
     // GPIO 0 and 1 are connected via cyw43 wifi chip
     unsafe {
         match GPIO_PINS.get_mut(&bcm_pin_number) {
-            Some(GPIOPin::CYW43Output) => control.gpio_set(bcm_pin_number, pin_level).await,
-            Some(GPIOPin::GPIOOutput(flex)) => flex.set_level(into_level(pin_level)),
+            Some(GPIOPin::CYW43Output) => {
+                info!("Setting cyw43 pin output level");
+                control.gpio_set(bcm_pin_number, pin_level).await
+            }
+            Some(GPIOPin::GPIOOutput(flex)) => {
+                info!("Setting Flex pin output level");
+                flex.set_level(into_level(pin_level))
+            }
             _ => error!("Pin {} is not configured as an Output", bcm_pin_number),
         }
     }
@@ -128,9 +148,9 @@ async fn apply_pin_config<'a>(
     new_pin_function: &PinFunction,
     _socket: &mut TcpSocket<'_>,
 ) {
-    let gpio_pin = unsafe {
+    let flex_pin = unsafe {
         match GPIO_PINS.remove(&bcm_pin_number) {
-            // Pin was setup as an Input - recover it for use
+            // Pin was set up as an Input - recover the Flex
             Some(GPIOPin::GPIOInput((signaller, returner))) => {
                 // Signal to pin monitor to exit
                 signaller.send(true).await;
@@ -139,7 +159,7 @@ async fn apply_pin_config<'a>(
             }
             // Pin is available - was unassigned
             Some(GPIOPin::Available(flex)) => Some(flex),
-            // Was assigned as an output - so recover it
+            // Was assigned as an output - recover the Flex
             Some(GPIOPin::GPIOOutput(flex)) => Some(flex),
             // The cyw43 pins cannot be changed - just used
             Some(GPIOPin::CYW43Input) | Some(GPIOPin::CYW43Output) => None,
@@ -153,16 +173,16 @@ async fn apply_pin_config<'a>(
     match new_pin_function {
         PinFunction::None => {
             // if we recovered a pin above - then leave it as
-            if let Some(flex) = gpio_pin {
+            if let Some(flex) = flex_pin {
                 unsafe {
                     let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::Available(flex));
                 }
+                info!("Pin #{} - Set as Available", bcm_pin_number);
             }
-            info!("Pin #{} - Unconfigured", bcm_pin_number);
         }
 
         PinFunction::Input(pull) => {
-            match gpio_pin {
+            match flex_pin {
                 Some(mut flex) => {
                     flex.set_as_input();
                     info!("Pin #{} Configured as GPIO input", bcm_pin_number);
@@ -201,10 +221,10 @@ async fn apply_pin_config<'a>(
         }
 
         PinFunction::Output(pin_level) => {
-            match gpio_pin {
+            match flex_pin {
                 Some(mut flex) => {
                     flex.set_as_output();
-                    info!("Pin #{} Configured as GPIO output", bcm_pin_number);
+                    info!("Pin #{} Flex pin configured as output", bcm_pin_number);
 
                     if let Some(l) = pin_level {
                         flex.set_level(into_level(*l));
@@ -217,14 +237,11 @@ async fn apply_pin_config<'a>(
                 }
                 None => {
                     // Must be GPIO 0 and 1 are connected via cyw43 wifi chip
-                    info!("Pin #{} Configured as output via cyw43", bcm_pin_number);
+                    info!("Pin #{} cyw43 pin used as Output ", bcm_pin_number);
 
                     if let Some(l) = pin_level {
                         control.gpio_set(bcm_pin_number, *l).await;
-                        info!(
-                            "Pin #{} - output level set to '{}'",
-                            bcm_pin_number, pin_level
-                        );
+                        info!("Pin #{} - output level set to '{}'", bcm_pin_number, l);
                     }
                     unsafe {
                         let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Output);
@@ -247,20 +264,6 @@ async fn apply_config<'a>(
         apply_pin_config(control, spawner, *bcm_pin_number, pin_function, socket).await;
     }
     info!("New config applied");
-}
-
-#[allow(dead_code)] // TODO remove when finish sending input levels
-/// Send a detected input level change back to the GUI using `writer` [TcpStream],
-/// timestamping with the current time in Utc
-async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: Level) {
-    let level_change = LevelChange::new(
-        level == Level::High,
-        Instant::now().duration_since(Instant::MIN).into(),
-    );
-    let hardware_event = IOLevelChanged(bcm, level_change);
-    let mut buf = [0; 1024];
-    let message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
-    socket.write_all(&message).await.unwrap();
 }
 
 /// Apply a config change to the hardware
