@@ -95,7 +95,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-14, ubuntu-latest, windows-latest ]
+        os: [ macos-14, ubuntu-24.04, windows-latest ]
 
     steps:
       - name: Checkout
@@ -126,6 +126,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           make clippy build
+          sudo apt-get update
           sudo apt-get install weston
           weston -Bheadless -Sweston &
           make test
