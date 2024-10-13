@@ -33,6 +33,7 @@ jobs:
       - name: cargo test all features - Linux
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get update
           sudo apt-get install weston
           weston -Bheadless -Sweston &
           cargo test-all-features
