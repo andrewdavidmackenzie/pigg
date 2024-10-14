@@ -127,14 +127,8 @@ async fn set_output_level<'a>(
     // GPIO 0 and 1 are connected via cyw43 wifi chip
     unsafe {
         match GPIO_PINS.get_mut(&bcm_pin_number) {
-            Some(GPIOPin::CYW43Output) => {
-                info!("Setting cyw43 pin output level");
-                control.gpio_set(bcm_pin_number, pin_level).await
-            }
-            Some(GPIOPin::GPIOOutput(flex)) => {
-                info!("Setting Flex pin output level");
-                flex.set_level(into_level(pin_level))
-            }
+            Some(GPIOPin::CYW43Output) => control.gpio_set(bcm_pin_number, pin_level).await,
+            Some(GPIOPin::GPIOOutput(flex)) => flex.set_level(into_level(pin_level)),
             _ => error!("Pin {} is not configured as an Output", bcm_pin_number),
         }
     }
@@ -172,16 +166,18 @@ async fn apply_pin_config<'a>(
 
     match new_pin_function {
         PinFunction::None => {
+            info!("Setting new pin function to: None");
             // if we recovered a pin above - then leave it as
             if let Some(flex) = flex_pin {
                 unsafe {
                     let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::Available(flex));
                 }
-                info!("Pin #{} - Set as Available", bcm_pin_number);
             }
+            info!("Pin #{} - Set as Available", bcm_pin_number);
         }
 
         PinFunction::Input(pull) => {
+            info!("Setting new pin function to: Input");
             match flex_pin {
                 Some(mut flex) => {
                     flex.set_as_input();
@@ -223,13 +219,13 @@ async fn apply_pin_config<'a>(
         PinFunction::Output(pin_level) => {
             match flex_pin {
                 Some(mut flex) => {
-                    flex.set_as_output();
-                    info!("Pin #{} Flex pin configured as output", bcm_pin_number);
-
                     if let Some(l) = pin_level {
                         flex.set_level(into_level(*l));
-                        info!("Pin #{} - output level set to '{}'", bcm_pin_number, l);
+                        info!("Pin #{} - Output level set to '{}'", bcm_pin_number, l);
                     }
+
+                    flex.set_as_output();
+                    info!("Pin #{} Flex pin configured as Output", bcm_pin_number);
 
                     unsafe {
                         let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::GPIOOutput(flex));
@@ -263,7 +259,10 @@ async fn apply_config<'a>(
     for (bcm_pin_number, pin_function) in &config.pin_functions {
         apply_pin_config(control, spawner, *bcm_pin_number, pin_function, socket).await;
     }
-    info!("New config applied");
+    let num_pins = config.pin_functions.len();
+    if num_pins > 0 {
+        info!("New config applied - {} pins reconfigured", num_pins);
+    }
 }
 
 /// Apply a config change to the hardware
@@ -319,4 +318,5 @@ pub fn setup_pins<'a>(available_pins: AvailablePins) {
         let _ = GPIO_PINS.insert(27, GPIOPin::Available(Flex::new(available_pins.pin_27)));
         let _ = GPIO_PINS.insert(28, GPIOPin::Available(Flex::new(available_pins.pin_28)));
     }
+    info!("GPIO Pins setup");
 }
