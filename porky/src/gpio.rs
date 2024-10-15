@@ -261,8 +261,11 @@ pub async fn apply_config_change<'a>(
 }
 
 pub struct AvailablePins {
+    // Physical Pin # 0 - GPIO0
     // Physical Pin # 1 - GPIO0 is connected via CYW43
+    // Maybe in use by Debug-Probe
     // Physical Pin # 2 - GPIO1 is connected via CYW43
+    // Maybe in use by Debug-Probe
     // Physical Pin # 3 - GROUND
     // Physical Pin # 4 - GPIO2 is connected via CYW43
     pub pin_3: embassy_rp::peripherals::PIN_3, // Physical Pin # 5 - GPIO3
@@ -314,7 +317,9 @@ pub struct AvailablePins {
 pub fn setup_pins<'a>(available_pins: AvailablePins) {
     unsafe {
         let _ = GPIO_PINS.insert(0, GPIOPin::CYW43Output); // GP0 connected to CYW43 chip
+        #[cfg(not(feature = "debug-probe"))]
         let _ = GPIO_PINS.insert(1, GPIOPin::CYW43Output); // GP1 connected to CYW43 chip
+        #[cfg(not(feature = "debug-probe"))]
         let _ = GPIO_PINS.insert(2, GPIOPin::CYW43Input); // GP2 connected to CYW43 chip
         let _ = GPIO_PINS.insert(3, GPIOPin::Available(Flex::new(available_pins.pin_3)));
         let _ = GPIO_PINS.insert(4, GPIOPin::Available(Flex::new(available_pins.pin_4)));

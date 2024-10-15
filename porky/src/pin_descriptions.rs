@@ -2,6 +2,15 @@ use crate::hw_definition::config::InputPull;
 use crate::hw_definition::description::PinDescription;
 use crate::hw_definition::pin_function::PinFunction;
 
+#[cfg(feature = "debug-probe")]
+const PIN_1: PinDescription = PinDescription {
+    bpn: 1,
+    bcm: Some(0),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_1: PinDescription = PinDescription {
     bpn: 1,
     bcm: Some(0),
@@ -14,6 +23,15 @@ const PIN_1: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_2: PinDescription = PinDescription {
+    bpn: 2,
+    bcm: Some(1),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_2: PinDescription = PinDescription {
     bpn: 2,
     bcm: Some(1),
