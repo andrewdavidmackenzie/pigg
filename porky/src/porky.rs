@@ -70,7 +70,9 @@ async fn main(spawner: Spawner) {
         pin_4: peripherals.PIN_4,
         pin_5: peripherals.PIN_5,
         pin_6: peripherals.PIN_6,
+        #[cfg(not(feature = "debug-probe"))]
         pin_7: peripherals.PIN_7,
+        #[cfg(not(feature = "debug-probe"))]
         pin_8: peripherals.PIN_8,
         pin_9: peripherals.PIN_9,
         pin_10: peripherals.PIN_10,
@@ -78,7 +80,9 @@ async fn main(spawner: Spawner) {
         pin_12: peripherals.PIN_12,
         pin_13: peripherals.PIN_13,
         pin_14: peripherals.PIN_14,
+        #[cfg(not(feature = "debug-probe"))]
         pin_15: peripherals.PIN_15,
+        #[cfg(not(feature = "debug-probe"))]
         pin_16: peripherals.PIN_16,
         pin_17: peripherals.PIN_17,
         pin_18: peripherals.PIN_18,

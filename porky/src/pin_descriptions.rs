@@ -101,6 +101,15 @@ const PIN_9: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_10: PinDescription = PinDescription {
+    bpn: 10,
+    bcm: Some(7),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_10: PinDescription = PinDescription {
     bpn: 10,
     bcm: Some(7),
@@ -113,6 +122,15 @@ const PIN_10: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_11: PinDescription = PinDescription {
+    bpn: 11,
+    bcm: Some(8),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_11: PinDescription = PinDescription {
     bpn: 11,
     bcm: Some(8),
@@ -215,6 +233,15 @@ const PIN_19: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_20: PinDescription = PinDescription {
+    bpn: 20,
+    bcm: Some(15),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_20: PinDescription = PinDescription {
     bpn: 20,
     bcm: Some(15),
@@ -227,6 +254,15 @@ const PIN_20: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_21: PinDescription = PinDescription {
+    bpn: 21,
+    bcm: Some(16),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_21: PinDescription = PinDescription {
     bpn: 21,
     bcm: Some(16),
