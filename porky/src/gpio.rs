@@ -260,54 +260,85 @@ pub async fn apply_config_change<'a>(
     }
 }
 
+// GPIO Pins Used Internally that are not in the list below
+// WL_GPIO0 - via CYW43 - Connected to user LED
+// WL_GPIO1 - via CYW43 - Output controls on-board SMPS power save pin
+// WL_GPIO2 - via CYW43 - Input VBUS sense - high if VBUS is present, else wlow
+// GPIO23 - Output wireless on signal - used by embassy
+// GPIO24 - Output/Input wireless SPI data/IRQ
+// GPIO25 - Output wireless SPI CS- when high enables GPIO29 ADC pin to read VSYS
+// GPIO29 - Output/Input SPI CLK/ADC Mode to measure VSYS/3
 pub struct AvailablePins {
-    // Physical Pin # 0 - GPIO0
     // Physical Pin # 1 - GPIO0 is connected via CYW43
     // Maybe in use by Debug-Probe
     // Physical Pin # 2 - GPIO1 is connected via CYW43
     // Maybe in use by Debug-Probe
     // Physical Pin # 3 - GROUND
     // Physical Pin # 4 - GPIO2 is connected via CYW43
-    pub pin_3: embassy_rp::peripherals::PIN_3, // Physical Pin # 5 - GPIO3
-    pub pin_4: embassy_rp::peripherals::PIN_4, // Physical Pin # 6 - GPIO4
-    pub pin_5: embassy_rp::peripherals::PIN_5, // Physical Pin # 7 - GPIO5
+    // ------------------------
+    // Physical Pin # 5 - GPIO3
+    pub pin_3: embassy_rp::peripherals::PIN_3,
+    // Physical Pin # 6 - GPIO4
+    pub pin_4: embassy_rp::peripherals::PIN_4,
+    // Physical Pin # 7 - GPIO5
+    pub pin_5: embassy_rp::peripherals::PIN_5,
     // Physical Pin # 8 - GROUND
-    pub pin_6: embassy_rp::peripherals::PIN_6, // Physical Pin # 9 - GPIO6
+    // Physical Pin # 9 - GPIO6
+    pub pin_6: embassy_rp::peripherals::PIN_6,
     #[cfg(not(feature = "debug-probe"))]
-    pub pin_7: embassy_rp::peripherals::PIN_7, // Physical Pin # 10 - GPIO7
+    // Physical Pin # 10 - GPIO7
+    pub pin_7: embassy_rp::peripherals::PIN_7,
     #[cfg(not(feature = "debug-probe"))]
-    pub pin_8: embassy_rp::peripherals::PIN_8, // Physical Pin # 11 - GPIO8
-    pub pin_9: embassy_rp::peripherals::PIN_9, // Physical Pin # 12 - GPIO9
+    // Physical Pin # 11 - GPIO8
+    pub pin_8: embassy_rp::peripherals::PIN_8,
+    // Physical Pin # 12 - GPIO9
+    pub pin_9: embassy_rp::peripherals::PIN_9,
     // Physical Pin # 13 - GROUND
-    pub pin_10: embassy_rp::peripherals::PIN_10, // Physical Pin # 14 - GPIO10
-    pub pin_11: embassy_rp::peripherals::PIN_11, // Physical Pin # 15 - GPIO11
-    pub pin_12: embassy_rp::peripherals::PIN_12, // Physical Pin # 16 - GPIO12
-    pub pin_13: embassy_rp::peripherals::PIN_13, // Physical Pin # 17 - GPIO13
+    // Physical Pin # 14 - GPIO10
+    pub pin_10: embassy_rp::peripherals::PIN_10,
+    // Physical Pin # 15 - GPIO11
+    pub pin_11: embassy_rp::peripherals::PIN_11,
+    // Physical Pin # 16 - GPIO12
+    pub pin_12: embassy_rp::peripherals::PIN_12,
+    // Physical Pin # 17 - GPIO13
+    pub pin_13: embassy_rp::peripherals::PIN_13,
     // Physical Pin # 18 - GROUND
-    pub pin_14: embassy_rp::peripherals::PIN_14, // Physical Pin # 19 - GPIO14
+    // Physical Pin # 19 - GPIO14
+    pub pin_14: embassy_rp::peripherals::PIN_14,
     #[cfg(not(feature = "debug-probe"))]
-    pub pin_15: embassy_rp::peripherals::PIN_15, // Physical Pin # 20 - GPIO15
+    // Physical Pin # 20 - GPIO15
+    pub pin_15: embassy_rp::peripherals::PIN_15,
     #[cfg(not(feature = "debug-probe"))]
-    pub pin_16: embassy_rp::peripherals::PIN_16, // Physical Pin # 21 - GPIO16
-    pub pin_17: embassy_rp::peripherals::PIN_17, // Physical Pin # 22 - GPIO17
+    // Physical Pin # 21 - GPIO16
+    pub pin_16: embassy_rp::peripherals::PIN_16,
+    // Physical Pin # 22 - GPIO17
+    pub pin_17: embassy_rp::peripherals::PIN_17,
     // Physical Pin # 23 - GROUND
-    pub pin_18: embassy_rp::peripherals::PIN_18, // Physical Pin # 24 - GPIO18
-    pub pin_19: embassy_rp::peripherals::PIN_19, // Physical Pin # 25 - GPIO19
-    pub pin_20: embassy_rp::peripherals::PIN_20, // Physical Pin # 26 - GPIO20
-    pub pin_21: embassy_rp::peripherals::PIN_21, // Physical Pin # 27 - GPIO21
+    // Physical Pin # 24 - GPIO18
+    pub pin_18: embassy_rp::peripherals::PIN_18,
+    // Physical Pin # 25 - GPIO19
+    pub pin_19: embassy_rp::peripherals::PIN_19,
+    // Physical Pin # 26 - GPIO20
+    pub pin_20: embassy_rp::peripherals::PIN_20,
+    // Physical Pin # 27 - GPIO21
+    pub pin_21: embassy_rp::peripherals::PIN_21,
     // Physical Pin # 28 - GROUND
-    pub pin_22: embassy_rp::peripherals::PIN_22, // Physical Pin # 29 - GPIO22
+    // Physical Pin # 29 - GPIO22
+    pub pin_22: embassy_rp::peripherals::PIN_22,
     // Physical Pin # 30 - RUN
-    pub pin_26: embassy_rp::peripherals::PIN_26, // Physical Pin # 31 - GPI=26
-    pub pin_27: embassy_rp::peripherals::PIN_27, // Physical Pin # 32 - GP1O27
+    // Physical Pin # 31 - GPIO26
+    pub pin_26: embassy_rp::peripherals::PIN_26,
+    // Physical Pin # 32 - GP1O27
+    pub pin_27: embassy_rp::peripherals::PIN_27,
     // Physical Pin # 33 - GROUND
-    pub pin_28: embassy_rp::peripherals::PIN_28, // Physical Pin # 34 - GPIO28
-                                                 // Physical Pin # 35 - ADC_VREF
-                                                 // Physical Pin # 36 - 3V3
-                                                 // Physical Pin # 37 - 3V3_EN
-                                                 // Physical Pin # 38 - GROUND
-                                                 // Physical Pin # 39 - VSYS
-                                                 // Physical Pin # 40 - VBUS
+    // Physical Pin # 34 - GPIO28
+    pub pin_28: embassy_rp::peripherals::PIN_28,
+    // Physical Pin # 35 - ADC_VREF
+    // Physical Pin # 36 - 3V3
+    // Physical Pin # 37 - 3V3_EN
+    // Physical Pin # 38 - GROUND
+    // Physical Pin # 39 - VSYS
+    // Physical Pin # 40 - VBUS
 }
 
 /// Take the set of available pins not used by other functions, including the three pins that
