@@ -10,6 +10,7 @@ path = "src/porky.rs"
 
 [features]
 std = []
+debug-probe = []
 
 [dependencies]
 embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }

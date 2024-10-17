@@ -2,6 +2,15 @@ use crate::hw_definition::config::InputPull;
 use crate::hw_definition::description::PinDescription;
 use crate::hw_definition::pin_function::PinFunction;
 
+#[cfg(feature = "debug-probe")]
+const PIN_1: PinDescription = PinDescription {
+    bpn: 1,
+    bcm: Some(0),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_1: PinDescription = PinDescription {
     bpn: 1,
     bcm: Some(0),
@@ -14,6 +23,15 @@ const PIN_1: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_2: PinDescription = PinDescription {
+    bpn: 2,
+    bcm: Some(1),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_2: PinDescription = PinDescription {
     bpn: 2,
     bcm: Some(1),
@@ -101,6 +119,15 @@ const PIN_9: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_10: PinDescription = PinDescription {
+    bpn: 10,
+    bcm: Some(7),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_10: PinDescription = PinDescription {
     bpn: 10,
     bcm: Some(7),
@@ -113,6 +140,15 @@ const PIN_10: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_11: PinDescription = PinDescription {
+    bpn: 11,
+    bcm: Some(8),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_11: PinDescription = PinDescription {
     bpn: 11,
     bcm: Some(8),
@@ -215,6 +251,15 @@ const PIN_19: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_20: PinDescription = PinDescription {
+    bpn: 20,
+    bcm: Some(15),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_20: PinDescription = PinDescription {
     bpn: 20,
     bcm: Some(15),
@@ -227,6 +272,15 @@ const PIN_20: PinDescription = PinDescription {
     ],
 };
 
+#[cfg(feature = "debug-probe")]
+const PIN_21: PinDescription = PinDescription {
+    bpn: 21,
+    bcm: Some(16),
+    name: "Debug-Probe",
+    options: &[],
+};
+
+#[cfg(not(feature = "debug-probe"))]
 const PIN_21: PinDescription = PinDescription {
     bpn: 21,
     bcm: Some(16),

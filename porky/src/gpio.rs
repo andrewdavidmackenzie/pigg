@@ -34,32 +34,6 @@ enum GPIOPin<'a> {
     GPIOOutput(Flex<'a>),
 }
 
-pub struct AvailablePins {
-    pub pin_3: embassy_rp::peripherals::PIN_3,
-    pub pin_4: embassy_rp::peripherals::PIN_4,
-    pub pin_5: embassy_rp::peripherals::PIN_5,
-    pub pin_6: embassy_rp::peripherals::PIN_6,
-    pub pin_7: embassy_rp::peripherals::PIN_7,
-    pub pin_8: embassy_rp::peripherals::PIN_8,
-    pub pin_9: embassy_rp::peripherals::PIN_9,
-    pub pin_10: embassy_rp::peripherals::PIN_10,
-    pub pin_11: embassy_rp::peripherals::PIN_11,
-    pub pin_12: embassy_rp::peripherals::PIN_12,
-    pub pin_13: embassy_rp::peripherals::PIN_13,
-    pub pin_14: embassy_rp::peripherals::PIN_14,
-    pub pin_15: embassy_rp::peripherals::PIN_15,
-    pub pin_16: embassy_rp::peripherals::PIN_16,
-    pub pin_17: embassy_rp::peripherals::PIN_17,
-    pub pin_18: embassy_rp::peripherals::PIN_18,
-    pub pin_19: embassy_rp::peripherals::PIN_19,
-    pub pin_20: embassy_rp::peripherals::PIN_20,
-    pub pin_21: embassy_rp::peripherals::PIN_21,
-    pub pin_22: embassy_rp::peripherals::PIN_22,
-    pub pin_26: embassy_rp::peripherals::PIN_26,
-    pub pin_27: embassy_rp::peripherals::PIN_27,
-    pub pin_28: embassy_rp::peripherals::PIN_28,
-}
-
 static mut GPIO_PINS: FnvIndexMap<BCMPinNumber, GPIOPin, 32> = FnvIndexMap::new();
 
 static RETURNER: Channel<ThreadModeRawMutex, Flex, 1> = Channel::new();
@@ -286,37 +260,139 @@ pub async fn apply_config_change<'a>(
     }
 }
 
+// Pins available to be programmed, but are not connected to header
+//  WL_GPIO0 - via CYW43 - Connected to user LED
+//  WL_GPIO1 - via CYW43 - Output controls on-board SMPS power save pin
+//  WL_GPIO2 - via CYW43 - Input VBUS sense - high if VBUS is present, else low
+//
+// GPIO Pins Used Internally that are not in the list below
+//  GP23 - Output wireless on signal - used by embassy
+//  GP24 - Output/Input wireless SPI data/IRQ
+//  GP25 - Output wireless SPI CS- when high enables GPIO29 ADC pin to read VSYS
+//  GP29 - Output/Input SPI CLK/ADC Mode to measure VSYS/3
+//
+// Refer to $ProjectRoot/assets/images/pi_pico_w_pinout.png
+pub struct HeaderPins {
+    // Physical Pin # 1 - GP0
+    // Maybe in use by Debug-Probe
+    #[cfg(not(feature = "debug-probe"))]
+    pub pin_0: embassy_rp::peripherals::PIN_0,
+    // Physical Pin # 2 - GP1
+    // Maybe in use by Debug-Probe
+    #[cfg(not(feature = "debug-probe"))]
+    pub pin_1: embassy_rp::peripherals::PIN_1,
+    // Physical Pin # 3 - GROUND
+    // Physical Pin # 4 - GP2
+    pub pin_2: embassy_rp::peripherals::PIN_2,
+    // Physical Pin # 5 - GP3
+    pub pin_3: embassy_rp::peripherals::PIN_3,
+    // Physical Pin # 6 - GP4
+    pub pin_4: embassy_rp::peripherals::PIN_4,
+    // Physical Pin # 7 - GP5
+    pub pin_5: embassy_rp::peripherals::PIN_5,
+    // Physical Pin # 8 - GROUND
+    // Physical Pin # 9 - GP6
+    pub pin_6: embassy_rp::peripherals::PIN_6,
+    #[cfg(not(feature = "debug-probe"))]
+    // Physical Pin # 10 - GP7
+    pub pin_7: embassy_rp::peripherals::PIN_7,
+    #[cfg(not(feature = "debug-probe"))]
+    // Physical Pin # 11 - GP8
+    pub pin_8: embassy_rp::peripherals::PIN_8,
+    // Physical Pin # 12 - GP9
+    pub pin_9: embassy_rp::peripherals::PIN_9,
+    // Physical Pin # 13 - GROUND
+    // Physical Pin # 14 - GP10
+    pub pin_10: embassy_rp::peripherals::PIN_10,
+    // Physical Pin # 15 - GP11
+    pub pin_11: embassy_rp::peripherals::PIN_11,
+    // Physical Pin # 16 - GP12
+    pub pin_12: embassy_rp::peripherals::PIN_12,
+    // Physical Pin # 17 - GP13
+    pub pin_13: embassy_rp::peripherals::PIN_13,
+    // Physical Pin # 18 - GROUND
+    // Physical Pin # 19 - GP14
+    pub pin_14: embassy_rp::peripherals::PIN_14,
+    #[cfg(not(feature = "debug-probe"))]
+    // Physical Pin # 20 - GP15
+    pub pin_15: embassy_rp::peripherals::PIN_15,
+    #[cfg(not(feature = "debug-probe"))]
+    // Physical Pin # 21 - GP16
+    pub pin_16: embassy_rp::peripherals::PIN_16,
+    // Physical Pin # 22 - GP17
+    pub pin_17: embassy_rp::peripherals::PIN_17,
+    // Physical Pin # 23 - GROUND
+    // Physical Pin # 24 - GP18
+    pub pin_18: embassy_rp::peripherals::PIN_18,
+    // Physical Pin # 25 - GP19
+    pub pin_19: embassy_rp::peripherals::PIN_19,
+    // Physical Pin # 26 - GP20
+    pub pin_20: embassy_rp::peripherals::PIN_20,
+    // Physical Pin # 27 - GP21
+    pub pin_21: embassy_rp::peripherals::PIN_21,
+    // Physical Pin # 28 - GROUND
+    // Physical Pin # 29 - GP22
+    pub pin_22: embassy_rp::peripherals::PIN_22,
+    // Physical Pin # 30 - RUN
+    // Physical Pin # 31 - GP26
+    pub pin_26: embassy_rp::peripherals::PIN_26,
+    // Physical Pin # 32 - GP27
+    pub pin_27: embassy_rp::peripherals::PIN_27,
+    // Physical Pin # 33 - GROUND
+    // Physical Pin # 34 - GP28
+    pub pin_28: embassy_rp::peripherals::PIN_28,
+    // Physical Pin # 35 - ADC_VREF
+    // Physical Pin # 36 - 3V3
+    // Physical Pin # 37 - 3V3_EN
+    // Physical Pin # 38 - GROUND
+    // Physical Pin # 39 - VSYS
+    // Physical Pin # 40 - VBUS
+}
+
 /// Take the set of available pins not used by other functions, including the three pins that
 /// are connected via the CYW43 Wi-Fi chip. Create [Flex] Pins out of each of the GPIO pins.
 /// Put them all into the GPIO_PINS map, marking them as available
-pub fn setup_pins<'a>(available_pins: AvailablePins) {
+/// NOTE: All pin numbers are GPIO (BCM) Pin Numbers, not physical pin numbers
+/// TODO we need to find a way to control these other pins
+///         let _ = GPIO_PINS.insert(0, GPIOPin::CYW43Output); // GP0 connected to CYW43 chip
+//         #[cfg(not(feature = "debug-probe"))]
+//         let _ = GPIO_PINS.insert(1, GPIOPin::CYW43Output); // GP1 connected to CYW43 chip
+//         #[cfg(not(feature = "debug-probe"))]
+//         let _ = GPIO_PINS.insert(2, GPIOPin::CYW43Input); // GP2 connected to CYW43 chip
+pub fn setup_pins<'a>(header_pins: HeaderPins) {
     unsafe {
-        let _ = GPIO_PINS.insert(0, GPIOPin::CYW43Output); // GP0 connected to CYW43 chip
-        let _ = GPIO_PINS.insert(1, GPIOPin::CYW43Output); // GP1 connected to CYW43 chip
-        let _ = GPIO_PINS.insert(2, GPIOPin::CYW43Input); // GP2 connected to CYW43 chip
-        let _ = GPIO_PINS.insert(3, GPIOPin::Available(Flex::new(available_pins.pin_3)));
-        let _ = GPIO_PINS.insert(4, GPIOPin::Available(Flex::new(available_pins.pin_4)));
-        let _ = GPIO_PINS.insert(5, GPIOPin::Available(Flex::new(available_pins.pin_5)));
-        let _ = GPIO_PINS.insert(6, GPIOPin::Available(Flex::new(available_pins.pin_6)));
-        let _ = GPIO_PINS.insert(7, GPIOPin::Available(Flex::new(available_pins.pin_7)));
-        let _ = GPIO_PINS.insert(8, GPIOPin::Available(Flex::new(available_pins.pin_8)));
-        let _ = GPIO_PINS.insert(9, GPIOPin::Available(Flex::new(available_pins.pin_9)));
-        let _ = GPIO_PINS.insert(10, GPIOPin::Available(Flex::new(available_pins.pin_10)));
-        let _ = GPIO_PINS.insert(11, GPIOPin::Available(Flex::new(available_pins.pin_11)));
-        let _ = GPIO_PINS.insert(12, GPIOPin::Available(Flex::new(available_pins.pin_12)));
-        let _ = GPIO_PINS.insert(13, GPIOPin::Available(Flex::new(available_pins.pin_13)));
-        let _ = GPIO_PINS.insert(14, GPIOPin::Available(Flex::new(available_pins.pin_14)));
-        let _ = GPIO_PINS.insert(15, GPIOPin::Available(Flex::new(available_pins.pin_15)));
-        let _ = GPIO_PINS.insert(16, GPIOPin::Available(Flex::new(available_pins.pin_16)));
-        let _ = GPIO_PINS.insert(17, GPIOPin::Available(Flex::new(available_pins.pin_17)));
-        let _ = GPIO_PINS.insert(18, GPIOPin::Available(Flex::new(available_pins.pin_18)));
-        let _ = GPIO_PINS.insert(19, GPIOPin::Available(Flex::new(available_pins.pin_19)));
-        let _ = GPIO_PINS.insert(20, GPIOPin::Available(Flex::new(available_pins.pin_20)));
-        let _ = GPIO_PINS.insert(21, GPIOPin::Available(Flex::new(available_pins.pin_21)));
-        let _ = GPIO_PINS.insert(22, GPIOPin::Available(Flex::new(available_pins.pin_22)));
-        let _ = GPIO_PINS.insert(26, GPIOPin::Available(Flex::new(available_pins.pin_26)));
-        let _ = GPIO_PINS.insert(27, GPIOPin::Available(Flex::new(available_pins.pin_27)));
-        let _ = GPIO_PINS.insert(28, GPIOPin::Available(Flex::new(available_pins.pin_28)));
+        #[cfg(not(feature = "debug-probe"))]
+        let _ = GPIO_PINS.insert(0, GPIOPin::Available(Flex::new(header_pins.pin_0)));
+        #[cfg(not(feature = "debug-probe"))]
+        let _ = GPIO_PINS.insert(1, GPIOPin::Available(Flex::new(header_pins.pin_1)));
+        let _ = GPIO_PINS.insert(2, GPIOPin::Available(Flex::new(header_pins.pin_2)));
+        let _ = GPIO_PINS.insert(3, GPIOPin::Available(Flex::new(header_pins.pin_3)));
+        let _ = GPIO_PINS.insert(4, GPIOPin::Available(Flex::new(header_pins.pin_4)));
+        let _ = GPIO_PINS.insert(5, GPIOPin::Available(Flex::new(header_pins.pin_5)));
+        let _ = GPIO_PINS.insert(6, GPIOPin::Available(Flex::new(header_pins.pin_6)));
+        #[cfg(not(feature = "debug-probe"))]
+        let _ = GPIO_PINS.insert(7, GPIOPin::Available(Flex::new(header_pins.pin_7)));
+        #[cfg(not(feature = "debug-probe"))]
+        let _ = GPIO_PINS.insert(8, GPIOPin::Available(Flex::new(header_pins.pin_8)));
+        let _ = GPIO_PINS.insert(9, GPIOPin::Available(Flex::new(header_pins.pin_9)));
+        let _ = GPIO_PINS.insert(10, GPIOPin::Available(Flex::new(header_pins.pin_10)));
+        let _ = GPIO_PINS.insert(11, GPIOPin::Available(Flex::new(header_pins.pin_11)));
+        let _ = GPIO_PINS.insert(12, GPIOPin::Available(Flex::new(header_pins.pin_12)));
+        let _ = GPIO_PINS.insert(13, GPIOPin::Available(Flex::new(header_pins.pin_13)));
+        let _ = GPIO_PINS.insert(14, GPIOPin::Available(Flex::new(header_pins.pin_14)));
+        #[cfg(not(feature = "debug-probe"))]
+        let _ = GPIO_PINS.insert(15, GPIOPin::Available(Flex::new(header_pins.pin_15)));
+        #[cfg(not(feature = "debug-probe"))]
+        let _ = GPIO_PINS.insert(16, GPIOPin::Available(Flex::new(header_pins.pin_16)));
+        let _ = GPIO_PINS.insert(17, GPIOPin::Available(Flex::new(header_pins.pin_17)));
+        let _ = GPIO_PINS.insert(18, GPIOPin::Available(Flex::new(header_pins.pin_18)));
+        let _ = GPIO_PINS.insert(19, GPIOPin::Available(Flex::new(header_pins.pin_19)));
+        let _ = GPIO_PINS.insert(20, GPIOPin::Available(Flex::new(header_pins.pin_20)));
+        let _ = GPIO_PINS.insert(21, GPIOPin::Available(Flex::new(header_pins.pin_21)));
+        let _ = GPIO_PINS.insert(22, GPIOPin::Available(Flex::new(header_pins.pin_22)));
+        let _ = GPIO_PINS.insert(26, GPIOPin::Available(Flex::new(header_pins.pin_26)));
+        let _ = GPIO_PINS.insert(27, GPIOPin::Available(Flex::new(header_pins.pin_27)));
+        let _ = GPIO_PINS.insert(28, GPIOPin::Available(Flex::new(header_pins.pin_28)));
     }
     info!("GPIO Pins setup");
 }
