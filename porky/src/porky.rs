@@ -48,7 +48,11 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
+    // Get the RPi Pico Peripherals - a number of the PINS are available for GPIO (they are
+    // passed to AvailablePins) while others are reserved for internal use and not available for
+    // GPIO
     let peripherals = embassy_rp::init(Default::default());
+    // PIN_25 - OP wireless SPI CS - when high also enables GPIO29 ADC pin to read VSYS
     let cs = Output::new(peripherals.PIN_25, Level::High);
     let mut pio = Pio::new(peripherals.PIO0, Irqs);
 
@@ -58,14 +62,22 @@ async fn main(spawner: Spawner) {
         pio.sm0,
         pio.irq0,
         cs,
+        // PIN_24 - OP/IP wireless SPI data/IRQ
         peripherals.PIN_24,
+        // PIN_29 - OP/IP wireless SPI CLK/ADC mode (ADC3) to measure VSYS/3
         peripherals.PIN_29,
         peripherals.DMA_CH0,
     );
+    // PIN_23 - OP wireless power on signal
     let (mut control, stack) = wifi::start_net(spawner, peripherals.PIN_23, spi).await;
 
     // Take the following pins out of peripherals for use a GPIO
-    let available_pins = gpio::AvailablePins {
+    let header_pins = gpio::HeaderPins {
+        #[cfg(not(feature = "debug-probe"))]
+        pin_0: peripherals.PIN_0,
+        #[cfg(not(feature = "debug-probe"))]
+        pin_1: peripherals.PIN_1,
+        pin_2: peripherals.PIN_2,
         pin_3: peripherals.PIN_3,
         pin_4: peripherals.PIN_4,
         pin_5: peripherals.PIN_5,
@@ -94,7 +106,7 @@ async fn main(spawner: Spawner) {
         pin_27: peripherals.PIN_27,
         pin_28: peripherals.PIN_28,
     };
-    gpio::setup_pins(available_pins);
+    gpio::setup_pins(header_pins);
 
     // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
     let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(peripherals.FLASH, peripherals.DMA_CH1);
