@@ -293,10 +293,8 @@ pub struct HeaderPins {
     // Physical Pin # 8 - GROUND
     // Physical Pin # 9 - GP6
     pub pin_6: embassy_rp::peripherals::PIN_6,
-    #[cfg(not(feature = "debug-probe"))]
     // Physical Pin # 10 - GP7
     pub pin_7: embassy_rp::peripherals::PIN_7,
-    #[cfg(not(feature = "debug-probe"))]
     // Physical Pin # 11 - GP8
     pub pin_8: embassy_rp::peripherals::PIN_8,
     // Physical Pin # 12 - GP9
@@ -313,10 +311,8 @@ pub struct HeaderPins {
     // Physical Pin # 18 - GROUND
     // Physical Pin # 19 - GP14
     pub pin_14: embassy_rp::peripherals::PIN_14,
-    #[cfg(not(feature = "debug-probe"))]
     // Physical Pin # 20 - GP15
     pub pin_15: embassy_rp::peripherals::PIN_15,
-    #[cfg(not(feature = "debug-probe"))]
     // Physical Pin # 21 - GP16
     pub pin_16: embassy_rp::peripherals::PIN_16,
     // Physical Pin # 22 - GP17
