@@ -46,7 +46,7 @@ async fn monitor_input(
     returner: Sender<'static, ThreadModeRawMutex, Flex<'static>, 1>,
     mut flex: Flex<'static>,
 ) {
-    let _ = send_input_level(bcm_pin_number, flex.get_level()).await;
+    send_input_level(bcm_pin_number, flex.get_level()).await;
 
     loop {
         match select(flex.wait_for_any_edge(), signaller.receive()).await {
@@ -68,7 +68,7 @@ async fn send_input_level(bcm: BCMPinNumber, level: Level) {
         Instant::now().duration_since(Instant::MIN).into(),
     );
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let _ = GUI_CHANNEL.sender().send(hardware_event).await;
+    GUI_CHANNEL.sender().send(hardware_event).await;
 }
 
 fn into_level(value: PinLevel) -> Level {
