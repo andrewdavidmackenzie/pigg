@@ -46,31 +46,29 @@ async fn monitor_input(
     returner: Sender<'static, ThreadModeRawMutex, Flex<'static>, 1>,
     mut flex: Flex<'static>,
 ) {
+    let _ = send_input_level(bcm_pin_number, flex.get_level()).await;
+
     loop {
         match select(flex.wait_for_any_edge(), signaller.receive()).await {
-            Either::First(()) => {
-                info!("Level change detected");
-                send_input_level(bcm_pin_number, flex.get_level()).await
-            }
+            Either::First(()) => send_input_level(bcm_pin_number, flex.get_level()).await,
             Either::Second(_) => {
                 info!("Monitor returning Pin");
                 // Return the Flex pin and exit the task
-                let _ = returner.send(flex);
+                let _ = returner.send(flex).await;
                 break;
             }
         }
     }
 }
 
-/// Send a detected input level change back to the GUI using `socket` [TcpSocket],
-/// timestamping with the current time in Utc
+/// Send a detected input level change back to the GUI, timestamping with the Duration since boot
 async fn send_input_level(bcm: BCMPinNumber, level: Level) {
     let level_change = LevelChange::new(
         level == Level::High,
         Instant::now().duration_since(Instant::MIN).into(),
     );
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let _ = GUI_CHANNEL.sender().send(hardware_event);
+    let _ = GUI_CHANNEL.sender().send(hardware_event).await;
 }
 
 fn into_level(value: PinLevel) -> Level {
@@ -154,8 +152,6 @@ async fn apply_pin_config<'a>(
                         Some(InputPull::PullUp) => flex.set_pull(Pull::Up),
                         Some(InputPull::PullDown) => flex.set_pull(Pull::Down),
                     };
-
-                    let _ = send_input_level(bcm_pin_number, flex.get_level()).await;
 
                     spawner
                         .spawn(monitor_input(

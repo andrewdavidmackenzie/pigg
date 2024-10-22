@@ -152,7 +152,7 @@ async fn main(spawner: Spawner) {
                     }
                 }
             }
-            info!("Disconnected - Exiting Message Loop");
+            info!("Exiting Message Loop");
         }
     }
 
