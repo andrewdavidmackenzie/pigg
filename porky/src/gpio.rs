@@ -42,19 +42,19 @@ static SIGNALLER: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
 /// Wait until a level change on an input occurs and then send it via TCP to GUI
 #[embassy_executor::task]
 pub async fn monitor_input(
-    _bcm_pin_number: BCMPinNumber,
-    //    socket: &mut TcpSocket<'_>,
+    bcm_pin_number: BCMPinNumber,
+    socket: &mut TcpSocket<'_>,
     signaller: Receiver<'static, ThreadModeRawMutex, bool, 1>,
     returner: Sender<'static, ThreadModeRawMutex, Flex<'static>, 1>,
     mut flex: Flex<'static>,
 ) {
-    //    let _ = send_input_level(socket, bcm_pin_number, flex.get_level()).await;
+    let _ = send_input_level(socket, bcm_pin_number, flex.get_level()).await;
 
     loop {
         match select(flex.wait_for_any_edge(), signaller.receive()).await {
             Either::First(()) => {
                 info!("Level change detected");
-                // send_input_level(socket, bcm_pin_number, flex.get_level()).await
+                send_input_level(socket, bcm_pin_number, flex.get_level()).await
             }
             Either::Second(_) => {
                 info!("Monitor returning Pin");
@@ -114,7 +114,7 @@ async fn apply_pin_config<'a>(
     spawner: &Spawner,
     bcm_pin_number: BCMPinNumber,
     new_pin_function: &PinFunction,
-    _socket: &mut TcpSocket<'_>,
+    socket: &mut TcpSocket<'_>,
 ) {
     let flex_pin = unsafe {
         match GPIO_PINS.remove(&bcm_pin_number) {
@@ -166,7 +166,7 @@ async fn apply_pin_config<'a>(
                     spawner
                         .spawn(monitor_input(
                             bcm_pin_number,
-                            //                            socket,
+                            socket,
                             SIGNALLER.receiver(),
                             RETURNER.sender(),
                             flex,
