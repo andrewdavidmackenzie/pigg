@@ -4,11 +4,11 @@ use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
+use crate::GUI_CHANNEL;
 use cyw43::Control;
 use defmt::{error, info};
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
-use embassy_net::tcp::TcpSocket;
 use embassy_rp::gpio::Flex;
 use embassy_rp::gpio::Level;
 use embassy_rp::gpio::Pull;
@@ -16,7 +16,6 @@ use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::channel::{Receiver, Sender};
 use embassy_time::Instant;
-use embedded_io_async::Write;
 use heapless::FnvIndexMap;
 
 /// The configured/not-configured state of the GPIO Pins on the Pi Pico, and how to access them
@@ -41,43 +40,35 @@ static SIGNALLER: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
 
 /// Wait until a level change on an input occurs and then send it via TCP to GUI
 #[embassy_executor::task]
-pub async fn monitor_input(
-    _bcm_pin_number: BCMPinNumber,
-    //    socket: &mut TcpSocket<'_>,
+async fn monitor_input(
+    bcm_pin_number: BCMPinNumber,
     signaller: Receiver<'static, ThreadModeRawMutex, bool, 1>,
     returner: Sender<'static, ThreadModeRawMutex, Flex<'static>, 1>,
     mut flex: Flex<'static>,
 ) {
-    //    let _ = send_input_level(socket, bcm_pin_number, flex.get_level()).await;
+    send_input_level(bcm_pin_number, flex.get_level()).await;
 
     loop {
         match select(flex.wait_for_any_edge(), signaller.receive()).await {
-            Either::First(()) => {
-                info!("Level change detected");
-                // send_input_level(socket, bcm_pin_number, flex.get_level()).await
-            }
+            Either::First(()) => send_input_level(bcm_pin_number, flex.get_level()).await,
             Either::Second(_) => {
                 info!("Monitor returning Pin");
                 // Return the Flex pin and exit the task
-                let _ = returner.send(flex);
+                let _ = returner.send(flex).await;
                 break;
             }
         }
     }
 }
 
-#[allow(dead_code)] // TODO remove when finish sending input levels
-/// Send a detected input level change back to the GUI using `writer` [TcpStream],
-/// timestamping with the current time in Utc
-async fn send_input_level(socket: &mut TcpSocket<'_>, bcm: BCMPinNumber, level: Level) {
+/// Send a detected input level change back to the GUI, timestamping with the Duration since boot
+async fn send_input_level(bcm: BCMPinNumber, level: Level) {
     let level_change = LevelChange::new(
         level == Level::High,
         Instant::now().duration_since(Instant::MIN).into(),
     );
     let hardware_event = IOLevelChanged(bcm, level_change);
-    let mut buf = [0; 1024];
-    let message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
-    socket.write_all(&message).await.unwrap();
+    GUI_CHANNEL.sender().send(hardware_event).await;
 }
 
 fn into_level(value: PinLevel) -> Level {
@@ -114,7 +105,6 @@ async fn apply_pin_config<'a>(
     spawner: &Spawner,
     bcm_pin_number: BCMPinNumber,
     new_pin_function: &PinFunction,
-    _socket: &mut TcpSocket<'_>,
 ) {
     let flex_pin = unsafe {
         match GPIO_PINS.remove(&bcm_pin_number) {
@@ -166,7 +156,6 @@ async fn apply_pin_config<'a>(
                     spawner
                         .spawn(monitor_input(
                             bcm_pin_number,
-                            //                            socket,
                             SIGNALLER.receiver(),
                             RETURNER.sender(),
                             flex,
@@ -223,15 +212,10 @@ async fn apply_pin_config<'a>(
 }
 
 /// This takes the GPIOConfig struct and configures all the pins in it
-async fn apply_config<'a>(
-    control: &mut Control<'_>,
-    spawner: &Spawner,
-    config: &HardwareConfig,
-    socket: &mut TcpSocket<'_>,
-) {
+async fn apply_config<'a>(control: &mut Control<'_>, spawner: &Spawner, config: &HardwareConfig) {
     // Config only has pins that are configured
     for (bcm_pin_number, pin_function) in &config.pin_functions {
-        apply_pin_config(control, spawner, *bcm_pin_number, pin_function, socket).await;
+        apply_pin_config(control, spawner, *bcm_pin_number, pin_function).await;
     }
     let num_pins = config.pin_functions.len();
     if num_pins > 0 {
@@ -247,12 +231,11 @@ pub async fn apply_config_change<'a>(
     control: &mut Control<'_>,
     spawner: &Spawner,
     config_change: HardwareConfigMessage,
-    socket: &mut TcpSocket<'_>,
 ) {
     match config_change {
-        NewConfig(config) => apply_config(control, spawner, &config, socket).await,
+        NewConfig(config) => apply_config(control, spawner, &config).await,
         NewPinConfig(bcm, pin_function) => {
-            apply_pin_config(control, spawner, bcm, &pin_function, socket).await
+            apply_pin_config(control, spawner, bcm, &pin_function).await
         }
         IOLevelChanged(bcm, level_change) => {
             set_output_level(control, bcm, level_change.new_level).await;
@@ -260,18 +243,18 @@ pub async fn apply_config_change<'a>(
     }
 }
 
-// Pins available to be programmed, but are not connected to header
-//  WL_GPIO0 - via CYW43 - Connected to user LED
-//  WL_GPIO1 - via CYW43 - Output controls on-board SMPS power save pin
-//  WL_GPIO2 - via CYW43 - Input VBUS sense - high if VBUS is present, else low
-//
-// GPIO Pins Used Internally that are not in the list below
-//  GP23 - Output wireless on signal - used by embassy
-//  GP24 - Output/Input wireless SPI data/IRQ
-//  GP25 - Output wireless SPI CS- when high enables GPIO29 ADC pin to read VSYS
-//  GP29 - Output/Input SPI CLK/ADC Mode to measure VSYS/3
-//
-// Refer to $ProjectRoot/assets/images/pi_pico_w_pinout.png
+/// Pins available to be programmed, but are not connected to header
+///  WL_GPIO0 - via CYW43 - Connected to user LED
+///  WL_GPIO1 - via CYW43 - Output controls on-board SMPS power save pin
+///  WL_GPIO2 - via CYW43 - Input VBUS sense - high if VBUS is present, else low
+///
+/// GPIO Pins Used Internally that are not in the list below
+///  GP23 - Output wireless on signal - used by embassy
+///  GP24 - Output/Input wireless SPI data/IRQ
+///  GP25 - Output wireless SPI CS- when high enables GPIO29 ADC pin to read VSYS
+///  GP29 - Output/Input SPI CLK/ADC Mode to measure VSYS/3
+///
+/// Refer to $ProjectRoot/assets/images/pi_pico_w_pinout.png
 pub struct HeaderPins {
     // Physical Pin # 1 - GP0
     // Maybe in use by Debug-Probe
@@ -366,9 +349,7 @@ pub fn setup_pins<'a>(header_pins: HeaderPins) {
         let _ = GPIO_PINS.insert(4, GPIOPin::Available(Flex::new(header_pins.pin_4)));
         let _ = GPIO_PINS.insert(5, GPIOPin::Available(Flex::new(header_pins.pin_5)));
         let _ = GPIO_PINS.insert(6, GPIOPin::Available(Flex::new(header_pins.pin_6)));
-        #[cfg(not(feature = "debug-probe"))]
         let _ = GPIO_PINS.insert(7, GPIOPin::Available(Flex::new(header_pins.pin_7)));
-        #[cfg(not(feature = "debug-probe"))]
         let _ = GPIO_PINS.insert(8, GPIOPin::Available(Flex::new(header_pins.pin_8)));
         let _ = GPIO_PINS.insert(9, GPIOPin::Available(Flex::new(header_pins.pin_9)));
         let _ = GPIO_PINS.insert(10, GPIOPin::Available(Flex::new(header_pins.pin_10)));
@@ -376,9 +357,7 @@ pub fn setup_pins<'a>(header_pins: HeaderPins) {
         let _ = GPIO_PINS.insert(12, GPIOPin::Available(Flex::new(header_pins.pin_12)));
         let _ = GPIO_PINS.insert(13, GPIOPin::Available(Flex::new(header_pins.pin_13)));
         let _ = GPIO_PINS.insert(14, GPIOPin::Available(Flex::new(header_pins.pin_14)));
-        #[cfg(not(feature = "debug-probe"))]
         let _ = GPIO_PINS.insert(15, GPIOPin::Available(Flex::new(header_pins.pin_15)));
-        #[cfg(not(feature = "debug-probe"))]
         let _ = GPIO_PINS.insert(16, GPIOPin::Available(Flex::new(header_pins.pin_16)));
         let _ = GPIO_PINS.insert(17, GPIOPin::Available(Flex::new(header_pins.pin_17)));
         let _ = GPIO_PINS.insert(18, GPIOPin::Available(Flex::new(header_pins.pin_18)));
