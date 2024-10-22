@@ -47,7 +47,7 @@ local-ip-address = { version = "0.6.3", default-features = false, optional = tru
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
-serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+serde = { version = "1.0.211", default-features = false, features = ["derive"] }
 serde_arrays = { version = "0.1.0", default-features = false }
 
 # for config serialization to/from file
