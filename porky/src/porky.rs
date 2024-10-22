@@ -26,7 +26,7 @@ mod ssid {
     include!(concat!(env!("OUT_DIR"), "/ssid.rs"));
 }
 
-/// Wifi related functions
+/// Wi-Fi related functions
 mod wifi;
 
 /// TCP related functions
