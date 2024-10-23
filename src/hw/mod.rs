@@ -128,10 +128,10 @@ impl HW {
     fn get_details() -> io::Result<HardwareDetails> {
         #[allow(unused_mut)]
         let mut details = HardwareDetails {
-            hardware: "Unknown".to_string(),
-            revision: "Unknown".to_string(),
-            serial: "Unknown".to_string(),
-            model: "Unknown".to_string(),
+            hardware: "unknown".to_string(),
+            revision: "unknown".to_string(),
+            serial: "unknown".to_string(),
+            model: "unknown".to_string(),
         };
 
         #[cfg(all(
