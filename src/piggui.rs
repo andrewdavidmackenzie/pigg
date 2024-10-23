@@ -276,7 +276,7 @@ impl Application for Piggui {
         let main_col = Column::new()
             .push(
                 self.hardware_view
-                    .view(&self.layout_selector, &self.hardware_target),
+                    .view(self.layout_selector.get(), &self.hardware_target),
             )
             .push(self.info_row.view(
                 self.unsaved_changes,

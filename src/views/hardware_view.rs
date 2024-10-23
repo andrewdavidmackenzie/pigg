@@ -23,7 +23,7 @@ use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
-use crate::views::layout_selector::{Layout, LayoutSelector};
+use crate::views::layout_selector::Layout;
 use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
@@ -382,14 +382,12 @@ impl HardwareView {
     /// Construct the view that represents the main row of the app
     pub fn view<'a>(
         &'a self,
-        layout_selector: &'a LayoutSelector,
+        layout: Layout,
+
         hardware_target: &'a HardwareTarget,
     ) -> Element<'a, Message> {
         let hw_column = Column::new()
-            .push(
-                self.hw_view(layout_selector.get(), hardware_target)
-                    .map(Message::Hardware),
-            )
+            .push(self.hw_view(layout, hardware_target).map(Message::Hardware))
             .align_items(Alignment::Center)
             .height(Length::Fill)
             .width(Length::Fill);
