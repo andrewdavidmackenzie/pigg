@@ -1,7 +1,7 @@
 use crate::styles::button_style::ButtonStyle;
 use crate::views::layout_selector::LayoutSelector;
 use crate::Message;
-use iced::widget::{Button, Column, Text};
+use iced::widget::Column;
 use iced::{Alignment, Color, Element, Length};
 
 /// Construct the view that represents the configuration column
@@ -14,20 +14,11 @@ pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
         border_radius: 2.0,
     };
 
-    let save_button = Button::new(Text::new("Save Configuration"))
-        .style(file_button_style.get_button_style())
-        .on_press(Message::Save);
-    let load_button = Button::new(Text::new("Load Configuration"))
-        .style(file_button_style.get_button_style())
-        .on_press(Message::Load);
-
     let mut configuration_column = Column::new()
         .align_items(Alignment::Start)
         .spacing(10)
         .width(Length::Shrink);
     configuration_column = configuration_column.push(layout_selector.view());
-    configuration_column = configuration_column.push(save_button);
-    configuration_column = configuration_column.push(load_button);
 
     configuration_column.into()
 }
