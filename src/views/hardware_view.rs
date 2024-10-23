@@ -381,15 +381,13 @@ impl HardwareView {
 
     /// Construct the view that represents the main row of the app
     pub fn view<'a>(
-        &self,
-        hardware_view: &'a HardwareView,
+        &'a self,
         layout_selector: &'a LayoutSelector,
         hardware_target: &'a HardwareTarget,
     ) -> Element<'a, Message> {
         let hw_column = Column::new()
             .push(
-                hardware_view
-                    .hw_view(layout_selector.get(), hardware_target)
+                self.hw_view(layout_selector.get(), hardware_target)
                     .map(Message::Hardware),
             )
             .align_items(Alignment::Center)
