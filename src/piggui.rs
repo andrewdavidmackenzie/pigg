@@ -289,6 +289,7 @@ impl Application for Piggui {
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
+            .padding([0.0, 0.0, 0.0, 0.0])
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
             .center_y();

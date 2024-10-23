@@ -379,27 +379,24 @@ impl HardwareView {
         Row::new().into()
     }
 
+    /// Construct the view that represents the main row of the app
     pub fn hardware_view<'a>(
         &self,
         hardware_view: &'a HardwareView,
         layout_selector: &'a LayoutSelector,
         hardware_target: &'a HardwareTarget,
     ) -> Element<'a, Message> {
-        let mut main_row = Row::new();
+        let hw_column = Column::new()
+            .push(
+                hardware_view
+                    .view(layout_selector.get(), hardware_target)
+                    .map(Message::Hardware),
+            )
+            .align_items(Alignment::Center)
+            .height(Length::Fill)
+            .width(Length::Fill);
 
-        main_row = main_row.push(
-            Column::new()
-                .push(
-                    hardware_view
-                        .view(layout_selector.get(), hardware_target)
-                        .map(Message::Hardware),
-                )
-                .align_items(Alignment::Center)
-                .height(Length::Fill)
-                .width(Length::Fill),
-        );
-
-        container(main_row).padding([10.0, 10.0, 0.0, 10.0]).into()
+        container(hw_column).padding(10.0).into()
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware

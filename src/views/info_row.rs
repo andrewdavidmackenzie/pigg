@@ -68,7 +68,7 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding([0.0, 0.0, 0.0, 0.0]),
         )
-        .set_background(Color::from_rgb8(45, 45, 45))
+        .set_background(Color::from_rgb8(40, 40, 40))
         .into()
     }
 
