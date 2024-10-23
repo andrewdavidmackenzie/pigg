@@ -1,6 +1,16 @@
 use crate::Message;
-use iced::widget::pick_list;
-use iced::{Element, Length, Size};
+use iced::widget::Button;
+use iced::{Color, Length, Size};
+
+use crate::views::hardware_view::HardwareTarget;
+use crate::views::hardware_view::HardwareTarget::NoHW;
+use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
+use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
+use iced::{Background, Element, Renderer, Theme};
+use iced_aw::menu;
+use iced_aw::menu::StyleSheet;
+use iced_aw::menu::{Item, Menu, MenuBar};
+use iced_aw::style::MenuBarStyle;
 
 /// These are the possible layouts to chose from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -10,30 +20,14 @@ pub enum Layout {
     BCMLayout,
 }
 
-// Implementing Display for Layout
-impl std::fmt::Display for Layout {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Layout::BoardLayout => "Board Pin Layout",
-                Layout::BCMLayout => "BCM Pin Layout",
-            }
-        )
-    }
-}
-
-const LAYOUTS: [Layout; 2] = [Layout::BoardLayout, Layout::BCMLayout];
-
 const BOARD_LAYOUT_SIZE: Size = Size {
-    width: 1570.0,
-    height: 780.0,
+    width: 1400.0,
+    height: 720.0,
 };
 
 const BCM_LAYOUT_SIZE: Size = Size {
-    width: 860.0,
-    height: 976.0,
+    width: 700.0,
+    height: 916.0,
 };
 
 #[derive(Clone, PartialEq, Default)]
@@ -66,43 +60,56 @@ impl LayoutSelector {
         self.selected_layout
     }
 
-    /// Generate the view to represent the [LayoutSelector]
-    pub fn view(&self) -> Element<'static, Message> {
-        pick_list(
-            &LAYOUTS[..],
-            Some(self.selected_layout),
-            Message::LayoutChanged,
-        )
-        .width(Length::Shrink)
-        .placeholder("Choose Layout")
-        .into()
-    }
-}
+    /// Create the view that shows menu to change layout
+    pub fn view<'a>(
+        &self,
+        hardware_target: &'a HardwareTarget,
+    ) -> Element<'a, Message, Theme, Renderer> {
+        let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
-#[cfg(test)]
-mod test {
-    use crate::views::layout_selector::{
-        Layout, LayoutSelector, BCM_LAYOUT_SIZE, BOARD_LAYOUT_SIZE,
-    };
+        let button = if hardware_target != &NoHW {
+            match self.selected_layout {
+                Layout::BoardLayout => {
+                    let show_bcp_layout: Item<'a, Message, _, _> = Item::new(
+                        Button::new("BCP Pin Layout")
+                            .width(Length::Fill)
+                            .on_press(Message::LayoutChanged(BCMLayout))
+                            .style(MENU_BUTTON_STYLE.get_button_style()),
+                    );
+                    menu_items.push(show_bcp_layout);
+                    Button::new("layout: board")
+                }
+                Layout::BCMLayout => {
+                    let show_physical_layout: Item<'a, Message, _, _> = Item::new(
+                        Button::new("Board Pin Layout")
+                            .width(Length::Fill)
+                            .on_press(Message::LayoutChanged(BoardLayout))
+                            .style(MENU_BUTTON_STYLE.get_button_style()),
+                    );
+                    menu_items.push(show_physical_layout);
 
-    #[test]
-    fn default_is_board() {
-        assert_eq!(LayoutSelector::get_default_window_size(), BOARD_LAYOUT_SIZE);
-    }
+                    Button::new("layout: bcp")
+                }
+            }
+            .style(MENU_BAR_BUTTON_STYLE.get_button_style())
+            .on_press(Message::MenuBarButtonClicked)
+        } else {
+            Button::new("layout").style(MENU_BAR_BUTTON_STYLE.get_button_style())
+        };
 
-    #[test]
-    fn initial() {
-        let mut layout_selector = LayoutSelector::new();
-        assert_eq!(
-            layout_selector.update(layout_selector.get()),
-            BOARD_LAYOUT_SIZE
-        );
-    }
+        let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
-    #[test]
-    fn switch_to_bcm() {
-        let mut layout_selector = LayoutSelector::new();
-        assert_eq!(layout_selector.update(Layout::BCMLayout), BCM_LAYOUT_SIZE);
-        assert_eq!(layout_selector.get(), Layout::BCMLayout);
+        MenuBar::new(vec![menu_root])
+            .style(|theme: &iced::Theme| menu::Appearance {
+                bar_background: Background::Color(Color::TRANSPARENT),
+                menu_shadow: iced::Shadow {
+                    color: Color::BLACK,
+                    offset: iced::Vector::new(1.0, 1.0),
+                    blur_radius: 10f32,
+                },
+                menu_background_expand: iced::Padding::from([5, 5]),
+                ..theme.appearance(&MenuBarStyle::Default)
+            })
+            .into()
     }
 }

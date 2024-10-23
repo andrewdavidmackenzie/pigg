@@ -3,7 +3,6 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::main_row;
 use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
@@ -262,7 +261,7 @@ impl Application for Piggui {
     /*
        +-window-------------------------------------------------------------------------------+
        |  +-content(main_col)---------------------------------------------------------------+ |
-       |  | +-main-row--------------------------------------------------------------------+ | |
+       |  | +-hardware-view---------------------------------------------------------------+ | |
        |  | |                                                                             | | |
        |  | |                                                                             | | |
        |  | |                                                                             | | |
@@ -275,13 +274,13 @@ impl Application for Piggui {
     */
     fn view(&self) -> Element<Message> {
         let main_col = Column::new()
-            .push(main_row::view(
-                &self.hardware_view,
-                &self.layout_selector,
-                &self.hardware_target,
-            ))
+            .push(
+                self.hardware_view
+                    .view(self.layout_selector.get(), &self.hardware_target),
+            )
             .push(self.info_row.view(
                 self.unsaved_changes,
+                &self.layout_selector,
                 &self.hardware_view,
                 &self.hardware_target,
             ));
@@ -289,6 +288,7 @@ impl Application for Piggui {
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
+            .padding([0.0, 0.0, 0.0, 0.0])
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
             .center_y();

@@ -3,8 +3,8 @@ use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
-use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
+use iced::widget::{container, Tooltip};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::cmp::PartialEq;
@@ -349,7 +349,7 @@ impl HardwareView {
         Command::none()
     }
 
-    pub fn view(
+    fn hw_view(
         &self,
         layout: Layout,
         hardware_target: &HardwareTarget,
@@ -377,6 +377,22 @@ impl HardwareView {
 
         // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
         Row::new().into()
+    }
+
+    /// Construct the view that represents the main row of the app
+    pub fn view<'a>(
+        &'a self,
+        layout: Layout,
+
+        hardware_target: &'a HardwareTarget,
+    ) -> Element<'a, Message> {
+        let hw_column = Column::new()
+            .push(self.hw_view(layout, hardware_target).map(Message::Hardware))
+            .align_items(Alignment::Center)
+            .height(Length::Fill)
+            .width(Length::Fill);
+
+        container(hw_column).padding(10.0).into()
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware

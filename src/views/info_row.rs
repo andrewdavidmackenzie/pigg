@@ -5,6 +5,7 @@ use iced_futures::Subscription;
 use crate::styles::background::SetAppearance;
 use crate::styles::button_style::ButtonStyle;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
+use crate::views::layout_selector::LayoutSelector;
 use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_menu, unsaved_status};
@@ -52,12 +53,14 @@ impl InfoRow {
     pub fn view<'a>(
         &'a self,
         unsaved_changes: bool,
+        layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
-        hardware_target: &HardwareTarget,
+        hardware_target: &'a HardwareTarget,
     ) -> Element<'a, Message> {
         container(
             Row::new()
                 .push(version_button())
+                .push(layout_selector.view(hardware_target))
                 .push(hardware_menu::view(hardware_view, hardware_target))
                 .push(unsaved_status::view(unsaved_changes))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
@@ -65,7 +68,7 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding([0.0, 0.0, 0.0, 0.0]),
         )
-        .set_background(Color::from_rgb8(45, 45, 45))
+        .set_background(Color::from_rgb8(40, 40, 40))
         .into()
     }
 
