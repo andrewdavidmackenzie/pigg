@@ -1,19 +1,10 @@
-use crate::styles::button_style::ButtonStyle;
 use crate::views::layout_selector::LayoutSelector;
 use crate::Message;
 use iced::widget::Column;
-use iced::{Alignment, Color, Element, Length};
+use iced::{Alignment, Element, Length};
 
 /// Construct the view that represents the configuration column
 pub fn view(layout_selector: &LayoutSelector) -> Element<'static, Message> {
-    let file_button_style = ButtonStyle {
-        bg_color: Color::new(0.0, 1.0, 1.0, 1.0),
-        text_color: Color::BLACK,
-        hovered_bg_color: Color::new(0.0, 0.8, 0.8, 1.0),
-        hovered_text_color: Color::WHITE,
-        border_radius: 2.0,
-    };
-
     let mut configuration_column = Column::new()
         .align_items(Alignment::Start)
         .spacing(10)
