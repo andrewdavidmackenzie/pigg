@@ -1,20 +1,22 @@
-use iced::widget::{Button, Text};
-use iced::{Length, Renderer, Theme};
-use iced_aw::menu::{Item, Menu};
-
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
+use iced::widget::{Button, Text};
+use iced::{Background, Color, Element, Length, Renderer, Theme};
+use iced_aw::menu;
+use iced_aw::menu::StyleSheet;
+use iced_aw::menu::{Item, Menu, MenuBar};
+use iced_aw::style::MenuBarStyle;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
-pub fn item<'a>(
+pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_target: &HardwareTarget,
-) -> Item<'a, Message, Theme, Renderer> {
+) -> Element<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "No Hardware connected".to_string(),
         Some(model) => match hardware_target {
@@ -93,10 +95,23 @@ pub fn item<'a>(
             .style(MENU_BUTTON_STYLE.get_button_style()),
     ));
 
-    Item::with_menu(
+    let menu_root = Item::with_menu(
         Button::new(Text::new(model))
             .style(MENU_BAR_BUTTON_STYLE.get_button_style())
             .on_press(Message::MenuBarButtonClicked),
         Menu::new(menu_items).width(235.0).offset(10.0),
-    )
+    );
+
+    MenuBar::new(vec![menu_root])
+        .style(|theme: &iced::Theme| menu::Appearance {
+            bar_background: Background::Color(Color::TRANSPARENT),
+            menu_shadow: iced::Shadow {
+                color: Color::BLACK,
+                offset: iced::Vector::new(1.0, 1.0),
+                blur_radius: 10f32,
+            },
+            menu_background_expand: iced::Padding::from([5, 5]),
+            ..theme.appearance(&MenuBarStyle::Default)
+        })
+        .into()
 }

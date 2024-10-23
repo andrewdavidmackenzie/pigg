@@ -1,9 +1,5 @@
 use iced::widget::{container, Row};
 use iced::{Color, Command, Element, Length};
-use iced_aw::menu;
-use iced_aw::menu::{MenuBar, StyleSheet};
-use iced_aw::style::MenuBarStyle;
-use iced_futures::core::Background;
 use iced_futures::Subscription;
 
 use crate::styles::background::SetAppearance;
@@ -59,23 +55,10 @@ impl InfoRow {
         hardware_view: &'a HardwareView,
         hardware_target: &HardwareTarget,
     ) -> Element<'a, Message> {
-        let hardware_root = hardware_menu::item(hardware_view, hardware_target);
-
-        let mb = MenuBar::new(vec![hardware_root]).style(|theme: &iced::Theme| menu::Appearance {
-            bar_background: Background::Color(Color::TRANSPARENT),
-            menu_shadow: iced::Shadow {
-                color: Color::BLACK,
-                offset: iced::Vector::new(1.0, 1.0),
-                blur_radius: 10f32,
-            },
-            menu_background_expand: iced::Padding::from([5, 5]),
-            ..theme.appearance(&MenuBarStyle::Default)
-        });
-
         container(
             Row::new()
                 .push(version_button())
-                .push(mb)
+                .push(hardware_menu::view(hardware_view, hardware_target))
                 .push(unsaved_status::view(unsaved_changes))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
