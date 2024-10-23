@@ -47,10 +47,9 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
             .style(MENU_BAR_UNSAVED_BUTTON_STYLE.get_button_style()),
         false => Button::new("config").style(MENU_BAR_BUTTON_STYLE.get_button_style()),
     }
-    .on_press(Message::MenuBarButtonClicked)
-    .width(Length::Fixed(160.0));
+    .on_press(Message::MenuBarButtonClicked);
 
-    let menu_root = Item::with_menu(button, Menu::new(menu_items).width(235.0).offset(10.0));
+    let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
     MenuBar::new(vec![menu_root])
         .style(|theme: &iced::Theme| menu::Appearance {
