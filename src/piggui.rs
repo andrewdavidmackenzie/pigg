@@ -3,7 +3,6 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::main_row;
 use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
@@ -262,7 +261,7 @@ impl Application for Piggui {
     /*
        +-window-------------------------------------------------------------------------------+
        |  +-content(main_col)---------------------------------------------------------------+ |
-       |  | +-main-row--------------------------------------------------------------------+ | |
+       |  | +-hardware-view---------------------------------------------------------------+ | |
        |  | |                                                                             | | |
        |  | |                                                                             | | |
        |  | |                                                                             | | |
@@ -275,7 +274,7 @@ impl Application for Piggui {
     */
     fn view(&self) -> Element<Message> {
         let main_col = Column::new()
-            .push(main_row::view(
+            .push(self.hardware_view.hardware_view(
                 &self.hardware_view,
                 &self.layout_selector,
                 &self.hardware_target,

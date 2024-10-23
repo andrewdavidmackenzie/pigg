@@ -3,8 +3,8 @@ use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
-use iced::widget::Tooltip;
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
+use iced::widget::{container, Tooltip};
 use iced::{Alignment, Color, Command, Element, Length};
 use iced_futures::Subscription;
 use std::cmp::PartialEq;
@@ -23,7 +23,7 @@ use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
-use crate::views::layout_selector::Layout;
+use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
@@ -349,7 +349,7 @@ impl HardwareView {
         Command::none()
     }
 
-    pub fn view(
+    fn view(
         &self,
         layout: Layout,
         hardware_target: &HardwareTarget,
@@ -377,6 +377,29 @@ impl HardwareView {
 
         // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
         Row::new().into()
+    }
+
+    pub fn hardware_view<'a>(
+        &self,
+        hardware_view: &'a HardwareView,
+        layout_selector: &'a LayoutSelector,
+        hardware_target: &'a HardwareTarget,
+    ) -> Element<'a, Message> {
+        let mut main_row = Row::new();
+
+        main_row = main_row.push(
+            Column::new()
+                .push(
+                    hardware_view
+                        .view(layout_selector.get(), hardware_target)
+                        .map(Message::Hardware),
+                )
+                .align_items(Alignment::Center)
+                .height(Length::Fill)
+                .width(Length::Fill),
+        );
+
+        container(main_row).padding([10.0, 10.0, 0.0, 10.0]).into()
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
