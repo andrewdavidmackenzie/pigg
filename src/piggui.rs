@@ -282,6 +282,7 @@ impl Application for Piggui {
             ))
             .push(self.info_row.view(
                 self.unsaved_changes,
+                &self.layout_selector,
                 &self.hardware_view,
                 &self.hardware_target,
             ));

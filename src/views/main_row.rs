@@ -1,4 +1,3 @@
-use crate::views::configuration_column;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_selector::LayoutSelector;
 use crate::Message;
@@ -12,14 +11,6 @@ pub fn view<'a>(
     hardware_target: &'a HardwareTarget,
 ) -> Element<'a, Message> {
     let mut main_row = Row::new();
-
-    main_row = main_row.push(
-        Column::new()
-            .push(configuration_column::view(layout_selector))
-            .align_items(Alignment::Start)
-            .width(Length::Shrink)
-            .height(Length::Shrink),
-    );
 
     main_row = main_row.push(
         Column::new()
