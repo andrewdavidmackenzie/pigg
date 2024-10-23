@@ -349,7 +349,7 @@ impl HardwareView {
         Command::none()
     }
 
-    fn view(
+    fn hw_view(
         &self,
         layout: Layout,
         hardware_target: &HardwareTarget,
@@ -380,7 +380,7 @@ impl HardwareView {
     }
 
     /// Construct the view that represents the main row of the app
-    pub fn hardware_view<'a>(
+    pub fn view<'a>(
         &self,
         hardware_view: &'a HardwareView,
         layout_selector: &'a LayoutSelector,
@@ -389,7 +389,7 @@ impl HardwareView {
         let hw_column = Column::new()
             .push(
                 hardware_view
-                    .view(layout_selector.get(), hardware_target)
+                    .hw_view(layout_selector.get(), hardware_target)
                     .map(Message::Hardware),
             )
             .align_items(Alignment::Center)
