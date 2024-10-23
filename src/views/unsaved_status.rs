@@ -23,7 +23,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
     let load_from: Item<'a, Message, _, _> = Item::new(
-        Button::new("Load Config from...")
+        Button::new("Load config from...")
             .width(Length::Fill)
             .on_press(Message::Load)
             .style(MENU_BUTTON_STYLE.get_button_style()),
@@ -32,7 +32,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
     menu_items.push(load_from);
 
     let save_as: Item<'a, Message, _, _> = Item::new(
-        Button::new("Save Config as...")
+        Button::new("Save config as...")
             .width(Length::Fill)
             .on_press(Message::Save)
             .style(MENU_BUTTON_STYLE.get_button_style()),
