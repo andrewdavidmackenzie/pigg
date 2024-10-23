@@ -55,3 +55,7 @@ Here are some gifs and links to YouTube videos showing some of the features.
 ## Piggui controlling a Pi Pico with porky
 
 [![Piggui controlling a remote Pi Pico via porky](images/porky.png)](https://youtube.com/shorts/-u8HXCff3Pc?feature=share)
+
+## Piggui connected to Porky with external GPIO Output and Input
+
+[![Piggui connected to Porky with external GPIO Output and Input](images/porky.png)](https://youtu.be/MNJv12FiCwQ)
