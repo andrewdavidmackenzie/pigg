@@ -18,14 +18,14 @@ pub fn view<'a>(
     hardware_target: &HardwareTarget,
 ) -> Element<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
-        None => "No Hardware connected".to_string(),
+        None => "hardware: none".to_string(),
         Some(model) => match hardware_target {
-            NoHW => "No Hardware connected".to_string(),
-            Local => format!("{}@Local", model),
+            NoHW => "hardware: none".to_string(),
+            Local => format!("hardware: {}@Local", model),
             #[cfg(feature = "iroh")]
-            Iroh(_, _) => format!("{}@Remote", model),
+            Iroh(_, _) => format!("hardware: {}@Remote", model),
             #[cfg(feature = "tcp")]
-            Tcp(_, _) => format!("{}@Remote", model),
+            Tcp(_, _) => format!("hardware: {}@Remote", model),
         },
     };
 
@@ -33,7 +33,7 @@ pub fn view<'a>(
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
     let disconnect: Item<'a, Message, _, _> = Item::new(
-        Button::new("Disconnect from Hardware")
+        Button::new("Disconnect")
             .width(Length::Fill)
             .on_press(Message::ConnectRequest(NoHW))
             .style(MENU_BUTTON_STYLE.get_button_style()),
@@ -51,14 +51,14 @@ pub fn view<'a>(
 
     #[cfg(not(target_arch = "wasm32"))]
     let connect_local: Item<'a, Message, _, _> = Item::new(
-        Button::new("Connect to local Hardware")
+        Button::new("Connect to local")
             .on_press(Message::ConnectRequest(Local))
             .style(MENU_BUTTON_STYLE.get_button_style())
             .width(Length::Fill),
     );
 
     let show_details = Item::new(
-        Button::new(Text::new("Show Hardware Details..."))
+        Button::new(Text::new("Show details..."))
             .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
             .style(MENU_BUTTON_STYLE.get_button_style()),
