@@ -69,7 +69,7 @@
 
         <Package Id='*'
             Keywords='Installer'
-            Description='A Graphical User Interface for interacting with local and remote Raspberry Pi Hardware'
+            Description='A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware'
             Manufacturer='Andrew Mackenzie; Sundaram Krishnan'
             InstallerVersion='450'
             Languages='1033'
