@@ -2,7 +2,7 @@
 name = "pigg"
 version = "0.4.0"
 edition = "2021"
-description = "A Graphical User Interface for interacting with local and remote Raspberry Pi Hardware"
+description = "A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware"
 default-run = "piggui"
 authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>", "Sundaram Krishnan <krishnsundaram@gmail.com>"]
 license = "Apache-2.0"
@@ -134,3 +134,7 @@ x86_64-pc-windows-msvc = "windows-latest"
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
 always_include_features = ["std"]
+
+[package.metadata.docs.rs]
+features = ["iroh", "tcp"]
+rustdoc-args = ["--cfg", "docsrs"]
