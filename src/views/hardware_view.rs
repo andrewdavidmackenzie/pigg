@@ -1,16 +1,3 @@
-use iced::advanced::text::editor::Direction;
-use iced::advanced::text::editor::Direction::{Left, Right};
-use iced::alignment::Horizontal;
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::tooltip::Position;
-use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
-use iced::widget::{container, Tooltip};
-use iced::{Alignment, Color, Element, Length, Task};
-use iced_futures::Subscription;
-use std::cmp::PartialEq;
-use std::collections::HashMap;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::InputPull;
@@ -29,6 +16,19 @@ use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::{Message, Piggui, PinState};
+use iced::advanced::text::editor::Direction;
+use iced::advanced::text::editor::Direction::{Left, Right};
+use iced::alignment::Horizontal;
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::scrollable::Scrollbar;
+use iced::widget::tooltip::Position;
+use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
+use iced::widget::{container, Tooltip};
+use iced::{Alignment, Color, Element, Length, Task};
+use iced_futures::Subscription;
+use std::cmp::PartialEq;
+use std::collections::HashMap;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::hardware_subscription;
 use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
@@ -360,7 +360,7 @@ impl HardwareView {
 
             return scrollable(pin_layout)
                 .direction({
-                    let scrollbar = scrollable::Properties::new().width(10);
+                    let scrollbar = Scrollbar::new().width(10);
                     scrollable::Direction::Both {
                         horizontal: scrollbar,
                         vertical: scrollbar,
