@@ -1,6 +1,5 @@
 use crate::widgets::spinner::circular::StyleSheet;
 use iced::application::Appearance;
-use iced::widget::button;
 use iced::{Color, Theme};
 
 pub struct ButtonStyle {

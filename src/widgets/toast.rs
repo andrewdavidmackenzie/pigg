@@ -422,7 +422,7 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
         &mut self,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn widget::Operation<Message>,
+        operation: &mut dyn Operation<Message>,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
             self.toasts

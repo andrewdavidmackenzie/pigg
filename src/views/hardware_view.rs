@@ -15,7 +15,7 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{Message, Piggui, PinState};
+use crate::{Message, PinState};
 use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::alignment::Horizontal;
