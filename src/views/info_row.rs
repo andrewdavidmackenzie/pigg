@@ -1,5 +1,5 @@
 use iced::widget::{container, Row};
-use iced::{Color, Command, Element, Length};
+use iced::{Color, Element, Length, Task};
 use iced_futures::Subscription;
 
 use crate::styles::background::SetAppearance;
@@ -45,7 +45,7 @@ impl InfoRow {
     }
 
     /// Update state based on [MessageRowMessage] messages received
-    pub fn update(&mut self, message: MessageRowMessage) -> Command<Message> {
+    pub fn update(&mut self, message: MessageRowMessage) -> Task<Message> {
         self.message_row.update(message)
     }
 

@@ -5,7 +5,7 @@ use iced::futures::channel::mpsc::Sender;
 use iced::widget::tooltip::Position;
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iced::widget::{container, Tooltip};
-use iced::{Alignment, Color, Command, Element, Length};
+use iced::{Alignment, Color, Element, Length, Task};
 use iced_futures::Subscription;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
@@ -287,7 +287,7 @@ impl HardwareView {
         self.update_hw_config();
     }
 
-    pub fn update(&mut self, message: HardwareViewMessage) -> Command<Message> {
+    pub fn update(&mut self, message: HardwareViewMessage) -> Task<Message> {
         match message {
             UpdateCharts => {
                 // Update all the charts of the pins that have an assigned function
@@ -298,7 +298,7 @@ impl HardwareView {
 
             PinFunctionSelected(bcm_pin_number, pin_function) => {
                 self.new_pin_function(bcm_pin_number, pin_function);
-                return Command::perform(empty(), |_| {
+                return Task::perform(empty(), |_| {
                     <Piggui as iced::Application>::Message::ConfigChangesMade
                 });
             }
@@ -313,7 +313,7 @@ impl HardwareView {
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
-                    return Command::perform(empty(), |_| {
+                    return Task::perform(empty(), |_| {
                         <Piggui as iced::Application>::Message::Connected
                     });
                 }
@@ -324,7 +324,7 @@ impl HardwareView {
                         .set_level(level_change);
                 }
                 HardwareEventMessage::Disconnected(message) => {
-                    return Command::perform(empty(), |_| {
+                    return Task::perform(empty(), |_| {
                         <Piggui as iced::Application>::Message::ConnectionError(message)
                     });
                 }
@@ -346,7 +346,7 @@ impl HardwareView {
             Activate(pin_number) => println!("Pin {pin_number} clicked"),
         }
 
-        Command::none()
+        Task::none()
     }
 
     fn hw_view(

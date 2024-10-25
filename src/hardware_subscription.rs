@@ -13,12 +13,12 @@ use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::Receiver;
 use iced::futures::sink::SinkExt;
 use iced::futures::StreamExt;
+use iced::Subscription;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use iced::{
     futures,
     futures::{pin_mut, FutureExt},
 };
-use iced::{subscription, Subscription};
 
 /// This enum describes the states of the subscription
 pub enum HWState {
@@ -43,7 +43,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> Subscription<HardwareEventMessag
     let target = hw_target.clone();
 
     struct Connect;
-    subscription::channel(
+    Subscription::channel(
         std::any::TypeId::of::<Connect>(),
         100,
         move |gui_sender| async move {

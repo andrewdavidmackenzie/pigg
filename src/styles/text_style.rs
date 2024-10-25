@@ -1,12 +1,12 @@
-use iced::widget::text;
-use iced::widget::text::Appearance;
+use crate::widgets::spinner::circular::StyleSheet;
+use iced::application::Appearance;
 use iced::{Color, Theme};
 
 pub struct TextStyle {
     pub text_color: Color,
 }
 
-impl text::StyleSheet for TextStyle {
+impl StyleSheet for TextStyle {
     type Style = Theme;
 
     fn appearance(&self, _style: Self::Style) -> Appearance {

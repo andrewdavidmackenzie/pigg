@@ -1,7 +1,8 @@
-use iced::widget::container;
+use iced::widget::{container, Container};
 
+use crate::widgets::spinner::circular::StyleSheet;
 use crate::Message;
-use iced::theme::Container;
+use iced::application::Appearance;
 use iced::{Background, Color};
 
 #[derive(Default)]
@@ -15,11 +16,11 @@ impl BackgroundColor {
     }
 }
 
-impl container::StyleSheet for BackgroundColor {
+impl StyleSheet for BackgroundColor {
     type Style = iced::Theme;
 
-    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
-        container::Appearance {
+    fn appearance(&self, _style: &Self::Style) -> Appearance {
+        Appearance {
             background: Some(Background::from(self.color)),
             ..Default::default()
         }

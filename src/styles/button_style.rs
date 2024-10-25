@@ -1,3 +1,5 @@
+use crate::widgets::spinner::circular::StyleSheet;
+use iced::application::Appearance;
 use iced::widget::button;
 use iced::{Color, Theme};
 
@@ -9,11 +11,11 @@ pub struct ButtonStyle {
     pub hovered_text_color: Color,
 }
 
-impl button::StyleSheet for ButtonStyle {
+impl StyleSheet for ButtonStyle {
     type Style = Theme;
 
-    fn active(&self, _style: &Self::Style) -> button::Appearance {
-        button::Appearance {
+    fn active(&self, _style: &Self::Style) -> Appearance {
+        Appearance {
             background: Some(iced::Background::Color(self.bg_color)),
             border: iced::Border {
                 color: Color::TRANSPARENT,
@@ -25,8 +27,8 @@ impl button::StyleSheet for ButtonStyle {
         }
     }
 
-    fn hovered(&self, _style: &Self::Style) -> button::Appearance {
-        button::Appearance {
+    fn hovered(&self, _style: &Self::Style) -> Appearance {
+        Appearance {
             background: Some(iced::Background::Color(self.hovered_bg_color)),
             border: iced::Border {
                 color: Color::TRANSPARENT,

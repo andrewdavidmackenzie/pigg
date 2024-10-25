@@ -12,7 +12,7 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{
-    executor, window, Application, Command, Element, Length, Pixels, Settings, Subscription, Theme,
+    executor, window, Application, Element, Length, Pixels, Settings, Subscription, Task, Theme,
 };
 use views::pin_state::PinState;
 
@@ -121,7 +121,7 @@ impl Application for Piggui {
     type Theme = Theme;
     type Flags = ();
 
-    fn new(_flags: ()) -> (Piggui, Command<Message>) {
+    fn new(_flags: ()) -> (Piggui, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
         #[cfg(not(target_arch = "wasm32"))]
@@ -153,7 +153,7 @@ impl Application for Piggui {
             .unwrap_or(String::from("Piggui"))
     }
 
-    fn update(&mut self, message: Message) -> Command<Message> {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             WindowEvent(event) => {
                 if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
@@ -169,7 +169,7 @@ impl Application for Piggui {
             }
 
             MenuBarButtonClicked => {
-                return Command::none();
+                return Task::none();
             }
 
             LayoutChanged(layout) => {
@@ -193,7 +193,7 @@ impl Application for Piggui {
                         &self.hardware_view,
                     );
                 } else {
-                    return Command::batch(vec![pick_and_load()]);
+                    return Task::batch(vec![pick_and_load()]);
                 }
             }
 
@@ -255,7 +255,7 @@ impl Application for Piggui {
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
     /*

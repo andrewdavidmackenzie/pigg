@@ -7,7 +7,7 @@ use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row, Space, Text};
-use iced::{keyboard, window, Color, Command, Element, Event, Length};
+use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
@@ -82,15 +82,11 @@ impl DisplayModal {
         }
     }
 
-    pub fn update(
-        &mut self,
-        message: ModalMessage,
-        hardware_view: &HardwareView,
-    ) -> Command<Message> {
+    pub fn update(&mut self, message: ModalMessage, hardware_view: &HardwareView) -> Task<Message> {
         match message {
             ModalMessage::HideModal => {
                 self.show_modal = false;
-                Command::none()
+                Task::none()
             }
 
             // Display warning for unsaved changes
@@ -103,7 +99,7 @@ impl DisplayModal {
                         .to_string(),
                     load_config: false,
                 });
-                Command::none()
+                Task::none()
             }
 
             // Display hardware information
@@ -115,12 +111,12 @@ impl DisplayModal {
                     body: hardware_view.hw_description().to_string(),
                     is_version: false,
                 });
-                Command::none()
+                Task::none()
             }
 
             ModalMessage::LoadFile => {
                 self.show_modal = false;
-                Command::batch(vec![pick_and_load()])
+                Task::batch(vec![pick_and_load()])
             }
 
             ModalMessage::UnsavedLoadConfigChangesModal => {
@@ -131,7 +127,7 @@ impl DisplayModal {
                         .to_string(),
                     load_config: true,
                 });
-                Command::none()
+                Task::none()
             }
 
             // Display piggui information
@@ -143,14 +139,14 @@ impl DisplayModal {
                     body: crate::views::version::version().to_string(),
                     is_version: true,
                 });
-                Command::none()
+                Task::none()
             }
 
             ModalMessage::OpenRepoLink => {
                 if let Err(e) = webbrowser::open(REPOSITORY) {
                     eprintln!("failed to open project repository: {}", e);
                 }
-                Command::none()
+                Task::none()
             }
 
             // Exits the Application
@@ -162,9 +158,9 @@ impl DisplayModal {
                 ..
             })) => {
                 self.show_modal = false;
-                Command::none()
+                Task::none()
             }
-            _ => Command::none(),
+            _ => Task::none(),
         }
     }
 

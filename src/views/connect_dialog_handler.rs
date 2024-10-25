@@ -28,7 +28,7 @@ use crate::Message;
 use iced::keyboard::key;
 #[allow(unused_imports)]
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Color, Command, Element, Event, Length};
+use iced::{keyboard, Color, Element, Event, Length, Task};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
@@ -169,20 +169,20 @@ impl ConnectDialog {
 
     async fn empty() {}
 
-    pub fn update(&mut self, message: ConnectDialogMessage) -> Command<Message> {
+    pub fn update(&mut self, message: ConnectDialogMessage) -> Task<Message> {
         match message {
             #[cfg(feature = "tcp")]
             ConnectionButtonPressedTcp(ip_address, port_num) => {
                 // Display error when Ip address field is empty
                 if ip_address.trim().is_empty() {
                     self.tcp_connection_error = String::from("Please Enter IP Address");
-                    return Command::none();
+                    return Task::none();
                 }
 
                 // Display error when port number field is empty
                 if port_num.trim().is_empty() {
                     self.tcp_connection_error = String::from("Please Enter Port Number");
-                    return Command::none();
+                    return Task::none();
                 }
 
                 // Validate IP address
@@ -194,7 +194,7 @@ impl ConnectDialog {
                                 self.tcp_connection_error.clear();
 
                                 // Proceed to request connection when the port number is valid
-                                Command::perform(Self::empty(), move |_| {
+                                Task::perform(Self::empty(), move |_| {
                                     Message::ConnectRequest(Tcp(ip, port))
                                 })
                             }
@@ -202,7 +202,7 @@ impl ConnectDialog {
                                 self.tcp_connection_error = format!("Invalid Port Number: {}", e);
                                 self.show_spinner = false;
                                 self.disable_widgets = false;
-                                Command::none()
+                                Task::none()
                             }
                         }
                     }
@@ -210,7 +210,7 @@ impl ConnectDialog {
                         self.tcp_connection_error = format!("Invalid IP Address: {}", err);
                         self.show_spinner = false;
                         self.disable_widgets = false;
-                        Command::none()
+                        Task::none()
                     }
                 };
             }
@@ -219,7 +219,7 @@ impl ConnectDialog {
             ConnectButtonPressedIroh(node_id, url) => {
                 if node_id.trim().is_empty() {
                     self.iroh_connection_error = String::from("Please Enter Node Id");
-                    return Command::none();
+                    return Task::none();
                 }
 
                 return match NodeId::from_str(node_id.as_str().trim()) {
@@ -237,12 +237,12 @@ impl ConnectDialog {
                                     self.show_spinner = false;
                                     self.disable_widgets = false;
                                     self.iroh_connection_error = format!("{}", err);
-                                    return Command::none();
+                                    return Task::none();
                                 }
                             }
                         };
 
-                        Command::perform(Self::empty(), move |_| {
+                        Task::perform(Self::empty(), move |_| {
                             Message::ConnectRequest(Iroh(nodeid, relay_url))
                         })
                     }
@@ -250,7 +250,7 @@ impl ConnectDialog {
                         self.iroh_connection_error = format!("{}", err);
                         self.show_spinner = false;
                         self.disable_widgets = false;
-                        Command::none()
+                        Task::none()
                     }
                 };
             }
@@ -281,7 +281,7 @@ impl ConnectDialog {
 
             HideConnectDialog => {
                 self.hide_modal();
-                Command::none()
+                Task::none()
             }
 
             ModalKeyEvent(event) => {
@@ -304,41 +304,41 @@ impl ConnectDialog {
                         ..
                     }) => {
                         self.hide_modal();
-                        Command::none()
+                        Task::none()
                     }
 
-                    _ => Command::none(),
+                    _ => Task::none(),
                 }
             }
 
             #[cfg(feature = "tcp")]
             IpAddressEntered(ip_addr) => {
                 self.ip_address = ip_addr;
-                Command::none()
+                Task::none()
             }
 
             #[cfg(feature = "tcp")]
             PortNumberEntered(port_num) => {
                 self.port_number = port_num;
-                Command::none()
+                Task::none()
             }
 
             #[cfg(feature = "iroh")]
             NodeIdEntered(node_id) => {
                 self.nodeid = node_id;
-                Command::none()
+                Task::none()
             }
 
             #[cfg(feature = "iroh")]
             RelayURL(relay_url) => {
                 self.relay_url = relay_url;
-                Command::none()
+                Task::none()
             }
 
             ConnectionError(error) => {
                 self.set_error(error);
                 self.enable_widgets_and_hide_spinner();
-                Command::none()
+                Task::none()
             }
         }
     }
