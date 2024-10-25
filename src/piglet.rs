@@ -179,15 +179,11 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
-                    if let Err(e) = tcp_message_loop(tcp_stream?, &mut hw).await {
-                        eprintln!("Tcp connection error: '{e}'");
-                    }
+                    let _ = tcp_message_loop(tcp_stream?, &mut hw).await;
                 },
                 iroh_connection = fused_iroh => {
                     println!("Connected via Iroh");
-                    if let Err(e) = iroh_message_loop(iroh_connection?, &mut hw).await {
-                        eprintln!("Iroh connection error: '{e}'");
-                    }
+                    let _ =  iroh_message_loop(iroh_connection?, &mut hw).await;
                 }
                 complete => {}
             }
