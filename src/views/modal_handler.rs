@@ -1,13 +1,10 @@
 use crate::file_helper::pick_and_load;
-use crate::styles::button_style::ButtonStyle;
-use crate::styles::container_style::ContainerStyle;
-use crate::styles::text_style::TextStyle;
 use crate::views::hardware_view::HardwareView;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row, Space, Text};
-use iced::{keyboard, window, Color, Element, Event, Length, Task};
+use iced::{keyboard, window, Color, Element, Event, Length, Task, Background, Border, Shadow};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
@@ -42,35 +39,80 @@ pub enum ModalMessage {
     OpenRepoLink,
 }
 
-pub(crate) const MODAL_CANCEL_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
+pub(crate) const MODAL_CANCEL_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(0.8, 0.0, 0.0, 1.0))),
+    // bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
     text_color: Color::WHITE,
-    hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
+    border: Border {
+        color: Color::TRANSPARENT,
+        width: 0.0,
+        radius: 2.0.into(),
+    },
+    // hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
+    // hovered_text_color: Color::WHITE,
+    // border_radius: 2.0,
+    shadow: Shadow {
+        color: Color::TRANSPARENT,
+        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        blur_radius: 0.0,
+    },
 };
 
-pub(crate) const MODAL_CONNECT_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
+pub(crate) const MODAL_CONNECT_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(0.0, 1.0, 1.0, 1.0))),
+    // bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
     text_color: Color::BLACK,
-    hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-    hovered_text_color: Color::WHITE,
-    border_radius: 2.0,
+    border: Border {
+        color: Color::TRANSPARENT,
+        width: 0.0,
+        radius: 2.0.into(),
+    },
+    // hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
+    // hovered_text_color: Color::WHITE,
+    // border_radius: 2.0,
+    shadow: Shadow {
+        color: Color::TRANSPARENT,
+        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        blur_radius: 0.0,
+    },
 };
 
-pub(crate) const MODAL_CONTAINER_STYLE: ContainerStyle = ContainerStyle {
-    border_color: Color::WHITE,
-    background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
-    border_radius: 2.0,
-    border_width: 2.0,
+pub(crate) const MODAL_CONTAINER_STYLE: container::Style = container::Style {
+    text_color: Some(Color::BLACK),
+    background: Some(Background::Color(Color::from_rgba(0.0, 0.0, 0.0, 1.0))),
+    border: Border {
+        color: Color::WHITE,
+        width: 2.0,
+        radius: 2.0.into(),
+    },
+    // border_color: Color::WHITE,
+    // // background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
+    // border_radius: 2.0,
+    // border_width: 2.0,
+    shadow: Shadow {
+        color: Color::TRANSPARENT,
+        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        blur_radius: 0.0,
+    },
 };
 
-const HYPERLINK_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::TRANSPARENT,
+const HYPERLINK_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::TRANSPARENT)),
+    // bg_color: Color::TRANSPARENT,
     text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0),
-    border_radius: 2.0,
-    hovered_bg_color: Color::TRANSPARENT,
-    hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0),
+    border: Border {
+        color: Color::TRANSPARENT,
+        width: 0.0,
+        radius: 2.0.into(),
+    },
+    // border_radius: 2.0,
+    // hovered_bg_color: Color::TRANSPARENT,
+    // hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0),
+    shadow: Shadow {
+        color: Color::TRANSPARENT,
+        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        blur_radius: 0.0,
+    },
 };
 
 impl DisplayModal {
@@ -172,8 +214,8 @@ impl DisplayModal {
                 load_config,
             }) => {
                 let mut button_row = Row::new();
-                let text_style = TextStyle {
-                    text_color: Color::new(0.988, 0.686, 0.243, 1.0),
+                let text_style = text::Style {
+                    color: Some(Color::new(0.988, 0.686, 0.243, 1.0)),
                 };
 
                 if *load_config {
@@ -181,12 +223,16 @@ impl DisplayModal {
                         .push(
                             button("Continue and load a new config")
                                 .on_press(Message::ModalHandle(ModalMessage::LoadFile))
-                                .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                                .style(move |theme, status | {
+                                    MODAL_CANCEL_BUTTON_STYLE
+                                }),
                         )
                         .push(
                             button("Return to app")
                                 .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                                .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                                .style(move |theme, status| {
+                                    MODAL_CONNECT_BUTTON_STYLE
+                                }),
                         )
                         .spacing(120);
                 } else {
@@ -194,13 +240,17 @@ impl DisplayModal {
                         .push(
                             button("Exit without saving")
                                 .on_press(Message::ModalHandle(ModalMessage::ExitApp))
-                                .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                                .style(move |theme, status| {
+                                    MODAL_CANCEL_BUTTON_STYLE
+                                }),
                         )
                         .push(Space::new(235, 10))
                         .push(
                             button("Return to app")
                                 .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                                .style(MODAL_CONNECT_BUTTON_STYLE.get_button_style()),
+                                .style(move |theme, status| {
+                                    MODAL_CONNECT_BUTTON_STYLE
+                                }),
                         )
                 }
 
@@ -208,14 +258,18 @@ impl DisplayModal {
                     column![column![
                         text(title.clone())
                             .size(20)
-                            .style(text_style.get_text_color()),
+                            .style(move |theme| {
+                            text_style
+                            }),
                         column![text(body.clone()),].spacing(10),
                         column![button_row].spacing(5),
                     ]
                     .spacing(10)]
                     .spacing(20),
                 )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .style(move |theme| {
+                    MODAL_CONTAINER_STYLE
+                })
                 .width(520)
                 .padding(15)
                 .into()
@@ -225,8 +279,8 @@ impl DisplayModal {
                 body,
                 is_version,
             }) => {
-                let text_style = TextStyle {
-                    text_color: Color::new(0.447, 0.624, 0.812, 1.0),
+                let text_style = text::Style {
+                    color: Some(Color::new(0.447, 0.624, 0.812, 1.0)),
                 };
                 let mut hyperlink_row = Row::new().width(Length::Fill);
                 let mut button_row = Row::new();
@@ -236,20 +290,26 @@ impl DisplayModal {
                         .push(
                             button(Text::new("github"))
                                 .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
-                                .style(HYPERLINK_BUTTON_STYLE.get_button_style()),
+                                .style(move |theme, status| {
+                                    HYPERLINK_BUTTON_STYLE
+                                }),
                         )
                         .align_items(Alignment::Center);
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                            .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                            .style(move |theme, status| {
+                                MODAL_CANCEL_BUTTON_STYLE
+                            }),
                     );
                 } else {
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                            .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                            .style(move |theme, status| {
+                                MODAL_CANCEL_BUTTON_STYLE
+                            }),
                     );
                 }
 
@@ -257,14 +317,18 @@ impl DisplayModal {
                     column![column![
                         text(title.clone())
                             .size(20)
-                            .style(text_style.get_text_color()),
+                            .style(move |theme| {
+                            text_style
+                            }),
                         column![text(body.clone()),].spacing(10),
                         column![button_row].spacing(5),
                     ]
                     .spacing(10)]
                     .spacing(20),
                 )
-                .style(MODAL_CONTAINER_STYLE.get_container_style())
+                .style(move |theme| {
+                    MODAL_CONTAINER_STYLE
+                })
                 .width(520)
                 .padding(15)
                 .into()
