@@ -1,7 +1,6 @@
-use crate::styles::button_style::ButtonStyle;
 use crate::Message;
-use iced::widget::{Button, Text};
-use iced::{Color, Element, Length, Task};
+use iced::widget::{Button, button, Text};
+use iced::{Background, Border, Color, Element, Length, Shadow, Task};
 use iced_futures::Subscription;
 use std::time::Duration;
 
@@ -116,17 +115,30 @@ impl MessageRow {
             }
         };
 
-        let button_style = ButtonStyle {
-            bg_color: Color::TRANSPARENT,
+        let button_style = button::Style {
+            background: Some(Background::Color(Color::TRANSPARENT)),
+            // bg_color: Color::TRANSPARENT,
             text_color,
-            hovered_bg_color: Color::TRANSPARENT,
-            hovered_text_color: Color::WHITE,
-            border_radius: 4.0,
+            border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 4.0.into(),
+            },
+            // hovered_bg_color: Color::TRANSPARENT,
+            // hovered_text_color: Color::WHITE,
+            // border_radius: 4.0,
+            shadow: Shadow {
+                color: Color::TRANSPARENT,
+                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                blur_radius: 0.0,
+            },
         };
 
         Button::new(Text::new(message_text))
             .on_press(MessageRowMessage::ClearStatusMessage)
-            .style(button_style.get_button_style())
+            .style(move |theme, status| {
+                button_style
+            })
             .clip(true)
             .height(iced::Length::Shrink)
             .width(Length::Shrink)
