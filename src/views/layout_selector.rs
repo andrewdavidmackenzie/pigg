@@ -74,7 +74,9 @@ impl LayoutSelector {
                         Button::new("BCP Pin Layout")
                             .width(Length::Fill)
                             .on_press(Message::LayoutChanged(BCMLayout))
-                            .style(MENU_BUTTON_STYLE.get_button_style()),
+                            .style(move |theme, status| {
+                                MENU_BUTTON_STYLE
+                            }),
                     );
                     menu_items.push(show_bcp_layout);
                     Button::new("layout: board")
@@ -84,7 +86,9 @@ impl LayoutSelector {
                         Button::new("Board Pin Layout")
                             .width(Length::Fill)
                             .on_press(Message::LayoutChanged(BoardLayout))
-                            .style(MENU_BUTTON_STYLE.get_button_style()),
+                            .style(move |theme, status| {
+                                MENU_BUTTON_STYLE
+                            }),
                     );
                     menu_items.push(show_physical_layout);
 
@@ -94,7 +98,9 @@ impl LayoutSelector {
             .style(MENU_BAR_BUTTON_STYLE.get_button_style())
             .on_press(Message::MenuBarButtonClicked)
         } else {
-            Button::new("layout").style(MENU_BAR_BUTTON_STYLE.get_button_style())
+            Button::new("layout").style(move |theme, status| {
+                MENU_BAR_BUTTON_STYLE
+            })
         };
 
         let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
