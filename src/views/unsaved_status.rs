@@ -1,7 +1,6 @@
-use crate::styles::button_style::ButtonStyle;
 use crate::Message;
-use iced::widget::Button;
-use iced::{Color, Length};
+use iced::widget::{button,Button};
+use iced::{Border, Color, Length, Shadow};
 
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use iced::{Background, Element, Renderer, Theme};
@@ -10,12 +9,23 @@ use iced_aw::menu::StyleSheet;
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_aw::style::MenuBarStyle;
 
-pub(crate) const MENU_BAR_UNSAVED_BUTTON_STYLE: ButtonStyle = ButtonStyle {
-    bg_color: Color::TRANSPARENT,
+pub(crate) const MENU_BAR_UNSAVED_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::TRANSPARENT)),
+    // bg_color: Color::TRANSPARENT,
     text_color: Color::from_rgba(1.0, 0.647, 0.0, 0.7),
-    hovered_bg_color: Color::TRANSPARENT,
-    hovered_text_color: Color::from_rgba(1.0, 0.647, 0.0, 1.0),
-    border_radius: 2.0,
+    border: Border {
+        color: Color::TRANSPARENT,
+        width: 0.0,
+        radius: 2.0.into(),
+    },
+    // hovered_bg_color: Color::TRANSPARENT,
+    // hovered_text_color: Color::from_rgba(1.0, 0.647, 0.0, 1.0),
+    // border_radius: 2.0,
+    shadow: Shadow {
+        color: Color::TRANSPARENT,
+        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        blur_radius: 0.0,
+    },
 };
 
 /// Create the view that represents the status of unsaved changes in the info row
@@ -26,7 +36,9 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Load config from...")
             .width(Length::Fill)
             .on_press(Message::Load)
-            .style(MENU_BUTTON_STYLE.get_button_style()),
+            .style(move |theme, status | {
+                MENU_BUTTON_STYLE
+            }),
     );
 
     menu_items.push(load_from);
