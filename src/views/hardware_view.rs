@@ -786,7 +786,7 @@ fn create_pin_view_side<'a>(
     // Create the pin itself, with number and as a button
     let pin_button = button(container(Text::new(pin_description.bpn.to_string())).align_x(Center))
         .width(Length::Fixed(PIN_BUTTON_WIDTH))
-        .style(move |theme, status| get_pin_style(pin_description))
+        .style(move |_, _| get_pin_style(pin_description))
         .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
