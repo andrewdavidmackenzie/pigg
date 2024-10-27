@@ -158,11 +158,12 @@ impl Piggui {
                             .modal_handler
                             .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
                     } else {
-                        return window::close(window::Id::MAIN);
+                        return window::get_latest().and_then(window::close);
                     }
                 }
             }
 
+            // TODO this could be removed no?
             MenuBarButtonClicked => {
                 return Task::none();
             }
