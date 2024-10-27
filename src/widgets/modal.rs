@@ -10,13 +10,13 @@ use iced::{Bottom, Color, Element, Fill, Subscription, Task};
 use std::fmt;
 
 pub fn main() -> iced::Result {
-    iced::application("Modal - Iced", App::update, App::view)
-        .subscription(App::subscription)
+    iced::application("Modal - Iced", Modal::update, Modal::view)
+        .subscription(Modal::subscription)
         .run()
 }
 
 #[derive(Default)]
-struct App {
+pub(crate) struct Modal {
     show_modal: bool,
     email: String,
     password: String,
@@ -34,7 +34,7 @@ enum Message {
     Event(Event),
 }
 
-impl App {
+impl Modal {
     fn subscription(&self) -> Subscription<Message> {
         event::listen().map(Message::Event)
     }
@@ -159,7 +159,7 @@ impl App {
     }
 }
 
-impl App {
+impl Modal {
     fn hide_modal(&mut self) {
         self.show_modal = false;
         self.email.clear();
