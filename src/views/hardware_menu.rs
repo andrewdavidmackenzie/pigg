@@ -8,7 +8,7 @@ use crate::{Message, ModalMessage};
 use iced::widget::{Button, Text};
 use iced::{Background, Border, Color, Element, Length, Padding, Renderer, Shadow, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::menu_bar;
+use iced_aw::style::{menu_bar, Status};
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
@@ -103,12 +103,12 @@ pub fn view<'a>(
     // TODO define Style as a const like MENU_BAR_BUTTON_STYLE
     // which is an unused import right now?
     MenuBar::new(vec![menu_root])
-        .style(|theme: &iced::Theme| menu_bar::Style {
+        .style(|theme: &iced::Theme, _status: Status| menu_bar::Style {
             bar_background: Background::Color(Color::TRANSPARENT),
             bar_border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 2.0,
+                radius: 2.0.into(),
             },
             bar_shadow: Shadow {
                 color: Color::TRANSPARENT,

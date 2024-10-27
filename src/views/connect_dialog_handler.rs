@@ -502,7 +502,7 @@ impl ConnectDialog {
                     .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(160)
-            .align_items(iced::Alignment::Center)
+            .align_y(iced::Alignment::Center)
     }
 
     #[cfg(feature = "iroh")]
@@ -522,7 +522,7 @@ impl ConnectDialog {
                     .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(360)
-            .align_items(iced::Alignment::Center)
+            .align_y(iced::Alignment::Center)
     }
 
     #[cfg(feature = "tcp")]
@@ -542,7 +542,7 @@ impl ConnectDialog {
                     .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(360)
-            .align_items(iced::Alignment::Center)
+            .align_y(iced::Alignment::Center)
     }
 
     #[cfg(feature = "iroh")]

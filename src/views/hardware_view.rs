@@ -470,7 +470,7 @@ impl HardwareView {
     ) -> Element<'a, Message> {
         let hw_column = Column::new()
             .push(self.hw_view(layout, hardware_target).map(Message::Hardware))
-            .align_items(Alignment::Center)
+            .align_x(Alignment::Center)
             .height(Length::Fill)
             .width(Length::Fill);
 
@@ -517,7 +517,7 @@ impl HardwareView {
                 column = column
                     .push(pin_row)
                     .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
-                    .align_items(Alignment::Center);
+                    .align_x(Alignment::Center);
             }
         }
 
@@ -555,7 +555,7 @@ impl HardwareView {
                 .push(left_row)
                 .push(right_row)
                 .spacing(BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS)
-                .align_items(Alignment::Center);
+                .align_y(Alignment::Center);
 
             column = column
                 .push(row)
@@ -563,7 +563,7 @@ impl HardwareView {
                     Length::Fixed(1.0),
                     Length::Fixed(VERTICAL_SPACE_BETWEEN_PIN_ROWS),
                 ))
-                .align_items(Alignment::Center);
+                .align_x(Alignment::Center);
         }
 
         column.into()
@@ -688,7 +688,7 @@ fn get_pin_widget<'a>(
 
     row.width(Length::Fixed(PIN_WIDGET_ROW_WIDTH))
         .spacing(WIDGET_ROW_SPACING)
-        .align_items(Alignment::Center)
+        .align_y(Alignment::Center)
         .into()
 }
 
@@ -739,10 +739,10 @@ fn create_pin_view_side<'a>(
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
         .width(Length::Fixed(PIN_OPTION_WIDTH))
-        .align_items(Alignment::Center);
+        .align_x(Alignment::Center);
 
     if let Some(bcm_pin_number) = pin_description.bcm {
-        let mut pin_options_row = Row::new().align_items(Alignment::Center);
+        let mut pin_options_row = Row::new().align_y(Alignment::Center);
 
         // Filter options
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
@@ -765,17 +765,17 @@ fn create_pin_view_side<'a>(
 
     let mut pin_name_column = Column::new()
         .width(Length::Fixed(PIN_NAME_WIDTH))
-        .align_items(Alignment::Center);
+        .align_x(Alignment::Center);
 
     // Create the Pin name
     let pin_name = Row::new()
         .push(Text::new(pin_description.name.to_string()))
-        .align_items(Alignment::Center);
+        .align_y(Alignment::Center);
 
     pin_name_column = pin_name_column.push(pin_name).width(PIN_NAME_WIDTH);
 
     let mut pin_arrow = Row::new()
-        .align_items(Alignment::Center)
+        .align_y(Alignment::Center)
         .width(Length::Fixed(PIN_ARROW_WIDTH));
 
     if direction == Left {
@@ -786,7 +786,7 @@ fn create_pin_view_side<'a>(
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
     }
 
-    let mut pin_button_column = Column::new().align_items(Alignment::Center);
+    let mut pin_button_column = Column::new().align_x(Alignment::Center);
     // Create the pin itself, with number and as a button
     let pin_button =
         button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
@@ -800,20 +800,19 @@ fn create_pin_view_side<'a>(
         Row::new()
             .push(pin_widget)
             .push(pin_option)
-            .push(pin_name_column.align_items(Alignment::End))
+            .push(pin_name_column.align_y(Alignment::End))
             .push(pin_arrow)
             .push(pin_button_column)
     } else {
         Row::new()
             .push(pin_button_column)
             .push(pin_arrow)
-            .push(pin_name_column.align_items(Alignment::Start))
+            .push(pin_name_column.align_y(Alignment::Start))
             .push(pin_option)
             .push(pin_widget)
     };
 
-    row.align_items(Alignment::Center)
-        .spacing(WIDGET_ROW_SPACING)
+    row.align_y(Alignment::Center).spacing(WIDGET_ROW_SPACING)
 }
 
 #[cfg(test)]

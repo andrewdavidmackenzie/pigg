@@ -11,7 +11,7 @@ use iced::mouse;
 use iced::theme;
 use iced::widget::{button, column, container, horizontal_rule, horizontal_space, row, text};
 use iced::window;
-use iced::{Fill,Alignment, Element, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
+use iced::{Alignment, Element, Fill, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
 
 pub const DEFAULT_TIMEOUT: u64 = u64::MAX / 3;
 
@@ -79,7 +79,7 @@ where
                             horizontal_space(),
                             button("X").on_press((on_close)(index)).padding(3),
                         ]
-                        .align_items(Alignment::Center)
+                        .align_y(Alignment::Center)
                     )
                     .width(Length::Fill)
                     .padding(5)
@@ -179,12 +179,9 @@ impl<'a, Message> Widget<Message, Theme, Renderer> for Manager<'a, Message> {
         operation: &mut dyn Operation,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
-            self.content.as_widget().operate(
-                &mut state.children[0],
-                layout,
-                renderer,
-                operation,
-            );
+            self.content
+                .as_widget()
+                .operate(&mut state.children[0], layout, renderer, operation);
         });
     }
 
@@ -277,11 +274,9 @@ impl<'a, Message> Widget<Message, Theme, Renderer> for Manager<'a, Message> {
                 timeout_secs: self.timeout_secs,
             }))
         });
-        let overlays =
-            content.into_iter().chain(toasts).collect::<Vec<_>>();
+        let overlays = content.into_iter().chain(toasts).collect::<Vec<_>>();
 
-        (!overlays.is_empty())
-            .then(|| overlay::Group::with_children(overlays).overlay())
+        (!overlays.is_empty()).then(|| overlay::Group::with_children(overlays).overlay())
     }
 }
 
@@ -294,14 +289,8 @@ struct Overlay<'a, 'b, Message> {
     timeout_secs: u64,
 }
 
-impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer>
-for Overlay<'a, 'b, Message>
-{
-    fn layout(
-        &mut self,
-        renderer: &Renderer,
-        bounds: Size,
-    ) -> layout::Node {
+impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a, 'b, Message> {
+    fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
         let limits = layout::Limits::new(Size::ZERO, bounds);
 
         layout::flex::resolve(
@@ -316,7 +305,7 @@ for Overlay<'a, 'b, Message>
             self.toasts,
             self.state,
         )
-            .translate(Vector::new(self.position.x, self.position.y))
+        .translate(Vector::new(self.position.x, self.position.y))
     }
 
     fn on_event(
@@ -331,28 +320,26 @@ for Overlay<'a, 'b, Message>
         if let Event::Window(window::Event::RedrawRequested(now)) = &event {
             let mut next_redraw: Option<window::RedrawRequest> = None;
 
-            self.instants.iter_mut().enumerate().for_each(
-                |(index, maybe_instant)| {
+            self.instants
+                .iter_mut()
+                .enumerate()
+                .for_each(|(index, maybe_instant)| {
                     if let Some(instant) = maybe_instant.as_mut() {
-                        let remaining =
-                            Duration::from_secs(self.timeout_secs)
-                                .saturating_sub(instant.elapsed());
+                        let remaining = Duration::from_secs(self.timeout_secs)
+                            .saturating_sub(instant.elapsed());
 
                         if remaining == Duration::ZERO {
                             maybe_instant.take();
                             shell.publish((self.on_close)(index));
-                            next_redraw =
-                                Some(window::RedrawRequest::NextFrame);
+                            next_redraw = Some(window::RedrawRequest::NextFrame);
                         } else {
-                            let redraw_at =
-                                window::RedrawRequest::At(*now + remaining);
+                            let redraw_at = window::RedrawRequest::At(*now + remaining);
                             next_redraw = next_redraw
                                 .map(|redraw| redraw.min(redraw_at))
                                 .or(Some(redraw_at));
                         }
                     }
-                },
-            );
+                });
 
             if let Some(redraw) = next_redraw {
                 shell.request_redraw(redraw);
@@ -408,9 +395,9 @@ for Overlay<'a, 'b, Message>
             .zip(self.state.iter())
             .zip(layout.children())
         {
-            child.as_widget().draw(
-                state, renderer, theme, style, layout, cursor, &viewport,
-            );
+            child
+                .as_widget()
+                .draw(state, renderer, theme, style, layout, cursor, &viewport);
         }
     }
 
@@ -445,20 +432,15 @@ for Overlay<'a, 'b, Message>
             .zip(self.state.iter())
             .zip(layout.children())
             .map(|((child, state), layout)| {
-                child.as_widget().mouse_interaction(
-                    state, layout, cursor, viewport, renderer,
-                )
+                child
+                    .as_widget()
+                    .mouse_interaction(state, layout, cursor, viewport, renderer)
             })
             .max()
             .unwrap_or_default()
     }
 
-    fn is_over(
-        &self,
-        layout: Layout<'_>,
-        _renderer: &Renderer,
-        cursor_position: Point,
-    ) -> bool {
+    fn is_over(&self, layout: Layout<'_>, _renderer: &Renderer, cursor_position: Point) -> bool {
         layout
             .children()
             .any(|layout| layout.bounds().contains(cursor_position))

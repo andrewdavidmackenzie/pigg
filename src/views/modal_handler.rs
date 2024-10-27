@@ -301,7 +301,7 @@ impl DisplayModal {
                                 .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
                                 .style(move |theme, status| HYPERLINK_BUTTON_STYLE),
                         )
-                        .align_items(Alignment::Center);
+                        .align_y(Alignment::Center);
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
