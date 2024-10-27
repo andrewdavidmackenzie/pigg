@@ -632,16 +632,13 @@ fn get_pin_widget<'a>(
         }
 
         Some(Output(_)) => {
-            let output_toggler = toggler(
-                None,
-                pin_state.get_level().unwrap_or(false as PinLevel),
-                move |b| {
+            let output_toggler = toggler(pin_state.get_level().unwrap_or(false as PinLevel))
+                .on_toggle(move |b| {
                     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
-                },
-            )
-            .size(TOGGLER_SIZE)
-            .style(move |theme, status| toggle_button_style);
+                })
+                .size(TOGGLER_SIZE)
+                .style(move |_theme, _status| toggle_button_style);
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
