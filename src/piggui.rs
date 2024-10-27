@@ -285,8 +285,8 @@ impl Piggui {
             .width(Length::Fill)
             .padding(Padding::new(0.0))
             .align_x(iced::alignment::Horizontal::Center)
-            .center_x()
-            .center_y();
+            .center_x(Length::Fill)
+            .center_y(Length::Fill);
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         if self.connect_dialog.show_modal {
