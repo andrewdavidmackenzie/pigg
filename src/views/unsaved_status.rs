@@ -71,7 +71,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
             bar_border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 2.0,
+                radius: 2.0.into(),
             },
             bar_shadow: Shadow {
                 color: Color::TRANSPARENT,

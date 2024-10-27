@@ -6,7 +6,7 @@ use crate::views::info_row::MENU_BUTTON_STYLE;
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
 use iced::widget::{Button, Text};
-use iced::{Background, Border, Color, Element, Length, Renderer, Shadow, Theme};
+use iced::{Background, Border, Color, Element, Length, Padding, Renderer, Shadow, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_aw::style::menu_bar;
 
@@ -115,12 +115,12 @@ pub fn view<'a>(
                 offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
-            bar_background_expand: [2.0, 2.0, 2.0, 2.0],
+            bar_background_expand: Padding(2.0),
             menu_background: Background::Color(Color::TRANSPARENT),
             menu_border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 2.0,
+                radius: 2.0.into(),
             },
             menu_shadow: iced::Shadow {
                 color: Color::BLACK,
