@@ -98,10 +98,15 @@ libc = "0.2.161"
 rppal = "0.19.0"
 libc = "0.2.161"
 
+[profile.release]
+opt-level = "s"
+lto = "fat"
+panic = "abort"
+strip = "debuginfo"
+
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"
-lto = "thin"
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
