@@ -6,7 +6,7 @@ use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use iced::border::Radius;
 use iced::{Background, Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::{menu_bar, Status};
+use iced_aw::style::menu_bar;
 
 pub(crate) const MENU_BAR_UNSAVED_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
@@ -40,7 +40,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Load config from...")
             .width(Length::Fill)
             .on_press(Message::Load)
-            .style(move |theme, status| MENU_BUTTON_STYLE),
+            .style(move |_, _| MENU_BUTTON_STYLE),
     );
 
     menu_items.push(load_from);
@@ -49,7 +49,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Save config as...")
             .width(Length::Fill)
             .on_press(Message::Save)
-            .style(MENU_BUTTON_STYLE.get_button_style()),
+            .style(|_, _| MENU_BUTTON_STYLE),
     );
 
     if unsaved_changes {
@@ -57,16 +57,15 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
     }
 
     let button = match unsaved_changes {
-        true => Button::new("config: unsaved changes")
-            .style(MENU_BAR_UNSAVED_BUTTON_STYLE.get_button_style()),
-        false => Button::new("config").style(MENU_BAR_BUTTON_STYLE.get_button_style()),
+        true => Button::new("config: unsaved changes").style(|_, _| MENU_BAR_UNSAVED_BUTTON_STYLE),
+        false => Button::new("config").style(|_, _| MENU_BAR_BUTTON_STYLE),
     }
     .on_press(Message::MenuBarButtonClicked);
 
     let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
     MenuBar::new(vec![menu_root])
-        .style(|theme: &iced::Theme, _status: Status| menu_bar::Style {
+        .style(|_, _| menu_bar::Style {
             bar_background: Background::Color(Color::TRANSPARENT),
             bar_border: Border {
                 color: Color::TRANSPARENT,
@@ -85,7 +84,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
                 width: 0.0,
                 radius: 2.0.into(),
             },
-            menu_shadow: iced::Shadow {
+            menu_shadow: Shadow {
                 color: Color::BLACK,
                 offset: iced::Vector::new(1.0, 1.0),
                 blur_radius: 10f32,

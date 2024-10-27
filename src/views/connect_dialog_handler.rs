@@ -511,7 +511,7 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Cancel"))
                     .on_press(Message::ConnectDialog(HideConnectDialog))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                    .style(|_, _| MODAL_CANCEL_BUTTON_STYLE),
             )
             .push(
                 Button::new(Text::new("Connect"))
@@ -519,7 +519,7 @@ impl ConnectDialog {
                         self.nodeid.clone(),
                         self.relay_url.clone(),
                     )))
-                    .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
+                    .style(move |_, _| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(360)
             .align_y(iced::Alignment::Center)
@@ -531,7 +531,7 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Cancel"))
                     .on_press(Message::ConnectDialog(HideConnectDialog))
-                    .style(MODAL_CANCEL_BUTTON_STYLE.get_button_style()),
+                    .style(|_, _| MODAL_CANCEL_BUTTON_STYLE),
             )
             .push(
                 Button::new(Text::new("Connect"))
@@ -539,7 +539,7 @@ impl ConnectDialog {
                         self.ip_address.clone(),
                         self.port_number.clone(),
                     )))
-                    .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
+                    .style(move |_, _| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(360)
             .align_y(iced::Alignment::Center)
