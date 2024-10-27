@@ -12,7 +12,6 @@ use iced::{Background, Color, Element, Event, Length, Radians, Rectangle, Render
 
 use crate::widgets::spinner::easing::{self, Easing};
 
-use plotters_iced::Renderer;
 use std::f32::consts::PI;
 use std::time::Duration;
 
