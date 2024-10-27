@@ -115,7 +115,7 @@ pub fn view<'a>(
                 offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
-            bar_background_expand: Padding(2.0),
+            bar_background_expand: Padding::new(2.0),
             menu_background: Background::Color(Color::TRANSPARENT),
             menu_border: Border {
                 color: Color::TRANSPARENT,
