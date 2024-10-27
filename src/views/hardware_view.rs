@@ -800,14 +800,14 @@ fn create_pin_view_side<'a>(
         Row::new()
             .push(pin_widget)
             .push(pin_option)
-            .push(pin_name_column.align_y(Alignment::End))
+            .push(pin_name_column.align_x(Alignment::End))
             .push(pin_arrow)
             .push(pin_button_column)
     } else {
         Row::new()
             .push(pin_button_column)
             .push(pin_arrow)
-            .push(pin_name_column.align_y(Alignment::Start))
+            .push(pin_name_column.align_x(Alignment::Start))
             .push(pin_option)
             .push(pin_widget)
     };

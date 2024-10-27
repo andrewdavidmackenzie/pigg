@@ -1,6 +1,6 @@
 use iced::border::Radius;
 use iced::widget::{button, container, Row};
-use iced::{Background, Border, Color, Element, Length, Shadow, Task};
+use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
 use iced_futures::Subscription;
 
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
@@ -97,7 +97,7 @@ impl InfoRow {
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)
-                .padding([0.0, 0.0, 0.0, 0.0]),
+                .padding(Padding::new(0.0)),
         )
         .set_background(Color::from_rgb8(40, 40, 40))
         .into()

@@ -1,12 +1,12 @@
 use crate::Message;
 use iced::widget::{button, Button};
-use iced::{Border, Color, Length, Shadow};
+use iced::{Border, Color, Length, Padding, Shadow};
 
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use iced::border::Radius;
 use iced::{Background, Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::menu_bar;
+use iced_aw::style::{menu_bar, Status};
 
 pub(crate) const MENU_BAR_UNSAVED_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
@@ -66,7 +66,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
     let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
     MenuBar::new(vec![menu_root])
-        .style(|theme: &iced::Theme| menu_bar::Style {
+        .style(|theme: &iced::Theme, _status: Status| menu_bar::Style {
             bar_background: Background::Color(Color::TRANSPARENT),
             bar_border: Border {
                 color: Color::TRANSPARENT,
@@ -78,7 +78,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
                 offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
-            bar_background_expand: [2.0, 2.0, 2.0, 2.0],
+            bar_background_expand: Padding::new(2.0),
             menu_background: Background::Color(Color::TRANSPARENT),
             menu_border: Border {
                 color: Color::TRANSPARENT,

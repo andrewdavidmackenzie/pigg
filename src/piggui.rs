@@ -11,7 +11,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{window, Element, Length, Subscription, Task, Theme};
+use iced::{window, Element, Length, Padding, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -283,7 +283,7 @@ impl Piggui {
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding([0.0, 0.0, 0.0, 0.0])
+            .padding(Padding::new(0.0))
             .align_x(iced::alignment::Horizontal::Center)
             .center_x()
             .center_y();

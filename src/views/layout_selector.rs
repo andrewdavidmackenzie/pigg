@@ -1,6 +1,6 @@
 use crate::Message;
 use iced::widget::Button;
-use iced::{Border, Color, Length, Shadow, Size};
+use iced::{Border, Color, Length, Padding, Shadow, Size};
 
 use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
@@ -8,7 +8,7 @@ use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
 use iced::{Background, Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::menu_bar;
+use iced_aw::style::{menu_bar, Status};
 
 /// These are the possible layouts to chose from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -98,7 +98,7 @@ impl LayoutSelector {
         let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
         MenuBar::new(vec![menu_root])
-            .style(|theme: &iced::Theme| menu_bar::Style {
+            .style(|theme: &iced::Theme, _status: Status| menu_bar::Style {
                 bar_background: Background::Color(Color::TRANSPARENT),
                 bar_border: Border {
                     color: Color::TRANSPARENT,
@@ -110,7 +110,7 @@ impl LayoutSelector {
                     offset: iced::Vector { x: 0.0, y: 0.0 },
                     blur_radius: 0.0,
                 },
-                bar_background_expand: [2.0, 2.0, 2.0, 2.0],
+                bar_background_expand: Padding::new(2.0),
                 menu_background: Background::Color(Color::TRANSPARENT),
                 menu_border: Border {
                     color: Color::TRANSPARENT,
