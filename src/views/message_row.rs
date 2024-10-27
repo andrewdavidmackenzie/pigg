@@ -1,5 +1,5 @@
 use crate::Message;
-use iced::widget::{Button, button, Text};
+use iced::widget::{button, Button, Text};
 use iced::{Background, Border, Color, Element, Length, Shadow, Task};
 use iced_futures::Subscription;
 use std::time::Duration;
@@ -129,16 +129,14 @@ impl MessageRow {
             // border_radius: 4.0,
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         };
 
         Button::new(Text::new(message_text))
             .on_press(MessageRowMessage::ClearStatusMessage)
-            .style(move |theme, status| {
-                button_style
-            })
+            .style(move |_theme, _status| button_style)
             .clip(true)
             .height(iced::Length::Shrink)
             .width(Length::Shrink)

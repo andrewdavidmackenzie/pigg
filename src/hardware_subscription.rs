@@ -11,7 +11,6 @@ use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
 use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::Receiver;
-use iced::futures::sink::SinkExt;
 use iced::futures::StreamExt;
 use iced::Subscription;
 #[cfg(any(feature = "iroh", feature = "tcp"))]

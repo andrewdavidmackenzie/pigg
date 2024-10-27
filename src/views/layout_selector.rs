@@ -7,7 +7,6 @@ use crate::views::hardware_view::HardwareTarget::NoHW;
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
 use iced::{Background, Element, Renderer, Theme};
-use iced_aw::menu;
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_aw::style::menu_bar;
 

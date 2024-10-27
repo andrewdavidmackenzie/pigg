@@ -11,9 +11,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{
-    executor, window, Application, Element, Length, Pixels, Settings, Subscription, Task, Theme,
-};
+use iced::{window, Element, Length, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -38,7 +36,6 @@ mod piggui_local_helper;
 #[cfg(feature = "tcp")]
 #[path = "networking/piggui_tcp_helper.rs"]
 mod piggui_tcp_helper;
-mod styles;
 mod views;
 mod widgets;
 
@@ -76,6 +73,26 @@ pub struct Piggui {
     hardware_target: HardwareTarget,
 }
 
+fn main() -> iced::Result {
+    // let window = window::Settings {
+    //     resizable: true,
+    //     exit_on_close_request: false,
+    //     size: LayoutSelector::get_default_window_size(),
+    //     ..Default::default()
+    // };
+
+    // Piggui::run(Settings {
+    //     window,
+    //     default_text_size: Pixels(14.0),
+    //     ..Default::default()
+    // })
+
+    iced::application(Piggui::title, Piggui::update, Piggui::view)
+        .subscription(Piggui::subscription)
+        .window_size((500.0, 800.0))
+        .run_with(Piggui::new)
+}
+
 impl Piggui {
     /// Send a connection error message to the Info Bar
     fn info_connection_error(&mut self, message: String) {
@@ -98,30 +115,8 @@ impl Piggui {
     fn dialog_connection_error(&mut self, message: String) {
         self.connect_dialog.set_error(message);
     }
-}
 
-fn main() -> Result<(), iced::Error> {
-    let window = window::Settings {
-        resizable: true,
-        exit_on_close_request: false,
-        size: LayoutSelector::get_default_window_size(),
-        ..Default::default()
-    };
-
-    Piggui::run(Settings {
-        window,
-        default_text_size: Pixels(14.0),
-        ..Default::default()
-    })
-}
-
-impl Application for Piggui {
-    type Executor = executor::Default;
-    type Message = Message;
-    type Theme = Theme;
-    type Flags = ();
-
-    fn new(_flags: ()) -> (Piggui, Task<Message>) {
+    fn new() -> (Self, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
         #[cfg(not(target_arch = "wasm32"))]
@@ -150,14 +145,14 @@ impl Application for Piggui {
     fn title(&self) -> String {
         self.config_filename
             .clone()
-            .unwrap_or(String::from("Piggui"))
+            .unwrap_or(String::from("piggui"))
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             WindowEvent(event) => {
-                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
-                {
+                //if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
+                if let iced::Event::Window(window::Event::CloseRequested) = event {
                     if self.unsaved_changes {
                         let _ = self
                             .modal_handler

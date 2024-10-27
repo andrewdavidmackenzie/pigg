@@ -1,10 +1,9 @@
 use crate::Message;
-use iced::widget::{button,Button};
+use iced::widget::{button, Button};
 use iced::{Border, Color, Length, Shadow};
 
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use iced::{Background, Element, Renderer, Theme};
-use iced_aw::menu;
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_aw::style::menu_bar;
 
@@ -22,7 +21,7 @@ pub(crate) const MENU_BAR_UNSAVED_BUTTON_STYLE: button::Style = button::Style {
     // border_radius: 2.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
-        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        offset: iced::Vector { x: 0.0, y: 0.0 },
         blur_radius: 0.0,
     },
 };
@@ -35,9 +34,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Load config from...")
             .width(Length::Fill)
             .on_press(Message::Load)
-            .style(move |theme, status | {
-                MENU_BUTTON_STYLE
-            }),
+            .style(move |theme, status| MENU_BUTTON_STYLE),
     );
 
     menu_items.push(load_from);
@@ -80,7 +77,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
             menu_border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 2.0,
+                radius: 2.0.into(),
             },
             menu_shadow: iced::Shadow {
                 color: Color::BLACK,

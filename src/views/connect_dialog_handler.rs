@@ -25,7 +25,7 @@ use crate::Message;
 use iced::keyboard::key;
 #[allow(unused_imports)]
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Color, Element, Event, Length, Task, Background, Shadow};
+use iced::{keyboard, Background, Color, Element, Event, Length, Shadow, Task};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
@@ -38,9 +38,9 @@ const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure piglet i
 #[cfg(feature = "tcp")]
 const TCP_INFO_TEXT: &str = "To connect to a Pi/Pi Pico using TCP, ensure it is reachable over the network. Retrieve the device's IP address and the port number from it (see piglet or porky docs) and enter below.";
 
-use std::sync::LazyLock;
 use iced::widget::button;
 use iced_futures::core::Border;
+use std::sync::LazyLock;
 
 #[cfg(feature = "tcp")]
 static TCP_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
@@ -65,7 +65,7 @@ const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
     // border_radius: 10.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
-        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        offset: iced::Vector { x: 0.0, y: 0.0 },
         blur_radius: 0.0,
     },
 };
@@ -81,14 +81,14 @@ const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 1.0,
-        radius: 2.0.into()
+        radius: 2.0.into(),
     },
     // hovered_bg_color: Color::BLACK,
     // hovered_text_color: Color::WHITE,
     // border_radius: 4.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
-        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        offset: iced::Vector { x: 0.0, y: 0.0 },
         blur_radius: 0.0,
     },
 };
@@ -100,14 +100,14 @@ const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 1.0,
-        radius: 4.0.into()
+        radius: 4.0.into(),
     },
     // hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
     // hovered_text_color: Color::WHITE,
     // border_radius: 4.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
-        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        offset: iced::Vector { x: 0.0, y: 0.0 },
         blur_radius: 0.0,
     },
 };
@@ -126,7 +126,7 @@ const TAB_BAR_STYLE: container::Style = container::Style {
     // border_radius: 0.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
-        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        offset: iced::Vector { x: 0.0, y: 0.0 },
         blur_radius: 0.0,
     },
 };
@@ -290,7 +290,7 @@ impl ConnectDialog {
                         };
 
                         Task::perform(Self::empty(), move |_| {
-                            Message::ConnectRequest(Iroh(nodeid, relay_url))
+                            Message::ConnectRequest(Iroh(nodeid, relay_url.clone()))
                         })
                     }
                     Err(err) => {
@@ -469,9 +469,7 @@ impl ConnectDialog {
         Row::new()
             .push(
                 Button::new(Text::new("Cancel"))
-                    .style(move |_theme, _status| {
-                        ACTIVE_TAB_BUTTON_STYLE
-                    }),
+                    .style(move |_theme, _status| ACTIVE_TAB_BUTTON_STYLE),
             )
             .push(
                 Circular::new()
@@ -480,9 +478,7 @@ impl ConnectDialog {
             )
             .push(
                 Button::new(Text::new("Connect"))
-                    .style(move | theme, status| {
-                        MODAL_CONNECT_BUTTON_STYLE
-                    }),
+                    .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(160)
             .align_items(iced::Alignment::Center)
@@ -502,9 +498,7 @@ impl ConnectDialog {
                         self.nodeid.clone(),
                         self.relay_url.clone(),
                     )))
-                    .style(move | theme, status| {
-                        MODAL_CONNECT_BUTTON_STYLE
-                    }),
+                    .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(360)
             .align_items(iced::Alignment::Center)
@@ -524,9 +518,7 @@ impl ConnectDialog {
                         self.ip_address.clone(),
                         self.port_number.clone(),
                     )))
-                    .style(move |theme, status| {
-                        MODAL_CONNECT_BUTTON_STYLE
-                    }),
+                    .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(360)
             .align_items(iced::Alignment::Center)
@@ -534,25 +526,17 @@ impl ConnectDialog {
 
     #[cfg(feature = "iroh")]
     fn create_text_container_iroh(&self) -> Element<'_, Message> {
-        container(Text::new(IROH_INFO_TEXT).style(move |theme| {
-            INFO_TEXT_STYLE
-        }))
+        container(Text::new(IROH_INFO_TEXT).style(move |_theme| INFO_TEXT_STYLE))
             .padding(10)
-            .style(move |theme| {
-                TEXT_BOX_CONTAINER_STYLE
-            })
+            .style(move |_theme| TEXT_BOX_CONTAINER_STYLE)
             .into()
     }
 
     #[cfg(feature = "tcp")]
     fn create_tcp_text_container(&self) -> Element<'_, Message> {
-        container(Text::new(TCP_INFO_TEXT).style(move |theme| {
-            INFO_TEXT_STYLE
-        }))
+        container(Text::new(TCP_INFO_TEXT).style(move |_theme| INFO_TEXT_STYLE))
             .padding(10)
-            .style(move |theme| {
-                TEXT_BOX_CONTAINER_STYLE
-            })
+            .style(move |_theme| TEXT_BOX_CONTAINER_STYLE)
             .into()
     }
 
@@ -567,9 +551,7 @@ impl ConnectDialog {
                     column![
                         self.create_text_container_iroh(),
                         text(self.iroh_connection_error.clone())
-                            .style(move |theme| {
-                                 CONNECTION_ERROR_DISPLAY
-                        }),
+                            .style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
                         text("Node Id").size(12),
                         {
                             let mut node_input = text_input("Enter node id", &self.nodeid)
@@ -616,9 +598,7 @@ impl ConnectDialog {
             ]
             .spacing(20),
         )
-        .style(move |_theme| {
-            MODAL_CONTAINER_STYLE
-        })
+        .style(move |_theme| MODAL_CONTAINER_STYLE)
         .width(520)
         .padding(15)
         .into()
@@ -635,9 +615,7 @@ impl ConnectDialog {
                     column![
                         self.create_tcp_text_container(),
                         text(self.tcp_connection_error.clone())
-                            .style(move | theme | {
-                            CONNECTION_ERROR_DISPLAY
-                        }),
+                            .style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
                         text("IP Address").size(12),
                         {
                             let mut ip_input = text_input("Enter IP Address", &self.ip_address)
@@ -685,9 +663,7 @@ impl ConnectDialog {
             ]
             .spacing(20),
         )
-        .style(|theme| {
-            MODAL_CONTAINER_STYLE
-        })
+        .style(|_theme| MODAL_CONTAINER_STYLE)
         .width(520)
         .padding(15)
         .into()
@@ -696,15 +672,9 @@ impl ConnectDialog {
     fn create_tab_buttons(&self, is_iroh_active: bool) -> Element<'_, Message> {
         #[allow(unused_variables)]
         let (iroh_style, tcp_style) = if is_iroh_active {
-            (
-                ACTIVE_TAB_BUTTON_STYLE,
-                INACTIVE_TAB_BUTTON_STYLE,
-            )
+            (ACTIVE_TAB_BUTTON_STYLE, INACTIVE_TAB_BUTTON_STYLE)
         } else {
-            (
-                INACTIVE_TAB_BUTTON_STYLE,
-                ACTIVE_TAB_BUTTON_STYLE,
-            )
+            (INACTIVE_TAB_BUTTON_STYLE, ACTIVE_TAB_BUTTON_STYLE)
         };
 
         let button_row = Row::new().spacing(5);
@@ -713,9 +683,7 @@ impl ConnectDialog {
         let button_row = button_row.push(
             Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
                 .on_press(Message::ConnectDialog(DisplayIrohTab))
-                .style(move | theme, status| {
-                    iroh_style
-                })
+                .style(move |_theme, _status| iroh_style)
                 .width(Length::Fixed(260f32)),
         );
 
@@ -723,16 +691,12 @@ impl ConnectDialog {
         let button_row = button_row.push(
             Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
                 .on_press(Message::ConnectDialog(DisplayTcpTab))
-                .style(move |theme, status| {
-                    tcp_style
-                })
+                .style(move |_theme, _status| tcp_style)
                 .width(Length::Fixed(260f32)),
         );
 
         container(button_row)
-            .style(move |theme| {
-                TAB_BAR_STYLE
-            })
+            .style(move |_theme| TAB_BAR_STYLE)
             .into()
     }
 }

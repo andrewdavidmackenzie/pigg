@@ -1,5 +1,5 @@
 use crate::{Message, ModalMessage};
-use iced::widget::{Button, button, Text};
+use iced::widget::{button, Button, Text};
 use iced::{Background, Border, Color, Element, Shadow};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -42,7 +42,7 @@ pub fn version_button() -> Element<'static, Message> {
         // border_radius: 4.0,
         shadow: Shadow {
             color: Color::TRANSPARENT,
-            offset:  iced::Vector { x: 0.0, y: 0.0 },
+            offset: iced::Vector { x: 0.0, y: 0.0 },
             blur_radius: 0.0,
         },
     };
@@ -50,8 +50,6 @@ pub fn version_button() -> Element<'static, Message> {
         .on_press(Message::ModalHandle(ModalMessage::VersionModal))
         .clip(true)
         .height(iced::Length::Shrink)
-        .style(move |theme, status | {
-            about_button_style
-        })
+        .style(move |_theme, _status| about_button_style)
         .into()
 }

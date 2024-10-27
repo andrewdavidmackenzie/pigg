@@ -110,7 +110,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::BLACK,
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -128,7 +128,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::BLACK,
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -146,7 +146,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::BLACK,
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -165,7 +165,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -184,7 +184,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -203,7 +203,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -222,7 +222,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -240,7 +240,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             // hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
             shadow: Shadow {
                 color: Color::TRANSPARENT,
-                offset:  iced::Vector { x: 0.0, y: 0.0 },
+                offset: iced::Vector { x: 0.0, y: 0.0 },
                 blur_radius: 0.0,
             },
         },
@@ -406,7 +406,9 @@ impl HardwareView {
                         .set_level(level_change);
                 }
                 HardwareEventMessage::Disconnected(message) => {
-                    return Task::perform(empty(), |_| Message::ConnectionError(message));
+                    return Task::perform(empty(), move |_| {
+                        Message::ConnectionError(message.clone())
+                    });
                 }
             },
 
@@ -607,10 +609,10 @@ fn get_pin_widget<'a>(
         foreground: Color::new(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
         foreground_border_width: 1.0,
         foreground_border_color: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
-        // active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
-        // active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
-        // active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
-        // active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
+                                                                 // active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
+                                                                 // active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
+                                                                 // active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
+                                                                 // active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
     };
 
     let row: Row<HardwareViewMessage> = match pin_function {
@@ -639,10 +641,7 @@ fn get_pin_widget<'a>(
                 },
             )
             .size(TOGGLER_SIZE)
-            .style(move |theme, status | {
-                toggle_button_style
-            });
-
+            .style(move |theme, status| toggle_button_style);
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
@@ -792,9 +791,7 @@ fn create_pin_view_side<'a>(
     let pin_button =
         button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
             .width(Length::Fixed(PIN_BUTTON_WIDTH))
-            .style(move |theme, status| {
-                get_pin_style(pin_description)
-            })
+            .style(move |theme, status| get_pin_style(pin_description))
             .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
