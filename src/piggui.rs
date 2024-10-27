@@ -11,7 +11,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{window, Element, Length, Padding, Subscription, Task, Theme};
+use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -74,22 +74,19 @@ pub struct Piggui {
 }
 
 fn main() -> iced::Result {
-    // let window = window::Settings {
-    //     resizable: true,
-    //     exit_on_close_request: false,
-    //     size: LayoutSelector::get_default_window_size(),
-    //     ..Default::default()
-    // };
-
-    // Piggui::run(Settings {
-    //     window,
-    //     default_text_size: Pixels(14.0),
-    //     ..Default::default()
-    // })
+    let settings = Settings {
+        id: Some("piggui".into()),
+        default_text_size: Pixels(14.0),
+        ..Default::default()
+    };
 
     iced::application(Piggui::title, Piggui::update, Piggui::view)
         .subscription(Piggui::subscription)
         .window_size((500.0, 800.0))
+        .exit_on_close_request(false)
+        .resizable(true)
+        .settings(settings)
+        .window_size(LayoutSelector::get_default_window_size())
         .run_with(Piggui::new)
 }
 
