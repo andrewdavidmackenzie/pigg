@@ -16,13 +16,12 @@ use crate::widgets::{circle::circle, line::line};
 use crate::{Message, PinState};
 use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
-use iced::alignment::Horizontal;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::tooltip::Position;
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iced::widget::{container, Tooltip};
-use iced::{Alignment, Background, Border, Color, Element, Length, Shadow, Task};
+use iced::{Alignment, Background, Border, Center, Color, Element, Length, Shadow, Task};
 use iced_futures::Subscription;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
@@ -785,11 +784,10 @@ fn create_pin_view_side<'a>(
 
     let mut pin_button_column = Column::new().align_x(Alignment::Center);
     // Create the pin itself, with number and as a button
-    let pin_button =
-        button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
-            .width(Length::Fixed(PIN_BUTTON_WIDTH))
-            .style(move |theme, status| get_pin_style(pin_description))
-            .on_press(Activate(pin_description.bpn));
+    let pin_button = button(container(Text::new(pin_description.bpn.to_string())).align_x(Center))
+        .width(Length::Fixed(PIN_BUTTON_WIDTH))
+        .style(move |theme, status| get_pin_style(pin_description))
+        .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
