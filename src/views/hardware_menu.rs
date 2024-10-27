@@ -3,12 +3,9 @@ use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
 use iced::widget::{Button, Text};
-use iced::{Background, Color, Element, Length, Renderer, Theme};
-use iced_aw::menu;
-use iced_aw::menu::StyleSheet;
+use iced::{Background, Border, Color, Element, Length, Renderer, Shadow, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::MenuBarStyle;
-
+use iced_aw::style::menu_bar;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
 
@@ -99,7 +96,7 @@ pub fn view<'a>(
         Button::new("Search for Pi's on local network...")
             .width(Length::Fill)
             .style(move |theme, status| {
-                MENU_BUTTON_STYLE
+                MENU_BAR_BUTTON_STYLE
             }),
     ));
 
@@ -113,15 +110,33 @@ pub fn view<'a>(
     );
 
     MenuBar::new(vec![menu_root])
-        .style(|theme: &iced::Theme| menu::Appearance {
+        .style(|theme: &iced::Theme|  menu_bar::Style {
             bar_background: Background::Color(Color::TRANSPARENT),
+            bar_border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 2.0,
+            },
+            bar_shadow: Shadow {
+                color: Color::TRANSPARENT,
+                offset: iced::Vector { x: 0.0, y: 0.0 },
+                blur_radius: 0.0,
+            },
+            bar_background_expand: [2.0, 2.0, 2.0, 2.0],
+            menu_background: Background::Color(Color::TRANSPARENT),
+            menu_border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 2.0,
+            },
             menu_shadow: iced::Shadow {
                 color: Color::BLACK,
                 offset: iced::Vector::new(1.0, 1.0),
                 blur_radius: 10f32,
             },
             menu_background_expand: iced::Padding::from([5, 5]),
-            ..theme.appearance(&MenuBarStyle::Default)
+            path: Background::Color(Color::TRANSPARENT),
+            path_border: Default::default(),
         })
         .into()
 }
