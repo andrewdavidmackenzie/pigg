@@ -6,7 +6,7 @@ use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
-use crate::widgets::modal::Modal;
+use crate::widgets::modal::modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
@@ -291,15 +291,21 @@ impl Piggui {
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         if self.connect_dialog.show_modal {
-            return Modal::new(content, self.connect_dialog.view())
-                .on_blur(ConnectDialog(HideConnectDialog))
-                .into();
+            return modal(
+                content,
+                self.connect_dialog.view(),
+                ConnectDialog(HideConnectDialog),
+            )
+            .into();
         }
 
         if self.modal_handler.show_modal {
-            return Modal::new(content, self.modal_handler.view())
-                .on_blur(ModalHandle(ModalMessage::HideModal))
-                .into();
+            return modal(
+                content,
+                self.modal_handler.view(),
+                ModalHandle(ModalMessage::HideModal),
+            )
+            .into();
         }
 
         content.into()
