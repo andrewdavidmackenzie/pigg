@@ -6,7 +6,6 @@ use iced::border::Radius;
 use iced::keyboard::key;
 use iced::widget::{button, column, container, text, Row, Space, Text};
 use iced::{keyboard, window, Background, Border, Color, Element, Event, Length, Shadow, Task};
-use iced_aw::style::Status;
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
@@ -321,14 +320,14 @@ impl DisplayModal {
                     column![column![
                         text(title.clone())
                             .size(20)
-                            .style(move |theme, _status: Status| { text_style }),
+                            .style(move |_theme| { text_style }),
                         column![text(body.clone()),].spacing(10),
                         column![button_row].spacing(5),
                     ]
                     .spacing(10)]
                     .spacing(20),
                 )
-                .style(move |theme, _status: Status| MODAL_CONTAINER_STYLE)
+                .style(move |_theme| MODAL_CONTAINER_STYLE)
                 .width(520)
                 .padding(15)
                 .into()

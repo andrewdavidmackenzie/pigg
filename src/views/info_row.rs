@@ -99,7 +99,8 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding(Padding::new(0.0)),
         )
-        .set_background(Color::from_rgb8(40, 40, 40))
+        // TODO .set_background(Color::from_rgb8(40, 40, 40))
+        // TODO I guess this needs to go into Style or .background()
         .into()
     }
 
