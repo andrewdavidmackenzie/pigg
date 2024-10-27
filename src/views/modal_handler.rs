@@ -213,7 +213,7 @@ impl DisplayModal {
             }
 
             // Exits the Application
-            ModalMessage::ExitApp => window::close(window::Id::MAIN),
+            ModalMessage::ExitApp => window::get_latest().and_then(window::close),
 
             // When Pressed `Esc` focuses on previous widget and hide modal
             ModalMessage::EscKeyEvent(Event::Keyboard(keyboard::Event::KeyPressed {
