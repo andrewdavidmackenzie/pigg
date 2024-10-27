@@ -33,27 +33,6 @@ impl Status {
     pub const ALL: &'static [Self] = &[Self::Primary, Self::Secondary, Self::Success, Self::Danger];
 }
 
-impl container::StyleSheet for Status {
-    type Style = Theme;
-
-    fn appearance(&self, theme: &Theme) -> container::Appearance {
-        let palette = theme.extended_palette();
-
-        let pair = match self {
-            Status::Primary => palette.primary.weak,
-            Status::Secondary => palette.secondary.weak,
-            Status::Success => palette.success.weak,
-            Status::Danger => palette.danger.weak,
-        };
-
-        container::Appearance {
-            background: Some(pair.color.into()),
-            text_color: pair.text.into(),
-            ..Default::default()
-        }
-    }
-}
-
 impl fmt::Display for Status {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -104,12 +83,16 @@ where
                     )
                     .width(Length::Fill)
                     .padding(5)
-                    .style(theme::Container::Custom(Box::new(toast.status))),
+                    .style(match toast.status {
+                        Status::Primary => primary,
+                        Status::Secondary => secondary,
+                        Status::Success => success,
+                        Status::Danger => danger,
+                    }),
                     horizontal_rule(1),
                     container(text(toast.body.as_str()))
                         .width(Length::Fill)
-                        .padding(5)
-                        .style(theme::Container::Box),
+                        .padding(5),
                 ])
                 .width(550)
                 .into()
@@ -334,7 +317,7 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
-        if let Event::Window(_, window::Event::RedrawRequested(now)) = &event {
+        if let Event::Window(window::Event::RedrawRequested(now)) = &event {
             let mut next_redraw: Option<window::RedrawRequest> = None;
 
             self.instants
@@ -463,7 +446,6 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
             .any(|layout| layout.bounds().contains(cursor_position))
     }
 }
-
 impl<'a, Message> From<Manager<'a, Message>> for Element<'a, Message>
 where
     Message: 'a,
@@ -471,4 +453,36 @@ where
     fn from(manager: Manager<'a, Message>) -> Self {
         Element::new(manager)
     }
+}
+
+fn styled(pair: theme::palette::Pair) -> container::Style {
+    container::Style {
+        background: Some(pair.color.into()),
+        text_color: pair.text.into(),
+        ..Default::default()
+    }
+}
+
+fn primary(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.primary.weak)
+}
+
+fn secondary(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.secondary.weak)
+}
+
+fn success(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.success.weak)
+}
+
+fn danger(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.danger.weak)
 }
