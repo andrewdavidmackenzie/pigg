@@ -7,7 +7,7 @@ use crate::{Message, ModalMessage};
 use iced::widget::{Button, Text};
 use iced::{Background, Border, Color, Element, Length, Padding, Renderer, Shadow, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::{menu_bar, Status};
+use iced_aw::style::menu_bar;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
