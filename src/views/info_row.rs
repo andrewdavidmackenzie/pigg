@@ -1,5 +1,6 @@
-use iced::widget::{container, Row, button};
-use iced::{Border, Background, Color, Element, Length, Task, Shadow};
+use iced::border::Radius;
+use iced::widget::{button, container, Row};
+use iced::{Background, Border, Color, Element, Length, Shadow, Task};
 use iced_futures::Subscription;
 
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
@@ -16,14 +17,19 @@ pub(crate) const MENU_BAR_BUTTON_STYLE: button::Style = button::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 0.0,
-        radius: 2.0.into(),
+        radius: Radius {
+            top_left: 2.0,
+            top_right: 2.0,
+            bottom_right: 2.0,
+            bottom_left: 2.0,
+        },
     },
     // hovered_bg_color: Color::TRANSPARENT,
     // hovered_text_color: Color::WHITE,
     // border_radius: 2.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
-        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        offset: iced::Vector { x: 0.0, y: 0.0 },
         blur_radius: 0.0,
     },
 };
@@ -35,14 +41,19 @@ pub(crate) const MENU_BUTTON_STYLE: button::Style = button::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 0.0,
-        radius: 4.0.into(),
+        radius: Radius {
+            top_left: 4.0,
+            top_right: 4.0,
+            bottom_right: 4.0,
+            bottom_left: 4.0,
+        },
     },
     // hovered_bg_color: Color::TRANSPARENT,
     // hovered_text_color: Color::WHITE,
     // border_radius: 4.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
-        offset:  iced::Vector { x: 0.0, y: 0.0 },
+        offset: iced::Vector { x: 0.0, y: 0.0 },
         blur_radius: 0.0,
     },
 };

@@ -3,6 +3,7 @@ use iced::widget::{button, Button};
 use iced::{Border, Color, Length, Shadow};
 
 use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
+use iced::border::Radius;
 use iced::{Background, Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_aw::style::menu_bar;
@@ -14,7 +15,12 @@ pub(crate) const MENU_BAR_UNSAVED_BUTTON_STYLE: button::Style = button::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 0.0,
-        radius: 2.0.into(),
+        radius: Radius {
+            top_left: 2.0,
+            top_right: 2.0,
+            bottom_right: 2.0,
+            bottom_left: 2.0,
+        },
     },
     // hovered_bg_color: Color::TRANSPARENT,
     // hovered_text_color: Color::from_rgba(1.0, 0.647, 0.0, 1.0),

@@ -38,6 +38,7 @@ const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure piglet i
 #[cfg(feature = "tcp")]
 const TCP_INFO_TEXT: &str = "To connect to a Pi/Pi Pico using TCP, ensure it is reachable over the network. Retrieve the device's IP address and the port number from it (see piglet or porky docs) and enter below.";
 
+use iced::border::Radius;
 use iced::widget::button;
 use iced_futures::core::Border;
 use std::sync::LazyLock;
@@ -57,7 +58,12 @@ const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
     border: Border {
         color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
         width: 2.0,
-        radius: 10.0.into(),
+        radius: Radius {
+            top_left: 10.0,
+            top_right: 10.0,
+            bottom_right: 10.0,
+            bottom_left: 10.0,
+        },
     },
     // border_color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
     // // background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
@@ -81,7 +87,12 @@ const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 1.0,
-        radius: 2.0.into(),
+        radius: Radius {
+            top_left: 2.0,
+            top_right: 2.0,
+            bottom_right: 2.0,
+            bottom_left: 2.0,
+        },
     },
     // hovered_bg_color: Color::BLACK,
     // hovered_text_color: Color::WHITE,
@@ -100,7 +111,12 @@ const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 1.0,
-        radius: 4.0.into(),
+        radius: Radius {
+            top_left: 4.0,
+            top_right: 4.0,
+            bottom_right: 4.0,
+            bottom_left: 4.0,
+        },
     },
     // hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
     // hovered_text_color: Color::WHITE,
@@ -118,7 +134,12 @@ const TAB_BAR_STYLE: container::Style = container::Style {
     border: Border {
         color: Color::TRANSPARENT,
         width: 0.0,
-        radius: 0.0.into(),
+        radius: Radius {
+            top_left: 0.0,
+            top_right: 0.0,
+            bottom_right: 0.0,
+            bottom_left: 0.0,
+        },
     },
     // border_color: Color::TRANSPARENT,
     // background_color: Color::from_rgb(0.2, 0.2, 0.2),
