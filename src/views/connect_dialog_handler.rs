@@ -499,7 +499,7 @@ impl ConnectDialog {
             )
             .push(
                 Button::new(Text::new("Connect"))
-                    .style(move |theme, status| MODAL_CONNECT_BUTTON_STYLE),
+                    .style(move |_theme, _status| MODAL_CONNECT_BUTTON_STYLE),
             )
             .spacing(160)
             .align_y(iced::Alignment::Center)
