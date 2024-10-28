@@ -1,17 +1,16 @@
 use crate::Message;
 use iced::widget::Button;
-use iced::{Border, Color, Length, Padding, Shadow, Size};
+use iced::{Length, Size};
 
 use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE,
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE, MENU_STYLE,
 };
 use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
 use iced::widget::button::Status::Hovered;
-use iced::{Background, Element, Renderer, Theme};
+use iced::{Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::menu_bar;
 
 /// These are the possible layouts to chose from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -109,34 +108,7 @@ impl LayoutSelector {
         let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
         MenuBar::new(vec![menu_root])
-            .style(|_, _| menu_bar::Style {
-                bar_background: Background::Color(Color::TRANSPARENT),
-                bar_border: Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
-                    radius: 2.0.into(),
-                },
-                bar_shadow: Shadow {
-                    color: Color::TRANSPARENT,
-                    offset: iced::Vector { x: 0.0, y: 0.0 },
-                    blur_radius: 0.0,
-                },
-                bar_background_expand: Padding::new(2.0),
-                menu_background: Background::Color(Color::TRANSPARENT),
-                menu_border: Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
-                    radius: 2.0.into(),
-                },
-                menu_shadow: iced::Shadow {
-                    color: Color::BLACK,
-                    offset: iced::Vector::new(1.0, 1.0),
-                    blur_radius: 10f32,
-                },
-                menu_background_expand: iced::Padding::from([5, 5]),
-                path: Background::Color(Color::TRANSPARENT),
-                path_border: Default::default(),
-            })
+            .style(|_, _| MENU_STYLE)
             .into()
     }
 }

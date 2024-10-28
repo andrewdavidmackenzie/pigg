@@ -2,15 +2,14 @@
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE,
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE, MENU_STYLE,
 };
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
 use iced::widget::button::Status::Hovered;
 use iced::widget::{Button, Text};
-use iced::{Background, Border, Color, Element, Length, Padding, Renderer, Shadow, Theme};
+use iced::{Element, Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::menu_bar;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
@@ -111,33 +110,6 @@ pub fn view<'a>(
     // TODO define Style as a const like MENU_BAR_BUTTON_STYLE
     // which is an unused import right now?
     MenuBar::new(vec![menu_root])
-        .style(|_, _| menu_bar::Style {
-            bar_background: Background::Color(Color::TRANSPARENT),
-            bar_border: Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: 2.0.into(),
-            },
-            bar_shadow: Shadow {
-                color: Color::TRANSPARENT,
-                offset: iced::Vector { x: 0.0, y: 0.0 },
-                blur_radius: 0.0,
-            },
-            bar_background_expand: Padding::new(2.0),
-            menu_background: Background::Color(Color::TRANSPARENT),
-            menu_border: Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: 2.0.into(),
-            },
-            menu_shadow: iced::Shadow {
-                color: Color::BLACK,
-                offset: iced::Vector::new(1.0, 1.0),
-                blur_radius: 10f32,
-            },
-            menu_background_expand: iced::Padding::from([5, 5]),
-            path: Background::Color(Color::TRANSPARENT),
-            path_border: Default::default(),
-        })
+        .style(|_, _| MENU_STYLE)
         .into()
 }

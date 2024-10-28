@@ -1,6 +1,7 @@
 use iced::border::Radius;
 use iced::widget::{button, container, Row};
 use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
+use iced_aw::style::menu_bar;
 use iced_futures::Subscription;
 
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
@@ -29,6 +30,12 @@ pub(crate) const MENU_SHADOW: Shadow = Shadow {
     blur_radius: 0.0,
 };
 
+pub(crate) const BLACK_SHADOW: Shadow = Shadow {
+    color: Color::BLACK,
+    offset: iced::Vector::new(1.0, 1.0),
+    blur_radius: 10f32,
+};
+
 pub(crate) const MENU_BAR_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
@@ -54,6 +61,19 @@ pub(crate) const MENU_BUTTON_STYLE: button::Style = button::Style {
     // hovered_bg_color: Color::TRANSPARENT,
     // hovered_text_color: Color::WHITE,
     shadow: MENU_SHADOW,
+};
+
+pub(crate) const MENU_STYLE: menu_bar::Style = menu_bar::Style {
+    bar_background: Background::Color(Color::TRANSPARENT),
+    bar_border: MENU_BORDER,
+    bar_shadow: MENU_SHADOW,
+    bar_background_expand: Padding::new(2.0),
+    menu_background: Background::Color(Color::TRANSPARENT),
+    menu_border: MENU_BORDER,
+    menu_shadow: BLACK_SHADOW,
+    menu_background_expand: Padding::new(5.0),
+    path: Background::Color(Color::TRANSPARENT),
+    path_border: MENU_BORDER,
 };
 
 pub struct InfoRow {
