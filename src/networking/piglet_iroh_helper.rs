@@ -58,8 +58,7 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
         // If you want to experiment with relaying using your own relay server,
         // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
         .relay_mode(RelayMode::Default)
-        // pass in `0` to bind the socket to a random available port
-        .bind(0)
+        .bind()
         .await?;
 
     let nodeid = endpoint.node_id();
@@ -104,7 +103,7 @@ pub async fn iroh_accept(
         let mut gui_sender = connection.open_uni().await?;
         let message = postcard::to_allocvec(&desc)?;
         gui_sender.write_all(&message).await?;
-        gui_sender.finish().await?;
+        gui_sender.finish()?;
         Ok(connection)
     } else {
         bail!("Could not connect to iroh")
@@ -240,6 +239,6 @@ fn send_input_level(
 async fn send(connection: Connection, message: &[u8]) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
     gui_sender.write_all(message).await?;
-    gui_sender.finish().await?;
+    gui_sender.finish()?;
     Ok(())
 }

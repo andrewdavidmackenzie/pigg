@@ -39,7 +39,7 @@ pub async fn send_config_change(
     // send it to the remotely connected hardware
     config_sender.write_all(&content).await?;
     // close and flush the stream to ensure the message is sent
-    config_sender.finish().await?;
+    config_sender.finish()?;
     Ok(())
 }
 
@@ -58,8 +58,7 @@ pub async fn connect(
         .alpns(vec![PIGLET_ALPN.to_vec()])
         // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
         .relay_mode(RelayMode::Default)
-        // You can choose a port to bind to, but passing in `0` will bind the socket to a random available port
-        .bind(0)
+        .bind()
         .await?;
 
     for _local_endpoint in endpoint
