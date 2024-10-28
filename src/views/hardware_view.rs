@@ -101,55 +101,43 @@ const PIN_RADIUS: Radius = Radius {
     bottom_left: PIN_BUTTON_RADIUS,
 };
 
+const PIN_BORDER: Border = Border {
+    color: Color::TRANSPARENT,
+    width: 0.0,
+    radius: PIN_RADIUS,
+};
+
+const PIN_SHADOW: Shadow = Shadow {
+    color: Color::TRANSPARENT,
+    offset: iced::Vector { x: 0.0, y: 0.0 },
+    blur_radius: 0.0,
+};
+
 const V3_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.92, 0.016, 1.0))),
     text_color: Color::BLACK,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
     // hovered_text_color: Color::BLACK,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 const V5_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.0, 0.0, 1.0))),
     text_color: Color::BLACK,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
     // hovered_text_color: Color::BLACK,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 const GND_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::BLACK)),
     text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::WHITE,
     // hovered_text_color: Color::BLACK,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 const GPIO_BUTTON_STYLE: button::Style = button::Style {
@@ -157,18 +145,10 @@ const GPIO_BUTTON_STYLE: button::Style = button::Style {
         0.678, 0.847, 0.902, 1.0,
     ))),
     text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::WHITE,
     // hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 const GPIO7_BUTTON_STYLE: button::Style = button::Style {
@@ -176,35 +156,19 @@ const GPIO7_BUTTON_STYLE: button::Style = button::Style {
         0.933, 0.510, 0.933, 1.0,
     ))),
     text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::WHITE,
     // hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 const GPIO14_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(0.0, 0.502, 0.0, 1.0))),
     text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::WHITE,
     // hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 const ID_BUTTON_STYLE: button::Style = button::Style {
@@ -212,35 +176,19 @@ const ID_BUTTON_STYLE: button::Style = button::Style {
         0.502, 0.502, 0.502, 1.0,
     ))),
     text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::WHITE,
     // hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 const DEFAULT_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.647, 0.0, 1.0))),
     text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: PIN_RADIUS,
-    },
+    border: PIN_BORDER,
     // hovered_bg_color: Color::WHITE,
     // hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: PIN_SHADOW,
 };
 
 fn get_pin_style(pin_description: &PinDescription) -> button::Style {
