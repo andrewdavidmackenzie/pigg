@@ -105,7 +105,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
             // hovered_text_color: Color::BLACK,
             shadow: Shadow {
@@ -123,7 +122,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
             // hovered_text_color: Color::BLACK,
             shadow: Shadow {
@@ -141,7 +139,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
             // hovered_text_color: Color::BLACK,
             shadow: Shadow {
@@ -160,7 +157,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
             // hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
             shadow: Shadow {
@@ -179,7 +175,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
             // hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
             shadow: Shadow {
@@ -198,7 +193,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
             // hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
             shadow: Shadow {
@@ -217,7 +211,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
             // hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
             shadow: Shadow {
@@ -235,7 +228,6 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
                 width: 0.0,
                 radius: PIN_BUTTON_RADIUS.into(),
             },
-            // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
             // hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
             shadow: Shadow {
