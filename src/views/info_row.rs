@@ -1,15 +1,16 @@
-use iced::border::Radius;
-use iced::widget::{button, container, Row};
-use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
-use iced_aw::style::menu_bar;
-use iced_futures::Subscription;
-
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_selector::LayoutSelector;
 use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_menu, unsaved_status};
 use crate::Message;
+use iced::border::Radius;
+use iced::widget::{button, container, Row};
+use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
+use iced_aw::style::menu_bar;
+use iced_futures::Subscription;
+
+const MENU_BACKGROUND_COLOR: Color = Color::from_rgba(0.15, 0.15, 0.15, 1.0);
 
 const MENU_RADIUS: Radius = Radius {
     top_left: 4.0,
@@ -33,7 +34,7 @@ pub(crate) const MENU_SHADOW: Shadow = Shadow {
 pub(crate) const BLACK_SHADOW: Shadow = Shadow {
     color: Color::BLACK,
     offset: iced::Vector::new(1.0, 1.0),
-    blur_radius: 10f32,
+    blur_radius: 5f32,
 };
 
 pub(crate) const MENU_BAR_BUTTON_STYLE: button::Style = button::Style {
@@ -62,12 +63,19 @@ pub(crate) const MENU_STYLE: menu_bar::Style = menu_bar::Style {
     bar_border: MENU_BORDER,
     bar_shadow: MENU_SHADOW,
     bar_background_expand: Padding::new(2.0),
-    menu_background: Background::Color(Color::TRANSPARENT),
+    menu_background: Background::Color(MENU_BACKGROUND_COLOR),
     menu_border: MENU_BORDER,
     menu_shadow: BLACK_SHADOW,
     menu_background_expand: Padding::new(5.0),
     path: Background::Color(Color::TRANSPARENT),
     path_border: MENU_BORDER,
+};
+
+const INFO_BAR_STYLE: container::Style = container::Style {
+    text_color: Some(Color::WHITE),
+    background: Some(Background::Color(MENU_BACKGROUND_COLOR)),
+    border: MENU_BORDER,
+    shadow: MENU_SHADOW,
 };
 
 pub struct InfoRow {
@@ -111,6 +119,7 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding(Padding::new(0.0)),
         )
+        .style(|_| INFO_BAR_STYLE)
         .into()
     }
 
