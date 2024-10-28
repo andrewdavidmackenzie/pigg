@@ -11,7 +11,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task};
+use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -87,6 +87,7 @@ fn main() -> iced::Result {
         .resizable(true)
         .settings(settings)
         .window_size(LayoutSelector::get_default_window_size())
+        .theme(|_| Theme::Dark)
         .run_with(Piggui::new)
 }
 
