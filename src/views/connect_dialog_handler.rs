@@ -65,10 +65,6 @@ const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
             bottom_left: 10.0,
         },
     },
-    // border_color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
-    // // background_color: Color::from_rgba(0.0, 0.0, 0.0, 0.0),
-    // border_width: 2.0,
-    // border_radius: 10.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
         offset: iced::Vector { x: 0.0, y: 0.0 },
@@ -88,15 +84,14 @@ const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
         color: Color::TRANSPARENT,
         width: 1.0,
         radius: Radius {
-            top_left: 2.0,
-            top_right: 2.0,
-            bottom_right: 2.0,
-            bottom_left: 2.0,
+            top_left: 4.0,
+            top_right: 4.0,
+            bottom_right: 4.0,
+            bottom_left: 4.0,
         },
     },
     // hovered_bg_color: Color::BLACK,
     // hovered_text_color: Color::WHITE,
-    // border_radius: 4.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
         offset: iced::Vector { x: 0.0, y: 0.0 },
@@ -106,7 +101,6 @@ const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
 
 const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
-    // bg_color: Color::TRANSPARENT, // Transparent background for inactive tab
     text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0), // Gray text color to show it's inactive
     border: Border {
         color: Color::TRANSPARENT,
@@ -120,7 +114,6 @@ const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     },
     // hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
     // hovered_text_color: Color::WHITE,
-    // border_radius: 4.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
         offset: iced::Vector { x: 0.0, y: 0.0 },
@@ -141,10 +134,6 @@ const TAB_BAR_STYLE: container::Style = container::Style {
             bottom_left: 0.0,
         },
     },
-    // border_color: Color::TRANSPARENT,
-    // background_color: Color::from_rgb(0.2, 0.2, 0.2),
-    // border_width: 0.0,
-    // border_radius: 0.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
         offset: iced::Vector { x: 0.0, y: 0.0 },
@@ -501,7 +490,7 @@ impl ConnectDialog {
                 Button::new(Text::new("Connect"))
                     .style(move |_theme, _status| MODAL_CONNECT_BUTTON_STYLE),
             )
-            .spacing(160)
+            .spacing(150)
             .align_y(iced::Alignment::Center)
     }
 
@@ -521,7 +510,7 @@ impl ConnectDialog {
                     )))
                     .style(move |_, _| MODAL_CONNECT_BUTTON_STYLE),
             )
-            .spacing(360)
+            .spacing(350)
             .align_y(iced::Alignment::Center)
     }
 
@@ -541,7 +530,7 @@ impl ConnectDialog {
                     )))
                     .style(move |_, _| MODAL_CONNECT_BUTTON_STYLE),
             )
-            .spacing(360)
+            .spacing(350)
             .align_y(iced::Alignment::Center)
     }
 
