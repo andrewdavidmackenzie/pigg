@@ -42,7 +42,6 @@ pub enum ModalMessage {
 
 pub(crate) const MODAL_CANCEL_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(0.8, 0.0, 0.0, 1.0))),
-    // bg_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0), // Gnome like Red background color
     text_color: Color::WHITE,
     border: Border {
         color: Color::TRANSPARENT,
@@ -56,7 +55,6 @@ pub(crate) const MODAL_CANCEL_BUTTON_STYLE: button::Style = button::Style {
     },
     // hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
     // hovered_text_color: Color::WHITE,
-    // border_radius: 2.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
         offset: iced::Vector { x: 0.0, y: 0.0 },
@@ -66,7 +64,6 @@ pub(crate) const MODAL_CANCEL_BUTTON_STYLE: button::Style = button::Style {
 
 pub(crate) const MODAL_CONNECT_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(0.0, 1.0, 1.0, 1.0))),
-    // bg_color: Color::from_rgba(0.0, 1.0, 1.0, 1.0), // Cyan background color
     text_color: Color::BLACK,
     border: Border {
         color: Color::TRANSPARENT,
@@ -80,7 +77,6 @@ pub(crate) const MODAL_CONNECT_BUTTON_STYLE: button::Style = button::Style {
     },
     // hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
     // hovered_text_color: Color::WHITE,
-    // border_radius: 2.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
         offset: iced::Vector { x: 0.0, y: 0.0 },
@@ -101,10 +97,6 @@ pub(crate) const MODAL_CONTAINER_STYLE: container::Style = container::Style {
             bottom_left: 2.0,
         },
     },
-    // border_color: Color::WHITE,
-    // // background_color: Color::from_rgba(0.0, 0.0, 0.0, 1.0),
-    // border_radius: 2.0,
-    // border_width: 2.0,
     shadow: Shadow {
         color: Color::TRANSPARENT,
         offset: iced::Vector { x: 0.0, y: 0.0 },
@@ -126,7 +118,6 @@ const HYPERLINK_BUTTON_STYLE: button::Style = button::Style {
             bottom_left: 2.0,
         },
     },
-    // border_radius: 2.0,
     // hovered_bg_color: Color::TRANSPARENT,
     // hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0),
     shadow: Shadow {
