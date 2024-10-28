@@ -297,9 +297,14 @@ where
             );
         });
 
-        renderer.with_translation(Vector::new(bounds.x, bounds.y), |renderer| {
-            renderer.draw(vec![geometry]);
-        });
+        renderer.with_translation(
+            Vector::new(bounds.x, bounds.y),
+            |renderer| {
+                use iced::advanced::graphics::geometry::Renderer as _;
+
+                renderer.draw_geometry(geometry);
+            },
+        );
     }
 
     fn tag(&self) -> tree::Tag {
