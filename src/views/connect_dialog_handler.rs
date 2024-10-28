@@ -254,7 +254,7 @@ impl ConnectDialog {
                 }
 
                 // Validate IP address
-                return match IpAddr::from_str(ip_address.as_str().trim()) {
+                match IpAddr::from_str(ip_address.as_str().trim()) {
                     Ok(ip) => {
                         // Validate port number
                         match port_num.trim().parse::<u16>() {
@@ -280,7 +280,7 @@ impl ConnectDialog {
                         self.disable_widgets = false;
                         Task::none()
                     }
-                };
+                }
             }
 
             #[cfg(feature = "iroh")]
@@ -290,7 +290,7 @@ impl ConnectDialog {
                     return Task::none();
                 }
 
-                return match NodeId::from_str(node_id.as_str().trim()) {
+                match NodeId::from_str(node_id.as_str().trim()) {
                     Ok(nodeid) => {
                         let url_str = url.trim();
                         let relay_url = if url_str.is_empty() {
@@ -320,7 +320,7 @@ impl ConnectDialog {
                         self.disable_widgets = false;
                         Task::none()
                     }
-                };
+                }
             }
 
             #[cfg(feature = "tcp")]
@@ -578,18 +578,13 @@ impl ConnectDialog {
                             let mut node_input = text_input("Enter node id", &self.nodeid)
                                 .padding(5)
                                 .id(IROH_INPUT_ID.clone())
-                                .on_submit(Message::ConnectDialog(
-                                    ConnectDialogMessage::ConnectButtonPressedIroh(
-                                        self.nodeid.clone(),
-                                        self.relay_url.clone(),
-                                    ),
-                                ));
+                                .on_submit(Message::ConnectDialog(ConnectButtonPressedIroh(
+                                    self.nodeid.clone(),
+                                    self.relay_url.clone(),
+                                )));
                             if input_enabled {
-                                node_input = node_input.on_input(|input| {
-                                    Message::ConnectDialog(ConnectDialogMessage::NodeIdEntered(
-                                        input,
-                                    ))
-                                });
+                                node_input = node_input
+                                    .on_input(|input| Message::ConnectDialog(NodeIdEntered(input)));
                             }
                             node_input
                         }
@@ -599,16 +594,13 @@ impl ConnectDialog {
                         let mut relay_input =
                             text_input("Enter Relay Url (Optional)", &self.relay_url)
                                 .padding(5)
-                                .on_submit(Message::ConnectDialog(
-                                    ConnectDialogMessage::ConnectButtonPressedIroh(
-                                        self.nodeid.clone(),
-                                        self.relay_url.clone(),
-                                    ),
-                                ));
+                                .on_submit(Message::ConnectDialog(ConnectButtonPressedIroh(
+                                    self.nodeid.clone(),
+                                    self.relay_url.clone(),
+                                )));
                         if input_enabled {
-                            relay_input = relay_input.on_input(|input| {
-                                Message::ConnectDialog(ConnectDialogMessage::RelayURL(input))
-                            });
+                            relay_input = relay_input
+                                .on_input(|input| Message::ConnectDialog(RelayURL(input)));
                         }
                         relay_input
                     }]
@@ -642,17 +634,13 @@ impl ConnectDialog {
                             let mut ip_input = text_input("Enter IP Address", &self.ip_address)
                                 .padding(5)
                                 .id(TCP_INPUT_ID.clone())
-                                .on_submit(Message::ConnectDialog(
-                                    ConnectDialogMessage::ConnectionButtonPressedTcp(
-                                        self.ip_address.clone(),
-                                        self.port_number.clone(),
-                                    ),
-                                ));
+                                .on_submit(Message::ConnectDialog(ConnectionButtonPressedTcp(
+                                    self.ip_address.clone(),
+                                    self.port_number.clone(),
+                                )));
                             if input_enabled {
                                 ip_input = ip_input.on_input(|input| {
-                                    Message::ConnectDialog(ConnectDialogMessage::IpAddressEntered(
-                                        input,
-                                    ))
+                                    Message::ConnectDialog(IpAddressEntered(input))
                                 });
                             }
                             ip_input
@@ -662,18 +650,13 @@ impl ConnectDialog {
                     column![text("Port Number").size(12), {
                         let mut port_input = text_input("Enter Port Number", &self.port_number)
                             .padding(5)
-                            .on_submit(Message::ConnectDialog(
-                                ConnectDialogMessage::ConnectionButtonPressedTcp(
-                                    self.ip_address.clone(),
-                                    self.port_number.clone(),
-                                ),
-                            ));
+                            .on_submit(Message::ConnectDialog(ConnectionButtonPressedTcp(
+                                self.ip_address.clone(),
+                                self.port_number.clone(),
+                            )));
                         if input_enabled {
-                            port_input = port_input.on_input(|input| {
-                                Message::ConnectDialog(ConnectDialogMessage::PortNumberEntered(
-                                    input,
-                                ))
-                            });
+                            port_input = port_input
+                                .on_input(|input| Message::ConnectDialog(PortNumberEntered(input)));
                         }
                         port_input
                     }]
