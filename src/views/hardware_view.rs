@@ -58,7 +58,7 @@ const PIN_WIDGET_ROW_WIDTH: f32 =
 //     + WIDGET_ROW_SPACING
 //     + PIN_OPTION_WIDTH;
 
-const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
+const SPACE_BETWEEN_PIN_COLUMNS: f32 = 10.0;
 
 // Export these two, so they can be used to calculate overall window size
 // pub const BCM_PIN_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
@@ -528,7 +528,7 @@ impl HardwareView {
             let row = Row::new()
                 .push(left_row)
                 .push(right_row)
-                .spacing(BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS)
+                .spacing(SPACE_BETWEEN_PIN_COLUMNS)
                 .align_y(Center);
 
             column = column.push(row);
