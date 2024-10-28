@@ -488,14 +488,14 @@ impl HardwareView {
                     self.pin_states.get(bcm_pin_number),
                 );
 
-                column = column
-                    .push(pin_row)
-                    .spacing(SPACE_BETWEEN_PIN_ROWS)
-                    .align_x(Alignment::Start);
+                column = column.push(pin_row);
             }
         }
 
-        column.into()
+        column
+            .spacing(SPACE_BETWEEN_PIN_ROWS)
+            .align_x(Alignment::Start)
+            .into()
     }
 
     /// View that draws the pins laid out as they are on the physical Pi board
@@ -531,13 +531,13 @@ impl HardwareView {
                 .spacing(BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS)
                 .align_y(Center);
 
-            column = column
-                .push(row)
-                .spacing(SPACE_BETWEEN_PIN_ROWS)
-                .align_x(Center);
+            column = column.push(row);
         }
 
-        column.into()
+        column
+            .spacing(SPACE_BETWEEN_PIN_ROWS)
+            .align_x(Center)
+            .into()
     }
 }
 
