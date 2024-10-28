@@ -89,7 +89,7 @@ pub(crate) const MODAL_CONNECT_BUTTON_STYLE: button::Style = button::Style {
 };
 
 pub(crate) const MODAL_CONTAINER_STYLE: container::Style = container::Style {
-    text_color: Some(Color::BLACK),
+    text_color: Some(Color::WHITE),
     background: Some(Background::Color(Color::from_rgba(0.0, 0.0, 0.0, 1.0))),
     border: Border {
         color: Color::WHITE,
@@ -289,7 +289,7 @@ impl DisplayModal {
                 is_version,
             }) => {
                 let text_style = text::Style {
-                    color: Some(Color::new(0.447, 0.624, 0.812, 1.0)),
+                    color: Some(Color::WHITE),
                 };
                 let mut hyperlink_row = Row::new().width(Length::Fill);
                 let mut button_row = Row::new();
