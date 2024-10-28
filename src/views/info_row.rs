@@ -10,52 +10,50 @@ use crate::views::version::version_button;
 use crate::views::{hardware_menu, unsaved_status};
 use crate::Message;
 
+const MENU_RADIUS: Radius = Radius {
+    top_left: 4.0,
+    top_right: 4.0,
+    bottom_right: 4.0,
+    bottom_left: 4.0,
+};
+
+pub(crate) const MENU_BORDER: Border = Border {
+    color: Color::TRANSPARENT,
+    width: 0.0,
+    radius: MENU_RADIUS,
+};
+
+pub(crate) const MENU_SHADOW: Shadow = Shadow {
+    color: Color::TRANSPARENT,
+    offset: iced::Vector { x: 0.0, y: 0.0 },
+    blur_radius: 0.0,
+};
+
 pub(crate) const MENU_BAR_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
-    // bg_color: Color::TRANSPARENT,
     text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: Radius {
-            top_left: 2.0,
-            top_right: 2.0,
-            bottom_right: 2.0,
-            bottom_left: 2.0,
-        },
-    },
+    border: MENU_BORDER,
     // hovered_bg_color: Color::TRANSPARENT,
     // hovered_text_color: Color::WHITE,
-    // border_radius: 2.0,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: MENU_SHADOW,
+};
+
+pub(crate) const MENU_BAR_BUTTON_HOVER_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::TRANSPARENT)),
+    text_color: Color::WHITE,
+    border: MENU_BORDER,
+    // hovered_bg_color: Color::TRANSPARENT,
+    // hovered_text_color: Color::WHITE,
+    shadow: MENU_SHADOW,
 };
 
 pub(crate) const MENU_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
-    // bg_color: Color::TRANSPARENT,
     text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: Radius {
-            top_left: 4.0,
-            top_right: 4.0,
-            bottom_right: 4.0,
-            bottom_left: 4.0,
-        },
-    },
+    border: MENU_BORDER,
     // hovered_bg_color: Color::TRANSPARENT,
     // hovered_text_color: Color::WHITE,
-    // border_radius: 4.0,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
+    shadow: MENU_SHADOW,
 };
 
 pub struct InfoRow {

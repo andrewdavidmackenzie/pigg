@@ -1,6 +1,8 @@
+use crate::views::info_row::{MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE};
 use crate::{Message, ModalMessage};
-use iced::widget::{button, Button, Text};
-use iced::{Background, Border, Color, Element, Shadow};
+use iced::widget::button::Status::Hovered;
+use iced::widget::{Button, Text};
+use iced::Element;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const BIN_NAME: &str = env!("CARGO_BIN_NAME");
@@ -28,28 +30,17 @@ pub fn version() -> String {
 
 pub fn version_button() -> Element<'static, Message> {
     let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
-    let about_button_style = button::Style {
-        background: Some(Background::Color(Color::TRANSPARENT)),
-        // bg_color: Color::TRANSPARENT,
-        text_color: Color::new(0.7, 0.7, 0.7, 1.0),
-        border: Border {
-            color: Color::TRANSPARENT,
-            width: 0.0,
-            radius: 4.0.into(),
-        },
-        // hovered_bg_color: Color::TRANSPARENT,
-        // hovered_text_color: Color::WHITE,
-        // border_radius: 4.0,
-        shadow: Shadow {
-            color: Color::TRANSPARENT,
-            offset: iced::Vector { x: 0.0, y: 0.0 },
-            blur_radius: 0.0,
-        },
-    };
+
     Button::new(version_text)
         .on_press(Message::ModalHandle(ModalMessage::VersionModal))
         .clip(true)
         .height(iced::Length::Shrink)
-        .style(move |_theme, _status| about_button_style)
+        .style(move |_theme, status| {
+            if status == Hovered {
+                MENU_BAR_BUTTON_HOVER_STYLE
+            } else {
+                MENU_BAR_BUTTON_STYLE
+            }
+        })
         .into()
 }

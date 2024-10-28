@@ -4,8 +4,11 @@ use iced::{Border, Color, Length, Padding, Shadow, Size};
 
 use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
-use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
+use crate::views::info_row::{
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE,
+};
 use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
+use iced::widget::button::Status::Hovered;
 use iced::{Background, Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_aw::style::menu_bar;
@@ -92,8 +95,16 @@ impl LayoutSelector {
             .style(|_, _| MENU_BAR_BUTTON_STYLE)
             .on_press(Message::MenuBarButtonClicked)
         } else {
-            Button::new("layout").style(move |_, _| MENU_BAR_BUTTON_STYLE)
+            Button::new("layout")
         };
+
+        let button = button.style(move |_theme, status| {
+            if status == Hovered {
+                MENU_BAR_BUTTON_HOVER_STYLE
+            } else {
+                MENU_BAR_BUTTON_STYLE
+            }
+        });
 
         let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 

@@ -1,9 +1,12 @@
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
-use crate::views::info_row::MENU_BUTTON_STYLE;
+use crate::views::info_row::{
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE,
+};
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
+use iced::widget::button::Status::Hovered;
 use iced::widget::{Button, Text};
 use iced::{Background, Border, Color, Element, Length, Padding, Renderer, Shadow, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
@@ -89,12 +92,18 @@ pub fn view<'a>(
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
             .width(Length::Fill)
-            .style(move |theme, status| MENU_BAR_BUTTON_STYLE),
+            .style(move |theme, status| MENU_BUTTON_STYLE),
     ));
 
     let menu_root = Item::with_menu(
         Button::new(Text::new(model))
-            .style(move |_, _| MENU_BUTTON_STYLE)
+            .style(move |_theme, status| {
+                if status == Hovered {
+                    MENU_BAR_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BAR_BUTTON_STYLE
+                }
+            })
             .on_press(Message::MenuBarButtonClicked),
         Menu::new(menu_items).width(235.0).offset(10.0),
     );
