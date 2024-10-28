@@ -40,8 +40,6 @@ pub(crate) const MENU_BAR_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
     border: MENU_BORDER,
-    // hovered_bg_color: Color::TRANSPARENT,
-    // hovered_text_color: Color::WHITE,
     shadow: MENU_SHADOW,
 };
 
@@ -49,8 +47,6 @@ pub(crate) const MENU_BAR_BUTTON_HOVER_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::WHITE,
     border: MENU_BORDER,
-    // hovered_bg_color: Color::TRANSPARENT,
-    // hovered_text_color: Color::WHITE,
     shadow: MENU_SHADOW,
 };
 
@@ -58,8 +54,6 @@ pub(crate) const MENU_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::WHITE,
     border: MENU_BORDER,
-    // hovered_bg_color: Color::TRANSPARENT,
-    // hovered_text_color: Color::WHITE,
     shadow: MENU_SHADOW,
 };
 
