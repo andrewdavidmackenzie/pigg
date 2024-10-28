@@ -54,7 +54,6 @@ pub enum Message {
     ModalHandle(ModalMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
-    MenuBarButtonClicked,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareTarget),
@@ -160,11 +159,6 @@ impl Piggui {
                         return window::get_latest().and_then(window::close);
                     }
                 }
-            }
-
-            // TODO this could be removed no?
-            MenuBarButtonClicked => {
-                return Task::none();
             }
 
             LayoutChanged(layout) => {

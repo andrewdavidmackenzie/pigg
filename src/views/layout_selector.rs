@@ -92,7 +92,6 @@ impl LayoutSelector {
                 }
             }
             .style(|_, _| MENU_BAR_BUTTON_STYLE)
-            .on_press(Message::MenuBarButtonClicked)
         } else {
             Button::new("layout")
         };

@@ -58,8 +58,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
                 MENU_BAR_BUTTON_STYLE
             }
         }),
-    }
-    .on_press(Message::MenuBarButtonClicked);
+    };
 
     let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 

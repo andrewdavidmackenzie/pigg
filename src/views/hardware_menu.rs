@@ -95,19 +95,16 @@ pub fn view<'a>(
     ));
 
     let menu_root = Item::with_menu(
-        Button::new(Text::new(model))
-            .style(move |_theme, status| {
-                if status == Hovered {
-                    MENU_BAR_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BAR_BUTTON_STYLE
-                }
-            })
-            .on_press(Message::MenuBarButtonClicked),
+        Button::new(Text::new(model)).style(move |_theme, status| {
+            if status == Hovered {
+                MENU_BAR_BUTTON_HOVER_STYLE
+            } else {
+                MENU_BAR_BUTTON_STYLE
+            }
+        }),
         Menu::new(menu_items).width(235.0).offset(10.0),
     );
 
-    // TODO define Style as a const like MENU_BAR_BUTTON_STYLE
     // which is an unused import right now?
     MenuBar::new(vec![menu_root])
         .style(|_, _| MENU_STYLE)
