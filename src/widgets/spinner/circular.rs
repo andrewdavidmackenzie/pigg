@@ -297,14 +297,11 @@ where
             );
         });
 
-        renderer.with_translation(
-            Vector::new(bounds.x, bounds.y),
-            |renderer| {
-                use iced::advanced::graphics::geometry::Renderer as _;
+        renderer.with_translation(Vector::new(bounds.x, bounds.y), |renderer| {
+            use iced::advanced::graphics::geometry::Renderer as _;
 
-                renderer.draw_geometry(geometry);
-            },
-        );
+            renderer.draw_geometry(geometry);
+        });
     }
 
     fn tag(&self) -> tree::Tag {
