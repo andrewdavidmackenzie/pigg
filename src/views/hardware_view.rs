@@ -491,7 +491,7 @@ impl HardwareView {
                 column = column
                     .push(pin_row)
                     .spacing(SPACE_BETWEEN_PIN_ROWS)
-                    .align_x(Center);
+                    .align_x(Alignment::Start);
             }
         }
 
@@ -533,10 +533,7 @@ impl HardwareView {
 
             column = column
                 .push(row)
-                .push(iced::widget::Space::new(
-                    Length::Fixed(1.0),
-                    Length::Fixed(SPACE_BETWEEN_PIN_ROWS),
-                ))
+                .spacing(SPACE_BETWEEN_PIN_ROWS)
                 .align_x(Center);
         }
 
