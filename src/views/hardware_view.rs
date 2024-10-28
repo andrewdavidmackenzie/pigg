@@ -488,8 +488,13 @@ impl HardwareView {
             ];
 
         if hardware_target != &NoHW {
-            subscriptions
-                .push(hardware_subscription::subscribe(hardware_target).map(HardwareSubscription));
+            subscriptions.push(
+                Subscription::run_with_id(
+                    "hardware",
+                    hardware_subscription::subscribe(hardware_target),
+                )
+                .map(HardwareSubscription),
+            );
         }
 
         Subscription::batch(subscriptions)

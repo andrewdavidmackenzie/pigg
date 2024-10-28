@@ -43,7 +43,6 @@ pub enum HWState {
 pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEventMessage> {
     let target = hw_target.clone();
 
-    struct Connect;
     stream::channel(100, move |gui_sender| async move {
         let mut state = HWState::Disconnected;
         let mut connected_hardware = hw::get();

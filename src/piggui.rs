@@ -11,7 +11,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
+use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -292,8 +292,7 @@ impl Piggui {
                 content,
                 self.connect_dialog.view(),
                 ConnectDialog(HideConnectDialog),
-            )
-            .into();
+            );
         }
 
         if self.modal_handler.show_modal {
@@ -301,15 +300,10 @@ impl Piggui {
                 content,
                 self.modal_handler.view(),
                 ModalHandle(ModalMessage::HideModal),
-            )
-            .into();
+            );
         }
 
         content.into()
-    }
-
-    fn theme(&self) -> Theme {
-        Theme::Dark
     }
 
     /// Subscribe to events from Hardware, from Windows and timings for StatusRow
