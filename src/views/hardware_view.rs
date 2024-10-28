@@ -191,6 +191,19 @@ const DEFAULT_BUTTON_STYLE: button::Style = button::Style {
     shadow: PIN_SHADOW,
 };
 
+const TOGGLER_STYLE: toggler::Style = toggler::Style {
+    background: Color::from_rgba(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
+    background_border_width: 1.0,
+    background_border_color: Color::from_rgba(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
+    foreground: Color::from_rgba(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
+    foreground_border_width: 1.0,
+    foreground_border_color: Color::from_rgba(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
+                                                                   // active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
+                                                                   // active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
+                                                                   // active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
+                                                                   // active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
+};
+
 fn get_pin_style(pin_description: &PinDescription) -> button::Style {
     match pin_description.name.as_ref() {
         "3V3" => V3_BUTTON_STYLE,
@@ -564,19 +577,6 @@ fn get_pin_widget<'a>(
     pin_state: &'a PinState,
     direction: Direction,
 ) -> Element<'a, HardwareViewMessage> {
-    let toggle_button_style = toggler::Style {
-        background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
-        background_border_width: 1.0,
-        background_border_color: Color::new(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
-        foreground: Color::new(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
-        foreground_border_width: 1.0,
-        foreground_border_color: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
-                                                                 // active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
-                                                                 // active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
-                                                                 // active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
-                                                                 // active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
-    };
-
     let row: Row<HardwareViewMessage> = match pin_function {
         Some(Input(pull)) => {
             let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
@@ -600,7 +600,7 @@ fn get_pin_widget<'a>(
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
                 })
                 .size(TOGGLER_SIZE)
-                .style(move |_theme, _status| toggle_button_style);
+                .style(move |_theme, _status| TOGGLER_STYLE);
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
