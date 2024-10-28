@@ -39,6 +39,8 @@ mod piggui_tcp_helper;
 mod views;
 mod widgets;
 
+const PIGGUI_ID: &str = "piggui";
+
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -75,7 +77,7 @@ pub struct Piggui {
 
 fn main() -> iced::Result {
     let settings = Settings {
-        id: Some("piggui".into()),
+        id: Some(PIGGUI_ID.into()),
         default_text_size: Pixels(14.0),
         ..Default::default()
     };
@@ -149,7 +151,6 @@ impl Piggui {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             WindowEvent(event) => {
-                //if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
                 if let iced::Event::Window(window::Event::CloseRequested) = event {
                     if self.unsaved_changes {
                         let _ = self
@@ -167,7 +168,14 @@ impl Piggui {
             }
 
             LayoutChanged(layout) => {
-                return window::resize(window::Id::unique(), self.layout_selector.update(layout));
+                let layout = self.layout_selector.update(layout);
+                return window::get_latest().then(move |latest| {
+                    if let Some(id) = latest {
+                        window::resize(id, layout)
+                    } else {
+                        Task::none()
+                    }
+                });
             }
 
             Save => {
