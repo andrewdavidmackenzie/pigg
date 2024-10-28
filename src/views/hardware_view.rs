@@ -33,7 +33,8 @@ use crate::hw_definition::description::{HardwareDescription, PinDescription, Pin
 use iroh_net::{relay::RelayUrl, NodeId};
 
 // WIDTHS
-const PIN_BUTTON_WIDTH: f32 = 30.0;
+const PIN_BUTTON_WIDTH: f32 = 28.0;
+const PIN_BUTTON_RADIUS: f32 = PIN_BUTTON_WIDTH / 2.0;
 const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
 const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
 const PIN_ARROW_WIDTH: f32 = PIN_ARROW_LINE_WIDTH + PIN_ARROW_CIRCLE_RADIUS * 2.0;
@@ -102,7 +103,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
@@ -120,7 +121,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
@@ -138,7 +139,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
@@ -157,7 +158,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
@@ -176,7 +177,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
@@ -195,7 +196,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
@@ -214,7 +215,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
@@ -232,7 +233,7 @@ fn get_pin_style(pin_description: &PinDescription) -> button::Style {
             border: Border {
                 color: Color::TRANSPARENT,
                 width: 0.0,
-                radius: 50.0.into(),
+                radius: PIN_BUTTON_RADIUS.into(),
             },
             // border_radius: 50.0,
             // hovered_bg_color: Color::WHITE,
@@ -789,11 +790,16 @@ fn create_pin_view_side<'a>(
 
     let mut pin_button_column = Column::new().align_x(Alignment::Center);
     // Create the pin itself, with number and as a button
-    let pin_button = button(container(Text::new(pin_description.bpn.to_string())).align_x(Center))
-        .padding(0.0)
-        .width(Length::Fixed(PIN_BUTTON_WIDTH))
-        .style(move |_, _| get_pin_style(pin_description))
-        .on_press(Activate(pin_description.bpn));
+    let pin_button = button(
+        container(Text::new(pin_description.bpn.to_string()))
+            .align_x(Center)
+            .align_y(Center),
+    )
+    .padding(0.0)
+    .width(Length::Fixed(PIN_BUTTON_WIDTH))
+    .height(Length::Fixed(PIN_BUTTON_WIDTH))
+    .style(move |_, _| get_pin_style(pin_description))
+    .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
