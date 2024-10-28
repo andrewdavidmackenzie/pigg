@@ -790,6 +790,7 @@ fn create_pin_view_side<'a>(
     let mut pin_button_column = Column::new().align_x(Alignment::Center);
     // Create the pin itself, with number and as a button
     let pin_button = button(container(Text::new(pin_description.bpn.to_string())).align_x(Center))
+        .padding(0.0)
         .width(Length::Fixed(PIN_BUTTON_WIDTH))
         .style(move |_, _| get_pin_style(pin_description))
         .on_press(Activate(pin_description.bpn));
