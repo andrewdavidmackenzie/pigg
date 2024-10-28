@@ -103,7 +103,6 @@ const PIN_RADIUS: Radius = Radius {
 
 const V3_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.92, 0.016, 1.0))),
-    // bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
     text_color: Color::BLACK,
     border: Border {
         color: Color::TRANSPARENT,
@@ -121,7 +120,6 @@ const V3_BUTTON_STYLE: button::Style = button::Style {
 
 const V5_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.0, 0.0, 1.0))),
-    // bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
     text_color: Color::BLACK,
     border: Border {
         color: Color::TRANSPARENT,
@@ -139,7 +137,6 @@ const V5_BUTTON_STYLE: button::Style = button::Style {
 
 const GND_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::BLACK)),
-    // bg_color: Color::BLACK,
     text_color: Color::WHITE,
     border: Border {
         color: Color::TRANSPARENT,
@@ -159,7 +156,6 @@ const GPIO_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(
         0.678, 0.847, 0.902, 1.0,
     ))),
-    // bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
     text_color: Color::WHITE,
     border: Border {
         color: Color::TRANSPARENT,
@@ -179,7 +175,6 @@ const GPIO7_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(
         0.933, 0.510, 0.933, 1.0,
     ))),
-    // bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
     text_color: Color::WHITE,
     border: Border {
         color: Color::TRANSPARENT,
@@ -197,7 +192,6 @@ const GPIO7_BUTTON_STYLE: button::Style = button::Style {
 
 const GPIO14_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(0.0, 0.502, 0.0, 1.0))),
-    // bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
     text_color: Color::WHITE,
     border: Border {
         color: Color::TRANSPARENT,
@@ -217,7 +211,6 @@ const ID_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(
         0.502, 0.502, 0.502, 1.0,
     ))),
-    // bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
     text_color: Color::WHITE,
     border: Border {
         color: Color::TRANSPARENT,
@@ -235,7 +228,6 @@ const ID_BUTTON_STYLE: button::Style = button::Style {
 
 const DEFAULT_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.647, 0.0, 1.0))),
-    // bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
     text_color: Color::WHITE,
     border: Border {
         color: Color::TRANSPARENT,
