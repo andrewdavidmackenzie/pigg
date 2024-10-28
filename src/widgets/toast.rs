@@ -11,7 +11,7 @@ use iced::mouse;
 use iced::theme;
 use iced::widget::{button, column, container, horizontal_rule, horizontal_space, row, text};
 use iced::window;
-use iced::{Alignment, Element, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
+use iced::{Alignment, Element, Fill, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
 
 pub const DEFAULT_TIMEOUT: u64 = u64::MAX / 3;
 
@@ -31,27 +31,6 @@ pub enum Status {
 
 impl Status {
     pub const ALL: &'static [Self] = &[Self::Primary, Self::Secondary, Self::Success, Self::Danger];
-}
-
-impl container::StyleSheet for Status {
-    type Style = Theme;
-
-    fn appearance(&self, theme: &Theme) -> container::Appearance {
-        let palette = theme.extended_palette();
-
-        let pair = match self {
-            Status::Primary => palette.primary.weak,
-            Status::Secondary => palette.secondary.weak,
-            Status::Success => palette.success.weak,
-            Status::Danger => palette.danger.weak,
-        };
-
-        container::Appearance {
-            background: Some(pair.color.into()),
-            text_color: pair.text.into(),
-            ..Default::default()
-        }
-    }
 }
 
 impl fmt::Display for Status {
@@ -100,16 +79,20 @@ where
                             horizontal_space(),
                             button("X").on_press((on_close)(index)).padding(3),
                         ]
-                        .align_items(Alignment::Center)
+                        .align_y(Alignment::Center)
                     )
                     .width(Length::Fill)
                     .padding(5)
-                    .style(theme::Container::Custom(Box::new(toast.status))),
+                    .style(match toast.status {
+                        Status::Primary => primary,
+                        Status::Secondary => secondary,
+                        Status::Success => success,
+                        Status::Danger => danger,
+                    }),
                     horizontal_rule(1),
                     container(text(toast.body.as_str()))
                         .width(Length::Fill)
-                        .padding(5)
-                        .style(theme::Container::Box),
+                        .padding(5),
                 ])
                 .width(550)
                 .into()
@@ -193,7 +176,7 @@ impl<'a, Message> Widget<Message, Theme, Renderer> for Manager<'a, Message> {
         state: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn Operation<Message>,
+        operation: &mut dyn Operation,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
             self.content
@@ -314,8 +297,8 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
             layout::flex::Axis::Vertical,
             renderer,
             &limits,
-            Length::Fill,
-            Length::Fill,
+            Fill,
+            Fill,
             10.into(),
             10.0,
             Alignment::End,
@@ -334,7 +317,7 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
         clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
     ) -> event::Status {
-        if let Event::Window(_, window::Event::RedrawRequested(now)) = &event {
+        if let Event::Window(window::Event::RedrawRequested(now)) = &event {
             let mut next_redraw: Option<window::RedrawRequest> = None;
 
             self.instants
@@ -422,7 +405,7 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
         &mut self,
         layout: Layout<'_>,
         renderer: &Renderer,
-        operation: &mut dyn widget::Operation<Message>,
+        operation: &mut dyn widget::Operation,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
             self.toasts
@@ -471,4 +454,36 @@ where
     fn from(manager: Manager<'a, Message>) -> Self {
         Element::new(manager)
     }
+}
+
+fn styled(pair: theme::palette::Pair) -> container::Style {
+    container::Style {
+        background: Some(pair.color.into()),
+        text_color: pair.text.into(),
+        ..Default::default()
+    }
+}
+
+fn primary(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.primary.weak)
+}
+
+fn secondary(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.secondary.weak)
+}
+
+fn success(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.success.weak)
+}
+
+fn danger(theme: &Theme) -> container::Style {
+    let palette = theme.extended_palette();
+
+    styled(palette.danger.weak)
 }

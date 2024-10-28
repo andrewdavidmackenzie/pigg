@@ -1,24 +1,11 @@
-use iced::advanced::text::editor::Direction;
-use iced::advanced::text::editor::Direction::{Left, Right};
-use iced::alignment::Horizontal;
-use iced::futures::channel::mpsc::Sender;
-use iced::widget::tooltip::Position;
-use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
-use iced::widget::{container, Tooltip};
-use iced::{Alignment, Color, Command, Element, Length};
-use iced_futures::Subscription;
-use std::cmp::PartialEq;
-use std::collections::HashMap;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
+use crate::hardware_subscription;
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::InputPull;
+use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
-use crate::styles::button_style::ButtonStyle;
-use crate::styles::toggler_style::TogglerStyle;
 use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
@@ -28,15 +15,26 @@ use crate::views::pin_state::{CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{Message, Piggui, PinState};
-
-use crate::hardware_subscription;
-use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
+use crate::{Message, PinState};
+use iced::advanced::text::editor::Direction;
+use iced::advanced::text::editor::Direction::{Left, Right};
+use iced::border::Radius;
+use iced::futures::channel::mpsc::Sender;
+use iced::widget::scrollable::Scrollbar;
+use iced::widget::tooltip::Position;
+use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
+use iced::widget::{container, Tooltip};
+use iced::{Alignment, Background, Border, Center, Color, Element, Length, Shadow, Task};
+use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
+use std::cmp::PartialEq;
+use std::collections::HashMap;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 // WIDTHS
-const PIN_BUTTON_WIDTH: f32 = 30.0;
+const PIN_BUTTON_WIDTH: f32 = 28.0;
+const PIN_BUTTON_RADIUS: f32 = PIN_BUTTON_WIDTH / 2.0;
 const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
 const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
 const PIN_ARROW_WIDTH: f32 = PIN_ARROW_LINE_WIDTH + PIN_ARROW_CIRCLE_RADIUS * 2.0;
@@ -60,7 +58,8 @@ const PIN_WIDGET_ROW_WIDTH: f32 =
 //     + WIDGET_ROW_SPACING
 //     + PIN_OPTION_WIDTH;
 
-const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
+const SPACE_BETWEEN_PIN_COLUMNS: f32 = 10.0;
+
 // Export these two, so they can be used to calculate overall window size
 // pub const BCM_PIN_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
 
@@ -68,9 +67,7 @@ const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 // pub const BOARD_PIN_LAYOUT_WIDTH: f32 =
 //     PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS;
 
-// HEIGHTS
-const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
-const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
+const SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
 /// This enum is for async events in the hardware that will be sent to the GUI
 #[allow(clippy::large_enum_variant)]
@@ -96,68 +93,126 @@ pub enum HardwareViewMessage {
     UpdateCharts,
 }
 
-fn get_pin_style(pin_description: &PinDescription) -> ButtonStyle {
+const PIN_RADIUS: Radius = Radius {
+    top_left: PIN_BUTTON_RADIUS,
+    top_right: PIN_BUTTON_RADIUS,
+    bottom_right: PIN_BUTTON_RADIUS,
+    bottom_left: PIN_BUTTON_RADIUS,
+};
+
+const PIN_BORDER: Border = Border {
+    color: Color::TRANSPARENT,
+    width: 0.0,
+    radius: PIN_RADIUS,
+};
+
+const PIN_SHADOW: Shadow = Shadow {
+    color: Color::TRANSPARENT,
+    offset: iced::Vector { x: 0.0, y: 0.0 },
+    blur_radius: 0.0,
+};
+
+const V3_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(1.0, 0.92, 0.016, 1.0))),
+    text_color: Color::BLACK,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
+    // hovered_text_color: Color::BLACK,
+    shadow: PIN_SHADOW,
+};
+
+const V5_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(1.0, 0.0, 0.0, 1.0))),
+    text_color: Color::BLACK,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
+    // hovered_text_color: Color::BLACK,
+    shadow: PIN_SHADOW,
+};
+
+const GND_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::BLACK)),
+    text_color: Color::WHITE,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::WHITE,
+    // hovered_text_color: Color::BLACK,
+    shadow: PIN_SHADOW,
+};
+
+const GPIO_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(
+        0.678, 0.847, 0.902, 1.0,
+    ))),
+    text_color: Color::WHITE,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::WHITE,
+    // hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
+    shadow: PIN_SHADOW,
+};
+
+const GPIO7_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(
+        0.933, 0.510, 0.933, 1.0,
+    ))),
+    text_color: Color::WHITE,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::WHITE,
+    // hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
+    shadow: PIN_SHADOW,
+};
+
+const GPIO14_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(0.0, 0.502, 0.0, 1.0))),
+    text_color: Color::WHITE,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::WHITE,
+    // hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
+    shadow: PIN_SHADOW,
+};
+
+const ID_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(
+        0.502, 0.502, 0.502, 1.0,
+    ))),
+    text_color: Color::WHITE,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::WHITE,
+    // hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
+    shadow: PIN_SHADOW,
+};
+
+const DEFAULT_BUTTON_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(1.0, 0.647, 0.0, 1.0))),
+    text_color: Color::WHITE,
+    border: PIN_BORDER,
+    // hovered_bg_color: Color::WHITE,
+    // hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
+    shadow: PIN_SHADOW,
+};
+
+const TOGGLER_STYLE: toggler::Style = toggler::Style {
+    background: Color::from_rgba(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
+    background_border_width: 1.0,
+    background_border_color: Color::from_rgba(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
+    foreground: Color::from_rgba(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
+    foreground_border_width: 1.0,
+    foreground_border_color: Color::from_rgba(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
+                                                                   // active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
+                                                                   // active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
+                                                                   // active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
+                                                                   // active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
+};
+
+fn get_pin_style(pin_description: &PinDescription) -> button::Style {
     match pin_description.name.as_ref() {
-        "3V3" => ButtonStyle {
-            bg_color: Color::new(1.0, 0.92, 0.016, 1.0), // Yellow
-            text_color: Color::BLACK,
-            border_radius: 50.0,
-            hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
-            hovered_text_color: Color::BLACK,
-        },
-        "5V" => ButtonStyle {
-            bg_color: Color::new(1.0, 0.0, 0.0, 1.0), // Red
-            text_color: Color::BLACK,
-            border_radius: 50.0,
-            hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
-            hovered_text_color: Color::BLACK,
-        },
-        "Ground" => ButtonStyle {
-            bg_color: Color::BLACK,
-            text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::BLACK,
-        },
-
-        "GPIO2" | "GPIO3" => ButtonStyle {
-            bg_color: Color::new(0.678, 0.847, 0.902, 1.0),
-            text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
-        },
-
-        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => ButtonStyle {
-            bg_color: Color::new(0.933, 0.510, 0.933, 1.0), // Violet
-            text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
-        },
-
-        "GPIO14" | "GPIO15" => ButtonStyle {
-            bg_color: Color::new(0.0, 0.502, 0.0, 1.0),
-            text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
-        },
-
-        "ID_SD" | "ID_SC" => ButtonStyle {
-            bg_color: Color::new(0.502, 0.502, 0.502, 1.0), // Grey
-            text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
-        },
-        _ => ButtonStyle {
-            bg_color: Color::new(1.0, 0.647, 0.0, 1.0),
-            text_color: Color::WHITE,
-            border_radius: 50.0,
-            hovered_bg_color: Color::WHITE,
-            hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
-        },
+        "3V3" => V3_BUTTON_STYLE,
+        "5V" => V5_BUTTON_STYLE,
+        "Ground" => GND_BUTTON_STYLE,
+        "GPIO2" | "GPIO3" => GPIO_BUTTON_STYLE,
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => GPIO7_BUTTON_STYLE,
+        "GPIO14" | "GPIO15" => GPIO14_BUTTON_STYLE,
+        "ID_SD" | "ID_SC" => ID_BUTTON_STYLE,
+        _ => DEFAULT_BUTTON_STYLE,
     }
 }
 
@@ -287,7 +342,7 @@ impl HardwareView {
         self.update_hw_config();
     }
 
-    pub fn update(&mut self, message: HardwareViewMessage) -> Command<Message> {
+    pub fn update(&mut self, message: HardwareViewMessage) -> Task<Message> {
         match message {
             UpdateCharts => {
                 // Update all the charts of the pins that have an assigned function
@@ -298,9 +353,7 @@ impl HardwareView {
 
             PinFunctionSelected(bcm_pin_number, pin_function) => {
                 self.new_pin_function(bcm_pin_number, pin_function);
-                return Command::perform(empty(), |_| {
-                    <Piggui as iced::Application>::Message::ConfigChangesMade
-                });
+                return Task::perform(empty(), |_| Message::ConfigChangesMade);
             }
 
             NewConfig(config) => {
@@ -313,9 +366,7 @@ impl HardwareView {
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
-                    return Command::perform(empty(), |_| {
-                        <Piggui as iced::Application>::Message::Connected
-                    });
+                    return Task::perform(empty(), |_| Message::Connected);
                 }
                 HardwareEventMessage::InputChange(bcm_pin_number, level_change) => {
                     self.pin_states
@@ -324,8 +375,8 @@ impl HardwareView {
                         .set_level(level_change);
                 }
                 HardwareEventMessage::Disconnected(message) => {
-                    return Command::perform(empty(), |_| {
-                        <Piggui as iced::Application>::Message::ConnectionError(message)
+                    return Task::perform(empty(), move |_| {
+                        Message::ConnectionError(message.clone())
                     });
                 }
             },
@@ -346,7 +397,7 @@ impl HardwareView {
             Activate(pin_number) => println!("Pin {pin_number} clicked"),
         }
 
-        Command::none()
+        Task::none()
     }
 
     fn hw_view(
@@ -366,7 +417,7 @@ impl HardwareView {
 
             return scrollable(pin_layout)
                 .direction({
-                    let scrollbar = scrollable::Properties::new().width(10);
+                    let scrollbar = Scrollbar::new().width(10);
                     scrollable::Direction::Both {
                         horizontal: scrollbar,
                         vertical: scrollbar,
@@ -388,7 +439,7 @@ impl HardwareView {
     ) -> Element<'a, Message> {
         let hw_column = Column::new()
             .push(self.hw_view(layout, hardware_target).map(Message::Hardware))
-            .align_items(Alignment::Center)
+            .align_x(Center)
             .height(Length::Fill)
             .width(Length::Fill);
 
@@ -407,8 +458,13 @@ impl HardwareView {
             ];
 
         if hardware_target != &NoHW {
-            subscriptions
-                .push(hardware_subscription::subscribe(hardware_target).map(HardwareSubscription));
+            subscriptions.push(
+                Subscription::run_with_id(
+                    "hardware",
+                    hardware_subscription::subscribe(hardware_target),
+                )
+                .map(HardwareSubscription),
+            );
         }
 
         Subscription::batch(subscriptions)
@@ -432,14 +488,14 @@ impl HardwareView {
                     self.pin_states.get(bcm_pin_number),
                 );
 
-                column = column
-                    .push(pin_row)
-                    .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
-                    .align_items(Alignment::Center);
+                column = column.push(pin_row);
             }
         }
 
-        column.into()
+        column
+            .spacing(SPACE_BETWEEN_PIN_ROWS)
+            .align_x(Alignment::Start)
+            .into()
     }
 
     /// View that draws the pins laid out as they are on the physical Pi board
@@ -472,19 +528,16 @@ impl HardwareView {
             let row = Row::new()
                 .push(left_row)
                 .push(right_row)
-                .spacing(BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS)
-                .align_items(Alignment::Center);
+                .spacing(SPACE_BETWEEN_PIN_COLUMNS)
+                .align_y(Center);
 
-            column = column
-                .push(row)
-                .push(iced::widget::Space::new(
-                    Length::Fixed(1.0),
-                    Length::Fixed(VERTICAL_SPACE_BETWEEN_PIN_ROWS),
-                ))
-                .align_items(Alignment::Center);
+            column = column.push(row);
         }
 
-        column.into()
+        column
+            .spacing(SPACE_BETWEEN_PIN_ROWS)
+            .align_x(Center)
+            .into()
     }
 }
 
@@ -520,19 +573,6 @@ fn get_pin_widget<'a>(
     pin_state: &'a PinState,
     direction: Direction,
 ) -> Element<'a, HardwareViewMessage> {
-    let toggle_button_style = TogglerStyle {
-        background: Color::new(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
-        background_border_width: 1.0,
-        background_border_color: Color::new(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
-        foreground: Color::new(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
-        foreground_border_width: 1.0,
-        foreground_border_color: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
-        active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
-        active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
-        active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
-        active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
-    };
-
     let row: Row<HardwareViewMessage> = match pin_function {
         Some(Input(pull)) => {
             let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
@@ -550,16 +590,13 @@ fn get_pin_widget<'a>(
         }
 
         Some(Output(_)) => {
-            let output_toggler = toggler(
-                None,
-                pin_state.get_level().unwrap_or(false as PinLevel),
-                move |b| {
+            let output_toggler = toggler(pin_state.get_level().unwrap_or(false as PinLevel))
+                .on_toggle(move |b| {
                     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
-                },
-            )
-            .size(TOGGLER_SIZE)
-            .style(toggle_button_style.get_toggler_style());
+                })
+                .size(TOGGLER_SIZE)
+                .style(move |_theme, _status| TOGGLER_STYLE);
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
@@ -606,7 +643,7 @@ fn get_pin_widget<'a>(
 
     row.width(Length::Fixed(PIN_WIDGET_ROW_WIDTH))
         .spacing(WIDGET_ROW_SPACING)
-        .align_items(Alignment::Center)
+        .align_y(Center)
         .into()
 }
 
@@ -657,10 +694,10 @@ fn create_pin_view_side<'a>(
     // Create the drop-down selector of pin function
     let mut pin_option = Column::new()
         .width(Length::Fixed(PIN_OPTION_WIDTH))
-        .align_items(Alignment::Center);
+        .align_x(Center);
 
     if let Some(bcm_pin_number) = pin_description.bcm {
-        let mut pin_options_row = Row::new().align_items(Alignment::Center);
+        let mut pin_options_row = Row::new().align_y(Center);
 
         // Filter options
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
@@ -683,17 +720,17 @@ fn create_pin_view_side<'a>(
 
     let mut pin_name_column = Column::new()
         .width(Length::Fixed(PIN_NAME_WIDTH))
-        .align_items(Alignment::Center);
+        .align_x(Center);
 
     // Create the Pin name
     let pin_name = Row::new()
         .push(Text::new(pin_description.name.to_string()))
-        .align_items(Alignment::Center);
+        .align_y(Center);
 
     pin_name_column = pin_name_column.push(pin_name).width(PIN_NAME_WIDTH);
 
     let mut pin_arrow = Row::new()
-        .align_items(Alignment::Center)
+        .align_y(Center)
         .width(Length::Fixed(PIN_ARROW_WIDTH));
 
     if direction == Left {
@@ -704,13 +741,18 @@ fn create_pin_view_side<'a>(
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
     }
 
-    let mut pin_button_column = Column::new().align_items(Alignment::Center);
+    let mut pin_button_column = Column::new().align_x(Center);
     // Create the pin itself, with number and as a button
-    let pin_button =
-        button(Text::new(pin_description.bpn.to_string()).horizontal_alignment(Horizontal::Center))
-            .width(Length::Fixed(PIN_BUTTON_WIDTH))
-            .style(get_pin_style(pin_description).get_button_style())
-            .on_press(Activate(pin_description.bpn));
+    let pin_button = button(
+        container(Text::new(pin_description.bpn.to_string()))
+            .align_x(Center)
+            .align_y(Center),
+    )
+    .padding(0.0)
+    .width(Length::Fixed(PIN_BUTTON_WIDTH))
+    .height(Length::Fixed(PIN_BUTTON_WIDTH))
+    .style(move |_, _| get_pin_style(pin_description))
+    .on_press(Activate(pin_description.bpn));
 
     pin_button_column = pin_button_column.push(pin_button);
     // Create the row of widgets that represent the pin, inverted order if left or right
@@ -718,20 +760,19 @@ fn create_pin_view_side<'a>(
         Row::new()
             .push(pin_widget)
             .push(pin_option)
-            .push(pin_name_column.align_items(Alignment::End))
+            .push(pin_name_column.align_x(Alignment::End))
             .push(pin_arrow)
             .push(pin_button_column)
     } else {
         Row::new()
             .push(pin_button_column)
             .push(pin_arrow)
-            .push(pin_name_column.align_items(Alignment::Start))
+            .push(pin_name_column.align_x(Alignment::Start))
             .push(pin_option)
             .push(pin_widget)
     };
 
-    row.align_items(Alignment::Center)
-        .spacing(WIDGET_ROW_SPACING)
+    row.align_y(Center).spacing(WIDGET_ROW_SPACING)
 }
 
 #[cfg(test)]

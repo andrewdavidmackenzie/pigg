@@ -6,14 +6,12 @@ use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::message_row::MessageMessage::Info;
 use crate::views::message_row::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
-use crate::widgets::modal::Modal;
+use crate::widgets::modal::modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{
-    executor, window, Application, Command, Element, Length, Pixels, Settings, Subscription, Theme,
-};
+use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -38,9 +36,10 @@ mod piggui_local_helper;
 #[cfg(feature = "tcp")]
 #[path = "networking/piggui_tcp_helper.rs"]
 mod piggui_tcp_helper;
-mod styles;
 mod views;
 mod widgets;
+
+const PIGGUI_ID: &str = "piggui";
 
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
@@ -55,7 +54,6 @@ pub enum Message {
     ModalHandle(ModalMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
-    MenuBarButtonClicked,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareTarget),
@@ -74,6 +72,24 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
+}
+
+fn main() -> iced::Result {
+    let settings = Settings {
+        id: Some(PIGGUI_ID.into()),
+        default_text_size: Pixels(14.0),
+        ..Default::default()
+    };
+
+    iced::application(Piggui::title, Piggui::update, Piggui::view)
+        .subscription(Piggui::subscription)
+        .window_size((500.0, 800.0))
+        .exit_on_close_request(false)
+        .resizable(true)
+        .settings(settings)
+        .window_size(LayoutSelector::get_default_window_size())
+        .theme(|_| Theme::Dark)
+        .run_with(Piggui::new)
 }
 
 impl Piggui {
@@ -98,30 +114,8 @@ impl Piggui {
     fn dialog_connection_error(&mut self, message: String) {
         self.connect_dialog.set_error(message);
     }
-}
 
-fn main() -> Result<(), iced::Error> {
-    let window = window::Settings {
-        resizable: true,
-        exit_on_close_request: false,
-        size: LayoutSelector::get_default_window_size(),
-        ..Default::default()
-    };
-
-    Piggui::run(Settings {
-        window,
-        default_text_size: Pixels(14.0),
-        ..Default::default()
-    })
-}
-
-impl Application for Piggui {
-    type Executor = executor::Default;
-    type Message = Message;
-    type Theme = Theme;
-    type Flags = ();
-
-    fn new(_flags: ()) -> (Piggui, Command<Message>) {
+    fn new() -> (Self, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
         #[cfg(not(target_arch = "wasm32"))]
@@ -150,30 +144,32 @@ impl Application for Piggui {
     fn title(&self) -> String {
         self.config_filename
             .clone()
-            .unwrap_or(String::from("Piggui"))
+            .unwrap_or(String::from("piggui"))
     }
 
-    fn update(&mut self, message: Message) -> Command<Message> {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             WindowEvent(event) => {
-                if let iced::Event::Window(window::Id::MAIN, window::Event::CloseRequested) = event
-                {
+                if let iced::Event::Window(window::Event::CloseRequested) = event {
                     if self.unsaved_changes {
                         let _ = self
                             .modal_handler
                             .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
                     } else {
-                        return window::close(window::Id::MAIN);
+                        return window::get_latest().and_then(window::close);
                     }
                 }
             }
 
-            MenuBarButtonClicked => {
-                return Command::none();
-            }
-
             LayoutChanged(layout) => {
-                return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
+                let layout = self.layout_selector.update(layout);
+                return window::get_latest().then(move |latest| {
+                    if let Some(id) = latest {
+                        window::resize(id, layout)
+                    } else {
+                        Task::none()
+                    }
+                });
             }
 
             Save => {
@@ -193,7 +189,7 @@ impl Application for Piggui {
                         &self.hardware_view,
                     );
                 } else {
-                    return Command::batch(vec![pick_and_load()]);
+                    return Task::batch(vec![pick_and_load()]);
                 }
             }
 
@@ -255,7 +251,7 @@ impl Application for Piggui {
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
     /*
@@ -288,29 +284,29 @@ impl Application for Piggui {
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding([0.0, 0.0, 0.0, 0.0])
+            .padding(Padding::new(0.0))
             .align_x(iced::alignment::Horizontal::Center)
-            .center_x()
-            .center_y();
+            .center_x(Length::Fill)
+            .center_y(Length::Fill);
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         if self.connect_dialog.show_modal {
-            return Modal::new(content, self.connect_dialog.view())
-                .on_blur(ConnectDialog(HideConnectDialog))
-                .into();
+            return modal(
+                content,
+                self.connect_dialog.view(),
+                ConnectDialog(HideConnectDialog),
+            );
         }
 
         if self.modal_handler.show_modal {
-            return Modal::new(content, self.modal_handler.view())
-                .on_blur(ModalHandle(ModalMessage::HideModal))
-                .into();
+            return modal(
+                content,
+                self.modal_handler.view(),
+                ModalHandle(ModalMessage::HideModal),
+            );
         }
 
         content.into()
-    }
-
-    fn theme(&self) -> Theme {
-        Theme::Dark
     }
 
     /// Subscribe to events from Hardware, from Windows and timings for StatusRow

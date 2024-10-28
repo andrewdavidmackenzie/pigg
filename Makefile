@@ -134,7 +134,7 @@ ssh:
 .PHONY: web-build
 web-build:
 	rustup target add wasm32-unknown-unknown
-	cargo build --target wasm32-unknown-unknown
+	cargo build --target wasm32-unknown-unknown --no-default-features
 
 .PHONY: web-run
 web-run: web-build

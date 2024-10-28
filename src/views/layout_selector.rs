@@ -1,16 +1,16 @@
 use crate::Message;
 use iced::widget::Button;
-use iced::{Color, Length, Size};
+use iced::{Length, Size};
 
 use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
-use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
+use crate::views::info_row::{
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE, MENU_STYLE,
+};
 use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
-use iced::{Background, Element, Renderer, Theme};
-use iced_aw::menu;
-use iced_aw::menu::StyleSheet;
+use iced::widget::button::Status::Hovered;
+use iced::{Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::MenuBarStyle;
 
 /// These are the possible layouts to chose from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -74,7 +74,7 @@ impl LayoutSelector {
                         Button::new("BCP Pin Layout")
                             .width(Length::Fill)
                             .on_press(Message::LayoutChanged(BCMLayout))
-                            .style(MENU_BUTTON_STYLE.get_button_style()),
+                            .style(move |_, _| MENU_BUTTON_STYLE),
                     );
                     menu_items.push(show_bcp_layout);
                     Button::new("layout: board")
@@ -84,32 +84,30 @@ impl LayoutSelector {
                         Button::new("Board Pin Layout")
                             .width(Length::Fill)
                             .on_press(Message::LayoutChanged(BoardLayout))
-                            .style(MENU_BUTTON_STYLE.get_button_style()),
+                            .style(move |_, _| MENU_BUTTON_STYLE),
                     );
                     menu_items.push(show_physical_layout);
 
                     Button::new("layout: bcp")
                 }
             }
-            .style(MENU_BAR_BUTTON_STYLE.get_button_style())
-            .on_press(Message::MenuBarButtonClicked)
+            .style(|_, _| MENU_BAR_BUTTON_STYLE)
         } else {
-            Button::new("layout").style(MENU_BAR_BUTTON_STYLE.get_button_style())
+            Button::new("layout")
         };
+
+        let button = button.style(move |_theme, status| {
+            if status == Hovered {
+                MENU_BAR_BUTTON_HOVER_STYLE
+            } else {
+                MENU_BAR_BUTTON_STYLE
+            }
+        });
 
         let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
         MenuBar::new(vec![menu_root])
-            .style(|theme: &iced::Theme| menu::Appearance {
-                bar_background: Background::Color(Color::TRANSPARENT),
-                menu_shadow: iced::Shadow {
-                    color: Color::BLACK,
-                    offset: iced::Vector::new(1.0, 1.0),
-                    blur_radius: 10f32,
-                },
-                menu_background_expand: iced::Padding::from([5, 5]),
-                ..theme.appearance(&MenuBarStyle::Default)
-            })
+            .style(|_, _| MENU_STYLE)
             .into()
     }
 }

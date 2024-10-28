@@ -1,16 +1,15 @@
-use crate::views::hardware_view::{HardwareTarget, HardwareView};
-use crate::views::info_row::{MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE};
-use crate::HardwareTarget::*;
-use crate::{Message, ModalMessage};
-use iced::widget::{Button, Text};
-use iced::{Background, Color, Element, Length, Renderer, Theme};
-use iced_aw::menu;
-use iced_aw::menu::StyleSheet;
-use iced_aw::menu::{Item, Menu, MenuBar};
-use iced_aw::style::MenuBarStyle;
-
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
+use crate::views::hardware_view::{HardwareTarget, HardwareView};
+use crate::views::info_row::{
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE, MENU_STYLE,
+};
+use crate::HardwareTarget::*;
+use crate::{Message, ModalMessage};
+use iced::widget::button::Status::Hovered;
+use iced::widget::{Button, Text};
+use iced::{Element, Length, Renderer, Theme};
+use iced_aw::menu::{Item, Menu, MenuBar};
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
@@ -36,7 +35,7 @@ pub fn view<'a>(
         Button::new("Disconnect")
             .width(Length::Fill)
             .on_press(Message::ConnectRequest(NoHW))
-            .style(MENU_BUTTON_STYLE.get_button_style()),
+            .style(|_, _| MENU_BUTTON_STYLE),
     );
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -46,14 +45,14 @@ pub fn view<'a>(
             .on_press(Message::ConnectDialog(
                 ConnectDialogMessage::ShowConnectDialog,
             ))
-            .style(MENU_BUTTON_STYLE.get_button_style()),
+            .style(move |_, _| MENU_BUTTON_STYLE),
     );
 
     #[cfg(not(target_arch = "wasm32"))]
     let connect_local: Item<'a, Message, _, _> = Item::new(
         Button::new("Connect to local")
             .on_press(Message::ConnectRequest(Local))
-            .style(MENU_BUTTON_STYLE.get_button_style())
+            .style(move |_, _| MENU_BUTTON_STYLE)
             .width(Length::Fill),
     );
 
@@ -61,7 +60,7 @@ pub fn view<'a>(
         Button::new(Text::new("Show details..."))
             .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
-            .style(MENU_BUTTON_STYLE.get_button_style()),
+            .style(move |_, _| MENU_BUTTON_STYLE),
     );
 
     match hardware_target {
@@ -92,26 +91,22 @@ pub fn view<'a>(
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
             .width(Length::Fill)
-            .style(MENU_BUTTON_STYLE.get_button_style()),
+            .style(move |theme, status| MENU_BUTTON_STYLE),
     ));
 
     let menu_root = Item::with_menu(
-        Button::new(Text::new(model))
-            .style(MENU_BAR_BUTTON_STYLE.get_button_style())
-            .on_press(Message::MenuBarButtonClicked),
+        Button::new(Text::new(model)).style(move |_theme, status| {
+            if status == Hovered {
+                MENU_BAR_BUTTON_HOVER_STYLE
+            } else {
+                MENU_BAR_BUTTON_STYLE
+            }
+        }),
         Menu::new(menu_items).width(235.0).offset(10.0),
     );
 
+    // which is an unused import right now?
     MenuBar::new(vec![menu_root])
-        .style(|theme: &iced::Theme| menu::Appearance {
-            bar_background: Background::Color(Color::TRANSPARENT),
-            menu_shadow: iced::Shadow {
-                color: Color::BLACK,
-                offset: iced::Vector::new(1.0, 1.0),
-                blur_radius: 10f32,
-            },
-            menu_background_expand: iced::Padding::from([5, 5]),
-            ..theme.appearance(&MenuBarStyle::Default)
-        })
+        .style(|_, _| MENU_STYLE)
         .into()
 }

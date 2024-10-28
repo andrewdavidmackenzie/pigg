@@ -165,7 +165,7 @@ impl Animation {
         let elapsed = now.duration_since(self.start());
         let additional_rotation = ((now - self.last()).as_secs_f32()
             / rotation_duration.as_secs_f32()
-            * (u32::MAX) as f32) as u32;
+            * u32::MAX as f32) as u32;
 
         match elapsed {
             elapsed if elapsed > cycle_duration => self.next(additional_rotation, now),
@@ -221,14 +221,6 @@ where
     Message: 'a + Clone,
     Theme: StyleSheet,
 {
-    fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<State>()
-    }
-
-    fn state(&self) -> tree::State {
-        tree::State::new(State::default())
-    }
-
     fn size(&self) -> Size<Length> {
         Size {
             width: Length::Fixed(self.size),
@@ -243,32 +235,6 @@ where
         limits: &layout::Limits,
     ) -> layout::Node {
         layout::atomic(limits, self.size, self.size)
-    }
-
-    fn on_event(
-        &mut self,
-        tree: &mut Tree,
-        event: Event,
-        _layout: Layout<'_>,
-        _cursor: mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn Clipboard,
-        shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
-    ) -> event::Status {
-        let state = tree.state.downcast_mut::<State>();
-
-        if let Event::Window(_, window::Event::RedrawRequested(now)) = event {
-            state.animation =
-                state
-                    .animation
-                    .timed_transition(self.cycle_duration, self.rotation_duration, now);
-
-            state.cache.clear();
-            shell.request_redraw(RedrawRequest::NextFrame);
-        }
-
-        event::Status::Ignored
     }
 
     fn draw(
@@ -334,8 +300,42 @@ where
         renderer.with_translation(Vector::new(bounds.x, bounds.y), |renderer| {
             use iced::advanced::graphics::geometry::Renderer as _;
 
-            renderer.draw(vec![geometry]);
+            renderer.draw_geometry(geometry);
         });
+    }
+
+    fn tag(&self) -> tree::Tag {
+        tree::Tag::of::<State>()
+    }
+
+    fn state(&self) -> tree::State {
+        tree::State::new(State::default())
+    }
+
+    fn on_event(
+        &mut self,
+        tree: &mut Tree,
+        event: Event,
+        _layout: Layout<'_>,
+        _cursor: mouse::Cursor,
+        _renderer: &Renderer,
+        _clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+        _viewport: &Rectangle,
+    ) -> event::Status {
+        let state = tree.state.downcast_mut::<State>();
+
+        if let Event::Window(window::Event::RedrawRequested(now)) = event {
+            state.animation =
+                state
+                    .animation
+                    .timed_transition(self.cycle_duration, self.rotation_duration, now);
+
+            state.cache.clear();
+            shell.request_redraw(RedrawRequest::NextFrame);
+        }
+
+        event::Status::Ignored
     }
 }
 
@@ -359,7 +359,7 @@ pub struct Appearance {
     pub bar_color: Color,
 }
 
-impl std::default::Default for Appearance {
+impl Default for Appearance {
     fn default() -> Self {
         Self {
             background: None,
@@ -374,7 +374,7 @@ pub trait StyleSheet {
     /// The supported style of the [`StyleSheet`].
     type Style: Default;
 
-    /// Produces the active [`Appearance`] of a indicator.
+    /// Produces the active [`Appearance`] of an indicator.
     fn appearance(&self, style: &Self::Style) -> Appearance;
 }
 
