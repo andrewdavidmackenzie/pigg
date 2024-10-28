@@ -59,6 +59,7 @@ const PIN_WIDGET_ROW_WIDTH: f32 =
 //     + PIN_OPTION_WIDTH;
 
 const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
+
 // Export these two, so they can be used to calculate overall window size
 // pub const BCM_PIN_LAYOUT_WIDTH: f32 = PIN_VIEW_SIDE_WIDTH; // One pin row per row
 
@@ -66,9 +67,7 @@ const BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS: f32 = 10.0;
 // pub const BOARD_PIN_LAYOUT_WIDTH: f32 =
 //     PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS;
 
-// HEIGHTS
-const VERTICAL_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
-const BCM_SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
+const SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
 /// This enum is for async events in the hardware that will be sent to the GUI
 #[allow(clippy::large_enum_variant)]
@@ -491,7 +490,7 @@ impl HardwareView {
 
                 column = column
                     .push(pin_row)
-                    .spacing(BCM_SPACE_BETWEEN_PIN_ROWS)
+                    .spacing(SPACE_BETWEEN_PIN_ROWS)
                     .align_x(Center);
             }
         }
@@ -536,7 +535,7 @@ impl HardwareView {
                 .push(row)
                 .push(iced::widget::Space::new(
                     Length::Fixed(1.0),
-                    Length::Fixed(VERTICAL_SPACE_BETWEEN_PIN_ROWS),
+                    Length::Fixed(SPACE_BETWEEN_PIN_ROWS),
                 ))
                 .align_x(Center);
         }
