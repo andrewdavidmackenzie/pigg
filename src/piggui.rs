@@ -166,7 +166,7 @@ impl Piggui {
             }
 
             LayoutChanged(layout) => {
-                return window::resize(window::Id::MAIN, self.layout_selector.update(layout));
+                return window::resize(window::Id::unique(), self.layout_selector.update(layout));
             }
 
             Save => {
