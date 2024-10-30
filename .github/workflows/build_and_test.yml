@@ -28,8 +28,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run cargo fmt check
-        run: cargo fmt --all -- --check
+      - name: Run cargo fmt check on piggui
+        run: cd piggui && cargo fmt --all -- --check
+
+      - name: Run cargo fmt check on porky
+        run: cd porky && cargo fmt --all -- --check
 
   arm7-build:
     runs-on: ubuntu-latest
@@ -52,8 +55,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Clippy and Build for armv7
-        run: make armv7
+      - name: Clippy and Build of piggui for armv7
+        run: cd piggui && make armv7
 
   aarch64-build:
     runs-on: ubuntu-latest
@@ -76,8 +79,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Clippy and Build for aarch64
-        run: make aarch64
+      - name: Clippy and Build piggui for aarch64
+        run: cd piggui && make aarch64
 
   porky-release-build:
     runs-on: ubuntu-latest
@@ -118,13 +121,14 @@ jobs:
         with:
           ref: HEAD
 
-      - name: Clippy build and test - non-Linux
+      - name: Clippy build and test piggui - non-Linux
         if: runner.os != 'Linux'
-        run: make clippy build test
+        run: cd piggui && make clippy build test
 
-      - name: Clippy build and test - Linux
+      - name: Clippy build and test piggui - Linux
         if: runner.os == 'Linux'
         run: |
+          cd piggui
           make clippy build
           sudo apt-get update
           sudo apt-get install weston
@@ -133,9 +137,10 @@ jobs:
         env:
           WAYLAND_DISPLAY: weston
 
-      - name: Clean up coverage
+      - name: Clean up coverage of piggui
         if: runner.os != 'Windows'
         run: |
+          cd piggui
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
           lcov --ignore-errors empty,empty --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
 

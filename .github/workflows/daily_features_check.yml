@@ -24,11 +24,11 @@ jobs:
         run: cargo install cargo-all-features
 
       - name: cargo build-all-features
-        run: cargo build-all-features
+        run: cd piggui && cargo build-all-features
 
       - name: cargo test all features - non-Linux
         if: runner.os != 'Linux'
-        run: cargo test-all-features
+        run: cd piggui && cargo test-all-features
 
       - name: cargo test all features - Linux
         if: runner.os == 'Linux'
@@ -36,6 +36,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install weston
           weston -Bheadless -Sweston &
-          cargo test-all-features
+          cd piggui && cargo test-all-features
         env:
           WAYLAND_DISPLAY: weston
