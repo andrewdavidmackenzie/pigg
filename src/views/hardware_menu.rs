@@ -105,7 +105,6 @@ pub fn view<'a>(
         Menu::new(menu_items).width(235.0).offset(10.0),
     );
 
-    // which is an unused import right now?
     MenuBar::new(vec![menu_root])
         .style(|_, _| MENU_STYLE)
         .into()
