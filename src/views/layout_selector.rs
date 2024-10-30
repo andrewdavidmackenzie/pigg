@@ -91,7 +91,6 @@ impl LayoutSelector {
                     Button::new("layout: bcp")
                 }
             }
-            .style(|_, _| MENU_BAR_BUTTON_STYLE)
         } else {
             Button::new("layout")
         };
