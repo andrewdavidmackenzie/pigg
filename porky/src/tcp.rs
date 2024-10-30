@@ -53,10 +53,10 @@ async fn accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device_id:
 
     // send hardware description
     let details = HardwareDetails {
-        hardware: "foo", // TODO
-        revision: "foo", // TODO
-        serial: from_utf8(&device_id_hex).unwrap(),
         model: "Pi Pico W",
+        hardware: "RP2040",
+        revision: "",
+        serial: from_utf8(&device_id_hex).unwrap(),
     };
 
     let hw_desc = HardwareDescription {
