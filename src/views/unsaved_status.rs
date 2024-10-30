@@ -60,7 +60,8 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         }),
     };
 
-    let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
+    // Increased width to 145 as Linux needs a little more width
+    let menu_root = Item::with_menu(button, Menu::new(menu_items).width(145.0).offset(10.0));
 
     MenuBar::new(vec![menu_root])
         .style(|_, _| MENU_STYLE)
