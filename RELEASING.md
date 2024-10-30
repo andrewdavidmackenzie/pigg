@@ -2,7 +2,7 @@
 
 We use `cargo dist` to automate our release and package publishing process.
 
-The steps to do a full release are:
+The steps to do a full release are (in the `piggui` subfolder):
 
 - Merge all pending PRs planned for the release
 - Create a new issue in GitHub based on the "release-manual-testing-template.md" and assign it to the milestone

@@ -8,11 +8,16 @@ Pi and allow you to control the GPIO hardware directly from the UI.
 Alternatively, you can run `piglet` to interact with the hardware (on a Pi...) and on the same machine or a remote
 one run `piggui` for the GUI.
 
+- `porky` is to enable a Pi Pico W to control GPIO hardware connected to it, and connect to it over Tcp from `piggui`
+  for the GUI.
+
 ## Running Piglet
 
-For now, while we need you to build from source:
+In the `piggui` subfolder:
 
-- Use `make run-piglet` or `make run-release-piglet`
+### Run Piglet in the foreground
+
+Use `make run-piglet` or `make run-release-piglet`
 
 On macOS/linux/Windows this will build for the local machine, and start `piglet` with a fake hardware backend.
 
@@ -44,9 +49,9 @@ the terminal. You can copy these and use them with `piggui` on the same, or a re
 
 ## Piggui
 
-For now, while we need you to build from source:
+In the `piggui` subfolder:
 
-- Use `make run`
+- Use `make run` or `make run-release`
 
 One macOS/linux/Windows this will build for the local machine
 (using `cargo run --bin piggui --features "fake_hw"`), and start `piggui` with a fake hardware backend.
@@ -67,18 +72,13 @@ On macOS/Linux/Window:
 
 - On macOS, linux or Windows: `cargo run --bin piggui --features "fake_hw" -- <filename>`
 
-### Connecting Piggui to a remove Piglet
+## Connecting Piggui to a remote Piglet
+
+### Connecting using iroh-net
 
 To connect to a remote piglet, get the `nodeid` value from the piglet instance (see above) and pass it to
 `piggui` as a command line option.
 
-When building from source, run `piggui` thus (where $nodeid is the value of the node id, quotes not required;
+On a Pi or macOS/Linux/Windows:
 
-On a Pi:
-
-- `cargo run --bin piggui -- --nodeid $nodeid` (builds with no hardware backend)
-- `cargo run --bin piggui --features "pi_hw" -- --nodeid $nodeid` (built with a Pi hardware backend)
-
-On macOS/Linux/Windows:
-
-- `cargo run --bin piggui -- --nodeid $nodeid`
+- `cargo run --bin piggui -- --nodeid $nodeid` / `piggui --nodeid $nodeid` (if installed)

@@ -36,7 +36,7 @@ mod tcp;
 mod gpio;
 
 /// Definition of hardware structs passed back and fore between porky and the GUI
-#[path = "../../src/hw_definition/mod.rs"]
+#[path = "../../piggui/src/hw_definition/mod.rs"]
 mod hw_definition;
 
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
