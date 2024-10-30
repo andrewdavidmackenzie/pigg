@@ -37,21 +37,24 @@ pub struct HardwareDescription<'a> {
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDetails {
-    pub hardware: String,
-    pub revision: String,
-    pub serial: String,
     /// A Human friendly Hardware Model description
     pub model: String,
+    /// Chipset used
+    pub hardware: String,
+    /// A Pi specific revision number that identifies the hardware board and chip used
+    pub revision: String,
+    /// A serial number unique to each device
+    pub serial: String,
 }
 
 #[cfg(not(feature = "std"))]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Serialize)]
 pub struct HardwareDetails<'a> {
+    pub model: &'a str,
     pub hardware: &'a str,
     pub revision: &'a str,
     pub serial: &'a str,
-    pub model: &'a str,
 }
 
 #[cfg(feature = "std")]
