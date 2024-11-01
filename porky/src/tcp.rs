@@ -1,7 +1,5 @@
 use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
-use crate::pin_descriptions::PIN_DESCRIPTIONS;
-use core::str::from_utf8;
+use crate::hw_definition::description::HardwareDescription;
 use cyw43::NetDriver;
 use defmt::{error, info};
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
@@ -9,13 +7,11 @@ use embassy_net::tcp::TcpSocket;
 use embassy_net::Ipv4Address;
 use embassy_net::Stack;
 use embedded_io_async::Write;
-use faster_hex::hex_encode;
-use heapless::Vec;
 
 /// Wait for a TCP connection to be made to this device
 pub async fn wait_connection<'a>(
     stack: &'a Stack<NetDriver<'static>>,
-    device_id: [u8; 8],
+    hw_desc: &'a HardwareDescription<'_>,
     ip_address: Ipv4Address,
     rx_buffer: &'a mut [u8],
     tx_buffer: &'a mut [u8],
@@ -28,13 +24,17 @@ pub async fn wait_connection<'a>(
     //socket.set_timeout(Some(Duration::from_secs(10)));
 
     // wait for an incoming TCP connection
-    accept(&mut socket, &ip_address, &device_id).await;
+    accept(&mut socket, &ip_address, hw_desc).await;
 
     socket
 }
 
 /// Wait for an incoming TCP connection, then respond to it with the [HardwareDescription]
-async fn accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device_id: &[u8; 8]) {
+async fn accept(
+    socket: &mut TcpSocket<'_>,
+    ip_address: &Ipv4Address,
+    hw_desc: &HardwareDescription<'_>,
+) {
     let mut buf = [0; 4096];
 
     info!("Listening on TCP {}:1234", ip_address);
@@ -47,24 +47,6 @@ async fn accept(socket: &mut TcpSocket<'_>, ip_address: &Ipv4Address, device_id:
         "Received connection from {:?}",
         socket.remote_endpoint().unwrap()
     );
-
-    let mut device_id_hex: [u8; 16] = [0; 16];
-    hex_encode(device_id, &mut device_id_hex).unwrap();
-
-    // send hardware description
-    let details = HardwareDetails {
-        model: "Pi Pico W",
-        hardware: "RP2040",
-        revision: "",
-        serial: from_utf8(&device_id_hex).unwrap(),
-    };
-
-    let hw_desc = HardwareDescription {
-        details,
-        pins: PinDescriptionSet {
-            pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
-        },
-    };
 
     let slice = postcard::to_slice(&hw_desc, &mut buf).unwrap();
     info!("Sending hardware description (length: {})", slice.len());
