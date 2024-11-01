@@ -5,7 +5,7 @@ use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use crate::ssid::{MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH};
-use core::str::from_utf8;
+use core::str;
 use cyw43_pio::PioSpi;
 use defmt::info;
 use defmt_rtt as _;
@@ -55,6 +55,38 @@ bind_interrupts!(struct Irqs {
 });
 
 pub static GUI_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> = Channel::new();
+
+/// Read a unique device ID from the Flash and format it as hex into the provided 16 byte array
+fn device_id(
+    mut device_id_hex: [u8; 16],
+    flash_pin: embassy_rp::peripherals::FLASH,
+    dma_pin: embassy_rp::peripherals::DMA_CH1,
+) {
+    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
+    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(flash_pin, dma_pin);
+    let mut device_id = [0; 8];
+    flash.blocking_unique_id(&mut device_id).unwrap();
+
+    // convert the device_id to a hex "string"
+    hex_encode(&device_id, &mut device_id_hex).unwrap();
+}
+
+/// Create a [HardwareDescription] for this device with the provided serial number
+fn hardware_description(serial: &str) -> HardwareDescription {
+    let details = HardwareDetails {
+        model: "Pi Pico W",
+        hardware: "RP2040",
+        revision: "",
+        serial,
+    };
+
+    HardwareDescription {
+        details,
+        pins: PinDescriptionSet {
+            pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
+        },
+    }
+}
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -114,11 +146,6 @@ async fn main(spawner: Spawner) {
     };
     gpio::setup_pins(header_pins);
 
-    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
-    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(peripherals.FLASH, peripherals.DMA_CH1);
-    let mut device_id = [0; 8];
-    flash.blocking_unique_id(&mut device_id).unwrap();
-
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
 
@@ -126,23 +153,11 @@ async fn main(spawner: Spawner) {
     let mut tx_buffer = [0; 4096];
     let mut buf = [0; 1024];
 
-    let mut device_id_hex: [u8; 16] = [0; 16];
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
-
-    // send hardware description
-    let details = HardwareDetails {
-        model: "Pi Pico W",
-        hardware: "RP2040",
-        revision: "",
-        serial: from_utf8(&device_id_hex).unwrap(),
-    };
-
-    let hw_desc = HardwareDescription {
-        details,
-        pins: PinDescriptionSet {
-            pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
-        },
-    };
+    // create hardware description
+    let device_id_hex: [u8; 16] = [0; 16];
+    device_id(device_id_hex, peripherals.FLASH, peripherals.DMA_CH1);
+    let serial = str::from_utf8(&device_id_hex).unwrap();
+    let hw_desc = hardware_description(serial);
 
     while let Some(ip_address) = wifi::join(&mut control, &stack, ssid_name, ssid_pass).await {
         loop {
