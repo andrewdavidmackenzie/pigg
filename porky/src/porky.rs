@@ -159,10 +159,10 @@ async fn main(spawner: Spawner) {
     let serial = str::from_utf8(&device_id_hex).unwrap();
     let hw_desc = hardware_description(serial);
 
-    while let Some(ip_address) = wifi::join(&mut control, &stack, ssid_name, ssid_pass).await {
+    if let Some(ip_address) = wifi::join(&mut control, stack, ssid_name, ssid_pass).await {
         loop {
             let mut socket =
-                tcp::wait_connection(&stack, &hw_desc, ip_address, &mut tx_buffer, &mut rx_buffer)
+                tcp::wait_connection(stack, &hw_desc, ip_address, &mut tx_buffer, &mut rx_buffer)
                     .await;
 
             info!("Entering message loop");
