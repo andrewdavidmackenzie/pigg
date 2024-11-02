@@ -19,46 +19,63 @@ const MENU_RADIUS: Radius = Radius {
     bottom_left: 4.0,
 };
 
-pub(crate) const MENU_BORDER: Border = Border {
-    color: Color::TRANSPARENT,
-    width: 0.0,
-    radius: MENU_RADIUS,
-};
-
-pub(crate) const MENU_SHADOW: Shadow = Shadow {
-    color: Color::TRANSPARENT,
-    offset: iced::Vector { x: 0.0, y: 0.0 },
-    blur_radius: 0.0,
-};
-
-pub(crate) const BLACK_SHADOW: Shadow = Shadow {
+const BLACK_SHADOW: Shadow = Shadow {
     color: Color::BLACK,
     offset: iced::Vector::new(1.0, 1.0),
     blur_radius: 5f32,
 };
 
+const HOVERED_COLOR: Color = Color::WHITE;
+const UNHOVERED_COLOR: Color = Color::from_rgba(0.7, 0.7, 0.7, 1.0);
+
+const MENU_BORDER: Border = Border {
+    color: Color::TRANSPARENT,
+    width: 0.0,
+    radius: MENU_RADIUS,
+};
+
+const MENU_SHADOW: Shadow = Shadow {
+    color: Color::TRANSPARENT,
+    offset: iced::Vector { x: 0.0, y: 0.0 },
+    blur_radius: 0.0,
+};
+
 pub(crate) const MENU_BAR_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
-    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+    text_color: UNHOVERED_COLOR,
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
 pub(crate) const MENU_BAR_BUTTON_HOVER_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
-    text_color: Color::WHITE,
+    text_color: HOVERED_COLOR,
+    border: MENU_BORDER,
+    shadow: MENU_SHADOW,
+};
+
+pub(crate) const MENU_BAR_BUTTON_HIGHLIGHT_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::TRANSPARENT)),
+    text_color: Color::from_rgba(1.0, 0.647, 0.0, 0.7),
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
 pub(crate) const MENU_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
-    text_color: Color::WHITE,
+    text_color: UNHOVERED_COLOR,
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
-pub(crate) const MENU_STYLE: menu_bar::Style = menu_bar::Style {
+pub(crate) const MENU_BUTTON_HOVER_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::TRANSPARENT)),
+    text_color: HOVERED_COLOR,
+    border: MENU_BORDER,
+    shadow: MENU_SHADOW,
+};
+
+pub(crate) const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
     bar_background: Background::Color(Color::TRANSPARENT),
     bar_border: MENU_BORDER,
     bar_shadow: MENU_SHADOW,
@@ -119,7 +136,7 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding(Padding::new(0.0)),
         )
-        .style(|_| INFO_BAR_STYLE)
+        .style(|_theme| INFO_BAR_STYLE)
         .into()
     }
 

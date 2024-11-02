@@ -1,23 +1,14 @@
 use crate::Message;
-use iced::widget::{button, Button};
-use iced::{Color, Length};
+use iced::widget::Button;
+use iced::Length;
 
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BORDER, MENU_BUTTON_STYLE,
-    MENU_SHADOW, MENU_STYLE,
+    MENU_BAR_BUTTON_HIGHLIGHT_STYLE, MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE,
+    MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
 };
 use iced::widget::button::Status::Hovered;
-use iced::{Background, Element, Renderer, Theme};
+use iced::{Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
-
-pub(crate) const MENU_BAR_UNSAVED_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::TRANSPARENT)),
-    text_color: Color::from_rgba(1.0, 0.647, 0.0, 0.7),
-    border: MENU_BORDER,
-    // hovered_bg_color: Color::TRANSPARENT,
-    // hovered_text_color: Color::from_rgba(1.0, 0.647, 0.0, 1.0),
-    shadow: MENU_SHADOW,
-};
 
 /// Create the view that represents the status of unsaved changes in the info row
 pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> {
@@ -27,7 +18,13 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Load config from...")
             .width(Length::Fill)
             .on_press(Message::Load)
-            .style(move |_, _| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     menu_items.push(load_from);
@@ -36,7 +33,13 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Save config as...")
             .width(Length::Fill)
             .on_press(Message::Save)
-            .style(|_, _| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     if unsaved_changes {
@@ -48,7 +51,7 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
             if status == Hovered {
                 MENU_BAR_BUTTON_HOVER_STYLE
             } else {
-                MENU_BAR_UNSAVED_BUTTON_STYLE
+                MENU_BAR_BUTTON_HIGHLIGHT_STYLE
             }
         }),
         false => Button::new("config").style(move |_theme, status| {
@@ -64,6 +67,6 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
     let menu_root = Item::with_menu(button, Menu::new(menu_items).width(145.0).offset(10.0));
 
     MenuBar::new(vec![menu_root])
-        .style(|_, _| MENU_STYLE)
+        .style(|_, _| MENU_BAR_STYLE)
         .into()
 }
