@@ -53,12 +53,19 @@ pub(crate) const MENU_BAR_BUTTON_HOVER_STYLE: button::Style = button::Style {
 
 pub(crate) const MENU_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
+    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+    border: MENU_BORDER,
+    shadow: MENU_SHADOW,
+};
+
+pub(crate) const MENU_BUTTON_HOVER_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::WHITE,
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
-pub(crate) const MENU_STYLE: menu_bar::Style = menu_bar::Style {
+pub(crate) const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
     bar_background: Background::Color(Color::TRANSPARENT),
     bar_border: MENU_BORDER,
     bar_shadow: MENU_SHADOW,

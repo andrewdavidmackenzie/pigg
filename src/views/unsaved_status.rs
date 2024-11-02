@@ -3,8 +3,8 @@ use iced::widget::{button, Button};
 use iced::{Color, Length};
 
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BORDER, MENU_BUTTON_STYLE,
-    MENU_SHADOW, MENU_STYLE,
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BORDER,
+    MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE, MENU_SHADOW,
 };
 use iced::widget::button::Status::Hovered;
 use iced::{Background, Element, Renderer, Theme};
@@ -27,7 +27,13 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Load config from...")
             .width(Length::Fill)
             .on_press(Message::Load)
-            .style(move |_, _| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     menu_items.push(load_from);
@@ -36,7 +42,13 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
         Button::new("Save config as...")
             .width(Length::Fill)
             .on_press(Message::Save)
-            .style(|_, _| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     if unsaved_changes {
@@ -64,6 +76,6 @@ pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> 
     let menu_root = Item::with_menu(button, Menu::new(menu_items).width(145.0).offset(10.0));
 
     MenuBar::new(vec![menu_root])
-        .style(|_, _| MENU_STYLE)
+        .style(|_, _| MENU_BAR_STYLE)
         .into()
 }

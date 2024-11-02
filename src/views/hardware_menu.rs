@@ -2,7 +2,8 @@
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE, MENU_STYLE,
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
+    MENU_BUTTON_STYLE,
 };
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
@@ -35,7 +36,13 @@ pub fn view<'a>(
         Button::new("Disconnect")
             .width(Length::Fill)
             .on_press(Message::ConnectRequest(NoHW))
-            .style(|_, _| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -45,22 +52,40 @@ pub fn view<'a>(
             .on_press(Message::ConnectDialog(
                 ConnectDialogMessage::ShowConnectDialog,
             ))
-            .style(move |_, _| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     #[cfg(not(target_arch = "wasm32"))]
     let connect_local: Item<'a, Message, _, _> = Item::new(
         Button::new("Connect to local")
+            .width(Length::Fill)
             .on_press(Message::ConnectRequest(Local))
-            .style(move |_, _| MENU_BUTTON_STYLE)
-            .width(Length::Fill),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     let show_details = Item::new(
         Button::new(Text::new("Show details..."))
             .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
-            .style(move |_, _| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     );
 
     match hardware_target {
@@ -91,7 +116,13 @@ pub fn view<'a>(
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
             .width(Length::Fill)
-            .style(move |theme, status| MENU_BUTTON_STYLE),
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
     ));
 
     let menu_root = Item::with_menu(
@@ -106,6 +137,6 @@ pub fn view<'a>(
     );
 
     MenuBar::new(vec![menu_root])
-        .style(|_, _| MENU_STYLE)
+        .style(|_, _| MENU_BAR_STYLE)
         .into()
 }

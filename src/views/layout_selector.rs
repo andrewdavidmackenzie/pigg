@@ -5,7 +5,8 @@ use iced::{Length, Size};
 use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_STYLE, MENU_STYLE,
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
+    MENU_BUTTON_STYLE,
 };
 use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
 use iced::widget::button::Status::Hovered;
@@ -74,7 +75,13 @@ impl LayoutSelector {
                         Button::new("BCP Pin Layout")
                             .width(Length::Fill)
                             .on_press(Message::LayoutChanged(BCMLayout))
-                            .style(move |_, _| MENU_BUTTON_STYLE),
+                            .style(|_, status| {
+                                if status == Hovered {
+                                    MENU_BUTTON_HOVER_STYLE
+                                } else {
+                                    MENU_BUTTON_STYLE
+                                }
+                            }),
                     );
                     menu_items.push(show_bcp_layout);
                     Button::new("layout: board")
@@ -84,7 +91,13 @@ impl LayoutSelector {
                         Button::new("Board Pin Layout")
                             .width(Length::Fill)
                             .on_press(Message::LayoutChanged(BoardLayout))
-                            .style(move |_, _| MENU_BUTTON_STYLE),
+                            .style(|_, status| {
+                                if status == Hovered {
+                                    MENU_BUTTON_HOVER_STYLE
+                                } else {
+                                    MENU_BUTTON_STYLE
+                                }
+                            }),
                     );
                     menu_items.push(show_physical_layout);
 
@@ -106,7 +119,7 @@ impl LayoutSelector {
         let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
         MenuBar::new(vec![menu_root])
-            .style(|_, _| MENU_STYLE)
+            .style(|_, _| MENU_BAR_STYLE)
             .into()
     }
 }
