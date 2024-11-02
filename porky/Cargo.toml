@@ -46,6 +46,12 @@ serde_derive = "~1.0"
 serde = "~1.0"
 toml = { version = "0.8.8" }
 
+[profile.release]
+opt-level = "s"
+lto = "fat"
+panic = "abort"
+strip = "debuginfo"
+
 [patch.crates-io]
 # make sure to get the latest git rev from GitHub, you can see the latest one here:
 # https://github.com/embassy-rs/embassy/commits/main/
