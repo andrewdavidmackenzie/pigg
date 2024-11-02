@@ -51,8 +51,8 @@ impl LayoutSelector {
     pub fn update(&mut self, new_layout: Layout) -> Size {
         self.selected_layout = new_layout;
         match self.selected_layout {
-            Layout::BoardLayout => BOARD_LAYOUT_SIZE,
-            Layout::BCMLayout => BCM_LAYOUT_SIZE,
+            BoardLayout => BOARD_LAYOUT_SIZE,
+            BCMLayout => BCM_LAYOUT_SIZE,
         }
     }
 
@@ -70,7 +70,7 @@ impl LayoutSelector {
 
         let button = if hardware_target != &NoHW {
             match self.selected_layout {
-                Layout::BoardLayout => {
+                BoardLayout => {
                     let show_bcp_layout: Item<'a, Message, _, _> = Item::new(
                         Button::new("BCP Pin Layout")
                             .width(Length::Fill)
@@ -86,7 +86,7 @@ impl LayoutSelector {
                     menu_items.push(show_bcp_layout);
                     Button::new("layout: board")
                 }
-                Layout::BCMLayout => {
+                BCMLayout => {
                     let show_physical_layout: Item<'a, Message, _, _> = Item::new(
                         Button::new("Board Pin Layout")
                             .width(Length::Fill)
