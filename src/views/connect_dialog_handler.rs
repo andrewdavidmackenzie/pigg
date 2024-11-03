@@ -9,9 +9,6 @@ use self::ConnectDialogMessage::{
 use self::ConnectDialogMessage::{
     ConnectionError, HideConnectDialog, ModalKeyEvent, ShowConnectDialog,
 };
-use crate::views::modal_handler::{
-    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_STYLE, MODAL_CONTAINER_STYLE,
-};
 #[cfg(feature = "tcp")]
 use crate::HardwareTarget::Tcp;
 #[cfg(feature = "tcp")]
@@ -25,7 +22,7 @@ use crate::Message;
 use iced::keyboard::key;
 #[allow(unused_imports)]
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
-use iced::{keyboard, Background, Color, Element, Event, Length, Shadow, Task};
+use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
@@ -38,108 +35,18 @@ const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure piglet i
 #[cfg(feature = "tcp")]
 const TCP_INFO_TEXT: &str = "To connect to a Pi/Pi Pico using TCP, ensure it is reachable over the network. Retrieve the device's IP address and the port number from it (see piglet or porky docs) and enter below.";
 
-use iced::border::Radius;
-use iced::widget::button;
-use iced_futures::core::Border;
+use crate::views::dialog_styles::{
+    ACTIVE_TAB_BUTTON_STYLE, CONNECTION_ERROR_DISPLAY, INACTIVE_TAB_BUTTON_HOVER_STYLE,
+    INACTIVE_TAB_BUTTON_STYLE, INFO_TEXT_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
+    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
+    MODAL_CONTAINER_STYLE, TAB_BAR_STYLE, TEXT_BOX_CONTAINER_STYLE,
+};
+use iced::widget::button::Status::Hovered;
 use std::sync::LazyLock;
 
 #[cfg(feature = "tcp")]
 static TCP_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
 static IROH_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
-
-const INFO_TEXT_STYLE: text::Style = text::Style {
-    color: Some(Color::from_rgba(0.8, 0.8, 0.8, 1.0)),
-    // text_color: Color::from_rgba(0.8, 0.8, 0.8, 1.0), // Slightly grey color
-};
-
-const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
-    text_color: Some(Color::BLACK),
-    background: Some(Background::Color(Color::from_rgba(0.0, 0.0, 0.0, 0.0))),
-    border: Border {
-        color: Color::from_rgba(1.0, 1.0, 1.0, 0.8),
-        width: 2.0,
-        radius: Radius {
-            top_left: 10.0,
-            top_right: 10.0,
-            bottom_right: 10.0,
-            bottom_left: 10.0,
-        },
-    },
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
-
-const CONNECTION_ERROR_DISPLAY: text::Style = text::Style {
-    color: Some(Color::from_rgba(0.8, 0.0, 0.0, 1.0)),
-    // text_color: Color::from_rgba(0.8, 0.0, 0.0, 1.0),
-};
-
-const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::BLACK)),
-    text_color: Color::WHITE, // White text for contrast
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 1.0,
-        radius: Radius {
-            top_left: 4.0,
-            top_right: 4.0,
-            bottom_right: 4.0,
-            bottom_left: 4.0,
-        },
-    },
-    // hovered_bg_color: Color::BLACK,
-    // hovered_text_color: Color::WHITE,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
-
-const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::TRANSPARENT)),
-    text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0), // Gray text color to show it's inactive
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 1.0,
-        radius: Radius {
-            top_left: 4.0,
-            top_right: 4.0,
-            bottom_right: 4.0,
-            bottom_left: 4.0,
-        },
-    },
-    // hovered_bg_color: Color::from_rgb(0.2, 0.2, 0.2), // Slightly darker gray when hovered
-    // hovered_text_color: Color::WHITE,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
-
-const TAB_BAR_STYLE: container::Style = container::Style {
-    text_color: Some(Color::BLACK),
-    background: Some(Background::Color(Color::from_rgb(0.2, 0.2, 0.2))),
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: Radius {
-            top_left: 0.0,
-            top_right: 0.0,
-            bottom_right: 0.0,
-            bottom_left: 0.0,
-        },
-    },
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
@@ -487,8 +394,13 @@ impl ConnectDialog {
                     .cycle_duration(Duration::from_secs_f32(2.0)),
             )
             .push(
-                Button::new(Text::new("Connect"))
-                    .style(move |_theme, _status| MODAL_CONNECT_BUTTON_STYLE),
+                Button::new(Text::new("Connect")).style(move |_theme, status| {
+                    if status == Hovered {
+                        MODAL_CONNECT_BUTTON_HOVER_STYLE
+                    } else {
+                        MODAL_CONNECT_BUTTON_STYLE
+                    }
+                }),
             )
             .spacing(150)
             .align_y(iced::Alignment::Center)
@@ -500,7 +412,13 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Cancel"))
                     .on_press(Message::ConnectDialog(HideConnectDialog))
-                    .style(|_, _| MODAL_CANCEL_BUTTON_STYLE),
+                    .style(|_, status| {
+                        if status == Hovered {
+                            MODAL_CANCEL_BUTTON_HOVER_STYLE
+                        } else {
+                            MODAL_CANCEL_BUTTON_STYLE
+                        }
+                    }),
             )
             .push(
                 Button::new(Text::new("Connect"))
@@ -508,7 +426,13 @@ impl ConnectDialog {
                         self.nodeid.clone(),
                         self.relay_url.clone(),
                     )))
-                    .style(move |_, _| MODAL_CONNECT_BUTTON_STYLE),
+                    .style(move |_theme, status| {
+                        if status == Hovered {
+                            MODAL_CONNECT_BUTTON_HOVER_STYLE
+                        } else {
+                            MODAL_CONNECT_BUTTON_STYLE
+                        }
+                    }),
             )
             .spacing(350)
             .align_y(iced::Alignment::Center)
@@ -520,7 +444,13 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Cancel"))
                     .on_press(Message::ConnectDialog(HideConnectDialog))
-                    .style(|_, _| MODAL_CANCEL_BUTTON_STYLE),
+                    .style(|_, status| {
+                        if status == Hovered {
+                            MODAL_CANCEL_BUTTON_HOVER_STYLE
+                        } else {
+                            MODAL_CANCEL_BUTTON_STYLE
+                        }
+                    }),
             )
             .push(
                 Button::new(Text::new("Connect"))
@@ -528,7 +458,13 @@ impl ConnectDialog {
                         self.ip_address.clone(),
                         self.port_number.clone(),
                     )))
-                    .style(move |_, _| MODAL_CONNECT_BUTTON_STYLE),
+                    .style(move |_theme, status| {
+                        if status == Hovered {
+                            MODAL_CONNECT_BUTTON_HOVER_STYLE
+                        } else {
+                            MODAL_CONNECT_BUTTON_STYLE
+                        }
+                    }),
             )
             .spacing(350)
             .align_y(iced::Alignment::Center)
@@ -538,6 +474,7 @@ impl ConnectDialog {
     fn create_text_container_iroh(&self) -> Element<'_, Message> {
         container(Text::new(IROH_INFO_TEXT).style(move |_theme| INFO_TEXT_STYLE))
             .padding(10)
+            .width(Length::Fill)
             .style(move |_theme| TEXT_BOX_CONTAINER_STYLE)
             .into()
     }
@@ -546,6 +483,7 @@ impl ConnectDialog {
     fn create_tcp_text_container(&self) -> Element<'_, Message> {
         container(Text::new(TCP_INFO_TEXT).style(move |_theme| INFO_TEXT_STYLE))
             .padding(10)
+            .width(Length::Fill)
             .style(move |_theme| TEXT_BOX_CONTAINER_STYLE)
             .into()
     }
@@ -664,10 +602,16 @@ impl ConnectDialog {
 
     fn create_tab_buttons(&self, is_iroh_active: bool) -> Element<'_, Message> {
         #[allow(unused_variables)]
-        let (iroh_style, tcp_style) = if is_iroh_active {
-            (ACTIVE_TAB_BUTTON_STYLE, INACTIVE_TAB_BUTTON_STYLE)
+        let (iroh_styles, tcp_styles) = if is_iroh_active {
+            (
+                (ACTIVE_TAB_BUTTON_STYLE, ACTIVE_TAB_BUTTON_STYLE),
+                (INACTIVE_TAB_BUTTON_STYLE, INACTIVE_TAB_BUTTON_HOVER_STYLE),
+            )
         } else {
-            (INACTIVE_TAB_BUTTON_STYLE, ACTIVE_TAB_BUTTON_STYLE)
+            (
+                (INACTIVE_TAB_BUTTON_STYLE, INACTIVE_TAB_BUTTON_HOVER_STYLE),
+                (ACTIVE_TAB_BUTTON_STYLE, ACTIVE_TAB_BUTTON_STYLE),
+            )
         };
 
         let button_row = Row::new().spacing(5);
@@ -676,7 +620,13 @@ impl ConnectDialog {
         let button_row = button_row.push(
             Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
                 .on_press(Message::ConnectDialog(DisplayIrohTab))
-                .style(move |_theme, _status| iroh_style)
+                .style(move |_theme, status| {
+                    if status == Hovered {
+                        iroh_styles.1
+                    } else {
+                        iroh_styles.0
+                    }
+                })
                 .width(Length::Fixed(260f32)),
         );
 
@@ -684,7 +634,13 @@ impl ConnectDialog {
         let button_row = button_row.push(
             Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
                 .on_press(Message::ConnectDialog(DisplayTcpTab))
-                .style(move |_theme, _status| tcp_style)
+                .style(move |_theme, status| {
+                    if status == Hovered {
+                        tcp_styles.1
+                    } else {
+                        tcp_styles.0
+                    }
+                })
                 .width(Length::Fixed(260f32)),
         );
 
