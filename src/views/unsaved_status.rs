@@ -2,6 +2,8 @@ use crate::Message;
 use iced::widget::Button;
 use iced::Length;
 
+use crate::views::hardware_view::HardwareTarget;
+use crate::views::hardware_view::HardwareTarget::NoHW;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HIGHLIGHT_STYLE, MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE,
     MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
@@ -11,39 +13,44 @@ use iced::{Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
 
 /// Create the view that represents the status of unsaved changes in the info row
-pub fn view<'a>(unsaved_changes: bool) -> Element<'a, Message, Theme, Renderer> {
+pub fn view<'a>(
+    unsaved_changes: bool,
+    hardware_target: &HardwareTarget,
+) -> Element<'a, Message, Theme, Renderer> {
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
-    let load_from: Item<'a, Message, _, _> = Item::new(
-        Button::new("Load config from...")
-            .width(Length::Fill)
-            .on_press(Message::Load)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
-    );
+    let mut load_from = Button::new("Load config from...")
+        .width(Length::Fill)
+        .style(|_, status| {
+            if status == Hovered {
+                MENU_BUTTON_HOVER_STYLE
+            } else {
+                MENU_BUTTON_STYLE
+            }
+        });
 
-    menu_items.push(load_from);
-
-    let save_as: Item<'a, Message, _, _> = Item::new(
-        Button::new("Save config as...")
-            .width(Length::Fill)
-            .on_press(Message::Save)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
-    );
+    if hardware_target != &NoHW {
+        load_from = load_from.on_press(Message::Load);
+    }
+    menu_items.push(Item::new(load_from));
 
     if unsaved_changes {
-        menu_items.push(save_as);
+        let mut save_as =
+            Button::new("Save config as...")
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                });
+
+        if hardware_target != &NoHW {
+            save_as = save_as.on_press(Message::Save);
+        }
+
+        menu_items.push(Item::new(save_as));
     }
 
     let button = match unsaved_changes {
