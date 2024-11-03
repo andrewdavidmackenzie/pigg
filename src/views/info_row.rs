@@ -130,7 +130,7 @@ impl InfoRow {
                 .push(version_button())
                 .push(layout_selector.view(hardware_target))
                 .push(hardware_menu::view(hardware_view, hardware_target))
-                .push(unsaved_status::view(unsaved_changes))
+                .push(unsaved_status::view(unsaved_changes, hardware_target))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)
