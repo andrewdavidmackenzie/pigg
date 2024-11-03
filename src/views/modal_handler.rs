@@ -1,11 +1,16 @@
 use crate::file_helper::pick_and_load;
+use crate::views::dialog_styles::{
+    HYPERLINK_BUTTON_HOVER_STYLE, HYPERLINK_BUTTON_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
+    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
+    MODAL_CONTAINER_STYLE,
+};
 use crate::views::hardware_view::HardwareView;
 use crate::views::version::REPOSITORY;
 use crate::Message;
-use iced::border::Radius;
 use iced::keyboard::key;
+use iced::widget::button::Status::Hovered;
 use iced::widget::{button, column, container, text, Row, Space, Text};
-use iced::{keyboard, window, Background, Border, Color, Element, Event, Length, Shadow, Task};
+use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
@@ -39,93 +44,6 @@ pub enum ModalMessage {
     EscKeyEvent(Event),
     OpenRepoLink,
 }
-
-pub(crate) const MODAL_CANCEL_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(0.8, 0.0, 0.0, 1.0))),
-    text_color: Color::WHITE,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: Radius {
-            top_left: 2.0,
-            top_right: 2.0,
-            bottom_right: 2.0,
-            bottom_left: 2.0,
-        },
-    },
-    // hovered_bg_color: Color::from_rgba(0.9, 0.2, 0.2, 1.0), // Slightly lighter red when hovered
-    // hovered_text_color: Color::WHITE,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
-
-pub(crate) const MODAL_CONNECT_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(0.0, 1.0, 1.0, 1.0))),
-    text_color: Color::BLACK,
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: Radius {
-            top_left: 2.0,
-            top_right: 2.0,
-            bottom_right: 2.0,
-            bottom_left: 2.0,
-        },
-    },
-    // hovered_bg_color: Color::from_rgba(0.0, 0.8, 0.8, 1.0), // Darker cyan color when hovered
-    // hovered_text_color: Color::WHITE,
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
-
-pub(crate) const MODAL_CONTAINER_STYLE: container::Style = container::Style {
-    text_color: Some(Color::WHITE),
-    background: Some(Background::Color(Color::from_rgba(0.0, 0.0, 0.0, 1.0))),
-    border: Border {
-        color: Color::WHITE,
-        width: 2.0,
-        radius: Radius {
-            top_left: 2.0,
-            top_right: 2.0,
-            bottom_right: 2.0,
-            bottom_left: 2.0,
-        },
-    },
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
-
-const HYPERLINK_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::TRANSPARENT)),
-    // bg_color: Color::TRANSPARENT,
-    text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0),
-    border: Border {
-        color: Color::TRANSPARENT,
-        width: 0.0,
-        radius: Radius {
-            top_left: 2.0,
-            top_right: 2.0,
-            bottom_right: 2.0,
-            bottom_left: 2.0,
-        },
-    },
-    // hovered_bg_color: Color::TRANSPARENT,
-    // hovered_text_color: Color::from_rgba(0.0, 0.0, 0.6, 1.0),
-    shadow: Shadow {
-        color: Color::TRANSPARENT,
-        offset: iced::Vector { x: 0.0, y: 0.0 },
-        blur_radius: 0.0,
-    },
-};
 
 impl DisplayModal {
     pub fn new() -> Self {
@@ -235,12 +153,24 @@ impl DisplayModal {
                         .push(
                             button("Continue and load a new config")
                                 .on_press(Message::ModalHandle(ModalMessage::LoadFile))
-                                .style(move |_theme, _status| MODAL_CANCEL_BUTTON_STYLE),
+                                .style(move |_theme, status| {
+                                    if status == Hovered {
+                                        MODAL_CANCEL_BUTTON_HOVER_STYLE
+                                    } else {
+                                        MODAL_CANCEL_BUTTON_STYLE
+                                    }
+                                }),
                         )
                         .push(
                             button("Return to app")
                                 .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                                .style(move |_theme, _status| MODAL_CONNECT_BUTTON_STYLE),
+                                .style(move |_theme, status| {
+                                    if status == Hovered {
+                                        MODAL_CONNECT_BUTTON_HOVER_STYLE
+                                    } else {
+                                        MODAL_CONNECT_BUTTON_STYLE
+                                    }
+                                }),
                         )
                         .spacing(120);
                 } else {
@@ -248,13 +178,25 @@ impl DisplayModal {
                         .push(
                             button("Exit without saving")
                                 .on_press(Message::ModalHandle(ModalMessage::ExitApp))
-                                .style(move |_theme, _status| MODAL_CANCEL_BUTTON_STYLE),
+                                .style(move |_theme, status| {
+                                    if status == Hovered {
+                                        MODAL_CANCEL_BUTTON_HOVER_STYLE
+                                    } else {
+                                        MODAL_CANCEL_BUTTON_STYLE
+                                    }
+                                }),
                         )
                         .push(Space::new(235, 10))
                         .push(
                             button("Return to app")
                                 .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                                .style(move |_theme, _status| MODAL_CONNECT_BUTTON_STYLE),
+                                .style(move |_theme, status| {
+                                    if status == Hovered {
+                                        MODAL_CONNECT_BUTTON_HOVER_STYLE
+                                    } else {
+                                        MODAL_CONNECT_BUTTON_STYLE
+                                    }
+                                }),
                         )
                 }
 
@@ -290,20 +232,38 @@ impl DisplayModal {
                         .push(
                             button(Text::new("github"))
                                 .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
-                                .style(move |_theme, _status| HYPERLINK_BUTTON_STYLE),
+                                .style(move |_theme, status| {
+                                    if status == Hovered {
+                                        HYPERLINK_BUTTON_HOVER_STYLE
+                                    } else {
+                                        HYPERLINK_BUTTON_STYLE
+                                    }
+                                }),
                         )
                         .align_y(Alignment::Center);
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                            .style(move |_theme, _status| MODAL_CANCEL_BUTTON_STYLE),
+                            .style(move |_theme, status| {
+                                if status == Hovered {
+                                    MODAL_CANCEL_BUTTON_HOVER_STYLE
+                                } else {
+                                    MODAL_CANCEL_BUTTON_STYLE
+                                }
+                            }),
                     );
                 } else {
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                            .style(move |_theme, _status| MODAL_CANCEL_BUTTON_STYLE),
+                            .style(move |_theme, status| {
+                                if status == Hovered {
+                                    MODAL_CANCEL_BUTTON_HOVER_STYLE
+                                } else {
+                                    MODAL_CANCEL_BUTTON_STYLE
+                                }
+                            }),
                     );
                 }
 
