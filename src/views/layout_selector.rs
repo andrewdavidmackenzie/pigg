@@ -108,13 +108,15 @@ impl LayoutSelector {
             }
         };
 
-        let button = button.style(move |_theme, status| {
-            if status == Hovered {
-                MENU_BAR_BUTTON_HOVER_STYLE
-            } else {
-                MENU_BAR_BUTTON_STYLE
-            }
-        });
+        let button = button
+            .style(move |_theme, status| {
+                if status == Hovered {
+                    MENU_BAR_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BAR_BUTTON_STYLE
+                }
+            })
+            .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;
 
         let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
 
