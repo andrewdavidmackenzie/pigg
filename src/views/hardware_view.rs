@@ -6,6 +6,7 @@ use crate::hw_definition::description::{HardwareDescription, PinDescription, Pin
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
+use crate::views::dialog_styles::NO_SHADOW;
 use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
@@ -21,10 +22,13 @@ use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::border::Radius;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
+use iced::widget::toggler::Status::Hovered;
 use iced::widget::tooltip::Position;
 use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
 use iced::widget::{container, Tooltip};
-use iced::{Alignment, Background, Border, Center, Color, Element, Length, Shadow, Task};
+use iced::{Alignment, Center, Element, Length, Task};
+use iced::{Background, Border, Color, Shadow};
+use iced_aw::style::colors::WHITE;
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
@@ -42,9 +46,9 @@ const PIN_NAME_WIDTH: f32 = 60.0;
 const PIN_OPTION_WIDTH: f32 = 130.0;
 const TOGGLER_SIZE: f32 = 30.0;
 const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
-const BUTTON_WIDTH: f32 = 16.0;
+const CLICKER_WIDTH: f32 = 13.0;
 // We want the pullup on an Input to be the same width as the clicker + toggler on an Output
-const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + WIDGET_ROW_SPACING + BUTTON_WIDTH;
+const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH;
 const LED_WIDTH: f32 = 16.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
@@ -190,17 +194,44 @@ const DEFAULT_BUTTON_STYLE: button::Style = button::Style {
     shadow: PIN_SHADOW,
 };
 
+const DARK_GREEN: Color = Color::from_rgba(0.0, 0.3, 0.0, 1.0);
+
 const TOGGLER_STYLE: toggler::Style = toggler::Style {
-    background: Color::from_rgba(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
-    background_border_width: 1.0,
-    background_border_color: Color::from_rgba(0.0, 0.2, 0.0, 1.0), // Darker green border (inactive)
+    background: DARK_GREEN, // Dark green background (inactive)
+    background_border_width: 2.0,
+    background_border_color: Color::from_rgba(0.0, 0.2, 0.0, 1.0), // Darker green border
+    foreground: Color::from_rgba(1.0, 0.9, 0.8, 1.0),              // Light yellowish foreground
+    foreground_border_width: 1.0,
+    foreground_border_color: Color::from_rgba(0.9, 0.9, 0.9, 1.0), // Light gray foreground border
+};
+
+const TOGGLER_HOVER_STYLE: toggler::Style = toggler::Style {
+    background: DARK_GREEN, // Dark green background (inactive)
+    background_border_width: 2.0,
+    background_border_color: WHITE,
     foreground: Color::from_rgba(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground (inactive)
     foreground_border_width: 1.0,
     foreground_border_color: Color::from_rgba(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (inactive)
-                                                                   // active_background: Color::new(0.0, 0.7, 0.0, 1.0), // Vibrant green background (active)
-                                                                   // active_foreground: Color::new(0.0, 0.0, 0.0, 1.0), // Black foreground (active)
-                                                                   // active_background_border: Color::new(0.0, 0.5, 0.0, 1.0), // Darker green border (active)
-                                                                   // active_foreground_border: Color::new(0.9, 0.9, 0.9, 1.0), // Light gray foreground border (active)
+};
+
+const RADIUS_4: Radius = Radius {
+    top_left: 4.0,
+    top_right: 4.0,
+    bottom_right: 4.0,
+    bottom_left: 4.0,
+};
+
+const TOOLTIP_BORDER: Border = Border {
+    color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+    width: 1.0,
+    radius: RADIUS_4,
+};
+
+const TOOLTIP_STYLE: container::Style = container::Style {
+    text_color: Some(Color::WHITE),
+    background: Some(Background::Color(Color::from_rgba(0.3, 0.3, 0.3, 1.0))),
+    border: TOOLTIP_BORDER,
+    shadow: NO_SHADOW,
 };
 
 fn get_pin_style(pin_description: &PinDescription) -> button::Style {
@@ -596,10 +627,13 @@ fn get_pin_widget<'a>(
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
                 })
                 .size(TOGGLER_SIZE)
-                .style(move |_theme, _status| TOGGLER_STYLE);
+                .style(move |_theme, status| match status {
+                    Hovered { .. } => TOGGLER_HOVER_STYLE,
+                    _ => TOGGLER_STYLE,
+                });
 
             let output_clicker =
-                clicker::<HardwareViewMessage>(BUTTON_WIDTH, Color::BLACK, Color::WHITE)
+                clicker::<HardwareViewMessage>(CLICKER_WIDTH, Color::BLACK, Color::WHITE)
                     .on_press({
                         let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
                         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
@@ -612,13 +646,17 @@ fn get_pin_widget<'a>(
                     });
 
             let toggle_tooltip =
-                Tooltip::new(output_toggler, "Click to toggle level", Position::Top);
+                Tooltip::new(output_toggler, "Click to toggle level", Position::Top)
+                    .gap(4.0)
+                    .style(|_| TOOLTIP_STYLE);
 
             let clicker_tooltip = Tooltip::new(
                 output_clicker,
                 "Click and hold to invert level",
                 Position::Top,
-            );
+            )
+            .gap(4.0)
+            .style(|_| TOOLTIP_STYLE);
 
             // For some unknown reason the Pullup picker is wider on the right side than the left
             // to we add some space here to make this match on both side. A nasty hack!
