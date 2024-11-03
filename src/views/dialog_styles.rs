@@ -16,13 +16,13 @@ const RADIUS_2: Radius = Radius {
     bottom_left: 2.0,
 };
 
-const NO_SHADOW: Shadow = Shadow {
+pub(crate) const NO_SHADOW: Shadow = Shadow {
     color: Color::TRANSPARENT,
     offset: iced::Vector { x: 0.0, y: 0.0 },
     blur_radius: 0.0,
 };
 
-const WHITE_BORDER: Border = Border {
+pub(crate) const WHITE_BORDER: Border = Border {
     color: Color::WHITE,
     width: 2.0,
     radius: RADIUS_2,
