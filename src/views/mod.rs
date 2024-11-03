@@ -2,6 +2,7 @@
 pub mod connect_dialog_handler;
 mod dialog_styles;
 pub mod hardware_menu;
+mod hardware_styles;
 pub mod hardware_view;
 pub mod info_row;
 pub mod layout_selector;
