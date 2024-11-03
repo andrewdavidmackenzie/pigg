@@ -115,6 +115,14 @@ impl Piggui {
         self.connect_dialog.set_error(message);
     }
 
+    /// We have disconnected, or been disconnected from the hardware
+    fn disconnected(&mut self) {
+        self.info_connected("Disconnected from hardware".to_string());
+        self.config_filename = None;
+        self.unsaved_changes = false;
+        self.hardware_view = HardwareView::new()
+    }
+
     fn new() -> (Self, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
@@ -226,7 +234,7 @@ impl Piggui {
                 if new_target == HardwareTarget::NoHW {
                     #[cfg(any(feature = "iroh", feature = "tcp"))]
                     self.connect_dialog.enable_widgets_and_hide_spinner();
-                    self.info_connected("Disconnected from hardware".to_string());
+                    self.disconnected();
                 } else {
                     #[cfg(any(feature = "iroh", feature = "tcp"))]
                     self.connect_dialog.disable_widgets_and_load_spinner();
