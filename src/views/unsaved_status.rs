@@ -53,7 +53,7 @@ pub fn view<'a>(
         menu_items.push(Item::new(save_as));
     }
 
-    let button = match unsaved_changes {
+    let mut button = match unsaved_changes {
         true => Button::new("config: unsaved changes").style(|_, status| {
             if status == Hovered {
                 MENU_BAR_BUTTON_HOVER_STYLE
@@ -69,6 +69,7 @@ pub fn view<'a>(
             }
         }),
     };
+    button = button.on_press(Message::MenuBarButtonClicked); // Needed for highlighting
 
     // Increased width to 145 as Linux needs a little more width
     let menu_root = Item::with_menu(button, Menu::new(menu_items).width(145.0).offset(10.0));

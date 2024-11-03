@@ -59,6 +59,7 @@ pub enum Message {
     ConnectRequest(HardwareTarget),
     Connected,
     ConnectionError(String),
+    MenuBarButtonClicked,
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -257,6 +258,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.dialog_connection_error(message);
             }
+            MenuBarButtonClicked => {}
         }
 
         Task::none()
