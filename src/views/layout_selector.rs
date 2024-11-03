@@ -68,44 +68,44 @@ impl LayoutSelector {
     ) -> Element<'a, Message, Theme, Renderer> {
         let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
-        let button = if hardware_target != &NoHW {
-            match self.selected_layout {
-                BoardLayout => {
-                    let show_bcp_layout: Item<'a, Message, _, _> = Item::new(
-                        Button::new("BCP Pin Layout")
-                            .width(Length::Fill)
-                            .on_press(Message::LayoutChanged(BCMLayout))
-                            .style(|_, status| {
-                                if status == Hovered {
-                                    MENU_BUTTON_HOVER_STYLE
-                                } else {
-                                    MENU_BUTTON_STYLE
-                                }
-                            }),
-                    );
-                    menu_items.push(show_bcp_layout);
-                    Button::new("layout: board")
-                }
-                BCMLayout => {
-                    let show_physical_layout: Item<'a, Message, _, _> = Item::new(
-                        Button::new("Board Pin Layout")
-                            .width(Length::Fill)
-                            .on_press(Message::LayoutChanged(BoardLayout))
-                            .style(|_, status| {
-                                if status == Hovered {
-                                    MENU_BUTTON_HOVER_STYLE
-                                } else {
-                                    MENU_BUTTON_STYLE
-                                }
-                            }),
-                    );
-                    menu_items.push(show_physical_layout);
+        let button = match self.selected_layout {
+            BoardLayout => {
+                let mut show_bcp_layout =
+                    Button::new("BCP Pin Layout")
+                        .width(Length::Fill)
+                        .style(|_, status| {
+                            if status == Hovered {
+                                MENU_BUTTON_HOVER_STYLE
+                            } else {
+                                MENU_BUTTON_STYLE
+                            }
+                        });
 
-                    Button::new("layout: bcp")
+                if hardware_target != &NoHW {
+                    show_bcp_layout = show_bcp_layout.on_press(Message::LayoutChanged(BCMLayout));
                 }
+                menu_items.push(Item::new(show_bcp_layout));
+                Button::new("layout: board")
             }
-        } else {
-            Button::new("layout")
+            BCMLayout => {
+                let mut show_physical_layout = Button::new("Board Pin Layout")
+                    .width(Length::Fill)
+                    .style(|_, status| {
+                        if status == Hovered {
+                            MENU_BUTTON_HOVER_STYLE
+                        } else {
+                            MENU_BUTTON_STYLE
+                        }
+                    });
+
+                if hardware_target != &NoHW {
+                    show_physical_layout =
+                        show_physical_layout.on_press(Message::LayoutChanged(BoardLayout));
+                }
+
+                menu_items.push(Item::new(show_physical_layout));
+                Button::new("layout: bcp")
+            }
         };
 
         let button = button.style(move |_theme, status| {

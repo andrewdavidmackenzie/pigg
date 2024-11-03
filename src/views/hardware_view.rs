@@ -465,7 +465,6 @@ impl HardwareView {
     pub fn view<'a>(
         &'a self,
         layout: Layout,
-
         hardware_target: &'a HardwareTarget,
     ) -> Element<'a, Message> {
         let hw_column = Column::new()
