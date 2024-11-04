@@ -1,6 +1,9 @@
+use crate::views::dialog_styles::{NO_BORDER, NO_SHADOW};
+use crate::views::hardware_styles::TOOLTIP_STYLE;
 use crate::Message;
-use iced::widget::{button, Button, Text};
-use iced::{Background, Border, Color, Element, Length, Shadow, Task};
+use iced::widget::tooltip::Position;
+use iced::widget::{button, Button, Text, Tooltip};
+use iced::{Background, Color, Element, Length, Task};
 use iced_futures::Subscription;
 use std::time::Duration;
 
@@ -26,16 +29,6 @@ pub enum MessageMessage {
 pub enum MessageRowMessage {
     ShowStatusMessage(MessageMessage),
     ClearStatusMessage,
-}
-
-impl MessageMessage {
-    fn text(&self) -> String {
-        match self {
-            MessageMessage::Error(msg, _) => msg.clone(),
-            MessageMessage::Warning(msg) => msg.clone(),
-            MessageMessage::Info(msg) => msg.clone(),
-        }
-    }
 }
 
 #[derive(Default)]
@@ -103,43 +96,38 @@ impl MessageRow {
 
     /// Create the view that represents a status row at the bottom of the screen
     pub fn view(&self) -> Element<MessageRowMessage> {
-        let (text_color, message_text) = match &self.message_queue.current_message {
-            None => (Color::TRANSPARENT, "".into()),
-            Some(msg) => {
-                let text_color = match msg {
-                    MessageMessage::Error(_, _) => Color::from_rgb8(255, 0, 0),
-                    MessageMessage::Warning(_) => iced::Color::new(1.0, 0.647, 0.0, 1.0),
-                    MessageMessage::Info(_) => Color::WHITE,
-                };
-                (text_color, msg.text())
-            }
+        let (text_color, message_text, details) = match &self.message_queue.current_message {
+            None => (Color::TRANSPARENT, "".to_string(), ""),
+            Some(msg) => match msg {
+                MessageMessage::Error(text, details) => {
+                    (Color::from_rgb8(255, 0, 0), text.into(), details as &str)
+                }
+                MessageMessage::Warning(text) => (
+                    Color::new(1.0, 0.647, 0.0, 1.0),
+                    text.into(),
+                    "No additional details",
+                ),
+                MessageMessage::Info(text) => (Color::WHITE, text.into(), "No additional details"),
+            },
         };
 
         let button_style = button::Style {
             background: Some(Background::Color(Color::TRANSPARENT)),
-            // bg_color: Color::TRANSPARENT,
             text_color,
-            border: Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: 4.0.into(),
-            },
-            // hovered_bg_color: Color::TRANSPARENT,
-            // hovered_text_color: Color::WHITE,
-            // border_radius: 4.0,
-            shadow: Shadow {
-                color: Color::TRANSPARENT,
-                offset: iced::Vector { x: 0.0, y: 0.0 },
-                blur_radius: 0.0,
-            },
+            border: NO_BORDER,
+            shadow: NO_SHADOW,
         };
 
-        Button::new(Text::new(message_text))
+        let button = Button::new(Text::new(message_text))
             .on_press(MessageRowMessage::ClearStatusMessage)
             .style(move |_theme, _status| button_style)
             .clip(true)
-            .height(iced::Length::Shrink)
-            .width(Length::Shrink)
+            .height(Length::Shrink)
+            .width(Length::Shrink);
+
+        Tooltip::new(button, details, Position::Top)
+            .gap(4.0)
+            .style(|_| TOOLTIP_STYLE)
             .into()
     }
 

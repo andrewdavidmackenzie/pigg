@@ -96,11 +96,10 @@ fn main() -> iced::Result {
 impl Piggui {
     /// Send a connection error message to the Info Bar
     fn info_connection_error(&mut self, message: String) {
-        self.info_row.add_info_message(
-            MessageMessage::Error(
-                "Connection Error".to_string(),
-                format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
-            ));
+        self.info_row.add_info_message(MessageMessage::Error(
+            "Connection Error".to_string(),
+            message,
+        ));
     }
 
     /// Send a message about successful connection to the info bar

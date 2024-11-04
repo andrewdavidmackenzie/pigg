@@ -186,7 +186,7 @@ impl DisplayModal {
                                     }
                                 }),
                         )
-                        .push(Space::new(235, 10))
+                        .push(Space::new(Length::Fill, 10))
                         .push(
                             button("Return to app")
                                 .on_press(Message::ModalHandle(ModalMessage::HideModal))

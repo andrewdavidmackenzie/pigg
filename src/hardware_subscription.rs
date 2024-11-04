@@ -43,9 +43,7 @@ pub enum HWState {
 async fn report_error(mut gui_sender: Sender<HardwareEventMessage>, e: &str) {
     eprintln!("{e}");
     if let Err(e) = gui_sender
-        .send(HardwareEventMessage::Disconnected(format!(
-            "Error connecting to piglet: {e}"
-        )))
+        .send(HardwareEventMessage::Disconnected(format!("{e}")))
         .await
     {
         eprintln!("{e}");
