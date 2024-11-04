@@ -172,7 +172,7 @@ impl DisplayModal {
                                     }
                                 }),
                         )
-                        .spacing(120);
+                        .spacing(130);
                 } else {
                     button_row = button_row
                         .push(
