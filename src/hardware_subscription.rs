@@ -105,7 +105,10 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                                     state =
                                         HWState::ConnectedIroh(hardware_event_receiver, connection);
                                 }
-                                Err(e) => report_error(gui_sender_clone, "Iroh error: {e}").await,
+                                Err(e) => {
+                                    report_error(gui_sender_clone, &format!("Iroh error: {e}"))
+                                        .await
+                                }
                             }
                         }
 
@@ -127,7 +130,9 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                                     // We are ready to receive messages from the GUI
                                     state = HWState::ConnectedTcp(hardware_event_receiver, stream);
                                 }
-                                Err(e) => report_error(gui_sender_clone, "TCP error: {e}").await,
+                                Err(e) => {
+                                    report_error(gui_sender_clone, &format!("TCP error: {e}")).await
+                                }
                             }
                         }
                     }
@@ -142,7 +147,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                     )
                     .await
                     {
-                        report_error(gui_sender_clone, "Hardware error: {e}").await;
+                        report_error(gui_sender_clone, &format!("Hardware error: {e}")).await;
                     }
                 }
 
