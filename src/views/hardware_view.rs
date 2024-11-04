@@ -10,7 +10,7 @@ use crate::views::hardware_styles::{
     get_pin_style, CLICKER_WIDTH, LED_WIDTH, PIN_ARROW_CIRCLE_RADIUS, PIN_ARROW_LINE_WIDTH,
     PIN_ARROW_WIDTH, PIN_BUTTON_WIDTH, PIN_NAME_WIDTH, PIN_OPTION_WIDTH, PIN_WIDGET_ROW_WIDTH,
     PULLUP_WIDTH, SPACE_BETWEEN_PIN_COLUMNS, SPACE_BETWEEN_PIN_ROWS, TOGGLER_HOVER_STYLE,
-    TOGGLER_SIZE, TOGGLER_STYLE, TOOLTIP_STYLE, WIDGET_ROW_SPACING,
+    TOGGLER_SIZE, TOGGLER_STYLE, TOGGLER_WIDTH, TOOLTIP_STYLE, WIDGET_ROW_SPACING,
 };
 use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
@@ -441,6 +441,7 @@ fn get_pin_widget<'a>(
                     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
                 })
+                .width(TOGGLER_WIDTH)
                 .size(TOGGLER_SIZE)
                 .style(move |_theme, status| match status {
                     Hovered { .. } => TOGGLER_HOVER_STYLE,
