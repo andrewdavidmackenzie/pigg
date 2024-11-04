@@ -1,4 +1,5 @@
 use crate::{hw, piggui_local_helper};
+use futures::channel::mpsc::Sender;
 
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
@@ -36,6 +37,19 @@ pub enum HWState {
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedTcp(Receiver<HardwareConfigMessage>, async_std::net::TcpStream),
+}
+
+/// Report an error to the GUI, if it cannot be sent print to STDERR
+async fn report_error(mut gui_sender: Sender<HardwareEventMessage>, e: &str) {
+    eprintln!("{e}");
+    if let Err(e) = gui_sender
+        .send(HardwareEventMessage::Disconnected(format!(
+            "Error connecting to piglet: {e}"
+        )))
+        .await
+    {
+        eprintln!("{e}");
+    }
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
@@ -91,17 +105,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                                     state =
                                         HWState::ConnectedIroh(hardware_event_receiver, connection);
                                 }
-                                Err(e) => {
-                                    eprintln!("Iroh error: {e}");
-                                    if let Err(e) = gui_sender_clone
-                                        .send(HardwareEventMessage::Disconnected(format!(
-                                            "Error connecting to piglet: {e}"
-                                        )))
-                                        .await
-                                    {
-                                        eprintln!("Send error: {e}");
-                                    }
-                                }
+                                Err(e) => report_error(gui_sender_clone, "Iroh error: {e}").await,
                             }
                         }
 
@@ -123,17 +127,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                                     // We are ready to receive messages from the GUI
                                     state = HWState::ConnectedTcp(hardware_event_receiver, stream);
                                 }
-                                Err(e) => {
-                                    eprintln!("Tcp error: {e}");
-                                    if let Err(e) = gui_sender_clone
-                                        .send(HardwareEventMessage::Disconnected(format!(
-                                            "Error connecting to piglet: {e}"
-                                        )))
-                                        .await
-                                    {
-                                        eprintln!("Send error: {e}");
-                                    }
-                                }
+                                Err(e) => report_error(gui_sender_clone, "TCP error: {e}").await,
                             }
                         }
                     }
@@ -148,15 +142,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                     )
                     .await
                     {
-                        eprintln!("Hardware error: {e}");
-                        if let Err(e) = gui_sender_clone
-                            .send(HardwareEventMessage::Disconnected(format!(
-                                "Error connecting to hardware: {e}"
-                            )))
-                            .await
-                        {
-                            eprintln!("Send error: {e}");
-                        }
+                        report_error(gui_sender_clone, "Hardware error: {e}").await;
                     }
                 }
 
