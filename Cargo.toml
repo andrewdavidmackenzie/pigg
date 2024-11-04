@@ -65,7 +65,6 @@ tokio = { version = "1.41.0", default-features = false, features = ["time", "rt"
 log = { version = "0.4.22", default-features = false }
 
 # used by piggui in GUI only
-iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
 iced_aw = { version = "0.11.0", default-features = false, features = ["menu"] }
 iced_futures = { version = "0.13.2", default-features = false }
 plotters-iced = { version = "0.11.0", default-features = false }
@@ -90,8 +89,14 @@ rfd = "0.15.0"
 clap = { version = "4.5.20", default-features = false, features = ["std", "help", "error-context"] }
 
 [target.aarch64-unknown-linux-gnu.dependencies]
+# Use 'tiny-skia' renderer on raspberry pi
+iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
 rppal = "0.19.0"
 libc = "0.2.161"
+
+# Use 'wgpu' render on all other platforms
+[target.'cfg(not(target = "aarch64-unknown-linux-gnu.dependencies"))']
+iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
 
 [target.armv7-unknown-linux-gnueabihf.dependencies]
 rppal = "0.19.0"
