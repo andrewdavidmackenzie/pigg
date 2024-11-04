@@ -141,13 +141,23 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                 HWState::ConnectedLocal(config_change_receiver) => {
                     let config_change = config_change_receiver.select_next_some().await;
-                    piggui_local_helper::apply_config_change(
+                    if let Err(e) = piggui_local_helper::apply_config_change(
                         &mut connected_hardware,
                         config_change,
-                        gui_sender_clone,
+                        gui_sender_clone.clone(),
                     )
                     .await
-                    .unwrap();
+                    {
+                        eprintln!("Hardware error: {e}");
+                        if let Err(e) = gui_sender_clone
+                            .send(HardwareEventMessage::Disconnected(format!(
+                                "Error connecting to hardware: {e}"
+                            )))
+                            .await
+                        {
+                            eprintln!("Send error: {e}");
+                        }
+                    }
                 }
 
                 #[cfg(feature = "iroh")]
