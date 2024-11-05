@@ -88,17 +88,22 @@ service-manager = { version = "0.7.1", default-features = false }
 rfd = "0.15.0"
 clap = { version = "4.5.20", default-features = false, features = ["std", "help", "error-context"] }
 
-[target.aarch64-unknown-linux-gnu.dependencies]
-# Use 'tiny-skia' renderer on raspberry pi
-iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
-rppal = "0.19.0"
-libc = "0.2.161"
+# Raspberry Pi Iced dependency
+[target.'cfg(all(any(target_arch = "aarch64", target_arch = "armv7"), target_os = "linux"))'.dependencies.iced]
+version = "0.13.1"
+default-features = false
+# Use 'tiny-skia' renderer
+features = ["tokio", "tiny-skia"]
 
-# Use 'wgpu' render on all other platforms
-[target.'cfg(not(target = "aarch64-unknown-linux-gnu"))'.dependencies]
-iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
+# Non-Raspberry Pi Iced dependency
+[target.'cfg(not(any( all(target_arch = "aarch64", target_os = "linux"), all(target_arch = "armv7", target_os = "linux") )))'.dependencies.iced]
+version = "0.13.1"
+default-features = false
+# Use 'wgpu' renderer
+features = ["tokio", "wgpu"]
 
-[target.armv7-unknown-linux-gnueabihf.dependencies]
+# Raspberry Pi specific dependencies
+[target.'cfg(all(any(target_arch = "aarch64", target_arch = "armv7"), target_os = "linux"))'.dependencies]
 rppal = "0.19.0"
 libc = "0.2.161"
 
