@@ -136,15 +136,16 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                 }
 
                 HWState::ConnectedLocal(config_change_receiver) => {
-                    let config_change = config_change_receiver.select_next_some().await;
-                    if let Err(e) = piggui_local_helper::apply_config_change(
-                        &mut connected_hardware,
-                        config_change,
-                        gui_sender_clone.clone(),
-                    )
-                    .await
-                    {
-                        report_error(gui_sender_clone, &format!("Hardware error: {e}")).await;
+                    if let Some(config_change) = config_change_receiver.next().await {
+                        if let Err(e) = piggui_local_helper::apply_config_change(
+                            &mut connected_hardware,
+                            config_change,
+                            gui_sender_clone.clone(),
+                        )
+                        .await
+                        {
+                            report_error(gui_sender_clone, &format!("Hardware error: {e}")).await;
+                        }
                     }
                 }
 
@@ -157,8 +158,10 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                     futures::select! {
                         // receive a config change from the UI
-                        config_change_message = config_change_receiver.select_next_some() => {
-                            piggui_iroh_helper::send_config_change(connection, config_change_message).await.unwrap()
+                        config_change_message = config_change_receiver.next() => {
+                            if let Some(change_message) = config_change_message {
+                                piggui_iroh_helper::send_config_change(connection, change_message).await.unwrap()
+                            }
                         }
 
                         // receive an input level change from remote hardware
@@ -178,8 +181,10 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                     futures::select! {
                         // receive a config change from the UI
-                        config_change_message = config_change_receiver.select_next_some() => {
-                            piggui_tcp_helper::send_config_change(stream.clone(), config_change_message).await.unwrap()
+                        config_change_message = config_change_receiver.next() => {
+                            if let Some(change_message) = config_change_message {
+                                piggui_tcp_helper::send_config_change(stream.clone(), change_message).await.unwrap()
+                            }
                         }
 
                         // receive an input level change from remote hardware
