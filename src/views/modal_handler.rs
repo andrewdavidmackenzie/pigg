@@ -143,62 +143,38 @@ impl DisplayModal {
                 body,
                 load_config,
             }) => {
-                let mut button_row = Row::new();
                 let text_style = text::Style {
                     color: Some(Color::new(0.988, 0.686, 0.243, 1.0)),
                 };
 
-                if *load_config {
-                    button_row = button_row
-                        .push(
-                            button("Continue and load a new config")
-                                .on_press(Message::ModalHandle(ModalMessage::LoadFile))
-                                .style(move |_theme, status| {
-                                    if status == Hovered {
-                                        MODAL_CANCEL_BUTTON_HOVER_STYLE
-                                    } else {
-                                        MODAL_CANCEL_BUTTON_STYLE
-                                    }
-                                }),
-                        )
-                        .push(
-                            button("Return to app")
-                                .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                                .style(move |_theme, status| {
-                                    if status == Hovered {
-                                        MODAL_CONNECT_BUTTON_HOVER_STYLE
-                                    } else {
-                                        MODAL_CONNECT_BUTTON_STYLE
-                                    }
-                                }),
-                        )
-                        .spacing(120);
+                let mut action_button = if *load_config {
+                    button("Continue and load a new config")
+                        .on_press(Message::ModalHandle(ModalMessage::LoadFile))
                 } else {
-                    button_row = button_row
-                        .push(
-                            button("Exit without saving")
-                                .on_press(Message::ModalHandle(ModalMessage::ExitApp))
-                                .style(move |_theme, status| {
-                                    if status == Hovered {
-                                        MODAL_CANCEL_BUTTON_HOVER_STYLE
-                                    } else {
-                                        MODAL_CANCEL_BUTTON_STYLE
-                                    }
-                                }),
-                        )
-                        .push(Space::new(235, 10))
-                        .push(
-                            button("Return to app")
-                                .on_press(Message::ModalHandle(ModalMessage::HideModal))
-                                .style(move |_theme, status| {
-                                    if status == Hovered {
-                                        MODAL_CONNECT_BUTTON_HOVER_STYLE
-                                    } else {
-                                        MODAL_CONNECT_BUTTON_STYLE
-                                    }
-                                }),
-                        )
-                }
+                    button("Exit without saving")
+                        .on_press(Message::ModalHandle(ModalMessage::ExitApp))
+                };
+
+                action_button = action_button.style(move |_theme, status| {
+                    if status == Hovered {
+                        MODAL_CANCEL_BUTTON_HOVER_STYLE
+                    } else {
+                        MODAL_CANCEL_BUTTON_STYLE
+                    }
+                });
+                let mut button_row = Row::new().push(action_button);
+                button_row = button_row.push(Space::new(Length::Fill, 10));
+                button_row = button_row.push(
+                    button("Return to app")
+                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                        .style(move |_theme, status| {
+                            if status == Hovered {
+                                MODAL_CONNECT_BUTTON_HOVER_STYLE
+                            } else {
+                                MODAL_CONNECT_BUTTON_STYLE
+                            }
+                        }),
+                );
 
                 container(
                     column![column![

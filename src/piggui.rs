@@ -94,31 +94,11 @@ fn main() -> iced::Result {
 }
 
 impl Piggui {
-    /// Send a connection error message to the Info Bar
-    fn info_connection_error(&mut self, message: String) {
-        self.info_row.add_info_message(
-            MessageMessage::Error(
-                "Connection Error".to_string(),
-                format!("Error in connection to hardware: '{message}'. Check networking and try to re-connect")
-            ));
-    }
-
-    /// Send a message about successful connection to the info bar
-    fn info_connected(&mut self, message: String) {
-        #[cfg(debug_assertions)]
-        println!("{message}");
-        self.info_row.add_info_message(Info(message));
-    }
-
     #[cfg(any(feature = "iroh", feature = "tcp"))]
-    /// Send a connection error message to the connection dialog
-    fn dialog_connection_error(&mut self, message: String) {
-        self.connect_dialog.set_error(message);
-    }
-
     /// We have disconnected, or been disconnected from the hardware
     fn disconnected(&mut self) {
-        self.info_connected("Disconnected from hardware".to_string());
+        self.info_row
+            .add_info_message(Info("Disconnected from hardware".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
         self.hardware_view = HardwareView::new()
@@ -248,15 +228,19 @@ impl Piggui {
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
-                self.info_connected("Connected to hardware".to_string());
+                self.info_row
+                    .add_info_message(Info("Connected to hardware".to_string()));
             }
 
-            ConnectionError(message) => {
+            ConnectionError(details) => {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
-                self.info_connection_error(message.clone());
+                self.info_row.add_info_message(MessageMessage::Error(
+                    "Connection Error".to_string(),
+                    details.clone(),
+                ));
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
-                self.dialog_connection_error(message);
+                self.connect_dialog.set_error(details);
             }
             MenuBarButtonClicked => {}
         }

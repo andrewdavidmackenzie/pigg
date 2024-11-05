@@ -28,7 +28,7 @@ pub(crate) const WHITE_BORDER: Border = Border {
     radius: RADIUS_2,
 };
 
-const NO_BORDER: Border = Border {
+pub(crate) const NO_BORDER: Border = Border {
     color: Color::TRANSPARENT,
     width: 0.0,
     radius: RADIUS_2,
