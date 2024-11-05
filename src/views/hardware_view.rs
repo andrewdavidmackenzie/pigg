@@ -221,9 +221,9 @@ impl HardwareView {
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HardwareEventMessage::Disconnected(message) => {
+                HardwareEventMessage::Disconnected(details) => {
                     return Task::perform(empty(), move |_| {
-                        Message::ConnectionError(message.clone())
+                        Message::ConnectionError(details.clone())
                     });
                 }
             },
