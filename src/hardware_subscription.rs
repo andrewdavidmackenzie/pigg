@@ -42,7 +42,7 @@ pub enum HWState {
 /// Report an error to the GUI, if it cannot be sent print to STDERR
 async fn report_error(mut gui_sender: Sender<HardwareEventMessage>, e: &str) {
     if let Err(e) = gui_sender
-        .send(HardwareEventMessage::Disconnected(format!("{e}")))
+        .send(HardwareEventMessage::Disconnected(e.to_string()))
         .await
     {
         eprintln!("{e}");
