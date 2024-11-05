@@ -230,6 +230,8 @@ impl Piggui {
                 self.connect_dialog.hide_modal();
                 self.info_row
                     .add_info_message(Info("Connected to hardware".to_string()));
+                #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
+                println!("Connected to hardware");
             }
 
             ConnectionError(details) => {
