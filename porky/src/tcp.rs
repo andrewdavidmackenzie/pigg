@@ -1,49 +1,61 @@
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::HardwareDescription;
 use defmt::{error, info};
+use embassy_futures::select::{select, Either};
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
 use embassy_net::tcp::TcpSocket;
-use embassy_net::Ipv4Address;
 use embassy_net::Stack;
 use embedded_io_async::Write;
 
+const TCP_PORT: u16 = 1234;
+
 /// Wait for a TCP connection to be made to this device
 pub async fn wait_connection<'a>(
-    stack: Stack<'static>,
+    wifi_stack: Stack<'static>,
+    usb_stack: Stack<'static>,
     hw_desc: &'a HardwareDescription<'_>,
-    ip_address: Option<Ipv4Address>,
-    rx_buffer: &'a mut [u8],
-    tx_buffer: &'a mut [u8],
-) -> TcpSocket<'a> {
-    // TODO
-    let ip = ip_address.unwrap();
-
+    wifi_rx_buffer: &'a mut [u8],
+    wifi_tx_buffer: &'a mut [u8],
+    usb_rx_buffer: &'a mut [u8],
+    usb_tx_buffer: &'a mut [u8],
+) -> Result<TcpSocket<'a>, ()> {
     // TODO check these are needed
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
-    let _client = TcpClient::new(stack, &client_state);
+    let _client = TcpClient::new(wifi_stack, &client_state);
 
-    let mut socket = TcpSocket::new(stack, tx_buffer, rx_buffer);
-    //socket.set_timeout(Some(Duration::from_secs(10)));
+    let wifi_socket = TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer);
+    let usb_socket = TcpSocket::new(usb_stack, usb_tx_buffer, usb_rx_buffer);
 
-    // wait for an incoming TCP connection
-    accept(&mut socket, &ip, hw_desc).await;
-
-    socket
+    accept(wifi_socket, usb_socket, hw_desc).await
 }
 
 /// Wait for an incoming TCP connection, then respond to it with the [HardwareDescription]
-async fn accept(
-    socket: &mut TcpSocket<'_>,
-    ip_address: &Ipv4Address,
+async fn accept<'a>(
+    mut wifi_socket: TcpSocket<'a>,
+    mut usb_socket: TcpSocket<'a>,
     hw_desc: &HardwareDescription<'_>,
-) {
+) -> Result<TcpSocket<'a>, ()> {
     let mut buf = [0; 4096];
 
-    info!("Listening on TCP {}:1234", ip_address);
-    if let Err(e) = socket.accept(1234).await {
-        error!("TCP accept error: {:?}", e);
-        return;
-    }
+    info!("Listening on port: {}", TCP_PORT);
+
+    let futures = select(wifi_socket.accept(TCP_PORT), usb_socket.accept(TCP_PORT)).await;
+    let mut socket = match futures {
+        Either::First(s) => match s {
+            Ok(_) => wifi_socket,
+            Err(e) => {
+                error!("TCP accept error: {:?}", e);
+                return Err(());
+            }
+        },
+        Either::Second(s) => match s {
+            Ok(_) => usb_socket,
+            Err(e) => {
+                error!("TCP accept error: {:?}", e);
+                return Err(());
+            }
+        },
+    };
 
     info!(
         "Received connection from {:?}",
@@ -53,6 +65,8 @@ async fn accept(
     let slice = postcard::to_slice(&hw_desc, &mut buf).unwrap();
     info!("Sending hardware description (length: {})", slice.len());
     socket.write_all(slice).await.unwrap();
+
+    Ok(socket)
 }
 
 /// Wait until a config message in received on the [TcpSocket] then deserialize it and return it

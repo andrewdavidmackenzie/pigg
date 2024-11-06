@@ -89,7 +89,6 @@ pub async fn start_net(
     //    gateway: Some(Ipv4Address::new(10, 42, 0, 1)),
     //});
 
-    // Generate random seed
     let seed = rng.next_u64();
 
     // Init network stack
@@ -99,21 +98,7 @@ pub async fn start_net(
 
     unwrap!(spawner.spawn(net_task(runner)));
 
-    /*
-        let mut rx_buffer = [0; 4096];
-        let mut tx_buffer = [0; 4096];
-        let mut buf = [0; 4096];
+    //    wifi::wait_for_dhcp("USB", &stack).await;
 
-        let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-        socket.set_timeout(Some(embassy_time::Duration::from_secs(10)));
-
-        info!("Listening on TCP:1234...");
-        if let Err(e) = socket.accept(1234).await {
-            warn!("accept error: {:?}", e);
-            continue;
-        }
-
-        info!("Received connection from {:?}", socket.remote_endpoint());
-    */
     stack
 }

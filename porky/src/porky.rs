@@ -157,31 +157,35 @@ async fn main(spawner: Spawner) {
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
 
-    let mut rx_buffer = [0; 4096];
-    let mut tx_buffer = [0; 4096];
-    let mut buf = [0; 1024];
-
     // create hardware description
     let device_id_hex: [u8; 16] = [0; 16];
     device_id(device_id_hex, peripherals.FLASH, peripherals.DMA_CH1);
     static ID: StaticCell<[u8; 16]> = StaticCell::new();
     let id = ID.init(device_id_hex);
-    let serial = str::from_utf8(id).unwrap();
-    let hw_desc = hardware_description(serial);
+    let serial_number = str::from_utf8(id).unwrap();
+    let hw_desc = hardware_description(serial_number);
 
-    let _usb_stack = usb::start_net(spawner, driver, serial).await;
+    let usb_stack = usb::start_net(spawner, driver, serial_number).await;
 
-    let ip_address = wifi::join(&mut control, wifi_stack, ssid_name, ssid_pass).await;
+    wifi::join(&mut control, wifi_stack, ssid_name, ssid_pass).await;
+
+    let mut wifi_tx_buffer = [0; 4096];
+    let mut wifi_rx_buffer = [0; 4096];
+    let mut usb_tx_buffer = [0; 4096];
+    let mut usb_rx_buffer = [0; 4096];
 
     loop {
         let mut socket = tcp::wait_connection(
             wifi_stack,
+            usb_stack,
             &hw_desc,
-            ip_address,
-            &mut tx_buffer,
-            &mut rx_buffer,
+            &mut wifi_tx_buffer,
+            &mut wifi_rx_buffer,
+            &mut usb_tx_buffer,
+            &mut usb_rx_buffer,
         )
-        .await;
+        .await
+        .unwrap();
 
         info!("Entering message loop");
         loop {
@@ -198,6 +202,7 @@ async fn main(spawner: Spawner) {
                     }
                 },
                 Either::Second(hardware_event) => {
+                    let mut buf = [0; 1024];
                     let gui_message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
                     socket.write_all(gui_message).await.unwrap();
                 }
