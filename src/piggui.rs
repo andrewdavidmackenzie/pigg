@@ -215,6 +215,7 @@ impl Piggui {
                 if new_target == HardwareTarget::NoHW {
                     #[cfg(any(feature = "iroh", feature = "tcp"))]
                     self.connect_dialog.enable_widgets_and_hide_spinner();
+                    #[cfg(any(feature = "iroh", feature = "tcp"))]
                     self.disconnected();
                 } else {
                     #[cfg(any(feature = "iroh", feature = "tcp"))]

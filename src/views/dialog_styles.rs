@@ -1,7 +1,10 @@
 use iced::border::Radius;
-use iced::widget::{button, container, text};
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use iced::widget::text;
+use iced::widget::{button, container};
 use iced::{Background, Border, Color, Shadow};
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 const RADIUS_10: Radius = Radius {
     top_left: 10.0,
     top_right: 10.0,
@@ -91,10 +94,12 @@ pub(crate) const HYPERLINK_BUTTON_HOVER_STYLE: button::Style = button::Style {
     shadow: NO_SHADOW,
 };
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub(crate) const INFO_TEXT_STYLE: text::Style = text::Style {
     color: Some(Color::from_rgba(0.8, 0.8, 0.8, 1.0)),
 };
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub(crate) const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
     text_color: Some(Color::BLACK),
     background: Some(Background::Color(Color::BLACK)),
@@ -106,10 +111,12 @@ pub(crate) const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
     shadow: NO_SHADOW,
 };
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub(crate) const CONNECTION_ERROR_DISPLAY: text::Style = text::Style {
     color: Some(Color::from_rgba(0.8, 0.0, 0.0, 1.0)),
 };
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub(crate) const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::BLACK)),
     text_color: Color::WHITE,
@@ -117,6 +124,7 @@ pub(crate) const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     shadow: NO_SHADOW,
 };
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub(crate) const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     // Gray text color to show it's inactive
@@ -125,6 +133,7 @@ pub(crate) const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
     shadow: NO_SHADOW,
 };
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub(crate) const INACTIVE_TAB_BUTTON_HOVER_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::WHITE,
@@ -132,6 +141,7 @@ pub(crate) const INACTIVE_TAB_BUTTON_HOVER_STYLE: button::Style = button::Style 
     shadow: NO_SHADOW,
 };
 
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 pub(crate) const TAB_BAR_STYLE: container::Style = container::Style {
     text_color: Some(Color::BLACK),
     background: Some(Background::Color(Color::from_rgb(0.2, 0.2, 0.2))),
