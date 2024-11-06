@@ -132,11 +132,6 @@ pub async fn start_net<'a>(
     //    gateway: Some(Ipv4Address::new(192, 168, 69, 1)),
     //});
 
-    control.init(clm).await;
-    control
-        .set_power_management(cyw43::PowerManagementMode::PowerSave)
-        .await;
-
     // Init network stack
     let (stack, runner) = embassy_net::new(net_device, config, resources, seed);
 
