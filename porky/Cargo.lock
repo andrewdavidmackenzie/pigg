@@ -543,6 +543,18 @@ version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy.git#e1501a21a878a96ea5cc01f2ce5574a115a53193"
 
 [[package]]
+name = "embassy-usb"
+version = "0.3.0"
+source = "git+https://github.com/embassy-rs/embassy.git#e1501a21a878a96ea5cc01f2ce5574a115a53193"
+dependencies = [
+ "embassy-futures 0.1.1 (git+https://github.com/embassy-rs/embassy.git)",
+ "embassy-net-driver-channel",
+ "embassy-sync 0.6.0 (git+https://github.com/embassy-rs/embassy.git)",
+ "embassy-usb-driver",
+ "heapless 0.8.0",
+]
+
+[[package]]
 name = "embassy-usb-driver"
 version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy.git#e1501a21a878a96ea5cc01f2ce5574a115a53193"
@@ -1144,12 +1156,14 @@ dependencies = [
  "embassy-rp",
  "embassy-sync 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embassy-time",
+ "embassy-usb",
  "embedded-io-async",
  "faster-hex",
  "heapless 0.8.0",
  "panic-probe",
  "portable-atomic",
  "postcard",
+ "rand",
  "serde",
  "serde_derive",
  "static_cell",
@@ -1222,6 +1236,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "rand"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+dependencies = [
+ "rand_core",
 ]
 
 [[package]]
