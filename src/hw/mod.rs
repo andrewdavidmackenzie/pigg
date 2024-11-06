@@ -100,6 +100,7 @@ impl HW {
 
     /// Write the output level of an output using the bcm pin number
     #[allow(unused_variables)]
+    #[allow(dead_code)] // Not used by piglet
     pub fn set_output_level(
         &mut self,
         bcm_pin_number: BCMPinNumber,
