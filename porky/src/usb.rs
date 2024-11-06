@@ -2,7 +2,6 @@ use defmt::*;
 use embassy_executor::Spawner;
 use embassy_net::{Stack, StackResources};
 use embassy_rp::clocks::RoscRng;
-use embassy_rp::peripherals;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_ncm::embassy_net::{Device, Runner, State as NetState};
@@ -12,7 +11,7 @@ use rand::RngCore;
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
-type MyDriver = Driver<'static, peripherals::USB>;
+type MyDriver = Driver<'static, USB>;
 
 const MTU: usize = 1514;
 
