@@ -17,7 +17,8 @@ use embassy_rp::flash::Flash;
 use embassy_rp::gpio::{Level, Output};
 use embassy_rp::peripherals::PIO0;
 use embassy_rp::peripherals::USB;
-use embassy_rp::pio::{InterruptHandler, Pio};
+use embassy_rp::pio::InterruptHandler as PioInterruptHandler;
+use embassy_rp::pio::Pio;
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
@@ -50,7 +51,7 @@ mod pin_descriptions;
 const FLASH_SIZE: usize = 2 * 1024 * 1024;
 
 bind_interrupts!(struct Irqs {
-    PIO0_IRQ_0 => InterruptHandler<PIO0>;
+    PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
     USBCTRL_IRQ => USBInterruptHandler<USB>;
 });
 
