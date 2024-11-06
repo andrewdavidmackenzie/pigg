@@ -1,6 +1,5 @@
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::HardwareDescription;
-use cyw43::NetDriver;
 use defmt::{error, info};
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
 use embassy_net::tcp::TcpSocket;
@@ -10,12 +9,15 @@ use embedded_io_async::Write;
 
 /// Wait for a TCP connection to be made to this device
 pub async fn wait_connection<'a>(
-    stack: &'a Stack<NetDriver<'static>>,
+    stack: Stack<'static>,
     hw_desc: &'a HardwareDescription<'_>,
-    ip_address: Ipv4Address,
+    ip_address: Option<Ipv4Address>,
     rx_buffer: &'a mut [u8],
     tx_buffer: &'a mut [u8],
 ) -> TcpSocket<'a> {
+    // TODO
+    let ip = ip_address.unwrap();
+
     // TODO check these are needed
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(stack, &client_state);
@@ -24,7 +26,7 @@ pub async fn wait_connection<'a>(
     //socket.set_timeout(Some(Duration::from_secs(10)));
 
     // wait for an incoming TCP connection
-    accept(&mut socket, &ip_address, hw_desc).await;
+    accept(&mut socket, &ip, hw_desc).await;
 
     socket
 }

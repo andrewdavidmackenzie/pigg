@@ -159,35 +159,32 @@ async fn main(spawner: Spawner) {
     let serial = str::from_utf8(&device_id_hex).unwrap();
     let hw_desc = hardware_description(serial);
 
-    if let Some(ip_address) = wifi::join(&mut control, stack, ssid_name, ssid_pass).await {
-        loop {
-            let mut socket =
-                tcp::wait_connection(stack, &hw_desc, ip_address, &mut tx_buffer, &mut rx_buffer)
-                    .await;
+    let ip_address = wifi::join(&mut control, stack, ssid_name, ssid_pass).await;
 
-            info!("Entering message loop");
-            loop {
-                match select(
-                    tcp::wait_message(&mut socket),
-                    GUI_CHANNEL.receiver().receive(),
-                )
-                .await
-                {
-                    Either::First(config_message) => match config_message {
-                        None => break,
-                        Some(message) => {
-                            gpio::apply_config_change(&mut control, &spawner, message).await
-                        }
-                    },
-                    Either::Second(hardware_event) => {
-                        let gui_message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
-                        socket.write_all(gui_message).await.unwrap();
+    loop {
+        let mut socket =
+            tcp::wait_connection(stack, &hw_desc, ip_address, &mut tx_buffer, &mut rx_buffer).await;
+
+        info!("Entering message loop");
+        loop {
+            match select(
+                tcp::wait_message(&mut socket),
+                GUI_CHANNEL.receiver().receive(),
+            )
+            .await
+            {
+                Either::First(config_message) => match config_message {
+                    None => break,
+                    Some(message) => {
+                        gpio::apply_config_change(&mut control, &spawner, message).await
                     }
+                },
+                Either::Second(hardware_event) => {
+                    let gui_message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
+                    socket.write_all(gui_message).await.unwrap();
                 }
             }
-            info!("Exiting Message Loop");
         }
+        info!("Exiting Message Loop");
     }
-
-    info!("Exiting");
 }
