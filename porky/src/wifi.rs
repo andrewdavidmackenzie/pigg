@@ -1,11 +1,10 @@
 use crate::ssid::SSID_SECURITY;
 use cyw43::Control;
-use cyw43::NetDriver;
 use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
-use defmt::{error, info, warn};
+use defmt::{error, info, unwrap, warn};
 use embassy_executor::Spawner;
-use embassy_net::Ipv4Address;
+use embassy_net::{Config, Ipv4Address};
 use embassy_net::{Stack, StackResources};
 use embassy_rp::gpio::Level;
 use embassy_rp::gpio::Output;
@@ -23,13 +22,13 @@ async fn wifi_task(
 }
 
 #[embassy_executor::task]
-async fn net_task(stack: &'static Stack<NetDriver<'static>>) -> ! {
-    stack.run().await
+async fn net_task(mut runner: embassy_net::Runner<'static, cyw43::NetDriver<'static>>) -> ! {
+    runner.run().await
 }
 
 pub async fn join(
     control: &mut Control<'_>,
-    stack: &Stack<NetDriver<'static>>,
+    stack: Stack<'static>,
     ssid_name: &str,
     ssid_pass: &str,
 ) -> Option<Ipv4Address> {
@@ -56,7 +55,7 @@ pub async fn join(
         match control.join(ssid_name, join_options).await {
             Ok(_) => {
                 info!("Joined wifi network: '{}'", ssid_name);
-                return wait_for_dhcp(stack).await;
+                return wait_for_dhcp(&stack).await;
             }
             Err(_) => {
                 attempt += 1;
@@ -73,7 +72,7 @@ pub async fn join(
 }
 
 /// Wait for the DHCP service to come up and for us to get an IP address
-async fn wait_for_dhcp(stack: &Stack<NetDriver<'static>>) -> Option<Ipv4Address> {
+async fn wait_for_dhcp(stack: &Stack<'static>) -> Option<Ipv4Address> {
     info!("Waiting for DHCP...");
     while !stack.is_config_up() {
         Timer::after_millis(100).await;
@@ -103,7 +102,7 @@ pub async fn start_net<'a>(
     spawner: Spawner,
     pin_23: embassy_rp::peripherals::PIN_23,
     spi: PioSpi<'static, PIO0, 0, DMA_CH0>,
-) -> (Control<'a>, &'static Stack<NetDriver<'static>>) {
+) -> (Control<'a>, Stack<'static>) {
     let fw = include_bytes!("../assets/43439A0.bin");
     let clm = include_bytes!("../assets/43439A0_clm.bin");
     let pwr = Output::new(pin_23, Level::Low);
@@ -118,16 +117,25 @@ pub async fn start_net<'a>(
         .set_power_management(cyw43::PowerManagementMode::PowerSave)
         .await;
 
-    let dhcp_config = embassy_net::Config::dhcpv4(Default::default());
-
     static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
     let resources = RESOURCES.init(StackResources::new());
 
     // Generate random seed
+    // let seed = rng.next_u64();
+    // TODO use rand
     let seed = 0x0123_4567_89ab_cdef;
-    static STACK: StaticCell<Stack<NetDriver<'static>>> = StaticCell::new();
-    let stack = STACK.init(Stack::new(net_device, dhcp_config, resources, seed));
-    spawner.spawn(net_task(stack)).unwrap();
+
+    let config = Config::dhcpv4(Default::default());
+    //let config = embassy_net::Config::ipv4_static(embassy_net::StaticConfigV4 {
+    //    address: Ipv4Cidr::new(Ipv4Address::new(192, 168, 69, 2), 24),
+    //    dns_servers: Vec::new(),
+    //    gateway: Some(Ipv4Address::new(192, 168, 69, 1)),
+    //});
+
+    // Init network stack
+    let (stack, runner) = embassy_net::new(net_device, config, resources, seed);
+
+    unwrap!(spawner.spawn(net_task(runner)));
 
     (control, stack)
 }
