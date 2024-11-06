@@ -1158,7 +1158,6 @@ dependencies = [
  "postcard",
  "serde",
  "serde_derive",
- "smoltcp",
  "static_cell",
  "toml",
 ]
