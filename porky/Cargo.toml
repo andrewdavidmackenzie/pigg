@@ -32,9 +32,6 @@ embassy-futures = { version = "0.1.1", default-features = false }
 # To convert device_id into hex for use as a string
 faster-hex = { version = "0.10.0", default-features = false }
 
-# Needed to work around an embassy dns server count bug
-smoltcp = { version = "0.11.0", default-features = false, features = ["dns-max-server-count-4"] }
-
 serde = { version = "1.0.208", default-features = false, features = ["derive"] } # no_std
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
