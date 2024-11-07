@@ -62,7 +62,8 @@ bind_interrupts!(struct Irqs {
     USBCTRL_IRQ => USBInterruptHandler<USB>;
 });
 
-pub static GUI_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> = Channel::new();
+pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
+    Channel::new();
 
 /// Read a unique device ID from the Flash and format it as hex into the provided 16 byte array
 fn device_id(
@@ -105,10 +106,6 @@ async fn main(spawner: Spawner) {
     // PIN_25 - OP wireless SPI CS - when high also enables GPIO29 ADC pin to read VSYS
     let cs = Output::new(peripherals.PIN_25, Level::High);
     let mut pio = Pio::new(peripherals.PIO0, Irqs);
-
-    #[cfg(feature = "usb-tcp")]
-    // Create the driver, from the HAL.
-    let driver = Driver::new(peripherals.USB, Irqs);
 
     // Initialize the cyw43 and start the network
     let spi = PioSpi::new(
@@ -170,16 +167,16 @@ async fn main(spawner: Spawner) {
     let hw_desc = hardware_description(serial_number);
 
     #[cfg(feature = "usb-tcp")]
-    let usb_stack = usb_tcp::start_net(spawner, driver, serial_number).await;
-
-    wifi::join(&mut control, wifi_stack, ssid_name, ssid_pass).await;
-
-    let mut wifi_tx_buffer = [0; 4096];
-    let mut wifi_rx_buffer = [0; 4096];
+    let usb_stack =
+        usb_tcp::start_net(spawner, Driver::new(peripherals.USB, Irqs), serial_number).await;
     #[cfg(feature = "usb-tcp")]
     let mut usb_tx_buffer = [0; 4096];
     #[cfg(feature = "usb-tcp")]
     let mut usb_rx_buffer = [0; 4096];
+
+    wifi::join(&mut control, wifi_stack, ssid_name, ssid_pass).await;
+    let mut wifi_tx_buffer = [0; 4096];
+    let mut wifi_rx_buffer = [0; 4096];
 
     loop {
         match tcp::wait_connection(
@@ -205,7 +202,7 @@ async fn main(spawner: Spawner) {
                 loop {
                     match select(
                         tcp::wait_message(&mut socket),
-                        GUI_CHANNEL.receiver().receive(),
+                        HARDWARE_EVENT_CHANNEL.receiver().receive(),
                     )
                     .await
                     {

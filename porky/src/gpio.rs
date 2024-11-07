@@ -4,7 +4,7 @@ use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
-use crate::GUI_CHANNEL;
+use crate::HARDWARE_EVENT_CHANNEL;
 use cyw43::Control;
 use defmt::{error, info};
 use embassy_executor::Spawner;
@@ -68,7 +68,7 @@ async fn send_input_level(bcm: BCMPinNumber, level: Level) {
         Instant::now().duration_since(Instant::MIN).into(),
     );
     let hardware_event = IOLevelChanged(bcm, level_change);
-    GUI_CHANNEL.sender().send(hardware_event).await;
+    HARDWARE_EVENT_CHANNEL.sender().send(hardware_event).await;
 }
 
 fn into_level(value: PinLevel) -> Level {

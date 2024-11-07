@@ -1,3 +1,4 @@
+use crate::wifi;
 use defmt::*;
 use embassy_executor::Spawner;
 use embassy_net::{Stack, StackResources};
@@ -98,7 +99,7 @@ pub async fn start_net(
 
     unwrap!(spawner.spawn(net_task(runner)));
 
-    //    wifi::wait_for_dhcp("USB", &stack).await;
+    wifi::wait_for_dhcp("USB", &stack).await;
 
     stack
 }
