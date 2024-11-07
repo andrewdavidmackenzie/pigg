@@ -7,7 +7,7 @@ use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use crate::ssid::{MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH};
 use core::str;
 use cyw43_pio::PioSpi;
-use defmt::info;
+use defmt::{error, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
@@ -19,7 +19,9 @@ use embassy_rp::peripherals::PIO0;
 use embassy_rp::peripherals::USB;
 use embassy_rp::pio::InterruptHandler as PioInterruptHandler;
 use embassy_rp::pio::Pio;
-use embassy_rp::usb::{Driver, InterruptHandler as USBInterruptHandler};
+#[cfg(feature = "usb-tcp")]
+use embassy_rp::usb::Driver;
+use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embedded_io_async::Write;
@@ -36,8 +38,9 @@ mod ssid {
 /// Wi-Fi related functions
 mod wifi;
 
+#[cfg(feature = "usb-tcp")]
 /// Module for Tcp over USB
-mod usb;
+mod usb_tcp;
 
 /// TCP related functions
 mod tcp;
@@ -103,6 +106,7 @@ async fn main(spawner: Spawner) {
     let cs = Output::new(peripherals.PIN_25, Level::High);
     let mut pio = Pio::new(peripherals.PIO0, Irqs);
 
+    #[cfg(feature = "usb-tcp")]
     // Create the driver, from the HAL.
     let driver = Driver::new(peripherals.USB, Irqs);
 
@@ -165,49 +169,63 @@ async fn main(spawner: Spawner) {
     let serial_number = str::from_utf8(id).unwrap();
     let hw_desc = hardware_description(serial_number);
 
-    let usb_stack = usb::start_net(spawner, driver, serial_number).await;
+    #[cfg(feature = "usb-tcp")]
+    let usb_stack = usb_tcp::start_net(spawner, driver, serial_number).await;
 
     wifi::join(&mut control, wifi_stack, ssid_name, ssid_pass).await;
 
     let mut wifi_tx_buffer = [0; 4096];
     let mut wifi_rx_buffer = [0; 4096];
+    #[cfg(feature = "usb-tcp")]
     let mut usb_tx_buffer = [0; 4096];
+    #[cfg(feature = "usb-tcp")]
     let mut usb_rx_buffer = [0; 4096];
 
     loop {
-        let mut socket = tcp::wait_connection(
+        match tcp::wait_connection(
             wifi_stack,
+            #[cfg(feature = "usb-tcp")]
             usb_stack,
-            &hw_desc,
             &mut wifi_tx_buffer,
             &mut wifi_rx_buffer,
+            #[cfg(feature = "usb-tcp")]
             &mut usb_tx_buffer,
+            #[cfg(feature = "usb-tcp")]
             &mut usb_rx_buffer,
         )
         .await
-        .unwrap();
+        {
+            Ok(mut socket) => {
+                let mut buf = [0; 4096];
+                let slice = postcard::to_slice(&hw_desc, &mut buf).unwrap();
+                info!("Sending hardware description (length: {})", slice.len());
+                socket.write_all(slice).await.unwrap();
 
-        info!("Entering message loop");
-        loop {
-            match select(
-                tcp::wait_message(&mut socket),
-                GUI_CHANNEL.receiver().receive(),
-            )
-            .await
-            {
-                Either::First(config_message) => match config_message {
-                    None => break,
-                    Some(message) => {
-                        gpio::apply_config_change(&mut control, &spawner, message).await
+                info!("Entering message loop");
+                loop {
+                    match select(
+                        tcp::wait_message(&mut socket),
+                        GUI_CHANNEL.receiver().receive(),
+                    )
+                    .await
+                    {
+                        Either::First(config_message) => match config_message {
+                            None => break,
+                            Some(message) => {
+                                gpio::apply_config_change(&mut control, &spawner, message).await
+                            }
+                        },
+                        Either::Second(hardware_event) => {
+                            let mut buf = [0; 1024];
+                            let gui_message =
+                                postcard::to_slice(&hardware_event, &mut buf).unwrap();
+                            socket.write_all(gui_message).await.unwrap();
+                        }
                     }
-                },
-                Either::Second(hardware_event) => {
-                    let mut buf = [0; 1024];
-                    let gui_message = postcard::to_slice(&hardware_event, &mut buf).unwrap();
-                    socket.write_all(gui_message).await.unwrap();
                 }
+                info!("Exiting Message Loop");
             }
+            Err(_) => error!("TCP accept error"),
         }
-        info!("Exiting Message Loop");
     }
 }

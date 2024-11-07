@@ -30,6 +30,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static, MTU>>
     runner.run().await
 }
 
+/// Start a network stack based on USB
 pub async fn start_net(
     spawner: Spawner,
     driver: Driver<'static, USB>,
