@@ -161,9 +161,6 @@ async fn main(spawner: Spawner) {
     };
     gpio::setup_pins(header_pins);
 
-    let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
-    let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
-
     // create hardware description
     let serial_number = serial_number(peripherals.FLASH, peripherals.DMA_CH1);
     let hw_desc = hardware_description(serial_number);
@@ -176,6 +173,8 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb-tcp")]
     let mut usb_rx_buffer = [0; 4096];
 
+    let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
+    let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
     wifi::join(&mut control, wifi_stack, ssid_name, ssid_pass).await;
     let mut wifi_tx_buffer = [0; 4096];
     let mut wifi_rx_buffer = [0; 4096];
