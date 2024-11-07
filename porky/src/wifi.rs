@@ -4,12 +4,14 @@ use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
 use defmt::{error, info, unwrap, warn};
 use embassy_executor::Spawner;
-use embassy_net::{Config, Ipv4Address};
+use embassy_net::Config;
 use embassy_net::{Stack, StackResources};
+use embassy_rp::clocks::RoscRng;
 use embassy_rp::gpio::Level;
 use embassy_rp::gpio::Output;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_time::Timer;
+use rand::RngCore;
 use static_cell::StaticCell;
 
 const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
@@ -31,7 +33,7 @@ pub async fn join(
     stack: Stack<'static>,
     ssid_name: &str,
     ssid_pass: &str,
-) -> Option<Ipv4Address> {
+) {
     let mut attempt = 1;
     while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
         info!(
@@ -48,14 +50,14 @@ pub async fn join(
             "wpa3" => join_options.auth = JoinAuth::Wpa3,
             _ => {
                 error!("Security '{}' is not supported", SSID_SECURITY);
-                return None;
             }
         };
 
         match control.join(ssid_name, join_options).await {
             Ok(_) => {
                 info!("Joined wifi network: '{}'", ssid_name);
-                return wait_for_dhcp(&stack).await;
+                wait_for_dhcp("WiFi", &stack).await;
+                return;
             }
             Err(_) => {
                 attempt += 1;
@@ -68,20 +70,18 @@ pub async fn join(
         "Failed to join Wifi after {} retries",
         WIFI_JOIN_RETRY_ATTEMPT_LIMIT
     );
-    None
 }
 
 /// Wait for the DHCP service to come up and for us to get an IP address
-async fn wait_for_dhcp(stack: &Stack<'static>) -> Option<Ipv4Address> {
-    info!("Waiting for DHCP...");
+pub(crate) async fn wait_for_dhcp(name: &str, stack: &Stack<'static>) {
+    info!("Waiting for DHCP on {}", name);
     while !stack.is_config_up() {
         Timer::after_millis(100).await;
     }
-    info!("DHCP is now up!");
+    info!("DHCP is up!");
     if let Some(if_config) = stack.config_v4() {
-        Some(if_config.address.address())
-    } else {
-        None
+        let ip_address = if_config.address.address();
+        info!("{} IP: {}", name, ip_address);
     }
 }
 
@@ -120,10 +120,8 @@ pub async fn start_net<'a>(
     static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
     let resources = RESOURCES.init(StackResources::new());
 
-    // Generate random seed
-    // let seed = rng.next_u64();
-    // TODO use rand
-    let seed = 0x0123_4567_89ab_cdef;
+    let mut rng = RoscRng;
+    let seed = rng.next_u64();
 
     let config = Config::dhcpv4(Default::default());
     //let config = embassy_net::Config::ipv4_static(embassy_net::StaticConfigV4 {
