@@ -21,7 +21,7 @@ pub async fn wait_connection<'a>(
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(wifi_stack, &client_state);
 
-    accept_either(
+    accept(
         TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer),
         #[cfg(feature = "usb-tcp")]
         TcpSocket::new(usb_stack, usb_tx_buffer, usb_rx_buffer),
@@ -30,7 +30,7 @@ pub async fn wait_connection<'a>(
 }
 
 /// Wait for an incoming TCP connection
-async fn accept_either<'a>(
+async fn accept<'a>(
     mut wifi_socket: TcpSocket<'a>,
     #[cfg(feature = "usb-tcp")] mut usb_socket: TcpSocket<'a>,
 ) -> Result<TcpSocket<'a>, AcceptError> {
