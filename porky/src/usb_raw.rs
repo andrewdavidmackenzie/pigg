@@ -1,3 +1,4 @@
+use crate::hw_definition::description::HardwareDescription;
 use crate::usb::get_usb_builder;
 use core::str;
 use defmt::{info, unwrap};
@@ -22,11 +23,13 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
 
 /// Handle CONTROL endpoint requests and responses. For many simple requests and responses
 /// you can get away with only using the control endpoint.
-pub(crate) struct ControlHandler {
+pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
+    hardware_description: &'h HardwareDescription<'h>,
+    buf: [u8; 1024],
 }
 
-impl Handler for ControlHandler {
+impl<'h> Handler for ControlHandler<'h> {
     /// Respond to HostToDevice control messages, where the host sends us a command and
     /// optionally some data, and we can only acknowledge or reject it.
     fn control_out<'a>(&'a mut self, req: Request, buf: &'a [u8]) -> Option<OutResponse> {
@@ -50,7 +53,7 @@ impl Handler for ControlHandler {
     }
 
     /// Respond to DeviceToHost control messages, where the host requests some data from us.
-    fn control_in<'a>(&'a mut self, req: Request, buf: &'a mut [u8]) -> Option<InResponse<'a>> {
+    fn control_in<'a>(&'a mut self, req: Request, _buf: &'a mut [u8]) -> Option<InResponse<'a>> {
         // Only handle Vendor request types to an Interface.
         if req.request_type != RequestType::Vendor || req.recipient != Recipient::Interface {
             return None;
@@ -61,19 +64,26 @@ impl Handler for ControlHandler {
             return None;
         }
 
-        // Respond "hello" to request 101, value 201, when asked for 5 bytes, otherwise reject.
+        // Respond to request 101, value 201 with HardwareDescription
         if req.request == 101 && req.value == 201 {
-            let msg = b"hello";
-            buf[..msg.len()].copy_from_slice(msg);
-            Some(InResponse::Accepted(&buf[..msg.len()]))
+            let msg = postcard::to_slice(self.hardware_description, &mut self.buf).unwrap();
+            info!(
+                "Sending hardware description via USB (length: {})",
+                msg.len()
+            );
+            Some(InResponse::Accepted(msg))
         } else {
             Some(InResponse::Rejected)
         }
     }
 }
 
-pub async fn start(spawner: Spawner, driver: Driver<'static, USB>, serial: &'static str) {
-    let mut builder = get_usb_builder(driver, serial);
+pub async fn start(
+    spawner: Spawner,
+    driver: Driver<'static, USB>,
+    hardware_description: &'static HardwareDescription<'_>,
+) {
+    let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
     // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
     // We tell Windows that this entire device is compatible with the "WINUSB" feature,
@@ -91,6 +101,8 @@ pub async fn start(spawner: Spawner, driver: Driver<'static, USB>, serial: &'sta
     static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
     let handle = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
+        hardware_description,
+        buf: [0; 1024],
     });
 
     // Add a vendor-specific function (class 0xFF), and corresponding interface,
@@ -104,6 +116,8 @@ pub async fn start(spawner: Spawner, driver: Driver<'static, USB>, serial: &'sta
 
     // Build the builder.
     let usb = builder.build();
+
+    info!("porky USB raw interface started");
 
     // Run the USB device.
     unwrap!(spawner.spawn(usb_task(usb)))

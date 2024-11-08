@@ -176,7 +176,8 @@ async fn main(spawner: Spawner) {
 
     // create hardware description
     let serial_number = serial_number(peripherals.FLASH, peripherals.DMA_CH1);
-    let hw_desc = hardware_description(serial_number);
+    static HARDWARE_DESCRIPTION: StaticCell<HardwareDescription> = StaticCell::new();
+    let hw_desc = HARDWARE_DESCRIPTION.init(hardware_description(serial_number));
 
     #[cfg(feature = "usb")]
     let driver = Driver::new(peripherals.USB, Irqs);
@@ -189,7 +190,7 @@ async fn main(spawner: Spawner) {
     let mut usb_rx_buffer = [0; 4096];
 
     #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, serial_number).await;
+    usb_raw::start(spawner, driver, hw_desc).await;
 
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
@@ -212,8 +213,8 @@ async fn main(spawner: Spawner) {
         .await
         {
             Ok(mut socket) => {
-                let mut buf = [0; 4096];
-                let slice = postcard::to_slice(&hw_desc, &mut buf).unwrap();
+                let mut hw_buf = [0; 1024];
+                let slice = postcard::to_slice(&hw_desc, &mut hw_buf).unwrap();
                 info!("Sending hardware description (length: {})", slice.len());
                 socket.write_all(slice).await.unwrap();
 
