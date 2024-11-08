@@ -32,17 +32,19 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh", "tcp", "std"]
+default = ["iroh", "tcp", "std", "usb-raw"]
 iroh = ["iroh-net"]
 tcp = ["portpicker", "local-ip-address"]
 discovery = []
 std = []
+usb-raw = ["nusb"]
 
 [dependencies]
 # Optional Dependencies
 iroh-net = { version = "0.28.1", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.3", default-features = false, optional = true }
+nusb = { version = "0.1.11", default-features = false, optional = true }
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
