@@ -14,7 +14,9 @@ use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
+#[cfg(feature = "usb-raw")]
 use crate::usb_raw::USBEvent;
+
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
@@ -323,6 +325,7 @@ impl Piggui {
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
+            #[cfg(feature = "usb-raw")]
             Subscription::run_with_id("usb", usb_raw::subscribe()).map(USB),
         ];
 
