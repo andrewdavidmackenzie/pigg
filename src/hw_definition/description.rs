@@ -45,6 +45,8 @@ pub struct HardwareDetails {
     pub revision: String,
     /// A serial number unique to each device
     pub serial: String,
+    /// Whether the device supports wifi or not
+    pub wifi: bool,
 }
 
 #[cfg(not(feature = "std"))]
@@ -55,6 +57,7 @@ pub struct HardwareDetails<'a> {
     pub hardware: &'a str,
     pub revision: &'a str,
     pub serial: &'a str,
+    pub wifi: bool,
 }
 
 #[cfg(feature = "std")]

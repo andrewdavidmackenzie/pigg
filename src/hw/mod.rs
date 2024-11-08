@@ -133,6 +133,7 @@ impl HW {
             revision: "unknown".to_string(),
             serial: "unknown".to_string(),
             model: "Fake RPi".to_string(),
+            wifi: false,
         };
 
         #[cfg(all(

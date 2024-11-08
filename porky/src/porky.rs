@@ -106,6 +106,7 @@ fn hardware_description(serial: &str) -> HardwareDescription {
         hardware: "RP2040",
         revision: "",
         serial,
+        wifi: true,
     };
 
     HardwareDescription {
