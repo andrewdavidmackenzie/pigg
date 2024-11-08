@@ -252,9 +252,7 @@ impl Piggui {
             }
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
             #[cfg(feature = "usb-raw")]
-            USB(event) => {
-                println!("USB Event: \n{:?}", event);
-            }
+            USB(event) => return usb_raw::usb_event(event),
         }
 
         Task::none()

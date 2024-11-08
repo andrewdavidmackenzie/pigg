@@ -1,6 +1,8 @@
 use crate::hw_definition::description::HardwareDescription;
+use crate::Message;
 use async_std::prelude::Stream;
 use futures::SinkExt;
+use iced::Task;
 use iced_futures::stream;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
@@ -85,6 +87,18 @@ pub fn subscribe() -> impl Stream<Item = USBEvent> {
             }
         }
     })
+}
+
+async fn empty() {}
+
+pub fn usb_event(event: USBEvent) -> Task<Message> {
+    match event {
+        USBEvent::DeviceFound(hardware_description) => {
+            println!("USB Device Found: {}", hardware_description.details.model);
+            Task::none()
+        }
+        USBEvent::Error(e) => Task::perform(empty(), move |_| Message::ConnectionError(e.clone())),
+    }
 }
 
 /*
