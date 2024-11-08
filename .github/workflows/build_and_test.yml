@@ -31,6 +31,18 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --all -- --check
 
+  build-all-feature-combinations:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install cargo-all-features
+        run: cargo install cargo-all-features
+
+      - name: cargo build-all-features
+        run: cargo build-all-features
+
   arm7-build:
     runs-on: ubuntu-latest
     steps:
@@ -91,7 +103,7 @@ jobs:
       - name: Release build of porky for Pico
         run: cd porky && RUSTFLAGS= cargo build --release
 
-  clippy-build-and-test:
+  clippy-build-and-test-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
