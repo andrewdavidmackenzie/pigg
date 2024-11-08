@@ -3,6 +3,9 @@ use embassy_rp::usb::Driver;
 use embassy_usb::{Builder, Config};
 use static_cell::StaticCell;
 
+/// Create a Builder for the USB stack using:
+/// vendor: "pigg"
+/// product: "porky"
 pub(crate) fn get_usb_builder(
     driver: Driver<'static, USB>,
     serial: &'static str,
