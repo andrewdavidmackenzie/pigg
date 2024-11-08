@@ -9,7 +9,7 @@ name = "porky"
 path = "src/porky.rs"
 
 [features]
-default = ["usb-tcp"]
+default = ["usb-raw"]
 std = []
 debug-probe = []
 usb-tcp = ["usb"]
@@ -66,4 +66,8 @@ cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-denylist = ["std"]
+denylist = ["std", "usb"]
+# Features "usb-raw" and "usb-tcp" are incompatible, so skip permutations including them
+skip_feature_sets = [
+    ["usb-raw", "usb-tcp"],
+]

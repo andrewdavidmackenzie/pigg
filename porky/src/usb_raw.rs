@@ -1,4 +1,4 @@
-use crate::usb_tcp::get_usb_builder;
+use crate::usb::get_usb_builder;
 use core::str;
 use defmt::{info, unwrap};
 use embassy_executor::Spawner;
@@ -72,7 +72,7 @@ impl Handler for ControlHandler {
     }
 }
 
-pub async fn start_usb(spawner: Spawner, driver: Driver<'static, USB>, serial: &'static str) {
+pub async fn start(spawner: Spawner, driver: Driver<'static, USB>, serial: &'static str) {
     let mut builder = get_usb_builder(driver, serial);
 
     // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
