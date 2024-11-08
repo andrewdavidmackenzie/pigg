@@ -1,4 +1,3 @@
-use crate::wifi;
 use defmt::*;
 use embassy_executor::Spawner;
 use embassy_net::{Stack, StackResources};
@@ -31,14 +30,10 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static, MTU>>
     runner.run().await
 }
 
-/// Start a network stack based on USB
-pub async fn start_net(
-    spawner: Spawner,
+pub(crate) fn get_usb_builder(
     driver: Driver<'static, USB>,
     serial: &'static str,
-) -> Stack<'static> {
-    let mut rng = RoscRng;
-
+) -> Builder<'static, Driver<'static, USB>> {
     // Create embassy-usb Config
     let mut config = Config::new(0xbabe, 0xface);
     config.manufacturer = Some("pigg");
@@ -48,23 +43,32 @@ pub async fn start_net(
     config.max_packet_size_0 = 64;
 
     // Required for Windows support.
-    config.composite_with_iads = true;
     config.device_class = 0xEF;
     config.device_sub_class = 0x02;
     config.device_protocol = 0x01;
+    config.composite_with_iads = true;
 
-    // Create embassy-usb DeviceBuilder using the driver and config.
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static CONTROL_BUF: StaticCell<[u8; 128]> = StaticCell::new();
-    let mut builder = Builder::new(
+    static MSOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
+    Builder::new(
         driver,
         config,
         &mut CONFIG_DESC.init([0; 256])[..],
         &mut BOS_DESC.init([0; 256])[..],
-        &mut [], // no msos descriptors
+        &mut MSOS_DESC.init([0; 256])[..],
         &mut CONTROL_BUF.init([0; 128])[..],
-    );
+    )
+}
+
+/// Start a network stack based on USB
+pub async fn start_net(
+    spawner: Spawner,
+    driver: Driver<'static, USB>,
+    serial: &'static str,
+) -> Stack<'static> {
+    let mut builder = get_usb_builder(driver, serial);
 
     // Our MAC addr.
     let our_mac_addr = [0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC];
@@ -90,6 +94,7 @@ pub async fn start_net(
     //    gateway: Some(Ipv4Address::new(10, 42, 0, 1)),
     //});
 
+    let mut rng = RoscRng;
     let seed = rng.next_u64();
 
     // Init network stack
@@ -99,7 +104,7 @@ pub async fn start_net(
 
     unwrap!(spawner.spawn(net_task(runner)));
 
-    wifi::wait_for_dhcp("USB", &stack).await;
+    //wifi::wait_for_dhcp("USB", &stack).await;
 
     stack
 }

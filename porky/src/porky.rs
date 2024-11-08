@@ -43,6 +43,9 @@ mod wifi;
 /// Module for Tcp over USB
 mod usb_tcp;
 
+#[cfg(feature = "usb-raw")]
+mod usb_raw;
+
 /// TCP related functions
 mod tcp;
 
@@ -165,9 +168,12 @@ async fn main(spawner: Spawner) {
     let serial_number = serial_number(peripherals.FLASH, peripherals.DMA_CH1);
     let hw_desc = hardware_description(serial_number);
 
+    //    start_usb(spawner, driver, "12345678").await;
+
     #[cfg(feature = "usb-tcp")]
-    let usb_stack =
-        usb_tcp::start_net(spawner, Driver::new(peripherals.USB, Irqs), serial_number).await;
+    let driver = Driver::new(peripherals.USB, Irqs);
+    #[cfg(feature = "usb-tcp")]
+    let usb_stack = usb_tcp::start_net(spawner, driver, serial_number).await;
     #[cfg(feature = "usb-tcp")]
     let mut usb_tx_buffer = [0; 4096];
     #[cfg(feature = "usb-tcp")]
