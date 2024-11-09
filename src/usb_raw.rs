@@ -5,7 +5,7 @@ use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced::Task;
 use iced_futures::stream;
-use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
+use nusb::transfer::{ControlIn, ControlType, Recipient};
 use nusb::Interface;
 use std::io;
 use std::time::Duration;
@@ -41,7 +41,7 @@ fn get_porky() -> Option<Interface> {
     device.claim_interface(0).ok()
 }
 
-async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, String> {
+/*
     let request = b"hardware description";
     porky
         .control_out(ControlOut {
@@ -55,18 +55,19 @@ async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescripti
         .await
         .status
         .map_err(|_| "Could not send command to porky over USB".to_string())?;
+*/
+const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
+    control_type: ControlType::Vendor,
+    recipient: Recipient::Interface,
+    request: 101,
+    value: 201,
+    index: 0,
+    length: 1000,
+};
 
-    // Receive HardwareDescription back from device
-    let response = porky
-        .control_in(ControlIn {
-            control_type: ControlType::Vendor,
-            recipient: Recipient::Interface,
-            request: 101,
-            value: 201,
-            index: 0,
-            length: 1000,
-        })
-        .await;
+/// Request HardwareDescription from compatible porky device over USB
+async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, String> {
+    let response = porky.control_in(GET_HARDWARE_DESCRIPTION).await;
     response
         .status
         .map_err(|_| "Could not get response from porky over USB".to_string())?;

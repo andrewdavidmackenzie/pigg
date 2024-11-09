@@ -61,6 +61,23 @@ pub struct HardwareDetails<'a> {
 }
 
 #[cfg(feature = "std")]
+/// [SsidSpec] contains details on how the device connects to WiFi
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SsidSpec {
+    ssid_name: String,
+    ssid_pass: String,
+    ssid_security: String,
+}
+
+#[cfg(not(feature = "std"))]
+/// [SsidSpec] contains details on how the device connects to WiFi
+#[derive(Serialize)]
+pub struct SsidSpec<'a> {
+    ssid_name: &'a str,
+    ssid_pass: &'a str,
+    ssid_security: &'a str,
+}
+#[cfg(feature = "std")]
 /// [PinDescription] describes a pins in the connected hardware.
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize, Debug, Clone, Deserialize)]

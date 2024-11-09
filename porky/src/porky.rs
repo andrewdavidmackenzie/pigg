@@ -4,7 +4,9 @@
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
-use crate::ssid::{MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH};
+use crate::ssid::{
+    MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH, SSID_SECURITY,
+};
 use core::str;
 use cyw43_pio::PioSpi;
 use defmt::{error, info};
@@ -195,7 +197,14 @@ async fn main(spawner: Spawner) {
 
     let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
     let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
-    wifi::join(&mut control, wifi_stack, ssid_name, ssid_pass).await;
+    wifi::join(
+        &mut control,
+        wifi_stack,
+        ssid_name,
+        ssid_pass,
+        SSID_SECURITY,
+    )
+    .await;
     let mut wifi_tx_buffer = [0; 4096];
     let mut wifi_rx_buffer = [0; 4096];
 
