@@ -252,9 +252,11 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.set_error(details);
             }
+
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
+
             #[cfg(feature = "usb-raw")]
-            USB(event) => return usb_raw::usb_event(event),
+            USB(event) => self.usb_event(event),
         }
 
         Task::none()
@@ -334,6 +336,29 @@ impl Piggui {
         subscriptions.push(self.connect_dialog.subscription().map(ConnectDialog));
 
         Subscription::batch(subscriptions)
+    }
+
+    #[cfg(feature = "usb-raw")]
+    /// Process messages related to USB raw discovery of attached devices
+    fn usb_event(&mut self, event: USBEvent) {
+        match event {
+            USBEvent::DeviceFound(_hardware_description, _ssid_spec) => {
+                self.info_row
+                    .add_info_message(Info("USB Device Found".to_string()));
+                //println!(": {}", hardware_description.details.model);
+            }
+            USBEvent::DeviceLost(_hardware_description) => {
+                self.info_row
+                    .add_info_message(Info("USB Device Lost".to_string()));
+                //println!("USB Device Lost: {}", hardware_description.details.model);
+            }
+            USBEvent::Error(e) => {
+                self.info_row.add_info_message(MessageMessage::Error(
+                    "Connection Error".to_string(),
+                    e.clone(),
+                ));
+            }
+        }
     }
 }
 

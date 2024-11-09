@@ -64,19 +64,38 @@ pub struct HardwareDetails<'a> {
 /// [SsidSpec] contains details on how the device connects to WiFi
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SsidSpec {
-    ssid_name: String,
-    ssid_pass: String,
-    ssid_security: String,
+    pub ssid_name: String,
+    pub ssid_pass: String,
+    pub ssid_security: String,
 }
 
 #[cfg(not(feature = "std"))]
 /// [SsidSpec] contains details on how the device connects to WiFi
 #[derive(Serialize)]
 pub struct SsidSpec<'a> {
-    ssid_name: &'a str,
-    ssid_pass: &'a str,
-    ssid_security: &'a str,
+    pub ssid_name: &'a str,
+    pub ssid_pass: &'a str,
+    pub ssid_security: &'a str,
 }
+
+#[cfg(feature = "std")]
+/// [WiFiDetails] contains details on WiFi connection and connections details
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WiFiDetails {
+    ssid_spec: SsidSpec,
+    tcp: (String, u16), // ("ip", port)
+    iroh: String,       // "NodeId"
+}
+
+#[cfg(not(feature = "std"))]
+/// [WiFiDetails] contains details on WiFi connection and connections details
+#[derive(Serialize)]
+pub struct WiFiDetails<'a> {
+    ssid_spec: SsidSpec<'a>,
+    tcp: (&'a str, u16), // ("ip", port)
+    iroh: &'a str,       // "NodeId"
+}
+
 #[cfg(feature = "std")]
 /// [PinDescription] describes a pins in the connected hardware.
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1

@@ -2,17 +2,18 @@
 #![no_main]
 
 use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
-use crate::pin_descriptions::PIN_DESCRIPTIONS;
-use crate::ssid::{
-    MARKER_LENGTH, SSID_NAME, SSID_NAME_LENGTH, SSID_PASS, SSID_PASS_LENGTH, SSID_SECURITY,
+use crate::hw_definition::description::{
+    HardwareDescription, HardwareDetails, PinDescriptionSet, SsidSpec,
 };
+use crate::pin_descriptions::PIN_DESCRIPTIONS;
+use crate::ssid::{SSID_NAME, SSID_PASS, SSID_SECURITY};
 use core::str;
 use cyw43_pio::PioSpi;
 use defmt::{error, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
+use embassy_net::tcp::TcpSocket;
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::Async;
 use embassy_rp::flash::Flash;
@@ -81,21 +82,19 @@ bind_interrupts!(struct Irqs {
 pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
     Channel::new();
 
-/// Read a unique device ID from the Flash and format it as hex into the provided 16 byte array
-fn device_id(mut device_id_hex: [u8; 16], flash_pin: FLASH, dma_pin: DMA_CH1) {
-    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
-    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(flash_pin, dma_pin);
-    let mut device_id = [0; 8];
-    flash.blocking_unique_id(&mut device_id).unwrap();
-
-    // convert the device_id to a hex "string"
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
-}
-
 /// Get the unique serial number from Flash
 fn serial_number(flash: FLASH, dma: DMA_CH1) -> &'static str {
-    let device_id_hex: [u8; 16] = [0; 16];
-    device_id(device_id_hex, flash, dma);
+    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
+    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(flash, dma);
+    let mut device_id = [0; 8];
+    flash.blocking_unique_id(&mut device_id).unwrap();
+    info!("device_id: {:?}", device_id);
+
+    // convert the device_id to a hex "string"
+    let mut device_id_hex: [u8; 16] = [0; 16];
+    hex_encode(&device_id, &mut device_id_hex).unwrap();
+
+    info!("device_id: {}", device_id_hex);
     static ID: StaticCell<[u8; 16]> = StaticCell::new();
     let id = ID.init(device_id_hex);
     str::from_utf8(id).unwrap()
@@ -117,6 +116,24 @@ fn hardware_description(serial: &str) -> HardwareDescription {
             pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
         },
     }
+}
+
+const DEFAULT_SSID_SPEC: SsidSpec = SsidSpec {
+    ssid_name: SSID_NAME,
+    ssid_pass: SSID_PASS,
+    ssid_security: SSID_SECURITY,
+};
+
+fn get_ssid_spec<'a>() -> SsidSpec<'a> {
+    DEFAULT_SSID_SPEC
+}
+
+/// Send the [HardwareDescription] over the [TcpSocket]
+async fn send_hardware_description(socket: &mut TcpSocket<'_>, hw_desc: &HardwareDescription<'_>) {
+    let mut hw_buf = [0; 1024];
+    let slice = postcard::to_slice(hw_desc, &mut hw_buf).unwrap();
+    info!("Sending hardware description (length: {})", slice.len());
+    socket.write_all(slice).await.unwrap()
 }
 
 #[embassy_executor::main]
@@ -192,19 +209,13 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb-tcp")]
     let mut usb_rx_buffer = [0; 4096];
 
-    #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, hw_desc).await;
+    static SSID_SPEC: StaticCell<SsidSpec> = StaticCell::new();
+    let ssid_spec = SSID_SPEC.init(get_ssid_spec());
 
-    let ssid_name = SSID_NAME[MARKER_LENGTH..(MARKER_LENGTH + SSID_NAME_LENGTH)].trim();
-    let ssid_pass = SSID_PASS[MARKER_LENGTH..(MARKER_LENGTH + SSID_PASS_LENGTH)].trim();
-    wifi::join(
-        &mut control,
-        wifi_stack,
-        ssid_name,
-        ssid_pass,
-        SSID_SECURITY,
-    )
-    .await;
+    #[cfg(feature = "usb-raw")]
+    usb_raw::start(spawner, driver, hw_desc, ssid_spec).await;
+
+    wifi::join(&mut control, wifi_stack, ssid_spec).await;
     let mut wifi_tx_buffer = [0; 4096];
     let mut wifi_rx_buffer = [0; 4096];
 
@@ -223,10 +234,7 @@ async fn main(spawner: Spawner) {
         .await
         {
             Ok(mut socket) => {
-                let mut hw_buf = [0; 1024];
-                let slice = postcard::to_slice(&hw_desc, &mut hw_buf).unwrap();
-                info!("Sending hardware description (length: {})", slice.len());
-                socket.write_all(slice).await.unwrap();
+                send_hardware_description(&mut socket, &hw_desc).await;
 
                 info!("Entering message loop");
                 loop {
