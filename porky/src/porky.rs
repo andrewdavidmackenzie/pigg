@@ -82,21 +82,19 @@ bind_interrupts!(struct Irqs {
 pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
     Channel::new();
 
-/// Read a unique device ID from the Flash and format it as hex into the provided 16 byte array
-fn device_id(mut device_id_hex: [u8; 16], flash_pin: FLASH, dma_pin: DMA_CH1) {
-    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
-    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(flash_pin, dma_pin);
-    let mut device_id = [0; 8];
-    flash.blocking_unique_id(&mut device_id).unwrap();
-
-    // convert the device_id to a hex "string"
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
-}
-
 /// Get the unique serial number from Flash
 fn serial_number(flash: FLASH, dma: DMA_CH1) -> &'static str {
-    let device_id_hex: [u8; 16] = [0; 16];
-    device_id(device_id_hex, flash, dma);
+    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
+    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(flash, dma);
+    let mut device_id = [0; 8];
+    flash.blocking_unique_id(&mut device_id).unwrap();
+    info!("device_id: {:?}", device_id);
+
+    // convert the device_id to a hex "string"
+    let mut device_id_hex: [u8; 16] = [0; 16];
+    hex_encode(&device_id, &mut device_id_hex).unwrap();
+
+    info!("device_id: {}", device_id_hex);
     static ID: StaticCell<[u8; 16]> = StaticCell::new();
     let id = ID.init(device_id_hex);
     str::from_utf8(id).unwrap()

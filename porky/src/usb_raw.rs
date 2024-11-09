@@ -128,7 +128,7 @@ pub async fn start(
     // Build the builder.
     let usb = builder.build();
 
-    info!("porky USB raw interface started");
+    info!("USB raw interface started");
 
     // Run the USB device.
     unwrap!(spawner.spawn(usb_task(usb)))
