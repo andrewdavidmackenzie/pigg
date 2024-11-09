@@ -1,3 +1,4 @@
+use crate::hw_definition::description::SsidSpec;
 use cyw43::Control;
 use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
@@ -27,35 +28,29 @@ async fn net_task(mut runner: embassy_net::Runner<'static, cyw43::NetDriver<'sta
     runner.run().await
 }
 
-pub async fn join(
-    control: &mut Control<'_>,
-    stack: Stack<'static>,
-    ssid_name: &str,
-    ssid_pass: &str,
-    ssid_security: &str,
-) {
+pub async fn join(control: &mut Control<'_>, stack: Stack<'static>, wifi_spec: &SsidSpec<'_>) {
     let mut attempt = 1;
     while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
         info!(
             "Attempt #{} to join wifi network: '{}' with security = '{}'",
-            attempt, ssid_name, ssid_security
+            attempt, wifi_spec.ssid_name, wifi_spec.ssid_security
         );
 
-        let mut join_options = JoinOptions::new(ssid_pass.as_bytes());
+        let mut join_options = JoinOptions::new(wifi_spec.ssid_pass.as_bytes());
 
-        match ssid_security {
+        match wifi_spec.ssid_security {
             "open" => join_options.auth = JoinAuth::Open,
             "wpa" => join_options.auth = JoinAuth::Wpa,
             "wpa2" => join_options.auth = JoinAuth::Wpa2,
             "wpa3" => join_options.auth = JoinAuth::Wpa3,
             _ => {
-                error!("Security '{}' is not supported", ssid_security);
+                error!("Security '{}' is not supported", wifi_spec.ssid_security);
             }
         };
 
-        match control.join(ssid_name, join_options).await {
+        match control.join(wifi_spec.ssid_name, join_options).await {
             Ok(_) => {
-                info!("Joined wifi network: '{}'", ssid_name);
+                info!("Joined wifi network: '{}'", wifi_spec.ssid_name);
                 wait_for_dhcp("WiFi", &stack).await;
                 return;
             }

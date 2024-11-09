@@ -14,9 +14,6 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::{env, io};
 
-const SSID_NAME_LENGTH: usize = 32;
-const SSID_PASS_LENGTH: usize = 63;
-
 const SSID_FILE_NAME: &str = "ssid.toml";
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -43,30 +40,23 @@ fn generate_ssid(filename: &str, ssid: SsidSpec) -> io::Result<()> {
     let out_dir = Path::new(&out);
     let out_file = out_dir.join(filename);
     let mut file = File::create(out_file).unwrap();
-    file.write_all(b"pub(crate) const MARKER_LENGTH : usize = \"$SSID_NAME::\".len();\n")?;
-    file.write_all(b"pub(crate) const SSID_NAME_LENGTH : usize = 32;\n")?;
-    file.write_all(b"pub(crate) const SSID_PASS_LENGTH : usize = 63;\n")?;
 
-    // SSID Names can be upto 32 ASCII characters plus 24 for markers = 56
-    // right pad the provided string with spaces upto 32 ASCII characters (bytes)
     file.write_all(
         format!(
-            "pub(crate) const SSID_NAME : &str = \"$SSID_NAME::{: <SSID_NAME_LENGTH$}$SSID_NAME::\";\n",
+            "pub(crate) const SSID_NAME : &str = \"{}\";\n",
             ssid.ssid_name
         )
-            .as_bytes(),
+        .as_bytes(),
     )?;
 
-    // SSID Passwords can be upto 63 ASCII characters plus 24 for markers = 87
     file.write_all(
         format!(
-            "pub(crate) const SSID_PASS : &str = \"$SSID_PASS::{: <SSID_PASS_LENGTH$}$SSID_PASS::\";\n",
+            "pub(crate) const SSID_PASS : &str = \"{}\";\n",
             ssid.ssid_pass
         )
-            .as_bytes(),
+        .as_bytes(),
     )?;
 
-    // SSID Security can be wpa, wpa2, wpa3
     file.write_all(
         format!(
             "pub(crate) const SSID_SECURITY : &str = \"{}\";\n",

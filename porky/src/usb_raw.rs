@@ -1,7 +1,8 @@
-use crate::hw_definition::description::HardwareDescription;
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
 use crate::usb::get_usb_builder;
 use core::str;
-use defmt::{info, unwrap};
+use defmt::{error, info, unwrap};
 use embassy_executor::Spawner;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
@@ -26,6 +27,7 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
+    ssid_spec: &'h SsidSpec<'h>,
     buf: [u8; 1024],
 }
 
@@ -64,24 +66,32 @@ impl<'h> Handler for ControlHandler<'h> {
             return None;
         }
 
-        // Respond to request 101, value 201 with HardwareDescription
-        if req.request == 101 && req.value == 201 {
-            let msg = postcard::to_slice(self.hardware_description, &mut self.buf).unwrap();
-            info!(
-                "Sending hardware description via USB (length: {})",
-                msg.len()
-            );
-            Some(InResponse::Accepted(msg))
-        } else {
-            Some(InResponse::Rejected)
-        }
+        // Respond to valid requests from piggui
+        let msg = match (req.request, req.value) {
+            (PIGGUI_REQUEST, GET_HARDWARE_VALUE) => {
+                postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
+            }
+            (PIGGUI_REQUEST, GET_SSID_VALUE) => {
+                postcard::to_slice(self.ssid_spec, &mut self.buf).ok()?
+            }
+            _ => {
+                error!(
+                    "Unknown USB request and/or value: {}:{}",
+                    req.request, req.value
+                );
+                return Some(InResponse::Rejected);
+            }
+        };
+        Some(InResponse::Accepted(msg))
     }
 }
 
+/// Start the USB stack and raw communications over it
 pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
+    ssid_spec: &'static SsidSpec<'_>,
 ) {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
@@ -102,6 +112,7 @@ pub async fn start(
     let handle = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
+        ssid_spec,
         buf: [0; 1024],
     });
 
