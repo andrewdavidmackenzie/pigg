@@ -1,10 +1,8 @@
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
 use crate::usb_raw::USBState::{Connected, Disconnected};
-use crate::Message;
 use async_std::prelude::Stream;
 use futures::SinkExt;
-use iced::Task;
 use iced_futures::stream;
 use nusb::transfer::{ControlIn, ControlType, Recipient};
 use nusb::Interface;
@@ -34,7 +32,7 @@ const GET_WIFI_DETAILS: ControlIn = ControlIn {
 
 #[derive(Debug, Clone)]
 pub enum USBEvent {
-    DeviceFound(HardwareDescription),
+    DeviceFound(HardwareDescription, Option<SsidSpec>),
     DeviceLost(HardwareDescription),
     Error(String),
 }
@@ -100,7 +98,7 @@ async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescripti
 }
 
 /// Request [SsidSpec] from compatible porky device over USB
-async fn get_ssid_details(porky: &Interface) -> Result<SsidSpec, String> {
+async fn get_ssid_spec(porky: &Interface) -> Result<SsidSpec, String> {
     usb_request_porky(porky, GET_WIFI_DETAILS).await
 }
 
@@ -118,16 +116,15 @@ pub fn subscribe() -> impl Stream<Item = USBEvent> {
             usb_state = match (porky_found, &usb_state) {
                 (Some(porky), Disconnected) => match get_hardware_description(&porky).await {
                     Ok(hardware_description) => {
-                        println!("Hardware Details: {:?}", hardware_description.details);
-                        // TODO
-                        if hardware_description.details.wifi {
-                            match get_ssid_details(&porky).await {
-                                Ok(details) => println!("Ssid Spec: {:?}", details),
-                                Err(e) => println!("Could not get Ssid Spec: {e}"),
-                            }
-                        }
+                        let ssid_spec = match hardware_description.details.wifi {
+                            true => get_ssid_spec(&porky).await.ok(),
+                            false => None,
+                        };
                         let _ = gui_sender_clone
-                            .send(USBEvent::DeviceFound(hardware_description.clone()))
+                            .send(USBEvent::DeviceFound(
+                                hardware_description.clone(),
+                                ssid_spec,
+                            ))
                             .await;
                         Connected(hardware_description)
                     }
@@ -147,22 +144,6 @@ pub fn subscribe() -> impl Stream<Item = USBEvent> {
             };
         }
     })
-}
-
-async fn empty() {}
-
-pub fn usb_event(event: USBEvent) -> Task<Message> {
-    match event {
-        USBEvent::DeviceFound(hardware_description) => {
-            println!("USB Device Found: {}", hardware_description.details.model);
-            Task::none()
-        }
-        USBEvent::DeviceLost(hardware_description) => {
-            println!("USB Device Lost: {}", hardware_description.details.model);
-            Task::none()
-        }
-        USBEvent::Error(e) => Task::perform(empty(), move |_| Message::ConnectionError(e.clone())),
-    }
 }
 
 /*

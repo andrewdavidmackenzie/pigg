@@ -252,9 +252,11 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.set_error(details);
             }
+
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
+
             #[cfg(feature = "usb-raw")]
-            USB(event) => return usb_raw::usb_event(event),
+            USB(event) => return self.usb_event(event),
         }
 
         Task::none()
@@ -335,7 +337,29 @@ impl Piggui {
 
         Subscription::batch(subscriptions)
     }
+
+    fn usb_event(&mut self, event: USBEvent) -> Task<Message> {
+        match event {
+            USBEvent::DeviceFound(_hardware_description, _ssid_spec) => {
+                self.info_row
+                    .add_info_message(Info("USB Device Found".to_string()));
+                //println!(": {}", hardware_description.details.model);
+                Task::none()
+            }
+            USBEvent::DeviceLost(_hardware_description) => {
+                self.info_row
+                    .add_info_message(Info("USB Device Lost".to_string()));
+                //println!("USB Device Lost: {}", hardware_description.details.model);
+                Task::none()
+            }
+            USBEvent::Error(e) => {
+                Task::perform(empty(), move |_| Message::ConnectionError(e.clone()))
+            }
+        }
+    }
 }
+
+async fn empty() {}
 
 /// Determine the hardware target based on command line options
 #[allow(unused_variables)]
