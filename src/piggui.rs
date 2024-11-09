@@ -14,6 +14,9 @@ use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
+#[cfg(feature = "usb-raw")]
+use crate::usb_raw::USBEvent;
+
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
@@ -36,6 +39,8 @@ mod piggui_local_helper;
 #[cfg(feature = "tcp")]
 #[path = "networking/piggui_tcp_helper.rs"]
 mod piggui_tcp_helper;
+#[cfg(feature = "usb-raw")]
+mod usb_raw;
 mod views;
 mod widgets;
 
@@ -60,6 +65,8 @@ pub enum Message {
     Connected,
     ConnectionError(String),
     MenuBarButtonClicked,
+    #[cfg(feature = "usb-raw")]
+    USB(USBEvent),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -245,7 +252,9 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.set_error(details);
             }
-            MenuBarButtonClicked => {}
+            MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
+            #[cfg(feature = "usb-raw")]
+            USB(event) => return usb_raw::usb_event(event),
         }
 
         Task::none()
@@ -316,6 +325,8 @@ impl Piggui {
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
+            #[cfg(feature = "usb-raw")]
+            Subscription::run_with_id("usb", usb_raw::subscribe()).map(USB),
         ];
 
         // Handle Keyboard events for ConnectDialog

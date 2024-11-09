@@ -9,10 +9,12 @@ name = "porky"
 path = "src/porky.rs"
 
 [features]
-default = ["usb-tcp"]
+default = ["usb-raw"]
 std = []
 debug-probe = []
-usb-tcp = ["embassy-usb"]
+usb-tcp = ["usb"]
+usb-raw = ["usb"]
+usb = ["embassy-usb"]
 
 [dependencies]
 embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
@@ -38,10 +40,9 @@ faster-hex = { version = "0.10.0", default-features = false }
 serde = { version = "1.0.208", default-features = false, features = ["derive"] } # no_std
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
-#chrono = { version = "0.4", default-features = false, features = ["serde"] }
 
 [build-dependencies]
-# for reading config from a file in build.rs
+# for reading SSID config from a file in build.rs
 serde_derive = "~1.0"
 serde = "~1.0"
 toml = { version = "0.8.8" }
@@ -65,4 +66,8 @@ cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-denylist = ["std"]
+denylist = ["std", "usb"]
+# Features "usb-raw" and "usb-tcp" are incompatible, so skip permutations including them
+skip_feature_sets = [
+    ["usb-raw", "usb-tcp"],
+]

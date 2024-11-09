@@ -1,4 +1,3 @@
-use crate::ssid::SSID_SECURITY;
 use cyw43::Control;
 use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
@@ -33,23 +32,24 @@ pub async fn join(
     stack: Stack<'static>,
     ssid_name: &str,
     ssid_pass: &str,
+    ssid_security: &str,
 ) {
     let mut attempt = 1;
     while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
         info!(
             "Attempt #{} to join wifi network: '{}' with security = '{}'",
-            attempt, ssid_name, SSID_SECURITY
+            attempt, ssid_name, ssid_security
         );
 
         let mut join_options = JoinOptions::new(ssid_pass.as_bytes());
 
-        match SSID_SECURITY {
+        match ssid_security {
             "open" => join_options.auth = JoinAuth::Open,
             "wpa" => join_options.auth = JoinAuth::Wpa,
             "wpa2" => join_options.auth = JoinAuth::Wpa2,
             "wpa3" => join_options.auth = JoinAuth::Wpa3,
             _ => {
-                error!("Security '{}' is not supported", SSID_SECURITY);
+                error!("Security '{}' is not supported", ssid_security);
             }
         };
 

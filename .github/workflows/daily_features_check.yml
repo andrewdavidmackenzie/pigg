@@ -15,17 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install cargo-all-features
-        run: cargo install cargo-all-features
-
-      - name: cargo build-all-features
-        run: cargo build-all-features
-
       - name: cargo test all features - non-Linux
         if: runner.os != 'Linux'
         run: cargo test-all-features
