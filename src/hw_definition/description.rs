@@ -77,6 +77,25 @@ pub struct SsidSpec<'a> {
     ssid_pass: &'a str,
     ssid_security: &'a str,
 }
+
+#[cfg(feature = "std")]
+/// [WiFiDetails] contains details on WiFi connection and connections details
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WiFiDetails {
+    ssid_spec: Option<SsidSpec>,
+    tcp: Option<String>,  // "ip:port"
+    iroh: Option<String>, // "NodeId"
+}
+
+#[cfg(not(feature = "std"))]
+/// [WiFiDetails] contains details on WiFi connection and connections details
+#[derive(Serialize)]
+pub struct WiFiDetails<'a> {
+    ssid_spec: Option<SsidSpec<'a>>,
+    tcp: Option<&'a str>,  // "ip:port"
+    iroh: Option<&'a str>, // "NodeId"
+}
+
 #[cfg(feature = "std")]
 /// [PinDescription] describes a pins in the connected hardware.
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
