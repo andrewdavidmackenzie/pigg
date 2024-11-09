@@ -70,7 +70,7 @@ log = { version = "0.4.22", default-features = false }
 iced_aw = { version = "0.11.0", default-features = false, features = ["menu"] }
 iced_futures = { version = "0.13.2", default-features = false }
 plotters-iced = { version = "0.11.0", default-features = false }
-plotters = { version = "0.3", default_features = false, features = [
+plotters = { version = "0.3", default-features = false, features = [
     "chrono",
     "line_series",
 ] }
