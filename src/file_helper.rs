@@ -1,6 +1,6 @@
 use crate::hw_definition::config::HardwareConfig;
-use crate::views::message_row::MessageMessage::{Error, Info};
-use crate::views::message_row::MessageRowMessage::ShowStatusMessage;
+use crate::views::message_box::MessageMessage::{Error, Info};
+use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::Message;
 use crate::Message::{ConfigLoaded, InfoRow};
 use iced::Task;

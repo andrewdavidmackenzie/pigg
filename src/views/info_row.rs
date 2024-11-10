@@ -1,6 +1,6 @@
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_selector::LayoutSelector;
-use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
+use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_menu, unsaved_status};
 use crate::Message;
@@ -141,6 +141,8 @@ impl InfoRow {
     }
 
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
-        self.message_row.subscription()
+        let subscriptions = vec![self.message_row.subscription()];
+
+        Subscription::batch(subscriptions)
     }
 }

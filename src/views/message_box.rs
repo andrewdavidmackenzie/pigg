@@ -142,8 +142,8 @@ impl MessageRow {
 
 #[cfg(test)]
 mod test {
-    use crate::views::message_row::MessageMessage::{Error, Info, Warning};
-    use crate::views::message_row::MessageQueue;
+    use crate::views::message_box::MessageMessage::{Error, Info, Warning};
+    use crate::views::message_box::MessageQueue;
 
     #[test]
     fn errors_first() {

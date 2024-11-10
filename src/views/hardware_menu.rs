@@ -1,3 +1,4 @@
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
@@ -6,11 +7,19 @@ use crate::views::info_row::{
     MENU_BUTTON_STYLE,
 };
 use crate::HardwareTarget::*;
-use crate::{Message, ModalMessage};
+use crate::{usb_raw, Message, ModalMessage};
 use iced::widget::button::Status::Hovered;
 use iced::widget::{Button, Text};
 use iced::{Element, Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
+use iced_futures::Subscription;
+
+#[derive(Debug, Clone)]
+pub enum DeviceEvent {
+    DeviceFound(HardwareDescription, Option<SsidSpec>),
+    DeviceLost(HardwareDescription),
+    Error(String),
+}
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
@@ -141,4 +150,14 @@ pub fn view<'a>(
     MenuBar::new(vec![menu_root])
         .style(|_, _| MENU_BAR_STYLE)
         .into()
+}
+
+/// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
+pub fn subscription() -> Subscription<DeviceEvent> {
+    let subscriptions = vec![
+        #[cfg(feature = "usb-raw")]
+        Subscription::run_with_id("device", usb_raw::subscribe()),
+    ];
+
+    Subscription::batch(subscriptions)
 }

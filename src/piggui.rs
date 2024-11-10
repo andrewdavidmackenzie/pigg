@@ -3,8 +3,8 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::message_row::MessageMessage::Info;
-use crate::views::message_row::{MessageMessage, MessageRowMessage};
+use crate::views::message_box::MessageMessage::Info;
+use crate::views::message_box::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
 use crate::widgets::modal::modal;
 use crate::Message::*;
@@ -15,12 +15,13 @@ use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Tas
 use views::pin_state::PinState;
 
 #[cfg(feature = "usb-raw")]
-use crate::usb_raw::USBEvent;
+use crate::views::hardware_menu::DeviceEvent;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
+use crate::views::hardware_menu;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -66,7 +67,7 @@ pub enum Message {
     ConnectionError(String),
     MenuBarButtonClicked,
     #[cfg(feature = "usb-raw")]
-    USB(USBEvent),
+    Device(DeviceEvent),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -256,7 +257,7 @@ impl Piggui {
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
             #[cfg(feature = "usb-raw")]
-            USB(event) => self.usb_event(event),
+            Device(event) => self.device_event(event),
         }
 
         Task::none()
@@ -327,8 +328,7 @@ impl Piggui {
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
-            #[cfg(feature = "usb-raw")]
-            Subscription::run_with_id("usb", usb_raw::subscribe()).map(USB),
+            hardware_menu::subscription().map(Device),
         ];
 
         // Handle Keyboard events for ConnectDialog
@@ -340,19 +340,19 @@ impl Piggui {
 
     #[cfg(feature = "usb-raw")]
     /// Process messages related to USB raw discovery of attached devices
-    fn usb_event(&mut self, event: USBEvent) {
+    fn device_event(&mut self, event: DeviceEvent) {
         match event {
-            USBEvent::DeviceFound(_hardware_description, _ssid_spec) => {
+            DeviceEvent::DeviceFound(_hardware_description, _ssid_spec) => {
                 self.info_row
                     .add_info_message(Info("USB Device Found".to_string()));
                 //println!(": {}", hardware_description.details.model);
             }
-            USBEvent::DeviceLost(_hardware_description) => {
+            DeviceEvent::DeviceLost(_hardware_description) => {
                 self.info_row
                     .add_info_message(Info("USB Device Lost".to_string()));
                 //println!("USB Device Lost: {}", hardware_description.details.model);
             }
-            USBEvent::Error(e) => {
+            DeviceEvent::Error(e) => {
                 self.info_row.add_info_message(MessageMessage::Error(
                     "Connection Error".to_string(),
                     e.clone(),

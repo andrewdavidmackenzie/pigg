@@ -1,6 +1,7 @@
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
 use crate::usb_raw::USBState::{Connected, Disconnected};
+use crate::views::hardware_menu::DeviceEvent;
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
@@ -29,13 +30,6 @@ const GET_WIFI_DETAILS: ControlIn = ControlIn {
     index: 0,
     length: 1000,
 };
-
-#[derive(Debug, Clone)]
-pub enum USBEvent {
-    DeviceFound(HardwareDescription, Option<SsidSpec>),
-    DeviceLost(HardwareDescription),
-    Error(String),
-}
 
 pub enum USBState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
@@ -102,8 +96,8 @@ async fn get_ssid_spec(porky: &Interface) -> Result<SsidSpec, String> {
     usb_request_porky(porky, GET_WIFI_DETAILS).await
 }
 
-/// A stream of [USBEvent] to a possibly connected porky
-pub fn subscribe() -> impl Stream<Item = USBEvent> {
+/// A stream of [DeviceEvent] to a possibly connected porky
+pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
     let mut usb_state = Disconnected;
 
     stream::channel(100, move |gui_sender| async move {
@@ -121,7 +115,7 @@ pub fn subscribe() -> impl Stream<Item = USBEvent> {
                             false => None,
                         };
                         let _ = gui_sender_clone
-                            .send(USBEvent::DeviceFound(
+                            .send(DeviceEvent::DeviceFound(
                                 hardware_description.clone(),
                                 ssid_spec,
                             ))
@@ -129,7 +123,7 @@ pub fn subscribe() -> impl Stream<Item = USBEvent> {
                         Connected(hardware_description)
                     }
                     Err(e) => {
-                        let _ = gui_sender_clone.send(USBEvent::Error(e)).await;
+                        let _ = gui_sender_clone.send(DeviceEvent::Error(e)).await;
                         Disconnected
                     }
                 },
@@ -137,7 +131,7 @@ pub fn subscribe() -> impl Stream<Item = USBEvent> {
                 (None, Disconnected) => Disconnected,
                 (None, Connected(hardware_description)) => {
                     let _ = gui_sender_clone
-                        .send(USBEvent::DeviceLost(hardware_description.clone()))
+                        .send(DeviceEvent::DeviceLost(hardware_description.clone()))
                         .await;
                     Disconnected
                 }

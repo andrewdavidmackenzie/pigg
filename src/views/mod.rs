@@ -6,7 +6,7 @@ mod hardware_styles;
 pub mod hardware_view;
 pub mod info_row;
 pub mod layout_selector;
-pub mod message_row;
+pub mod message_box;
 pub mod modal_handler;
 pub mod pin_state;
 pub mod unsaved_status;
