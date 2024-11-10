@@ -15,6 +15,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install cargo-all-features
+        run: cargo install cargo-all-features
+
       - name: cargo test all features - non-Linux
         if: runner.os != 'Linux'
         run: cargo test-all-features
