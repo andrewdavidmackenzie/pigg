@@ -14,8 +14,7 @@ use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
 use views::pin_state::PinState;
 
-#[cfg(feature = "usb-raw")]
-use crate::views::hardware_menu::DeviceEvent;
+use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
@@ -66,7 +65,6 @@ pub enum Message {
     Connected,
     ConnectionError(String),
     MenuBarButtonClicked,
-    #[cfg(feature = "usb-raw")]
     Device(DeviceEvent),
 }
 
@@ -81,6 +79,8 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
+    // TODO - make this a map with serial number as key so can remove
+    known_devices: Vec<KnownDevice>,
 }
 
 fn main() -> iced::Result {
@@ -133,6 +133,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
+                known_devices: vec![],
             },
             maybe_load_no_picker(config_filename),
         )
@@ -256,7 +257,6 @@ impl Piggui {
 
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
-            #[cfg(feature = "usb-raw")]
             Device(event) => self.device_event(event),
         }
 
@@ -288,6 +288,7 @@ impl Piggui {
                 &self.layout_selector,
                 &self.hardware_view,
                 &self.hardware_target,
+                &self.known_devices,
             ));
 
         let content = container(main_col)
@@ -338,18 +339,21 @@ impl Piggui {
         Subscription::batch(subscriptions)
     }
 
-    #[cfg(feature = "usb-raw")]
     /// Process messages related to USB raw discovery of attached devices
     fn device_event(&mut self, event: DeviceEvent) {
         match event {
-            DeviceEvent::DeviceFound(_hardware_description, _ssid_spec) => {
+            DeviceEvent::DeviceFound(hardware_description, ssid_spec) => {
                 self.info_row
                     .add_info_message(Info("USB Device Found".to_string()));
+                // TODO make generic - but add "source" (how was found?)
+                self.known_devices
+                    .push(KnownDevice::Porky(hardware_description, ssid_spec))
                 //println!(": {}", hardware_description.details.model);
             }
             DeviceEvent::DeviceLost(_hardware_description) => {
                 self.info_row
                     .add_info_message(Info("USB Device Lost".to_string()));
+                // TODO remove from known using serial as key
                 //println!("USB Device Lost: {}", hardware_description.details.model);
             }
             DeviceEvent::Error(e) => {

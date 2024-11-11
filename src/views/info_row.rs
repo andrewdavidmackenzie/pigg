@@ -1,3 +1,4 @@
+use crate::views::hardware_menu::KnownDevice;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_selector::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
@@ -124,12 +125,17 @@ impl InfoRow {
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
         hardware_target: &'a HardwareTarget,
+        known_devices: &[KnownDevice],
     ) -> Element<'a, Message> {
         container(
             Row::new()
                 .push(version_button())
                 .push(layout_selector.view(hardware_target))
-                .push(hardware_menu::view(hardware_view, hardware_target))
+                .push(hardware_menu::view(
+                    hardware_view,
+                    hardware_target,
+                    known_devices,
+                ))
                 .push(unsaved_status::view(unsaved_changes, hardware_target))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))

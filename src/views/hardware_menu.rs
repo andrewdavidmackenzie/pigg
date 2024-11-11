@@ -1,4 +1,6 @@
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+#[cfg(feature = "usb-raw")]
+use crate::usb_raw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
@@ -7,7 +9,7 @@ use crate::views::info_row::{
     MENU_BUTTON_STYLE,
 };
 use crate::HardwareTarget::*;
-use crate::{usb_raw, Message, ModalMessage};
+use crate::{Message, ModalMessage};
 use iced::widget::button::Status::Hovered;
 use iced::widget::{Button, Text};
 use iced::{Element, Length, Renderer, Theme};
@@ -21,10 +23,16 @@ pub enum DeviceEvent {
     Error(String),
 }
 
+pub enum KnownDevice {
+    #[allow(dead_code)] // TODO remove
+    Porky(HardwareDescription, Option<SsidSpec>),
+}
+
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_target: &HardwareTarget,
+    _device_list: &[KnownDevice],
 ) -> Element<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
