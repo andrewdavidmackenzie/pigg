@@ -3,6 +3,7 @@ use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 use crate::usb_raw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
+use crate::views::hardware_menu::KnownDevice::Porky;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
@@ -24,7 +25,6 @@ pub enum DeviceEvent {
 }
 
 pub enum KnownDevice {
-    #[allow(dead_code)] // TODO remove
     Porky(HardwareDescription, Option<SsidSpec>),
 }
 
@@ -32,7 +32,7 @@ pub enum KnownDevice {
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_target: &HardwareTarget,
-    _device_list: &[KnownDevice],
+    known_devices: &[KnownDevice],
 ) -> Element<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
@@ -132,6 +132,7 @@ pub fn view<'a>(
     #[cfg(feature = "discovery")]
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
+            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .width(Length::Fill)
             .style(|_, status| {
                 if status == Hovered {
@@ -142,20 +143,59 @@ pub fn view<'a>(
             }),
     ));
 
-    let menu_root = Item::with_menu(
+    let mut device_items = vec![];
+
+    for device in known_devices {
+        match device {
+            Porky(hardware_description, _) => {
+                device_items.push(Item::new(
+                    Button::new(Text::new(format!(
+                        "{}({})",
+                        hardware_description.details.model, hardware_description.details.serial
+                    )))
+                    .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+                    .width(Length::Fill)
+                    .style(|_, status| {
+                        if status == Hovered {
+                            MENU_BUTTON_HOVER_STYLE
+                        } else {
+                            MENU_BUTTON_STYLE
+                        }
+                    }),
+                ));
+            }
+        }
+    }
+
+    let devices_submenu = Item::with_menu(
+        Button::new("Discovered devices")
+            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+            .width(Length::Fill)
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
+        Menu::new(device_items).width(250.0).offset(10.0),
+    );
+    menu_items.push(devices_submenu);
+
+    let hardware_menu_root = Item::with_menu(
         Button::new(Text::new(model))
+            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(move |_theme, status| {
                 if status == Hovered {
                     MENU_BAR_BUTTON_HOVER_STYLE
                 } else {
                     MENU_BAR_BUTTON_STYLE
                 }
-            })
-            .on_press(Message::MenuBarButtonClicked), // Needed for highlighting
+            }),
         Menu::new(menu_items).width(235.0).offset(10.0),
     );
 
-    MenuBar::new(vec![menu_root])
+    MenuBar::new(vec![hardware_menu_root])
         .style(|_, _| MENU_BAR_STYLE)
         .into()
 }
