@@ -3,8 +3,8 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::message_row::MessageMessage::Info;
-use crate::views::message_row::{MessageMessage, MessageRowMessage};
+use crate::views::message_box::MessageMessage::Info;
+use crate::views::message_box::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
 use crate::widgets::modal::modal;
 use crate::Message::*;
@@ -12,15 +12,16 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
+use std::collections::HashMap;
 use views::pin_state::PinState;
 
-#[cfg(feature = "usb-raw")]
-use crate::usb_raw::USBEvent;
+use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
+use crate::views::hardware_menu;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -65,8 +66,8 @@ pub enum Message {
     Connected,
     ConnectionError(String),
     MenuBarButtonClicked,
-    #[cfg(feature = "usb-raw")]
-    USB(USBEvent),
+    Device(DeviceEvent),
+    ConfigureWiFi(String),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -80,6 +81,7 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
+    known_devices: HashMap<String, KnownDevice>,
 }
 
 fn main() -> iced::Result {
@@ -132,6 +134,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
+                known_devices: HashMap::new(),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -255,8 +258,14 @@ impl Piggui {
 
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
-            #[cfg(feature = "usb-raw")]
-            USB(event) => self.usb_event(event),
+            Device(event) => self.device_event(event),
+
+            ConfigureWiFi(serial_number) => {
+                println!(
+                    "dialog to configure known device with serial number: {}",
+                    serial_number
+                )
+            }
         }
 
         Task::none()
@@ -287,6 +296,7 @@ impl Piggui {
                 &self.layout_selector,
                 &self.hardware_view,
                 &self.hardware_target,
+                &self.known_devices,
             ));
 
         let content = container(main_col)
@@ -327,8 +337,7 @@ impl Piggui {
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
-            #[cfg(feature = "usb-raw")]
-            Subscription::run_with_id("usb", usb_raw::subscribe()).map(USB),
+            hardware_menu::subscription().map(Device),
         ];
 
         // Handle Keyboard events for ConnectDialog
@@ -338,21 +347,24 @@ impl Piggui {
         Subscription::batch(subscriptions)
     }
 
-    #[cfg(feature = "usb-raw")]
     /// Process messages related to USB raw discovery of attached devices
-    fn usb_event(&mut self, event: USBEvent) {
+    fn device_event(&mut self, event: DeviceEvent) {
         match event {
-            USBEvent::DeviceFound(_hardware_description, _ssid_spec) => {
+            DeviceEvent::DeviceFound(method, hardware_description, ssid_spec) => {
                 self.info_row
                     .add_info_message(Info("USB Device Found".to_string()));
-                //println!(": {}", hardware_description.details.model);
+                self.known_devices.insert(
+                    hardware_description.details.serial.clone(),
+                    KnownDevice::Porky(method, hardware_description, ssid_spec),
+                );
             }
-            USBEvent::DeviceLost(_hardware_description) => {
+            DeviceEvent::DeviceLost(hardware_description) => {
                 self.info_row
                     .add_info_message(Info("USB Device Lost".to_string()));
-                //println!("USB Device Lost: {}", hardware_description.details.model);
+                self.known_devices
+                    .remove(&hardware_description.details.serial);
             }
-            USBEvent::Error(e) => {
+            DeviceEvent::Error(e) => {
                 self.info_row.add_info_message(MessageMessage::Error(
                     "Connection Error".to_string(),
                     e.clone(),

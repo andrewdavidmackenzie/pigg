@@ -1,6 +1,7 @@
+use crate::views::hardware_menu::KnownDevice;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_selector::LayoutSelector;
-use crate::views::message_row::{MessageMessage, MessageRow, MessageRowMessage};
+use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{hardware_menu, unsaved_status};
 use crate::Message;
@@ -9,6 +10,7 @@ use iced::widget::{button, container, Row};
 use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
 use iced_aw::style::menu_bar;
 use iced_futures::Subscription;
+use std::collections::HashMap;
 
 const MENU_BACKGROUND_COLOR: Color = Color::from_rgba(0.15, 0.15, 0.15, 1.0);
 
@@ -124,12 +126,17 @@ impl InfoRow {
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
         hardware_target: &'a HardwareTarget,
+        known_devices: &HashMap<String, KnownDevice>,
     ) -> Element<'a, Message> {
         container(
             Row::new()
                 .push(version_button())
                 .push(layout_selector.view(hardware_target))
-                .push(hardware_menu::view(hardware_view, hardware_target))
+                .push(hardware_menu::view(
+                    hardware_view,
+                    hardware_target,
+                    known_devices,
+                ))
                 .push(unsaved_status::view(unsaved_changes, hardware_target))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
@@ -141,6 +148,8 @@ impl InfoRow {
     }
 
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
-        self.message_row.subscription()
+        let subscriptions = vec![self.message_row.subscription()];
+
+        Subscription::batch(subscriptions)
     }
 }

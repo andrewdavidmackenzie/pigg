@@ -1,5 +1,9 @@
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+#[cfg(feature = "usb-raw")]
+use crate::usb_raw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::ConnectDialogMessage;
+use crate::views::hardware_menu::KnownDevice::Porky;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
@@ -11,11 +15,117 @@ use iced::widget::button::Status::Hovered;
 use iced::widget::{Button, Text};
 use iced::{Element, Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
+use iced_futures::Subscription;
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+
+#[derive(Debug, Clone)]
+pub enum DiscoveryMethod {
+    USBRaw,
+}
+
+impl Display for DiscoveryMethod {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DiscoveryMethod::USBRaw => f.write_str("on USB"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum DeviceEvent {
+    DeviceFound(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
+    DeviceLost(HardwareDescription),
+    Error(String),
+}
+
+pub enum KnownDevice {
+    #[allow(dead_code)] // Until ssid spec is used
+    Porky(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
+}
+
+/// Create a submenu item for the known devices
+fn devices_submenu<'a>(
+    known_devices: &HashMap<String, KnownDevice>,
+) -> Item<'a, Message, Theme, Renderer> {
+    let mut device_items = vec![];
+
+    for (serial_number, device) in known_devices {
+        match device {
+            Porky(method, hardware_description, _) => {
+                let button = Button::new(Text::new(format!(
+                    "{} ({}) {}",
+                    hardware_description.details.model, serial_number, method
+                )))
+                .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                });
+
+                if hardware_description.details.wifi {
+                    device_items.push(Item::with_menu(
+                        button,
+                        Menu::new(vec![Item::new(
+                            Button::new(Text::new("Configure Device WiFi"))
+                                .on_press(Message::ConfigureWiFi(serial_number.to_string()))
+                                .width(170.0)
+                                .style(|_, status| {
+                                    if status == Hovered {
+                                        MENU_BUTTON_HOVER_STYLE
+                                    } else {
+                                        MENU_BUTTON_STYLE
+                                    }
+                                }),
+                        )])
+                        .width(170.0)
+                        .offset(10.0),
+                    ));
+                } else {
+                    device_items.push(Item::new(button));
+                }
+            }
+        }
+    }
+
+    if device_items.is_empty() {
+        Item::new(
+            Button::new("Discovered devices (None)")
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                }),
+        )
+    } else {
+        Item::with_menu(
+            Button::new("Discovered devices")
+                .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                }),
+            Menu::new(device_items).width(270.0).offset(10.0),
+        )
+    }
+}
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_target: &HardwareTarget,
+    known_devices: &HashMap<String, KnownDevice>,
 ) -> Element<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
@@ -115,6 +225,7 @@ pub fn view<'a>(
     #[cfg(feature = "discovery")]
     menu_items.push(Item::new(
         Button::new("Search for Pi's on local network...")
+            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .width(Length::Fill)
             .style(|_, status| {
                 if status == Hovered {
@@ -125,20 +236,32 @@ pub fn view<'a>(
             }),
     ));
 
-    let menu_root = Item::with_menu(
+    menu_items.push(devices_submenu(known_devices));
+
+    let hardware_menu_root = Item::with_menu(
         Button::new(Text::new(model))
+            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(move |_theme, status| {
                 if status == Hovered {
                     MENU_BAR_BUTTON_HOVER_STYLE
                 } else {
                     MENU_BAR_BUTTON_STYLE
                 }
-            })
-            .on_press(Message::MenuBarButtonClicked), // Needed for highlighting
-        Menu::new(menu_items).width(235.0).offset(10.0),
+            }),
+        Menu::new(menu_items).width(215.0).offset(10.0),
     );
 
-    MenuBar::new(vec![menu_root])
+    MenuBar::new(vec![hardware_menu_root])
         .style(|_, _| MENU_BAR_STYLE)
         .into()
+}
+
+/// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
+pub fn subscription() -> Subscription<DeviceEvent> {
+    let subscriptions = vec![
+        #[cfg(feature = "usb-raw")]
+        Subscription::run_with_id("device", usb_raw::subscribe()),
+    ];
+
+    Subscription::batch(subscriptions)
 }
