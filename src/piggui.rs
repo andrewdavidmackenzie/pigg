@@ -17,6 +17,7 @@ use views::pin_state::PinState;
 
 use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 
+use crate::hw_definition::description::{HardwareDetails, SsidSpec};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
@@ -67,7 +68,7 @@ pub enum Message {
     ConnectionError(String),
     MenuBarButtonClicked,
     Device(DeviceEvent),
-    ConfigureWiFi(String),
+    ConfigureWiFi(HardwareDetails, Option<SsidSpec>),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -260,7 +261,7 @@ impl Piggui {
 
             Device(event) => self.device_event(event),
 
-            ConfigureWiFi(serial_number) => {
+            ConfigureWiFi(serial_number, ssid_spec) => {
                 println!(
                     "dialog to configure known device with serial number: {}",
                     serial_number

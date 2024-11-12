@@ -40,7 +40,6 @@ pub enum DeviceEvent {
 }
 
 pub enum KnownDevice {
-    #[allow(dead_code)] // Until ssid spec is used
     Porky(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
 }
 
@@ -52,7 +51,7 @@ fn devices_submenu<'a>(
 
     for (serial_number, device) in known_devices {
         match device {
-            Porky(method, hardware_description, _) => {
+            Porky(method, hardware_description, ssid_spec) => {
                 let button = Button::new(Text::new(format!(
                     "{} ({}) {}",
                     hardware_description.details.model, serial_number, method
@@ -72,7 +71,10 @@ fn devices_submenu<'a>(
                         button,
                         Menu::new(vec![Item::new(
                             Button::new(Text::new("Configure Device WiFi"))
-                                .on_press(Message::ConfigureWiFi(serial_number.to_string()))
+                                .on_press(Message::ConfigureWiFi(
+                                    hardware_description.details.clone(),
+                                    ssid_spec.clone(),
+                                ))
                                 .width(170.0)
                                 .style(|_, status| {
                                     if status == Hovered {
