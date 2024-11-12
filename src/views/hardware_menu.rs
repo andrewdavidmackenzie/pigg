@@ -70,7 +70,7 @@ fn devices_submenu<'a>(
                     device_items.push(Item::with_menu(
                         button,
                         Menu::new(vec![Item::new(
-                            Button::new(Text::new("Configure WiFi"))
+                            Button::new(Text::new("Configure Device WiFi"))
                                 .on_press(Message::ConfigureWiFi(serial_number.to_string()))
                                 .width(150.0)
                                 .style(|_, status| {
@@ -91,19 +91,33 @@ fn devices_submenu<'a>(
         }
     }
 
-    Item::with_menu(
-        Button::new("Discovered devices")
-            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-            .width(Length::Fill)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
-        Menu::new(device_items).width(270.0).offset(10.0),
-    )
+    if device_items.is_empty() {
+        Item::new(
+            Button::new("Discovered devices (None)")
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                }),
+        )
+    } else {
+        Item::with_menu(
+            Button::new("Discovered devices")
+                .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                }),
+            Menu::new(device_items).width(270.0).offset(10.0),
+        )
+    }
 }
 
 /// Create the view that represents the clickable button that shows what hardware is connected
@@ -233,7 +247,7 @@ pub fn view<'a>(
                     MENU_BAR_BUTTON_STYLE
                 }
             }),
-        Menu::new(menu_items).width(235.0).offset(10.0),
+        Menu::new(menu_items).width(215.0).offset(10.0),
     );
 
     MenuBar::new(vec![hardware_menu_root])

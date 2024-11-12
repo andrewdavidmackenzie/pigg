@@ -358,10 +358,11 @@ impl Piggui {
                     KnownDevice::Porky(method, hardware_description, ssid_spec),
                 );
             }
-            DeviceEvent::DeviceLost(_hardware_description) => {
+            DeviceEvent::DeviceLost(hardware_description) => {
                 self.info_row
                     .add_info_message(Info("USB Device Lost".to_string()));
-                // TODO remove from known using serial as key
+                self.known_devices
+                    .remove(&hardware_description.details.serial);
             }
             DeviceEvent::Error(e) => {
                 self.info_row.add_info_message(MessageMessage::Error(
