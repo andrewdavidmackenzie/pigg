@@ -189,7 +189,7 @@ impl Piggui {
                         &self.hardware_view,
                     );
                 } else {
-                    return Task::batch(vec![pick_and_load()]);
+                    return pick_and_load();
                 }
             }
 
@@ -261,15 +261,19 @@ impl Piggui {
 
             Device(event) => self.device_event(event),
 
-            ConfigureWiFi(serial_number, ssid_spec) => {
-                println!(
-                    "dialog to configure known device with serial number: {}",
-                    serial_number
-                )
+            ConfigureWiFi(hardware_details, ssid_spec) => {
+                return Self::send_ssid(hardware_details, ssid_spec);
             }
         }
 
         Task::none()
+    }
+
+    fn send_ssid(hardware_details: HardwareDetails, ssid_spec: Option<SsidSpec>) -> Task<Message> {
+        Task::perform(
+            usb_raw::send_ssid_spec(hardware_details.serial, ssid_spec.unwrap()),
+            |_| Message::MenuBarButtonClicked, // TODO
+        )
     }
 
     /*

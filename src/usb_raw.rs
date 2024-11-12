@@ -94,7 +94,7 @@ async fn get_ssid_spec(porky: &Interface) -> Result<SsidSpec, String> {
 }
 
 /// Send a new Wi-Fi SsidSpec to the connected porky device
-pub async fn send_ssid_spec(serial_number: &str, ssid_spec: &SsidSpec) -> Result<(), String> {
+pub async fn send_ssid_spec(serial_number: String, ssid_spec: SsidSpec) -> Result<(), String> {
     let porky = find_porky().ok_or("Could not find USB attached porky")?;
 
     let hardware_description = get_hardware_description(&porky).await?;

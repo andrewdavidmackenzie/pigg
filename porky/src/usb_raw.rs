@@ -45,13 +45,21 @@ impl<'h> Handler for ControlHandler<'h> {
             return None;
         }
 
-        // Accept request 100, value 200, reject others.
-        if req.request == 100 && req.value == 200 {
-            info!("Message: {}", str::from_utf8(buf).unwrap());
-            Some(OutResponse::Accepted)
-        } else {
-            Some(OutResponse::Rejected)
-        }
+        // Respond to valid requests from piggui
+        match (req.request, req.value) {
+            (PIGGUI_REQUEST, SET_SSID_VALUE) => {
+                let _ssid_spec: SsidSpec = postcard::from_bytes(buf).ok()?;
+                info!("Requested to set ssid spec");
+            }
+            _ => {
+                error!(
+                    "Unknown USB request and/or value: {}:{}",
+                    req.request, req.value
+                );
+                return Some(OutResponse::Rejected);
+            }
+        };
+        Some(OutResponse::Accepted)
     }
 
     /// Respond to DeviceToHost control messages, where the host requests some data from us.

@@ -1,6 +1,4 @@
-#[cfg(feature = "std")]
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
 #[cfg(feature = "std")]
@@ -71,7 +69,7 @@ pub struct SsidSpec {
 
 #[cfg(not(feature = "std"))]
 /// [SsidSpec] contains details on how the device connects to WiFi
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct SsidSpec<'a> {
     pub ssid_name: &'a str,
     pub ssid_pass: &'a str,
