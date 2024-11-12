@@ -263,6 +263,9 @@ impl Piggui {
             Device(event) => self.device_event(event),
 
             ConfigureWiFi(hardware_details, ssid_spec) => {
+                // TODO this should show the dialog, and the dialog submit will send a new message
+                // like "SendWifiConfig(serial_number, ssid_spec) and that message should call
+                // this method to send it via USB to the attached porky
                 return Self::send_ssid(hardware_details, ssid_spec);
             }
         }
