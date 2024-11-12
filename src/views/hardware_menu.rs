@@ -16,23 +16,101 @@ use iced::widget::{Button, Text};
 use iced::{Element, Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_futures::Subscription;
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+
+#[derive(Debug, Clone)]
+pub enum DiscoveryMethod {
+    USBRaw,
+}
+
+impl Display for DiscoveryMethod {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DiscoveryMethod::USBRaw => f.write_str("on USB"),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum DeviceEvent {
-    DeviceFound(HardwareDescription, Option<SsidSpec>),
+    DeviceFound(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
     DeviceLost(HardwareDescription),
     Error(String),
 }
 
 pub enum KnownDevice {
-    Porky(HardwareDescription, Option<SsidSpec>),
+    Porky(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
+}
+
+/// Create a submenu item for the known devices
+fn devices_submenu<'a>(
+    known_devices: &HashMap<String, KnownDevice>,
+) -> Item<'a, Message, Theme, Renderer> {
+    let mut device_items = vec![];
+
+    for (serial_number, device) in known_devices {
+        match device {
+            Porky(method, hardware_description, _) => {
+                let button = Button::new(Text::new(format!(
+                    "{} ({}) {}",
+                    hardware_description.details.model, serial_number, method
+                )))
+                .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                });
+
+                if hardware_description.details.wifi {
+                    device_items.push(Item::with_menu(
+                        button,
+                        Menu::new(vec![Item::new(
+                            Button::new(Text::new("Configure WiFi"))
+                                .on_press(Message::ConfigureWiFi(serial_number.to_string()))
+                                .width(150.0)
+                                .style(|_, status| {
+                                    if status == Hovered {
+                                        MENU_BUTTON_HOVER_STYLE
+                                    } else {
+                                        MENU_BUTTON_STYLE
+                                    }
+                                }),
+                        )])
+                        .width(170.0)
+                        .offset(10.0),
+                    ));
+                } else {
+                    device_items.push(Item::new(button));
+                }
+            }
+        }
+    }
+
+    Item::with_menu(
+        Button::new("Discovered devices")
+            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+            .width(Length::Fill)
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
+        Menu::new(device_items).width(270.0).offset(10.0),
+    )
 }
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_target: &HardwareTarget,
-    known_devices: &[KnownDevice],
+    known_devices: &HashMap<String, KnownDevice>,
 ) -> Element<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
@@ -143,44 +221,7 @@ pub fn view<'a>(
             }),
     ));
 
-    let mut device_items = vec![];
-
-    for device in known_devices {
-        match device {
-            Porky(hardware_description, _) => {
-                device_items.push(Item::new(
-                    Button::new(Text::new(format!(
-                        "{}({})",
-                        hardware_description.details.model, hardware_description.details.serial
-                    )))
-                    .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-                    .width(Length::Fill)
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    }),
-                ));
-            }
-        }
-    }
-
-    let devices_submenu = Item::with_menu(
-        Button::new("Discovered devices")
-            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-            .width(Length::Fill)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
-        Menu::new(device_items).width(250.0).offset(10.0),
-    );
-    menu_items.push(devices_submenu);
+    menu_items.push(devices_submenu(known_devices));
 
     let hardware_menu_root = Item::with_menu(
         Button::new(Text::new(model))

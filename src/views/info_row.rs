@@ -10,6 +10,7 @@ use iced::widget::{button, container, Row};
 use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
 use iced_aw::style::menu_bar;
 use iced_futures::Subscription;
+use std::collections::HashMap;
 
 const MENU_BACKGROUND_COLOR: Color = Color::from_rgba(0.15, 0.15, 0.15, 1.0);
 
@@ -125,7 +126,7 @@ impl InfoRow {
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
         hardware_target: &'a HardwareTarget,
-        known_devices: &[KnownDevice],
+        known_devices: &HashMap<String, KnownDevice>,
     ) -> Element<'a, Message> {
         container(
             Row::new()

@@ -2,6 +2,7 @@ use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
 use crate::usb_raw::USBState::{Connected, Disconnected};
 use crate::views::hardware_menu::DeviceEvent;
+use crate::views::hardware_menu::DiscoveryMethod::USBRaw;
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
@@ -116,6 +117,7 @@ pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
                         };
                         let _ = gui_sender_clone
                             .send(DeviceEvent::DeviceFound(
+                                USBRaw,
                                 hardware_description.clone(),
                                 ssid_spec,
                             ))
