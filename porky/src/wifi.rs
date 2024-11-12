@@ -69,14 +69,13 @@ pub async fn join(control: &mut Control<'_>, stack: Stack<'static>, wifi_spec: &
 
 /// Wait for the DHCP service to come up and for us to get an IP address
 pub(crate) async fn wait_for_dhcp(name: &str, stack: &Stack<'static>) {
-    info!("Waiting for DHCP on {}", name);
+    info!("Waiting for IP Address assignment {}", name);
     while !stack.is_config_up() {
         Timer::after_millis(100).await;
     }
-    info!("DHCP is up!");
     if let Some(if_config) = stack.config_v4() {
         let ip_address = if_config.address.address();
-        info!("{} IP: {}", name, ip_address);
+        info!("Assigned {} IP: {}", name, ip_address);
     }
 }
 

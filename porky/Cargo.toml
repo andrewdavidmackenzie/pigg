@@ -41,6 +41,9 @@ serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
+ekv = { version = "1.0.0", default-features = false }
+embedded-storage = { version = "0.3", default-features = false }
+
 [build-dependencies]
 # for reading SSID config from a file in build.rs
 serde_derive = "~1.0"
