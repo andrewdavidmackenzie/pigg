@@ -40,6 +40,7 @@ pub enum DeviceEvent {
 }
 
 pub enum KnownDevice {
+    #[allow(dead_code)] // Until ssid spec is used
     Porky(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
 }
 
@@ -72,7 +73,7 @@ fn devices_submenu<'a>(
                         Menu::new(vec![Item::new(
                             Button::new(Text::new("Configure Device WiFi"))
                                 .on_press(Message::ConfigureWiFi(serial_number.to_string()))
-                                .width(150.0)
+                                .width(170.0)
                                 .style(|_, status| {
                                     if status == Hovered {
                                         MENU_BUTTON_HOVER_STYLE
