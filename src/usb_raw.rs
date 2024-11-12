@@ -1,12 +1,14 @@
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
-use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
+use crate::hw_definition::usb_requests::{
+    GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST, SET_SSID_VALUE,
+};
 use crate::usb_raw::USBState::{Connected, Disconnected};
 use crate::views::hardware_menu::DeviceEvent;
 use crate::views::hardware_menu::DiscoveryMethod::USBRaw;
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
-use nusb::transfer::{ControlIn, ControlType, Recipient};
+use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use serde::Deserialize;
 use std::io;
@@ -40,7 +42,9 @@ pub enum USBState {
 }
 
 /// Try and find an attached "porky" USB device based on the vendor id and product id
-fn get_porky() -> Option<Interface> {
+// TODO take a specific (optional) serial number?
+// TODO if no serial number, return a vec of matching ones
+fn find_porky() -> Option<Interface> {
     let mut device_list = nusb::list_devices().ok()?;
     let porky_info = device_list
         .find(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
@@ -56,24 +60,16 @@ fn get_porky() -> Option<Interface> {
     device.claim_interface(0).ok()
 }
 
-/*
-    let request = b"hardware description";
-    porky
-        .control_out(ControlOut {
-            control_type: ControlType::Vendor,
-            recipient: Recipient::Interface,
-            request: 100,
-            value: 200,
-            index: 0,
-            data: request,
-        })
-        .await
+/// Generic request to send data to porky over USB
+async fn usb_send_porky<'a>(porky: &Interface, control_out: ControlOut<'a>) -> Result<(), String> {
+    let response = porky.control_out(control_out).await;
+    response
         .status
-        .map_err(|_| "Could not send command to porky over USB".to_string())?;
-*/
+        .map_err(|e| format!("Could not get response from porky over USB: {e}"))
+}
 
-/// Generic request to porky over USB
-async fn usb_request_porky<T>(porky: &Interface, control_in: ControlIn) -> Result<T, String>
+/// Generic request to get data from porky over USB
+async fn usb_get_porky<T>(porky: &Interface, control_in: ControlIn) -> Result<T, String>
 where
     T: for<'a> Deserialize<'a>,
 {
@@ -89,12 +85,37 @@ where
 
 /// Request [HardwareDescription] from compatible porky device over USB
 async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, String> {
-    usb_request_porky(porky, GET_HARDWARE_DESCRIPTION).await
+    usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
 }
 
 /// Request [SsidSpec] from compatible porky device over USB
 async fn get_ssid_spec(porky: &Interface) -> Result<SsidSpec, String> {
-    usb_request_porky(porky, GET_WIFI_DETAILS).await
+    usb_get_porky(porky, GET_WIFI_DETAILS).await
+}
+
+/// Send a new Wi-Fi SsidSpec to the connected porky device
+pub async fn send_ssid_spec(serial_number: &str, ssid_spec: &SsidSpec) -> Result<(), String> {
+    let porky = find_porky().ok_or("Could not find USB attached porky")?;
+
+    let hardware_description = get_hardware_description(&porky).await?;
+
+    if hardware_description.details.serial != serial_number {
+        return Err("USB attached porky does not have matching serial number".into());
+    }
+
+    let mut buf = [0; 1024];
+    let data = postcard::to_slice(&ssid_spec, &mut buf).unwrap();
+
+    let set_wifi_details: ControlOut = ControlOut {
+        control_type: ControlType::Vendor,
+        recipient: Recipient::Interface,
+        request: PIGGUI_REQUEST,
+        value: SET_SSID_VALUE,
+        index: 0,
+        data,
+    };
+
+    usb_send_porky(&porky, set_wifi_details).await
 }
 
 /// A stream of [DeviceEvent] to a possibly connected porky
@@ -106,7 +127,7 @@ pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
             let mut gui_sender_clone = gui_sender.clone();
             tokio::time::sleep(Duration::from_secs(1)).await;
 
-            let porky_found = get_porky();
+            let porky_found = find_porky();
 
             usb_state = match (porky_found, &usb_state) {
                 (Some(porky), Disconnected) => match get_hardware_description(&porky).await {
