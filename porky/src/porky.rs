@@ -15,12 +15,10 @@ use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_net::tcp::TcpSocket;
 use embassy_rp::bind_interrupts;
-use embassy_rp::flash::Async;
-use embassy_rp::flash::Flash;
 use embassy_rp::gpio::{Level, Output};
+use embassy_rp::peripherals::PIO0;
 #[cfg(feature = "usb")]
 use embassy_rp::peripherals::USB;
-use embassy_rp::peripherals::{DMA_CH1, FLASH, PIO0};
 use embassy_rp::pio::InterruptHandler as PioInterruptHandler;
 use embassy_rp::pio::Pio;
 #[cfg(feature = "usb")]
@@ -30,7 +28,6 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embedded_io_async::Write;
-use faster_hex::hex_encode;
 use heapless::Vec;
 use panic_probe as _;
 use static_cell::StaticCell;
@@ -68,6 +65,9 @@ mod gpio;
 #[path = "../../src/hw_definition/mod.rs"]
 mod hw_definition;
 
+/// Functions for interacting with the Flash ROM
+mod flash;
+
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
 
@@ -81,24 +81,6 @@ bind_interrupts!(struct Irqs {
 
 pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
     Channel::new();
-
-/// Get the unique serial number from Flash
-fn serial_number(flash: FLASH, dma: DMA_CH1) -> &'static str {
-    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
-    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(flash, dma);
-    let mut device_id = [0; 8];
-    flash.blocking_unique_id(&mut device_id).unwrap();
-    info!("device_id: {:?}", device_id);
-
-    // convert the device_id to a hex "string"
-    let mut device_id_hex: [u8; 16] = [0; 16];
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
-
-    info!("device_id: {}", device_id_hex);
-    static ID: StaticCell<[u8; 16]> = StaticCell::new();
-    let id = ID.init(device_id_hex);
-    str::from_utf8(id).unwrap()
-}
 
 /// Create a [HardwareDescription] for this device with the provided serial number
 fn hardware_description(serial: &str) -> HardwareDescription {
@@ -195,7 +177,7 @@ async fn main(spawner: Spawner) {
     gpio::setup_pins(header_pins);
 
     // create hardware description
-    let serial_number = serial_number(peripherals.FLASH, peripherals.DMA_CH1);
+    let serial_number = flash::serial_number(peripherals.FLASH, peripherals.DMA_CH1);
     static HARDWARE_DESCRIPTION: StaticCell<HardwareDescription> = StaticCell::new();
     let hw_desc = HARDWARE_DESCRIPTION.init(hardware_description(serial_number));
 
