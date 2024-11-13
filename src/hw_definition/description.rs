@@ -40,7 +40,7 @@ pub struct HardwareDescription<'a> {
 
 #[cfg(not(feature = "no_std"))]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HardwareDetails {
     /// A Human friendly Hardware Model description
     pub model: String,
@@ -67,7 +67,7 @@ pub struct HardwareDetails<'a> {
 
 #[cfg(not(feature = "no_std"))]
 /// [SsidSpec] contains details on how the device connects to Wi-Fi
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SsidSpec {
     pub ssid_name: String,
     pub ssid_pass: String,

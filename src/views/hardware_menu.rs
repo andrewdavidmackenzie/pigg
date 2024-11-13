@@ -73,7 +73,7 @@ fn devices_submenu<'a>(
                         Menu::new(vec![Item::new(
                             Button::new(Text::new("Configure Device WiFi"))
                                 .on_press(Message::SsidDialog(SsidDialogMessage::ShowSsidDialog(
-                                    hardware_description.clone(),
+                                    hardware_description.details.clone(),
                                     ssid_spec.clone(),
                                 )))
                                 .width(170.0)
