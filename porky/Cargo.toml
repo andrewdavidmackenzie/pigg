@@ -9,8 +9,8 @@ name = "porky"
 path = "src/porky.rs"
 
 [features]
-default = ["usb-raw"]
-std = []
+default = ["usb-raw", "no_std"]
+no_std = []
 debug-probe = []
 usb-tcp = ["usb"]
 usb-raw = ["usb"]

@@ -66,18 +66,8 @@ impl<'h> Handler for ControlHandler<'h> {
         match (req.request, req.value) {
             (PIGGUI_REQUEST, _SET_SSID_VALUE) => {
                 self.buf.clone_from_slice(&buf);
-                self.ssid_spec = postcard::from_bytes::<SsidSpec>(&self.buf).ok()?;
-                /*
-                                51 | impl<'h> Handler for ControlHandler<'h> {
-                   |      -- lifetime `'h` defined here
-                ...
-                54 |     fn control_out(&mut self, req: Request, buf: &[u8]) -> Option<OutResponse> {
-                   |                    - let's call the lifetime of this reference `'1`
-                ...
-                69 |                 self.ssid_spec = postcard::from_bytes::<SsidSpec>(&self.buf).ok()?;
-                   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assignment requires that `'1` must outlive `'h`
-
-                                 */
+                let ssid_spec = postcard::from_bytes::<SsidSpec>(&self.buf).ok()?;
+                self.ssid_spec = ssid_spec;
                 store_ssid_spec(&self.ssid_spec);
                 info!("SsidSpec set via USB");
             }

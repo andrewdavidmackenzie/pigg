@@ -32,11 +32,11 @@ name = "piglet"
 path = "src/piglet.rs"
 
 [features]
-default = ["iroh", "tcp", "std", "usb-raw", "discovery"]
+default = ["iroh", "tcp", "usb-raw", "discovery"]
 iroh = ["iroh-net"]
 tcp = ["portpicker", "local-ip-address"]
 discovery = []
-std = []
+no_std = []
 usb-raw = ["nusb"]
 
 [dependencies]
