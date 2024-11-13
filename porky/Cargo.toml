@@ -69,7 +69,8 @@ cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-denylist = ["std", "usb"]
+denylist = ["usb"]
+always_include_features = ["no_std"]
 # Features "usb-raw" and "usb-tcp" are incompatible, so skip permutations including them
 skip_feature_sets = [
     ["usb-raw", "usb-tcp"],
