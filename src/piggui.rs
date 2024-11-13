@@ -23,6 +23,7 @@ use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
 use crate::views::hardware_menu;
+#[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
@@ -273,11 +274,15 @@ impl Piggui {
         Task::none()
     }
 
+    #[allow(unused_variables)]
     fn send_ssid(hardware_details: HardwareDetails, ssid_spec: Option<SsidSpec>) -> Task<Message> {
-        Task::perform(
+        #[cfg(feature = "usb-raw")]
+        return Task::perform(
             usb_raw::send_ssid_spec(hardware_details.serial, ssid_spec.unwrap()),
             |_| InfoRow(ShowStatusMessage(Info("Wi-Fi Setup sent via USB".into()))),
-        )
+        );
+        #[cfg(not(feature = "usb-raw"))]
+        Task::none()
     }
 
     /*

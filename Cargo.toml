@@ -141,7 +141,7 @@ x86_64-pc-windows-msvc = "windows-latest"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-always_include_features = ["std"]
+denylist = ["no_std"]
 
 [package.metadata.docs.rs]
 features = ["iroh", "tcp"]
