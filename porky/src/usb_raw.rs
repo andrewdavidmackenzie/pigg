@@ -37,7 +37,7 @@ pub(crate) struct ControlHandler<'h> {
     buf: [u8; 1024],
 }
 
-/// Update the [SsidSpec] held by the [ControlHandler] and also write it to the flash database
+/// Write the [SsidSpec] to the flash database
 fn store_ssid_spec<'h>(
     _db: &mut Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     _ssid_spec: &SsidSpec,
@@ -71,7 +71,10 @@ impl<'h> Handler for ControlHandler<'h> {
                 self.ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
                 // TODO store it!
                 store_ssid_spec(&mut self.db, &self.ssid_spec);
-                info!("SsidSpec set via USB");
+                info!(
+                    "SsidSpec for SSID: {} set via USB",
+                    self.ssid_spec.ssid_name
+                );
             }
             (_, _) => {
                 error!(
