@@ -1,11 +1,16 @@
+use crate::flash;
+use crate::flash::DbFlash;
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
 use crate::usb::get_usb_builder;
 use core::str;
 use defmt::{error, info, unwrap};
+use ekv::Database;
 use embassy_executor::Spawner;
-use embassy_rp::peripherals::USB;
+use embassy_rp::flash::{Blocking, Flash};
+use embassy_rp::peripherals::{FLASH, USB};
 use embassy_rp::usb::Driver;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
 use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
@@ -27,14 +32,26 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
-    ssid_spec: &'h SsidSpec<'h>,
+    ssid_spec: SsidSpec<'h>,
+    db: Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
+}
+
+/// Update the [SsidSpec] held by the [ControlHandler] and also write it to the flash database
+fn store_ssid_spec(_ssid_spec: &SsidSpec) {
+
+    /*
+    let mut wtx = self.db.write_transaction().await;
+    let bytes = postcard::to_slice(ssid_spec, &mut self.buf).unwrap();
+    wtx.write(SSID_SPEC_KEY, bytes).await.unwrap();
+    wtx.commit().await.unwrap();
+     */
 }
 
 impl<'h> Handler for ControlHandler<'h> {
     /// Respond to HostToDevice control messages, where the host sends us a command and
     /// optionally some data, and we can only acknowledge or reject it.
-    fn control_out<'a>(&'a mut self, req: Request, buf: &'a [u8]) -> Option<OutResponse> {
+    fn control_out(&mut self, req: Request, buf: &[u8]) -> Option<OutResponse> {
         // Only handle Vendor request types to an Interface.
         if req.request_type != RequestType::Vendor || req.recipient != Recipient::Interface {
             return None;
@@ -47,9 +64,22 @@ impl<'h> Handler for ControlHandler<'h> {
 
         // Respond to valid requests from piggui
         match (req.request, req.value) {
-            (PIGGUI_REQUEST, SET_SSID_VALUE) => {
-                let _ssid_spec: SsidSpec = postcard::from_bytes(buf).ok()?;
-                info!("Requested to set ssid spec");
+            (PIGGUI_REQUEST, _SET_SSID_VALUE) => {
+                self.buf.clone_from_slice(&buf);
+                self.ssid_spec = postcard::from_bytes::<SsidSpec>(&self.buf).ok()?;
+                /*
+                                51 | impl<'h> Handler for ControlHandler<'h> {
+                   |      -- lifetime `'h` defined here
+                ...
+                54 |     fn control_out(&mut self, req: Request, buf: &[u8]) -> Option<OutResponse> {
+                   |                    - let's call the lifetime of this reference `'1`
+                ...
+                69 |                 self.ssid_spec = postcard::from_bytes::<SsidSpec>(&self.buf).ok()?;
+                   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assignment requires that `'1` must outlive `'h`
+
+                                 */
+                store_ssid_spec(&self.ssid_spec);
+                info!("SsidSpec set via USB");
             }
             _ => {
                 error!(
@@ -80,7 +110,7 @@ impl<'h> Handler for ControlHandler<'h> {
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
             }
             (PIGGUI_REQUEST, GET_SSID_VALUE) => {
-                postcard::to_slice(self.ssid_spec, &mut self.buf).ok()?
+                postcard::to_slice(&self.ssid_spec, &mut self.buf).ok()?
             }
             _ => {
                 error!(
@@ -99,7 +129,7 @@ pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
-    ssid_spec: &'static SsidSpec<'_>,
+    db: Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
 ) {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
@@ -116,11 +146,16 @@ pub async fn start(
         msos::PropertyData::RegMultiSz(DEVICE_INTERFACE_GUIDS),
     ));
 
+    static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
+    let static_buf = STATIC_BUF.init([0u8; 200]);
+    let ssid_spec = crate::get_ssid_spec(&db, static_buf).await;
+
     static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
     let handle = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
         ssid_spec,
+        db,
         buf: [0; 1024],
     });
 

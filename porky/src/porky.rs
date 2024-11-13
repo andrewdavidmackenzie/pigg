@@ -115,7 +115,7 @@ fn hardware_description(serial: &str) -> HardwareDescription {
 /// Return the [SsidSpec] we should use to try and connect to the Wi-Fi network
 /// If we can find an override value stored in the flash database, use that.
 /// If not, use the default value that was built from `ssid.toml` file in project root folder
-async fn get_ssid_spec<'a>(
+pub async fn get_ssid_spec<'a>(
     db: &Database<DbFlash<Flash<'a, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: &'a mut [u8],
 ) -> SsidSpec<'a> {
@@ -233,15 +233,11 @@ async fn main(spawner: Spawner) {
     let ssid_spec = SSID_SPEC.init(spec);
 
     #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, hw_desc, ssid_spec).await;
+    usb_raw::start(spawner, driver, hw_desc, db).await;
 
     wifi::join(&mut control, wifi_stack, ssid_spec).await;
     let mut wifi_tx_buffer = [0; 4096];
     let mut wifi_rx_buffer = [0; 4096];
-
-    //let mut wtx = db.write_transaction().await;
-    //wtx.write(b"HELLO", b"WORLD").await.unwrap();
-    //wtx.commit().await.unwrap();
 
     loop {
         match tcp::wait_connection(
