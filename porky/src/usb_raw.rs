@@ -38,7 +38,10 @@ pub(crate) struct ControlHandler<'h> {
 }
 
 /// Update the [SsidSpec] held by the [ControlHandler] and also write it to the flash database
-fn store_ssid_spec(_ssid_spec: &SsidSpec) {
+fn store_ssid_spec<'h>(
+    _db: &mut Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    _ssid_spec: &SsidSpec,
+) {
     // TODO store it
     /*
     let mut wtx = self.db.write_transaction().await;
@@ -64,13 +67,13 @@ impl<'h> Handler for ControlHandler<'h> {
 
         // Respond to valid requests from piggui
         match (req.request, req.value) {
-            (PIGGUI_REQUEST, _SET_SSID_VALUE) => {
-                let _ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
+            (PIGGUI_REQUEST, _) => {
+                self.ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
                 // TODO store it!
-                store_ssid_spec(&self.ssid_spec);
+                store_ssid_spec(&mut self.db, &self.ssid_spec);
                 info!("SsidSpec set via USB");
             }
-            _ => {
+            (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
                     req.request, req.value
