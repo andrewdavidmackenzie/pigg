@@ -7,7 +7,6 @@ use core::str;
 use defmt::{error, info, unwrap};
 use ekv::Database;
 use embassy_executor::Spawner;
-use embassy_futures;
 use embassy_futures::block_on;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::{FLASH, USB};
@@ -41,15 +40,14 @@ pub(crate) struct ControlHandler<'h> {
 
 impl<'h> ControlHandler<'h> {
     /// Write the [SsidSpec] to the flash database
-    async fn store_ssid_spec(&mut self) {
+    async fn store_ssid_spec(&mut self) -> Result<(), &'static str> {
         let mut wtx = self.db.write_transaction().await;
-        let bytes = postcard::to_slice(&self.ssid_spec, &mut self.buf).unwrap();
-        wtx.write(SSID_SPEC_KEY, bytes).await.unwrap();
-        wtx.commit().await.unwrap();
-        info!(
-            "SsidSpec for SSID: {} set via USB",
-            self.ssid_spec.ssid_name
-        );
+        let bytes = postcard::to_slice(&self.ssid_spec, &mut self.buf)
+            .map_err(|_| "Deserialization error")?;
+        wtx.write(SSID_SPEC_KEY, bytes)
+            .await
+            .map_err(|_| "Write error")?;
+        wtx.commit().await.map_err(|_| "Commit error")
     }
 }
 
@@ -67,21 +65,31 @@ impl<'h> Handler for ControlHandler<'h> {
             return None;
         }
 
-        // Respond to valid requests from piggui
         match (req.request, req.value) {
             (PIGGUI_REQUEST, _) => {
                 self.ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
-                block_on(self.store_ssid_spec());
+                match block_on(self.store_ssid_spec()) {
+                    Ok(_) => {
+                        info!(
+                            "SsidSpec for SSID: {} stored to Flash Database",
+                            self.ssid_spec.ssid_name
+                        );
+                        Some(OutResponse::Accepted)
+                    }
+                    Err(_) => {
+                        error!("Error storing SsidSpec to Flash Database");
+                        Some(OutResponse::Rejected)
+                    }
+                }
             }
             (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
                     req.request, req.value
                 );
-                return Some(OutResponse::Rejected);
+                Some(OutResponse::Rejected)
             }
-        };
-        Some(OutResponse::Accepted)
+        }
     }
 
     /// Respond to DeviceToHost control messages, where the host requests some data from us.
