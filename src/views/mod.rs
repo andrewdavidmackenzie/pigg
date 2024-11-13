@@ -9,6 +9,7 @@ pub mod layout_selector;
 pub mod message_box;
 pub mod modal_handler;
 pub mod pin_state;
+pub mod ssid_dialog;
 pub mod unsaved_status;
 pub mod version;
 pub mod waveform;

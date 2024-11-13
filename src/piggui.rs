@@ -6,6 +6,7 @@ use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::message_box::MessageMessage::Info;
 use crate::views::message_box::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
+use crate::views::ssid_dialog::SsidDialog;
 use crate::widgets::modal::modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
@@ -25,6 +26,8 @@ use crate::views::connect_dialog_handler::{
 use crate::views::hardware_menu;
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
+use crate::views::ssid_dialog::SsidDialogMessage;
+use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -71,6 +74,7 @@ pub enum Message {
     MenuBarButtonClicked,
     Device(DeviceEvent),
     ConfigureWiFi(HardwareDetails, Option<SsidSpec>),
+    SsidDialog(SsidDialogMessage),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -85,6 +89,7 @@ pub struct Piggui {
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
     known_devices: HashMap<String, KnownDevice>,
+    ssid_dialog: SsidDialog,
 }
 
 fn main() -> iced::Result {
@@ -138,6 +143,7 @@ impl Piggui {
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
                 known_devices: HashMap::new(),
+                ssid_dialog: SsidDialog::new(),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -269,6 +275,10 @@ impl Piggui {
                 // this method to send it via USB to the attached porky
                 return Self::send_ssid(hardware_details, ssid_spec);
             }
+
+            SsidDialog(ssid_dialog_message) => {
+                return self.ssid_dialog.update(ssid_dialog_message);
+            }
         }
 
         Task::none()
@@ -330,6 +340,10 @@ impl Piggui {
             );
         }
 
+        if self.ssid_dialog.show_modal {
+            return modal(content, self.ssid_dialog.view(), SsidDialog(HideSsidDialog));
+        }
+
         if self.modal_handler.show_modal {
             return modal(
                 content,
@@ -357,6 +371,8 @@ impl Piggui {
         // Handle Keyboard events for ConnectDialog
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         subscriptions.push(self.connect_dialog.subscription().map(ConnectDialog));
+
+        subscriptions.push(self.ssid_dialog.subscription().map(SsidDialog));
 
         Subscription::batch(subscriptions)
     }

@@ -9,6 +9,7 @@ use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
     MENU_BUTTON_STYLE,
 };
+use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
 use iced::widget::button::Status::Hovered;
@@ -71,10 +72,10 @@ fn devices_submenu<'a>(
                         button,
                         Menu::new(vec![Item::new(
                             Button::new(Text::new("Configure Device WiFi"))
-                                .on_press(Message::ConfigureWiFi(
-                                    hardware_description.details.clone(),
+                                .on_press(Message::SsidDialog(SsidDialogMessage::ShowSsidDialog(
+                                    hardware_description.clone(),
                                     ssid_spec.clone(),
-                                ))
+                                )))
                                 .width(170.0)
                                 .style(|_, status| {
                                     if status == Hovered {
@@ -108,16 +109,19 @@ fn devices_submenu<'a>(
         )
     } else {
         Item::with_menu(
-            Button::new("Discovered devices")
-                .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-                .width(Length::Fill)
-                .style(|_, status| {
-                    if status == Hovered {
-                        MENU_BUTTON_HOVER_STYLE
-                    } else {
-                        MENU_BUTTON_STYLE
-                    }
-                }),
+            Button::new(Text::new(format!(
+                "Discovered devices ({})",
+                device_items.len()
+            )))
+            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
+            .width(Length::Fill)
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            }),
             Menu::new(device_items).width(270.0).offset(10.0),
         )
     }
