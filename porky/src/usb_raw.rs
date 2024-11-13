@@ -1,12 +1,14 @@
-use crate::flash;
 use crate::flash::DbFlash;
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
 use crate::usb::get_usb_builder;
+use crate::{flash, SSID_SPEC_KEY};
 use core::str;
 use defmt::{error, info, unwrap};
 use ekv::Database;
 use embassy_executor::Spawner;
+use embassy_futures;
+use embassy_futures::block_on;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::{FLASH, USB};
 use embassy_rp::usb::Driver;
@@ -37,18 +39,18 @@ pub(crate) struct ControlHandler<'h> {
     buf: [u8; 1024],
 }
 
-/// Write the [SsidSpec] to the flash database
-fn store_ssid_spec<'h>(
-    _db: &mut Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
-    _ssid_spec: &SsidSpec,
-) {
-    // TODO store it
-    /*
-    let mut wtx = self.db.write_transaction().await;
-    let bytes = postcard::to_slice(ssid_spec, &mut self.buf).unwrap();
-    wtx.write(SSID_SPEC_KEY, bytes).await.unwrap();
-    wtx.commit().await.unwrap();
-     */
+impl<'h> ControlHandler<'h> {
+    /// Write the [SsidSpec] to the flash database
+    async fn store_ssid_spec(&mut self) {
+        let mut wtx = self.db.write_transaction().await;
+        let bytes = postcard::to_slice(&self.ssid_spec, &mut self.buf).unwrap();
+        wtx.write(SSID_SPEC_KEY, bytes).await.unwrap();
+        wtx.commit().await.unwrap();
+        info!(
+            "SsidSpec for SSID: {} set via USB",
+            self.ssid_spec.ssid_name
+        );
+    }
 }
 
 impl<'h> Handler for ControlHandler<'h> {
@@ -69,12 +71,7 @@ impl<'h> Handler for ControlHandler<'h> {
         match (req.request, req.value) {
             (PIGGUI_REQUEST, _) => {
                 self.ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
-                // TODO store it!
-                store_ssid_spec(&mut self.db, &self.ssid_spec);
-                info!(
-                    "SsidSpec for SSID: {} set via USB",
-                    self.ssid_spec.ssid_name
-                );
+                block_on(self.store_ssid_spec());
             }
             (_, _) => {
                 error!(
