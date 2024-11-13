@@ -39,7 +39,7 @@ pub(crate) struct ControlHandler<'h> {
 
 /// Update the [SsidSpec] held by the [ControlHandler] and also write it to the flash database
 fn store_ssid_spec(_ssid_spec: &SsidSpec) {
-
+    // TODO store it
     /*
     let mut wtx = self.db.write_transaction().await;
     let bytes = postcard::to_slice(ssid_spec, &mut self.buf).unwrap();
@@ -65,9 +65,8 @@ impl<'h> Handler for ControlHandler<'h> {
         // Respond to valid requests from piggui
         match (req.request, req.value) {
             (PIGGUI_REQUEST, _SET_SSID_VALUE) => {
-                self.buf.clone_from_slice(&buf);
-                let ssid_spec = postcard::from_bytes::<SsidSpec>(&self.buf).ok()?;
-                self.ssid_spec = ssid_spec;
+                let _ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
+                // TODO store it!
                 store_ssid_spec(&self.ssid_spec);
                 info!("SsidSpec set via USB");
             }
