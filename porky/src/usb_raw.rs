@@ -76,8 +76,8 @@ impl<'h> Handler for ControlHandler<'h> {
                         );
                         Some(OutResponse::Accepted)
                     }
-                    Err(_) => {
-                        error!("Error storing SsidSpec to Flash Database");
+                    Err(e) => {
+                        error!("Error ({}) storing SsidSpec to Flash Database", e);
                         Some(OutResponse::Rejected)
                     }
                 }
