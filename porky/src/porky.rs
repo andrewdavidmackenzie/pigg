@@ -7,7 +7,6 @@ use crate::hw_definition::description::{
     HardwareDescription, HardwareDetails, PinDescriptionSet, SsidSpec,
 };
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
-use crate::ssid::{SSID_NAME, SSID_PASS, SSID_SECURITY};
 use core::str;
 use cyw43_pio::PioSpi;
 use defmt::{error, info};
@@ -74,14 +73,6 @@ mod flash;
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
 
-/// [DEFAULT_SSID_SPEC] is the default [SsidSpec] built into porky at build time by build.rs
-/// build script that reads it from `ssid.toml`file in project root folder
-const DEFAULT_SSID_SPEC: SsidSpec = SsidSpec {
-    ssid_name: SSID_NAME,
-    ssid_pass: SSID_PASS,
-    ssid_security: SSID_SECURITY,
-};
-
 /// [SSID_SPEC_KEY] is the key to a possible netry in the Flash DB for SsidSpec override
 const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
@@ -118,7 +109,7 @@ fn hardware_description(serial: &str) -> HardwareDescription {
 pub async fn get_ssid_spec<'a>(
     db: &Database<DbFlash<Flash<'a, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: &'a mut [u8],
-) -> SsidSpec<'a> {
+) -> SsidSpec {
     let rtx = db.read_transaction().await;
     match rtx.read(SSID_SPEC_KEY, buf).await {
         Ok(size) => match postcard::from_bytes::<SsidSpec>(&buf[..size]) {
@@ -131,12 +122,12 @@ pub async fn get_ssid_spec<'a>(
             }
             Err(_) => {
                 error!("Error reading SsidSpec stored in flash Database, using default");
-                DEFAULT_SSID_SPEC
+                ssid::get_default_ssid_spec()
             }
         },
         Err(_) => {
             info!("Could not read any SsidSpec override from the database, so using default");
-            DEFAULT_SSID_SPEC
+            ssid::get_default_ssid_spec()
         }
     }
 }

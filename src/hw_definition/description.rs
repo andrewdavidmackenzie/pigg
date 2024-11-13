@@ -8,11 +8,18 @@ use std::borrow::Cow;
 use std::string::String;
 
 #[cfg(feature = "no_std")]
+use heapless::String;
+#[cfg(feature = "no_std")]
 use heapless::Vec;
 #[cfg(not(feature = "no_std"))]
 use std::vec::Vec;
 
 use crate::hw_definition::pin_function::PinFunction;
+
+#[cfg(feature = "no_std")]
+const SSID_NAME_LENGTH: usize = 32;
+#[cfg(feature = "no_std")]
+const SSID_PASS_LENGTH: usize = 63;
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
 #[cfg(not(feature = "no_std"))]
@@ -70,10 +77,10 @@ pub struct SsidSpec {
 #[cfg(feature = "no_std")]
 /// [SsidSpec] contains details on how the device connects to Wi-Fi
 #[derive(Serialize, Deserialize)]
-pub struct SsidSpec<'a> {
-    pub ssid_name: &'a str,
-    pub ssid_pass: &'a str,
-    pub ssid_security: &'a str,
+pub struct SsidSpec {
+    pub ssid_name: String<SSID_NAME_LENGTH>,
+    pub ssid_pass: String<SSID_PASS_LENGTH>,
+    pub ssid_security: String<4>,
 }
 
 #[cfg(not(feature = "no_std"))]
@@ -89,7 +96,7 @@ pub struct WiFiDetails {
 /// [WiFiDetails] contains details on WiFi connection and connections details
 #[derive(Serialize)]
 pub struct WiFiDetails<'a> {
-    ssid_spec: SsidSpec<'a>,
+    ssid_spec: SsidSpec,
     tcp: (&'a str, u16), // ("ip", port)
     iroh: &'a str,       // "NodeId"
 }

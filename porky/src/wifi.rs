@@ -28,7 +28,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, cyw43::NetDriver<'sta
     runner.run().await
 }
 
-pub async fn join(control: &mut Control<'_>, stack: Stack<'static>, wifi_spec: &SsidSpec<'_>) {
+pub async fn join(control: &mut Control<'_>, stack: Stack<'static>, wifi_spec: &SsidSpec) {
     let mut attempt = 1;
     while attempt <= WIFI_JOIN_RETRY_ATTEMPT_LIMIT {
         info!(
@@ -38,7 +38,7 @@ pub async fn join(control: &mut Control<'_>, stack: Stack<'static>, wifi_spec: &
 
         let mut join_options = JoinOptions::new(wifi_spec.ssid_pass.as_bytes());
 
-        match wifi_spec.ssid_security {
+        match wifi_spec.ssid_security.as_str() {
             "open" => join_options.auth = JoinAuth::Open,
             "wpa" => join_options.auth = JoinAuth::Wpa,
             "wpa2" => join_options.auth = JoinAuth::Wpa2,
@@ -48,7 +48,7 @@ pub async fn join(control: &mut Control<'_>, stack: Stack<'static>, wifi_spec: &
             }
         };
 
-        match control.join(wifi_spec.ssid_name, join_options).await {
+        match control.join(&wifi_spec.ssid_name, join_options).await {
             Ok(_) => {
                 info!("Joined wifi network: '{}'", wifi_spec.ssid_name);
                 wait_for_dhcp("WiFi", &stack).await;
