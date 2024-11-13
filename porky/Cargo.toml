@@ -21,7 +21,6 @@ embassy-time = { version = "0.3.2", default-features = false, features = ["defmt
 embassy-executor = { version = "0.6.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
 embassy-rp = { version = "0.2.0", default-features = false, features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 embassy-net = { version = "0.4.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"] }
-embassy-usb = { version = "0.3.0", default-features = false, optional = true }
 cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"] }
 cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"] }
 panic-probe = { version = "0.3", default-features = false, features = ["print-defmt"] }
@@ -43,6 +42,9 @@ heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
 ekv = { version = "1.0.0", default-features = false }
 embedded-storage = { version = "0.3", default-features = false }
+
+# Optional Dependencies
+embassy-usb = { version = "0.3.0", default-features = false, optional = true }
 
 [build-dependencies]
 # for reading SSID config from a file in build.rs
