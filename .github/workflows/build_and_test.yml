@@ -149,7 +149,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
-          lcov --ignore-errors empty,empty --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
+          lcov --ignore-errors unsupported --ignore-errors empty,empty --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
         if: runner.os != 'Windows'

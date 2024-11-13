@@ -1,39 +1,44 @@
-#[cfg(feature = "std")]
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 use std::borrow::Cow;
 
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 use std::string::String;
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
+use heapless::String;
+#[cfg(feature = "no_std")]
 use heapless::Vec;
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 use std::vec::Vec;
 
 use crate::hw_definition::pin_function::PinFunction;
 
+#[cfg(feature = "no_std")]
+const SSID_NAME_LENGTH: usize = 32;
+#[cfg(feature = "no_std")]
+const SSID_PASS_LENGTH: usize = 63;
+
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 #[derive(Serialize)]
-#[cfg_attr(feature = "std", derive(Debug, Clone, Deserialize))]
+#[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Deserialize))]
 pub struct HardwareDescription {
     pub details: HardwareDetails,
     pub pins: PinDescriptionSet,
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 #[derive(Serialize)]
-#[cfg_attr(feature = "std", derive(Debug, Clone, Deserialize))]
+#[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Deserialize))]
 pub struct HardwareDescription<'a> {
     pub details: HardwareDetails<'a>,
     pub pins: PinDescriptionSet<'a>,
 }
 
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDetails {
@@ -49,7 +54,7 @@ pub struct HardwareDetails {
     pub wifi: bool,
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Serialize)]
 pub struct HardwareDetails<'a> {
@@ -60,8 +65,8 @@ pub struct HardwareDetails<'a> {
     pub wifi: bool,
 }
 
-#[cfg(feature = "std")]
-/// [SsidSpec] contains details on how the device connects to WiFi
+#[cfg(not(feature = "no_std"))]
+/// [SsidSpec] contains details on how the device connects to Wi-Fi
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SsidSpec {
     pub ssid_name: String,
@@ -69,16 +74,16 @@ pub struct SsidSpec {
     pub ssid_security: String,
 }
 
-#[cfg(not(feature = "std"))]
-/// [SsidSpec] contains details on how the device connects to WiFi
-#[derive(Serialize)]
-pub struct SsidSpec<'a> {
-    pub ssid_name: &'a str,
-    pub ssid_pass: &'a str,
-    pub ssid_security: &'a str,
+#[cfg(feature = "no_std")]
+/// [SsidSpec] contains details on how the device connects to Wi-Fi
+#[derive(Serialize, Deserialize)]
+pub struct SsidSpec {
+    pub ssid_name: String<SSID_NAME_LENGTH>,
+    pub ssid_pass: String<SSID_PASS_LENGTH>,
+    pub ssid_security: String<4>,
 }
 
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 /// [WiFiDetails] contains details on WiFi connection and connections details
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WiFiDetails {
@@ -87,16 +92,16 @@ pub struct WiFiDetails {
     iroh: String,       // "NodeId"
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 /// [WiFiDetails] contains details on WiFi connection and connections details
 #[derive(Serialize)]
 pub struct WiFiDetails<'a> {
-    ssid_spec: SsidSpec<'a>,
+    ssid_spec: SsidSpec,
     tcp: (&'a str, u16), // ("ip", port)
     iroh: &'a str,       // "NodeId"
 }
 
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 /// [PinDescription] describes a pins in the connected hardware.
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize, Debug, Clone, Deserialize)]
@@ -104,7 +109,7 @@ pub struct PinDescriptionSet {
     pub(crate) pins: Vec<PinDescription>,
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 /// [PinDescription] describes a pins in the connected hardware.
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize)]
@@ -112,7 +117,7 @@ pub struct PinDescriptionSet<'a> {
     pub(crate) pins: Vec<PinDescription<'a>, 40>,
 }
 
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 /// [PinDescription] is used to describe each pin and possible uses it can be put to
 /// * [board_pin_number] refer to the pins by the number of the pin printed on the board
 /// * [bcm_pin_number] refer to the pins by the "Broadcom SOC channel" number. Programmable pins
@@ -127,7 +132,7 @@ pub struct PinDescription {
     pub options: Cow<'static, [PinFunction]>,
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 #[derive(Clone, Serialize)]
 pub struct PinDescription<'a> {
     pub bpn: BoardPinNumber,

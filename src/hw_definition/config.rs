@@ -1,20 +1,23 @@
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 use heapless::FnvIndexMap;
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 use std::collections::HashMap;
-#[cfg(feature = "std")]
+#[cfg(not(feature = "no_std"))]
 use std::time::Duration;
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
-#[cfg_attr(feature = "std", derive(Debug, Clone, Serialize, Deserialize, Default))]
-#[cfg_attr(not(feature = "std"), derive(Clone, Serialize, Deserialize))]
+#[cfg_attr(
+    not(feature = "no_std"),
+    derive(Debug, Clone, Serialize, Deserialize, Default)
+)]
+#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize))]
 pub struct HardwareConfig {
-    #[cfg(feature = "std")]
+    #[cfg(not(feature = "no_std"))]
     pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "no_std")]
     pub pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 32>,
 }
 
@@ -23,8 +26,8 @@ pub struct HardwareConfig {
 ///    * NewConfig
 ///    * NewPinConfig
 ///    * OutputLevelChanged
-#[cfg_attr(feature = "std", derive(Debug, Clone, Serialize, Deserialize))]
-#[cfg_attr(not(feature = "std"), derive(Clone, Serialize, Deserialize))]
+#[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Serialize, Deserialize))]
+#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize))]
 pub enum HardwareConfigMessage {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains
@@ -35,14 +38,14 @@ pub enum HardwareConfigMessage {
     IOLevelChanged(BCMPinNumber, LevelChange),
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Duration {
     pub secs: u64,
     pub nanos: u32,
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 impl From<embassy_time::Duration> for Duration {
     fn from(duration: embassy_time::Duration) -> Self {
         Duration {
@@ -52,7 +55,7 @@ impl From<embassy_time::Duration> for Duration {
     }
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no_std")]
 impl From<Duration> for embassy_time::Duration {
     fn from(duration: Duration) -> Self {
         embassy_time::Duration::from_nanos((duration.secs * 1_000_000_000) + duration.nanos as u64)
@@ -62,7 +65,7 @@ impl From<Duration> for embassy_time::Duration {
 /// LevelChange describes the change in level of an input or Output and when it occurred
 /// - `new_level` : [PinLevel]
 /// - `timestamp` : [Duration]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(feature = "no_std"), derive(Debug))]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LevelChange {
     pub new_level: PinLevel,

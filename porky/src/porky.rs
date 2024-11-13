@@ -1,36 +1,35 @@
 #![no_std]
 #![no_main]
 
+use crate::flash::DbFlash;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{
     HardwareDescription, HardwareDetails, PinDescriptionSet, SsidSpec,
 };
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
-use crate::ssid::{SSID_NAME, SSID_PASS, SSID_SECURITY};
 use core::str;
 use cyw43_pio::PioSpi;
 use defmt::{error, info};
 use defmt_rtt as _;
+use ekv::Database;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_net::tcp::TcpSocket;
 use embassy_rp::bind_interrupts;
-use embassy_rp::flash::Async;
-use embassy_rp::flash::Flash;
+use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::gpio::{Level, Output};
 #[cfg(feature = "usb")]
 use embassy_rp::peripherals::USB;
-use embassy_rp::peripherals::{DMA_CH1, FLASH, PIO0};
+use embassy_rp::peripherals::{FLASH, PIO0};
 use embassy_rp::pio::InterruptHandler as PioInterruptHandler;
 use embassy_rp::pio::Pio;
 #[cfg(feature = "usb")]
 use embassy_rp::usb::Driver;
 #[cfg(feature = "usb")]
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
-use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
+use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
 use embedded_io_async::Write;
-use faster_hex::hex_encode;
 use heapless::Vec;
 use panic_probe as _;
 use static_cell::StaticCell;
@@ -68,10 +67,14 @@ mod gpio;
 #[path = "../../src/hw_definition/mod.rs"]
 mod hw_definition;
 
+/// Functions for interacting with the Flash ROM
+mod flash;
+
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
 
-const FLASH_SIZE: usize = 2 * 1024 * 1024;
+/// [SSID_SPEC_KEY] is the key to a possible netry in the Flash DB for SsidSpec override
+const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
@@ -81,24 +84,6 @@ bind_interrupts!(struct Irqs {
 
 pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
     Channel::new();
-
-/// Get the unique serial number from Flash
-fn serial_number(flash: FLASH, dma: DMA_CH1) -> &'static str {
-    // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
-    let mut flash = Flash::<_, Async, { FLASH_SIZE }>::new(flash, dma);
-    let mut device_id = [0; 8];
-    flash.blocking_unique_id(&mut device_id).unwrap();
-    info!("device_id: {:?}", device_id);
-
-    // convert the device_id to a hex "string"
-    let mut device_id_hex: [u8; 16] = [0; 16];
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
-
-    info!("device_id: {}", device_id_hex);
-    static ID: StaticCell<[u8; 16]> = StaticCell::new();
-    let id = ID.init(device_id_hex);
-    str::from_utf8(id).unwrap()
-}
 
 /// Create a [HardwareDescription] for this device with the provided serial number
 fn hardware_description(serial: &str) -> HardwareDescription {
@@ -118,14 +103,33 @@ fn hardware_description(serial: &str) -> HardwareDescription {
     }
 }
 
-const DEFAULT_SSID_SPEC: SsidSpec = SsidSpec {
-    ssid_name: SSID_NAME,
-    ssid_pass: SSID_PASS,
-    ssid_security: SSID_SECURITY,
-};
-
-fn get_ssid_spec<'a>() -> SsidSpec<'a> {
-    DEFAULT_SSID_SPEC
+/// Return the [SsidSpec] we should use to try and connect to the Wi-Fi network
+/// If we can find an override value stored in the flash database, use that.
+/// If not, use the default value that was built from `ssid.toml` file in project root folder
+pub async fn get_ssid_spec<'a>(
+    db: &Database<DbFlash<Flash<'a, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    buf: &'a mut [u8],
+) -> SsidSpec {
+    let rtx = db.read_transaction().await;
+    match rtx.read(SSID_SPEC_KEY, buf).await {
+        Ok(size) => match postcard::from_bytes::<SsidSpec>(&buf[..size]) {
+            Ok(spec) => {
+                info!(
+                    "Loaded SsidSpec override from database for SSID: {}",
+                    spec.ssid_name
+                );
+                spec
+            }
+            Err(_) => {
+                error!("Error reading SsidSpec stored in flash Database, using default");
+                ssid::get_default_ssid_spec()
+            }
+        },
+        Err(_) => {
+            info!("Could not read any SsidSpec override from the database, so using default");
+            ssid::get_default_ssid_spec()
+        }
+    }
 }
 
 /// Send the [HardwareDescription] over the [TcpSocket]
@@ -195,7 +199,8 @@ async fn main(spawner: Spawner) {
     gpio::setup_pins(header_pins);
 
     // create hardware description
-    let serial_number = serial_number(peripherals.FLASH, peripherals.DMA_CH1);
+    let mut flash = flash::get_flash(peripherals.FLASH);
+    let serial_number = flash::serial_number(&mut flash);
     static HARDWARE_DESCRIPTION: StaticCell<HardwareDescription> = StaticCell::new();
     let hw_desc = HARDWARE_DESCRIPTION.init(hardware_description(serial_number));
 
@@ -209,11 +214,17 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb-tcp")]
     let mut usb_rx_buffer = [0; 4096];
 
+    // start the flash database
+    let db = flash::db_init(flash).await;
+
+    static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
+    let static_buf = STATIC_BUF.init([0u8; 200]);
+    let spec = get_ssid_spec(&db, static_buf).await;
     static SSID_SPEC: StaticCell<SsidSpec> = StaticCell::new();
-    let ssid_spec = SSID_SPEC.init(get_ssid_spec());
+    let ssid_spec = SSID_SPEC.init(spec);
 
     #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, hw_desc, ssid_spec).await;
+    usb_raw::start(spawner, driver, hw_desc, db).await;
 
     wifi::join(&mut control, wifi_stack, ssid_spec).await;
     let mut wifi_tx_buffer = [0; 4096];

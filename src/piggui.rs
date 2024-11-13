@@ -17,11 +17,14 @@ use views::pin_state::PinState;
 
 use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 
+use crate::hw_definition::description::{HardwareDetails, SsidSpec};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
 use crate::views::hardware_menu;
+#[cfg(feature = "usb-raw")]
+use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -67,7 +70,7 @@ pub enum Message {
     ConnectionError(String),
     MenuBarButtonClicked,
     Device(DeviceEvent),
-    ConfigureWiFi(String),
+    ConfigureWiFi(HardwareDetails, Option<SsidSpec>),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -188,7 +191,7 @@ impl Piggui {
                         &self.hardware_view,
                     );
                 } else {
-                    return Task::batch(vec![pick_and_load()]);
+                    return pick_and_load();
                 }
             }
 
@@ -260,14 +263,25 @@ impl Piggui {
 
             Device(event) => self.device_event(event),
 
-            ConfigureWiFi(serial_number) => {
-                println!(
-                    "dialog to configure known device with serial number: {}",
-                    serial_number
-                )
+            ConfigureWiFi(hardware_details, ssid_spec) => {
+                // TODO this should show the dialog, and the dialog submit will send a new message
+                // like "SendWifiConfig(serial_number, ssid_spec) and that message should call
+                // this method to send it via USB to the attached porky
+                return Self::send_ssid(hardware_details, ssid_spec);
             }
         }
 
+        Task::none()
+    }
+
+    #[allow(unused_variables)]
+    fn send_ssid(hardware_details: HardwareDetails, ssid_spec: Option<SsidSpec>) -> Task<Message> {
+        #[cfg(feature = "usb-raw")]
+        return Task::perform(
+            usb_raw::send_ssid_spec(hardware_details.serial, ssid_spec.unwrap()),
+            |_| InfoRow(ShowStatusMessage(Info("Wi-Fi Setup sent via USB".into()))),
+        );
+        #[cfg(not(feature = "usb-raw"))]
         Task::none()
     }
 

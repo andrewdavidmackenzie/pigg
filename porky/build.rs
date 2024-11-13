@@ -42,25 +42,23 @@ fn generate_ssid(filename: &str, ssid: SsidSpec) -> io::Result<()> {
     let mut file = File::create(out_file).unwrap();
 
     file.write_all(
-        format!(
-            "pub(crate) const SSID_NAME : &str = \"{}\";\n",
-            ssid.ssid_name
-        )
-        .as_bytes(),
+        b"\
+use heapless::String;\n
+use crate::hw_definition::description::SsidSpec;\n\
+use core::str::FromStr;\n",
     )?;
 
     file.write_all(
         format!(
-            "pub(crate) const SSID_PASS : &str = \"{}\";\n",
-            ssid.ssid_pass
-        )
-        .as_bytes(),
-    )?;
-
-    file.write_all(
-        format!(
-            "pub(crate) const SSID_SECURITY : &str = \"{}\";\n",
-            ssid.security
+            "\n\
+pub(crate) fn get_default_ssid_spec() -> SsidSpec {{ \n\
+    SsidSpec {{ \n\
+        ssid_name: String::from_str(\"{}\").unwrap(), \n\
+        ssid_pass: String::from_str(\"{}\").unwrap(), \n\
+        ssid_security: String::from_str(\"{}\").unwrap(), \n\
+    }} \n\
+}}",
+            ssid.ssid_name, ssid.ssid_pass, ssid.security
         )
         .as_bytes(),
     )
