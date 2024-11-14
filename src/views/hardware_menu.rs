@@ -70,22 +70,40 @@ fn devices_submenu<'a>(
                 if hardware_description.details.wifi {
                     device_items.push(Item::with_menu(
                         button,
-                        Menu::new(vec![Item::new(
-                            Button::new(Text::new("Configure Device WiFi"))
-                                .on_press(Message::SsidDialog(SsidDialogMessage::ShowSsidDialog(
-                                    hardware_description.details.clone(),
-                                    ssid_spec.clone(),
-                                )))
-                                .width(170.0)
-                                .style(|_, status| {
-                                    if status == Hovered {
-                                        MENU_BUTTON_HOVER_STYLE
-                                    } else {
-                                        MENU_BUTTON_STYLE
-                                    }
-                                }),
-                        )])
-                        .width(170.0)
+                        Menu::new(vec![
+                            Item::new(
+                                Button::new(Text::new("Configure Device WiFi"))
+                                    .on_press(Message::SsidDialog(
+                                        SsidDialogMessage::ShowSsidDialog(
+                                            hardware_description.details.clone(),
+                                            ssid_spec.clone(),
+                                        ),
+                                    ))
+                                    .width(170.0)
+                                    .style(|_, status| {
+                                        if status == Hovered {
+                                            MENU_BUTTON_HOVER_STYLE
+                                        } else {
+                                            MENU_BUTTON_STYLE
+                                        }
+                                    }),
+                            ),
+                            Item::new(
+                                Button::new(Text::new("Reset Device WiFi to Default"))
+                                    .on_press(Message::ResetSsid(
+                                        hardware_description.details.serial.clone(),
+                                    ))
+                                    .width(190.0)
+                                    .style(|_, status| {
+                                        if status == Hovered {
+                                            MENU_BUTTON_HOVER_STYLE
+                                        } else {
+                                            MENU_BUTTON_STYLE
+                                        }
+                                    }),
+                            ),
+                        ])
+                        .width(190.0)
                         .offset(10.0),
                     ));
                 } else {

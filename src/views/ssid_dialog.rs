@@ -55,12 +55,6 @@ pub enum SsidDialogMessage {
     ConnectionError(String),
 }
 
-impl Default for SsidDialog {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Debug)]
 pub enum SSIDSecurity {

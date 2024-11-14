@@ -3,7 +3,7 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::message_box::MessageMessage::Info;
+use crate::views::message_box::MessageMessage::{Error, Info};
 use crate::views::message_box::{MessageMessage, MessageRowMessage};
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
 use crate::views::ssid_dialog::SsidDialog;
@@ -23,6 +23,7 @@ use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
 use crate::views::hardware_menu;
+use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
 #[cfg(feature = "iroh")]
@@ -71,6 +72,7 @@ pub enum Message {
     MenuBarButtonClicked,
     Device(DeviceEvent),
     SsidDialog(SsidDialogMessage),
+    ResetSsid(String),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -104,6 +106,22 @@ fn main() -> iced::Result {
         .window_size(LayoutSelector::get_default_window_size())
         .theme(|_| Theme::Dark)
         .run_with(Piggui::new)
+}
+
+#[allow(unused_variables)]
+fn reset_ssid(serial_number: String) -> Task<Message> {
+    #[cfg(feature = "usb-raw")]
+    return Task::perform(usb_raw::reset_ssid_spec(serial_number), |res| match res {
+        Ok(_) => InfoRow(ShowStatusMessage(Info(
+            "Wi-Fi Setup reset to Default by USB".into(),
+        ))),
+        Err(e) => InfoRow(ShowStatusMessage(Error(
+            "Error resetting Wi-Fi Setup via USB".into(),
+            e,
+        ))),
+    });
+    #[cfg(not(feature = "usb-raw"))]
+    Task::none()
 }
 
 impl Piggui {
@@ -267,6 +285,10 @@ impl Piggui {
 
             SsidDialog(ssid_dialog_message) => {
                 return self.ssid_dialog.update(ssid_dialog_message);
+            }
+
+            ResetSsid(serial_number) => {
+                return reset_ssid(serial_number);
             }
         }
 
