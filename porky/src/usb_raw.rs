@@ -55,11 +55,9 @@ impl<'h> ControlHandler<'h> {
     /// Delete the [SsidSpec] from the flash database
     async fn delete_ssid_spec(&mut self) -> Result<(), &'static str> {
         let mut wtx = self.db.write_transaction().await;
-        let bytes = postcard::to_slice(&self.ssid_spec, &mut self.buf)
-            .map_err(|_| "Deserialization error")?;
-        wtx.write(SSID_SPEC_KEY, bytes)
+        wtx.delete(SSID_SPEC_KEY)
             .await
-            .map_err(|_| "Write error")?;
+            .map_err(|_| "Delete error")?;
         wtx.commit().await.map_err(|_| "Commit error")
     }
 }

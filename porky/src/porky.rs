@@ -115,13 +115,13 @@ pub async fn get_ssid_spec<'a>(
         Ok(size) => match postcard::from_bytes::<SsidSpec>(&buf[..size]) {
             Ok(spec) => {
                 info!(
-                    "Loaded SsidSpec override from database for SSID: {}",
+                    "Loaded SsidSpec from Flash database for SSID: {}",
                     spec.ssid_name
                 );
                 spec
             }
             Err(_) => {
-                error!("Error reading SsidSpec stored in flash Database, using default");
+                error!("Error reading SsidSpec from Flash database, using default");
                 ssid::get_default_ssid_spec()
             }
         },
