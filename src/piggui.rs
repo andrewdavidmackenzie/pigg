@@ -74,6 +74,7 @@ pub enum Message {
     Device(DeviceEvent),
     SsidDialog(SsidDialogMessage),
     ResetSsid(String),
+    SsidSpecSent(Result<(), String>),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -290,6 +291,22 @@ impl Piggui {
             ResetSsid(serial_number) => {
                 return reset_ssid(serial_number);
             }
+
+            SsidSpecSent(result) => match result {
+                Ok(_) => {
+                    self.ssid_dialog.hide_modal();
+                    self.info_row
+                        .add_info_message(Info("Wi-Fi Setup sent via USB".to_string()));
+                }
+                Err(e) => {
+                    self.ssid_dialog.enable_widgets_and_hide_spinner();
+                    self.ssid_dialog.set_error(e.clone());
+                    self.info_row.add_info_message(Error(
+                        "Error sending Wi-Fi Setup via USB".to_string(),
+                        e,
+                    ));
+                }
+            },
         }
 
         Task::none()

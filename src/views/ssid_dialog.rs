@@ -23,11 +23,7 @@ use crate::views::dialog_styles::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
     MODAL_CONTAINER_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
-use crate::views::message_box::MessageMessage::{Error, Info};
-#[cfg(feature = "usb-raw")]
-use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::views::ssid_dialog::SsidDialogMessage::{HidePasswordToggled, SecuritySelected};
-use crate::Message::InfoRow;
 use iced::widget::button::Status::Hovered;
 use std::sync::LazyLock;
 
@@ -60,16 +56,9 @@ pub enum SsidDialogMessage {
 #[allow(unused_variables)]
 fn send_ssid(serial_number: String, ssid_spec: SsidSpec) -> Task<Message> {
     #[cfg(feature = "usb-raw")]
-    return Task::perform(
-        usb_raw::send_ssid_spec(serial_number, ssid_spec),
-        |res| match res {
-            Ok(_) => InfoRow(ShowStatusMessage(Info("Wi-Fi Setup sent via USB".into()))),
-            Err(e) => InfoRow(ShowStatusMessage(Error(
-                "Error sending Wi-Fi Setup via USB".into(),
-                e,
-            ))),
-        },
-    );
+    return Task::perform(usb_raw::send_ssid_spec(serial_number, ssid_spec), |res| {
+        Message::SsidSpecSent(res)
+    });
     #[cfg(not(feature = "usb-raw"))]
     Task::none()
 }
@@ -159,7 +148,7 @@ impl SsidDialog {
                         send_ssid(self.hardware_details.serial.clone(), ssid_spec)
                     }
                     Err(error) => {
-                        self.error = error;
+                        self.set_error(error);
                         self.show_spinner = false;
                         self.disable_widgets = false;
                         Task::none()
@@ -293,6 +282,14 @@ impl SsidDialog {
     // Handle Keyboard events
     pub fn subscription(&self) -> Subscription<SsidDialogMessage> {
         iced::event::listen().map(ModalKeyEvent)
+    }
+
+    pub fn enable_widgets_and_hide_spinner(&mut self) {
+        self.disable_widgets = false;
+        self.show_spinner = false;
+    }
+    pub fn set_error(&mut self, error: String) {
+        self.error = error;
     }
 
     fn send_row(&self) -> Row<'_, Message> {
