@@ -73,13 +73,13 @@ fn devices_submenu<'a>(
                         Menu::new(vec![
                             Item::new(
                                 Button::new(Text::new("Configure Device WiFi"))
+                                    .width(Length::Fill)
                                     .on_press(Message::SsidDialog(
                                         SsidDialogMessage::ShowSsidDialog(
                                             hardware_description.details.clone(),
                                             ssid_spec.clone(),
                                         ),
                                     ))
-                                    .width(170.0)
                                     .style(|_, status| {
                                         if status == Hovered {
                                             MENU_BUTTON_HOVER_STYLE
@@ -90,10 +90,10 @@ fn devices_submenu<'a>(
                             ),
                             Item::new(
                                 Button::new(Text::new("Reset Device WiFi to Default"))
+                                    .width(Length::Fill)
                                     .on_press(Message::ResetSsid(
                                         hardware_description.details.serial.clone(),
                                     ))
-                                    .width(190.0)
                                     .style(|_, status| {
                                         if status == Hovered {
                                             MENU_BUTTON_HOVER_STYLE
