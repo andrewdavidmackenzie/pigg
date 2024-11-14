@@ -26,12 +26,10 @@ use crate::views::dialog_styles::{
 use crate::views::message_box::MessageMessage::{Error, Info};
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
-use crate::views::ssid_dialog::SsidDialogMessage::{SecuritySelected, ShowPasswordToggled};
+use crate::views::ssid_dialog::SsidDialogMessage::{HidePasswordToggled, SecuritySelected};
 use crate::Message::InfoRow;
 use iced::widget::button::Status::Hovered;
 use std::sync::LazyLock;
-
-const INFO_TEXT: &str = "To configure the Wi-Fi of the USB connected 'porky' device, complete the fields below and then press 'Send'";
 
 static INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
 
@@ -43,7 +41,7 @@ pub struct SsidDialog {
     show_spinner: bool,
     disable_widgets: bool,
     hardware_details: HardwareDetails,
-    show_password: bool,
+    hide_password: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -56,7 +54,7 @@ pub enum SsidDialogMessage {
     HideSsidDialog,
     ShowSsidDialog(HardwareDetails, Option<SsidSpec>),
     ConnectionError(String),
-    ShowPasswordToggled,
+    HidePasswordToggled,
 }
 
 #[allow(unused_variables)]
@@ -119,7 +117,7 @@ impl SsidDialog {
             show_spinner: false,
             disable_widgets: false,
             hardware_details: HardwareDetails::default(),
-            show_password: false,
+            hide_password: true,
         }
     }
 
@@ -205,8 +203,8 @@ impl SsidDialog {
                 Task::none()
             }
 
-            ShowPasswordToggled => {
-                self.show_password = !self.show_password;
+            HidePasswordToggled => {
+                self.hide_password = !self.hide_password;
                 Task::none()
             }
         }
@@ -224,11 +222,10 @@ impl SsidDialog {
         container(
             column![
                 text("Configure Wi-Fi of USB connected 'porky' device").size(20),
-                self.create_text_container(format!(
-                    "{} with Serial Number: {}",
+                self.create_text_container(format!("To configure the Wi-Fi of the USB connected device '{}' with Serial Number '{}' \
+                 complete the fields below and then press 'Send'",
                     self.hardware_details.model, self.hardware_details.serial
                 )),
-                self.create_text_container(INFO_TEXT.into()),
                 text(self.error.clone()).style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
                 text("SSID Name"),
                 {
@@ -249,12 +246,13 @@ impl SsidDialog {
                 row![
                     text("SSID Password"),
                     horizontal_space(),
-                    checkbox("Show Password", self.show_password)
-                        .on_toggle(|_| Message::SsidDialog(ShowPasswordToggled))
+                    checkbox("Hide Password", self.hide_password)
+                        .on_toggle(|_| Message::SsidDialog(HidePasswordToggled))
                 ],
                 {
                     let mut password_input =
                         text_input("Enter SSID Password", &self.ssid_spec.ssid_pass)
+                            .secure(self.hide_password)
                             .padding(5)
                             .on_submit(Message::SsidDialog(SendButtonPressed(
                                 self.ssid_spec.ssid_name.clone(),
