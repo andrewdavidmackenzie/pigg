@@ -1,10 +1,10 @@
 use iced::border::Radius;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb-raw"))]
 use iced::widget::text;
 use iced::widget::{button, container};
 use iced::{Background, Border, Color, Shadow};
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb-raw"))]
 const RADIUS_10: Radius = Radius {
     top_left: 10.0,
     top_right: 10.0,
@@ -94,12 +94,12 @@ pub(crate) const HYPERLINK_BUTTON_HOVER_STYLE: button::Style = button::Style {
     shadow: NO_SHADOW,
 };
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb-raw"))]
 pub(crate) const INFO_TEXT_STYLE: text::Style = text::Style {
     color: Some(Color::from_rgba(0.8, 0.8, 0.8, 1.0)),
 };
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb-raw"))]
 pub(crate) const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
     text_color: Some(Color::BLACK),
     background: Some(Background::Color(Color::BLACK)),
@@ -111,7 +111,7 @@ pub(crate) const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
     shadow: NO_SHADOW,
 };
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb-raw"))]
 pub(crate) const CONNECTION_ERROR_DISPLAY: text::Style = text::Style {
     color: Some(Color::from_rgba(0.8, 0.0, 0.0, 1.0)),
 };
