@@ -98,25 +98,11 @@ fn send_ssid(serial_number: String, ssid_spec: SsidSpec) -> Task<Message> {
     Task::none()
 }
 
-impl SsidDialog {
-    pub fn new() -> Self {
-        Self {
-            ssid_spec: SsidSpec::default(),
-            error: String::new(),
-            show_modal: false,
-            show_spinner: false,
-            disable_widgets: false,
-            hardware_details: HardwareDetails::default(),
-        }
-    }
-
-    /// Validate the name, password and security setting combination and return an optional
-    /// error string if not valid, or None if they are valid
-    fn valid_ssid_spec(
-        name: String,
-        pass: String,
-        security: SSIDSecurity,
-    ) -> Result<SsidSpec, String> {
+impl SsidSpec {
+    /// Try and create a new [SsidSpec] using name, password and security fields, validating
+    /// the combination. Return an `Ok` with the [SsisSpec] or an `Err` with an error string
+    /// describing the cause of it being invalid.
+    fn try_new(name: String, pass: String, security: SSIDSecurity) -> Result<SsidSpec, String> {
         if name.trim().is_empty() {
             return Err("Please Enter SSID name".into());
         }
@@ -144,11 +130,23 @@ impl SsidDialog {
             ssid_security: security.to_string(),
         })
     }
+}
+impl SsidDialog {
+    pub fn new() -> Self {
+        Self {
+            ssid_spec: SsidSpec::default(),
+            error: String::new(),
+            show_modal: false,
+            show_spinner: false,
+            disable_widgets: false,
+            hardware_details: HardwareDetails::default(),
+        }
+    }
 
     pub fn update(&mut self, message: SsidDialogMessage) -> Task<Message> {
         match message {
             SendButtonPressed(name, password, security) => {
-                match Self::valid_ssid_spec(name, password, security) {
+                match SsidSpec::try_new(name, password, security) {
                     Ok(ssid_spec) => {
                         self.error.clear();
                         self.show_spinner = true;
