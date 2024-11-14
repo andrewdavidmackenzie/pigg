@@ -125,6 +125,7 @@ impl SsidSpec {
         })
     }
 }
+
 impl SsidDialog {
     pub fn new() -> Self {
         Self {
@@ -223,10 +224,59 @@ impl SsidDialog {
 
     //noinspection RsLift
     pub fn view(&self) -> Element<'_, Message> {
-        match self.disable_widgets {
-            true => self.create_container(false),
-            false => self.create_container(true),
-        }
+        container(
+            column![
+                text("Configure Wi-Fi of USB connected 'porky' device").size(20),
+                column![
+                    self.create_text_container(format!(
+                        "{} with Serial Number: {}",
+                        self.hardware_details.model, self.hardware_details.serial
+                    )),
+                    self.create_text_container(INFO_TEXT.into()),
+                    text(self.error.clone()).style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
+                    text("SSID Name").size(12),
+                    {
+                        let mut name_input =
+                            text_input("Enter SSID Name", &self.ssid_spec.ssid_name)
+                                .padding(5)
+                                .id(INPUT_ID.clone())
+                                .on_submit(Message::SsidDialog(SendButtonPressed(
+                                    self.ssid_spec.ssid_name.clone(),
+                                    self.ssid_spec.ssid_pass.clone(),
+                                    SSIDSecurity::OPEN, // TODO
+                                )));
+                        if !self.disable_widgets {
+                            name_input = name_input
+                                .on_input(|input| Message::SsidDialog(NameEntered(input)));
+                        }
+                        name_input
+                    }
+                ]
+                .spacing(10),
+                column![text("SSID Password").size(12), {
+                    let mut password_input =
+                        text_input("Enter SSID Password", &self.ssid_spec.ssid_pass)
+                            .padding(5)
+                            .on_submit(Message::SsidDialog(SendButtonPressed(
+                                self.ssid_spec.ssid_name.clone(),
+                                self.ssid_spec.ssid_pass.clone(),
+                                SSIDSecurity::OPEN, // TODO
+                            )));
+                    if !self.disable_widgets {
+                        password_input = password_input
+                            .on_input(|input| Message::SsidDialog(PasswordEntered(input)));
+                    }
+                    password_input
+                }]
+                .spacing(5),
+                self.send_row(),
+            ]
+            .spacing(10),
+        )
+        .style(move |_theme| MODAL_CONTAINER_STYLE)
+        .width(520)
+        .padding(15)
+        .into()
     }
 
     pub fn hide_modal(&mut self) {
@@ -282,65 +332,12 @@ impl SsidDialog {
         row.push(send_button)
     }
 
-    fn create_text_container(&self) -> Element<'_, Message> {
-        container(Text::new(INFO_TEXT).style(move |_theme| INFO_TEXT_STYLE))
+    fn create_text_container(&self, msg: String) -> Element<'_, Message> {
+        container(Text::new(msg).style(move |_theme| INFO_TEXT_STYLE))
             .padding(10)
             .width(Length::Fill)
             .style(move |_theme| TEXT_BOX_CONTAINER_STYLE)
             .into()
-    }
-
-    //noinspection RsLiveness
-    fn create_container(&self, input_enabled: bool) -> Element<'_, Message> {
-        container(
-            column![
-                text("Configure Wi-Fi of USB connected 'porky' device").size(20),
-                column![
-                    self.create_text_container(),
-                    text(self.error.clone()).style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
-                    text("SSID Name").size(12),
-                    {
-                        let mut name_input =
-                            text_input("Enter SSID Name", &self.ssid_spec.ssid_name)
-                                .padding(5)
-                                .id(INPUT_ID.clone())
-                                .on_submit(Message::SsidDialog(SendButtonPressed(
-                                    self.ssid_spec.ssid_name.clone(),
-                                    self.ssid_spec.ssid_pass.clone(),
-                                    SSIDSecurity::OPEN, // TODO
-                                )));
-                        if input_enabled {
-                            name_input = name_input
-                                .on_input(|input| Message::SsidDialog(NameEntered(input)));
-                        }
-                        name_input
-                    }
-                ]
-                .spacing(10),
-                column![text("SSID Password").size(12), {
-                    let mut password_input =
-                        text_input("Enter SSID Password", &self.ssid_spec.ssid_pass)
-                            .padding(5)
-                            .on_submit(Message::SsidDialog(SendButtonPressed(
-                                self.ssid_spec.ssid_name.clone(),
-                                self.ssid_spec.ssid_pass.clone(),
-                                SSIDSecurity::OPEN, // TODO
-                            )));
-                    if input_enabled {
-                        password_input = password_input
-                            .on_input(|input| Message::SsidDialog(PasswordEntered(input)));
-                    }
-                    password_input
-                }]
-                .spacing(5),
-                self.send_row(),
-            ]
-            .spacing(10),
-        )
-        .style(move |_theme| MODAL_CONTAINER_STYLE)
-        .width(520)
-        .padding(15)
-        .into()
     }
 }
 
