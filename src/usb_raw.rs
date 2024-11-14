@@ -1,6 +1,6 @@
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 use crate::hw_definition::usb_requests::{
-    GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST, SET_SSID_VALUE,
+    GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 use crate::usb_raw::USBState::{Connected, Disconnected};
 use crate::views::hardware_menu::DeviceEvent;
@@ -14,7 +14,7 @@ use serde::Deserialize;
 use std::io;
 use std::time::Duration;
 
-/// ControlIn "command" to request the HardwareDescription
+/// [ControlIn] "command" to request the HardwareDescription
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
@@ -24,7 +24,7 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     length: 1000,
 };
 
-/// ControlIn "command" to request the WifiDetails
+/// [ControlIn] "command" to request the WifiDetails
 const GET_WIFI_DETAILS: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
@@ -32,6 +32,16 @@ const GET_WIFI_DETAILS: ControlIn = ControlIn {
     value: GET_SSID_VALUE,
     index: 0,
     length: 1000,
+};
+
+/// [ControlOut] "command" to reset the [SsidSpec] of an attached "porky"
+const RESET_SSID: ControlOut = ControlOut {
+    control_type: ControlType::Vendor,
+    recipient: Recipient::Interface,
+    request: PIGGUI_REQUEST,
+    value: RESET_SSID_VALUE,
+    index: 0,
+    data: &[],
 };
 
 pub enum USBState {
@@ -116,6 +126,18 @@ pub async fn send_ssid_spec(serial_number: String, ssid_spec: SsidSpec) -> Resul
     };
 
     usb_send_porky(&porky, set_wifi_details).await
+}
+
+/// Reset the SsidSpec in a connected porky device
+pub async fn reset_ssid_spec(serial_number: String) -> Result<(), String> {
+    let porky = find_porky().ok_or("Could not find USB attached porky")?;
+    // TODO have find take an optional serial number to look for
+    let hardware_description = get_hardware_description(&porky).await?;
+    if hardware_description.details.serial != serial_number {
+        return Err("USB attached porky does not have matching serial number".into());
+    }
+
+    usb_send_porky(&porky, RESET_SSID).await
 }
 
 /// A stream of [DeviceEvent] to a possibly connected porky

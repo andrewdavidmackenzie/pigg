@@ -1,8 +1,10 @@
 use crate::flash::DbFlash;
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
-use crate::hw_definition::usb_requests::{GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST};
+use crate::hw_definition::usb_requests::{
+    GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+};
 use crate::usb::get_usb_builder;
-use crate::{flash, SSID_SPEC_KEY};
+use crate::{flash, ssid, SSID_SPEC_KEY};
 use core::str;
 use defmt::{error, info, unwrap};
 use ekv::Database;
@@ -49,6 +51,15 @@ impl<'h> ControlHandler<'h> {
             .map_err(|_| "Write error")?;
         wtx.commit().await.map_err(|_| "Commit error")
     }
+
+    /// Delete the [SsidSpec] from the flash database
+    async fn delete_ssid_spec(&mut self) -> Result<(), &'static str> {
+        let mut wtx = self.db.write_transaction().await;
+        wtx.delete(SSID_SPEC_KEY)
+            .await
+            .map_err(|_| "Delete error")?;
+        wtx.commit().await.map_err(|_| "Commit error")
+    }
 }
 
 impl<'h> Handler for ControlHandler<'h> {
@@ -66,7 +77,7 @@ impl<'h> Handler for ControlHandler<'h> {
         }
 
         match (req.request, req.value) {
-            (PIGGUI_REQUEST, _) => {
+            (PIGGUI_REQUEST, SET_SSID_VALUE) => {
                 self.ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
                 match block_on(self.store_ssid_spec()) {
                     Ok(_) => {
@@ -78,6 +89,19 @@ impl<'h> Handler for ControlHandler<'h> {
                     }
                     Err(e) => {
                         error!("Error ({}) storing SsidSpec to Flash Database", e);
+                        Some(OutResponse::Rejected)
+                    }
+                }
+            }
+            (PIGGUI_REQUEST, RESET_SSID_VALUE) => {
+                self.ssid_spec = ssid::get_default_ssid_spec();
+                match block_on(self.delete_ssid_spec()) {
+                    Ok(_) => {
+                        info!("SsidSpec deleted from Flash Database");
+                        Some(OutResponse::Accepted)
+                    }
+                    Err(e) => {
+                        error!("Error ({}) deleting SsidSpec from Flash Database", e);
                         Some(OutResponse::Rejected)
                     }
                 }

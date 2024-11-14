@@ -11,3 +11,6 @@ pub const GET_SSID_VALUE: u16 = 202;
 
 /// Command value to set the ssid details from porky
 pub const SET_SSID_VALUE: u16 = 203;
+
+/// Command value to reset the ssid details to default
+pub const RESET_SSID_VALUE: u16 = 204;

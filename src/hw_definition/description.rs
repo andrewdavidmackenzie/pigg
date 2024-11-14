@@ -16,10 +16,12 @@ use std::vec::Vec;
 
 use crate::hw_definition::pin_function::PinFunction;
 
-#[cfg(feature = "no_std")]
-const SSID_NAME_LENGTH: usize = 32;
-#[cfg(feature = "no_std")]
-const SSID_PASS_LENGTH: usize = 63;
+#[allow(dead_code)] // Not used by piglet
+pub const SSID_NAME_MAX_LENGTH: usize = 32;
+#[allow(dead_code)] // Not used by piglet
+pub const SSID_PASS_MAX_LENGTH: usize = 63;
+#[allow(dead_code)] // Not used by piglet
+pub const SSID_PASS_MIN_LENGTH: usize = 8;
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
 #[cfg(not(feature = "no_std"))]
@@ -40,7 +42,7 @@ pub struct HardwareDescription<'a> {
 
 #[cfg(not(feature = "no_std"))]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HardwareDetails {
     /// A Human friendly Hardware Model description
     pub model: String,
@@ -67,7 +69,7 @@ pub struct HardwareDetails<'a> {
 
 #[cfg(not(feature = "no_std"))]
 /// [SsidSpec] contains details on how the device connects to Wi-Fi
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SsidSpec {
     pub ssid_name: String,
     pub ssid_pass: String,
@@ -78,8 +80,8 @@ pub struct SsidSpec {
 /// [SsidSpec] contains details on how the device connects to Wi-Fi
 #[derive(Serialize, Deserialize)]
 pub struct SsidSpec {
-    pub ssid_name: String<SSID_NAME_LENGTH>,
-    pub ssid_pass: String<SSID_PASS_LENGTH>,
+    pub ssid_name: String<SSID_NAME_MAX_LENGTH>,
+    pub ssid_pass: String<SSID_PASS_MAX_LENGTH>,
     pub ssid_security: String<4>,
 }
 

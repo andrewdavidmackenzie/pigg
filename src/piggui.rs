@@ -1,30 +1,38 @@
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw_definition::config::HardwareConfig;
+#[cfg(feature = "usb-raw")]
+use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
-use crate::views::message_box::MessageMessage::Info;
-use crate::views::message_box::{MessageMessage, MessageRowMessage};
+use crate::views::message_box::MessageMessage::{Error, Info};
+use crate::views::message_box::MessageRowMessage;
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
+#[cfg(feature = "usb-raw")]
+use crate::views::ssid_dialog::SsidDialog;
 use crate::widgets::modal::modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
+#[cfg(feature = "usb-raw")]
 use std::collections::HashMap;
 use views::pin_state::PinState;
 
-use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
-
-use crate::hw_definition::description::{HardwareDetails, SsidSpec};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog_handler::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
+#[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu;
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
+#[cfg(feature = "usb-raw")]
+use crate::views::ssid_dialog::SsidDialogMessage;
+#[cfg(feature = "usb-raw")]
+use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
+use iced_aw::iced_fonts;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -69,8 +77,14 @@ pub enum Message {
     Connected,
     ConnectionError(String),
     MenuBarButtonClicked,
+    #[cfg(feature = "usb-raw")]
     Device(DeviceEvent),
-    ConfigureWiFi(HardwareDetails, Option<SsidSpec>),
+    #[cfg(feature = "usb-raw")]
+    SsidDialog(SsidDialogMessage),
+    #[cfg(feature = "usb-raw")]
+    ResetSsid(String),
+    #[cfg(feature = "usb-raw")]
+    SsidSpecSent(Result<(), String>),
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -84,7 +98,10 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
+    #[cfg(feature = "usb-raw")]
     known_devices: HashMap<String, KnownDevice>,
+    #[cfg(feature = "usb-raw")]
+    ssid_dialog: SsidDialog,
 }
 
 fn main() -> iced::Result {
@@ -97,12 +114,30 @@ fn main() -> iced::Result {
     iced::application(Piggui::title, Piggui::update, Piggui::view)
         .subscription(Piggui::subscription)
         .window_size((500.0, 800.0))
+        .font(iced_fonts::REQUIRED_FONT_BYTES)
         .exit_on_close_request(false)
         .resizable(true)
         .settings(settings)
         .window_size(LayoutSelector::get_default_window_size())
         .theme(|_| Theme::Dark)
         .run_with(Piggui::new)
+}
+
+#[cfg(feature = "usb-raw")]
+#[allow(unused_variables)]
+fn reset_ssid(serial_number: String) -> Task<Message> {
+    #[cfg(feature = "usb-raw")]
+    return Task::perform(usb_raw::reset_ssid_spec(serial_number), |res| match res {
+        Ok(_) => InfoRow(ShowStatusMessage(Info(
+            "Wi-Fi Setup reset to Default by USB".into(),
+        ))),
+        Err(e) => InfoRow(ShowStatusMessage(Error(
+            "Error resetting Wi-Fi Setup via USB".into(),
+            e,
+        ))),
+    });
+    #[cfg(not(feature = "usb-raw"))]
+    Task::none()
 }
 
 impl Piggui {
@@ -137,7 +172,10 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
+                #[cfg(feature = "usb-raw")]
                 known_devices: HashMap::new(),
+                #[cfg(feature = "usb-raw")]
+                ssid_dialog: SsidDialog::new(),
             },
             maybe_load_no_picker(config_filename),
         )
@@ -251,37 +289,45 @@ impl Piggui {
             ConnectionError(details) => {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
-                self.info_row.add_info_message(MessageMessage::Error(
-                    "Connection Error".to_string(),
-                    details.clone(),
-                ));
+                self.info_row
+                    .add_info_message(Error("Connection Error".to_string(), details.clone()));
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.set_error(details);
             }
 
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
+            #[cfg(feature = "usb-raw")]
             Device(event) => self.device_event(event),
 
-            ConfigureWiFi(hardware_details, ssid_spec) => {
-                // TODO this should show the dialog, and the dialog submit will send a new message
-                // like "SendWifiConfig(serial_number, ssid_spec) and that message should call
-                // this method to send it via USB to the attached porky
-                return Self::send_ssid(hardware_details, ssid_spec);
+            #[cfg(feature = "usb-raw")]
+            SsidDialog(ssid_dialog_message) => {
+                return self.ssid_dialog.update(ssid_dialog_message);
             }
+
+            #[cfg(feature = "usb-raw")]
+            ResetSsid(serial_number) => {
+                return reset_ssid(serial_number);
+            }
+
+            #[cfg(feature = "usb-raw")]
+            SsidSpecSent(result) => match result {
+                Ok(_) => {
+                    self.ssid_dialog.hide_modal();
+                    self.info_row
+                        .add_info_message(Info("Wi-Fi Setup sent via USB".to_string()));
+                }
+                Err(e) => {
+                    self.ssid_dialog.enable_widgets_and_hide_spinner();
+                    self.ssid_dialog.set_error(e.clone());
+                    self.info_row.add_info_message(Error(
+                        "Error sending Wi-Fi Setup via USB".to_string(),
+                        e,
+                    ));
+                }
+            },
         }
 
-        Task::none()
-    }
-
-    #[allow(unused_variables)]
-    fn send_ssid(hardware_details: HardwareDetails, ssid_spec: Option<SsidSpec>) -> Task<Message> {
-        #[cfg(feature = "usb-raw")]
-        return Task::perform(
-            usb_raw::send_ssid_spec(hardware_details.serial, ssid_spec.unwrap()),
-            |_| InfoRow(ShowStatusMessage(Info("Wi-Fi Setup sent via USB".into()))),
-        );
-        #[cfg(not(feature = "usb-raw"))]
         Task::none()
     }
 
@@ -310,6 +356,7 @@ impl Piggui {
                 &self.layout_selector,
                 &self.hardware_view,
                 &self.hardware_target,
+                #[cfg(feature = "usb-raw")]
                 &self.known_devices,
             ));
 
@@ -328,6 +375,11 @@ impl Piggui {
                 self.connect_dialog.view(),
                 ConnectDialog(HideConnectDialog),
             );
+        }
+
+        #[cfg(feature = "usb-raw")]
+        if self.ssid_dialog.show_modal {
+            return modal(content, self.ssid_dialog.view(), SsidDialog(HideSsidDialog));
         }
 
         if self.modal_handler.show_modal {
@@ -351,6 +403,7 @@ impl Piggui {
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
+            #[cfg(feature = "usb-raw")]
             hardware_menu::subscription().map(Device),
         ];
 
@@ -358,9 +411,13 @@ impl Piggui {
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         subscriptions.push(self.connect_dialog.subscription().map(ConnectDialog));
 
+        #[cfg(feature = "usb-raw")]
+        subscriptions.push(self.ssid_dialog.subscription().map(SsidDialog));
+
         Subscription::batch(subscriptions)
     }
 
+    #[cfg(feature = "usb-raw")]
     /// Process messages related to USB raw discovery of attached devices
     fn device_event(&mut self, event: DeviceEvent) {
         match event {
@@ -379,10 +436,8 @@ impl Piggui {
                     .remove(&hardware_description.details.serial);
             }
             DeviceEvent::Error(e) => {
-                self.info_row.add_info_message(MessageMessage::Error(
-                    "Connection Error".to_string(),
-                    e.clone(),
-                ));
+                self.info_row
+                    .add_info_message(Error("Connection Error".to_string(), e.clone()));
             }
         }
     }
