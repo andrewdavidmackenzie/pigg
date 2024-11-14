@@ -16,7 +16,9 @@ use std::vec::Vec;
 
 use crate::hw_definition::pin_function::PinFunction;
 
+#[allow(dead_code)] // Not used by piglet
 pub const SSID_NAME_LENGTH: usize = 32;
+#[allow(dead_code)] // Not used by piglet
 pub const SSID_PASS_LENGTH: usize = 63;
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins

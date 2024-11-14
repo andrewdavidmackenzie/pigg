@@ -54,6 +54,7 @@ pub enum SsidDialogMessage {
     ShowSsidDialog(HardwareDetails, Option<SsidSpec>),
     ConnectionError(String),
 }
+
 impl Default for SsidDialog {
     fn default() -> Self {
         Self::new()
@@ -124,12 +125,17 @@ impl SsidDialog {
             return Err("SSID name is too long".into());
         }
 
-        if pass.trim().is_empty() {
-            return Err("Please Enter SSID password".into());
-        }
+        match security {
+            SSIDSecurity::OPEN => {}
+            SSIDSecurity::WPA | SSIDSecurity::WPA2 | SSIDSecurity::WPA3 => {
+                if pass.trim().is_empty() {
+                    return Err("Please Enter SSID password".into());
+                }
 
-        if pass.trim().len() > SSID_PASS_LENGTH {
-            return Err("SSID password is too long".into());
+                if pass.trim().len() > SSID_PASS_LENGTH {
+                    return Err("SSID password is too long".into());
+                }
+            }
         }
 
         Ok(SsidSpec {
