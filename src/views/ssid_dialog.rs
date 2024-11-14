@@ -2,13 +2,15 @@ use self::SsidDialogMessage::{
     ConnectionError, HideSsidDialog, ModalKeyEvent, NameEntered, PasswordEntered,
     SendButtonPressed, ShowSsidDialog,
 };
-use std::fmt::{Display, Formatter};
 
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::{usb_raw, Message};
 use iced::keyboard::key;
-use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
+use iced::widget::{
+    self, checkbox, column, container, horizontal_space, pick_list, row, text, text_input, Button,
+    Row, Text,
+};
 use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
 use std::time::Duration;
@@ -24,7 +26,7 @@ use crate::views::dialog_styles::{
 use crate::views::message_box::MessageMessage::{Error, Info};
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
-use crate::views::ssid_dialog::SsidDialogMessage::SecuritySelected;
+use crate::views::ssid_dialog::SsidDialogMessage::{SecuritySelected, ShowPasswordToggled};
 use crate::Message::InfoRow;
 use iced::widget::button::Status::Hovered;
 use std::sync::LazyLock;
@@ -41,38 +43,20 @@ pub struct SsidDialog {
     show_spinner: bool,
     disable_widgets: bool,
     hardware_details: HardwareDetails,
+    show_password: bool,
 }
 
 #[derive(Clone, Debug)]
 pub enum SsidDialogMessage {
     NameEntered(String),
     PasswordEntered(String),
-    SecuritySelected(SSIDSecurity),
+    SecuritySelected(String),
     ModalKeyEvent(Event),
-    SendButtonPressed(String, String, SSIDSecurity),
+    SendButtonPressed(String, String, String),
     HideSsidDialog,
     ShowSsidDialog(HardwareDetails, Option<SsidSpec>),
     ConnectionError(String),
-}
-
-#[allow(clippy::upper_case_acronyms)]
-#[derive(Clone, Debug)]
-pub enum SSIDSecurity {
-    OPEN,
-    WPA,
-    WPA2,
-    WPA3,
-}
-
-impl Display for SSIDSecurity {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            SSIDSecurity::OPEN => "open",
-            SSIDSecurity::WPA => "wpa",
-            SSIDSecurity::WPA2 => "wpa2",
-            SSIDSecurity::WPA3 => "wpa3",
-        })
-    }
+    ShowPasswordToggled,
 }
 
 #[allow(unused_variables)]
@@ -96,7 +80,7 @@ impl SsidSpec {
     /// Try and create a new [SsidSpec] using name, password and security fields, validating
     /// the combination. Return an `Ok` with the [SsisSpec] or an `Err` with an error string
     /// describing the cause of it being invalid.
-    fn try_new(name: String, pass: String, security: SSIDSecurity) -> Result<SsidSpec, String> {
+    fn try_new(name: String, pass: String, security: String) -> Result<SsidSpec, String> {
         if name.trim().is_empty() {
             return Err("Please Enter SSID name".into());
         }
@@ -105,9 +89,8 @@ impl SsidSpec {
             return Err("SSID name is too long".into());
         }
 
-        match security {
-            SSIDSecurity::OPEN => {}
-            SSIDSecurity::WPA | SSIDSecurity::WPA2 | SSIDSecurity::WPA3 => {
+        match security.as_str() {
+            "wpa" | "wpa2" | "wpa3" => {
                 if pass.trim().is_empty() {
                     return Err("Please Enter SSID password".into());
                 }
@@ -116,12 +99,13 @@ impl SsidSpec {
                     return Err("SSID password is too long".into());
                 }
             }
+            _ => {}
         }
 
         Ok(SsidSpec {
             ssid_name: name,
             ssid_pass: pass,
-            ssid_security: security.to_string(),
+            ssid_security: security,
         })
     }
 }
@@ -135,6 +119,7 @@ impl SsidDialog {
             show_spinner: false,
             disable_widgets: false,
             hardware_details: HardwareDetails::default(),
+            show_password: false,
         }
     }
 
@@ -219,56 +204,77 @@ impl SsidDialog {
                 self.show_spinner = false;
                 Task::none()
             }
+
+            ShowPasswordToggled => {
+                self.show_password = !self.show_password;
+                Task::none()
+            }
         }
     }
 
     //noinspection RsLift
     pub fn view(&self) -> Element<'_, Message> {
+        let security_options = vec![
+            "open".to_string(),
+            "wpa".to_string(),
+            "wpa2".to_string(),
+            "wpa3".to_string(),
+        ];
+
         container(
             column![
                 text("Configure Wi-Fi of USB connected 'porky' device").size(20),
-                column![
-                    self.create_text_container(format!(
-                        "{} with Serial Number: {}",
-                        self.hardware_details.model, self.hardware_details.serial
-                    )),
-                    self.create_text_container(INFO_TEXT.into()),
-                    text(self.error.clone()).style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
-                    text("SSID Name").size(12),
-                    {
-                        let mut name_input =
-                            text_input("Enter SSID Name", &self.ssid_spec.ssid_name)
-                                .padding(5)
-                                .id(INPUT_ID.clone())
-                                .on_submit(Message::SsidDialog(SendButtonPressed(
-                                    self.ssid_spec.ssid_name.clone(),
-                                    self.ssid_spec.ssid_pass.clone(),
-                                    SSIDSecurity::OPEN, // TODO
-                                )));
-                        if !self.disable_widgets {
-                            name_input = name_input
-                                .on_input(|input| Message::SsidDialog(NameEntered(input)));
-                        }
-                        name_input
+                self.create_text_container(format!(
+                    "{} with Serial Number: {}",
+                    self.hardware_details.model, self.hardware_details.serial
+                )),
+                self.create_text_container(INFO_TEXT.into()),
+                text(self.error.clone()).style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
+                text("SSID Name"),
+                {
+                    let mut name_input = text_input("Enter SSID Name", &self.ssid_spec.ssid_name)
+                        .padding(5)
+                        .id(INPUT_ID.clone())
+                        .on_submit(Message::SsidDialog(SendButtonPressed(
+                            self.ssid_spec.ssid_name.clone(),
+                            self.ssid_spec.ssid_pass.clone(),
+                            self.ssid_spec.ssid_security.clone(),
+                        )));
+                    if !self.disable_widgets {
+                        name_input =
+                            name_input.on_input(|input| Message::SsidDialog(NameEntered(input)));
                     }
-                ]
-                .spacing(10),
-                column![text("SSID Password").size(12), {
+                    name_input
+                },
+                row![
+                    text("SSID Password"),
+                    horizontal_space(),
+                    checkbox("Show Password", self.show_password)
+                        .on_toggle(|_| Message::SsidDialog(ShowPasswordToggled))
+                ],
+                {
                     let mut password_input =
                         text_input("Enter SSID Password", &self.ssid_spec.ssid_pass)
                             .padding(5)
                             .on_submit(Message::SsidDialog(SendButtonPressed(
                                 self.ssid_spec.ssid_name.clone(),
                                 self.ssid_spec.ssid_pass.clone(),
-                                SSIDSecurity::OPEN, // TODO
+                                self.ssid_spec.ssid_security.clone(),
                             )));
                     if !self.disable_widgets {
                         password_input = password_input
                             .on_input(|input| Message::SsidDialog(PasswordEntered(input)));
                     }
                     password_input
-                }]
-                .spacing(5),
+                },
+                text("SSID Security"),
+                pick_list(
+                    security_options,
+                    Some(self.ssid_spec.ssid_security.clone()),
+                    move |selected| { Message::SsidDialog(SecuritySelected(selected)) }
+                )
+                .padding(5)
+                .placeholder("Select SSID Security"),
                 self.send_row(),
             ]
             .spacing(10),
@@ -313,20 +319,21 @@ impl SsidDialog {
         if self.show_spinner {
             row = row
                 .push(cancel_button)
+                .push(horizontal_space())
                 .push(
                     Circular::new()
                         .easing(&EMPHASIZED_ACCELERATE)
                         .cycle_duration(Duration::from_secs_f32(2.0)),
                 )
-                .spacing(150);
+                .push(horizontal_space())
         } else {
             cancel_button = cancel_button.on_press(Message::SsidDialog(HideSsidDialog));
             send_button = send_button.on_press(Message::SsidDialog(SendButtonPressed(
                 self.ssid_spec.ssid_name.clone(),
                 self.ssid_spec.ssid_pass.clone(),
-                SSIDSecurity::OPEN, // TODO
+                self.ssid_spec.ssid_security.clone(),
             )));
-            row = row.push(cancel_button).spacing(350);
+            row = row.push(cancel_button).push(horizontal_space());
         }
 
         row.push(send_button)
@@ -344,7 +351,6 @@ impl SsidDialog {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::views::ssid_dialog::SSIDSecurity::OPEN;
     #[test]
     fn test_show_ssid_dialog() {
         let mut ssid_dialog = SsidDialog::new();
@@ -399,7 +405,11 @@ mod tests {
     #[test]
     fn test_send_button_pressed_empty_name() {
         let mut ssid_dialog = SsidDialog::new();
-        let _ = ssid_dialog.update(SendButtonPressed("".to_string(), "".to_string(), OPEN));
+        let _ = ssid_dialog.update(SendButtonPressed(
+            "".to_string(),
+            "".to_string(),
+            "open".to_string(),
+        ));
         assert_eq!(ssid_dialog.error, "Please Enter SSID name");
     }
 
@@ -407,7 +417,11 @@ mod tests {
     fn test_send_button_pressed_invalid_name() {
         let mut ssid_dialog = SsidDialog::new();
         let invalid_name = "invalid_name".to_string();
-        let _ = ssid_dialog.update(SendButtonPressed(invalid_name, "".to_string(), OPEN));
+        let _ = ssid_dialog.update(SendButtonPressed(
+            invalid_name,
+            "".to_string(),
+            "open".to_string(),
+        ));
         assert!(!ssid_dialog.error.is_empty());
     }
 
