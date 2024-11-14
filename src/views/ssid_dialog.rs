@@ -137,6 +137,33 @@ impl SsidDialog {
         }
     }
 
+    fn modal_key_event(&mut self, event: Event) -> Task<Message> {
+        match event {
+            // When Pressed `Tab` focuses on previous/next widget
+            Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(key::Named::Tab),
+                modifiers,
+                ..
+            }) => {
+                if modifiers.shift() {
+                    widget::focus_previous()
+                } else {
+                    widget::focus_next()
+                }
+            }
+            // When Pressed `Esc` focuses on previous widget and hide modal
+            Event::Keyboard(keyboard::Event::KeyPressed {
+                key: keyboard::Key::Named(key::Named::Escape),
+                ..
+            }) => {
+                self.hide_modal();
+                Task::none()
+            }
+
+            _ => Task::none(),
+        }
+    }
+
     pub fn update(&mut self, message: SsidDialogMessage) -> Task<Message> {
         match message {
             SendButtonPressed(name, password, security) => {
@@ -168,32 +195,7 @@ impl SsidDialog {
                 Task::none()
             }
 
-            ModalKeyEvent(event) => {
-                match event {
-                    // When Pressed `Tab` focuses on previous/next widget
-                    Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Tab),
-                        modifiers,
-                        ..
-                    }) => {
-                        if modifiers.shift() {
-                            widget::focus_previous()
-                        } else {
-                            widget::focus_next()
-                        }
-                    }
-                    // When Pressed `Esc` focuses on previous widget and hide modal
-                    Event::Keyboard(keyboard::Event::KeyPressed {
-                        key: keyboard::Key::Named(key::Named::Escape),
-                        ..
-                    }) => {
-                        self.hide_modal();
-                        Task::none()
-                    }
-
-                    _ => Task::none(),
-                }
-            }
+            ModalKeyEvent(event) => self.modal_key_event(event),
 
             NameEntered(name) => {
                 self.ssid_spec.ssid_name = name;

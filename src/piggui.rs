@@ -4,7 +4,7 @@ use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMess
 use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::message_box::MessageMessage::{Error, Info};
-use crate::views::message_box::{MessageMessage, MessageRowMessage};
+use crate::views::message_box::MessageRowMessage;
 use crate::views::modal_handler::{DisplayModal, ModalMessage};
 use crate::views::ssid_dialog::SsidDialog;
 use crate::widgets::modal::modal;
@@ -271,10 +271,8 @@ impl Piggui {
             ConnectionError(details) => {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
-                self.info_row.add_info_message(MessageMessage::Error(
-                    "Connection Error".to_string(),
-                    details.clone(),
-                ));
+                self.info_row
+                    .add_info_message(Error("Connection Error".to_string(), details.clone()));
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.set_error(details);
             }
@@ -395,10 +393,8 @@ impl Piggui {
                     .remove(&hardware_description.details.serial);
             }
             DeviceEvent::Error(e) => {
-                self.info_row.add_info_message(MessageMessage::Error(
-                    "Connection Error".to_string(),
-                    e.clone(),
-                ));
+                self.info_row
+                    .add_info_message(Error("Connection Error".to_string(), e.clone()));
             }
         }
     }
