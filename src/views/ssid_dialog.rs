@@ -415,9 +415,8 @@ mod tests {
     #[test]
     fn test_send_button_pressed_invalid_name() {
         let mut ssid_dialog = SsidDialog::new();
-        let invalid_name = "invalid_name".to_string();
         let _ = ssid_dialog.update(SendButtonPressed(
-            invalid_name,
+            "".to_string(),
             "".to_string(),
             "open".to_string(),
         ));
