@@ -16,10 +16,8 @@ use std::vec::Vec;
 
 use crate::hw_definition::pin_function::PinFunction;
 
-#[cfg(feature = "no_std")]
-const SSID_NAME_LENGTH: usize = 32;
-#[cfg(feature = "no_std")]
-const SSID_PASS_LENGTH: usize = 63;
+pub const SSID_NAME_LENGTH: usize = 32;
+pub const SSID_PASS_LENGTH: usize = 63;
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
 #[cfg(not(feature = "no_std"))]

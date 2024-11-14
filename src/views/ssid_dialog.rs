@@ -13,13 +13,15 @@ use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
 use std::time::Duration;
 
-use crate::hw_definition::description::{HardwareDetails, SsidSpec};
+use crate::hw_definition::description::{
+    HardwareDetails, SsidSpec, SSID_NAME_LENGTH, SSID_PASS_LENGTH,
+};
 use crate::views::dialog_styles::{
     CONNECTION_ERROR_DISPLAY, INFO_TEXT_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
     MODAL_CONTAINER_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
-use crate::views::message_box::MessageMessage::Info;
+use crate::views::message_box::MessageMessage::{Error, Info};
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::views::ssid_dialog::SsidDialogMessage::SecuritySelected;
@@ -27,7 +29,7 @@ use crate::Message::InfoRow;
 use iced::widget::button::Status::Hovered;
 use std::sync::LazyLock;
 
-const INFO_TEXT: &str = "To configure the Wi-Fi os the USB connected 'porky' device, complete the fields below and then press 'Send'";
+const INFO_TEXT: &str = "To configure the Wi-Fi of the USB connected 'porky' device, complete the fields below and then press 'Send'";
 
 static INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
 
@@ -81,9 +83,16 @@ impl Display for SSIDSecurity {
 #[allow(unused_variables)]
 fn send_ssid(serial_number: String, ssid_spec: SsidSpec) -> Task<Message> {
     #[cfg(feature = "usb-raw")]
-    return Task::perform(usb_raw::send_ssid_spec(serial_number, ssid_spec), |_| {
-        InfoRow(ShowStatusMessage(Info("Wi-Fi Setup sent via USB".into())))
-    });
+    return Task::perform(
+        usb_raw::send_ssid_spec(serial_number, ssid_spec),
+        |res| match res {
+            Ok(_) => InfoRow(ShowStatusMessage(Info("Wi-Fi Setup sent via USB".into()))),
+            Err(e) => InfoRow(ShowStatusMessage(Error(
+                "Error sending Wi-Fi Setup via USB".into(),
+                e,
+            ))),
+        },
+    );
     #[cfg(not(feature = "usb-raw"))]
     Task::none()
 }
@@ -111,8 +120,16 @@ impl SsidDialog {
             return Err("Please Enter SSID name".into());
         }
 
+        if name.trim().len() > SSID_NAME_LENGTH {
+            return Err("SSID name is too long".into());
+        }
+
         if pass.trim().is_empty() {
             return Err("Please Enter SSID password".into());
+        }
+
+        if pass.trim().len() > SSID_PASS_LENGTH {
+            return Err("SSID password is too long".into());
         }
 
         Ok(SsidSpec {
