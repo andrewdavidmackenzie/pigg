@@ -16,7 +16,7 @@ use iced_futures::Subscription;
 use std::time::Duration;
 
 use crate::hw_definition::description::{
-    HardwareDetails, SsidSpec, SSID_NAME_LENGTH, SSID_PASS_LENGTH,
+    HardwareDetails, SsidSpec, SSID_NAME_MAX_LENGTH, SSID_PASS_MAX_LENGTH, SSID_PASS_MIN_LENGTH,
 };
 use crate::views::dialog_styles::{
     CONNECTION_ERROR_DISPLAY, INFO_TEXT_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
@@ -72,7 +72,7 @@ impl SsidSpec {
             return Err("Please Enter SSID name".into());
         }
 
-        if name.trim().len() > SSID_NAME_LENGTH {
+        if name.trim().len() > SSID_NAME_MAX_LENGTH {
             return Err("SSID name is too long".into());
         }
 
@@ -82,7 +82,11 @@ impl SsidSpec {
                     return Err("Please Enter SSID password".into());
                 }
 
-                if pass.trim().len() > SSID_PASS_LENGTH {
+                if pass.trim().len() < SSID_PASS_MIN_LENGTH {
+                    return Err("SSID password is too short".into());
+                }
+
+                if pass.trim().len() > SSID_PASS_MAX_LENGTH {
                     return Err("SSID password is too long".into());
                 }
             }
