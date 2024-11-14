@@ -26,6 +26,7 @@ use crate::views::hardware_menu;
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
+use iced_aw::iced_fonts;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -100,6 +101,7 @@ fn main() -> iced::Result {
     iced::application(Piggui::title, Piggui::update, Piggui::view)
         .subscription(Piggui::subscription)
         .window_size((500.0, 800.0))
+        .font(iced_fonts::REQUIRED_FONT_BYTES)
         .exit_on_close_request(false)
         .resizable(true)
         .settings(settings)

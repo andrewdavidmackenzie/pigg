@@ -13,8 +13,10 @@ use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareTarget::*;
 use crate::{Message, ModalMessage};
 use iced::widget::button::Status::Hovered;
-use iced::widget::{Button, Text};
-use iced::{Element, Length, Renderer, Theme};
+use iced::widget::{button, horizontal_space, row, text};
+use iced::{alignment, Element, Length, Renderer, Theme};
+use iced_aw::iced_fonts::required::{icon_to_string, RequiredIcons};
+use iced_aw::iced_fonts::REQUIRED_FONT;
 use iced_aw::menu::{Item, Menu, MenuBar};
 use iced_futures::Subscription;
 use std::collections::HashMap;
@@ -53,10 +55,17 @@ fn devices_submenu<'a>(
     for (serial_number, device) in known_devices {
         match device {
             Porky(method, hardware_description, ssid_spec) => {
-                let button = Button::new(Text::new(format!(
-                    "{} ({}) {}",
-                    hardware_description.details.model, serial_number, method
-                )))
+                let device_button = button(row!(
+                    text(format!(
+                        "{} ({}) {}",
+                        hardware_description.details.model, serial_number, method
+                    )),
+                    horizontal_space(),
+                    text(icon_to_string(RequiredIcons::CaretRightFill))
+                        .font(REQUIRED_FONT)
+                        .width(Length::Shrink)
+                        .align_y(alignment::Vertical::Center),
+                ))
                 .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
                 .width(Length::Fill)
                 .style(|_, status| {
@@ -69,10 +78,10 @@ fn devices_submenu<'a>(
 
                 if hardware_description.details.wifi {
                     device_items.push(Item::with_menu(
-                        button,
+                        device_button,
                         Menu::new(vec![
                             Item::new(
-                                Button::new(Text::new("Configure Device WiFi"))
+                                button("Configure Device WiFi")
                                     .width(Length::Fill)
                                     .on_press(Message::SsidDialog(
                                         SsidDialogMessage::ShowSsidDialog(
@@ -89,7 +98,7 @@ fn devices_submenu<'a>(
                                     }),
                             ),
                             Item::new(
-                                Button::new(Text::new("Reset Device WiFi to Default"))
+                                button("Reset Device WiFi to Default")
                                     .width(Length::Fill)
                                     .on_press(Message::ResetSsid(
                                         hardware_description.details.serial.clone(),
@@ -107,7 +116,7 @@ fn devices_submenu<'a>(
                         .offset(10.0),
                     ));
                 } else {
-                    device_items.push(Item::new(button));
+                    device_items.push(Item::new(device_button));
                 }
             }
         }
@@ -115,7 +124,7 @@ fn devices_submenu<'a>(
 
     if device_items.is_empty() {
         Item::new(
-            Button::new("Discovered devices (None)")
+            button("Discovered devices (None)")
                 .width(Length::Fill)
                 .style(|_, status| {
                     if status == Hovered {
@@ -127,10 +136,14 @@ fn devices_submenu<'a>(
         )
     } else {
         Item::with_menu(
-            Button::new(Text::new(format!(
-                "Discovered devices ({})",
-                device_items.len()
-            )))
+            button(row!(
+                text(format!("Discovered devices ({})", device_items.len())),
+                horizontal_space(),
+                text(icon_to_string(RequiredIcons::CaretRightFill))
+                    .width(Length::Shrink)
+                    .align_y(alignment::Vertical::Center)
+                    .font(REQUIRED_FONT),
+            ))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .width(Length::Fill)
             .style(|_, status| {
@@ -167,7 +180,7 @@ pub fn view<'a>(
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
     let disconnect: Item<'a, Message, _, _> = Item::new(
-        Button::new("Disconnect")
+        button("Disconnect")
             .width(Length::Fill)
             .on_press(Message::ConnectRequest(NoHW))
             .style(|_, status| {
@@ -181,7 +194,7 @@ pub fn view<'a>(
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     let connect: Item<'a, Message, _, _> = Item::new(
-        Button::new("Connect to remote Pi ...")
+        button("Connect to remote Pi ...")
             .width(Length::Fill)
             .on_press(Message::ConnectDialog(
                 ConnectDialogMessage::ShowConnectDialog,
@@ -197,7 +210,7 @@ pub fn view<'a>(
 
     #[cfg(not(target_arch = "wasm32"))]
     let connect_local: Item<'a, Message, _, _> = Item::new(
-        Button::new("Connect to local")
+        button("Connect to local")
             .width(Length::Fill)
             .on_press(Message::ConnectRequest(Local))
             .style(|_, status| {
@@ -210,7 +223,7 @@ pub fn view<'a>(
     );
 
     let show_details = Item::new(
-        Button::new(Text::new("Show details..."))
+        button("Show details...")
             .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
             .width(Length::Fill)
             .style(|_, status| {
@@ -248,7 +261,7 @@ pub fn view<'a>(
 
     #[cfg(feature = "discovery")]
     menu_items.push(Item::new(
-        Button::new("Search for Pi's on local network...")
+        button("Search for Pi's on local network...")
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .width(Length::Fill)
             .style(|_, status| {
@@ -263,7 +276,7 @@ pub fn view<'a>(
     menu_items.push(devices_submenu(known_devices));
 
     let hardware_menu_root = Item::with_menu(
-        Button::new(Text::new(model))
+        button(text(model))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(move |_theme, status| {
                 if status == Hovered {
