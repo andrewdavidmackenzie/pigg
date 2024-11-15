@@ -6,14 +6,14 @@ see [porky/BUILDING.md](porky/BUILDING.md)
 NOTE: These instructions below apply equally, whether you have cloned the repo or have downloaded and exploded the
 source tarball/zip of a release.
 
+NOTE: None of the developers currently has a Windows machine, so we have been unable to test this on Windows.
+
 ```sh
 cd
  ``` 
 
 into the `pigg` project root folder (where you can see `Cargo.toml` for example) and then follow the instructions
 below to build from source.
-
-NOTE: None of the developers currently has a Windows machine, so we have been unable to test this on Windows.
 
 ## Building on host machine
 

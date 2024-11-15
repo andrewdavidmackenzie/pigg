@@ -9,6 +9,5 @@ run:
 build:
 	cargo build --release
 
-#TODO
-#config: build
-#	@cd .. && cargo run -p configr -- MOVISTAR_8A9E E68N8MA422GRQJQTPqjN target/thumbv6m-none-eabi/release/picomon
+uf2: build
+	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky.uf2

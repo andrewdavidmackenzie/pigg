@@ -3,83 +3,52 @@
 NOTE: These instructions below apply equally, whether you have cloned the repo or have downloaded and exploded the
 source tarball/zip of a release.
 
-```sh
-cd
- ``` 
-
-into the `pigg` project root folder (where you can see `Cargo.toml` for example) and then follow the instructions
-below to build from source.
-
 NOTE: None of the developers currently has a Windows machine, so we have been unable to test this on Windows.
 
-## Building on host machine
+```sh
+cd pigg/porky
+ ```
+
+## Building
 
 ```sh
 make
 ```
 
-This will run clippy, build, and run tests, generating these binaries:
+will run build a release DWARF binary for the Raspberry Pi Pico W here:
 
-- `target/debug/piggui` - GUI with a GPIO backend and ability to connect to remote `piglet` and `porky` devices
-- `target/debug/piglet` - CLI with a GPIO backend
-- `porky/target/thumbv6m-none-eabi/release/porky` - an executable for use on Raspberry Pi Pico W
+- `pigg/porky/target/thumbv6m-none-eabi/release/porky`
 
-By default, `cargo` (used by `make`) compiles for the machine it is running on. For cross-compiling for a Raspberry
-Pi on a different host see later section.
+## Running Directly
 
-## GPIO Backends
+NOTE: Running directly requires a debug probe attached to your device and host, and `probe-rs` installed.
 
-If built for macOS, linux, Windows (building on the same OS) the GPIO backend of `piggui` and `piglet` will be a
-simulated backend to show the features and ease development.
+If you have a debug probe for the Pico, and it is connected and also the Pico is connected to
+USB then you can use probe-rs to download and debug `porky`.
 
-If built for a Raspberry Pi (building on the Pi or cross compiling for it) the GPIO backend will interact with the
-real GPIO hardware present.
+[config.toml](./.cargo/config.toml) is where the runner for cargo is set up.
 
-## Running directly
+You can use `make run` (which uses `cargo run --release`) to run `porky` directly.
 
-- Use `make run` to start a debug build of `piggui`
-- Use `"make run-release"` to start a release build of `piggui`
-- Use `make run-piglet` to start a debug build of `piglet`
-- Use `"make run-release-piglet"` to start a release build of `piglet`
+The release binary is about half the size of the debug binary, so downloading to the Pico W is much faster.
 
-## Building for Pi on a Pi
+The Pi Pico will start running `porky` and you should start seeing log messages on the terminal where
+you are running `make run`. The boot process should end with `porky` connected to the configured (or default)
+Wi-Fi network, and the output of its IP and the port it is listening for TCP connections on.
 
-NOTE: For this option you will need a working rust toolchain installed on your Raspberry Pi. Also, these builds make
-take a very long time. Large intermediate files are also generated and can fill-up the storage of your Pi.
+## Creating a UF2 file
 
-On your Raspberry Pi, use `make` to build and `make run` (etc) as above.
+Use `make uf2` Makefile target.
 
-## Building for Pi on another host
+This uses the `elf2usb2` command which you can install using cargo.
 
-You can cross compile for a Raspberry Pi device on a macOS/Windows/Linux host and take advantage of the increased
-computing power to reduce compile times.
+This ill produce the file `target/thumbv6m-none-eabi/release/porky.uf2`
 
-Relevant Makefile targets for `armv7` and `aarch64` architectures are:
+You can check its type using: `file target/thumbv6m-none-eabi/release/porky.uf2`:
 
-- [`armv7` | `aarch64`] - will run clippy and build
-- [`clippy-armv7` | `clippy-aarch64`] - will run clippy
-- [`build-armv7` | `build-aarch64`] - will run build
-- [`release-build-armv7` | `release-build-aarch64`] - will run a release build
-- [`test-armv7` | `test-aarch64`] - will run tests
+```
+target/thumbv6m-none-eabi/release/porky.uf2: UF2 firmware image, family Raspberry Pi RP2040, address 0x10000000, 1608 total blocks
+```
 
-These targets will build binary files for `piggui` and `piglet` in the `target/{architecture}/{release or debug}/`
-directory.
-
-Being built _for_ the Raspberry Pi, these binaries will have real GPIO backends that interact with the real Raspberry
-Pi hardware.
-
-### Helper Env vars
-
-There are a couple of env vars that can be setup to help you interact with your Raspberry Pi.
-
-You can set these up in your env, so you always have them, or set them on the command line when invoking `make`
-
-- `PI_TARGET` Which Pi to copy files to and ssh into
-- `PI_USER` The username of your user on the pi, to be able to copy files and ssh into it
-
-Example: `PI_TARGET=pizero2w0.local PI_USER=andrew make copy-armv7`
-
-### Copying and Running binaries on a Raspberry Pi from a host
-
-- [`copy-armv7` | `copy-aarch64`] to copy the built binaries to your Raspberry Pi
-- `make ssh` to ssh into your Pi to be able to run the binaries.
+See [section in README.md](README.md#installing-and-running-porky-on-your-raspberry-pi-pico-w) for how to use your
+newly created UF2 file.
