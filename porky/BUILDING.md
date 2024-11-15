@@ -19,6 +19,46 @@ will run build a release DWARF binary for the Raspberry Pi Pico W here:
 
 - `pigg/porky/target/thumbv6m-none-eabi/release/porky`
 
+### How SSID information is used by `porky`
+
+The startup process of `porky` is:
+
+- Try to load SSID information from Flash memory
+- If none is present try and use the default SSID information compiled in as part of the build
+- If no default information was built in, then `porky` has no SSID information and will not try to connect to a Wi-Fi
+  network
+- USB connection is always started and will be able to receive SSID information from `piggui`. This will be stored in
+  the Flash memory and used in the above process at next start
+
+### Configuring with override SSID information
+
+As described, the default information can be overridden by supplying other SSID details that are stored in Flash memory.
+
+See the [section in README.md](README.md#configuring-wi-fi-on-a-pi-pico-w-porky-device) on that for details
+of how to do it using `piggui`
+
+### Customizing the default SSID information
+
+It is possible to customize the default SSID (Wi-Fi network) information that `porky` tries to use to connect to a
+Wi-Fi network on startup, if you are building from source. Then all devices programmed with that build will
+automatically try to connect to that Wi-Fi network at startup, without having to use `piggui` and USB.
+
+The build process looks for the presence of a valid SSID specification file (called `ssid.toml`) in TOML format in
+the `proky` project root directory (i.e. In `pigg/porky/` beside `Cargo.toml`).
+
+The format of `ssid.toml` must be like this:
+
+```
+ssid_name = "SSID Name"
+ssid_pass = "SSID Password"
+security = "wpa2"
+```
+
+Valid values for the `security` field are: `open`, `wpa`, `wpa2` and `wpa3`
+
+Create this file with your SSID information in it and then run the makefile `make` target and it will produce a
+`porky` binary with that SSID as the default SSID. Run `make uf2` to generate a UF2 file for download.
+
 ## Running Directly
 
 NOTE: Running directly requires a debug probe attached to your device and host, and `probe-rs` installed.
