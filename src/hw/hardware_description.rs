@@ -8,7 +8,12 @@ impl Display for HardwareDetails {
         writeln!(f, "Hardware: {}", self.hardware)?;
         writeln!(f, "Revision: {}", self.revision)?;
         writeln!(f, "Serial: {}", self.serial)?;
-        write!(f, "Model: {}", self.model)
+        writeln!(f, "Model: {}", self.model)?;
+        if self.wifi {
+            write!(f, "Wi-Fi Supported: Yes")
+        } else {
+            write!(f, "Wi-Fi Supported: No")
+        }
     }
 }
 
