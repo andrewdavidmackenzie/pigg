@@ -149,10 +149,9 @@ impl DisplayModal {
 
                 let mut action_button = if *load_config {
                     button("Continue and load a new config")
-                        .on_press(Message::ModalHandle(ModalMessage::LoadFile))
+                        .on_press(Message::Modal(ModalMessage::LoadFile))
                 } else {
-                    button("Exit without saving")
-                        .on_press(Message::ModalHandle(ModalMessage::ExitApp))
+                    button("Exit without saving").on_press(Message::Modal(ModalMessage::ExitApp))
                 };
 
                 action_button = action_button.style(move |_theme, status| {
@@ -166,7 +165,7 @@ impl DisplayModal {
                 button_row = button_row.push(Space::new(Length::Fill, 10));
                 button_row = button_row.push(
                     button("Return to app")
-                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                        .on_press(Message::Modal(ModalMessage::HideModal))
                         .style(move |_theme, status| {
                             if status == Hovered {
                                 MODAL_CONNECT_BUTTON_HOVER_STYLE
@@ -207,7 +206,7 @@ impl DisplayModal {
                     hyperlink_row = hyperlink_row
                         .push(
                             button(Text::new("github"))
-                                .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
+                                .on_press(Message::Modal(ModalMessage::OpenRepoLink))
                                 .style(move |_theme, status| {
                                     if status == Hovered {
                                         HYPERLINK_BUTTON_HOVER_STYLE
@@ -220,7 +219,7 @@ impl DisplayModal {
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
-                            .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                            .on_press(Message::Modal(ModalMessage::HideModal))
                             .style(move |_theme, status| {
                                 if status == Hovered {
                                     MODAL_CANCEL_BUTTON_HOVER_STYLE
@@ -232,7 +231,7 @@ impl DisplayModal {
                 } else {
                     button_row = button_row.push(
                         button("Close")
-                            .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                            .on_press(Message::Modal(ModalMessage::HideModal))
                             .style(move |_theme, status| {
                                 if status == Hovered {
                                     MODAL_CANCEL_BUTTON_HOVER_STYLE

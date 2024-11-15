@@ -67,7 +67,7 @@ pub enum Message {
     Load,
     LayoutChanged(Layout),
     Hardware(HardwareViewMessage),
-    ModalHandle(ModalMessage),
+    Modal(ModalMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -230,8 +230,8 @@ impl Piggui {
                 }
             }
 
-            ModalHandle(toast_message) => {
-                return self.modal_handler.update(toast_message);
+            Modal(modal_message) => {
+                return self.modal_handler.update(modal_message);
             }
 
             #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -381,7 +381,7 @@ impl Piggui {
             return modal(
                 content,
                 self.modal_handler.view(),
-                ModalHandle(ModalMessage::HideModal),
+                Modal(ModalMessage::HideModal),
             );
         }
 
@@ -393,7 +393,7 @@ impl Piggui {
         #[allow(unused_mut)]
         let mut subscriptions = vec![
             iced::event::listen().map(WindowEvent),
-            self.modal_handler.subscription().map(ModalHandle), // Handle Esc key event for modal
+            self.modal_handler.subscription().map(Modal), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view
                 .subscription(&self.hardware_target)

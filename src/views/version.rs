@@ -32,7 +32,7 @@ pub fn version_button() -> Element<'static, Message> {
     let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
 
     Button::new(version_text)
-        .on_press(Message::ModalHandle(ModalMessage::VersionModal))
+        .on_press(Message::Modal(ModalMessage::VersionModal))
         .clip(true)
         .height(iced::Length::Shrink)
         .style(move |_theme, status| {

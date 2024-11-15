@@ -11,6 +11,7 @@ use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
     MENU_BUTTON_STYLE,
 };
+use crate::views::modal_handler::ModalMessage::HardwareDetailsModal;
 #[cfg(feature = "usb-raw")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareTarget::*;
@@ -98,6 +99,20 @@ fn devices_submenu<'a>(
                                             ssid_spec.clone(),
                                         ),
                                     ))
+                                    .style(|_, status| {
+                                        if status == Hovered {
+                                            MENU_BUTTON_HOVER_STYLE
+                                        } else {
+                                            MENU_BUTTON_STYLE
+                                        }
+                                    }),
+                            ),
+                            Item::new(
+                                button("Display Device Details...")
+                                    .width(Length::Fill)
+                                    .on_press(Message::Modal(HardwareDetailsModal(
+                                        hardware_description.details.clone(),
+                                    )))
                                     .style(|_, status| {
                                         if status == Hovered {
                                             MENU_BUTTON_HOVER_STYLE
@@ -231,7 +246,7 @@ pub fn view<'a>(
     if let Some(hardware_description) = hardware_view.hardware_description.as_ref() {
         let show_details = Item::new(
             button("Show details...")
-                .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal(
+                .on_press(Message::Modal(ModalMessage::HardwareDetailsModal(
                     hardware_description.details.clone(),
                 )))
                 .width(Length::Fill)
