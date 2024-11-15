@@ -13,7 +13,9 @@ use embassy_futures::block_on;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::{FLASH, USB};
 use embassy_rp::usb::Driver;
+use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_time::Duration;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
 use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
@@ -38,6 +40,7 @@ pub(crate) struct ControlHandler<'h> {
     ssid_spec: SsidSpec,
     db: Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
+    watchdog: Watchdog,
 }
 
 impl<'h> ControlHandler<'h> {
@@ -82,9 +85,10 @@ impl<'h> Handler for ControlHandler<'h> {
                 match block_on(self.store_ssid_spec()) {
                     Ok(_) => {
                         info!(
-                            "SsidSpec for SSID: {} stored to Flash Database",
+                            "SsidSpec for SSID: {} stored to Flash Database, restarting in 1sec",
                             self.ssid_spec.ssid_name
                         );
+                        self.watchdog.start(Duration::from_millis(1_000));
                         Some(OutResponse::Accepted)
                     }
                     Err(e) => {
@@ -97,7 +101,8 @@ impl<'h> Handler for ControlHandler<'h> {
                 self.ssid_spec = ssid::get_default_ssid_spec();
                 match block_on(self.delete_ssid_spec()) {
                     Ok(_) => {
-                        info!("SsidSpec deleted from Flash Database");
+                        info!("SsidSpec deleted from Flash Database, restarting in 1sec");
+                        self.watchdog.start(Duration::from_millis(1_000));
                         Some(OutResponse::Accepted)
                     }
                     Err(e) => {
@@ -154,6 +159,7 @@ pub async fn start(
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
     db: Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    watchdog: Watchdog,
 ) {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
@@ -181,6 +187,7 @@ pub async fn start(
         ssid_spec,
         db,
         buf: [0; 1024],
+        watchdog,
     });
 
     // Add a vendor-specific function (class 0xFF), and corresponding interface,

@@ -22,10 +22,6 @@ use iced::widget::{button, text};
 #[cfg(feature = "usb-raw")]
 use iced::widget::{horizontal_space, row};
 use iced::{Element, Length, Renderer, Theme};
-#[cfg(feature = "usb-raw")]
-use iced_aw::iced_fonts::required::{icon_to_string, RequiredIcons};
-#[cfg(feature = "usb-raw")]
-use iced_aw::iced_fonts::REQUIRED_FONT;
 use iced_aw::menu::{Item, Menu, MenuBar};
 #[cfg(feature = "usb-raw")]
 use iced_futures::Subscription;
@@ -78,13 +74,9 @@ fn devices_submenu<'a>(
                         hardware_description.details.model, serial_number, method
                     )),
                     horizontal_space(),
-                    text(icon_to_string(RequiredIcons::CaretRightFill))
-                        .font(REQUIRED_FONT)
-                        .width(Length::Shrink)
-                        .align_y(alignment::Vertical::Center),
+                    text(" >").align_y(alignment::Vertical::Center),
                 ))
                 .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-                .width(Length::Fill)
                 .style(|_, status| {
                     if status == Hovered {
                         MENU_BUTTON_HOVER_STYLE
@@ -129,7 +121,7 @@ fn devices_submenu<'a>(
                                     }),
                             ),
                         ])
-                        .width(190.0)
+                        .width(280.0)
                         .offset(10.0),
                     ));
                 } else {
@@ -156,10 +148,7 @@ fn devices_submenu<'a>(
             button(row!(
                 text(format!("Discovered devices ({})", device_items.len())),
                 horizontal_space(),
-                text(icon_to_string(RequiredIcons::CaretRightFill))
-                    .width(Length::Shrink)
-                    .align_y(alignment::Vertical::Center)
-                    .font(REQUIRED_FONT),
+                text(" >").align_y(alignment::Vertical::Center)
             ))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .width(Length::Fill)
@@ -170,7 +159,7 @@ fn devices_submenu<'a>(
                     MENU_BUTTON_STYLE
                 }
             }),
-            Menu::new(device_items).width(270.0).offset(10.0),
+            Menu::new(device_items).width(280.0).offset(10.0),
         )
     }
 }
