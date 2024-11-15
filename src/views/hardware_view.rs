@@ -620,7 +620,7 @@ mod test {
     #[test]
     fn no_hardware_description() {
         let hw_view = HardwareView::new();
-        assert_eq!(hw_view.hw_description(), "No Hardware connected");
+        assert!(hw_view.hardware_description.is_none());
     }
 
     #[test]

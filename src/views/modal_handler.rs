@@ -270,7 +270,6 @@ impl DisplayModal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::views::hardware_view::HardwareView;
 
     #[test]
     fn test_hide_modal() {
@@ -282,7 +281,7 @@ mod tests {
             is_version: false,
         });
 
-        let _ = display_modal.update(ModalMessage::HideModal, &HardwareView::new());
+        let _ = display_modal.update(ModalMessage::HideModal);
         assert!(!display_modal.show_modal);
     }
 
@@ -290,7 +289,7 @@ mod tests {
     fn test_unsaved_changes_exit_modal() {
         let mut display_modal = DisplayModal::new();
 
-        let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal, &HardwareView::new());
+        let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal);
         assert!(display_modal.show_modal);
 
         if let Some(ModalType::Warning {
@@ -314,7 +313,7 @@ mod tests {
     fn test_version_modal() {
         let mut display_modal = DisplayModal::new();
 
-        let _ = display_modal.update(ModalMessage::VersionModal, &HardwareView::new());
+        let _ = display_modal.update(ModalMessage::VersionModal);
         assert!(display_modal.show_modal);
 
         if let Some(ModalType::Info {
