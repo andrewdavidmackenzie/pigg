@@ -1,7 +1,4 @@
-# Building Piggui and Piglet from source
-
-NOTE: For details on building `porky` the embedded binary for Pi Pico W devices,
-see [porky/BUILDING.md](porky/BUILDING.md)
+# Building Porky
 
 NOTE: These instructions below apply equally, whether you have cloned the repo or have downloaded and exploded the
 source tarball/zip of a release.
