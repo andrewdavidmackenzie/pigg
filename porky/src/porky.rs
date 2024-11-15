@@ -27,6 +27,7 @@ use embassy_rp::pio::Pio;
 use embassy_rp::usb::Driver;
 #[cfg(feature = "usb")]
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
+use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
 use embedded_io_async::Write;
@@ -224,7 +225,10 @@ async fn main(spawner: Spawner) {
     let ssid_spec = SSID_SPEC.init(spec);
 
     #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, hw_desc, db).await;
+    let watchdog = Watchdog::new(peripherals.WATCHDOG);
+
+    #[cfg(feature = "usb-raw")]
+    usb_raw::start(spawner, driver, hw_desc, db, watchdog).await;
 
     wifi::join(&mut control, wifi_stack, ssid_spec).await;
     let mut wifi_tx_buffer = [0; 4096];
