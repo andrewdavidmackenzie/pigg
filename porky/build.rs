@@ -35,33 +35,46 @@ fn read_ssid(ssid_filename: &str) -> Result<SsidSpec, io::Error> {
 }
 
 /// Given an optional override of SSID details,generate that as a source file in OUT_DIR
-fn generate_ssid(filename: &str, ssid: SsidSpec) -> io::Result<()> {
+fn generate_ssid(filename: &str, ssid: Option<SsidSpec>) -> io::Result<()> {
     let out = env::var("OUT_DIR").unwrap();
     let out_dir = Path::new(&out);
     let out_file = out_dir.join(filename);
-    let mut file = File::create(out_file).unwrap();
+    let mut file = File::create(out_file)?;
 
     file.write_all(
         b"\
+#[allow(unused_imports)]\n
 use heapless::String;\n
 use crate::hw_definition::description::SsidSpec;\n\
+#[allow(unused_imports)]\n
 use core::str::FromStr;\n",
     )?;
 
-    file.write_all(
-        format!(
-            "\n\
-pub(crate) fn get_default_ssid_spec() -> SsidSpec {{ \n\
-    SsidSpec {{ \n\
+    match ssid {
+        None => file.write_all(
+            format!(
+                "\n\
+pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
+    None \n\
+}}"
+            )
+            .as_bytes(),
+        ),
+        Some(spec) => file.write_all(
+            format!(
+                "\n\
+pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
+    Some(SsidSpec {{ \n\
         ssid_name: String::from_str(\"{}\").unwrap(), \n\
         ssid_pass: String::from_str(\"{}\").unwrap(), \n\
         ssid_security: String::from_str(\"{}\").unwrap(), \n\
-    }} \n\
+    }}) \n\
 }}",
-            ssid.ssid_name, ssid.ssid_pass, ssid.security
-        )
-        .as_bytes(),
-    )
+                spec.ssid_name, spec.ssid_pass, spec.security
+            )
+            .as_bytes(),
+        ),
+    }
 }
 
 fn main() -> io::Result<()> {
@@ -85,7 +98,7 @@ fn main() -> io::Result<()> {
     println!("cargo:rustc-link-arg-bins=-Tlink-rp.x");
     println!("cargo:rustc-link-arg-bins=-Tdefmt.x");
 
-    let ssid_spec = read_ssid(SSID_FILE_NAME)?;
+    let ssid_spec = read_ssid(SSID_FILE_NAME).ok();
 
     generate_ssid("ssid.rs", ssid_spec)?;
 

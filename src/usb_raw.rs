@@ -99,7 +99,7 @@ async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescripti
 }
 
 /// Request [SsidSpec] from compatible porky device over USB
-async fn get_ssid_spec(porky: &Interface) -> Result<SsidSpec, String> {
+async fn get_ssid_spec(porky: &Interface) -> Result<Option<SsidSpec>, String> {
     usb_get_porky(porky, GET_WIFI_DETAILS).await
 }
 
@@ -155,7 +155,7 @@ pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
                 (Some(porky), Disconnected) => match get_hardware_description(&porky).await {
                     Ok(hardware_description) => {
                         let ssid_spec = match hardware_description.details.wifi {
-                            true => get_ssid_spec(&porky).await.ok(),
+                            true => get_ssid_spec(&porky).await.unwrap(), // TODO
                             false => None,
                         };
                         let _ = gui_sender_clone

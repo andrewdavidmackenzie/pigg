@@ -11,7 +11,7 @@ use core::str;
 use cyw43_pio::PioSpi;
 use defmt::{error, info};
 use defmt_rtt as _;
-use ekv::Database;
+use ekv::{Database, ReadError};
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_net::tcp::TcpSocket;
@@ -104,33 +104,37 @@ fn hardware_description(serial: &str) -> HardwareDescription {
     }
 }
 
-/// Return the [SsidSpec] we should use to try and connect to the Wi-Fi network
-/// If we can find an override value stored in the flash database, use that.
-/// If not, use the default value that was built from `ssid.toml` file in project root folder
+/// Return an [Option<SsidSpec>] if one could be found in Flash Database or a default.
+/// The default, if it exists was built from `ssid.toml` file in project root folder
 pub async fn get_ssid_spec<'a>(
     db: &Database<DbFlash<Flash<'a, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: &'a mut [u8],
-) -> SsidSpec {
+) -> Option<SsidSpec> {
     let rtx = db.read_transaction().await;
-    match rtx.read(SSID_SPEC_KEY, buf).await {
+    let spec = match rtx.read(SSID_SPEC_KEY, buf).await {
         Ok(size) => match postcard::from_bytes::<SsidSpec>(&buf[..size]) {
-            Ok(spec) => {
-                info!(
-                    "Loaded SsidSpec from Flash database for SSID: {}",
-                    spec.ssid_name
-                );
-                spec
-            }
+            Ok(spec) => Some(spec),
             Err(_) => {
-                error!("Error reading SsidSpec from Flash database, using default");
+                error!("Error deserializing SsidSpec from Flash database, trying default");
                 ssid::get_default_ssid_spec()
             }
         },
-        Err(_) => {
-            info!("Could not read any SsidSpec override from the database, so using default");
+        Err(ReadError::KeyNotFound) => {
+            info!("No SsidSpec found in Flash database, trying default");
             ssid::get_default_ssid_spec()
         }
+        Err(_) => {
+            info!("Error reading SsidSpec from Flash database, trying default");
+            ssid::get_default_ssid_spec()
+        }
+    };
+
+    match &spec {
+        None => info!("No SsidSpec used"),
+        Some(s) => info!("SsidSpec used for SSID: {}", s.ssid_name),
     }
+
+    spec
 }
 
 /// Send the [HardwareDescription] over the [TcpSocket]
@@ -221,61 +225,63 @@ async fn main(spawner: Spawner) {
     static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
     let static_buf = STATIC_BUF.init([0u8; 200]);
     let spec = get_ssid_spec(&db, static_buf).await;
-    static SSID_SPEC: StaticCell<SsidSpec> = StaticCell::new();
-    let ssid_spec = SSID_SPEC.init(spec);
 
     #[cfg(feature = "usb-raw")]
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
 
     #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, hw_desc, db, watchdog).await;
+    usb_raw::start(spawner, driver, hw_desc, spec.clone(), db, watchdog).await;
 
-    wifi::join(&mut control, wifi_stack, ssid_spec).await;
-    let mut wifi_tx_buffer = [0; 4096];
-    let mut wifi_rx_buffer = [0; 4096];
+    if let Some(ssid) = spec {
+        static SSID_SPEC: StaticCell<SsidSpec> = StaticCell::new();
+        let ssid_spec = SSID_SPEC.init(ssid);
+        wifi::join(&mut control, wifi_stack, ssid_spec).await;
+        let mut wifi_tx_buffer = [0; 4096];
+        let mut wifi_rx_buffer = [0; 4096];
 
-    loop {
-        match tcp::wait_connection(
-            wifi_stack,
-            #[cfg(feature = "usb-tcp")]
-            usb_stack,
-            &mut wifi_tx_buffer,
-            &mut wifi_rx_buffer,
-            #[cfg(feature = "usb-tcp")]
-            &mut usb_tx_buffer,
-            #[cfg(feature = "usb-tcp")]
-            &mut usb_rx_buffer,
-        )
-        .await
-        {
-            Ok(mut socket) => {
-                send_hardware_description(&mut socket, &hw_desc).await;
+        loop {
+            match tcp::wait_connection(
+                wifi_stack,
+                #[cfg(feature = "usb-tcp")]
+                usb_stack,
+                &mut wifi_tx_buffer,
+                &mut wifi_rx_buffer,
+                #[cfg(feature = "usb-tcp")]
+                &mut usb_tx_buffer,
+                #[cfg(feature = "usb-tcp")]
+                &mut usb_rx_buffer,
+            )
+            .await
+            {
+                Ok(mut socket) => {
+                    send_hardware_description(&mut socket, &hw_desc).await;
 
-                info!("Entering message loop");
-                loop {
-                    match select(
-                        tcp::wait_message(&mut socket),
-                        HARDWARE_EVENT_CHANNEL.receiver().receive(),
-                    )
-                    .await
-                    {
-                        Either::First(config_message) => match config_message {
-                            None => break,
-                            Some(message) => {
-                                gpio::apply_config_change(&mut control, &spawner, message).await
+                    info!("Entering message loop");
+                    loop {
+                        match select(
+                            tcp::wait_message(&mut socket),
+                            HARDWARE_EVENT_CHANNEL.receiver().receive(),
+                        )
+                        .await
+                        {
+                            Either::First(config_message) => match config_message {
+                                None => break,
+                                Some(message) => {
+                                    gpio::apply_config_change(&mut control, &spawner, message).await
+                                }
+                            },
+                            Either::Second(hardware_event) => {
+                                let mut buf = [0; 1024];
+                                let gui_message =
+                                    postcard::to_slice(&hardware_event, &mut buf).unwrap();
+                                socket.write_all(gui_message).await.unwrap();
                             }
-                        },
-                        Either::Second(hardware_event) => {
-                            let mut buf = [0; 1024];
-                            let gui_message =
-                                postcard::to_slice(&hardware_event, &mut buf).unwrap();
-                            socket.write_all(gui_message).await.unwrap();
                         }
                     }
+                    info!("Exiting Message Loop");
                 }
-                info!("Exiting Message Loop");
+                Err(_) => error!("TCP accept error"),
             }
-            Err(_) => error!("TCP accept error"),
         }
     }
 }

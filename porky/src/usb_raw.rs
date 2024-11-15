@@ -37,7 +37,7 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
-    ssid_spec: SsidSpec,
+    ssid_spec: Option<SsidSpec>,
     db: Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
     watchdog: Watchdog,
@@ -80,29 +80,36 @@ impl<'h> Handler for ControlHandler<'h> {
         }
 
         match (req.request, req.value) {
-            (PIGGUI_REQUEST, SET_SSID_VALUE) => {
-                self.ssid_spec = postcard::from_bytes::<SsidSpec>(buf).ok()?;
-                match block_on(self.store_ssid_spec()) {
-                    Ok(_) => {
-                        info!(
-                            "SsidSpec for SSID: {} stored to Flash Database, restarting in 1sec",
-                            self.ssid_spec.ssid_name
-                        );
-                        self.watchdog.start(Duration::from_millis(1_000));
-                        Some(OutResponse::Accepted)
-                    }
-                    Err(e) => {
-                        error!("Error ({}) storing SsidSpec to Flash Database", e);
-                        Some(OutResponse::Rejected)
+            (PIGGUI_REQUEST, SET_SSID_VALUE) => match postcard::from_bytes::<SsidSpec>(buf) {
+                Ok(spec) => {
+                    self.ssid_spec = Some(spec);
+                    match block_on(self.store_ssid_spec()) {
+                        Ok(_) => {
+                            info!(
+                                "SsidSpec for SSID: stored to Flash Database, restarting in 1sec",
+                            );
+                            self.watchdog.start(Duration::from_millis(1_000));
+                            Some(OutResponse::Accepted)
+                        }
+                        Err(e) => {
+                            error!("Error ({}) storing SsidSpec to Flash Database", e);
+                            Some(OutResponse::Rejected)
+                        }
                     }
                 }
-            }
+                Err(_) => {
+                    self.ssid_spec = None;
+                    error!("Could not deserialize SsidSpec sent via USB");
+                    Some(OutResponse::Rejected)
+                }
+            },
             (PIGGUI_REQUEST, RESET_SSID_VALUE) => {
-                self.ssid_spec = ssid::get_default_ssid_spec();
                 match block_on(self.delete_ssid_spec()) {
                     Ok(_) => {
-                        info!("SsidSpec deleted from Flash Database, restarting in 1sec");
-                        self.watchdog.start(Duration::from_millis(1_000));
+                        info!("SsidSpec deleted from Flash Database");
+                        self.ssid_spec = ssid::get_default_ssid_spec();
+                        //info!("Restarting in 1sec");
+                        //self.watchdog.start(Duration::from_millis(1_000));
                         Some(OutResponse::Accepted)
                     }
                     Err(e) => {
@@ -158,6 +165,7 @@ pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
+    spec: Option<SsidSpec>,
     db: Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     watchdog: Watchdog,
 ) {
@@ -176,15 +184,11 @@ pub async fn start(
         msos::PropertyData::RegMultiSz(DEVICE_INTERFACE_GUIDS),
     ));
 
-    static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
-    let static_buf = STATIC_BUF.init([0u8; 200]);
-    let ssid_spec = crate::get_ssid_spec(&db, static_buf).await;
-
     static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
     let handle = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
-        ssid_spec,
+        ssid_spec: spec,
         db,
         buf: [0; 1024],
         watchdog,
@@ -203,7 +207,5 @@ pub async fn start(
     let usb = builder.build();
 
     info!("USB raw interface started");
-
-    // Run the USB device.
     unwrap!(spawner.spawn(usb_task(usb)))
 }

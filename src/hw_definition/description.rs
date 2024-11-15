@@ -78,7 +78,7 @@ pub struct SsidSpec {
 
 #[cfg(feature = "no_std")]
 /// [SsidSpec] contains details on how the device connects to Wi-Fi
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SsidSpec {
     pub ssid_name: String<SSID_NAME_MAX_LENGTH>,
     pub ssid_pass: String<SSID_PASS_MAX_LENGTH>,
