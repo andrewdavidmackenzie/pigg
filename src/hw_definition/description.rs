@@ -86,7 +86,7 @@ pub struct SsidSpec {
 }
 
 #[cfg(not(feature = "no_std"))]
-/// [WiFiDetails] contains details on WiFi connection and connections details
+/// [WiFiDetails] contains details on Wi-Fi connection and connections details
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WiFiDetails {
     ssid_spec: SsidSpec,

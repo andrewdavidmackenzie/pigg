@@ -1,90 +1,88 @@
 # Building Piggui and Piglet from source
 
-Note that these instructions below apply equally, whether you have cloned the repo or have downloaded and exploded the
+NOTE: For details on building `porky` the embedded binary for Pi Pico W devices,
+see [porky/BUILDING.md](porky/BUILDING.md)
+
+NOTE: These instructions below apply equally, whether you have cloned the repo or have downloaded and exploded the
 source tarball/zip of a release.
 
-`cd` into the `pigg` project root folder (where you can see `Cargo.toml` for example) and then follow the instructions
+NOTE: None of the developers currently has a Windows machine, so we have been unable to test this on Windows.
+
+```sh
+cd
+ ``` 
+
+into the `pigg` project root folder (where you can see `Cargo.toml` for example) and then follow the instructions
 below to build from source.
 
-Note that once we complete some more work to create pre-built, installable, binaries for you, this work will all
-go away and we will document how you install the binaries directly.
+## Building on host machine
 
-### macOS/linux/Windows or Pi (with a fake Hardware backend)
-
-```
-cargo install pigg
+```sh
+make
 ```
 
-NOTE: `cargo` will build for the machine where you are running it, so you will get a version of `piggui`
-with a fake hardware backend, not real Pi GPIO hardware, but you can play with the GUI.
+This will run clippy, build, and run tests, generating these binaries:
 
-### On Pi with real GPIO hardware backend
+- `target/debug/piggui` - GUI with a GPIO backend and ability to connect to remote `piglet` and `porky` devices
+- `target/debug/piglet` - CLI with a GPIO backend
+- `porky/target/thumbv6m-none-eabi/release/porky` - an executable for use on Raspberry Pi Pico W
 
-To be able to interact with real Pi GPIO hardware you have two options:
+By default, `cargo` (used by `make`) compiles for the machine it is running on. For cross-compiling for a Raspberry
+Pi on a different host see later section.
 
-- Run `cargo install` on your Pi
-- Follow the instructions before for Building from Source on your Pi
-    - Use `make` to build on macOS/linux/Windows and cross-compile for your Pi, but you will need `Docker`/`Podman`
-      and `cross` installed
+## GPIO Backends
 
-Soon, we will add support for `cargo binstall` to allow you to get a binary for Pi directly.
+If built for macOS, linux, Windows (building on the same OS) the GPIO backend of `piggui` and `piglet` will be a
+simulated backend to show the features and ease development.
 
-## Building from Source
+If built for a Raspberry Pi (building on the Pi or cross compiling for it) the GPIO backend will interact with the
+real GPIO hardware present.
 
-### Pre-requisites
+## Running directly
 
-We use `"cross"` to cross compile for Raspberry Pi from Linux or macOS or Windows.
-None of the developers currently has a Windows machine, so we have been unable to test this on Windows.
-Install docker or podman and `"cross"` for cross compiling rust on your host for the Raspberry Pi.
+- Use `make run` to start a debug build of `piggui`
+- Use `"make run-release"` to start a release build of `piggui`
+- Use `make run-piglet` to start a debug build of `piglet`
+- Use `"make run-release-piglet"` to start a release build of `piglet`
 
-If you run `"make"` on a Raspberry Pi, it will not use `"cross"` and just compile natively.
-So, to be clear `"cross"` is not a pre-requisite for Raspberry Pi native building.
+## Building for Pi on a Pi
 
-### Building on host development machine
+NOTE: For this option you will need a working rust toolchain installed on your Raspberry Pi. Also, these builds make
+take a very long time. Large intermediate files are also generated and can fill-up the storage of your Pi.
 
-Run `"make"` on macOS, linux, Windows (or in fact RPi also) host to build these binaries:
+On your Raspberry Pi, use `make` to build and `make run` (etc) as above.
 
-- `target/debug/piggui` - GUI version without GPIO, to enable UI development on a host
-- `target/aarch64-unknown-linux-gnu/release/piggui` - GUI version for Pi with GPIO, can be run natively from RPi command
-  line
-- `target/aarch64-unknown-linux-gnu/release/piglet` - Headless version for Pi with GPIO, can be run natively from RPi
-  command line
-- `target/armv7-unknown-linux-gnueabihf/release/piggui` - GUI version for Pi with GPIO, can be run natively from RPi
-  command line
-- `target/armv7-unknown-linux-gnueabihf/release/piglet` - Headless version for Pi with GPIO, can be run natively from
-  RPi
-  command line
+## Building for Pi on another host
 
-Use `"make run-release"` to start a release build of `piggui` on the local machine - for GUI development, or use
-`make run` to start a debug build of the same.
+You can cross compile for a Raspberry Pi device on a macOS/Windows/Linux host and take advantage of the increased
+computing power to reduce compile times.
 
-### Building for Pi from macOS, linux or Windows
+Relevant Makefile targets for `armv7` and `aarch64` architectures are:
 
-If you use `make` that builds for local host AND pi (using cross).
+- [`armv7` | `aarch64`] - will run clippy and build
+- [`clippy-armv7` | `clippy-aarch64`] - will run clippy
+- [`build-armv7` | `build-aarch64`] - will run build
+- [`release-build-armv7` | `release-build-aarch64`] - will run a release build
+- [`test-armv7` | `test-aarch64`] - will run tests
 
-If you get strange build errors from `cross`, check first that your Docker daemon is running.
+These targets will build binary files for `piggui` and `piglet` in the `target/{architecture}/{release or debug}/`
+directory.
 
-#### Helper Env vars
+Being built _for_ the Raspberry Pi, these binaries will have real GPIO backends that interact with the real Raspberry
+Pi hardware.
 
-There are a couple of env vars that can be setup to help you interact with your pi.
+### Helper Env vars
+
+There are a couple of env vars that can be setup to help you interact with your Raspberry Pi.
 
 You can set these up in your env, so you always have them, or set them on the command line when invoking `make`
 
 - `PI_TARGET` Which Pi to copy files to and ssh into
-  `PI_TARGET := pizero2w0.local`
-
 - `PI_USER` The username of your user on the pi, to be able to copy files and ssh into it
-  `PI_USER := andrew`
 
-#### Make targets
+Example: `PI_TARGET=pizero2w0.local PI_USER=andrew make copy-armv7`
 
-- Use `make` to run `clippy`, build for the Pi using `cross`, build for the local machine using `cargo` and to run tests
-- Use `make cross-build` for aarch64-based Raspberry Pi models, and `make cross-build-armv7` for armv7-based Raspberry
-  Pi models to build only for the Pi.
-- Use `make copy` to copy the built binaries to your raspberry pi.
-- Use `make ssh` to ssh into your Pi to be able to run the binaries.
+### Copying and Running binaries on a Raspberry Pi from a host
 
-### Building for Pi on a Pi!
-
-You should be able to use `make` or `make run` directly, and it will build `piggui` with a GUI and
-also build `piglet`
+- [`copy-armv7` | `copy-aarch64`] to copy the built binaries to your Raspberry Pi
+- `make ssh` to ssh into your Pi to be able to run the binaries.

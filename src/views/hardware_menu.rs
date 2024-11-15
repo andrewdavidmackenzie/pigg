@@ -90,7 +90,7 @@ fn devices_submenu<'a>(
                         device_button,
                         Menu::new(vec![
                             Item::new(
-                                button("Configure Device WiFi")
+                                button("Configure Device Wi-Fi...")
                                     .width(Length::Fill)
                                     .on_press(Message::SsidDialog(
                                         SsidDialogMessage::ShowSsidDialog(
@@ -107,7 +107,7 @@ fn devices_submenu<'a>(
                                     }),
                             ),
                             Item::new(
-                                button("Reset Device WiFi to Default")
+                                button("Reset Device Wi-Fi to Default")
                                     .width(Length::Fill)
                                     .on_press(Message::ResetSsid(
                                         hardware_description.details.serial.clone(),

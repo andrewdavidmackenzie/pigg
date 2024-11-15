@@ -62,3 +62,18 @@ Check the version you have installed is the latest with
 piggui --version
 piglet --version
 ```
+
+## Installing with `cargo install`
+
+For this option you will need a working rust toolchain installed.
+
+```
+cargo install pigg
+```
+
+`cargo` will build the binaries for the machine where you are running it, so:
+
+- On a macOS/Windows/Linux host you will get a version of `piggui` and `piglet` with a fake hardware backend,
+  not real Pi GPIO hardware, but you can play with the GUI.
+- On a Pi you will get a version of `piggui` and `piglet` with a real GPIO hardware backend enabling you
+  to interact with real Pi GPIO hardware.
