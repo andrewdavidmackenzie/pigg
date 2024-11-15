@@ -228,18 +228,23 @@ pub fn view<'a>(
             }),
     );
 
-    let show_details = Item::new(
-        button("Show details...")
-            .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal))
-            .width(Length::Fill)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
-    );
+    if let Some(hardware_description) = hardware_view.hardware_description.as_ref() {
+        let show_details = Item::new(
+            button("Show details...")
+                .on_press(Message::ModalHandle(ModalMessage::HardwareDetailsModal(
+                    hardware_description.details.clone(),
+                )))
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                }),
+        );
+        menu_items.push(show_details);
+    }
 
     match hardware_target {
         NoHW => {
@@ -251,17 +256,14 @@ pub fn view<'a>(
         #[cfg(not(target_arch = "wasm32"))]
         Local => {
             menu_items.push(disconnect);
-            menu_items.push(show_details);
         }
         #[cfg(feature = "iroh")]
         Iroh(_, _) => {
             menu_items.push(disconnect);
-            menu_items.push(show_details);
         }
         #[cfg(feature = "tcp")]
         Tcp(_, _) => {
             menu_items.push(disconnect);
-            menu_items.push(show_details);
         }
     }
 

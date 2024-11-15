@@ -192,7 +192,7 @@ impl Piggui {
                     if self.unsaved_changes {
                         let _ = self
                             .modal_handler
-                            .update(ModalMessage::UnsavedChangesExitModal, &self.hardware_view);
+                            .update(ModalMessage::UnsavedChangesExitModal);
                     } else {
                         return window::get_latest().and_then(window::close);
                     }
@@ -222,19 +222,16 @@ impl Piggui {
 
             Load => {
                 if self.unsaved_changes {
-                    let _ = self.modal_handler.update(
-                        ModalMessage::UnsavedLoadConfigChangesModal,
-                        &self.hardware_view,
-                    );
+                    let _ = self
+                        .modal_handler
+                        .update(ModalMessage::UnsavedLoadConfigChangesModal);
                 } else {
                     return pick_and_load();
                 }
             }
 
             ModalHandle(toast_message) => {
-                return self
-                    .modal_handler
-                    .update(toast_message, &self.hardware_view);
+                return self.modal_handler.update(toast_message);
             }
 
             #[cfg(any(feature = "iroh", feature = "tcp"))]

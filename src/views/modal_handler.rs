@@ -1,10 +1,10 @@
 use crate::file_helper::pick_and_load;
+use crate::hw_definition::description::HardwareDetails;
 use crate::views::dialog_styles::{
     HYPERLINK_BUTTON_HOVER_STYLE, HYPERLINK_BUTTON_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
     MODAL_CONTAINER_STYLE,
 };
-use crate::views::hardware_view::HardwareView;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
@@ -38,7 +38,7 @@ pub enum ModalMessage {
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
     LoadFile,
-    HardwareDetailsModal,
+    HardwareDetailsModal(HardwareDetails),
     VersionModal,
     ExitApp,
     EscKeyEvent(Event),
@@ -54,7 +54,7 @@ impl DisplayModal {
         }
     }
 
-    pub fn update(&mut self, message: ModalMessage, hardware_view: &HardwareView) -> Task<Message> {
+    pub fn update(&mut self, message: ModalMessage) -> Task<Message> {
         match message {
             ModalMessage::HideModal => {
                 self.show_modal = false;
@@ -75,12 +75,12 @@ impl DisplayModal {
             }
 
             // Display hardware information
-            ModalMessage::HardwareDetailsModal => {
+            ModalMessage::HardwareDetailsModal(hardware_details) => {
                 self.show_modal = true;
                 self.is_warning = false;
                 self.modal_type = Some(ModalType::Info {
-                    title: "About Connected Hardware".to_string(),
-                    body: hardware_view.hw_description().to_string(),
+                    title: "Device Details".to_string(),
+                    body: hardware_details.to_string(),
                     is_version: false,
                 });
                 Task::none()
