@@ -233,9 +233,7 @@ async fn main(spawner: Spawner) {
     usb_raw::start(spawner, driver, hw_desc, db, watchdog).await;
 
     if let Some(ssid) = spec {
-        static SSID_SPEC: StaticCell<SsidSpec> = StaticCell::new();
-        let ssid_spec = SSID_SPEC.init(ssid);
-        wifi::join(&mut control, wifi_stack, ssid_spec).await;
+        wifi::join(&mut control, wifi_stack, &ssid).await;
         let mut wifi_tx_buffer = [0; 4096];
         let mut wifi_rx_buffer = [0; 4096];
 
