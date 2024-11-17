@@ -1,10 +1,10 @@
 use crate::file_helper::pick_and_load;
+use crate::hw_definition::description::HardwareDetails;
 use crate::views::dialog_styles::{
     HYPERLINK_BUTTON_HOVER_STYLE, HYPERLINK_BUTTON_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
     MODAL_CONTAINER_STYLE,
 };
-use crate::views::hardware_view::HardwareView;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
@@ -38,7 +38,7 @@ pub enum ModalMessage {
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
     LoadFile,
-    HardwareDetailsModal,
+    HardwareDetailsModal(HardwareDetails),
     VersionModal,
     ExitApp,
     EscKeyEvent(Event),
@@ -54,7 +54,7 @@ impl DisplayModal {
         }
     }
 
-    pub fn update(&mut self, message: ModalMessage, hardware_view: &HardwareView) -> Task<Message> {
+    pub fn update(&mut self, message: ModalMessage) -> Task<Message> {
         match message {
             ModalMessage::HideModal => {
                 self.show_modal = false;
@@ -75,12 +75,12 @@ impl DisplayModal {
             }
 
             // Display hardware information
-            ModalMessage::HardwareDetailsModal => {
+            ModalMessage::HardwareDetailsModal(hardware_details) => {
                 self.show_modal = true;
                 self.is_warning = false;
                 self.modal_type = Some(ModalType::Info {
-                    title: "About Connected Hardware".to_string(),
-                    body: hardware_view.hw_description().to_string(),
+                    title: "Device Details".to_string(),
+                    body: hardware_details.to_string(),
                     is_version: false,
                 });
                 Task::none()
@@ -149,10 +149,9 @@ impl DisplayModal {
 
                 let mut action_button = if *load_config {
                     button("Continue and load a new config")
-                        .on_press(Message::ModalHandle(ModalMessage::LoadFile))
+                        .on_press(Message::Modal(ModalMessage::LoadFile))
                 } else {
-                    button("Exit without saving")
-                        .on_press(Message::ModalHandle(ModalMessage::ExitApp))
+                    button("Exit without saving").on_press(Message::Modal(ModalMessage::ExitApp))
                 };
 
                 action_button = action_button.style(move |_theme, status| {
@@ -166,7 +165,7 @@ impl DisplayModal {
                 button_row = button_row.push(Space::new(Length::Fill, 10));
                 button_row = button_row.push(
                     button("Return to app")
-                        .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                        .on_press(Message::Modal(ModalMessage::HideModal))
                         .style(move |_theme, status| {
                             if status == Hovered {
                                 MODAL_CONNECT_BUTTON_HOVER_STYLE
@@ -207,7 +206,7 @@ impl DisplayModal {
                     hyperlink_row = hyperlink_row
                         .push(
                             button(Text::new("github"))
-                                .on_press(Message::ModalHandle(ModalMessage::OpenRepoLink))
+                                .on_press(Message::Modal(ModalMessage::OpenRepoLink))
                                 .style(move |_theme, status| {
                                     if status == Hovered {
                                         HYPERLINK_BUTTON_HOVER_STYLE
@@ -220,7 +219,7 @@ impl DisplayModal {
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
-                            .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                            .on_press(Message::Modal(ModalMessage::HideModal))
                             .style(move |_theme, status| {
                                 if status == Hovered {
                                     MODAL_CANCEL_BUTTON_HOVER_STYLE
@@ -232,7 +231,7 @@ impl DisplayModal {
                 } else {
                     button_row = button_row.push(
                         button("Close")
-                            .on_press(Message::ModalHandle(ModalMessage::HideModal))
+                            .on_press(Message::Modal(ModalMessage::HideModal))
                             .style(move |_theme, status| {
                                 if status == Hovered {
                                     MODAL_CANCEL_BUTTON_HOVER_STYLE
@@ -271,7 +270,6 @@ impl DisplayModal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::views::hardware_view::HardwareView;
 
     #[test]
     fn test_hide_modal() {
@@ -283,7 +281,7 @@ mod tests {
             is_version: false,
         });
 
-        let _ = display_modal.update(ModalMessage::HideModal, &HardwareView::new());
+        let _ = display_modal.update(ModalMessage::HideModal);
         assert!(!display_modal.show_modal);
     }
 
@@ -291,7 +289,7 @@ mod tests {
     fn test_unsaved_changes_exit_modal() {
         let mut display_modal = DisplayModal::new();
 
-        let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal, &HardwareView::new());
+        let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal);
         assert!(display_modal.show_modal);
 
         if let Some(ModalType::Warning {
@@ -315,7 +313,7 @@ mod tests {
     fn test_version_modal() {
         let mut display_modal = DisplayModal::new();
 
-        let _ = display_modal.update(ModalMessage::VersionModal, &HardwareView::new());
+        let _ = display_modal.update(ModalMessage::VersionModal);
         assert!(display_modal.show_modal);
 
         if let Some(ModalType::Info {

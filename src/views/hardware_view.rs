@@ -79,7 +79,7 @@ pub enum HardwareTarget {
 pub struct HardwareView {
     hardware_config: HardwareConfig,
     hardware_sender: Option<Sender<HardwareConfigMessage>>,
-    hardware_description: Option<HardwareDescription>,
+    pub hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
     pin_states: HashMap<BCMPinNumber, PinState>,
 }
@@ -98,22 +98,6 @@ impl HardwareView {
 
     pub fn get_config(&self) -> HardwareConfig {
         self.hardware_config.clone()
-    }
-
-    /// Return a String describing the HW Piggui is connected to, or a placeholder string
-    #[must_use]
-    pub fn hw_description(&self) -> String {
-        if let Some(hardware_description) = &self.hardware_description {
-            format!(
-                "Hardware: {}\nRevision: {}\nSerial: {}\nModel: {}",
-                hardware_description.details.hardware,
-                hardware_description.details.revision,
-                hardware_description.details.serial,
-                hardware_description.details.model,
-            )
-        } else {
-            "No Hardware connected".to_string()
-        }
     }
 
     /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
@@ -636,7 +620,7 @@ mod test {
     #[test]
     fn no_hardware_description() {
         let hw_view = HardwareView::new();
-        assert_eq!(hw_view.hw_description(), "No Hardware connected");
+        assert!(hw_view.hardware_description.is_none());
     }
 
     #[test]
