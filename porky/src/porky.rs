@@ -232,53 +232,67 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb-raw")]
     usb_raw::start(spawner, driver, hw_desc, db, watchdog).await;
 
+    // If we have a valid SsidSpec, then try and join that network using it
     if let Some(ssid) = spec {
-        wifi::join(&mut control, wifi_stack, &ssid).await;
-        let mut wifi_tx_buffer = [0; 4096];
-        let mut wifi_rx_buffer = [0; 4096];
+        match wifi::join(&mut control, wifi_stack, &ssid).await {
+            Ok(ip) => {
+                info!("Assigned IP: {}", ip);
 
-        loop {
-            match tcp::wait_connection(
-                wifi_stack,
-                #[cfg(feature = "usb-tcp")]
-                usb_stack,
-                &mut wifi_tx_buffer,
-                &mut wifi_rx_buffer,
-                #[cfg(feature = "usb-tcp")]
-                &mut usb_tx_buffer,
-                #[cfg(feature = "usb-tcp")]
-                &mut usb_rx_buffer,
-            )
-            .await
-            {
-                Ok(mut socket) => {
-                    send_hardware_description(&mut socket, &hw_desc).await;
+                let mut wifi_tx_buffer = [0; 4096];
+                let mut wifi_rx_buffer = [0; 4096];
 
-                    info!("Entering message loop");
-                    loop {
-                        match select(
-                            tcp::wait_message(&mut socket),
-                            HARDWARE_EVENT_CHANNEL.receiver().receive(),
-                        )
-                        .await
-                        {
-                            Either::First(config_message) => match config_message {
-                                None => break,
-                                Some(message) => {
-                                    gpio::apply_config_change(&mut control, &spawner, message).await
+                loop {
+                    match tcp::wait_connection(
+                        wifi_stack,
+                        #[cfg(feature = "usb-tcp")]
+                        usb_stack,
+                        &mut wifi_tx_buffer,
+                        &mut wifi_rx_buffer,
+                        #[cfg(feature = "usb-tcp")]
+                        &mut usb_tx_buffer,
+                        #[cfg(feature = "usb-tcp")]
+                        &mut usb_rx_buffer,
+                    )
+                    .await
+                    {
+                        Ok(mut socket) => {
+                            send_hardware_description(&mut socket, &hw_desc).await;
+
+                            info!("Entering message loop");
+                            loop {
+                                match select(
+                                    tcp::wait_message(&mut socket),
+                                    HARDWARE_EVENT_CHANNEL.receiver().receive(),
+                                )
+                                .await
+                                {
+                                    Either::First(config_message) => match config_message {
+                                        None => break,
+                                        Some(message) => {
+                                            gpio::apply_config_change(
+                                                &mut control,
+                                                &spawner,
+                                                message,
+                                            )
+                                            .await
+                                        }
+                                    },
+                                    Either::Second(hardware_event) => {
+                                        let mut buf = [0; 1024];
+                                        let gui_message =
+                                            postcard::to_slice(&hardware_event, &mut buf).unwrap();
+                                        socket.write_all(gui_message).await.unwrap();
+                                    }
                                 }
-                            },
-                            Either::Second(hardware_event) => {
-                                let mut buf = [0; 1024];
-                                let gui_message =
-                                    postcard::to_slice(&hardware_event, &mut buf).unwrap();
-                                socket.write_all(gui_message).await.unwrap();
                             }
+                            info!("Exiting Message Loop");
                         }
+                        Err(_) => error!("TCP accept error"),
                     }
-                    info!("Exiting Message Loop");
                 }
-                Err(_) => error!("TCP accept error"),
+            }
+            Err(e) => {
+                error!("Could not join Wi-Fi network: {}", e);
             }
         }
     }
