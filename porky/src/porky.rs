@@ -230,7 +230,7 @@ async fn main(spawner: Spawner) {
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
 
     #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, hw_desc, spec.clone(), db, watchdog).await;
+    usb_raw::start(spawner, driver, hw_desc, db, watchdog).await;
 
     if let Some(ssid) = spec {
         static SSID_SPEC: StaticCell<SsidSpec> = StaticCell::new();

@@ -4,7 +4,7 @@ use crate::hw_definition::usb_requests::{
     GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 use crate::usb::get_usb_builder;
-use crate::{flash, ssid, SSID_SPEC_KEY};
+use crate::{flash, get_ssid_spec, SSID_SPEC_KEY};
 use core::str;
 use defmt::{error, info, unwrap};
 use ekv::Database;
@@ -37,7 +37,6 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
-    ssid_spec: Option<SsidSpec>,
     db: Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
     watchdog: Watchdog,
@@ -45,10 +44,10 @@ pub(crate) struct ControlHandler<'h> {
 
 impl<'h> ControlHandler<'h> {
     /// Write the [SsidSpec] to the flash database
-    async fn store_ssid_spec(&mut self) -> Result<(), &'static str> {
+    async fn store_ssid_spec(&mut self, ssid_spec: SsidSpec) -> Result<(), &'static str> {
         let mut wtx = self.db.write_transaction().await;
-        let bytes = postcard::to_slice(&self.ssid_spec, &mut self.buf)
-            .map_err(|_| "Deserialization error")?;
+        let bytes =
+            postcard::to_slice(&ssid_spec, &mut self.buf).map_err(|_| "Deserialization error")?;
         wtx.write(SSID_SPEC_KEY, bytes)
             .await
             .map_err(|_| "Write error")?;
@@ -81,43 +80,34 @@ impl<'h> Handler for ControlHandler<'h> {
 
         match (req.request, req.value) {
             (PIGGUI_REQUEST, SET_SSID_VALUE) => match postcard::from_bytes::<SsidSpec>(buf) {
-                Ok(spec) => {
-                    self.ssid_spec = Some(spec);
-                    match block_on(self.store_ssid_spec()) {
-                        Ok(_) => {
-                            info!(
-                                "SsidSpec for SSID: stored to Flash Database, restarting in 1sec",
-                            );
-                            self.watchdog.start(Duration::from_millis(1_000));
-                            Some(OutResponse::Accepted)
-                        }
-                        Err(e) => {
-                            error!("Error ({}) storing SsidSpec to Flash Database", e);
-                            Some(OutResponse::Rejected)
-                        }
+                Ok(spec) => match block_on(self.store_ssid_spec(spec)) {
+                    Ok(_) => {
+                        info!("SsidSpec for SSID: stored to Flash Database, restarting in 1sec",);
+                        self.watchdog.start(Duration::from_millis(1_000));
+                        Some(OutResponse::Accepted)
                     }
-                }
+                    Err(e) => {
+                        error!("Error ({}) storing SsidSpec to Flash Database", e);
+                        Some(OutResponse::Rejected)
+                    }
+                },
                 Err(_) => {
-                    self.ssid_spec = None;
                     error!("Could not deserialize SsidSpec sent via USB");
                     Some(OutResponse::Rejected)
                 }
             },
-            (PIGGUI_REQUEST, RESET_SSID_VALUE) => {
-                match block_on(self.delete_ssid_spec()) {
-                    Ok(_) => {
-                        info!("SsidSpec deleted from Flash Database");
-                        self.ssid_spec = ssid::get_default_ssid_spec();
-                        //info!("Restarting in 1sec");
-                        //self.watchdog.start(Duration::from_millis(1_000));
-                        Some(OutResponse::Accepted)
-                    }
-                    Err(e) => {
-                        error!("Error ({}) deleting SsidSpec from Flash Database", e);
-                        Some(OutResponse::Rejected)
-                    }
+            (PIGGUI_REQUEST, RESET_SSID_VALUE) => match block_on(self.delete_ssid_spec()) {
+                Ok(_) => {
+                    info!("SsidSpec deleted from Flash Database");
+                    info!("Restarting in 1sec");
+                    self.watchdog.start(Duration::from_millis(1_000));
+                    Some(OutResponse::Accepted)
                 }
-            }
+                Err(e) => {
+                    error!("Error ({}) deleting SsidSpec from Flash Database", e);
+                    Some(OutResponse::Rejected)
+                }
+            },
             (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -146,7 +136,10 @@ impl<'h> Handler for ControlHandler<'h> {
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
             }
             (PIGGUI_REQUEST, GET_SSID_VALUE) => {
-                postcard::to_slice(&self.ssid_spec, &mut self.buf).ok()?
+                static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
+                let static_buf = STATIC_BUF.init([0u8; 200]);
+                let ssid_spec = block_on(get_ssid_spec(&self.db, static_buf));
+                postcard::to_slice(&ssid_spec, &mut self.buf).ok()?
             }
             _ => {
                 error!(
@@ -165,7 +158,6 @@ pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
-    spec: Option<SsidSpec>,
     db: Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     watchdog: Watchdog,
 ) {
@@ -188,7 +180,6 @@ pub async fn start(
     let handle = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
-        ssid_spec: spec,
         db,
         buf: [0; 1024],
         watchdog,
