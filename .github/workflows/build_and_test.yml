@@ -88,6 +88,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Cross
+        shell: bash
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall --no-confirm cross
+
       - name: Build for armv7-musl
         run: make build-armv7-musl
 
