@@ -66,7 +66,7 @@ test:
 
 #### armv7 targets
 .PHONY: armv7
-armv7: clippy-armv7 build-armv7
+armv7: clippy-armv7 build-armv7 build-armv7-musl
 
 .PHONY: clippy-armv7
 clippy-armv7:
