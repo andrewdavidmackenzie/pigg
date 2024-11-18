@@ -138,6 +138,7 @@ impl<'h> Handler for ControlHandler<'h> {
             }
             (PIGGUI_REQUEST, GET_WIFI_VALUE) => unsafe {
                 static mut STATIC_BUF: [u8; 200] = [0u8; 200];
+                #[allow(static_mut_refs)]
                 let ssid_spec = block_on(get_ssid_spec(&self.db, &mut STATIC_BUF));
                 let wifi = WiFiDetails {
                     ssid_spec,
