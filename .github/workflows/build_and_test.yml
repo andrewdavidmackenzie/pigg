@@ -67,6 +67,30 @@ jobs:
       - name: Clippy and Build for armv7
         run: make armv7
 
+  arm7-musl-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Add target
+        run: rustup target add armv7-unknown-linux-musleabihf
+
+      #      - name: Install Linker
+      #        run: |
+      #          sudo apt update
+      #          sudo apt install -y gcc-arm-linux-gnueabihf
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build for armv7-musl
+        run: make build-armv7-musl
+
   aarch64-build:
     runs-on: ubuntu-latest
     steps:
