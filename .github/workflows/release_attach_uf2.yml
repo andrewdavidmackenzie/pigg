@@ -17,6 +17,9 @@ jobs:
       - name: add thumbv6m-none-eabi target
         run: rustup target add thumbv6m-none-eabi
 
+      - name: Install elf2uf2-rs
+        run: cargo binstall elf2uf2-rs
+
       - name: Build UF2 file for porky
         run: cd porky && RUSTFLAGS= make uf2
 
