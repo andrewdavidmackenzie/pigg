@@ -17,8 +17,11 @@ jobs:
       - name: add thumbv6m-none-eabi target
         run: rustup target add thumbv6m-none-eabi
 
+      - name: Install cargo binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
       - name: Install elf2uf2-rs
-        run: cargo install elf2uf2-rs
+        run: cargo binstall elf2uf2-rs
 
       - name: Build UF2 file for porky
         run: cd porky && RUSTFLAGS= make uf2
