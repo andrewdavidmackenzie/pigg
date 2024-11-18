@@ -8,7 +8,7 @@ use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
     MENU_BUTTON_STYLE,
 };
-use crate::views::layout_selector::Layout::{BCMLayout, BoardLayout};
+use crate::views::layout_menu::Layout::{BCMLayout, BoardLayout};
 use iced::widget::button::Status::Hovered;
 use iced::{Element, Renderer, Theme};
 use iced_aw::menu::{Item, Menu, MenuBar};

@@ -42,6 +42,7 @@ use crate::views::dialog_styles::{
     MODAL_CONTAINER_STYLE, TAB_BAR_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
 use iced::widget::button::Status::Hovered;
+use iced::widget::horizontal_space;
 use std::sync::LazyLock;
 
 #[cfg(feature = "tcp")]
@@ -307,33 +308,17 @@ impl ConnectDialog {
         }
     }
 
-    //noinspection RsLift
     pub fn view(&self) -> Element<'_, Message> {
-        match (self.disable_widgets, self.display_iroh) {
-            (true, true) => {
-                #[cfg(feature = "iroh")]
-                return self.create_iroh_container(false);
-                #[cfg(not(feature = "iroh"))]
-                return self.create_tcp_container(false);
-            }
-            (true, false) => {
-                #[cfg(feature = "tcp")]
-                return self.create_tcp_container(false);
-                #[cfg(not(feature = "tcp"))]
-                return self.create_iroh_container(false);
-            }
-            (false, false) => {
-                #[cfg(feature = "tcp")]
-                return self.create_tcp_container(true);
-                #[cfg(not(feature = "tcp"))]
-                return self.create_iroh_container(true);
-            }
-            (false, true) => {
-                #[cfg(feature = "iroh")]
-                return self.create_iroh_container(true);
-                #[cfg(not(feature = "iroh"))]
-                return self.create_tcp_container(true);
-            }
+        if self.display_iroh {
+            #[cfg(feature = "iroh")]
+            return self.create_iroh_container();
+            #[cfg(not(feature = "iroh"))]
+            return self.create_tcp_container();
+        } else {
+            #[cfg(feature = "tcp")]
+            return self.create_tcp_container();
+            #[cfg(not(feature = "tcp"))]
+            return self.create_iroh_container();
         }
     }
 
@@ -388,11 +373,13 @@ impl ConnectDialog {
                 Button::new(Text::new("Cancel"))
                     .style(move |_theme, _status| ACTIVE_TAB_BUTTON_STYLE),
             )
+            .push(horizontal_space())
             .push(
                 Circular::new()
                     .easing(&EMPHASIZED_ACCELERATE)
                     .cycle_duration(Duration::from_secs_f32(2.0)),
             )
+            .push(horizontal_space())
             .push(
                 Button::new(Text::new("Connect")).style(move |_theme, status| {
                     if status == Hovered {
@@ -402,7 +389,6 @@ impl ConnectDialog {
                     }
                 }),
             )
-            .spacing(150)
             .align_y(iced::Alignment::Center)
     }
 
@@ -420,6 +406,7 @@ impl ConnectDialog {
                         }
                     }),
             )
+            .push(horizontal_space())
             .push(
                 Button::new(Text::new("Connect"))
                     .on_press(Message::ConnectDialog(ConnectButtonPressedIroh(
@@ -434,7 +421,6 @@ impl ConnectDialog {
                         }
                     }),
             )
-            .spacing(350)
             .align_y(iced::Alignment::Center)
     }
 
@@ -452,6 +438,7 @@ impl ConnectDialog {
                         }
                     }),
             )
+            .push(horizontal_space())
             .push(
                 Button::new(Text::new("Connect"))
                     .on_press(Message::ConnectDialog(ConnectionButtonPressedTcp(
@@ -466,7 +453,6 @@ impl ConnectDialog {
                         }
                     }),
             )
-            .spacing(350)
             .align_y(iced::Alignment::Center)
     }
 
@@ -490,7 +476,7 @@ impl ConnectDialog {
 
     //noinspection RsLiveness
     #[cfg(feature = "iroh")]
-    fn create_iroh_container(&self, input_enabled: bool) -> Element<'_, Message> {
+    fn create_iroh_container(&self) -> Element<'_, Message> {
         container(
             column![
                 self.create_tab_buttons(true),
@@ -509,7 +495,7 @@ impl ConnectDialog {
                                     self.nodeid.clone(),
                                     self.relay_url.clone(),
                                 )));
-                            if input_enabled {
+                            if !self.disable_widgets {
                                 node_input = node_input
                                     .on_input(|input| Message::ConnectDialog(NodeIdEntered(input)));
                             }
@@ -525,7 +511,7 @@ impl ConnectDialog {
                                     self.nodeid.clone(),
                                     self.relay_url.clone(),
                                 )));
-                        if input_enabled {
+                        if !self.disable_widgets {
                             relay_input = relay_input
                                 .on_input(|input| Message::ConnectDialog(RelayURL(input)));
                         }
@@ -546,7 +532,7 @@ impl ConnectDialog {
 
     //noinspection RsLiveness
     #[cfg(feature = "tcp")]
-    fn create_tcp_container(&self, input_enabled: bool) -> Element<'_, Message> {
+    fn create_tcp_container(&self) -> Element<'_, Message> {
         container(
             column![
                 self.create_tab_buttons(false),
@@ -565,7 +551,7 @@ impl ConnectDialog {
                                     self.ip_address.clone(),
                                     self.port_number.clone(),
                                 )));
-                            if input_enabled {
+                            if !self.disable_widgets {
                                 ip_input = ip_input.on_input(|input| {
                                     Message::ConnectDialog(IpAddressEntered(input))
                                 });
@@ -581,7 +567,7 @@ impl ConnectDialog {
                                 self.ip_address.clone(),
                                 self.port_number.clone(),
                             )));
-                        if input_enabled {
+                        if !self.disable_widgets {
                             port_input = port_input
                                 .on_input(|input| Message::ConnectDialog(PortNumberEntered(input)));
                         }
@@ -618,7 +604,7 @@ impl ConnectDialog {
 
         #[cfg(feature = "iroh")]
         let button_row = button_row.push(
-            Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(22))
+            Button::new(Text::new("Connect using Iroh").width(Length::Fill).size(20))
                 .on_press(Message::ConnectDialog(DisplayIrohTab))
                 .style(move |_theme, status| {
                     if status == Hovered {
@@ -627,12 +613,12 @@ impl ConnectDialog {
                         iroh_styles.0
                     }
                 })
-                .width(Length::Fixed(260f32)),
+                .width(260),
         );
 
         #[cfg(feature = "tcp")]
         let button_row = button_row.push(
-            Button::new(Text::new("Connect using TCP").width(Length::Fill).size(22))
+            Button::new(Text::new("Connect using TCP").width(Length::Fill).size(20))
                 .on_press(Message::ConnectDialog(DisplayTcpTab))
                 .style(move |_theme, status| {
                     if status == Hovered {
@@ -641,7 +627,7 @@ impl ConnectDialog {
                         tcp_styles.0
                     }
                 })
-                .width(Length::Fixed(260f32)),
+                .width(280),
         );
 
         container(button_row)
@@ -654,7 +640,7 @@ impl ConnectDialog {
 mod tests {
     use super::*;
     #[cfg(feature = "tcp")]
-    use crate::views::connect_dialog_handler::ConnectDialogMessage::ConnectionButtonPressedTcp;
+    use crate::views::connect_dialog::ConnectDialogMessage::ConnectionButtonPressedTcp;
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     #[test]
     fn test_show_connect_dialog() {

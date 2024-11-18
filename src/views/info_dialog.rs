@@ -14,7 +14,7 @@ use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
-pub struct ModalDialog {
+pub struct InfoDialog {
     pub show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
@@ -33,7 +33,7 @@ pub enum ModalType {
 }
 
 #[derive(Clone, Debug)]
-pub enum ModalMessage {
+pub enum InfoDialogMessage {
     HideModal,
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
@@ -45,7 +45,7 @@ pub enum ModalMessage {
     OpenRepoLink,
 }
 
-impl ModalDialog {
+impl InfoDialog {
     pub fn new() -> Self {
         Self {
             show_modal: false,
@@ -54,15 +54,15 @@ impl ModalDialog {
         }
     }
 
-    pub fn update(&mut self, message: ModalMessage) -> Task<Message> {
+    pub fn update(&mut self, message: InfoDialogMessage) -> Task<Message> {
         match message {
-            ModalMessage::HideModal => {
+            InfoDialogMessage::HideModal => {
                 self.show_modal = false;
                 Task::none()
             }
 
             // Display warning for unsaved changes
-            ModalMessage::UnsavedChangesExitModal => {
+            InfoDialogMessage::UnsavedChangesExitModal => {
                 self.show_modal = true;
                 self.is_warning = true;
                 self.modal_type = Some(ModalType::Warning {
@@ -75,7 +75,7 @@ impl ModalDialog {
             }
 
             // Display hardware information
-            ModalMessage::HardwareDetailsModal(hardware_details, tcp) => {
+            InfoDialogMessage::HardwareDetailsModal(hardware_details, tcp) => {
                 self.show_modal = true;
                 self.is_warning = false;
                 let body = match tcp {
@@ -95,12 +95,12 @@ impl ModalDialog {
                 Task::none()
             }
 
-            ModalMessage::LoadFile => {
+            InfoDialogMessage::LoadFile => {
                 self.show_modal = false;
                 Task::batch(vec![pick_and_load()])
             }
 
-            ModalMessage::UnsavedLoadConfigChangesModal => {
+            InfoDialogMessage::UnsavedLoadConfigChangesModal => {
                 self.show_modal = true;
                 self.modal_type = Some(ModalType::Warning {
                     title: "Unsaved Changes".to_string(),
@@ -112,7 +112,7 @@ impl ModalDialog {
             }
 
             // Display piggui information
-            ModalMessage::VersionModal => {
+            InfoDialogMessage::VersionModal => {
                 self.show_modal = true;
                 self.is_warning = false;
                 self.modal_type = Some(ModalType::Info {
@@ -123,7 +123,7 @@ impl ModalDialog {
                 Task::none()
             }
 
-            ModalMessage::OpenRepoLink => {
+            InfoDialogMessage::OpenRepoLink => {
                 if let Err(e) = webbrowser::open(REPOSITORY) {
                     eprintln!("failed to open project repository: {}", e);
                 }
@@ -131,10 +131,10 @@ impl ModalDialog {
             }
 
             // Exits the Application
-            ModalMessage::ExitApp => window::get_latest().and_then(window::close),
+            InfoDialogMessage::ExitApp => window::get_latest().and_then(window::close),
 
             // When Pressed `Esc` focuses on previous widget and hide modal
-            ModalMessage::EscKeyEvent(Event::Keyboard(keyboard::Event::KeyPressed {
+            InfoDialogMessage::EscKeyEvent(Event::Keyboard(keyboard::Event::KeyPressed {
                 key: keyboard::Key::Named(key::Named::Escape),
                 ..
             })) => {
@@ -158,9 +158,10 @@ impl ModalDialog {
 
                 let mut action_button = if *load_config {
                     button("Continue and load a new config")
-                        .on_press(Message::Modal(ModalMessage::LoadFile))
+                        .on_press(Message::Modal(InfoDialogMessage::LoadFile))
                 } else {
-                    button("Exit without saving").on_press(Message::Modal(ModalMessage::ExitApp))
+                    button("Exit without saving")
+                        .on_press(Message::Modal(InfoDialogMessage::ExitApp))
                 };
 
                 action_button = action_button.style(move |_theme, status| {
@@ -174,7 +175,7 @@ impl ModalDialog {
                 button_row = button_row.push(Space::new(Length::Fill, 10));
                 button_row = button_row.push(
                     button("Return to app")
-                        .on_press(Message::Modal(ModalMessage::HideModal))
+                        .on_press(Message::Modal(InfoDialogMessage::HideModal))
                         .style(move |_theme, status| {
                             if status == Hovered {
                                 MODAL_CONNECT_BUTTON_HOVER_STYLE
@@ -215,7 +216,7 @@ impl ModalDialog {
                     hyperlink_row = hyperlink_row
                         .push(
                             button(Text::new("github"))
-                                .on_press(Message::Modal(ModalMessage::OpenRepoLink))
+                                .on_press(Message::Modal(InfoDialogMessage::OpenRepoLink))
                                 .style(move |_theme, status| {
                                     if status == Hovered {
                                         HYPERLINK_BUTTON_HOVER_STYLE
@@ -228,7 +229,7 @@ impl ModalDialog {
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
-                            .on_press(Message::Modal(ModalMessage::HideModal))
+                            .on_press(Message::Modal(InfoDialogMessage::HideModal))
                             .style(move |_theme, status| {
                                 if status == Hovered {
                                     MODAL_CANCEL_BUTTON_HOVER_STYLE
@@ -240,7 +241,7 @@ impl ModalDialog {
                 } else {
                     button_row = button_row.push(
                         button("Close")
-                            .on_press(Message::Modal(ModalMessage::HideModal))
+                            .on_press(Message::Modal(InfoDialogMessage::HideModal))
                             .style(move |_theme, status| {
                                 if status == Hovered {
                                     MODAL_CANCEL_BUTTON_HOVER_STYLE
@@ -271,8 +272,8 @@ impl ModalDialog {
         }
     }
 
-    pub fn subscription(&self) -> Subscription<ModalMessage> {
-        iced::event::listen().map(ModalMessage::EscKeyEvent)
+    pub fn subscription(&self) -> Subscription<InfoDialogMessage> {
+        iced::event::listen().map(InfoDialogMessage::EscKeyEvent)
     }
 }
 
@@ -282,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_hide_modal() {
-        let mut display_modal = ModalDialog::new();
+        let mut display_modal = InfoDialog::new();
         display_modal.show_modal = true;
         display_modal.modal_type = Some(ModalType::Info {
             title: "Test".to_string(),
@@ -290,15 +291,15 @@ mod tests {
             is_version: false,
         });
 
-        let _ = display_modal.update(ModalMessage::HideModal);
+        let _ = display_modal.update(InfoDialogMessage::HideModal);
         assert!(!display_modal.show_modal);
     }
 
     #[test]
     fn test_unsaved_changes_exit_modal() {
-        let mut display_modal = ModalDialog::new();
+        let mut display_modal = InfoDialog::new();
 
-        let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal);
+        let _ = display_modal.update(InfoDialogMessage::UnsavedChangesExitModal);
         assert!(display_modal.show_modal);
 
         if let Some(ModalType::Warning {
@@ -320,9 +321,9 @@ mod tests {
 
     #[test]
     fn test_version_modal() {
-        let mut display_modal = ModalDialog::new();
+        let mut display_modal = InfoDialog::new();
 
-        let _ = display_modal.update(ModalMessage::VersionModal);
+        let _ = display_modal.update(InfoDialogMessage::VersionModal);
         assert!(display_modal.show_modal);
 
         if let Some(ModalType::Info {

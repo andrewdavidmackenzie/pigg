@@ -1,6 +1,5 @@
 use crate::Message;
 use iced::widget::Button;
-use iced::Length;
 
 use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
@@ -20,7 +19,7 @@ pub fn view<'a>(
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
     let mut load_from = Button::new("Load config from...")
-        .width(Length::Fill)
+        .width(180)
         .style(|_, status| {
             if status == Hovered {
                 MENU_BUTTON_HOVER_STYLE
@@ -35,16 +34,15 @@ pub fn view<'a>(
     menu_items.push(Item::new(load_from));
 
     if unsaved_changes {
-        let mut save_as =
-            Button::new("Save config as...")
-                .width(Length::Fill)
-                .style(|_, status| {
-                    if status == Hovered {
-                        MENU_BUTTON_HOVER_STYLE
-                    } else {
-                        MENU_BUTTON_STYLE
-                    }
-                });
+        let mut save_as = Button::new("Save config as...")
+            .width(180)
+            .style(|_, status| {
+                if status == Hovered {
+                    MENU_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BUTTON_STYLE
+                }
+            });
 
         if hardware_target != &NoHW {
             save_as = save_as.on_press(Message::Save);
@@ -72,7 +70,7 @@ pub fn view<'a>(
     button = button.on_press(Message::MenuBarButtonClicked); // Needed for highlighting
 
     // Increased width to 145 as Linux needs a little more width
-    let menu_root = Item::with_menu(button, Menu::new(menu_items).width(145.0).offset(10.0));
+    let menu_root = Item::with_menu(button, Menu::new(menu_items).width(180.0).offset(10.0));
 
     MenuBar::new(vec![menu_root])
         .style(|_, _| MENU_BAR_STYLE)
