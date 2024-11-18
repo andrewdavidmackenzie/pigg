@@ -1,10 +1,10 @@
 #[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu::KnownDevice;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
-use crate::views::layout_selector::LayoutSelector;
+use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
-use crate::views::{hardware_menu, unsaved_status};
+use crate::views::{config_menu, hardware_menu};
 use crate::Message;
 use iced::border::Radius;
 use iced::widget::{button, container, Row};
@@ -140,7 +140,7 @@ impl InfoRow {
                     #[cfg(feature = "usb-raw")]
                     known_devices,
                 ))
-                .push(unsaved_status::view(unsaved_changes, hardware_target))
+                .push(config_menu::view(unsaved_changes, hardware_target))
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)

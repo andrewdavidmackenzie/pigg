@@ -16,12 +16,12 @@ use crate::views::hardware_view::HardwareTarget::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
-use crate::views::layout_selector::Layout;
-use crate::views::pin_state::CHART_UPDATES_PER_SECOND;
+use crate::views::layout_menu::Layout;
+use crate::views::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
-use crate::{Message, PinState};
+use crate::Message;
 use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;

@@ -4,7 +4,7 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_row::InfoRow;
-use crate::views::layout_selector::{Layout, LayoutSelector};
+use crate::views::layout_menu::{Layout, LayoutSelector};
 use crate::views::message_box::MessageMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
 use crate::views::modal::{ModalDialog, ModalMessage};
@@ -18,7 +18,6 @@ use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
 #[cfg(feature = "usb-raw")]
 use std::collections::HashMap;
-use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
