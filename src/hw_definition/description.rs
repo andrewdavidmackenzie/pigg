@@ -77,7 +77,7 @@ pub struct SsidSpec {
 }
 
 #[cfg(feature = "no_std")]
-/// [SsidSpec] contains details on how the device connects to Wi-Fi
+/// [WiFiDetails] contains details on how the device connects to Wi-Fi
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SsidSpec {
     pub ssid_name: String<SSID_NAME_MAX_LENGTH>,
@@ -89,18 +89,16 @@ pub struct SsidSpec {
 /// [WiFiDetails] contains details on Wi-Fi connection and connections details
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WiFiDetails {
-    ssid_spec: SsidSpec,
-    tcp: (String, u16), // ("ip", port)
-    iroh: String,       // "NodeId"
+    pub ssid_spec: Option<SsidSpec>,
+    pub tcp: Option<([u8; 4], u16)>, // ("ip", port)
 }
 
 #[cfg(feature = "no_std")]
 /// [WiFiDetails] contains details on WiFi connection and connections details
 #[derive(Serialize)]
-pub struct WiFiDetails<'a> {
-    ssid_spec: SsidSpec,
-    tcp: (&'a str, u16), // ("ip", port)
-    iroh: &'a str,       // "NodeId"
+pub struct WiFiDetails {
+    pub ssid_spec: Option<SsidSpec>,
+    pub tcp: Option<([u8; 4], u16)>, // ("ip", port)
 }
 
 #[cfg(not(feature = "no_std"))]

@@ -6,8 +6,8 @@ pub const PIGGUI_REQUEST: u8 = 101;
 /// Command Value to get the hardware description from porky
 pub const GET_HARDWARE_VALUE: u16 = 201;
 
-/// Command value to get the ssid details from porky
-pub const GET_SSID_VALUE: u16 = 202;
+/// Command value to get the [WiFiDetails] from porky
+pub const GET_WIFI_VALUE: u16 = 202;
 
 /// Command value to set the ssid details from porky
 pub const SET_SSID_VALUE: u16 = 203;

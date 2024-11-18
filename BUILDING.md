@@ -86,3 +86,8 @@ Example: `PI_TARGET=pizero2w0.local PI_USER=andrew make copy-armv7`
 
 - [`copy-armv7` | `copy-aarch64`] to copy the built binaries to your Raspberry Pi
 - `make ssh` to ssh into your Pi to be able to run the binaries.
+
+## Building `porky`
+
+For more details on building and running `porky` on a Raspberry Pi Pico W device,
+see [porky/BUILDING.md](porky/BUILDING.md).

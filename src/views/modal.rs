@@ -14,7 +14,7 @@ use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
-pub struct DisplayModal {
+pub struct ModalDialog {
     pub show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
@@ -38,14 +38,14 @@ pub enum ModalMessage {
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
     LoadFile,
-    HardwareDetailsModal(HardwareDetails),
+    HardwareDetailsModal(HardwareDetails, Option<([u8; 4], u16)>),
     VersionModal,
     ExitApp,
     EscKeyEvent(Event),
     OpenRepoLink,
 }
 
-impl DisplayModal {
+impl ModalDialog {
     pub fn new() -> Self {
         Self {
             show_modal: false,
@@ -75,12 +75,21 @@ impl DisplayModal {
             }
 
             // Display hardware information
-            ModalMessage::HardwareDetailsModal(hardware_details) => {
+            ModalMessage::HardwareDetailsModal(hardware_details, tcp) => {
                 self.show_modal = true;
                 self.is_warning = false;
+                let body = match tcp {
+                    None => hardware_details.to_string(),
+                    Some(t) => {
+                        format!(
+                            "{}\nIP Address/Port: {}.{}.{}.{}:{}",
+                            hardware_details, t.0[0], t.0[1], t.0[2], t.0[3], t.1
+                        )
+                    }
+                };
                 self.modal_type = Some(ModalType::Info {
                     title: "Device Details".to_string(),
-                    body: hardware_details.to_string(),
+                    body,
                     is_version: false,
                 });
                 Task::none()
@@ -273,7 +282,7 @@ mod tests {
 
     #[test]
     fn test_hide_modal() {
-        let mut display_modal = DisplayModal::new();
+        let mut display_modal = ModalDialog::new();
         display_modal.show_modal = true;
         display_modal.modal_type = Some(ModalType::Info {
             title: "Test".to_string(),
@@ -287,7 +296,7 @@ mod tests {
 
     #[test]
     fn test_unsaved_changes_exit_modal() {
-        let mut display_modal = DisplayModal::new();
+        let mut display_modal = ModalDialog::new();
 
         let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal);
         assert!(display_modal.show_modal);
@@ -311,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_version_modal() {
-        let mut display_modal = DisplayModal::new();
+        let mut display_modal = ModalDialog::new();
 
         let _ = display_modal.update(ModalMessage::VersionModal);
         assert!(display_modal.show_modal);

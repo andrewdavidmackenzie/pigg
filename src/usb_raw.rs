@@ -1,6 +1,6 @@
-use crate::hw_definition::description::{HardwareDescription, SsidSpec};
-use crate::hw_definition::usb_requests::{
-    GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+use crate::hw_definition::description::{HardwareDescription, SsidSpec, WiFiDetails};
+use crate::hw_definition::usb_values::{
+    GET_HARDWARE_VALUE, GET_WIFI_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 use crate::usb_raw::USBState::{Connected, Disconnected};
 use crate::views::hardware_menu::DeviceEvent;
@@ -24,17 +24,17 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     length: 1000,
 };
 
-/// [ControlIn] "command" to request the WifiDetails
+/// [ControlIn] "command" to request the WiFiDetails
 const GET_WIFI_DETAILS: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
     request: PIGGUI_REQUEST,
-    value: GET_SSID_VALUE,
+    value: GET_WIFI_VALUE,
     index: 0,
     length: 1000,
 };
 
-/// [ControlOut] "command" to reset the [SsidSpec] of an attached "porky"
+/// [ControlOut] "command" to reset the [WiFiDetails] of an attached "porky"
 const RESET_SSID: ControlOut = ControlOut {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
@@ -98,8 +98,8 @@ async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescripti
     usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
 }
 
-/// Request [SsidSpec] from compatible porky device over USB
-async fn get_ssid_spec(porky: &Interface) -> Result<Option<SsidSpec>, String> {
+/// Request [WiFiDetails] from compatible porky device over USB
+async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, String> {
     usb_get_porky(porky, GET_WIFI_DETAILS).await
 }
 
@@ -154,15 +154,22 @@ pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
             usb_state = match (porky_found, &usb_state) {
                 (Some(porky), Disconnected) => match get_hardware_description(&porky).await {
                     Ok(hardware_description) => {
-                        let ssid_spec = match hardware_description.details.wifi {
-                            true => get_ssid_spec(&porky).await.unwrap(), // TODO
-                            false => None,
+                        let wifi_details = if hardware_description.details.wifi {
+                            match get_wifi_details(&porky).await {
+                                Ok(details) => Some(details),
+                                Err(_) => {
+                                    // TODO report error to UI
+                                    None
+                                }
+                            }
+                        } else {
+                            None
                         };
                         let _ = gui_sender_clone
                             .send(DeviceEvent::DeviceFound(
                                 USBRaw,
                                 hardware_description.clone(),
-                                ssid_spec,
+                                wifi_details,
                             ))
                             .await;
                         Connected(hardware_description)

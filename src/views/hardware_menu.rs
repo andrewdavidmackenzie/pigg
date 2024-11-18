@@ -1,5 +1,6 @@
 #[cfg(feature = "usb-raw")]
-use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+use crate::hw_definition::description::HardwareDescription;
+use crate::hw_definition::description::WiFiDetails;
 #[cfg(feature = "usb-raw")]
 use crate::usb_raw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -11,11 +12,11 @@ use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
     MENU_BUTTON_STYLE,
 };
-use crate::views::modal_handler::ModalMessage::HardwareDetailsModal;
+use crate::views::modal::ModalMessage::HardwareDetailsModal;
 #[cfg(feature = "usb-raw")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareTarget::*;
-use crate::{Message, ModalMessage};
+use crate::Message;
 #[cfg(feature = "usb-raw")]
 use iced::alignment;
 use iced::widget::button::Status::Hovered;
@@ -49,14 +50,14 @@ impl Display for DiscoveryMethod {
 #[cfg(feature = "usb-raw")]
 #[derive(Debug, Clone)]
 pub enum DeviceEvent {
-    DeviceFound(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
+    DeviceFound(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
     DeviceLost(HardwareDescription),
     Error(String),
 }
 
 #[cfg(feature = "usb-raw")]
 pub enum KnownDevice {
-    Porky(DiscoveryMethod, HardwareDescription, Option<SsidSpec>),
+    Porky(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
 }
 
 #[cfg(feature = "usb-raw")]
@@ -68,7 +69,7 @@ fn devices_submenu<'a>(
 
     for (serial_number, device) in known_devices {
         match device {
-            Porky(method, hardware_description, ssid_spec) => {
+            Porky(method, hardware_description, wifi_details) => {
                 let device_button = button(row!(
                     text(format!(
                         "{} ({}) {}",
@@ -96,7 +97,7 @@ fn devices_submenu<'a>(
                                     .on_press(Message::SsidDialog(
                                         SsidDialogMessage::ShowSsidDialog(
                                             hardware_description.details.clone(),
-                                            ssid_spec.clone(),
+                                            wifi_details.as_ref().unwrap().ssid_spec.clone(), // TODO unwrap
                                         ),
                                     ))
                                     .style(|_, status| {
@@ -112,6 +113,7 @@ fn devices_submenu<'a>(
                                     .width(Length::Fill)
                                     .on_press(Message::Modal(HardwareDetailsModal(
                                         hardware_description.details.clone(),
+                                        wifi_details.as_ref().unwrap().tcp,
                                     )))
                                     .style(|_, status| {
                                         if status == Hovered {
@@ -246,8 +248,9 @@ pub fn view<'a>(
     if let Some(hardware_description) = hardware_view.hardware_description.as_ref() {
         let show_details = Item::new(
             button("Show details...")
-                .on_press(Message::Modal(ModalMessage::HardwareDetailsModal(
+                .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_description.details.clone(),
+                    None,
                 )))
                 .width(Length::Fill)
                 .style(|_, status| {
