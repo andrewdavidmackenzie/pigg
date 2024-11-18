@@ -76,6 +76,10 @@ clippy-armv7:
 build-armv7:
 	cargo build --target=armv7-unknown-linux-gnueabihf
 
+.PHONY: build-armv7-musl
+build-armv7-musl:
+	cross build --target=armv7-unknown-linux-musleabihf
+
 .PHONY: release-build-armv7
 release-build-armv7:
 	cargo build --release --target=armv7-unknown-linux-gnueabihf
