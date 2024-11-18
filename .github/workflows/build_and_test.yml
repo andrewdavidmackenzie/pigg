@@ -95,7 +95,7 @@ jobs:
           cargo binstall --no-confirm cross
 
       - name: Build for armv7-musl
-        run: make build-armv7-musl
+        run: RUSTFLAGS= make build-armv7-musl
 
   aarch64-build:
     runs-on: ubuntu-latest
