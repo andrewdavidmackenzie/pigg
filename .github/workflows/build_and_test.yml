@@ -103,6 +103,9 @@ jobs:
       - name: Release build of porky for Pico
         run: cd porky && RUSTFLAGS= cargo build --release
 
+      - name: Build UF2 file for porky
+        run: cd porky && RUSTFLAGS= make uf2
+
   clippy-build-and-test-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
