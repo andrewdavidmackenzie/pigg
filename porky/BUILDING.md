@@ -82,7 +82,7 @@ Use `make uf2` Makefile target.
 
 This uses the `elf2usb2` command which you can install using cargo.
 
-This ill produce the file `target/thumbv6m-none-eabi/release/porky.uf2`
+This will produce the file `target/thumbv6m-none-eabi/release/porky.uf2`
 
 You can check its type using: `file target/thumbv6m-none-eabi/release/porky.uf2`:
 

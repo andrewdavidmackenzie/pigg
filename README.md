@@ -38,16 +38,34 @@ hardware remotely.
   </tr>
 </table>
 
-## Latest NEW Feature - pre-built images and installers
+## What's new in this release - Pi Pico W Support!
 
-We have added pre-built images for different OS and CPU architecture, along with installers, to the automated
-release process using `cargo dist`. See [INSTALLING.md](INSTALLING.md) for details.
+Raspberry Pi Pico W support!!! Including:
 
-Up-to-date instructions for installing are also be in the release notes of the
-[latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
+- Embedded application `porky` for running on the Pi Pico W
+- UF2 Image provided as part of release to aid programming Pi Pico W devices with `porky`
+- Ability to build `porky` yourself with default SSID information so all devices with built binary connect
+  automatically to Wi-Fi
+- USB direct connection between `piggui` and `porky` that allows you to:
+    - Discover USB connected `porky` devices
+    - View information about the device
+    - Determine if it is connected to the Wi-Fi network and if it is, get it's IP and Port for remote GUI use
+    - Program an "override" Wi-Fi network it will use to connect to, instead of the default one as part of the build.
+      This
+      is persisted in Flash memory so it is used again on restart/reboot.
+    - Reset the "override" Wi-Fi (removing it) so that on restart the device will connect to the default one if it
+      exists.
+      If not, it will restart, connect to USB and wait to be programmed with a Wi-Fi network to connect to.
+- Remote access to the (headless) Pico W's GPIO over the network, in the same user interface as remote access to Pi
+  GPIO hardware via `piglet`
+- Pi Pico specific pin layout and numbering
+
+NOTE: Support for Pi Pico (not W), Pi Pico 2 (not W) and Pi Pico 2 W is planned for next releases.
 
 ## Other Features
 
+- Pre-built images for different OS and CPU architecture, along with installers. See [INSTALLING.md](INSTALLING.md) for
+  details.
 - Visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
   physical layout of the Pi's GPIO connector/header, or a "BCM Pin Layout" with only the programmable
   GPIO pins, ordered by BCM pin number
@@ -102,6 +120,14 @@ It offers the ability to interact with the hardware from a remote `piggui`instan
 It will print out connection info at startup and start listing for Iroh network connections from `piggui` instances,
 then the user can interact with it and visualize inputs level changes from the `piggui` GUI.
 
+## Porky
+
+`porky` is an embedded application developer for the Raspberry Pi Pico (Pi Pico W only currently, but I plan to
+add support for Pico, Pico 2 and Pico 2 W soon) for remote interaction with the Pi Pico's GPIO hardware. It can be
+connected to remotely over TCP, just like to a `piglet` running on a Pi.
+
+For more details see [porky's README.md](porky/README.md)
+
 ## Input from Raspberry Pi users wanted
 
 We would like input from Raspberry Pi users to help us decide the order of things to work on in the future,
@@ -116,14 +142,11 @@ We have identified a number of areas we would like to work on after this initial
 but would really appreciate your input on what could be most useful or just the coolest,
 many have GH issues.
 
-- Pre-built binaries for install on Raspberry Pi [Issue #112](https://github.com/andrewdavidmackenzie/pigg/issues/112)
-  and easier install [Issue #111](https://github.com/andrewdavidmackenzie/pigg/issues/111)
 - Expand support beyond Inputs and Outputs ( e.g. Clocks, PWM, I2C, UART, SPI etc.).
   Issue [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
   [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
 - True logical layout, grouping pins by function [Issue #94](https://github.com/andrewdavidmackenzie/pigg/issues/94)
 - Allow connections between pins [Issue #95](https://github.com/andrewdavidmackenzie/pigg/issues/95)
-- Pico support for a headless hardware backend accessed over the network
 - Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 
 ## Installing

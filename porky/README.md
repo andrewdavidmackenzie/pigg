@@ -80,13 +80,20 @@ IP address. It will be listening for TCP connections on that IP on the default p
 For the `piggui` GUI application to connect to a networked `porky` device, it needs to know the device's
 IP address.
 
+You can find the IP Address and Port that `porky` is listening on via the `piggy` GUI by using the "hardware" menu
+(bottom center)
+
+```
+hardware > Discovered devices > Pi Pico W ($serial_number$) on USB > Display Device Details...
+```
+
 ## Connecting to `porky` over Wi-Fi
 
-Once you have the IP address, in the "hardware" menu, disconnect from any other device
+Once you have the IP address and Port, via the same "hardware" menu disconnect from current device
 (including the fake local device on the host) and then select the "Connect to remote Pi..." option.
 
 This will open the Connection dialog. Select the "Connect using TCP" tab. Then complete the fields with the IP Address
-of the `porky` device and the port number 1234, and press "Connect".
+and Port (1234 by default) of the `porky` device and press "Connect".
 
 `piggui` should connect to the remote `porky` device and show the pins in the default layout. Now you may control and
 view remotely the GPIO hardware of your Pi Pico W - without writing a line of code and from the comfort of your

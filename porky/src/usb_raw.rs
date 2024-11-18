@@ -136,16 +136,15 @@ impl<'h> Handler for ControlHandler<'h> {
             (PIGGUI_REQUEST, GET_HARDWARE_VALUE) => {
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
             }
-            (PIGGUI_REQUEST, GET_WIFI_VALUE) => {
-                static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
-                let static_buf = STATIC_BUF.init([0u8; 200]);
-                let ssid_spec = block_on(get_ssid_spec(&self.db, static_buf));
+            (PIGGUI_REQUEST, GET_WIFI_VALUE) => unsafe {
+                static mut STATIC_BUF: [u8; 200] = [0u8; 200];
+                let ssid_spec = block_on(get_ssid_spec(&self.db, &mut STATIC_BUF));
                 let wifi = WiFiDetails {
                     ssid_spec,
                     tcp: self.tcp,
                 };
                 postcard::to_slice(&wifi, &mut self.buf).ok()?
-            }
+            },
             _ => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
