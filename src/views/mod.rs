@@ -1,5 +1,5 @@
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-pub mod connect_dialog_handler;
+pub mod connect_dialog;
 mod dialog_styles;
 pub mod hardware_menu;
 mod hardware_styles;

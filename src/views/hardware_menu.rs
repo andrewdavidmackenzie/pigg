@@ -4,7 +4,7 @@ use crate::hw_definition::description::WiFiDetails;
 #[cfg(feature = "usb-raw")]
 use crate::usb_raw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::views::connect_dialog_handler::ConnectDialogMessage;
+use crate::views::connect_dialog::ConnectDialogMessage;
 #[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu::KnownDevice::Porky;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};

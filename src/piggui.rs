@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use views::pin_state::PinState;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::views::connect_dialog_handler::{
+use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
 #[cfg(feature = "usb-raw")]
