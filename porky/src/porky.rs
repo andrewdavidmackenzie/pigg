@@ -7,6 +7,7 @@ use crate::hw_definition::description::{
     HardwareDescription, HardwareDetails, PinDescriptionSet, SsidSpec,
 };
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
+use crate::tcp::TCP_PORT;
 use core::str;
 use cyw43_pio::PioSpi;
 use defmt::{error, info};
@@ -224,19 +225,19 @@ async fn main(spawner: Spawner) {
 
     static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
     let static_buf = STATIC_BUF.init([0u8; 200]);
-    let spec = get_ssid_spec(&db, static_buf).await;
 
     #[cfg(feature = "usb-raw")]
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
 
-    #[cfg(feature = "usb-raw")]
-    usb_raw::start(spawner, driver, hw_desc, db, watchdog).await;
-
     // If we have a valid SsidSpec, then try and join that network using it
-    if let Some(ssid) = spec {
-        match wifi::join(&mut control, wifi_stack, &ssid).await {
+    match get_ssid_spec(&db, static_buf).await {
+        Some(ssid) => match wifi::join(&mut control, wifi_stack, &ssid).await {
             Ok(ip) => {
                 info!("Assigned IP: {}", ip);
+
+                let tcp = (ip.octets(), TCP_PORT);
+                #[cfg(feature = "usb-raw")]
+                usb_raw::start(spawner, driver, hw_desc, Some(tcp), db, watchdog).await;
 
                 let mut wifi_tx_buffer = [0; 4096];
                 let mut wifi_rx_buffer = [0; 4096];
@@ -292,8 +293,15 @@ async fn main(spawner: Spawner) {
                 }
             }
             Err(e) => {
-                error!("Could not join Wi-Fi network: {}", e);
+                error!("Could not join Wi-Fi network: {}, starting USB", e);
+                #[cfg(feature = "usb-raw")]
+                usb_raw::start(spawner, driver, hw_desc, None, db, watchdog).await;
             }
+        },
+        None => {
+            info!("No valid SsidSpec was found, starting USB alone");
+            #[cfg(feature = "usb-raw")]
+            usb_raw::start(spawner, driver, hw_desc, None, db, watchdog).await;
         }
     }
 }

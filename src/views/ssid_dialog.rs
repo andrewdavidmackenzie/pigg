@@ -160,9 +160,9 @@ impl SsidDialog {
                 }
             }
 
-            ShowSsidDialog(hardware_details, ssid_spec) => {
+            ShowSsidDialog(hardware_details, wifi) => {
                 self.hardware_details = hardware_details;
-                self.ssid_spec = ssid_spec.unwrap_or(SsidSpec::default());
+                self.ssid_spec = wifi.unwrap_or(SsidSpec::default());
                 self.show_modal = true;
                 text_input::focus(INPUT_ID.clone())
             }

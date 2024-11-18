@@ -416,12 +416,12 @@ impl Piggui {
     /// Process messages related to USB raw discovery of attached devices
     fn device_event(&mut self, event: DeviceEvent) {
         match event {
-            DeviceEvent::DeviceFound(method, hardware_description, ssid_spec) => {
+            DeviceEvent::DeviceFound(method, hardware_description, wifi_details) => {
                 self.info_row
                     .add_info_message(Info("USB Device Found".to_string()));
                 self.known_devices.insert(
                     hardware_description.details.serial.clone(),
-                    KnownDevice::Porky(method, hardware_description, ssid_spec),
+                    KnownDevice::Porky(method, hardware_description, wifi_details),
                 );
             }
             DeviceEvent::DeviceLost(hardware_description) => {

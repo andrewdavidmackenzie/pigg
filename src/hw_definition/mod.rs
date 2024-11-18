@@ -2,7 +2,8 @@
 pub mod config;
 pub mod description;
 pub mod pin_function;
-pub mod usb_requests;
+#[cfg(feature = "usb-raw")]
+pub mod usb_values;
 
 /// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number
 pub type BCMPinNumber = u8;

@@ -1,7 +1,7 @@
 use crate::flash::DbFlash;
-use crate::hw_definition::description::{HardwareDescription, SsidSpec};
-use crate::hw_definition::usb_requests::{
-    GET_HARDWARE_VALUE, GET_SSID_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+use crate::hw_definition::description::{HardwareDescription, SsidSpec, WiFiDetails};
+use crate::hw_definition::usb_values::{
+    GET_HARDWARE_VALUE, GET_WIFI_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 use crate::usb::get_usb_builder;
 use crate::{flash, get_ssid_spec, SSID_SPEC_KEY};
@@ -37,6 +37,7 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
+    tcp: Option<([u8; 4], u16)>,
     db: Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
     watchdog: Watchdog,
@@ -135,11 +136,15 @@ impl<'h> Handler for ControlHandler<'h> {
             (PIGGUI_REQUEST, GET_HARDWARE_VALUE) => {
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
             }
-            (PIGGUI_REQUEST, GET_SSID_VALUE) => {
+            (PIGGUI_REQUEST, GET_WIFI_VALUE) => {
                 static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
                 let static_buf = STATIC_BUF.init([0u8; 200]);
                 let ssid_spec = block_on(get_ssid_spec(&self.db, static_buf));
-                postcard::to_slice(&ssid_spec, &mut self.buf).ok()?
+                let wifi = WiFiDetails {
+                    ssid_spec,
+                    tcp: self.tcp,
+                };
+                postcard::to_slice(&wifi, &mut self.buf).ok()?
             }
             _ => {
                 error!(
@@ -158,6 +163,7 @@ pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
+    tcp: Option<([u8; 4], u16)>,
     db: Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     watchdog: Watchdog,
 ) {
@@ -180,6 +186,7 @@ pub async fn start(
     let handle = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
+        tcp,
         db,
         buf: [0; 1024],
         watchdog,

@@ -38,7 +38,7 @@ pub enum ModalMessage {
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
     LoadFile,
-    HardwareDetailsModal(HardwareDetails),
+    HardwareDetailsModal(HardwareDetails, Option<([u8; 4], u16)>),
     VersionModal,
     ExitApp,
     EscKeyEvent(Event),
@@ -75,12 +75,21 @@ impl DisplayModal {
             }
 
             // Display hardware information
-            ModalMessage::HardwareDetailsModal(hardware_details) => {
+            ModalMessage::HardwareDetailsModal(hardware_details, tcp) => {
                 self.show_modal = true;
                 self.is_warning = false;
+                let body = match tcp {
+                    None => hardware_details.to_string(),
+                    Some(t) => {
+                        format!(
+                            "{}\nIP Address/Port: {}.{}.{}.{}:{}",
+                            hardware_details, t.0[0], t.0[1], t.0[2], t.0[3], t.1
+                        )
+                    }
+                };
                 self.modal_type = Some(ModalType::Info {
                     title: "Device Details".to_string(),
-                    body: hardware_details.to_string(),
+                    body,
                     is_version: false,
                 });
                 Task::none()

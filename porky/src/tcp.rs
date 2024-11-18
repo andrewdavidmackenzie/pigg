@@ -6,7 +6,7 @@ use embassy_net::tcp::client::{TcpClient, TcpClientState};
 use embassy_net::tcp::{AcceptError, TcpSocket};
 use embassy_net::Stack;
 
-const TCP_PORT: u16 = 1234;
+pub const TCP_PORT: u16 = 1234;
 
 /// Wait for a TCP connection to be made to this device, then respond to it with the [HardwareDescription]
 pub async fn wait_connection<'a>(
