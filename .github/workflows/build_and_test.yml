@@ -104,8 +104,8 @@ jobs:
         run: cd porky && RUSTFLAGS= cargo build --release
 
       - name: Install elf2uf2-rs
-        run: cargo binstall elf2uf2-rs
-        
+        run: cargo install elf2uf2-rs
+
       - name: Build UF2 file for porky
         run: cd porky && RUSTFLAGS= make uf2
 
