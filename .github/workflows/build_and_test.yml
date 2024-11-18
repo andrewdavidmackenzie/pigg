@@ -56,7 +56,7 @@ jobs:
       - name: Add target
         run: rustup target add armv7-unknown-linux-gnueabihf
 
-      - name: Install Linker
+      - name: Install armv7 Linker
         run: |
           sudo apt update
           sudo apt install -y gcc-arm-linux-gnueabihf
@@ -64,8 +64,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Clippy and Build for armv7
-        run: make armv7
+      - name: Build for armv7
+        run: cargo build --target=armv7-unknown-linux-gnueabihf
+
+  arm7-musl-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Add target
+        run: rustup target add armv7-unknown-linux-musleabihf
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Cross
+        shell: bash
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall --no-confirm cross
+
+      - name: Build for armv7-musl
+        run: RUSTFLAGS= make build-armv7-musl
 
   aarch64-build:
     runs-on: ubuntu-latest
@@ -80,7 +105,7 @@ jobs:
       - name: Add target
         run: rustup target add aarch64-unknown-linux-gnu
 
-      - name: Install Linkers
+      - name: Install aarch64 Linker
         run: |
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu
@@ -88,8 +113,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Clippy and Build for aarch64
-        run: make aarch64
+      - name: Build for aarch64
+        run: cargo build --target=aarch64-unknown-linux-gnu
 
   porky-release-build:
     runs-on: ubuntu-latest
