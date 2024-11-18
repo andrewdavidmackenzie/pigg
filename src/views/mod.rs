@@ -7,7 +7,7 @@ pub mod hardware_view;
 pub mod info_row;
 pub mod layout_selector;
 pub mod message_box;
-pub mod modal_handler;
+pub mod modal;
 pub mod pin_state;
 #[cfg(feature = "usb-raw")]
 pub mod ssid_dialog;

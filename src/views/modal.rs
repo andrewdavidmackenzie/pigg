@@ -14,7 +14,7 @@ use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 
-pub struct DisplayModal {
+pub struct ModalDialog {
     pub show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
@@ -45,7 +45,7 @@ pub enum ModalMessage {
     OpenRepoLink,
 }
 
-impl DisplayModal {
+impl ModalDialog {
     pub fn new() -> Self {
         Self {
             show_modal: false,
@@ -282,7 +282,7 @@ mod tests {
 
     #[test]
     fn test_hide_modal() {
-        let mut display_modal = DisplayModal::new();
+        let mut display_modal = ModalDialog::new();
         display_modal.show_modal = true;
         display_modal.modal_type = Some(ModalType::Info {
             title: "Test".to_string(),
@@ -296,7 +296,7 @@ mod tests {
 
     #[test]
     fn test_unsaved_changes_exit_modal() {
-        let mut display_modal = DisplayModal::new();
+        let mut display_modal = ModalDialog::new();
 
         let _ = display_modal.update(ModalMessage::UnsavedChangesExitModal);
         assert!(display_modal.show_modal);
@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_version_modal() {
-        let mut display_modal = DisplayModal::new();
+        let mut display_modal = ModalDialog::new();
 
         let _ = display_modal.update(ModalMessage::VersionModal);
         assert!(display_modal.show_modal);

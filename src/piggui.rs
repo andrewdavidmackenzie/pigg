@@ -7,7 +7,7 @@ use crate::views::info_row::InfoRow;
 use crate::views::layout_selector::{Layout, LayoutSelector};
 use crate::views::message_box::MessageMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
-use crate::views::modal_handler::{DisplayModal, ModalMessage};
+use crate::views::modal::{ModalDialog, ModalMessage};
 #[cfg(feature = "usb-raw")]
 use crate::views::ssid_dialog::SsidDialog;
 use crate::widgets::modal::modal;
@@ -92,7 +92,7 @@ pub struct Piggui {
     layout_selector: LayoutSelector,
     unsaved_changes: bool,
     info_row: InfoRow,
-    modal_handler: DisplayModal,
+    modal_handler: ModalDialog,
     hardware_view: HardwareView,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
@@ -165,7 +165,7 @@ impl Piggui {
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
-                modal_handler: DisplayModal::new(),
+                modal_handler: ModalDialog::new(),
                 hardware_view: HardwareView::new(),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),

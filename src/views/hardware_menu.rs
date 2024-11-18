@@ -12,7 +12,7 @@ use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
     MENU_BUTTON_STYLE,
 };
-use crate::views::modal_handler::ModalMessage::HardwareDetailsModal;
+use crate::views::modal::ModalMessage::HardwareDetailsModal;
 #[cfg(feature = "usb-raw")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareTarget::*;
