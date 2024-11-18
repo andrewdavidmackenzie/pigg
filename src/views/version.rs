@@ -1,5 +1,5 @@
 use crate::views::info_row::{MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE};
-use crate::{Message, ModalMessage};
+use crate::{InfoDialogMessage, Message};
 use iced::widget::button::Status::Hovered;
 use iced::widget::{Button, Text};
 use iced::Element;
@@ -32,7 +32,7 @@ pub fn version_button() -> Element<'static, Message> {
     let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
 
     Button::new(version_text)
-        .on_press(Message::Modal(ModalMessage::VersionModal))
+        .on_press(Message::Modal(InfoDialogMessage::VersionModal))
         .clip(true)
         .height(iced::Length::Shrink)
         .style(move |_theme, status| {

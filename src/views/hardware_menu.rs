@@ -8,11 +8,11 @@ use crate::views::connect_dialog::ConnectDialogMessage;
 #[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu::KnownDevice::Porky;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
+use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
     MENU_BUTTON_STYLE,
 };
-use crate::views::modal::ModalMessage::HardwareDetailsModal;
 #[cfg(feature = "usb-raw")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareTarget::*;

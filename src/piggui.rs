@@ -3,11 +3,11 @@ use crate::hw_definition::config::HardwareConfig;
 #[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
+use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
 use crate::views::message_box::MessageMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
-use crate::views::modal::{ModalDialog, ModalMessage};
 #[cfg(feature = "usb-raw")]
 use crate::views::ssid_dialog::SsidDialog;
 use crate::widgets::modal::modal;
@@ -66,7 +66,7 @@ pub enum Message {
     Load,
     LayoutChanged(Layout),
     Hardware(HardwareViewMessage),
-    Modal(ModalMessage),
+    Modal(InfoDialogMessage),
     InfoRow(MessageRowMessage),
     WindowEvent(iced::Event),
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -91,7 +91,7 @@ pub struct Piggui {
     layout_selector: LayoutSelector,
     unsaved_changes: bool,
     info_row: InfoRow,
-    modal_handler: ModalDialog,
+    modal_handler: InfoDialog,
     hardware_view: HardwareView,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
@@ -164,7 +164,7 @@ impl Piggui {
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
-                modal_handler: ModalDialog::new(),
+                modal_handler: InfoDialog::new(),
                 hardware_view: HardwareView::new(),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
@@ -191,7 +191,7 @@ impl Piggui {
                     if self.unsaved_changes {
                         let _ = self
                             .modal_handler
-                            .update(ModalMessage::UnsavedChangesExitModal);
+                            .update(InfoDialogMessage::UnsavedChangesExitModal);
                     } else {
                         return window::get_latest().and_then(window::close);
                     }
@@ -223,7 +223,7 @@ impl Piggui {
                 if self.unsaved_changes {
                     let _ = self
                         .modal_handler
-                        .update(ModalMessage::UnsavedLoadConfigChangesModal);
+                        .update(InfoDialogMessage::UnsavedLoadConfigChangesModal);
                 } else {
                     return pick_and_load();
                 }
@@ -380,7 +380,7 @@ impl Piggui {
             return modal(
                 content,
                 self.modal_handler.view(),
-                Modal(ModalMessage::HideModal),
+                Modal(InfoDialogMessage::HideModal),
             );
         }
 
