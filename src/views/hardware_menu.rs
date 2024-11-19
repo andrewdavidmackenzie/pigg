@@ -1,5 +1,6 @@
 #[cfg(feature = "usb-raw")]
 use crate::hw_definition::description::HardwareDescription;
+#[cfg(feature = "usb-raw")]
 use crate::hw_definition::description::WiFiDetails;
 #[cfg(feature = "usb-raw")]
 use crate::usb_raw;
