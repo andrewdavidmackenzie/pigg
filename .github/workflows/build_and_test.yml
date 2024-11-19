@@ -80,17 +80,16 @@ jobs:
       - name: Add target
         run: rustup target add armv7-unknown-linux-musleabihf
 
+      - name: Install armv7 Linker
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-arm-linux-gnueabihf
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Cross
-        shell: bash
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall --no-confirm cross
-
       - name: Build for armv7-musl
-        run: RUSTFLAGS= make build-armv7-musl
+        run: RUSTFLAGS= cargo build --target=armv7-unknown-linux-musleabihf
 
   aarch64-build:
     runs-on: ubuntu-latest

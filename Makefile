@@ -16,7 +16,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-porky test
+all: clippy build build-arm build-porky test
 
 .PHONY: clean
 clean:
@@ -63,6 +63,10 @@ build-porky:
 .PHONY: test
 test:
 	cargo test
+
+#### arm builds
+.PHONY: build-arm
+build-arm: build-armv7 build-armv7-musl build-aarch64
 
 #### armv7 targets
 .PHONY: armv7
