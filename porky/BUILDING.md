@@ -56,7 +56,7 @@ security = "wpa2"
 
 Valid values for the `security` field are: `open`, `wpa`, `wpa2` and `wpa3`
 
-Create this file with your SSID information in it and then run the makefile `make` target and it will produce a
+Create this file with your SSID information in it and then run the makefile `make` target, and it will produce a
 `porky` binary with that SSID as the default SSID. Run `make uf2` to generate a UF2 file for download.
 
 ## Running Directly
@@ -82,13 +82,13 @@ Use `make uf2` Makefile target.
 
 This uses the `elf2usb2` command which you can install using cargo.
 
-This will produce the file `target/thumbv6m-none-eabi/release/porky.uf2`
+This will produce the file `target/thumbv6m-none-eabi/release/porky_pico_w.uf2`
 
-You can check its type using: `file target/thumbv6m-none-eabi/release/porky.uf2`:
+You can check its type using: `file target/thumbv6m-none-eabi/release/porky_pico_w.uf2`:
 
 ```
-target/thumbv6m-none-eabi/release/porky.uf2: UF2 firmware image, family Raspberry Pi RP2040, address 0x10000000, 1608 total blocks
+target/thumbv6m-none-eabi/release/porky_pico_w.uf2: UF2 firmware image, family Raspberry Pi RP2040, address 0x10000000, 1608 total blocks
 ```
 
-See [section in README.md](README.md#installing-and-running-porky-on-your-raspberry-pi-pico-w) for how to use your
-newly created UF2 file.
+See [section in README.md](README.md#installing-and-running-porky-on-your-raspberry-pi-pico-w) for how to use your newly
+created UF2 file.
