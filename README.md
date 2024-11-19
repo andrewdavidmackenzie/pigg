@@ -38,7 +38,7 @@ hardware remotely.
   </tr>
 </table>
 
-## What's new in this release - Pi Pico W Support!
+## What's new in Release 0.5.0 - Pi Pico W Support!
 
 The `pigg` project now has initial Raspberry Pi Pico W support!!!
 
