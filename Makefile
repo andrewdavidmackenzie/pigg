@@ -74,24 +74,24 @@ armv7: clippy-armv7 build-armv7 build-armv7-musl
 
 .PHONY: clippy-armv7
 clippy-armv7:
-	cross clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: build-armv7
 build-armv7:
-	cross build --target=armv7-unknown-linux-gnueabihf
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross build --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: build-armv7-musl
 build-armv7-musl:
-	cross build --target=armv7-unknown-linux-musleabihf
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross build --target=armv7-unknown-linux-musleabihf
 
 .PHONY: release-build-armv7
 release-build-armv7:
-	cross build --release --target=armv7-unknown-linux-gnueabihf
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross build --release --target=armv7-unknown-linux-gnueabihf
 
 # NOTE: The tests will be built for armv7 architecture, so tests can only be run on that architecture
 .PHONY: test-armv7
 test-armv7:
-	cross test --target=armv7-unknown-linux-gnueabihf
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross test --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: copy-armv7
 copy-armv7:
@@ -110,20 +110,20 @@ aarch64: clippy-aarch64 build-aarch64
 
 .PHONY: clippy-aarch64
 clippy-aarch64:
-	cross clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
 
 .PHONY: build-aarch64
 build-aarch64:
-	cross build --target=aarch64-unknown-linux-gnu
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross build --target=aarch64-unknown-linux-gnu
 
 .PHONY: release-build-aarch64
 release-build-aarch64:
-	cross build --release --target=aarch64-unknown-linux-gnu
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross build --release --target=aarch64-unknown-linux-gnu
 
 # NOTE: The tests will be built for aarch64 architecture, so tests can only be run on that architecture
 .PHONY: test-aarch64
 test-aarch64:
-	cross test --target=aarch64-unknown-linux-gnu
+	DOCKER_DEFAULT_PLATFORM=linux/amd64 cross test --target=aarch64-unknown-linux-gnu
 
 .PHONY: copy-aarch64
 copy-aarch64:
