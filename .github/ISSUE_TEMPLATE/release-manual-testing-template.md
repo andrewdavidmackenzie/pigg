@@ -103,6 +103,10 @@ entire groups of tests that don't need to be repeated in all scenarios.
     - 3 - Piggui on Mac/Linux/Windows + Piglet on same machine
     - 4 - Piggui on Pi + Piglet on same machine
     - 5 - Piggui on Mac/Linux/Windows + Piglet on Pi
+        - a) - On Pi Zero / Zero 2 (gnu-aarch64)
+        - b) - On Pi 3B (armv7 gnu and musl binaries)
+        - c) - On Pi 4/400 (gnu-aarch64)
+        - d) - On Pi 5 (gnu-aarch64)
 - Piggui and porky
     - 6 - Piggui on Mac/Linux/Windows + porky
 
@@ -133,6 +137,10 @@ Execute the tests blocks in the specified scenario and click the checkbox when a
 
 
 - Scenario: 5 - Piggui on Mac/Linux/Windows + Piglet on Pi
+    - a) - On Pi Zero / Zero 2 (gnu-aarch64)
+    - b) - On Pi 3B (armv7 gnu and musl binaries)
+    - c) - On Pi 4/400 (gnu-aarch64)
+    - d) - On Pi 5 (gnu-aarch64)
 - Test Blocks:
     - [ ] HW Interaction
     - [ ] Networking
