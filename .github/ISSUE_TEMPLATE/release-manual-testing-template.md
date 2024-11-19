@@ -69,7 +69,18 @@ entire groups of tests that don't need to be repeated in all scenarios.
       state
         - Trying to exit should exit immediately
 
-#### Networking (only applies to Piggui + Piglet scenarios)
+#### USB (applies to Piggui+Porky scenario only)
+
+- Piggui can detect a USB connected porky
+- the device is added to the discovered devices menu
+- when the porky is flashed with a "stock" UF2 from a release:
+    - the "Display device details" dialog shows it as NOT connected to wifi initially
+    - the "Configure wifi" option opens the dialog but it's not prefilled with anything
+    - configuring with a valid ssid, it reboots and connects (dialog displays IP and port)
+    - the "reset wifi" option causes a reboot and now the device no longer has a config
+      and doesn't connect to the wifi
+
+#### Networking (only applies to Piggui+Piglet and Piggui+Porky scenarios)
 
 - Piggui can disconnect from the current hardware that was connected at startup (fake or Pi hw)
     - The board layout is not shown
@@ -79,6 +90,9 @@ entire groups of tests that don't need to be repeated in all scenarios.
 - Piggui can connect to piglet using Iroh with a nodeid entered via dialog
 - Piggui can connect to piglet using TCP with a ip:port via command line
 - Piggui can connect to piglet using TCP with a ip:port entered via dialog
+- Piggui can connect to porky using TCP with a ip:port entered via dialog
+    - A Pi Pico pin layout is shown
+- Piggui can connect to porky using TCP with a ip:port via command line
 
 ### Scenarios
 
@@ -89,6 +103,8 @@ entire groups of tests that don't need to be repeated in all scenarios.
     - 3 - Piggui on Mac/Linux/Windows + Piglet on same machine
     - 4 - Piggui on Pi + Piglet on same machine
     - 5 - Piggui on Mac/Linux/Windows + Piglet on Pi
+- Piggui and porky
+    - 6 - Piggui on Mac/Linux/Windows + porky
 
 ## Manual Test Matrix
 
@@ -120,6 +136,11 @@ Execute the tests blocks in the specified scenario and click the checkbox when a
 - Test Blocks:
     - [ ] HW Interaction
     - [ ] Networking
+
+- Scenario 6 - Piggui on Mac/Linux/Windows + porky
+    - [ ] HW Interaction
+    - [ ] Networking
+    - [ ] USB
 
 ## Already automated tests
 
