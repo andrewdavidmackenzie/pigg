@@ -84,7 +84,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build for armv7-musl
-        run: cargo build --target=armv7-unknown-linux-musleabihf
+        run: RUSTFLAGS= cargo build --target=armv7-unknown-linux-musleabihf
 
   aarch64-build:
     runs-on: ubuntu-latest
