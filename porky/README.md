@@ -10,7 +10,7 @@ See [Building.md](BUILDING.md) on details of how to build from source.
 
 ### Getting a UF2 file
 
-You should find a `porky` UF2 file as part of the pre-build binaries in a release.
+You should find a `porky_pico_w.uf2` UF2 file as part of the pre-build binaries in a release.
 
 If you wish to build your own (e.g. maybe you want to specify a default Wi-Fi network to connect to), please consult
 the [UF2 Building section of BUILDING.md](BUILDING.md#creating-a-uf2-file)
@@ -42,7 +42,7 @@ You should be able to drag 'n' drop or copy the UF2 file to `/Volumes/RPI-RP` us
 but I (and many others on the Internet) get an error from macOS 14.
 
 However, this works:
-`ditto --norsrc --noextattr --noacl picomon.uf2 /Volumes/RPI-RP2`
+`ditto --norsrc --noextattr --noacl porky_pico_w.uf2 /Volumes/RPI-RP2`
 
 people report that `rsync` may also work.
 

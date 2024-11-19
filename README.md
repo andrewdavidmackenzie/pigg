@@ -40,7 +40,11 @@ hardware remotely.
 
 ## What's new in this release - Pi Pico W Support!
 
-Raspberry Pi Pico W support!!! Including:
+The `pigg` project now has initial Raspberry Pi Pico W support!!!
+
+It's a first version and is missing a few things we have planned on the [roadmap](#roadmap), but it's a great start!
+
+Pi Pico support includes:
 
 - Embedded application `porky` for running on the Pi Pico W
 - UF2 Image provided as part of release to aid programming Pi Pico W devices with `porky`
@@ -49,16 +53,15 @@ Raspberry Pi Pico W support!!! Including:
 - USB direct connection between `piggui` and `porky` that allows you to:
     - Discover USB connected `porky` devices
     - View information about the device
-    - Determine if it is connected to the Wi-Fi network and if it is, get it's IP and Port for remote GUI use
+    - Determine if it is connected to the Wi-Fi network and if it is, get its IP and Port for remote GUI use
     - Program an "override" Wi-Fi network it will use to connect to, instead of the default one as part of the build.
       This
-      is persisted in Flash memory so it is used again on restart/reboot.
+      is persisted in Flash memory, so it is used again on restart/reboot.
     - Reset the "override" Wi-Fi (removing it) so that on restart the device will connect to the default one if it
       exists.
       If not, it will restart, connect to USB and wait to be programmed with a Wi-Fi network to connect to.
-- Remote access to the (headless) Pico W's GPIO over the network, in the same user interface as remote access to Pi
-  GPIO hardware via `piglet`
-- Pi Pico specific pin layout and numbering
+- Remote network access to the (headless) Pico W's GPIO, in the same GUI as remote access to Raspberry Pis (not Pico).
+- Pi Pico specific pin layout and numbering displayed in GUI
 
 NOTE: Support for Pi Pico (not W), Pi Pico 2 (not W) and Pi Pico 2 W is planned for next releases.
 
@@ -87,7 +90,7 @@ NOTE: Support for Pi Pico (not W), Pi Pico 2 (not W) and Pi Pico 2 W is planned 
   foreground and this will detect the background instance and display its `nodeid` for you then exit.
 - Take the `nodeid` and either supply it as a command line option to `piggui` (`--nodeid $nodeid`, prefixed with `-- `
   if using `cargo run`) or enter it into the GUI. To connect to a remote instance from the GUI, click on the
-  "hardware menu" in the left of the info bar at the bottom of the screen and select the "Connect to remote Pi..:"
+  "hardware menu" in the left of the info bar at the bottom of the screen and select the "Connect to remote Pi..."
   menu item. Then enter the `nodeid` into the field provided and hit "Connect"
 - Here are two videos showing the two ways to use it, with piglet running on a RPi shown via VNC.
     - Video with Dialog: https://youtu.be/aToJ1aT7NeM
@@ -138,10 +141,20 @@ Please let us know what you think, and suggestions, via
 
 ## Roadmap
 
-We have identified a number of areas we would like to work on after this initial release,
-but would really appreciate your input on what could be most useful or just the coolest,
-many have GH issues.
+We have identified a number of areas to work on in future releases, but we would really appreciate your input
+on what could be most useful or just the coolest, many have GH issues.
 
+See issues in
+milestones [0.6.0](https://github.com/andrewdavidmackenzie/pigg/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6.0)
+and [0.7.0](https://github.com/andrewdavidmackenzie/pigg/issues?q=is%3Aopen+is%3Aissue+milestone%3A%220.7.0+Release%22)
+for the entire up-to-date list and progress.
+
+- Extend Pi Pico support:
+    - Persisting of GPIO config to flash and recovery at reboot/restart so that the GPIO continues to work as before
+    - Full functionality over USB, not just getting hardware details and Wi-Fi config as in 0.5.0
+    - Support for Pi Pico (not W) using USB above
+    - Support for Pi Pico 2 and Pi Pico 2 W
+- Discovery of compatible Pi and Pi Pico devices on the local network
 - Expand support beyond Inputs and Outputs ( e.g. Clocks, PWM, I2C, UART, SPI etc.).
   Issue [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
   [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
