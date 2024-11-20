@@ -3,6 +3,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::BCMPinNumber;
 use futures::channel::mpsc::Sender;
 
+#[cfg(not(feature = "no_std"))]
 #[allow(dead_code)] // Not used by piglet
 /// This enum is for async events in the hardware that will be sent to the GUI
 #[allow(clippy::large_enum_variant)]
