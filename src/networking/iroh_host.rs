@@ -9,7 +9,7 @@ use iroh_net::{
 };
 use std::io;
 
-use crate::hw::PIGLET_ALPN;
+use super::PIGLET_ALPN;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::HardwareDescription;
 
