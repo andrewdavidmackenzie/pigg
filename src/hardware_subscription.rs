@@ -1,4 +1,4 @@
-use crate::{hw, piggui_local_helper};
+use crate::{hw, networking::piggui_local_helper};
 use futures::channel::mpsc::Sender;
 
 use crate::hw_definition::config::HardwareConfigMessage;
@@ -6,9 +6,9 @@ use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
 
 #[cfg(feature = "iroh")]
-use crate::piggui_iroh_helper;
+use crate::networking::piggui_iroh_helper;
 #[cfg(feature = "tcp")]
-use crate::piggui_tcp_helper;
+use crate::networking::piggui_tcp_helper;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};

@@ -41,14 +41,7 @@ mod file_helper;
 mod hardware_subscription;
 mod hw;
 mod hw_definition;
-#[cfg(feature = "iroh")]
-#[path = "networking/piggui_iroh_helper.rs"]
-mod piggui_iroh_helper;
-#[path = "networking/piggui_local_helper.rs"]
-mod piggui_local_helper;
-#[cfg(feature = "tcp")]
-#[path = "networking/piggui_tcp_helper.rs"]
-mod piggui_tcp_helper;
+mod networking;
 #[cfg(feature = "usb-raw")]
 mod usb_raw;
 mod views;
