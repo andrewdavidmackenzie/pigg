@@ -1,5 +1,7 @@
 use crate::hw::driver::HW;
-use crate::hw_definition::config::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputChange};
+use crate::hw_definition::config::HardwareConfigMessage::{
+    IOLevelChanged, NewConfig, NewPinConfig,
+};
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use crate::hw_definition::event::HardwareEvent;
 use crate::hw_definition::event::HardwareEvent::InputChange;
@@ -40,7 +42,7 @@ pub async fn apply_config_change(
 
             send_current_input_state(&bcm, &pin_function, gc, hardware).await?;
         }
-        OutputChange(bcm, level_change) => {
+        IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
         }

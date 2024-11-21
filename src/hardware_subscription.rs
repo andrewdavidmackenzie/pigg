@@ -3,7 +3,7 @@ use futures::channel::mpsc::Sender;
 
 use crate::hw_definition::config::HardwareConfigMessage;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::hw_definition::config::HardwareConfigMessage::OutputChange;
+use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
 
 use crate::hw_definition::event::HardwareEvent;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -169,7 +169,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                         // receive an input level change from remote hardware
                         remote_event = fused_wait_for_remote_message => {
-                            if let Ok(OutputChange(bcm, level_change)) = remote_event {
+                            if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
                                  gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
                              }
                         }
@@ -192,7 +192,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                         // receive an input level change from remote hardware
                         remote_event = fused_wait_for_remote_message => {
-                            if let Ok(OutputChange(bcm, level_change)) = remote_event {
+                            if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
                                  gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
                              }
                         }

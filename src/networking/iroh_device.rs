@@ -10,7 +10,9 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
-use crate::hw_definition::config::HardwareConfigMessage::{NewConfig, NewPinConfig, OutputChange};
+use crate::hw_definition::config::HardwareConfigMessage::{
+    IOLevelChanged, NewConfig, NewPinConfig,
+};
 use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 use crate::hw_definition::description::HardwareDescription;
 use iroh_net::endpoint::Connection;
@@ -156,7 +158,7 @@ async fn apply_config_change(
 
             send_current_input_state(&bcm, &pin_function, cc, hardware).await?;
         }
-        OutputChange(bcm, level_change) => {
+        IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
         }
@@ -210,7 +212,7 @@ async fn send_input_level_async(
 ) -> anyhow::Result<()> {
     let level_change = LevelChange::new(level, timestamp);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
-    let hardware_event = OutputChange(bcm, level_change);
+    let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
     send(connection, &message).await
 }
@@ -223,7 +225,7 @@ fn send_input_level(
     level_change: LevelChange,
 ) -> anyhow::Result<()> {
     trace!("Pin #{bcm} Input level change: {level_change:?}");
-    let hardware_event = OutputChange(bcm, level_change);
+    let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()

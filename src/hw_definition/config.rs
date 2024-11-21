@@ -34,8 +34,8 @@ pub enum HardwareConfigMessage {
     NewConfig(HardwareConfig),
     /// A pin has had its config changed
     NewPinConfig(BCMPinNumber, PinFunction),
-    /// The level of an Output pin has been set
-    OutputChange(BCMPinNumber, LevelChange),
+    /// The level of a pin has changed
+    IOLevelChanged(BCMPinNumber, LevelChange),
 }
 
 #[cfg(feature = "no_std")]

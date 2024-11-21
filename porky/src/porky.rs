@@ -75,7 +75,7 @@ mod flash;
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
 
-/// [SSID_SPEC_KEY] is the key to a possible netry in the Flash DB for SsidSpec override
+/// [SSID_SPEC_KEY] is the key to a possible entry in the Flash DB for SsidSpec override
 const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
 bind_interrupts!(struct Irqs {
