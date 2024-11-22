@@ -62,7 +62,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
         .await?;
 
     let nodeid = endpoint.node_id();
-    info!("nodeid: {nodeid}");
+    println!("nodeid: {nodeid}"); // Don't removed - required by integration tests
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -78,7 +78,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
     let relay_url = endpoint
             .home_relay()
             .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    info!("Relay URL: {relay_url}");
+    println!("Relay URL: {relay_url}"); // Don't removed - required by integration tests
 
     Ok(IrohDevice {
         nodeid,
