@@ -28,9 +28,9 @@ use tracing_subscriber::filter::{Directive, LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 #[cfg(feature = "iroh")]
-use crate::piglet_iroh_helper::{iroh_accept, iroh_message_loop};
+use crate::networking::iroh_device;
 #[cfg(feature = "tcp")]
-use crate::piglet_tcp_helper::{tcp_accept, tcp_message_loop};
+use crate::networking::tcp_device;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use serde::{Deserialize, Serialize};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -38,12 +38,7 @@ use std::{fs::File, io::Write};
 
 mod hw;
 mod hw_definition;
-#[cfg(feature = "iroh")]
-#[path = "networking/piglet_iroh_helper.rs"]
-mod piglet_iroh_helper;
-#[cfg(feature = "tcp")]
-#[path = "networking/piglet_tcp_helper.rs"]
-mod piglet_tcp_helper;
+mod networking;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
@@ -53,9 +48,9 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 #[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
-    pub iroh_info: piglet_iroh_helper::IrohInfo,
+    pub iroh_info: iroh_device::IrohDevice,
     #[cfg(feature = "tcp")]
-    pub tcp_info: piglet_tcp_helper::TcpInfo,
+    pub tcp_info: tcp_device::TcpDevice,
 }
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -110,7 +105,7 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
 async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
     setup_logging(matches);
 
-    let mut hw = hw::get();
+    let mut hw = hw::driver::get();
     info!("\n{}", hw.description()?.details);
 
     // Load any config file specified on the command line
@@ -128,9 +123,9 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     let listener_info = ListenerInfo {
         #[cfg(feature = "iroh")]
-        iroh_info: piglet_iroh_helper::get_iroh_listener_info().await?,
+        iroh_info: iroh_device::get_device().await?,
         #[cfg(feature = "tcp")]
-        tcp_info: piglet_tcp_helper::get_tcp_listener_info().await?,
+        tcp_info: tcp_device::get_device().await?,
     };
 
     // write the info about the node to the info_path file for use in piggui
@@ -145,9 +140,9 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     if let Some(mut listener) = listener_info.tcp_info.listener {
         loop {
             println!("Waiting for TCP connection");
-            if let Ok(stream) = tcp_accept(&mut listener, &desc).await {
+            if let Ok(stream) = tcp_device::accept_connection(&mut listener, &desc).await {
                 println!("Connected via TCP");
-                let _ = tcp_message_loop(stream, &mut hw).await;
+                let _ = tcp_device::tcp_message_loop(stream, &mut hw).await;
             }
         }
     }
@@ -156,9 +151,9 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     if let Some(endpoint) = listener_info.iroh_info.endpoint {
         loop {
             println!("Waiting for Iroh connection");
-            if let Ok(connection) = iroh_accept(&endpoint, &desc).await {
+            if let Ok(connection) = iroh_device::accept_connection(&endpoint, &desc).await {
                 println!("Connected via Iroh");
-                let _ = iroh_message_loop(connection, &mut hw).await;
+                let _ = iroh_device::iroh_message_loop(connection, &mut hw).await;
             }
         }
     }
@@ -171,19 +166,19 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     ) {
         loop {
             println!("Waiting for Iroh or TCP connection");
-            let fused_tcp = tcp_accept(&mut tcp_listener, &desc).fuse();
-            let fused_iroh = iroh_accept(&iroh_endpoint, &desc).fuse();
+            let fused_tcp = tcp_device::accept_connection(&mut tcp_listener, &desc).fuse();
+            let fused_iroh = iroh_device::accept_connection(&iroh_endpoint, &desc).fuse();
 
             futures::pin_mut!(fused_tcp, fused_iroh);
 
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
-                    let _ = tcp_message_loop(tcp_stream?, &mut hw).await;
+                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hw).await;
                 },
                 iroh_connection = fused_iroh => {
                     println!("Connected via Iroh");
-                    let _ =  iroh_message_loop(iroh_connection?, &mut hw).await;
+                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hw).await;
                 }
                 complete => {}
             }
@@ -404,7 +399,7 @@ mod test {
             .expect("Could not create Relay URL");
 
         let info = ListenerInfo {
-            iroh_info: crate::piglet_iroh_helper::IrohInfo {
+            iroh_info: crate::iroh_device::IrohDevice {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
@@ -412,7 +407,7 @@ mod test {
                 endpoint: None,
             },
             #[cfg(feature = "tcp")]
-            tcp_info: crate::piglet_tcp_helper::TcpInfo {
+            tcp_info: crate::tcp_device::TcpDevice {
                 ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
                 port: 9001,
                 listener: None,
@@ -439,7 +434,7 @@ mod test {
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         let info = ListenerInfo {
-            iroh_info: crate::piglet_iroh_helper::IrohInfo {
+            iroh_info: crate::iroh_device::IrohDevice {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
@@ -447,7 +442,7 @@ mod test {
                 endpoint: None,
             },
             #[cfg(feature = "tcp")]
-            tcp_info: crate::piglet_tcp_helper::TcpInfo {
+            tcp_info: crate::tcp_device::TcpDevice {
                 ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
                 port: 9001,
                 listener: None,

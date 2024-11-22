@@ -1,17 +1,18 @@
-use crate::{hw, piggui_local_helper};
+use crate::{hw, networking::local_device};
 use futures::channel::mpsc::Sender;
 
 use crate::hw_definition::config::HardwareConfigMessage;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
 
-#[cfg(feature = "iroh")]
-use crate::piggui_iroh_helper;
-#[cfg(feature = "tcp")]
-use crate::piggui_tcp_helper;
+use crate::hw_definition::event::HardwareEvent;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::views::hardware_view::HardwareEventMessage::InputChange;
-use crate::views::hardware_view::{HardwareEventMessage, HardwareTarget};
+use crate::hw_definition::event::HardwareEvent::InputChange;
+#[cfg(feature = "iroh")]
+use crate::networking::iroh_host;
+#[cfg(feature = "tcp")]
+use crate::networking::tcp_host;
+use crate::views::hardware_view::HardwareTarget;
 use futures::stream::Stream;
 use futures::SinkExt;
 use iced::futures::channel::mpsc;
@@ -42,9 +43,9 @@ pub enum HWState {
 }
 
 /// Report an error to the GUI, if it cannot be sent print to STDERR
-async fn report_error(mut gui_sender: Sender<HardwareEventMessage>, e: &str) {
+async fn report_error(mut gui_sender: Sender<HardwareEvent>, e: &str) {
     if let Err(e) = gui_sender
-        .send(HardwareEventMessage::Disconnected(e.to_string()))
+        .send(HardwareEvent::Disconnected(e.to_string()))
         .await
     {
         eprintln!("{e}");
@@ -53,12 +54,12 @@ async fn report_error(mut gui_sender: Sender<HardwareEventMessage>, e: &str) {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEventMessage> {
+pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent> {
     let target = hw_target.clone();
 
     stream::channel(100, move |gui_sender| async move {
         let mut state = HWState::Disconnected;
-        let mut connected_hardware = hw::get();
+        let mut connected_hardware = hw::driver::get();
 
         loop {
             let mut gui_sender_clone = gui_sender.clone();
@@ -75,7 +76,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                             let hardware_description = connected_hardware.description().unwrap();
                             // Send the sender back to the GUI
                             let _ = gui_sender_clone
-                                .send(HardwareEventMessage::Connected(
+                                .send(HardwareEvent::Connected(
                                     hardware_event_sender.clone(),
                                     hardware_description.clone(),
                                 ))
@@ -87,11 +88,11 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                         #[cfg(feature = "iroh")]
                         HardwareTarget::Iroh(nodeid, relay) => {
-                            match piggui_iroh_helper::connect(&nodeid, relay.clone()).await {
+                            match iroh_host::connect(&nodeid, relay.clone()).await {
                                 Ok((hardware_description, connection)) => {
                                     // Send the sender back to the GUI
                                     if let Err(e) = gui_sender_clone
-                                        .send(HardwareEventMessage::Connected(
+                                        .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
                                             hardware_description.clone(),
                                         ))
@@ -113,11 +114,11 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                         #[cfg(feature = "tcp")]
                         HardwareTarget::Tcp(ip, port) => {
-                            match piggui_tcp_helper::connect(ip, port).await {
+                            match tcp_host::connect(ip, port).await {
                                 Ok((hardware_description, stream)) => {
                                     // Send the stream back to the GUI
                                     if let Err(e) = gui_sender_clone
-                                        .send(HardwareEventMessage::Connected(
+                                        .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
                                             hardware_description.clone(),
                                         ))
@@ -139,7 +140,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                 HWState::ConnectedLocal(config_change_receiver) => {
                     if let Some(config_change) = config_change_receiver.next().await {
-                        if let Err(e) = piggui_local_helper::apply_config_change(
+                        if let Err(e) = local_device::apply_config_change(
                             &mut connected_hardware,
                             config_change,
                             gui_sender_clone.clone(),
@@ -155,14 +156,14 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                 HWState::ConnectedIroh(config_change_receiver, connection) => {
                     let mut connection_clone = connection.clone();
                     let fused_wait_for_remote_message =
-                        piggui_iroh_helper::wait_for_remote_message(&mut connection_clone).fuse();
+                        iroh_host::wait_for_remote_message(&mut connection_clone).fuse();
                     pin_mut!(fused_wait_for_remote_message);
 
                     futures::select! {
                         // receive a config change from the UI
                         config_change_message = config_change_receiver.next() => {
                             if let Some(change_message) = config_change_message {
-                                piggui_iroh_helper::send_config_change(connection, change_message).await.unwrap()
+                                iroh_host::send_config_change(connection, change_message).await.unwrap()
                             }
                         }
 
@@ -178,14 +179,14 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                 #[cfg(feature = "tcp")]
                 HWState::ConnectedTcp(config_change_receiver, stream) => {
                     let fused_wait_for_remote_message =
-                        piggui_tcp_helper::wait_for_remote_message(stream.clone()).fuse();
+                        tcp_host::wait_for_remote_message(stream.clone()).fuse();
                     pin_mut!(fused_wait_for_remote_message);
 
                     futures::select! {
                         // receive a config change from the UI
                         config_change_message = config_change_receiver.next() => {
                             if let Some(change_message) = config_change_message {
-                                piggui_tcp_helper::send_config_change(stream.clone(), change_message).await.unwrap()
+                                tcp_host::send_config_change(stream.clone(), change_message).await.unwrap()
                             }
                         }
 

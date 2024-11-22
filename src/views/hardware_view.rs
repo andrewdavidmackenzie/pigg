@@ -3,6 +3,7 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::InputPull;
 use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
+use crate::hw_definition::event::HardwareEvent;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
@@ -39,26 +40,13 @@ use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// This enum is for async events in the hardware that will be sent to the GUI
-#[allow(clippy::large_enum_variant)]
-#[derive(Clone, Debug)]
-pub enum HardwareEventMessage {
-    /// This event indicates that the listener is ready. It conveys a sender to the GUI
-    /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
-    Connected(Sender<HardwareConfigMessage>, HardwareDescription),
-    /// This event indicates that the logic level of an input has just changed
-    InputChange(BCMPinNumber, LevelChange),
-    /// We have lost the connection to the hardware
-    Disconnected(String),
-}
-
 /// [HardwareViewMessage] covers all messages that are handled by hardware_view
 #[derive(Debug, Clone)]
 pub enum HardwareViewMessage {
     Activate(BoardPinNumber),
     PinFunctionSelected(BCMPinNumber, PinFunction),
     NewConfig(HardwareConfig),
-    HardwareSubscription(HardwareEventMessage),
+    HardwareSubscription(HardwareEvent),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
 }
@@ -192,20 +180,20 @@ impl HardwareView {
             }
 
             HardwareSubscription(event) => match event {
-                HardwareEventMessage::Connected(config_change_sender, hw_desc) => {
+                HardwareEvent::Connected(config_change_sender, hw_desc) => {
                     self.hardware_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
                     return Task::perform(empty(), |_| Message::Connected);
                 }
-                HardwareEventMessage::InputChange(bcm_pin_number, level_change) => {
+                HardwareEvent::InputChange(bcm_pin_number, level_change) => {
                     self.pin_states
                         .entry(bcm_pin_number)
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HardwareEventMessage::Disconnected(details) => {
+                HardwareEvent::Disconnected(details) => {
                     return Task::perform(empty(), move |_| {
                         Message::ConnectionError(details.clone())
                     });

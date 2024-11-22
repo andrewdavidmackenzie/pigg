@@ -7,7 +7,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
-use crate::hw::HW;
+use crate::hw::driver::HW;
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
@@ -22,14 +22,14 @@ use std::net::IpAddr;
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct TcpInfo {
+pub(crate) struct TcpDevice {
     pub ip: IpAddr,
     pub port: u16,
     #[serde(skip)]
     pub listener: Option<TcpListener>,
 }
 
-impl Display for TcpInfo {
+impl Display for TcpDevice {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "IP Address: {}", self.ip)?;
         writeln!(f, "Port: {}", self.port)?;
@@ -37,27 +37,23 @@ impl Display for TcpInfo {
     }
 }
 
-pub(crate) async fn get_tcp_listener_info() -> anyhow::Result<TcpInfo> {
+pub(crate) async fn get_device() -> anyhow::Result<TcpDevice> {
     let ip = local_ip()?;
     let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
     println!("ip: '{ip}:{port}'");
-    let listener = tcp_bind(&ip, port).await?;
+    let address = format!("{}:{}", ip, port);
+    info!("Waiting for TCP connection @ {address}");
+    let listener = TcpListener::bind(&address).await?;
 
-    Ok(TcpInfo {
+    Ok(TcpDevice {
         ip,
         port,
         listener: Some(listener),
     })
 }
 
-async fn tcp_bind(ip: &IpAddr, port: u16) -> anyhow::Result<TcpListener> {
-    let address = format!("{}:{}", ip, port);
-    info!("Waiting for TCP connection @ {address}");
-    let listener = TcpListener::bind(&address).await?;
-    Ok(listener)
-}
-
-pub(crate) async fn tcp_accept(
+/// accept incoming connections, returns a TcpStream
+pub(crate) async fn accept_connection(
     listener: &mut TcpListener,
     desc: &HardwareDescription,
 ) -> anyhow::Result<TcpStream> {
@@ -96,7 +92,7 @@ pub(crate) async fn tcp_message_loop(
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
-pub async fn apply_config_change(
+async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
     writer: TcpStream,
@@ -111,16 +107,16 @@ pub async fn apply_config_change(
                 })
                 .await?;
 
-            let _ = send_current_input_states(writer.clone(), &config, hardware).await;
+            send_current_input_states(writer.clone(), &config, hardware).await?;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
             let wc = writer.clone();
-            let _ = hardware
+            hardware
                 .apply_pin_config(bcm, &pin_function, move |bcm, level_change| {
                     let _ = send_input_level(writer.clone(), bcm, level_change);
                 })
-                .await;
+                .await?;
 
             send_current_input_state(&bcm, &pin_function, wc, hardware).await?;
         }

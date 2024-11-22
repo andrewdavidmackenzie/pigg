@@ -1,5 +1,7 @@
-use crate::hw::{HW, PIGLET_ALPN};
+use super::PIGLET_ALPN;
+use crate::hw::driver::HW;
 use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 use anyhow::{bail, Context};
 use futures::StreamExt;
 use iroh_net::{Endpoint, NodeId};
@@ -7,8 +9,6 @@ use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
-
-use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
@@ -21,7 +21,7 @@ use iroh_net::relay::{RelayMode, RelayUrl};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct IrohInfo {
+pub(crate) struct IrohDevice {
     pub nodeid: NodeId,
     pub local_addrs: String,
     pub relay_url: RelayUrl,
@@ -30,7 +30,7 @@ pub(crate) struct IrohInfo {
     pub endpoint: Option<Endpoint>,
 }
 
-impl Display for IrohInfo {
+impl Display for IrohDevice {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "nodeid: {}", self.nodeid)?;
         writeln!(f, "relay URL: {}", self.relay_url)?;
@@ -38,7 +38,7 @@ impl Display for IrohInfo {
     }
 }
 
-pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
+pub async fn get_device() -> anyhow::Result<IrohDevice> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
@@ -62,7 +62,7 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
         .await?;
 
     let nodeid = endpoint.node_id();
-    println!("nodeid: {nodeid}");
+    println!("nodeid: {nodeid}"); // Don't removed - required by integration tests
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -73,14 +73,14 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
         .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
-    println!("local Addresses: {local_addrs}");
+    info!("local Addresses: {local_addrs}");
 
     let relay_url = endpoint
             .home_relay()
             .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    println!("Relay URL: {relay_url}");
+    println!("Relay URL: {relay_url}"); // Don't removed - required by integration tests
 
-    Ok(IrohInfo {
+    Ok(IrohDevice {
         nodeid,
         local_addrs,
         relay_url,
@@ -90,7 +90,7 @@ pub async fn get_iroh_listener_info() -> anyhow::Result<IrohInfo> {
 }
 
 /// accept incoming connections, returns a normal QUIC connection
-pub async fn iroh_accept(
+pub async fn accept_connection(
     endpoint: &Endpoint,
     desc: &HardwareDescription,
 ) -> anyhow::Result<Connection> {
@@ -114,7 +114,7 @@ pub async fn iroh_accept(
 pub async fn iroh_message_loop(connection: Connection, hardware: &mut HW) -> anyhow::Result<()> {
     loop {
         let mut config_receiver = connection.accept_uni().await?;
-        trace!("Receiving config message");
+        info!("Waiting for message");
         let payload = config_receiver.read_to_end(4096).await?;
 
         if payload.is_empty() {
@@ -130,19 +130,18 @@ pub async fn iroh_message_loop(connection: Connection, hardware: &mut HW) -> any
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
-pub async fn apply_config_change(
+async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
     connection: Connection,
 ) -> anyhow::Result<()> {
     match config_change {
         NewConfig(config) => {
-            let cc = connection.clone();
             info!("New config applied");
+            let cc = connection.clone();
             hardware
                 .apply_config(&config, move |bcm, level_change| {
-                    let cc = connection.clone();
-                    let _ = send_input_level(cc, bcm, level_change);
+                    let _ = send_input_level(connection.clone(), bcm, level_change);
                 })
                 .await?;
 
@@ -162,8 +161,6 @@ pub async fn apply_config_change(
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
-            // No need to send to UI, as this change came from the UI, less we take out of
-            // new_pin_function() in hardware view
         }
     }
 
@@ -236,6 +233,7 @@ fn send_input_level(
     rt.block_on(send(connection, &message))
 }
 
+/// Send a message to the GUI using `connection` [Connection]
 async fn send(connection: Connection, message: &[u8]) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
     gui_sender.write_all(message).await?;

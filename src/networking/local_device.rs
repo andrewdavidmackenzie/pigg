@@ -1,24 +1,25 @@
-use crate::hw::HW;
+use crate::hw::driver::HW;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
+use crate::hw_definition::event::HardwareEvent;
+use crate::hw_definition::event::HardwareEvent::InputChange;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
-use crate::views::hardware_view::HardwareEventMessage;
-use crate::views::hardware_view::HardwareEventMessage::InputChange;
 use iced::futures::channel::mpsc::Sender;
-use log::trace;
+use log::{info, trace};
 use std::time::Duration;
 
 /// Apply a config change to the local hardware
 pub async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
-    gui_sender_clone: Sender<HardwareEventMessage>,
+    gui_sender_clone: Sender<HardwareEvent>,
 ) -> anyhow::Result<()> {
     match config_change {
         NewConfig(config) => {
+            info!("New config applied");
             let gc = gui_sender_clone.clone();
             hardware
                 .apply_config(&config, move |bcm_pin_number, level_change| {
@@ -27,9 +28,10 @@ pub async fn apply_config_change(
                 })
                 .await?;
 
-            send_current_input_states(gc, &config, hardware).await
+            send_current_input_states(gc, &config, hardware).await?;
         }
         NewPinConfig(bcm, pin_function) => {
+            info!("New pin config for pin #{bcm}: {pin_function}");
             let gc = gui_sender_clone.clone();
             hardware
                 .apply_pin_config(bcm, &pin_function, move |bcm_pin_number, level_change| {
@@ -38,18 +40,19 @@ pub async fn apply_config_change(
                 })
                 .await?;
 
-            send_current_input_state(&bcm, &pin_function, gc, hardware).await
+            send_current_input_state(&bcm, &pin_function, gc, hardware).await?;
         }
-        IOLevelChanged(bcm_pin_number, level_change) => {
-            hardware.set_output_level(bcm_pin_number, level_change.new_level)?;
-            Ok(())
+        IOLevelChanged(bcm, level_change) => {
+            trace!("Pin #{bcm} Output level change: {level_change:?}");
+            hardware.set_output_level(bcm, level_change.new_level)?;
         }
     }
+    Ok(())
 }
 
 /// Send the current input state for all inputs configured in the config
 async fn send_current_input_states(
-    gui_sender_clone: Sender<HardwareEventMessage>,
+    gui_sender_clone: Sender<HardwareEvent>,
     config: &HardwareConfig,
     hardware: &HW,
 ) -> anyhow::Result<()> {
@@ -70,7 +73,7 @@ async fn send_current_input_states(
 async fn send_current_input_state(
     bcm_pin_number: &BCMPinNumber,
     pin_function: &PinFunction,
-    gui_sender_clone: Sender<HardwareEventMessage>,
+    gui_sender_clone: Sender<HardwareEvent>,
     hardware: &HW,
 ) -> anyhow::Result<()> {
     let now = hardware.get_time_since_boot();
@@ -95,25 +98,27 @@ async fn send_current_input_state(
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
 async fn send_input_level_async(
-    mut gui_sender_clone: Sender<HardwareEventMessage>,
+    mut gui_sender_clone: Sender<HardwareEvent>,
     bcm: BCMPinNumber,
     level: PinLevel,
     timestamp: Duration,
 ) -> anyhow::Result<()> {
     let level_change = LevelChange::new(level, timestamp);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
-    gui_sender_clone.try_send(InputChange(bcm, level_change))?;
+    let hardware_event = InputChange(bcm, level_change);
+    gui_sender_clone.try_send(hardware_event)?;
     Ok(())
 }
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
 fn send_input_level(
-    mut gui_sender_clone: Sender<HardwareEventMessage>,
+    mut gui_sender_clone: Sender<HardwareEvent>,
     bcm: BCMPinNumber,
     level_change: LevelChange,
 ) -> anyhow::Result<()> {
     trace!("Pin #{bcm} Input level change: {level_change:?}");
-    gui_sender_clone.try_send(InputChange(bcm, level_change))?;
+    let hardware_event = InputChange(bcm, level_change);
+    gui_sender_clone.try_send(hardware_event)?;
     Ok(())
 }
