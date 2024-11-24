@@ -44,7 +44,7 @@ Wi-Fi network on startup, if you are building from source. Then all devices prog
 automatically try to connect to that Wi-Fi network at startup, without having to use `piggui` and USB.
 
 The build process looks for the presence of a valid SSID specification file (called `ssid.toml`) in TOML format in
-the `proky` project root directory (i.e. In `pigg/porky/` beside `Cargo.toml`).
+the `porky` project root directory (i.e. In `pigg/porky/` beside `Cargo.toml`).
 
 The format of `ssid.toml` must be like this:
 
@@ -80,7 +80,9 @@ Wi-Fi network, and the output of its IP and the port it is listening for TCP con
 
 Use `make uf2` Makefile target.
 
-This uses the `elf2usb2` command which you can install using cargo.
+This uses [`elf2usb2-rs`](https://github.com/JoNil/elf2uf2-rs). This can be installed using:
+- `cargo binstall elf2uf2-rs` if you use `cargo binstall` to install a pre-compiled binary
+- `cargo install elf2uf2-rs` to build it from source and install it
 
 This will produce the file `target/thumbv6m-none-eabi/release/porky_pico_w.uf2`
 
