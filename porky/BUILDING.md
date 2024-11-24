@@ -80,7 +80,7 @@ Wi-Fi network, and the output of its IP and the port it is listening for TCP con
 
 Use `make uf2` Makefile target.
 
-This uses [`elf2usb2`](https://crates.io/crates/elf2uf2-rs). This can be installed using:
+This uses [`elf2usb2-rs`](https://github.com/JoNil/elf2uf2-rs). This can be installed using:
 - `cargo binstall elf2uf2-rs` if you use `cargo binstall` to install a pre-compiled binary
 - `cargo install elf2uf2-rs` to build it from source and install it
 
