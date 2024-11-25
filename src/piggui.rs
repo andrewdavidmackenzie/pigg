@@ -37,11 +37,13 @@ use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 
+pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
 mod hw;
 mod hw_definition;
+pub mod local_device;
 mod networking;
 #[cfg(feature = "usb-raw")]
 mod usb_raw;

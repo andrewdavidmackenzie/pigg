@@ -1,6 +1,5 @@
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
-use crate::views::hardware_view::HardwareTarget;
 #[cfg(feature = "no_std")]
 use heapless::FnvIndexMap;
 use serde::{Deserialize, Serialize};
@@ -37,8 +36,6 @@ pub enum HardwareConfigMessage {
     NewPinConfig(BCMPinNumber, PinFunction),
     /// The level of a pin has changed
     IOLevelChanged(BCMPinNumber, LevelChange),
-    /// We wish to switch the connection to a new device
-    NewConnection(HardwareTarget),
 }
 
 #[cfg(feature = "no_std")]

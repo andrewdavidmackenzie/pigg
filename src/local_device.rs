@@ -1,10 +1,10 @@
+use crate::event::HardwareEvent;
+use crate::event::HardwareEvent::InputChange;
 use crate::hw::driver::HW;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
-use crate::hw_definition::event::HardwareEvent;
-use crate::hw_definition::event::HardwareEvent::InputChange;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 use iced::futures::channel::mpsc::Sender;
@@ -46,7 +46,6 @@ pub async fn apply_config_change(
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
         }
-        _ => {}
     }
     Ok(())
 }

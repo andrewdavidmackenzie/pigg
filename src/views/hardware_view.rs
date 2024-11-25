@@ -1,9 +1,10 @@
+use crate::event::HardwareEvent;
 use crate::hardware_subscription;
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage;
+use crate::hardware_subscription::SubscriberMessage;
+use crate::hardware_subscription::SubscriberMessage::Hardware;
 use crate::hw_definition::config::InputPull;
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
-use crate::hw_definition::event::HardwareEvent;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
@@ -67,7 +68,7 @@ pub enum HardwareTarget {
 
 pub struct HardwareView {
     hardware_config: HardwareConfig,
-    hardware_sender: Option<Sender<HardwareConfigMessage>>,
+    subscriber_sender: Option<Sender<SubscriberMessage>>,
     pub hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
     pin_states: HashMap<BCMPinNumber, PinState>,
@@ -80,7 +81,7 @@ impl HardwareView {
         Self {
             hardware_config: HardwareConfig::default(),
             hardware_description: None, // Until listener is ready
-            hardware_sender: None,      // Until listener is ready
+            subscriber_sender: None,    // Until listener is ready
             pin_states: HashMap::new(),
         }
     }
@@ -99,17 +100,17 @@ impl HardwareView {
 
     /// Send the GPIOConfig from the GUI to the hardware to have it applied
     fn update_hw_config(&mut self) {
-        if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
-            let _ = hardware_sender.try_send(HardwareConfigMessage::NewConfig(
+        if let Some(ref mut subscriber_sender) = &mut self.subscriber_sender {
+            let _ = subscriber_sender.try_send(Hardware(HardwareConfigMessage::NewConfig(
                 self.hardware_config.clone(),
-            ));
+            )));
         }
     }
 
     /// Send a message to request the subscription to switch connections to a new target
     pub fn new_target(&mut self, new_target: HardwareTarget) {
-        if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
-            let _ = hardware_sender.try_send(HardwareConfigMessage::NewConnection(new_target));
+        if let Some(ref mut hardware_sender) = &mut self.subscriber_sender {
+            let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(new_target));
         }
     }
     /// A new function has been selected for a pin via the UI, this function:
@@ -132,11 +133,11 @@ impl HardwareView {
             // Report config changes to the hardware listener
             // Since config loading and hardware listener setup can occur out of order
             // mark the config as changed. If we send to the listener, then mark as done
-            if let Some(ref mut listener) = &mut self.hardware_sender {
-                let _ = listener.try_send(HardwareConfigMessage::NewPinConfig(
+            if let Some(ref mut listener) = &mut self.subscriber_sender {
+                let _ = listener.try_send(Hardware(HardwareConfigMessage::NewPinConfig(
                     bcm_pin_number,
                     new_function,
-                ));
+                )));
             }
         }
     }
@@ -188,7 +189,7 @@ impl HardwareView {
 
             HardwareSubscription(event) => match event {
                 HardwareEvent::Connected(config_change_sender, hw_desc) => {
-                    self.hardware_sender = Some(config_change_sender);
+                    self.subscriber_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
                     self.update_hw_config();
@@ -215,11 +216,11 @@ impl HardwareView {
                     .entry(bcm_pin_number)
                     .or_insert(PinState::new())
                     .set_level(level_change.clone());
-                if let Some(ref mut listener) = &mut self.hardware_sender {
-                    let _ = listener.try_send(HardwareConfigMessage::IOLevelChanged(
+                if let Some(ref mut listener) = &mut self.subscriber_sender {
+                    let _ = listener.try_send(Hardware(HardwareConfigMessage::IOLevelChanged(
                         bcm_pin_number,
                         level_change,
-                    ));
+                    )));
                 }
             }
 
