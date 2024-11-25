@@ -152,8 +152,6 @@ impl Piggui {
         self.unsaved_changes = false;
         self.hardware_target = new_target.clone();
         self.hardware_view.new_target(new_target);
-
-        //        self.hardware_view = HardwareView::new();
     }
 
     fn new() -> (Self, Task<Message>) {

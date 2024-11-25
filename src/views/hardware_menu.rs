@@ -278,9 +278,8 @@ pub fn view<'a>(
             menu_items.push(connect);
             menu_items.push(disconnect);
         }
-        #[cfg(feature = "iroh")]
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
         _ => {
-            #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
             #[cfg(not(target_arch = "wasm32"))]
