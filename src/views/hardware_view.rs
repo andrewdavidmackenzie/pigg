@@ -36,6 +36,7 @@ use iced::{Alignment, Center, Element, Length, Task};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
+use serde::{Deserialize, Serialize};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -51,7 +52,7 @@ pub enum HardwareViewMessage {
     UpdateCharts,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub enum HardwareTarget {
     #[cfg_attr(target_arch = "wasm32", default)]
     NoHW,
@@ -105,6 +106,12 @@ impl HardwareView {
         }
     }
 
+    /// Send a message to request the subscription to switch connections to a new target
+    pub fn new_target(&mut self, new_target: HardwareTarget) {
+        if let Some(ref mut hardware_sender) = &mut self.hardware_sender {
+            let _ = hardware_sender.try_send(HardwareConfigMessage::NewConnection(new_target));
+        }
+    }
     /// A new function has been selected for a pin via the UI, this function:
     /// - updates the pin_selected_function array for the UI
     /// - saves it in the gpio_config, so when we save later it's there
@@ -193,9 +200,12 @@ impl HardwareView {
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HardwareEvent::Disconnected(details) => {
+                HardwareEvent::Disconnected => {
+                    return Task::perform(empty(), move |_| Message::Disconnected);
+                }
+                HardwareEvent::ConnectionError(error) => {
                     return Task::perform(empty(), move |_| {
-                        Message::ConnectionError(details.clone())
+                        Message::ConnectionError(error.clone())
                     });
                 }
             },

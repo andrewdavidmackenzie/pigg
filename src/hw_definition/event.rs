@@ -13,6 +13,8 @@ pub enum HardwareEvent {
     Connected(Sender<HardwareConfigMessage>, HardwareDescription),
     /// This event indicates that the logic level of an input has just changed
     InputChange(BCMPinNumber, LevelChange),
-    /// We have lost the connection to the hardware
-    Disconnected(String),
+    /// We have disconnected from the hardware
+    Disconnected,
+    /// There was an error in the connection to the hardware
+    ConnectionError(String),
 }

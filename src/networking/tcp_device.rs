@@ -124,6 +124,7 @@ async fn apply_config_change(
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             let _ = hardware.set_output_level(bcm, level_change.new_level);
         }
+        _ => {}
     }
 
     Ok(())
