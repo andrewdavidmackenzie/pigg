@@ -1,10 +1,12 @@
 use crate::hw_definition::config::HardwareConfigMessage;
+use crate::hw_definition::description::HardwareDescription;
 use defmt::info;
 #[cfg(feature = "usb-tcp")]
 use embassy_futures::select::{select, Either};
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
 use embassy_net::tcp::{AcceptError, TcpSocket};
 use embassy_net::Stack;
+use embedded_io_async::Write;
 
 pub const TCP_PORT: u16 = 1234;
 
@@ -55,6 +57,27 @@ async fn accept<'a>(
     };
 
     Ok(socket)
+}
+
+/// Send the [HardwareDescription] over the [TcpSocket]
+pub async fn send_hardware_description(
+    socket: &mut TcpSocket<'_>,
+    hw_desc: &HardwareDescription<'_>,
+) {
+    let mut hw_buf = [0; 1024];
+    let slice = postcard::to_slice(hw_desc, &mut hw_buf).unwrap();
+    info!("Sending hardware description (length: {})", slice.len());
+    socket.write_all(slice).await.unwrap()
+}
+
+/// Send a [HardwareConfigMessage] over TCP to the GUI
+pub async fn send_message(
+    socket: &mut TcpSocket<'_>,
+    hardware_config_message: HardwareConfigMessage,
+) {
+    let mut buf = [0; 1024];
+    let gui_message = postcard::to_slice(&hardware_config_message, &mut buf).unwrap();
+    socket.write_all(gui_message).await.unwrap();
 }
 
 /// Wait until a config message in received on the [TcpSocket] then deserialize it and return it
