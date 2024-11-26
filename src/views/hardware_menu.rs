@@ -206,7 +206,7 @@ pub fn view<'a>(
     let disconnect: Item<'a, Message, _, _> = Item::new(
         button("Disconnect")
             .width(Length::Fill)
-            .on_press(Message::ConnectRequest(NoHW))
+            .on_press(Message::Disconnected)
             .style(|_, status| {
                 if status == Hovered {
                     MENU_BUTTON_HOVER_STYLE
@@ -274,15 +274,16 @@ pub fn view<'a>(
         }
         #[cfg(not(target_arch = "wasm32"))]
         Local => {
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
+            menu_items.push(connect);
             menu_items.push(disconnect);
         }
-        #[cfg(feature = "iroh")]
-        Iroh(_, _) => {
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        _ => {
+            menu_items.push(connect);
             menu_items.push(disconnect);
-        }
-        #[cfg(feature = "tcp")]
-        Tcp(_, _) => {
-            menu_items.push(disconnect);
+            #[cfg(not(target_arch = "wasm32"))]
+            menu_items.push(connect_local);
         }
     }
 

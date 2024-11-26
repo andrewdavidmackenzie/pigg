@@ -1,8 +1,6 @@
 //! This module provides definition structs for hardware, hardware events and configuration of hardware
 pub mod config;
 pub mod description;
-#[cfg(not(feature = "no_std"))]
-pub mod event;
 pub mod pin_function;
 #[cfg(feature = "usb-raw")]
 pub mod usb_values;

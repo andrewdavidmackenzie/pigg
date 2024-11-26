@@ -1,13 +1,15 @@
-use crate::{hw, networking::local_device};
+use crate::{hw, local_device};
 use futures::channel::mpsc::Sender;
 
 use crate::hw_definition::config::HardwareConfigMessage;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
 
-use crate::hw_definition::event::HardwareEvent;
+use crate::event::HardwareEvent;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::hw_definition::event::HardwareEvent::InputChange;
+use crate::event::HardwareEvent::InputChange;
+use crate::hardware_subscription::HWState::Disconnected;
+use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(feature = "iroh")]
 use crate::networking::iroh_host;
 #[cfg(feature = "tcp")]
@@ -25,27 +27,31 @@ use iced::{
     futures::{pin_mut, FutureExt},
 };
 
+/// A message type sent from the UI to the subscriber
+pub enum SubscriberMessage {
+    /// We wish to switch the connection to a new device
+    NewConnection(HardwareTarget),
+    Hardware(HardwareConfigMessage),
+}
+
 /// This enum describes the states of the subscription
 pub enum HWState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedLocal(Receiver<HardwareConfigMessage>),
+    ConnectedLocal(Receiver<SubscriberMessage>),
     #[cfg(feature = "iroh")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedIroh(
-        Receiver<HardwareConfigMessage>,
-        iroh_net::endpoint::Connection,
-    ),
+    ConnectedIroh(Receiver<SubscriberMessage>, iroh_net::endpoint::Connection),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedTcp(Receiver<HardwareConfigMessage>, async_std::net::TcpStream),
+    ConnectedTcp(Receiver<SubscriberMessage>, async_std::net::TcpStream),
 }
 
 /// Report an error to the GUI, if it cannot be sent print to STDERR
 async fn report_error(mut gui_sender: Sender<HardwareEvent>, e: &str) {
     if let Err(e) = gui_sender
-        .send(HardwareEvent::Disconnected(e.to_string()))
+        .send(HardwareEvent::ConnectionError(e.to_string()))
         .await
     {
         eprintln!("{e}");
@@ -55,35 +61,46 @@ async fn report_error(mut gui_sender: Sender<HardwareEvent>, e: &str) {
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
 pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent> {
-    let target = hw_target.clone();
+    let mut target = hw_target.clone();
 
     stream::channel(100, move |gui_sender| async move {
-        let mut state = HWState::Disconnected;
+        let mut state = Disconnected;
         let mut connected_hardware = hw::driver::get();
 
         loop {
             let mut gui_sender_clone = gui_sender.clone();
             match &mut state {
-                HWState::Disconnected => {
+                Disconnected => {
                     let (hardware_event_sender, hardware_event_receiver) =
-                        mpsc::channel::<HardwareConfigMessage>(100);
+                        mpsc::channel::<SubscriberMessage>(100);
 
                     match target.clone() {
                         HardwareTarget::NoHW => {}
 
                         #[cfg(not(target_arch = "wasm32"))]
                         HardwareTarget::Local => {
-                            let hardware_description = connected_hardware.description().unwrap();
-                            // Send the sender back to the GUI
-                            let _ = gui_sender_clone
-                                .send(HardwareEvent::Connected(
-                                    hardware_event_sender.clone(),
-                                    hardware_description.clone(),
-                                ))
-                                .await;
+                            // Connect immediately - nothing to wait for!
+                            match connected_hardware.description() {
+                                Ok(hardware_description) => {
+                                    if let Err(e) = gui_sender_clone
+                                        .send(HardwareEvent::Connected(
+                                            hardware_event_sender.clone(),
+                                            hardware_description.clone(),
+                                        ))
+                                        .await
+                                    {
+                                        report_error(gui_sender_clone, &format!("Send error: {e}"))
+                                            .await;
+                                    }
 
-                            // We are ready to receive messages from the GUI and send messages to it
-                            state = HWState::ConnectedLocal(hardware_event_receiver);
+                                    // We are ready to receive messages from the GUI and send messages to it
+                                    state = HWState::ConnectedLocal(hardware_event_receiver);
+                                }
+                                Err(e) => {
+                                    report_error(gui_sender_clone, &format!("LocalHW error: {e}"))
+                                        .await
+                                }
+                            }
                         }
 
                         #[cfg(feature = "iroh")]
@@ -98,7 +115,8 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                                         ))
                                         .await
                                     {
-                                        eprintln!("Send error: {e}");
+                                        report_error(gui_sender_clone, &format!("Send error: {e}"))
+                                            .await;
                                     }
 
                                     // We are ready to receive messages from the GUI
@@ -140,14 +158,23 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
 
                 HWState::ConnectedLocal(config_change_receiver) => {
                     if let Some(config_change) = config_change_receiver.next().await {
-                        if let Err(e) = local_device::apply_config_change(
-                            &mut connected_hardware,
-                            config_change,
-                            gui_sender_clone.clone(),
-                        )
-                        .await
-                        {
-                            report_error(gui_sender_clone, &format!("Hardware error: {e}")).await;
+                        match &config_change {
+                            NewConnection(new_target) => {
+                                target = new_target.clone();
+                                state = Disconnected;
+                            }
+                            Hardware(config_change) => {
+                                if let Err(e) = local_device::apply_config_change(
+                                    &mut connected_hardware,
+                                    config_change.clone(),
+                                    gui_sender_clone.clone(),
+                                )
+                                .await
+                                {
+                                    report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                        .await;
+                                }
+                            }
                         }
                     }
                 }
@@ -162,15 +189,30 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                     futures::select! {
                         // receive a config change from the UI
                         config_change_message = config_change_receiver.next() => {
-                            if let Some(change_message) = config_change_message {
-                                iroh_host::send_config_change(connection, change_message).await.unwrap()
+                            if let Some(config_change) = config_change_message {
+                                match &config_change {
+                                    NewConnection(new_target) => {
+                                        target = new_target.clone();
+                                        state = Disconnected;
+                                    },
+                                    Hardware(config_change) => {
+                                        if let Err(e) = iroh_host::send_config_change(connection, config_change.clone()).await
+                                        {
+                                            report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                                .await;
+                                        }
+                                    }
+                                }
                             }
                         }
 
                         // receive an input level change from remote hardware
                         remote_event = fused_wait_for_remote_message => {
                             if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
-                                 gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
+                                if let Err(e) = gui_sender_clone.send(InputChange(bcm, level_change)).await {
+                                        report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                            .await;
+                                }
                              }
                         }
                     }
@@ -185,15 +227,30 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                     futures::select! {
                         // receive a config change from the UI
                         config_change_message = config_change_receiver.next() => {
-                            if let Some(change_message) = config_change_message {
-                                tcp_host::send_config_change(stream.clone(), change_message).await.unwrap()
+                            if let Some(config_change) = config_change_message {
+                                match &config_change {
+                                    NewConnection(new_target) => {
+                                        target = new_target.clone();
+                                        state = Disconnected;
+                                    },
+                                    Hardware(config_change) => {
+                                        if let Err(e) = tcp_host::send_config_change(stream.clone(), config_change.clone()).await
+                                        {
+                                            report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                                .await;
+                                        }
+                                    }
+                                }
                             }
                         }
 
                         // receive an input level change from remote hardware
                         remote_event = fused_wait_for_remote_message => {
                             if let Ok(IOLevelChanged(bcm, level_change)) = remote_event {
-                                 gui_sender_clone.send(InputChange(bcm, level_change)).await.unwrap();
+                                if let Err(e) = gui_sender_clone.send(InputChange(bcm, level_change)).await {
+                                    report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                        .await;
+                                }
                              }
                         }
                     }

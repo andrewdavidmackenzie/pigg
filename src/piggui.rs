@@ -25,6 +25,7 @@ use crate::views::connect_dialog::{
 };
 #[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu;
+use crate::views::hardware_view::HardwareTarget::NoHW;
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "usb-raw")]
@@ -36,11 +37,13 @@ use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 
+pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
 mod hw;
 mod hw_definition;
+pub mod local_device;
 mod networking;
 #[cfg(feature = "usb-raw")]
 mod usb_raw;
@@ -66,6 +69,7 @@ pub enum Message {
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareTarget),
     Connected,
+    Disconnected,
     ConnectionError(String),
     MenuBarButtonClicked,
     #[cfg(feature = "usb-raw")]
@@ -138,7 +142,16 @@ impl Piggui {
             .add_info_message(Info("Disconnected from hardware".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
+        self.hardware_target = NoHW;
         self.hardware_view = HardwareView::new()
+    }
+
+    /// Connect to hardware - resetting the relevant control variables in the process
+    fn connect(&mut self, new_target: HardwareTarget) {
+        self.config_filename = None;
+        self.unsaved_changes = false;
+        self.hardware_target = new_target.clone();
+        self.hardware_view.new_target(new_target);
     }
 
     fn new() -> (Self, Task<Message>) {
@@ -250,16 +263,9 @@ impl Piggui {
             }
 
             ConnectRequest(new_target) => {
-                if new_target == HardwareTarget::NoHW {
-                    #[cfg(any(feature = "iroh", feature = "tcp"))]
-                    self.connect_dialog.enable_widgets_and_hide_spinner();
-                    #[cfg(any(feature = "iroh", feature = "tcp"))]
-                    self.disconnected();
-                } else {
-                    #[cfg(any(feature = "iroh", feature = "tcp"))]
-                    self.connect_dialog.disable_widgets_and_load_spinner();
-                }
-                self.hardware_target = new_target;
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
+                self.connect_dialog.disable_widgets_and_load_spinner();
+                self.connect(new_target);
             }
 
             Connected => {
@@ -271,6 +277,13 @@ impl Piggui {
                     .add_info_message(Info("Connected to hardware".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
                 println!("Connected to hardware");
+            }
+
+            Disconnected => {
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
+                self.connect_dialog.enable_widgets_and_hide_spinner();
+                #[cfg(any(feature = "iroh", feature = "tcp"))]
+                self.disconnected();
             }
 
             ConnectionError(details) => {
