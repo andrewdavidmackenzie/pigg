@@ -7,6 +7,7 @@ use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 use crate::HARDWARE_EVENT_CHANNEL;
+#[cfg(feature = "wifi")]
 use cyw43::Control;
 use defmt::{error, info};
 use embassy_executor::Spawner;

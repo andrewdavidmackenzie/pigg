@@ -11,6 +11,9 @@ path = "src/porky.rs"
 
 [features]
 default = ["usb-raw", "no_std"]
+pico = []
+pico_w = ["wifi"]
+wifi = ["cyw43", "cyw43-pio", "embassy-net"]
 no_std = []
 debug-probe = []
 usb-tcp = ["usb"]
@@ -21,9 +24,6 @@ usb = ["embassy-usb"]
 embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.6.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
 embassy-rp = { version = "0.2.0", default-features = false, features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
-embassy-net = { version = "0.4.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"] }
-cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"] }
-cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"] }
 panic-probe = { version = "0.3", default-features = false, features = ["print-defmt"] }
 portable-atomic = { version = "1.5", default-features = false, features = ["critical-section"] }
 defmt = { version = "0.3", default-features = false }
@@ -46,6 +46,9 @@ embedded-storage = { version = "0.3", default-features = false }
 
 # Optional Dependencies
 embassy-usb = { version = "0.3.0", default-features = false, optional = true }
+cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"], optional = true }
+cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"], optional = true }
+embassy-net = { version = "0.4.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"], optional = true }
 
 [build-dependencies]
 # for reading SSID config from a file in build.rs
