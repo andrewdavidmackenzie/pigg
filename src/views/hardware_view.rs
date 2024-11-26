@@ -37,7 +37,6 @@ use iced::{Alignment, Center, Element, Length, Task};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
 use iroh_net::{relay::RelayUrl, NodeId};
-use serde::{Deserialize, Serialize};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -53,7 +52,7 @@ pub enum HardwareViewMessage {
     UpdateCharts,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum HardwareTarget {
     #[cfg_attr(target_arch = "wasm32", default)]
     NoHW,
