@@ -16,7 +16,6 @@ pico_w = ["wifi"]
 wifi = ["cyw43", "cyw43-pio", "embassy-net"]
 no_std = []
 debug-probe = []
-usb-tcp = ["usb"]
 usb-raw = ["usb"]
 usb = ["embassy-usb"]
 
@@ -77,7 +76,3 @@ cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
 skip_optional_dependencies = true
 denylist = ["usb"]
 always_include_features = ["no_std"]
-# Features "usb-raw" and "usb-tcp" are incompatible, so skip permutations including them
-skip_feature_sets = [
-    ["usb-raw", "usb-tcp"],
-]

@@ -37,11 +37,6 @@ use heapless::Vec;
 use panic_probe as _;
 use static_cell::StaticCell;
 
-#[cfg(all(feature = "usb-tcp", feature = "usb-raw"))]
-compile_error!(
-    "Features 'usb-raw' and 'usb-tcp' are mutually exclusive and cannot be enabled together"
-);
-
 #[cfg(not(any(feature = "pico", feature = "pico_w")))]
 compile_error!(
     "You must chose a feature from:[\"pico\", \"pico_w\"] to select a device to build for"
@@ -58,10 +53,6 @@ mod wifi;
 
 #[cfg(feature = "usb")]
 mod usb;
-
-#[cfg(feature = "usb-tcp")]
-/// Module for Tcp over USB
-mod usb_tcp;
 
 #[cfg(feature = "usb-raw")]
 mod usb_raw;
@@ -213,13 +204,6 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb")]
     let driver = Driver::new(peripherals.USB, Irqs);
 
-    #[cfg(feature = "usb-tcp")]
-    let usb_stack = usb_tcp::start(spawner, driver, serial_number).await;
-    #[cfg(feature = "usb-tcp")]
-    let mut usb_tx_buffer = [0; 4096];
-    #[cfg(feature = "usb-tcp")]
-    let mut usb_rx_buffer = [0; 4096];
-
     // start the flash database
     let db = flash::db_init(flash).await;
 
@@ -243,18 +227,8 @@ async fn main(spawner: Spawner) {
                 let mut wifi_rx_buffer = [0; 4096];
 
                 loop {
-                    match tcp::wait_connection(
-                        wifi_stack,
-                        #[cfg(feature = "usb-tcp")]
-                        usb_stack,
-                        &mut wifi_tx_buffer,
-                        &mut wifi_rx_buffer,
-                        #[cfg(feature = "usb-tcp")]
-                        &mut usb_tx_buffer,
-                        #[cfg(feature = "usb-tcp")]
-                        &mut usb_rx_buffer,
-                    )
-                    .await
+                    match tcp::wait_connection(wifi_stack, &mut wifi_tx_buffer, &mut wifi_rx_buffer)
+                        .await
                     {
                         Ok(mut socket) => {
                             tcp::send_hardware_description(&mut socket, &hw_desc).await;
