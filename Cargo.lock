@@ -2489,8 +2489,7 @@ dependencies = [
 [[package]]
 name = "iced_aw"
 version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42e05df3019f20c6decea93d035b32a2afc7b329d89cc5a68cca097d0e0a1889"
+source = "git+https://github.com/andrewdavidmackenzie/iced_aw.git?branch=fix_menu_crash#cecaa8ea1e0a2c72c4fea5e792e7527276d0ac69"
 dependencies = [
  "cfg-if",
  "iced",
