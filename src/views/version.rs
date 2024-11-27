@@ -1,8 +1,9 @@
 use crate::views::info_row::{MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE};
 use crate::{InfoDialogMessage, Message};
+use iced::widget::button;
 use iced::widget::button::Status::Hovered;
-use iced::widget::{Button, Text};
-use iced::Element;
+use iced::{Renderer, Theme};
+use iced_aw::menu::Item;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const BIN_NAME: &str = env!("CARGO_BIN_NAME");
@@ -28,19 +29,18 @@ pub fn version() -> String {
     )
 }
 
-pub fn version_button() -> Element<'static, Message> {
-    let version_text = Text::new(version().lines().next().unwrap_or_default().to_string());
-
-    Button::new(version_text)
-        .on_press(Message::Modal(InfoDialogMessage::VersionModal))
-        .clip(true)
-        .height(iced::Length::Shrink)
-        .style(move |_theme, status| {
-            if status == Hovered {
-                MENU_BAR_BUTTON_HOVER_STYLE
-            } else {
-                MENU_BAR_BUTTON_STYLE
-            }
-        })
-        .into()
+pub fn version_button<'a>() -> Item<'a, Message, Theme, Renderer> {
+    Item::new(
+        button("about")
+            .on_press(Message::Modal(InfoDialogMessage::AboutDialog))
+            .clip(true)
+            .height(iced::Length::Shrink)
+            .style(move |_theme, status| {
+                if status == Hovered {
+                    MENU_BAR_BUTTON_HOVER_STYLE
+                } else {
+                    MENU_BAR_BUTTON_STYLE
+                }
+            }),
+    )
 }

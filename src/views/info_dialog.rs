@@ -45,7 +45,7 @@ pub enum InfoDialogMessage {
     UnsavedLoadConfigChangesModal,
     LoadFile,
     HardwareDetailsModal(HardwareDetails, Option<([u8; 4], u16)>),
-    VersionModal,
+    AboutDialog,
     ExitApp,
     EscKeyEvent(Event),
     OpenRepoLink,
@@ -126,7 +126,7 @@ impl InfoDialog {
             }
 
             // Display piggui information
-            InfoDialogMessage::VersionModal => {
+            InfoDialogMessage::AboutDialog => {
                 self.show_modal = true;
                 self.is_warning = false;
                 self.modal_type = Some(ModalType::Info {
@@ -353,7 +353,7 @@ mod tests {
     fn test_version_modal() {
         let mut display_modal = InfoDialog::new();
 
-        let _ = display_modal.update(InfoDialogMessage::VersionModal);
+        let _ = display_modal.update(InfoDialogMessage::AboutDialog);
         assert!(display_modal.show_modal);
 
         if let Some(ModalType::Info {

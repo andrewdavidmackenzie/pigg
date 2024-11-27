@@ -5,13 +5,12 @@ use iced::{Length, Size};
 use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
-    MENU_BUTTON_STYLE,
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
 };
 use crate::views::layout_menu::Layout::{BCMLayout, BoardLayout};
 use iced::widget::button::Status::Hovered;
-use iced::{Element, Renderer, Theme};
-use iced_aw::menu::{Item, Menu, MenuBar};
+use iced::{Renderer, Theme};
+use iced_aw::menu::{Item, Menu};
 
 /// These are the possible layouts to chose from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -65,7 +64,7 @@ impl LayoutSelector {
     pub fn view<'a>(
         &self,
         hardware_target: &'a HardwareTarget,
-    ) -> Element<'a, Message, Theme, Renderer> {
+    ) -> Item<'a, Message, Theme, Renderer> {
         let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
         let button = match self.selected_layout {
@@ -118,10 +117,6 @@ impl LayoutSelector {
             })
             .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;
 
-        let menu_root = Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0));
-
-        MenuBar::new(vec![menu_root])
-            .style(|_, _| MENU_BAR_STYLE)
-            .into()
+        Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
     }
 }
