@@ -6,6 +6,7 @@ use crate::views::dialog_styles::{
     MODAL_CONTAINER_STYLE,
 };
 use crate::views::hardware_view::HardwareTarget;
+#[cfg(feature = "tcp")]
 use crate::views::hardware_view::HardwareTarget::Tcp;
 use crate::views::version::REPOSITORY;
 use crate::Message;
@@ -15,6 +16,7 @@ use iced::widget::{button, column, container, horizontal_space, text, Row, Space
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
+#[cfg(feature = "tcp")]
 use std::net::{IpAddr, Ipv4Addr};
 
 pub struct InfoDialog {
@@ -80,22 +82,25 @@ impl InfoDialog {
             }
 
             // Display hardware information
+            #[allow(unused_variables)]
             InfoDialogMessage::HardwareDetailsModal(hardware_details, tcp) => {
                 self.show_modal = true;
                 self.is_warning = false;
-                let body = match tcp {
-                    None => hardware_details.to_string(),
-                    Some(t) => {
-                        self.target = Some(Tcp(
-                            IpAddr::V4(Ipv4Addr::new(t.0[0], t.0[1], t.0[2], t.0[3])),
-                            t.1,
-                        ));
-                        format!(
-                            "{}\nIP Address/Port: {}.{}.{}.{}:{}",
-                            hardware_details, t.0[0], t.0[1], t.0[2], t.0[3], t.1
-                        )
-                    }
-                };
+                #[allow(unused_mut)]
+                let mut body = format!("{hardware_details}");
+
+                #[cfg(feature = "tcp")]
+                if let Some(t) = tcp {
+                    self.target = Some(Tcp(
+                        IpAddr::V4(Ipv4Addr::new(t.0[0], t.0[1], t.0[2], t.0[3])),
+                        t.1,
+                    ));
+                    body.push_str(&format!(
+                        "\nIP Address/Port: {}.{}.{}.{}:{}",
+                        t.0[0], t.0[1], t.0[2], t.0[3], t.1
+                    ));
+                }
+
                 self.modal_type = Some(ModalType::Info {
                     title: "Device Details".to_string(),
                     body,
