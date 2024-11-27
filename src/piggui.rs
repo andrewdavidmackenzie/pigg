@@ -144,7 +144,6 @@ impl Piggui {
         self.config_filename = None;
         self.unsaved_changes = false;
         self.hardware_target = NoHW;
-        self.hardware_view = HardwareView::new()
     }
 
     /// Connect to hardware - resetting the relevant control variables in the process
