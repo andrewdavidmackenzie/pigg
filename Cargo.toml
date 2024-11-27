@@ -95,7 +95,7 @@ clap = { version = "4.5.21", default-features = false, features = ["std", "help"
 # Use 'tiny-skia' renderer in iced
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
 rppal = "0.19.0"
-libc = "0.2.164"
+libc = "0.2.166"
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(not(any( all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
