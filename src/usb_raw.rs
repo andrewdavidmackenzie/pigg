@@ -52,6 +52,8 @@ pub enum USBState {
 }
 
 /// Try and find an attached "porky" USB devices based on the vendor id and product id
+/// Return a hashmap of interfaces for each one, with the serial_number as the key, enabling
+/// us later to communicate with a specific device using its serial number
 async fn find_porkys() -> HashMap<String, Interface> {
     match nusb::list_devices() {
         Ok(device_list) => {
@@ -111,7 +113,7 @@ pub async fn send_ssid_spec(serial_number: String, ssid_spec: SsidSpec) -> Resul
     let porkys = find_porkys().await;
     let porky = porkys
         .get(&serial_number)
-        .ok_or("USB attached porky does not have matching serial number".to_string())?;
+        .ok_or("Cannot find USB attached porky with matching serial number".to_string())?;
 
     let mut buf = [0; 1024];
     let data = postcard::to_slice(&ssid_spec, &mut buf).unwrap();
@@ -133,7 +135,7 @@ pub async fn reset_ssid_spec(serial_number: String) -> Result<(), String> {
     let porkys = find_porkys().await;
     let porky = porkys
         .get(&serial_number)
-        .ok_or("USB attached porky does not have matching serial number".to_string())?;
+        .ok_or("Cannot find USB attached porky with matching serial number".to_string())?;
     usb_send_porky(porky, RESET_SSID).await
 }
 
