@@ -25,6 +25,7 @@ use crate::views::connect_dialog::{
 };
 #[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareTarget::NoHW;
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
@@ -273,6 +274,7 @@ impl Piggui {
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
+                self.modal_handler.show_modal = false;
                 self.info_row
                     .add_info_message(Info("Connected to hardware".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
