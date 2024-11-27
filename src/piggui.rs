@@ -431,11 +431,10 @@ impl Piggui {
                     KnownDevice::Porky(method, hardware_description, wifi_details),
                 );
             }
-            DeviceEvent::DeviceLost(hardware_description) => {
+            DeviceEvent::DeviceLost(serial_number) => {
                 self.info_row
                     .add_info_message(Info("USB Device Lost".to_string()));
-                self.known_devices
-                    .remove(&hardware_description.details.serial);
+                self.known_devices.remove(&serial_number);
             }
             DeviceEvent::Error(e) => {
                 self.info_row

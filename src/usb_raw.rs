@@ -2,7 +2,6 @@ use crate::hw_definition::description::{HardwareDescription, SsidSpec, WiFiDetai
 use crate::hw_definition::usb_values::{
     GET_HARDWARE_VALUE, GET_WIFI_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
-use crate::usb_raw::USBState::{Connected, Disconnected};
 use crate::views::hardware_menu::DeviceEvent;
 use crate::views::hardware_menu::DiscoveryMethod::USBRaw;
 use async_std::prelude::Stream;
@@ -43,13 +42,6 @@ const RESET_SSID: ControlOut = ControlOut {
     index: 0,
     data: &[],
 };
-
-pub enum USBState {
-    /// Just starting up, we have not yet set up a channel between GUI and Listener
-    Disconnected,
-    /// The subscription is ready and will listen for config events on the channel contained
-    Connected(HardwareDescription),
-}
 
 /// Try and find an attached "porky" USB devices based on the vendor id and product id
 /// Return a hashmap of interfaces for each one, with the serial_number as the key, enabling
@@ -139,56 +131,59 @@ pub async fn reset_ssid_spec(serial_number: String) -> Result<(), String> {
     usb_send_porky(porky, RESET_SSID).await
 }
 
-/// A stream of [DeviceEvent] to a possibly connected porky
+/// A stream of [DeviceEvent] announcing the discovery or loss of devices
 pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
-    let mut usb_state = Disconnected;
-
-    // TODO maintain a list and report entries / exits
     stream::channel(100, move |gui_sender| async move {
+        let mut previous_serials: Vec<String> = vec![];
+
         loop {
             let mut gui_sender_clone = gui_sender.clone();
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            let current_porkys = find_porkys().await;
 
-            let porkys = find_porkys().await;
-            let porky_found = porkys.values().next();
-
-            usb_state = match (porky_found, &usb_state) {
-                (Some(porky), Disconnected) => match get_hardware_description(porky).await {
-                    Ok(hardware_description) => {
-                        let wifi_details = if hardware_description.details.wifi {
-                            match get_wifi_details(porky).await {
-                                Ok(details) => Some(details),
-                                Err(_) => {
-                                    // TODO report error to UI
-                                    None
+            // New devices
+            for (serial, porky) in &current_porkys {
+                if !previous_serials.contains(serial) {
+                    match get_hardware_description(porky).await {
+                        Ok(hardware_description) => {
+                            let wifi_details = if hardware_description.details.wifi {
+                                match get_wifi_details(porky).await {
+                                    Ok(details) => Some(details),
+                                    Err(_) => {
+                                        // TODO report error to UI
+                                        None
+                                    }
                                 }
-                            }
-                        } else {
-                            None
-                        };
-                        let _ = gui_sender_clone
-                            .send(DeviceEvent::DeviceFound(
-                                USBRaw,
-                                hardware_description.clone(),
-                                wifi_details,
-                            ))
-                            .await;
-                        Connected(hardware_description)
+                            } else {
+                                None
+                            };
+
+                            println!("Found new device");
+                            let _ = gui_sender_clone
+                                .send(DeviceEvent::DeviceFound(
+                                    USBRaw,
+                                    hardware_description.clone(),
+                                    wifi_details,
+                                ))
+                                .await;
+                        }
+                        Err(e) => {
+                            let _ = gui_sender_clone.send(DeviceEvent::Error(e)).await;
+                        }
                     }
-                    Err(e) => {
-                        let _ = gui_sender_clone.send(DeviceEvent::Error(e)).await;
-                        Disconnected
-                    }
-                },
-                (Some(_), Connected(hw)) => Connected(hw.clone()),
-                (None, Disconnected) => Disconnected,
-                (None, Connected(hardware_description)) => {
-                    let _ = gui_sender_clone
-                        .send(DeviceEvent::DeviceLost(hardware_description.clone()))
-                        .await;
-                    Disconnected
                 }
-            };
+            }
+
+            // Lost devices
+            for serial in previous_serials {
+                if !current_porkys.contains_key(&serial) {
+                    let _ = gui_sender_clone
+                        .send(DeviceEvent::DeviceLost(serial.clone()))
+                        .await;
+                }
+            }
+
+            previous_serials = current_porkys.into_keys().collect();
+            tokio::time::sleep(Duration::from_secs(2)).await;
         }
     })
 }
