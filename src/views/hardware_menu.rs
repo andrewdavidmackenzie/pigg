@@ -54,7 +54,7 @@ impl Display for DiscoveryMethod {
 #[derive(Debug, Clone)]
 pub enum DeviceEvent {
     DeviceFound(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
-    DeviceLost(HardwareDescription),
+    DeviceLost(String),
     Error(String),
 }
 
@@ -352,10 +352,5 @@ pub fn view<'a>(
 #[cfg(feature = "usb-raw")]
 /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
 pub fn subscription() -> Subscription<DeviceEvent> {
-    let subscriptions = vec![
-        #[cfg(feature = "usb-raw")]
-        Subscription::run_with_id("device", usb_raw::subscribe()),
-    ];
-
-    Subscription::batch(subscriptions)
+    Subscription::run(usb_raw::subscribe)
 }
