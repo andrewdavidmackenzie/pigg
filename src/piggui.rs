@@ -163,7 +163,6 @@ impl Piggui {
             .map(|s| s.to_string());
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
-
         (
             Self {
                 config_filename: config_filename.clone(),
