@@ -5,19 +5,23 @@ use crate::views::dialog_styles::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
     MODAL_CONTAINER_STYLE,
 };
+use crate::views::hardware_view::HardwareTarget;
+use crate::views::hardware_view::HardwareTarget::Tcp;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::button::Status::Hovered;
-use iced::widget::{button, column, container, text, Row, Space, Text};
+use iced::widget::{button, column, container, horizontal_space, text, Row, Space, Text};
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
+use std::net::{IpAddr, Ipv4Addr};
 
 pub struct InfoDialog {
     pub show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
+    target: Option<HardwareTarget>,
 }
 pub enum ModalType {
     Warning {
@@ -51,6 +55,7 @@ impl InfoDialog {
             show_modal: false,
             is_warning: false,
             modal_type: None,
+            target: None,
         }
     }
 
@@ -81,6 +86,10 @@ impl InfoDialog {
                 let body = match tcp {
                     None => hardware_details.to_string(),
                     Some(t) => {
+                        self.target = Some(Tcp(
+                            IpAddr::V4(Ipv4Addr::new(t.0[0], t.0[1], t.0[2], t.0[3])),
+                            t.1,
+                        ));
                         format!(
                             "{}\nIP Address/Port: {}.{}.{}.{}:{}",
                             hardware_details, t.0[0], t.0[1], t.0[2], t.0[3], t.1
@@ -250,6 +259,22 @@ impl InfoDialog {
                                 }
                             }),
                     );
+                    if let Some(target) = &self.target {
+                        button_row = button_row
+                            .push(horizontal_space())
+                            .push(
+                                button("Connect")
+                                    .on_press(Message::ConnectRequest(target.clone()))
+                                    .style(move |_theme, status| {
+                                        if status == Hovered {
+                                            MODAL_CONNECT_BUTTON_HOVER_STYLE
+                                        } else {
+                                            MODAL_CONNECT_BUTTON_STYLE
+                                        }
+                                    }),
+                            )
+                            .align_y(iced::Alignment::Center);
+                    }
                 }
 
                 container(

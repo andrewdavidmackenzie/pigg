@@ -146,13 +146,12 @@ fn devices_submenu<'a>(
                         }),
                     ) = device
                     {
+                        let target =
+                            Tcp(IpAddr::V4(Ipv4Addr::new(ip[0], ip[1], ip[2], ip[3])), *port);
                         menu_items.push(Item::new(
                             button("Connect to Device by TCP")
                                 .width(Length::Fill)
-                                .on_press(Message::ConnectRequest(Tcp(
-                                    IpAddr::V4(Ipv4Addr::new(ip[0], ip[1], ip[2], ip[3])),
-                                    *port,
-                                )))
+                                .on_press(Message::ConnectRequest(target))
                                 .style(|_, status| {
                                     if status == Hovered {
                                         MENU_BUTTON_HOVER_STYLE
