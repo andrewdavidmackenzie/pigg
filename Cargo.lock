@@ -2489,11 +2489,13 @@ dependencies = [
 [[package]]
 name = "iced_aw"
 version = "0.11.0"
-source = "git+https://github.com/andrewdavidmackenzie/iced_aw.git?branch=fix_menu_crash#cecaa8ea1e0a2c72c4fea5e792e7527276d0ac69"
+source = "git+https://github.com/iced-rs/iced_aw.git#7d8cd8d952a2434c52871fecdcb51d9a17da8e0e"
 dependencies = [
  "cfg-if",
+ "getrandom",
  "iced",
  "iced_fonts",
+ "web-time",
 ]
 
 [[package]]
