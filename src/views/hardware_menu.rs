@@ -32,6 +32,7 @@ use iced_futures::Subscription;
 use std::collections::HashMap;
 #[cfg(feature = "usb-raw")]
 use std::fmt::{Display, Formatter};
+#[cfg(all(feature = "tcp", feature = "usb-raw"))]
 use std::net::{IpAddr, Ipv4Addr};
 
 #[cfg(feature = "usb-raw")]
@@ -90,6 +91,7 @@ fn devices_submenu<'a>(
                 });
 
                 if hardware_description.details.wifi {
+                    #[allow(unused_mut)]
                     let mut menu_items = vec![
                         Item::new(
                             button("Configure Device Wi-Fi...")
@@ -137,6 +139,7 @@ fn devices_submenu<'a>(
                         ),
                     ];
 
+                    #[cfg(feature = "tcp")]
                     if let Porky(
                         _,
                         _,

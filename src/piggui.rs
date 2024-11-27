@@ -25,6 +25,7 @@ use crate::views::connect_dialog::{
 };
 #[cfg(feature = "usb-raw")]
 use crate::views::hardware_menu;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareTarget::NoHW;
 #[cfg(feature = "usb-raw")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
