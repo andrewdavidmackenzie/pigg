@@ -183,7 +183,7 @@ pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
             }
 
             previous_serials = current_porkys.into_keys().collect();
-            tokio::time::sleep(Duration::from_secs(2)).await;
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     })
 }
