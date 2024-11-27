@@ -1,6 +1,6 @@
 use self::SsidDialogMessage::{
     ConnectionError, HideSsidDialog, ModalKeyEvent, NameEntered, PasswordEntered,
-    SendButtonPressed, ShowSsidDialog,
+    SendButtonPressed, Show,
 };
 
 use crate::widgets::spinner::circular::Circular;
@@ -48,7 +48,8 @@ pub enum SsidDialogMessage {
     ModalKeyEvent(Event),
     SendButtonPressed(String, String, String),
     HideSsidDialog,
-    ShowSsidDialog(HardwareDetails, Option<SsidSpec>),
+    /// Show the dialog to configure Wi-Fi details of a connected device
+    Show(HardwareDetails, Option<SsidSpec>),
     ConnectionError(String),
     HidePasswordToggled,
 }
@@ -160,7 +161,7 @@ impl SsidDialog {
                 }
             }
 
-            ShowSsidDialog(hardware_details, wifi) => {
+            Show(hardware_details, wifi) => {
                 self.hardware_details = hardware_details;
                 self.ssid_spec = wifi.unwrap_or(SsidSpec::default());
                 self.show_modal = true;
@@ -355,10 +356,7 @@ mod tests {
         let mut ssid_dialog = SsidDialog::new();
         assert!(!ssid_dialog.show_modal);
 
-        let _ = ssid_dialog.update(ShowSsidDialog(
-            HardwareDetails::default(),
-            Some(SsidSpec::default()),
-        ));
+        let _ = ssid_dialog.update(Show(HardwareDetails::default(), Some(SsidSpec::default())));
         assert!(ssid_dialog.show_modal);
     }
 
@@ -367,7 +365,7 @@ mod tests {
         let mut ssid_dialog = SsidDialog::new();
         assert!(!ssid_dialog.show_modal);
 
-        let _ = ssid_dialog.update(ShowSsidDialog(HardwareDetails::default(), None));
+        let _ = ssid_dialog.update(Show(HardwareDetails::default(), None));
         assert!(ssid_dialog.show_modal);
     }
 
