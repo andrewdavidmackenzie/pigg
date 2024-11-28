@@ -94,7 +94,10 @@ pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMes
 /// Create a [HardwareDescription] for this device with the provided serial number
 fn hardware_description(serial: &str) -> HardwareDescription {
     let details = HardwareDetails {
+        #[cfg(feature = "pico_w")]
         model: "Pi Pico W",
+        #[cfg(feature = "pico")]
+        model: "Pi Pico",
         hardware: "RP2040",
         revision: "",
         serial,
@@ -236,7 +239,7 @@ async fn main(spawner: Spawner) {
                         .await
                     {
                         Ok(mut socket) => {
-                            tcp::send_hardware_description(&mut socket, &hw_desc).await;
+                            tcp::send_hardware_description(&mut socket, hw_desc).await;
 
                             info!("Entering message loop");
                             loop {

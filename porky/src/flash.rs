@@ -27,7 +27,7 @@ pub struct DbFlash<T: NorFlash + ReadNorFlash> {
 }
 
 /// Get the unique serial number from Flash
-pub fn serial_number<'a>(flash: &mut Flash<'a, FLASH, Blocking, FLASH_SIZE>) -> &'static str {
+pub fn serial_number(flash: &mut Flash<'_, FLASH, Blocking, FLASH_SIZE>) -> &'static str {
     // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
     let mut device_id = [0; 8];
     flash.blocking_unique_id(&mut device_id).unwrap();
@@ -87,9 +87,9 @@ pub fn get_flash<'a>(flash_pin: FLASH) -> Flash<'a, FLASH, Blocking, FLASH_SIZE>
     Flash::new_blocking(flash_pin)
 }
 
-pub async fn db_init<'a>(
-    flash: Flash<'a, FLASH, Blocking, FLASH_SIZE>,
-) -> Database<DbFlash<Flash<'a, FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex> {
+pub async fn db_init(
+    flash: Flash<'static, FLASH, Blocking, FLASH_SIZE>,
+) -> Database<DbFlash<Flash<FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex> {
     let flash: DbFlash<Flash<_, _, FLASH_SIZE>> = DbFlash {
         flash,
         start: unsafe { &__config_start as *const u32 as usize },
