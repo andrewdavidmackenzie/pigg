@@ -78,10 +78,15 @@ mod pin_descriptions;
 /// [SSID_SPEC_KEY] is the key to a possible entry in the Flash DB for SsidSpec override
 const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
+#[cfg(feature = "usb")]
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
-    #[cfg(feature = "usb")]
     USBCTRL_IRQ => USBInterruptHandler<USB>;
+});
+
+#[cfg(not(feature = "usb"))]
+bind_interrupts!(struct Irqs {
+    PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
 });
 
 pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
