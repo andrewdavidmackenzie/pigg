@@ -1,6 +1,6 @@
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw_definition::config::HardwareConfig;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
@@ -8,7 +8,7 @@ use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
 use crate::views::message_box::MessageMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialog;
 use crate::widgets::modal::modal;
 use crate::Message::*;
@@ -16,22 +16,22 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use std::collections::HashMap;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::hardware_menu;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareTarget::NoHW;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
@@ -46,7 +46,7 @@ mod hw;
 mod hw_definition;
 pub mod local_device;
 mod networking;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 mod usb_raw;
 mod views;
 mod widgets;
@@ -73,13 +73,13 @@ pub enum Message {
     Disconnected,
     ConnectionError(String),
     MenuBarButtonClicked,
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     Device(DeviceEvent),
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     SsidDialog(SsidDialogMessage),
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     ResetSsid(String),
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     SsidSpecSent(Result<(), String>),
 }
 
@@ -94,9 +94,9 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_target: HardwareTarget,
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     known_devices: HashMap<String, KnownDevice>,
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     ssid_dialog: SsidDialog,
 }
 
@@ -118,10 +118,10 @@ fn main() -> iced::Result {
         .run_with(Piggui::new)
 }
 
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 #[allow(unused_variables)]
 fn reset_ssid(serial_number: String) -> Task<Message> {
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     return Task::perform(usb_raw::reset_ssid_spec(serial_number), |res| match res {
         Ok(_) => InfoRow(ShowStatusMessage(Info(
             "Wi-Fi Setup reset to Default by USB".into(),
@@ -131,7 +131,7 @@ fn reset_ssid(serial_number: String) -> Task<Message> {
             e,
         ))),
     });
-    #[cfg(not(feature = "usb-raw"))]
+    #[cfg(not(feature = "usb"))]
     Task::none()
 }
 
@@ -174,9 +174,9 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 hardware_target: get_hardware_target(&matches),
-                #[cfg(feature = "usb-raw")]
+                #[cfg(feature = "usb")]
                 known_devices: HashMap::new(),
-                #[cfg(feature = "usb-raw")]
+                #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
             maybe_load_no_picker(config_filename),
@@ -297,20 +297,20 @@ impl Piggui {
 
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
-            #[cfg(feature = "usb-raw")]
+            #[cfg(feature = "usb")]
             Device(event) => self.device_event(event),
 
-            #[cfg(feature = "usb-raw")]
+            #[cfg(feature = "usb")]
             SsidDialog(ssid_dialog_message) => {
                 return self.ssid_dialog.update(ssid_dialog_message);
             }
 
-            #[cfg(feature = "usb-raw")]
+            #[cfg(feature = "usb")]
             ResetSsid(serial_number) => {
                 return reset_ssid(serial_number);
             }
 
-            #[cfg(feature = "usb-raw")]
+            #[cfg(feature = "usb")]
             SsidSpecSent(result) => match result {
                 Ok(_) => {
                     self.ssid_dialog.hide_modal();
@@ -356,7 +356,7 @@ impl Piggui {
                 &self.layout_selector,
                 &self.hardware_view,
                 &self.hardware_target,
-                #[cfg(feature = "usb-raw")]
+                #[cfg(feature = "usb")]
                 &self.known_devices,
             ));
 
@@ -377,7 +377,7 @@ impl Piggui {
             );
         }
 
-        #[cfg(feature = "usb-raw")]
+        #[cfg(feature = "usb")]
         if self.ssid_dialog.show_modal {
             return modal(content, self.ssid_dialog.view(), SsidDialog(HideSsidDialog));
         }
@@ -403,7 +403,7 @@ impl Piggui {
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
-            #[cfg(feature = "usb-raw")]
+            #[cfg(feature = "usb")]
             hardware_menu::subscription().map(Device),
         ];
 
@@ -411,13 +411,13 @@ impl Piggui {
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         subscriptions.push(self.connect_dialog.subscription().map(ConnectDialog));
 
-        #[cfg(feature = "usb-raw")]
+        #[cfg(feature = "usb")]
         subscriptions.push(self.ssid_dialog.subscription().map(SsidDialog));
 
         Subscription::batch(subscriptions)
     }
 
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     /// Process messages related to USB raw discovery of attached devices
     fn device_event(&mut self, event: DeviceEvent) {
         match event {

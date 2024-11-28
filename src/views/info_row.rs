@@ -1,4 +1,4 @@
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::hardware_menu::KnownDevice;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::layout_menu::LayoutSelector;
@@ -12,7 +12,7 @@ use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
 use iced_aw::style::menu_bar;
 use iced_aw::MenuBar;
 use iced_futures::Subscription;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use std::collections::HashMap;
 
 const MENU_BACKGROUND_COLOR: Color = Color::from_rgba(0.15, 0.15, 0.15, 1.0);
@@ -129,7 +129,7 @@ impl InfoRow {
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
         hardware_target: &'a HardwareTarget,
-        #[cfg(feature = "usb-raw")] known_devices: &HashMap<String, KnownDevice>,
+        #[cfg(feature = "usb")] known_devices: &HashMap<String, KnownDevice>,
     ) -> Element<'a, Message> {
         let menu_bar: Element<Message> = MenuBar::new(vec![
             version_button(),
@@ -137,7 +137,7 @@ impl InfoRow {
             hardware_menu::view(
                 hardware_view,
                 hardware_target,
-                #[cfg(feature = "usb-raw")]
+                #[cfg(feature = "usb")]
                 known_devices,
             ),
             config_menu::view(unsaved_changes, hardware_target),

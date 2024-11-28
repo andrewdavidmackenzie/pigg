@@ -31,7 +31,9 @@ enum GPIOPin<'a> {
             Receiver<'a, ThreadModeRawMutex, Flex<'a>, 1>,
         ),
     ),
+    #[cfg(feature = "wifi")]
     CYW43Input,
+    #[cfg(feature = "wifi")]
     CYW43Output,
     GPIOOutput(Flex<'a>),
 }
@@ -81,10 +83,9 @@ fn into_level(value: PinLevel) -> Level {
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Set an output's level using the bcm pin number
 async fn set_output_level<'a>(
-    control: &mut Control<'_>,
+    #[cfg(feature = "wifi")] control: &mut Control<'_>,
     bcm_pin_number: BCMPinNumber,
     pin_level: PinLevel,
 ) {
@@ -96,6 +97,7 @@ async fn set_output_level<'a>(
     // GPIO 0 and 1 are connected via cyw43 wifi chip
     unsafe {
         match GPIO_PINS.get_mut(&bcm_pin_number) {
+            #[cfg(feature = "wifi")]
             Some(GPIOPin::CYW43Output) => control.gpio_set(bcm_pin_number, pin_level).await,
             Some(GPIOPin::GPIOOutput(flex)) => flex.set_level(into_level(pin_level)),
             _ => error!("Pin {} is not configured as an Output", bcm_pin_number),
@@ -103,10 +105,9 @@ async fn set_output_level<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Apply the requested config to one pin, using bcm_pin_number
 async fn apply_pin_config<'a>(
-    control: &mut Control<'_>,
+    #[cfg(feature = "wifi")] control: &mut Control<'_>,
     spawner: &Spawner,
     bcm_pin_number: BCMPinNumber,
     new_pin_function: &PinFunction,
@@ -125,6 +126,7 @@ async fn apply_pin_config<'a>(
             // Was assigned as an output - recover the Flex
             Some(GPIOPin::GPIOOutput(flex)) => Some(flex),
             // The cyw43 pins cannot be changed - just used
+            #[cfg(feature = "wifi")]
             Some(GPIOPin::CYW43Input) | Some(GPIOPin::CYW43Output) => None,
             _ => {
                 error!("Could not find pin #{}", bcm_pin_number);
@@ -175,11 +177,14 @@ async fn apply_pin_config<'a>(
                     }
                 }
                 None => {
-                    // Must be GPIO 2 is connected via cyw43 wifi chip
-                    unsafe {
-                        let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Input);
+                    #[cfg(feature = "wifi")]
+                    {
+                        // Must be GPIO 2 is connected via cyw43 wifi chip
+                        unsafe {
+                            let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Input);
+                        }
+                        info!("Pin #{} - Configured as input via cyw43", bcm_pin_number);
                     }
-                    info!("Pin #{} - Configured as input via cyw43", bcm_pin_number);
                 }
             }
         }
@@ -200,15 +205,18 @@ async fn apply_pin_config<'a>(
                     }
                 }
                 None => {
-                    // Must be GPIO 0 and 1 are connected via cyw43 wifi chip
-                    info!("Pin #{} cyw43 pin used as Output ", bcm_pin_number);
+                    #[cfg(feature = "wifi")]
+                    {
+                        // Must be GPIO 0 and 1 are connected via cyw43 wifi chip
+                        info!("Pin #{} cyw43 pin used as Output ", bcm_pin_number);
 
-                    if let Some(l) = pin_level {
-                        control.gpio_set(bcm_pin_number, *l).await;
-                        info!("Pin #{} - output level set to '{}'", bcm_pin_number, l);
-                    }
-                    unsafe {
-                        let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Output);
+                        if let Some(l) = pin_level {
+                            control.gpio_set(bcm_pin_number, *l).await;
+                            info!("Pin #{} - output level set to '{}'", bcm_pin_number, l);
+                        }
+                        unsafe {
+                            let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Output);
+                        }
                     }
                 }
             }
@@ -216,12 +224,22 @@ async fn apply_pin_config<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
 /// This takes the GPIOConfig struct and configures all the pins in it
-async fn apply_config<'a>(control: &mut Control<'_>, spawner: &Spawner, config: &HardwareConfig) {
+async fn apply_config<'a>(
+    #[cfg(feature = "wifi")] control: &mut Control<'_>,
+    spawner: &Spawner,
+    config: &HardwareConfig,
+) {
     // Config only has pins that are configured
     for (bcm_pin_number, pin_function) in &config.pin_functions {
-        apply_pin_config(control, spawner, *bcm_pin_number, pin_function).await;
+        apply_pin_config(
+            #[cfg(feature = "wifi")]
+            control,
+            spawner,
+            *bcm_pin_number,
+            pin_function,
+        )
+        .await;
     }
     let num_pins = config.pin_functions.len();
     if num_pins > 0 {
@@ -229,23 +247,43 @@ async fn apply_config<'a>(control: &mut Control<'_>, spawner: &Spawner, config: 
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Apply a config change to the hardware
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
 pub async fn apply_config_change<'a>(
-    control: &mut Control<'_>,
+    #[cfg(feature = "wifi")] control: &mut Control<'_>,
     spawner: &Spawner,
     config_change: HardwareConfigMessage,
 ) {
     match config_change {
-        NewConfig(config) => apply_config(control, spawner, &config).await,
+        NewConfig(config) => {
+            apply_config(
+                #[cfg(feature = "wifi")]
+                control,
+                spawner,
+                &config,
+            )
+            .await
+        }
         NewPinConfig(bcm, pin_function) => {
-            apply_pin_config(control, spawner, bcm, &pin_function).await
+            apply_pin_config(
+                #[cfg(feature = "wifi")]
+                control,
+                spawner,
+                bcm,
+                &pin_function,
+            )
+            .await
         }
         IOLevelChanged(bcm, level_change) => {
-            set_output_level(control, bcm, level_change.new_level).await;
+            set_output_level(
+                #[cfg(feature = "wifi")]
+                control,
+                bcm,
+                level_change.new_level,
+            )
+            .await;
         }
     }
 }

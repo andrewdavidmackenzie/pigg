@@ -5,8 +5,7 @@ use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
 use defmt::{error, info, unwrap, warn};
 use embassy_executor::Spawner;
-use embassy_net::Config;
-use embassy_net::{Stack, StackResources};
+use embassy_net::{Config, Runner, Stack, StackResources};
 use embassy_rp::clocks::RoscRng;
 use embassy_rp::gpio::Level;
 use embassy_rp::gpio::Output;
@@ -25,7 +24,7 @@ async fn wifi_task(
 }
 
 #[embassy_executor::task]
-async fn net_task(mut runner: embassy_net::Runner<'static, cyw43::NetDriver<'static>>) -> ! {
+async fn net_task(mut runner: Runner<'static, cyw43::NetDriver<'static>>) -> ! {
     runner.run().await
 }
 

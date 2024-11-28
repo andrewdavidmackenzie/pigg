@@ -17,15 +17,15 @@ make
 
 will run build a release DWARF binary for the Raspberry Pi Pico W here:
 
-- `pigg/porky/target/thumbv6m-none-eabi/release/porky`
+- `pigg/porky/target/thumbv6m-none-eabi/release/porky_w`
 
-### How SSID information is used by `porky`
+### How SSID information is used by `porky_w`
 
-The startup process of `porky` is:
+The startup process of `porky_w` is:
 
 - Try to load SSID information from Flash memory
 - If none is present try and use the default SSID information compiled in as part of the build
-- If no default information was built in, then `porky` has no SSID information and will not try to connect to a Wi-Fi
+- If no default information was built in, then `porky_w` has no SSID information and will not try to connect to a Wi-Fi
   network
 - USB connection is always started and will be able to receive SSID information from `piggui`. This will be stored in
   the Flash memory and used in the above process at next start
@@ -39,7 +39,7 @@ of how to do it using `piggui`
 
 ### Customizing the default SSID information
 
-It is possible to customize the default SSID (Wi-Fi network) information that `porky` tries to use to connect to a
+It is possible to customize the default SSID (Wi-Fi network) information that `porky_w` tries to use to connect to a
 Wi-Fi network on startup, if you are building from source. Then all devices programmed with that build will
 automatically try to connect to that Wi-Fi network at startup, without having to use `piggui` and USB.
 
@@ -57,23 +57,23 @@ security = "wpa2"
 Valid values for the `security` field are: `open`, `wpa`, `wpa2` and `wpa3`
 
 Create this file with your SSID information in it and then run the makefile `make` target, and it will produce a
-`porky` binary with that SSID as the default SSID. Run `make uf2` to generate a UF2 file for download.
+`porky_w` binary with that SSID as the default SSID. Run `make uf2` to generate a UF2 file for download.
 
 ## Running Directly
 
 NOTE: Running directly requires a debug probe attached to your device and host, and `probe-rs` installed.
 
 If you have a debug probe for the Pico, and it is connected and also the Pico is connected to
-USB then you can use probe-rs to download and debug `porky`.
+USB then you can use probe-rs to download and debug `porky_w`.
 
 [config.toml](./.cargo/config.toml) is where the runner for cargo is set up.
 
-You can use `make run` (which uses `cargo run --release`) to run `porky` directly.
+You can use `make run` (which uses `cargo run --release`) to run `porky_w` directly.
 
 The release binary is about half the size of the debug binary, so downloading to the Pico W is much faster.
 
-The Pi Pico will start running `porky` and you should start seeing log messages on the terminal where
-you are running `make run`. The boot process should end with `porky` connected to the configured (or default)
+The Pi Pico W will start running `porky_w` and you should start seeing log messages on the terminal where
+you are running `make run`. The boot process should end with `porky_w` connected to the configured (or default)
 Wi-Fi network, and the output of its IP and the port it is listening for TCP connections on.
 
 ## Creating a UF2 file
@@ -81,6 +81,7 @@ Wi-Fi network, and the output of its IP and the port it is listening for TCP con
 Use `make uf2` Makefile target.
 
 This uses [`elf2usb2-rs`](https://github.com/JoNil/elf2uf2-rs). This can be installed using:
+
 - `cargo binstall elf2uf2-rs` if you use `cargo binstall` to install a pre-compiled binary
 - `cargo install elf2uf2-rs` to build it from source and install it
 
