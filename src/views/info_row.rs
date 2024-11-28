@@ -10,6 +10,7 @@ use iced::border::Radius;
 use iced::widget::{button, container, Row};
 use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
 use iced_aw::style::menu_bar;
+use iced_aw::MenuBar;
 use iced_futures::Subscription;
 #[cfg(feature = "usb-raw")]
 use std::collections::HashMap;
@@ -130,17 +131,23 @@ impl InfoRow {
         hardware_target: &'a HardwareTarget,
         #[cfg(feature = "usb-raw")] known_devices: &HashMap<String, KnownDevice>,
     ) -> Element<'a, Message> {
+        let menu_bar: Element<Message> = MenuBar::new(vec![
+            version_button(),
+            layout_selector.view(hardware_target),
+            hardware_menu::view(
+                hardware_view,
+                hardware_target,
+                #[cfg(feature = "usb-raw")]
+                known_devices,
+            ),
+            config_menu::view(unsaved_changes, hardware_target),
+        ])
+        .style(|_, _| MENU_BAR_STYLE)
+        .into();
+
         container(
             Row::new()
-                .push(version_button())
-                .push(layout_selector.view(hardware_target))
-                .push(hardware_menu::view(
-                    hardware_view,
-                    hardware_target,
-                    #[cfg(feature = "usb-raw")]
-                    known_devices,
-                ))
-                .push(config_menu::view(unsaved_changes, hardware_target))
+                .push(menu_bar)
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)

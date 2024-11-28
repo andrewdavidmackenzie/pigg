@@ -11,8 +11,7 @@ use crate::views::hardware_menu::KnownDevice::Porky;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE,
-    MENU_BUTTON_STYLE,
+    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
 };
 #[cfg(feature = "usb-raw")]
 use crate::views::ssid_dialog::SsidDialogMessage;
@@ -24,8 +23,8 @@ use iced::widget::button::Status::Hovered;
 use iced::widget::{button, text};
 #[cfg(feature = "usb-raw")]
 use iced::widget::{horizontal_space, row};
-use iced::{Element, Length, Renderer, Theme};
-use iced_aw::menu::{Item, Menu, MenuBar};
+use iced::{Length, Renderer, Theme};
+use iced_aw::menu::{Item, Menu};
 #[cfg(feature = "usb-raw")]
 use iced_futures::Subscription;
 #[cfg(feature = "usb-raw")]
@@ -214,7 +213,7 @@ pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_target: &HardwareTarget,
     #[cfg(feature = "usb-raw")] known_devices: &HashMap<String, KnownDevice>,
-) -> Element<'a, Message, Theme, Renderer> {
+) -> Item<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
         Some(model) => match hardware_target {
@@ -331,7 +330,7 @@ pub fn view<'a>(
     #[cfg(feature = "usb-raw")]
     menu_items.push(devices_submenu(known_devices));
 
-    let hardware_menu_root = Item::with_menu(
+    Item::with_menu(
         button(text(model))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(move |_theme, status| {
@@ -342,11 +341,7 @@ pub fn view<'a>(
                 }
             }),
         Menu::new(menu_items).width(215.0).offset(10.0),
-    );
-
-    MenuBar::new(vec![hardware_menu_root])
-        .style(|_, _| MENU_BAR_STYLE)
-        .into()
+    )
 }
 
 #[cfg(feature = "usb-raw")]

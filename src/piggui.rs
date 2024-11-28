@@ -144,7 +144,6 @@ impl Piggui {
         self.config_filename = None;
         self.unsaved_changes = false;
         self.hardware_target = NoHW;
-        self.hardware_view = HardwareView::new()
     }
 
     /// Connect to hardware - resetting the relevant control variables in the process
@@ -164,7 +163,6 @@ impl Piggui {
             .map(|s| s.to_string());
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
-
         (
             Self {
                 config_filename: config_filename.clone(),

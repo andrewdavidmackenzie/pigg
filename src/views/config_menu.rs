@@ -5,17 +5,17 @@ use crate::views::hardware_view::HardwareTarget;
 use crate::views::hardware_view::HardwareTarget::NoHW;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HIGHLIGHT_STYLE, MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE,
-    MENU_BAR_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
+    MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
 };
 use iced::widget::button::Status::Hovered;
-use iced::{Element, Renderer, Theme};
-use iced_aw::menu::{Item, Menu, MenuBar};
+use iced::{Renderer, Theme};
+use iced_aw::menu::{Item, Menu};
 
 /// Create the view that represents the status of unsaved changes in the info row
 pub fn view<'a>(
     unsaved_changes: bool,
     hardware_target: &HardwareTarget,
-) -> Element<'a, Message, Theme, Renderer> {
+) -> Item<'a, Message, Theme, Renderer> {
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
     let mut load_from = Button::new("Load config from...")
@@ -70,9 +70,5 @@ pub fn view<'a>(
     button = button.on_press(Message::MenuBarButtonClicked); // Needed for highlighting
 
     // Increased width to 145 as Linux needs a little more width
-    let menu_root = Item::with_menu(button, Menu::new(menu_items).width(180.0).offset(10.0));
-
-    MenuBar::new(vec![menu_root])
-        .style(|_, _| MENU_BAR_STYLE)
-        .into()
+    Item::with_menu(button, Menu::new(menu_items).width(180.0).offset(10.0))
 }
