@@ -54,7 +54,7 @@ serde_arrays = { version = "0.1.0", default-features = false }
 # for config serialization to/from file
 serde_json = { version = "1.0.133", default-features = false, features = ["std"] }
 # for alloc/no_alloc over the wire serialization/deserialization
-postcard = { version = "1.0.10", features = ["alloc"] }
+postcard = { version = "1.1.0", features = ["alloc"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
