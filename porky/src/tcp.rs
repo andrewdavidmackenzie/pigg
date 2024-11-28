@@ -22,7 +22,7 @@ pub async fn wait_connection<'a>(
 }
 
 /// Wait for an incoming TCP connection
-async fn accept<'a>(mut wifi_socket: TcpSocket<'a>) -> Result<TcpSocket<'a>, AcceptError> {
+async fn accept(mut wifi_socket: TcpSocket<'_>) -> Result<TcpSocket<'_>, AcceptError> {
     info!("Listening on port: {}", TCP_PORT);
 
     let socket = match wifi_socket.accept(TCP_PORT).await {

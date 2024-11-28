@@ -345,7 +345,7 @@ pub struct HeaderPins {
 //         let _ = GPIO_PINS.insert(1, GPIOPin::CYW43Output); // GP1 connected to CYW43 chip
 //         #[cfg(not(feature = "debug-probe"))]
 //         let _ = GPIO_PINS.insert(2, GPIOPin::CYW43Input); // GP2 connected to CYW43 chip
-pub fn setup_pins<'a>(header_pins: HeaderPins) {
+pub fn setup_pins(header_pins: HeaderPins) {
     unsafe {
         #[cfg(not(feature = "debug-probe"))]
         let _ = GPIO_PINS.insert(0, GPIOPin::Available(Flex::new(header_pins.pin_0)));

@@ -52,13 +52,10 @@ use core::str::FromStr;\n",
 
     match ssid {
         None => file.write_all(
-            format!(
-                "\n\
+            b"\n\
 pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
     None \n\
-}}"
-            )
-            .as_bytes(),
+}}",
         ),
         Some(spec) => file.write_all(
             format!(
