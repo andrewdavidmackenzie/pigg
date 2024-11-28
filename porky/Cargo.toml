@@ -7,7 +7,7 @@ rust-version = "1.80"
 
 [[bin]]
 name = "porky"
-path = "src/porky.rs"
+path = "src/porky_w.rs"
 
 [features]
 default = ["usb-raw", "no_std"]
