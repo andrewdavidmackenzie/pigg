@@ -17,7 +17,7 @@ use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
 #[cfg(feature = "tcp")]
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::IpAddr;
 
 pub struct InfoDialog {
     pub show_modal: bool,
@@ -44,7 +44,7 @@ pub enum InfoDialogMessage {
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
     LoadFile,
-    HardwareDetailsModal(HardwareDetails, Option<([u8; 4], u16)>),
+    HardwareDetailsModal(HardwareDetails, Option<(IpAddr, u16)>),
     AboutDialog,
     ExitApp,
     EscKeyEvent(Event),
@@ -91,14 +91,8 @@ impl InfoDialog {
 
                 #[cfg(feature = "tcp")]
                 if let Some(t) = tcp {
-                    self.target = Some(Tcp(
-                        IpAddr::V4(Ipv4Addr::new(t.0[0], t.0[1], t.0[2], t.0[3])),
-                        t.1,
-                    ));
-                    body.push_str(&format!(
-                        "\nIP Address/Port: {}.{}.{}.{}:{}",
-                        t.0[0], t.0[1], t.0[2], t.0[3], t.1
-                    ));
+                    self.target = Some(Tcp(t.0, t.1));
+                    body.push_str(&format!("\nIP Address/Port: {}:{}", t.0, t.1));
                 }
 
                 self.modal_type = Some(ModalType::Info {
@@ -278,7 +272,7 @@ impl InfoDialog {
                                         }
                                     }),
                             )
-                            .align_y(iced::Alignment::Center);
+                            .align_y(Alignment::Center);
                     }
                 }
 

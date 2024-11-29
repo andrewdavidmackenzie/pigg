@@ -39,6 +39,7 @@ use iced_futures::Subscription;
 use iroh_net::{relay::RelayUrl, NodeId};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
+use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// [HardwareViewMessage] covers all messages that are handled by hardware_view
@@ -63,7 +64,7 @@ pub enum HardwareConnection {
     #[cfg(feature = "iroh")]
     Iroh(NodeId, Option<RelayUrl>),
     #[cfg(feature = "tcp")]
-    Tcp(core::net::IpAddr, u16),
+    Tcp(IpAddr, u16),
 }
 
 pub struct HardwareView {

@@ -26,12 +26,10 @@ pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevi
     let remotes = endpoint.remote_info_iter();
 
     for remote in remotes {
-        if let Some(_address) = remote.addrs.first() {
-            let ip = [192u8, 168u8, 1u8, 51u8];
-            let port = 1234u16;
+        if let Some(address) = remote.addrs.first() {
             let wifi = WiFiDetails {
                 ssid_spec: None,
-                tcp: Some((ip, port)),
+                tcp: Some((address.addr.ip(), address.addr.port())),
             };
 
             map.insert(

@@ -25,8 +25,6 @@ use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
-#[cfg(all(feature = "tcp", feature = "usb", feature = "discovery"))]
-use std::net::{IpAddr, Ipv4Addr};
 
 /// Create a submenu item for the known devices
 #[cfg(feature = "discovery")]
@@ -114,7 +112,7 @@ fn devices_submenu<'a>(
                 tcp: Some((ip, port)),
             }) = wifi_details
             {
-                let target = Tcp(IpAddr::V4(Ipv4Addr::new(ip[0], ip[1], ip[2], ip[3])), *port);
+                let target = Tcp(*ip, *port);
                 menu_items.push(Item::new(
                     button("Connect to Device by TCP")
                         .width(Length::Fill)
