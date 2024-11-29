@@ -23,8 +23,6 @@ use std::collections::HashMap;
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-#[cfg(feature = "usb")]
-use crate::views::hardware_menu;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareTarget::NoHW;
 #[cfg(feature = "usb")]
@@ -38,6 +36,8 @@ use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 
+#[cfg(feature = "discovery")]
+mod discovery;
 pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
@@ -47,7 +47,7 @@ mod hw_definition;
 pub mod local_device;
 mod networking;
 #[cfg(feature = "usb")]
-mod usb_raw;
+mod usb;
 mod views;
 mod widgets;
 
@@ -122,7 +122,7 @@ fn main() -> iced::Result {
 #[allow(unused_variables)]
 fn reset_ssid(serial_number: String) -> Task<Message> {
     #[cfg(feature = "usb")]
-    return Task::perform(usb_raw::reset_ssid_spec(serial_number), |res| match res {
+    return Task::perform(usb::reset_ssid_spec(serial_number), |res| match res {
         Ok(_) => InfoRow(ShowStatusMessage(Info(
             "Wi-Fi Setup reset to Default by USB".into(),
         ))),
@@ -403,8 +403,8 @@ impl Piggui {
             self.hardware_view
                 .subscription(&self.hardware_target)
                 .map(Hardware),
-            #[cfg(feature = "usb")]
-            hardware_menu::subscription().map(Device),
+            #[cfg(feature = "discovery")]
+            Subscription::run(discovery::subscribe).map(Device),
         ];
 
         // Handle Keyboard events for ConnectDialog

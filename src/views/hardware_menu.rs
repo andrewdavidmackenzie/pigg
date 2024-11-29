@@ -2,8 +2,6 @@
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "usb")]
 use crate::hw_definition::description::WiFiDetails;
-#[cfg(feature = "usb")]
-use crate::usb_raw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::ConnectDialogMessage;
 #[cfg(feature = "usb")]
@@ -25,8 +23,6 @@ use iced::widget::{button, text};
 use iced::widget::{horizontal_space, row};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
-#[cfg(feature = "usb")]
-use iced_futures::Subscription;
 #[cfg(feature = "usb")]
 use std::collections::HashMap;
 #[cfg(feature = "usb")]
@@ -342,10 +338,4 @@ pub fn view<'a>(
             }),
         Menu::new(menu_items).width(215.0).offset(10.0),
     )
-}
-
-#[cfg(feature = "usb")]
-/// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
-pub fn subscription() -> Subscription<DeviceEvent> {
-    Subscription::run(usb_raw::subscribe)
 }
