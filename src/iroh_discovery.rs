@@ -8,20 +8,15 @@ use std::collections::HashMap;
 
 /// Create an iroh-net [Endpoint] for use in discovery
 #[cfg(feature = "discovery")]
-pub fn iroh_endpoint() -> anyhow::Result<Endpoint> {
+pub async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
     let key = SecretKey::generate();
     let id = key.public();
 
-    // TODO avoid recreating each time?
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
-    rt.block_on(
-        Endpoint::builder()
-            .secret_key(key)
-            .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
-            .bind(),
-    )
+    Endpoint::builder()
+        .secret_key(key)
+        .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
+        .bind()
+        .await
 }
 
 /// Try and find devices visible over iroh net
@@ -49,7 +44,6 @@ pub async fn find_porkys(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevic
         .map(|remote| remote.node_id)
         .collect();
 
-    println!("found:");
     for id in locally_discovered {
         println!("\t{id:?}");
         /*        map.insert(

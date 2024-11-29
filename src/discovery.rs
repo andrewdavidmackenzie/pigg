@@ -47,7 +47,7 @@ pub enum DeviceEvent {
 pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
     stream::channel(100, move |gui_sender| async move {
         #[cfg(feature = "iroh")]
-        let endpoint = iroh_discovery::iroh_endpoint().unwrap();
+        let endpoint = iroh_discovery::iroh_endpoint().await.unwrap();
 
         let mut previous_serials: Vec<String> = vec![];
 
