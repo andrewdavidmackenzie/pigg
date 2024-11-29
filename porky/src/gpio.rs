@@ -83,6 +83,7 @@ fn into_level(value: PinLevel) -> Level {
     }
 }
 
+#[cfg(feature = "wifi")]
 /// Set an output's level using the bcm pin number
 async fn set_output_level<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
@@ -105,6 +106,7 @@ async fn set_output_level<'a>(
     }
 }
 
+#[cfg(feature = "wifi")]
 /// Apply the requested config to one pin, using bcm_pin_number
 async fn apply_pin_config<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
@@ -224,6 +226,7 @@ async fn apply_pin_config<'a>(
     }
 }
 
+#[cfg(feature = "wifi")]
 /// This takes the GPIOConfig struct and configures all the pins in it
 async fn apply_config<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
@@ -247,6 +250,7 @@ async fn apply_config<'a>(
     }
 }
 
+#[cfg(feature = "wifi")]
 /// Apply a config change to the hardware
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
