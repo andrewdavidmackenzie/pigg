@@ -1,46 +1,46 @@
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::hw_definition::description::HardwareDescription;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::hw_definition::description::WiFiDetails;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::usb_raw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::ConnectDialogMessage;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::hardware_menu::KnownDevice::Porky;
 use crate::views::hardware_view::{HardwareTarget, HardwareView};
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
 };
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareTarget::*;
 use crate::Message;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use iced::alignment;
 use iced::widget::button::Status::Hovered;
 use iced::widget::{button, text};
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use iced::widget::{horizontal_space, row};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use iced_futures::Subscription;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use std::collections::HashMap;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 use std::fmt::{Display, Formatter};
-#[cfg(all(feature = "tcp", feature = "usb-raw"))]
+#[cfg(all(feature = "tcp", feature = "usb"))]
 use std::net::{IpAddr, Ipv4Addr};
 
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 #[derive(Debug, Clone)]
 pub enum DiscoveryMethod {
     USBRaw,
 }
 
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 impl Display for DiscoveryMethod {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -49,7 +49,7 @@ impl Display for DiscoveryMethod {
     }
 }
 
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 #[derive(Debug, Clone)]
 pub enum DeviceEvent {
     DeviceFound(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
@@ -57,12 +57,12 @@ pub enum DeviceEvent {
     Error(String),
 }
 
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 pub enum KnownDevice {
     Porky(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
 }
 
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 /// Create a submenu item for the known devices
 fn devices_submenu<'a>(
     known_devices: &HashMap<String, KnownDevice>,
@@ -212,7 +212,7 @@ fn devices_submenu<'a>(
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_target: &HardwareTarget,
-    #[cfg(feature = "usb-raw")] known_devices: &HashMap<String, KnownDevice>,
+    #[cfg(feature = "usb")] known_devices: &HashMap<String, KnownDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
@@ -327,7 +327,7 @@ pub fn view<'a>(
             }),
     ));
 
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     menu_items.push(devices_submenu(known_devices));
 
     Item::with_menu(
@@ -344,7 +344,7 @@ pub fn view<'a>(
     )
 }
 
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
 pub fn subscription() -> Subscription<DeviceEvent> {
     Subscription::run(usb_raw::subscribe)

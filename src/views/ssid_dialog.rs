@@ -56,11 +56,11 @@ pub enum SsidDialogMessage {
 
 #[allow(unused_variables)]
 fn send_ssid(serial_number: String, ssid_spec: SsidSpec) -> Task<Message> {
-    #[cfg(feature = "usb-raw")]
+    #[cfg(feature = "usb")]
     return Task::perform(usb_raw::send_ssid_spec(serial_number, ssid_spec), |res| {
         Message::SsidSpecSent(res)
     });
-    #[cfg(not(feature = "usb-raw"))]
+    #[cfg(not(feature = "usb"))]
     Task::none()
 }
 

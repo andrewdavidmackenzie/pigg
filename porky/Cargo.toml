@@ -6,14 +6,22 @@ edition = "2021"
 rust-version = "1.80"
 
 [[bin]]
+name = "porky_w"
+path = "src/porky_w.rs"
+required-features = ["pico_w"]
+
+[[bin]]
 name = "porky"
 path = "src/porky.rs"
+required-features = ["pico"]
 
 [features]
 default = ["usb-raw", "no_std"]
+pico = ["cyw43-pio"] # I don't know why yet  is needed. Reported to EMbassy
+pico_w = ["wifi"]
+wifi = ["cyw43", "cyw43-pio", "embassy-net"]
 no_std = []
 debug-probe = []
-usb-tcp = ["usb"]
 usb-raw = ["usb"]
 usb = ["embassy-usb"]
 
@@ -22,13 +30,13 @@ usb = ["embassy-usb"]
 embassy-time = { version = "0.3.2", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.6.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
 embassy-rp = { version = "0.2.0", default-features = false, features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
-embassy-net = { version = "0.5.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"] }
-cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"] }
-cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"] }
 embassy-sync = { version = "0.6.0", default-features = false }
 embassy-futures = { version = "0.1.1", default-features = false }
 
 # Optional Embassy Dependencies
+cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"], optional = true }
+cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"], optional = true }
+embassy-net = { version = "0.5.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"], optional = true }
 embassy-usb = { version = "0.3.0", default-features = false, optional = true }
 
 # Other dependencies (repos in https://github.com/embassy-rs)
@@ -40,7 +48,9 @@ embedded-storage = { version = "0.3", default-features = false }
 panic-probe = { version = "0.3", default-features = false, features = ["print-defmt"] }
 defmt = { version = "0.3", default-features = false }
 defmt-rtt = { version = "0.4", default-features = false }
+cortex-m = { version = "0.7.6", features = ["inline-asm"] }
 cortex-m-rt = { version = "0.7.0", default-features = false }
+
 embedded-io-async = { version = "0.6.1", features = ["defmt-03"] }
 rand = { version = "0.8.5", default-features = false }
 # To convert device_id into hex for use as a string
@@ -49,7 +59,6 @@ faster-hex = { version = "0.10.0", default-features = false }
 serde = { version = "1.0.208", default-features = false, features = ["derive"] } # no_std
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
-
 
 [build-dependencies]
 # for reading SSID config from a file in build.rs
@@ -68,19 +77,16 @@ strip = "debuginfo"
 embassy-time = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-executor = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-rp = { git = "https://github.com/embassy-rs/embassy.git" }
-embassy-net = { git = "https://github.com/embassy-rs/embassy.git" }
-cyw43 = { git = "https://github.com/embassy-rs/embassy.git" }
-cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-sync = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-futures = { git = "https://github.com/embassy-rs/embassy.git" }
+
 # Optional embassy repos patch
+cyw43 = { git = "https://github.com/embassy-rs/embassy.git" }
+cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
+embassy-net = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-usb = { git = "https://github.com/embassy-rs/embassy.git" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
 denylist = ["usb"]
 always_include_features = ["no_std"]
-# Features "usb-raw" and "usb-tcp" are incompatible, so skip permutations including them
-skip_feature_sets = [
-    ["usb-raw", "usb-tcp"],
-]

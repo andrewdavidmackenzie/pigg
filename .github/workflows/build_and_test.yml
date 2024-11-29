@@ -124,16 +124,13 @@ jobs:
       - name: add thumbv6m-none-eabi target
         run: rustup target add thumbv6m-none-eabi
 
-      - name: Release build of porky for Pico
-        run: cd porky && RUSTFLAGS= cargo build --release
-
       - name: Install cargo binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
       - name: Install elf2uf2-rs
         run: cargo binstall elf2uf2-rs
 
-      - name: Build UF2 file for porky
+      - name: Build porky and porky_w and their UF2 files
         run: cd porky && RUSTFLAGS= make uf2
 
   clippy-build-and-test-matrix:

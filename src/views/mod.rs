@@ -10,7 +10,7 @@ pub mod info_row;
 pub mod layout_menu;
 pub mod message_box;
 pub mod pin_state;
-#[cfg(feature = "usb-raw")]
+#[cfg(feature = "usb")]
 pub mod ssid_dialog;
 pub mod version;
 pub mod waveform;

@@ -6,7 +6,7 @@ over TCP.
 
 See [Building.md](BUILDING.md) on details of how to build from source.
 
-## Installing and Running `porky` on your Raspberry Pi Pico W
+## Installing and Running `porky_w` on your Raspberry Pi Pico W
 
 ### Getting a UF2 file
 
@@ -46,55 +46,55 @@ However, this works:
 
 people report that `rsync` may also work.
 
-when the download is done the Pi Pico W should reboot and run `porky`.
+when the download is done the Pi Pico W should reboot and run `porky_w`.
 
-## Configuring Wi-Fi on a Pi Pico W `porky` device
+## Configuring Wi-Fi on a Pi Pico W `porky_w` device
 
-Depending on where you got your UF2 file from, `porky` may have a default Wi-Fi network configured, or none.
+Depending on where you got your UF2 file from, `porky_w` may have a default Wi-Fi network configured, or none.
 
-You need to configure the Wi-Fi network you wish `porky` to connect to in order for it to be remotely accessible
+You need to configure the Wi-Fi network you wish `porky_w` to connect to in order for it to be remotely accessible
 over the network via TCP.
 
 Follow the following steps:
 
 - Connected the Pi Pico W via USB to a host computer where you can run the `piggui` GUI application
 - Run `piggui`
-- You should see an info message (in the bottom right hand corner message area) that a `porky` device was detected on
+- You should see an info message (in the bottom right hand corner message area) that a `porky_w` device was detected on
   USB
 - Oen the "hardware" menu (bottom menu bar). The "Discovered devices sub-menu should have sub-menu for the device
 - On the device's sub-menu select the "Configure Device Wi-Fi..." option
-- In the dialog enter the details of the Wi-Fi network you wish this `porky` device to connect to
-- Click the "Send" button. This will send the SSID details to the porky device and the dialog should close
-- The `porky` device should reboot (you will see disconnected and then connected messages in message box in the UI)
-- The `porky` device should now be attempting to connect to the specified Wi-Fi network
+- In the dialog enter the details of the Wi-Fi network you wish this `porky_w` device to connect to
+- Click the "Send" button. This will send the SSID details to the `porky_w` device and the dialog should close
+- The `porky_w` device should reboot (you will see disconnected and then connected messages in message box in the UI)
+- The `porky_w` device should now be attempting to connect to the specified Wi-Fi network
 
 NOTE: You may leave the device connected via USB (to power it) or disconnect it and connect it elsewhere, including
 using a USB charger (no data), as the device will attempt to connect to the specified Wi-Fi network.
 The USB connection to `piggui` is no longer needed.
 
-## Getting the `porky` device's IP and port
+## Getting the `porky_w` device's IP and port
 
-If the Wi-Fi network was configured correctly, `porky` should have been able to connect to the network and get an
+If the Wi-Fi network was configured correctly, `porky_w` should have been able to connect to the network and get an
 IP address. It will be listening for TCP connections on that IP on the default port of 1234.
 
-For the `piggui` GUI application to connect to a networked `porky` device, it needs to know the device's
+For the `piggui` GUI application to connect to a networked `porky_w` device, it needs to know the device's
 IP address.
 
-You can find the IP Address and Port that `porky` is listening on via the `piggy` GUI by using the "hardware" menu
-(bottom center)
+You can find the IP Address and Port that `porky_w` is listening on via the `piggy` GUI by using the "hardware" menu
+(bottom center), and it will offer an option to connect to the device directly.
 
 ```
 hardware > Discovered devices > Pi Pico W ($serial_number$) on USB > Display Device Details...
 ```
 
-## Connecting to `porky` over Wi-Fi
+## Connecting to `porky_w` over Wi-Fi
 
 Once you have the IP address and Port, via the same "hardware" menu disconnect from current device
 (including the fake local device on the host) and then select the "Connect to remote Pi..." option.
 
 This will open the Connection dialog. Select the "Connect using TCP" tab. Then complete the fields with the IP Address
-and Port (1234 by default) of the `porky` device and press "Connect".
+and Port (1234 by default) of the `porky_w` device and press "Connect".
 
-`piggui` should connect to the remote `porky` device and show the pins in the default layout. Now you may control and
+`piggui` should connect to the remote `porky_w` device and show the pins in the default layout. Now you may control and
 view remotely the GPIO hardware of your Pi Pico W - without writing a line of code and from the comfort of your
 host computer.
