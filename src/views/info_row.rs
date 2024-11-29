@@ -12,7 +12,7 @@ use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
 use iced_aw::style::menu_bar;
 use iced_aw::MenuBar;
 use iced_futures::Subscription;
-#[cfg(feature = "usb")]
+#[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
 const MENU_BACKGROUND_COLOR: Color = Color::from_rgba(0.15, 0.15, 0.15, 1.0);
@@ -129,7 +129,7 @@ impl InfoRow {
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
         hardware_connection: &'a HardwareConnection,
-        #[cfg(feature = "discovery")] known_devices: &HashMap<String, DiscoveredDevice>,
+        #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
     ) -> Element<'a, Message> {
         let menu_bar: Element<Message> = MenuBar::new(vec![
             version_button(),
@@ -138,7 +138,7 @@ impl InfoRow {
                 hardware_view,
                 hardware_connection,
                 #[cfg(feature = "discovery")]
-                known_devices,
+                discovered_devices,
             ),
             config_menu::view(unsaved_changes, hardware_connection),
         ])

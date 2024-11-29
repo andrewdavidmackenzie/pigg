@@ -16,7 +16,7 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
-#[cfg(feature = "usb")]
+#[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -44,7 +44,7 @@ mod file_helper;
 mod hardware_subscription;
 mod hw;
 mod hw_definition;
-#[cfg(feature = "discovery")]
+#[cfg(all(feature = "discovery", feature = "iroh"))]
 mod iroh_discovery;
 pub mod local_device;
 mod networking;
@@ -75,7 +75,7 @@ pub enum Message {
     Disconnected,
     ConnectionError(String),
     MenuBarButtonClicked,
-    #[cfg(feature = "usb")]
+    #[cfg(feature = "discovery")]
     Device(DeviceEvent),
     #[cfg(feature = "usb")]
     SsidDialog(SsidDialogMessage),
@@ -96,7 +96,7 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     hardware_connection: HardwareConnection,
-    #[cfg(feature = "usb")]
+    #[cfg(feature = "discovery")]
     discovered_devices: HashMap<String, DiscoveredDevice>,
     #[cfg(feature = "usb")]
     ssid_dialog: SsidDialog,
@@ -176,7 +176,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 hardware_connection: get_hardware_connection(&matches),
-                #[cfg(feature = "usb")]
+                #[cfg(feature = "discovery")]
                 discovered_devices: HashMap::new(),
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
@@ -299,7 +299,7 @@ impl Piggui {
 
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
-            #[cfg(feature = "usb")]
+            #[cfg(feature = "discovery")]
             Device(event) => self.device_event(event),
 
             #[cfg(feature = "usb")]
@@ -358,7 +358,7 @@ impl Piggui {
                 &self.layout_selector,
                 &self.hardware_view,
                 &self.hardware_connection,
-                #[cfg(feature = "usb")]
+                #[cfg(feature = "discovery")]
                 &self.discovered_devices,
             ));
 
@@ -419,19 +419,19 @@ impl Piggui {
         Subscription::batch(subscriptions)
     }
 
-    #[cfg(feature = "usb")]
+    #[cfg(feature = "discovery")]
     /// Process messages related to USB raw discovery of attached devices
     fn device_event(&mut self, event: DeviceEvent) {
         match event {
             DeviceEvent::DeviceFound(serial_number, discovered_device) => {
                 self.info_row
-                    .add_info_message(Info("USB Device Found".to_string()));
+                    .add_info_message(Info("Device Found".to_string()));
                 self.discovered_devices
                     .insert(serial_number, discovered_device);
             }
             DeviceEvent::DeviceLost(serial_number) => {
                 self.info_row
-                    .add_info_message(Info("USB Device Lost".to_string()));
+                    .add_info_message(Info("Device Lost".to_string()));
                 self.discovered_devices.remove(&serial_number);
             }
             DeviceEvent::Error(e) => {

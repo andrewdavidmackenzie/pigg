@@ -1,12 +1,19 @@
+#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
+#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::USBRaw;
-use crate::hw_definition::description::{HardwareDescription, SsidSpec, WiFiDetails};
+#[cfg(feature = "discovery")]
+use crate::hw_definition::description::WiFiDetails;
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+#[cfg(feature = "discovery")]
+use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_VALUE, GET_WIFI_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+    GET_HARDWARE_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use serde::Deserialize;
+#[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
 /// [ControlIn] "command" to request the HardwareDescription
@@ -20,6 +27,7 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
 };
 
 /// [ControlIn] "command" to request the WiFiDetails
+#[cfg(feature = "discovery")]
 const GET_WIFI_DETAILS: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
@@ -42,6 +50,7 @@ const RESET_SSID: ControlOut = ControlOut {
 /// Try and find an attached "porky" USB devices based on the vendor id and product id
 /// Return a hashmap of interfaces for each one, with the serial_number as the key, enabling
 /// us later to communicate with a specific device using its serial number
+#[cfg(feature = "discovery")]
 pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
     match nusb::list_devices() {
         Ok(device_list) => {
@@ -122,6 +131,7 @@ pub async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescr
 }
 
 /// Request [WiFiDetails] from compatible porky device over USB
+#[cfg(feature = "discovery")]
 pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, String> {
     usb_get_porky(porky, GET_WIFI_DETAILS).await
 }

@@ -1,15 +1,17 @@
 use crate::hw_definition::description::{HardwareDescription, WiFiDetails};
+#[cfg(feature = "iroh")]
 use crate::iroh_discovery;
 #[cfg(feature = "usb")]
 use crate::usb;
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
-#[cfg(not(any(feature = "usb", feature = "iroh")))]
-compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
+//#[cfg(not(any(feature = "usb", feature = "iroh")))]
+//compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
 
 #[derive(Debug, Clone)]
 pub enum DiscoveryMethod {
@@ -26,6 +28,8 @@ impl Display for DiscoveryMethod {
             DiscoveryMethod::USBRaw => f.write_str("on USB"),
             #[cfg(feature = "iroh")]
             DiscoveryMethod::IrohLocalSwarm => f.write_str("on Iroh network"),
+            #[cfg(not(any(feature = "usb", feature = "iroh")))]
+            _ => f.write_str(""),
         }
     }
 }
@@ -54,13 +58,16 @@ pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
         loop {
             let mut gui_sender_clone = gui_sender.clone();
             let mut current_serials = vec![];
+            #[allow(unused_mut)]
+            let mut current_devices = HashMap::new();
+
             #[cfg(feature = "usb")]
-            let current_porkys = usb::find_porkys().await;
+            current_devices.extend(usb::find_porkys().await);
             #[cfg(feature = "iroh")]
-            let _ = iroh_discovery::find_porkys(&endpoint).await;
+            current_devices.extend(iroh_discovery::find_piglets(&endpoint).await);
 
             // New devices
-            for (serial, discovered_device) in current_porkys {
+            for (serial, discovered_device) in current_devices {
                 if !previous_serials.contains(&serial) {
                     let _ = gui_sender_clone
                         .send(DeviceEvent::DeviceFound(serial.clone(), discovered_device))

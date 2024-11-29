@@ -1,4 +1,3 @@
-#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
 use iroh_net::discovery::local_swarm_discovery;
 use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
@@ -7,7 +6,6 @@ use iroh_net::{key::SecretKey, Endpoint};
 use std::collections::HashMap;
 
 /// Create an iroh-net [Endpoint] for use in discovery
-#[cfg(feature = "discovery")]
 pub async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
     let key = SecretKey::generate();
     let id = key.public();
@@ -20,7 +18,7 @@ pub async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
 }
 
 /// Try and find devices visible over iroh net
-pub async fn find_porkys(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevice> {
+pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevice> {
     let map = HashMap::<String, DiscoveredDevice>::new();
 
     // get an iterator of all the remote nodes this endpoint knows about

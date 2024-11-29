@@ -9,6 +9,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 use anyhow::{bail, Context};
 use futures::StreamExt;
+#[cfg(feature = "discovery")]
 use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
@@ -47,6 +48,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
     // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
     // connections between nodes when there are NATs or firewalls preventing direct connections.
     // If no direct connection can be made, packets are relayed over the relay servers.
+    #[allow(unused_mut)]
     let mut builder = Endpoint::builder()
         // The secret key is used to authenticate with other nodes.
         // The PublicKey portion of this secret key is how we identify nodes, often referred
