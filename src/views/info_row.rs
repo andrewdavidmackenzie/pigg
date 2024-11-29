@@ -1,6 +1,6 @@
 #[cfg(feature = "usb")]
 use crate::views::hardware_menu::KnownDevice;
-use crate::views::hardware_view::{HardwareTarget, HardwareView};
+use crate::views::hardware_view::{HardwareConnection, HardwareView};
 use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
@@ -128,19 +128,19 @@ impl InfoRow {
         unsaved_changes: bool,
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
-        hardware_target: &'a HardwareTarget,
+        hardware_connection: &'a HardwareConnection,
         #[cfg(feature = "usb")] known_devices: &HashMap<String, KnownDevice>,
     ) -> Element<'a, Message> {
         let menu_bar: Element<Message> = MenuBar::new(vec![
             version_button(),
-            layout_selector.view(hardware_target),
+            layout_selector.view(hardware_connection),
             hardware_menu::view(
                 hardware_view,
-                hardware_target,
+                hardware_connection,
                 #[cfg(feature = "usb")]
                 known_devices,
             ),
-            config_menu::view(unsaved_changes, hardware_target),
+            config_menu::view(unsaved_changes, hardware_connection),
         ])
         .style(|_, _| MENU_BAR_STYLE)
         .into();

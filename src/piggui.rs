@@ -2,7 +2,7 @@ use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw_definition::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
-use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
+use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareViewMessage};
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
@@ -24,7 +24,7 @@ use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::views::hardware_view::HardwareTarget::NoConnection;
+use crate::views::hardware_view::HardwareConnection::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "usb")]
@@ -68,7 +68,7 @@ pub enum Message {
     WindowEvent(iced::Event),
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     ConnectDialog(ConnectDialogMessage),
-    ConnectRequest(HardwareTarget),
+    ConnectRequest(HardwareConnection),
     Connected,
     Disconnected,
     ConnectionError(String),
@@ -93,7 +93,7 @@ pub struct Piggui {
     hardware_view: HardwareView,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
-    hardware_target: HardwareTarget,
+    hardware_connection: HardwareConnection,
     #[cfg(feature = "usb")]
     known_devices: HashMap<String, KnownDevice>,
     #[cfg(feature = "usb")]
@@ -143,14 +143,14 @@ impl Piggui {
             .add_info_message(Info("Disconnected from hardware".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_target = NoConnection;
+        self.hardware_connection = NoConnection;
     }
 
     /// Connect to hardware - resetting the relevant control variables in the process
-    fn connect(&mut self, new_target: HardwareTarget) {
+    fn connect(&mut self, new_target: HardwareConnection) {
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_target = new_target.clone();
+        self.hardware_connection = new_target.clone();
         self.hardware_view.new_target(new_target);
     }
 
@@ -173,7 +173,7 @@ impl Piggui {
                 hardware_view: HardwareView::new(),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
-                hardware_target: get_hardware_target(&matches),
+                hardware_connection: get_hardware_connection(&matches),
                 #[cfg(feature = "usb")]
                 known_devices: HashMap::new(),
                 #[cfg(feature = "usb")]
@@ -349,13 +349,13 @@ impl Piggui {
         let main_col = Column::new()
             .push(
                 self.hardware_view
-                    .view(self.layout_selector.get(), &self.hardware_target),
+                    .view(self.layout_selector.get(), &self.hardware_connection),
             )
             .push(self.info_row.view(
                 self.unsaved_changes,
                 &self.layout_selector,
                 &self.hardware_view,
-                &self.hardware_target,
+                &self.hardware_connection,
                 #[cfg(feature = "usb")]
                 &self.known_devices,
             ));
@@ -401,7 +401,7 @@ impl Piggui {
             self.modal_handler.subscription().map(Modal), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view
-                .subscription(&self.hardware_target)
+                .subscription(&self.hardware_connection)
                 .map(Hardware),
             #[cfg(feature = "discovery")]
             Subscription::run(discovery::subscribe).map(Device),
@@ -444,14 +444,14 @@ impl Piggui {
 
 /// Determine the hardware target based on command line options
 #[allow(unused_variables)]
-fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
+fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
     #[allow(unused_mut)]
-    let mut target = HardwareTarget::default();
+    let mut target = HardwareConnection::default();
 
     #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid") {
         if let Ok(nodeid) = NodeId::from_str(node_str) {
-            target = HardwareTarget::Iroh(nodeid, None);
+            target = HardwareConnection::Iroh(nodeid, None);
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }
@@ -468,13 +468,13 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
 }
 
 #[cfg(feature = "tcp")]
-fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareTarget> {
+fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareConnection> {
     let (ip_str, port_str) = ip_str
         .split_once(':')
         .ok_or(anyhow::anyhow!("Could not parse ip:port"))?;
     let ip = std::net::IpAddr::from_str(ip_str)?;
     let port = u16::from_str(port_str)?;
-    Ok(HardwareTarget::Tcp(ip, port))
+    Ok(HardwareConnection::Tcp(ip, port))
 }
 
 #[cfg(not(target_arch = "wasm32"))]

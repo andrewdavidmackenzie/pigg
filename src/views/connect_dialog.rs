@@ -10,12 +10,12 @@ use self::ConnectDialogMessage::{
     ConnectionError, HideConnectDialog, ModalKeyEvent, ShowConnectDialog,
 };
 #[cfg(feature = "tcp")]
-use crate::HardwareTarget::Tcp;
+use crate::HardwareConnection::Tcp;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
 
 #[cfg(feature = "iroh")]
-use crate::views::hardware_view::HardwareTarget::*;
+use crate::views::hardware_view::HardwareConnection::*;
 use crate::widgets::spinner::circular::Circular;
 use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::Message;

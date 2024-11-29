@@ -6,14 +6,14 @@ use crate::hw_definition::description::WiFiDetails;
 use crate::views::connect_dialog::ConnectDialogMessage;
 #[cfg(feature = "usb")]
 use crate::views::hardware_menu::KnownDevice::Porky;
-use crate::views::hardware_view::{HardwareTarget, HardwareView};
+use crate::views::hardware_view::{HardwareConnection, HardwareView};
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
 };
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
-use crate::HardwareTarget::*;
+use crate::HardwareConnection::*;
 use crate::Message;
 #[cfg(feature = "usb")]
 use iced::alignment;
@@ -207,12 +207,12 @@ fn devices_submenu<'a>(
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
-    hardware_target: &HardwareTarget,
+    hardware_connection: &HardwareConnection,
     #[cfg(feature = "usb")] known_devices: &HashMap<String, KnownDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
-        Some(model) => match hardware_target {
+        Some(model) => match hardware_connection {
             NoConnection => "hardware: none".to_string(),
             Local => format!("hardware: {}@Local", model),
             #[cfg(feature = "iroh")]
@@ -287,7 +287,7 @@ pub fn view<'a>(
         menu_items.push(show_details);
     }
 
-    match hardware_target {
+    match hardware_connection {
         NoConnection => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);

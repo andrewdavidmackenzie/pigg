@@ -5,9 +5,9 @@ use crate::views::dialog_styles::{
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
     MODAL_CONTAINER_STYLE,
 };
-use crate::views::hardware_view::HardwareTarget;
+use crate::views::hardware_view::HardwareConnection;
 #[cfg(feature = "tcp")]
-use crate::views::hardware_view::HardwareTarget::Tcp;
+use crate::views::hardware_view::HardwareConnection::Tcp;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
@@ -23,7 +23,7 @@ pub struct InfoDialog {
     pub show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
-    target: Option<HardwareTarget>,
+    target: Option<HardwareConnection>,
 }
 pub enum ModalType {
     Warning {

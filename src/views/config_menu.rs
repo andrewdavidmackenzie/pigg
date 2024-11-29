@@ -1,8 +1,8 @@
 use crate::Message;
 use iced::widget::Button;
 
-use crate::views::hardware_view::HardwareTarget;
-use crate::views::hardware_view::HardwareTarget::NoConnection;
+use crate::views::hardware_view::HardwareConnection;
+use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HIGHLIGHT_STYLE, MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE,
     MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
@@ -14,7 +14,7 @@ use iced_aw::menu::{Item, Menu};
 /// Create the view that represents the status of unsaved changes in the info row
 pub fn view<'a>(
     unsaved_changes: bool,
-    hardware_target: &HardwareTarget,
+    hardware_connection: &HardwareConnection,
 ) -> Item<'a, Message, Theme, Renderer> {
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
@@ -28,7 +28,7 @@ pub fn view<'a>(
             }
         });
 
-    if hardware_target != &NoConnection {
+    if hardware_connection != &NoConnection {
         load_from = load_from.on_press(Message::Load);
     }
     menu_items.push(Item::new(load_from));
@@ -44,7 +44,7 @@ pub fn view<'a>(
                 }
             });
 
-        if hardware_target != &NoConnection {
+        if hardware_connection != &NoConnection {
             save_as = save_as.on_press(Message::Save);
         }
 
