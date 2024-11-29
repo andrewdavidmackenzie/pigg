@@ -1,5 +1,5 @@
 #[cfg(feature = "discovery")]
-use crate::discovery::{DeviceEvent, KnownDevice};
+use crate::discovery::{DeviceEvent, DiscoveredDevice};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareViewMessage};
@@ -95,7 +95,7 @@ pub struct Piggui {
     connect_dialog: ConnectDialog,
     hardware_connection: HardwareConnection,
     #[cfg(feature = "usb")]
-    known_devices: HashMap<String, KnownDevice>,
+    discovered_devices: HashMap<String, DiscoveredDevice>,
     #[cfg(feature = "usb")]
     ssid_dialog: SsidDialog,
 }
@@ -175,7 +175,7 @@ impl Piggui {
                 connect_dialog: ConnectDialog::new(),
                 hardware_connection: get_hardware_connection(&matches),
                 #[cfg(feature = "usb")]
-                known_devices: HashMap::new(),
+                discovered_devices: HashMap::new(),
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
@@ -357,7 +357,7 @@ impl Piggui {
                 &self.hardware_view,
                 &self.hardware_connection,
                 #[cfg(feature = "usb")]
-                &self.known_devices,
+                &self.discovered_devices,
             ));
 
         let content = container(main_col)
@@ -421,18 +421,16 @@ impl Piggui {
     /// Process messages related to USB raw discovery of attached devices
     fn device_event(&mut self, event: DeviceEvent) {
         match event {
-            DeviceEvent::DeviceFound(method, hardware_description, wifi_details) => {
+            DeviceEvent::DeviceFound(serial_number, discovered_device) => {
                 self.info_row
                     .add_info_message(Info("USB Device Found".to_string()));
-                self.known_devices.insert(
-                    hardware_description.details.serial.clone(),
-                    KnownDevice::Porky(method, hardware_description, wifi_details),
-                );
+                self.discovered_devices
+                    .insert(serial_number, discovered_device);
             }
             DeviceEvent::DeviceLost(serial_number) => {
                 self.info_row
                     .add_info_message(Info("USB Device Lost".to_string()));
-                self.known_devices.remove(&serial_number);
+                self.discovered_devices.remove(&serial_number);
             }
             DeviceEvent::Error(e) => {
                 self.info_row

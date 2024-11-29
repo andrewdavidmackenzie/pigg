@@ -1,4 +1,3 @@
-use crate::discovery::DiscoveryMethod::USBRaw;
 use crate::hw_definition::description::{HardwareDescription, WiFiDetails};
 use async_std::prelude::Stream;
 use futures::SinkExt;
@@ -30,15 +29,17 @@ impl Display for DiscoveryMethod {
     }
 }
 
+/// Information about a [DiscoveredDevice] includes the [DiscoveryMethod], its [HardwareDescription]
+/// and [Option<WiFiDetails>]
+pub type DiscoveredDevice = (DiscoveryMethod, HardwareDescription, Option<WiFiDetails>);
+
+#[allow(clippy::large_enum_variant)]
+/// An event for the GUI related to the discovery or loss of a [DiscoveredDevice]
 #[derive(Debug, Clone)]
 pub enum DeviceEvent {
-    DeviceFound(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
+    DeviceFound(String, DiscoveredDevice),
     DeviceLost(String),
     Error(String),
-}
-
-pub enum KnownDevice {
-    Porky(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
 }
 
 #[cfg(feature = "iroh")]
@@ -68,51 +69,29 @@ pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
 
         loop {
             let mut gui_sender_clone = gui_sender.clone();
+            let mut current_serials = vec![];
             let current_porkys = crate::usb::find_porkys().await;
 
             // New devices
-            for (serial, porky) in &current_porkys {
-                if !previous_serials.contains(serial) {
-                    match crate::usb::get_hardware_description(porky).await {
-                        Ok(hardware_description) => {
-                            let wifi_details = if hardware_description.details.wifi {
-                                match crate::usb::get_wifi_details(porky).await {
-                                    Ok(details) => Some(details),
-                                    Err(_) => {
-                                        // TODO report error to UI
-                                        None
-                                    }
-                                }
-                            } else {
-                                None
-                            };
-
-                            println!("Found new device");
-                            let _ = gui_sender_clone
-                                .send(DeviceEvent::DeviceFound(
-                                    USBRaw,
-                                    hardware_description.clone(),
-                                    wifi_details,
-                                ))
-                                .await;
-                        }
-                        Err(e) => {
-                            let _ = gui_sender_clone.send(DeviceEvent::Error(e)).await;
-                        }
-                    }
+            for (serial, discovered_device) in current_porkys {
+                if !previous_serials.contains(&serial) {
+                    let _ = gui_sender_clone
+                        .send(DeviceEvent::DeviceFound(serial.clone(), discovered_device))
+                        .await;
                 }
+                current_serials.push(serial);
             }
 
             // Lost devices
             for serial in previous_serials {
-                if !current_porkys.contains_key(&serial) {
+                if !current_serials.contains(&serial) {
                     let _ = gui_sender_clone
                         .send(DeviceEvent::DeviceLost(serial.clone()))
                         .await;
                 }
             }
 
-            previous_serials = current_porkys.into_keys().collect();
+            previous_serials = current_serials;
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
     })
