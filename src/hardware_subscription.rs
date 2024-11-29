@@ -35,7 +35,7 @@ pub enum SubscriberMessage {
 }
 
 /// This enum describes the states of the subscription
-pub enum HWState {
+enum HWState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained

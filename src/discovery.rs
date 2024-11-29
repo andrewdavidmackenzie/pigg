@@ -42,21 +42,27 @@ pub enum KnownDevice {
 }
 
 #[cfg(feature = "iroh")]
-async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
+fn iroh_endpoint() -> anyhow::Result<Endpoint> {
     let key = SecretKey::generate();
     let id = key.public();
     println!("creating endpoint {id:?}\n");
-    Endpoint::builder()
-        .secret_key(key)
-        .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
-        .bind()
-        .await
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    rt.block_on(
+        Endpoint::builder()
+            .secret_key(key)
+            .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
+            .bind(),
+    )
 }
 
 /// A stream of [DeviceEvent] announcing the discovery or loss of devices
 pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
     #[cfg(feature = "iroh")]
-    //let _ = iroh_endpoint().await.unwrap();
+    let _ = iroh_endpoint().unwrap();
+
     stream::channel(100, move |gui_sender| async move {
         let mut previous_serials: Vec<String> = vec![];
 

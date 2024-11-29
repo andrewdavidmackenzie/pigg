@@ -188,6 +188,7 @@ fn send_input_level(
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
+    // TODO avoid recreating every time?
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
