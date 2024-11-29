@@ -17,7 +17,7 @@ required-features = ["pico"]
 
 [features]
 default = ["usb-raw", "no_std"]
-pico = []
+pico = ["cyw43-pio"] # I don't know why yet  is needed. Reported to EMbassy
 pico_w = ["wifi"]
 wifi = ["cyw43", "cyw43-pio", "embassy-net"]
 no_std = []
@@ -60,7 +60,6 @@ serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
-
 [build-dependencies]
 # for reading SSID config from a file in build.rs
 serde_derive = "~1.0"
@@ -78,12 +77,13 @@ strip = "debuginfo"
 embassy-time = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-executor = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-rp = { git = "https://github.com/embassy-rs/embassy.git" }
-embassy-net = { git = "https://github.com/embassy-rs/embassy.git" }
-cyw43 = { git = "https://github.com/embassy-rs/embassy.git" }
-cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-sync = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-futures = { git = "https://github.com/embassy-rs/embassy.git" }
+
 # Optional embassy repos patch
+cyw43 = { git = "https://github.com/embassy-rs/embassy.git" }
+cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
+embassy-net = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-usb = { git = "https://github.com/embassy-rs/embassy.git" }
 
 [package.metadata.cargo-all-features]
