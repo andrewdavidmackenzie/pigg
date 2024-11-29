@@ -130,7 +130,7 @@ jobs:
       - name: Install elf2uf2-rs
         run: cargo binstall elf2uf2-rs
 
-      - name: Build UF2 files for porky and porky_w
+      - name: Build porky and porky_w and their UF2 files
         run: cd porky && RUSTFLAGS= make uf2
 
   clippy-build-and-test-matrix:
