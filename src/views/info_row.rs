@@ -1,5 +1,5 @@
-#[cfg(feature = "usb")]
-use crate::views::hardware_menu::KnownDevice;
+#[cfg(feature = "discovery")]
+use crate::discovery::KnownDevice;
 use crate::views::hardware_view::{HardwareConnection, HardwareView};
 use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};

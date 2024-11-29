@@ -1,7 +1,7 @@
+#[cfg(feature = "discovery")]
+use crate::discovery::{DeviceEvent, KnownDevice};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw_definition::config::HardwareConfig;
-#[cfg(feature = "usb")]
-use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
 use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareViewMessage};
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;

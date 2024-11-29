@@ -1,5 +1,4 @@
-#[cfg(feature = "usb")]
-use crate::hw_definition::description::HardwareDescription;
+use crate::discovery::KnownDevice;
 #[cfg(feature = "usb")]
 use crate::hw_definition::description::WiFiDetails;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -25,40 +24,10 @@ use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 #[cfg(feature = "usb")]
 use std::collections::HashMap;
-#[cfg(feature = "usb")]
-use std::fmt::{Display, Formatter};
 #[cfg(all(feature = "tcp", feature = "usb"))]
 use std::net::{IpAddr, Ipv4Addr};
 
-#[cfg(feature = "usb")]
-#[derive(Debug, Clone)]
-pub enum DiscoveryMethod {
-    USBRaw,
-}
-
-#[cfg(feature = "usb")]
-impl Display for DiscoveryMethod {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DiscoveryMethod::USBRaw => f.write_str("on USB"),
-        }
-    }
-}
-
-#[cfg(feature = "usb")]
-#[derive(Debug, Clone)]
-pub enum DeviceEvent {
-    DeviceFound(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
-    DeviceLost(String),
-    Error(String),
-}
-
-#[cfg(feature = "usb")]
-pub enum KnownDevice {
-    Porky(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
-}
-
-#[cfg(feature = "usb")]
+#[cfg(feature = "discovery")]
 /// Create a submenu item for the known devices
 fn devices_submenu<'a>(
     known_devices: &HashMap<String, KnownDevice>,
@@ -310,20 +279,6 @@ pub fn view<'a>(
     }
 
     #[cfg(feature = "discovery")]
-    menu_items.push(Item::new(
-        button("Search for Pi's on local network...")
-            .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-            .width(Length::Fill)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
-    ));
-
-    #[cfg(feature = "usb")]
     menu_items.push(devices_submenu(known_devices));
 
     Item::with_menu(

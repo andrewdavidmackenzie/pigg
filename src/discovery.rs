@@ -1,14 +1,45 @@
-use crate::views::hardware_menu::DeviceEvent;
-use crate::views::hardware_menu::DiscoveryMethod::USBRaw;
+use crate::discovery::DiscoveryMethod::USBRaw;
+use crate::hw_definition::description::{HardwareDescription, WiFiDetails};
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
 #[cfg(feature = "iroh")]
 use iroh_net::{discovery::local_swarm_discovery::LocalSwarmDiscovery, key::SecretKey, Endpoint};
+use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
 #[cfg(not(any(feature = "usb", feature = "iroh")))]
 compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
+
+#[derive(Debug, Clone)]
+pub enum DiscoveryMethod {
+    #[cfg(feature = "usb")]
+    USBRaw,
+    #[cfg(feature = "iroh")]
+    IrohLocalSwarm,
+}
+
+impl Display for DiscoveryMethod {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            #[cfg(feature = "usb")]
+            DiscoveryMethod::USBRaw => f.write_str("on USB"),
+            #[cfg(feature = "iroh")]
+            DiscoveryMethod::IrohLocalSwarm => f.write_str("on Iroh network"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum DeviceEvent {
+    DeviceFound(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
+    DeviceLost(String),
+    Error(String),
+}
+
+pub enum KnownDevice {
+    Porky(DiscoveryMethod, HardwareDescription, Option<WiFiDetails>),
+}
 
 #[cfg(feature = "iroh")]
 async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
