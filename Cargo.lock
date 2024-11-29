@@ -19,6 +19,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 
 [[package]]
+name = "acto"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31c372578ce4215ccf94ec3f3585fbb6a902e47d07b064ff8a55d850ffb5025e"
+dependencies = [
+ "parking_lot 0.12.3",
+ "pin-project-lite",
+ "rustc_version",
+ "smol_str 0.1.24",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2238,6 +2252,30 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 
 [[package]]
 name = "hickory-proto"
+version = "0.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07698b8420e2f0d6447a436ba999ec85d8fbf2a398bbd737b82cac4a2e96e512"
+dependencies = [
+ "async-trait",
+ "cfg-if",
+ "data-encoding",
+ "enum-as-inner",
+ "futures-channel",
+ "futures-io",
+ "futures-util",
+ "idna 0.4.0",
+ "ipnet",
+ "once_cell",
+ "rand",
+ "thiserror 1.0.69",
+ "tinyvec",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "hickory-proto"
 version = "0.25.0-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8270a1857fb962b9914aafd46a89a187a4e63d0eb4190c327e7c7b8256a2d055"
@@ -2270,7 +2308,7 @@ checksum = "46c110355b5703070d9e29c344d79818a7cde3de9c27fc35750defea6074b0ad"
 dependencies = [
  "cfg-if",
  "futures-util",
- "hickory-proto",
+ "hickory-proto 0.25.0-alpha.2",
  "ipconfig",
  "lru-cache",
  "once_cell",
@@ -2512,7 +2550,7 @@ dependencies = [
  "once_cell",
  "palette",
  "rustc-hash 2.0.0",
- "smol_str",
+ "smol_str 0.2.2",
  "thiserror 1.0.69",
  "web-time",
 ]
@@ -2793,6 +2831,16 @@ dependencies = [
 
 [[package]]
 name = "idna"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d20d6b07bfbc108882d88ed8e37d39636dcc260e15e30c45e6ba089610b917c"
+dependencies = [
+ "unicode-bidi",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "idna"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "634d9b1461af396cad843f47fdba5597a4f9e6ddd4bfb6ff5d85028c25cb12f6"
@@ -2980,7 +3028,7 @@ dependencies = [
  "futures-util",
  "governor",
  "hex",
- "hickory-proto",
+ "hickory-proto 0.25.0-alpha.2",
  "hickory-resolver",
  "hostname",
  "http 1.1.0",
@@ -3019,6 +3067,7 @@ dependencies = [
  "strum",
  "stun-rs",
  "surge-ping",
+ "swarm-discovery",
  "thiserror 1.0.69",
  "time",
  "tokio",
@@ -5870,6 +5919,12 @@ dependencies = [
 
 [[package]]
 name = "smol_str"
+version = "0.1.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fad6c857cbab2627dcf01ec85a623ca4e7dcb5691cbaa3d7fb7653671f0d09c9"
+
+[[package]]
+name = "smol_str"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd538fb6910ac1099850255cf94a94df6551fbdd602454387d0adb2d1ca6dead"
@@ -6118,6 +6173,21 @@ name = "svg_fmt"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce5d813d71d82c4cbc1742135004e4a79fd870214c155443451c139c9470a0aa"
+
+[[package]]
+name = "swarm-discovery"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39769914108ae68e261d85ceac7bce7095947130f79c29d4535e9b31fc702a40"
+dependencies = [
+ "acto",
+ "anyhow",
+ "hickory-proto 0.24.1",
+ "rand",
+ "socket2",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "swash"
@@ -7656,7 +7726,7 @@ dependencies = [
  "rustix",
  "sctk-adwaita",
  "smithay-client-toolkit",
- "smol_str",
+ "smol_str 0.2.2",
  "tracing",
  "unicode-segmentation",
  "wasm-bindgen",
