@@ -1,9 +1,10 @@
 use crate::hw_definition::description::{HardwareDescription, WiFiDetails};
+use crate::iroh_discovery;
+#[cfg(feature = "usb")]
+use crate::usb;
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
-#[cfg(feature = "iroh")]
-use iroh_net::{discovery::local_swarm_discovery::LocalSwarmDiscovery, key::SecretKey, Endpoint};
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
@@ -42,35 +43,21 @@ pub enum DeviceEvent {
     Error(String),
 }
 
-#[cfg(feature = "iroh")]
-fn iroh_endpoint() -> anyhow::Result<Endpoint> {
-    let key = SecretKey::generate();
-    let id = key.public();
-    println!("creating endpoint {id:?}\n");
-
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
-    rt.block_on(
-        Endpoint::builder()
-            .secret_key(key)
-            .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
-            .bind(),
-    )
-}
-
 /// A stream of [DeviceEvent] announcing the discovery or loss of devices
 pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
-    #[cfg(feature = "iroh")]
-    let _ = iroh_endpoint().unwrap();
-
     stream::channel(100, move |gui_sender| async move {
+        #[cfg(feature = "iroh")]
+        let endpoint = iroh_discovery::iroh_endpoint().unwrap();
+
         let mut previous_serials: Vec<String> = vec![];
 
         loop {
             let mut gui_sender_clone = gui_sender.clone();
             let mut current_serials = vec![];
-            let current_porkys = crate::usb::find_porkys().await;
+            #[cfg(feature = "usb")]
+            let current_porkys = usb::find_porkys().await;
+            #[cfg(feature = "iroh")]
+            let _ = iroh_discovery::find_porkys(&endpoint).await;
 
             // New devices
             for (serial, discovered_device) in current_porkys {

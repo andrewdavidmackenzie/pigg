@@ -44,6 +44,8 @@ mod file_helper;
 mod hardware_subscription;
 mod hw;
 mod hw_definition;
+#[cfg(feature = "discovery")]
+mod iroh_discovery;
 pub mod local_device;
 mod networking;
 #[cfg(feature = "usb")]
