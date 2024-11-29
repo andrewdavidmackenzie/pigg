@@ -1,7 +1,8 @@
 use crate::discovery::DiscoveredDevice;
-use iroh_net::discovery::local_swarm_discovery;
+use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
+use crate::hw;
+use crate::hw_definition::description::WiFiDetails;
 use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
-use iroh_net::endpoint::Source;
 use iroh_net::{key::SecretKey, Endpoint};
 use std::collections::HashMap;
 
@@ -19,37 +20,29 @@ pub async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
 
 /// Try and find devices visible over iroh net
 pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevice> {
-    let map = HashMap::<String, DiscoveredDevice>::new();
+    let mut map = HashMap::<String, DiscoveredDevice>::new();
 
     // get an iterator of all the remote nodes this endpoint knows about
     let remotes = endpoint.remote_info_iter();
 
-    // filter that list down to the nodes that have a `Source::Discovery` with
-    // the `service` name [`iroh::discovery::local_swarm_discovery::NAME`]
-    // If you have a long-running node and want to only get the nodes that were
-    // discovered recently, you can also filter on the `Duration` of the source,
-    // which indicates how long ago we got information from that source.
-    let locally_discovered: Vec<_> = remotes
-        .filter(|remote| {
-            remote.sources().iter().any(|(source, _duration)| {
-                if let Source::Discovery { name } = source {
-                    name == local_swarm_discovery::NAME
-                } else {
-                    false
-                }
-            })
-        })
-        .map(|remote| remote.node_id)
-        .collect();
+    for remote in remotes {
+        if let Some(_address) = remote.addrs.first() {
+            let ip = [192u8, 168u8, 1u8, 51u8];
+            let port = 1234u16;
+            let wifi = WiFiDetails {
+                ssid_spec: None,
+                tcp: Some((ip, port)),
+            };
 
-    for id in locally_discovered {
-        println!("\t{id:?}");
-        /*        map.insert(
-                   hardware_description.details.serial.clone(),
-                   (IrohLocalSwarm, hardware_description, wifi_details),
-               );
-
-        */
+            map.insert(
+                "fake serial".to_string(),
+                (
+                    IrohLocalSwarm,
+                    hw::driver::get().description().unwrap(),
+                    Some(wifi),
+                ),
+            );
+        }
     }
 
     map
