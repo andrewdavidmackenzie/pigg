@@ -3,13 +3,29 @@ use crate::views::hardware_menu::DiscoveryMethod::USBRaw;
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
+#[cfg(feature = "iroh")]
+use iroh_net::{discovery::local_swarm_discovery::LocalSwarmDiscovery, key::SecretKey, Endpoint};
 use std::time::Duration;
 
 #[cfg(not(any(feature = "usb", feature = "iroh")))]
 compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
 
+#[cfg(feature = "iroh")]
+async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
+    let key = SecretKey::generate();
+    let id = key.public();
+    println!("creating endpoint {id:?}\n");
+    Endpoint::builder()
+        .secret_key(key)
+        .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
+        .bind()
+        .await
+}
+
 /// A stream of [DeviceEvent] announcing the discovery or loss of devices
 pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
+    #[cfg(feature = "iroh")]
+    //let _ = iroh_endpoint().await.unwrap();
     stream::channel(100, move |gui_sender| async move {
         let mut previous_serials: Vec<String> = vec![];
 

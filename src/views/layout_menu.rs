@@ -3,7 +3,7 @@ use iced::widget::Button;
 use iced::{Length, Size};
 
 use crate::views::hardware_view::HardwareTarget;
-use crate::views::hardware_view::HardwareTarget::NoHW;
+use crate::views::hardware_view::HardwareTarget::NoConnection;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
 };
@@ -80,7 +80,7 @@ impl LayoutSelector {
                             }
                         });
 
-                if hardware_target != &NoHW {
+                if hardware_target != &NoConnection {
                     show_bcp_layout = show_bcp_layout.on_press(Message::LayoutChanged(BCMLayout));
                 }
                 menu_items.push(Item::new(show_bcp_layout));
@@ -97,7 +97,7 @@ impl LayoutSelector {
                         }
                     });
 
-                if hardware_target != &NoHW {
+                if hardware_target != &NoConnection {
                     show_physical_layout =
                         show_physical_layout.on_press(Message::LayoutChanged(BoardLayout));
                 }

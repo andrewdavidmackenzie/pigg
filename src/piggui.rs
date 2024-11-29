@@ -24,7 +24,7 @@ use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::views::hardware_view::HardwareTarget::NoHW;
+use crate::views::hardware_view::HardwareTarget::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "usb")]
@@ -143,7 +143,7 @@ impl Piggui {
             .add_info_message(Info("Disconnected from hardware".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_target = NoHW;
+        self.hardware_target = NoConnection;
     }
 
     /// Connect to hardware - resetting the relevant control variables in the process

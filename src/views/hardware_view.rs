@@ -55,7 +55,7 @@ pub enum HardwareViewMessage {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum HardwareTarget {
     #[cfg_attr(target_arch = "wasm32", default)]
-    NoHW,
+    NoConnection,
     #[cfg(not(target_arch = "wasm32"))]
     #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
@@ -234,7 +234,7 @@ impl HardwareView {
         layout: Layout,
         hardware_target: &HardwareTarget,
     ) -> Element<HardwareViewMessage> {
-        if hardware_target == &NoHW {
+        if hardware_target == &NoConnection {
             return Row::new().into();
         }
 
@@ -285,7 +285,7 @@ impl HardwareView {
                     .map(|_| UpdateCharts),
             ];
 
-        if hardware_target != &NoHW {
+        if hardware_target != &NoConnection {
             subscriptions.push(
                 Subscription::run_with_id(
                     "hardware",

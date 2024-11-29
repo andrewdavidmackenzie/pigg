@@ -213,7 +213,7 @@ pub fn view<'a>(
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
         Some(model) => match hardware_target {
-            NoHW => "hardware: none".to_string(),
+            NoConnection => "hardware: none".to_string(),
             Local => format!("hardware: {}@Local", model),
             #[cfg(feature = "iroh")]
             Iroh(_, _) => format!("hardware: {}@Remote", model),
@@ -288,7 +288,7 @@ pub fn view<'a>(
     }
 
     match hardware_target {
-        NoHW => {
+        NoConnection => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             #[cfg(not(target_arch = "wasm32"))]

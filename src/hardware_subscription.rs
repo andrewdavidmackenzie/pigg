@@ -75,7 +75,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                         mpsc::channel::<SubscriberMessage>(100);
 
                     match target.clone() {
-                        HardwareTarget::NoHW => {}
+                        HardwareTarget::NoConnection => {}
 
                         #[cfg(not(target_arch = "wasm32"))]
                         HardwareTarget::Local => {

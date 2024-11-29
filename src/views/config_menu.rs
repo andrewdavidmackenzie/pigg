@@ -2,7 +2,7 @@ use crate::Message;
 use iced::widget::Button;
 
 use crate::views::hardware_view::HardwareTarget;
-use crate::views::hardware_view::HardwareTarget::NoHW;
+use crate::views::hardware_view::HardwareTarget::NoConnection;
 use crate::views::info_row::{
     MENU_BAR_BUTTON_HIGHLIGHT_STYLE, MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE,
     MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
@@ -28,7 +28,7 @@ pub fn view<'a>(
             }
         });
 
-    if hardware_target != &NoHW {
+    if hardware_target != &NoConnection {
         load_from = load_from.on_press(Message::Load);
     }
     menu_items.push(Item::new(load_from));
@@ -44,7 +44,7 @@ pub fn view<'a>(
                 }
             });
 
-        if hardware_target != &NoHW {
+        if hardware_target != &NoConnection {
             save_as = save_as.on_press(Message::Save);
         }
 
