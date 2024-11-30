@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
 #[cfg(not(feature = "no_std"))]
 use std::borrow::Cow;
+#[cfg(not(feature = "no_std"))]
 use std::net::IpAddr;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
