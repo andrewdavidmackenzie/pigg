@@ -5,6 +5,8 @@ use crate::hw_definition::description::{HardwareDetails, PinDescription, PinDesc
 
 impl Display for HardwareDetails {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Application: {}", self.app_name)?;
+        writeln!(f, "App Version: {}", self.app_version)?;
         writeln!(f, "Hardware: {}", self.hardware)?;
         writeln!(f, "Revision: {}", self.revision)?;
         writeln!(f, "Serial: {}", self.serial)?;

@@ -127,6 +127,8 @@ impl HW {
             serial: "unknown".to_string(),
             model: "Fake RPi".to_string(),
             wifi: true,
+            app_name: env!("CARGO_BIN_NAME").to_string(),
+            app_version: env!("CARGO_PKG_VERSION").to_string(),
         };
 
         #[cfg(all(

@@ -71,6 +71,8 @@ fn hardware_description(serial: &str) -> HardwareDescription {
         revision: "",
         serial,
         wifi: false,
+        app_name: env!("CARGO_BIN_NAME"),
+        app_version: env!("CARGO_PKG_VERSION"),
     };
 
     HardwareDescription {

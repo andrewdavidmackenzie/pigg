@@ -55,6 +55,10 @@ pub struct HardwareDetails {
     pub serial: String,
     /// Whether the device supports wifi or not
     pub wifi: bool,
+    /// WHat binary/application name is running on the device
+    pub app_name: String,
+    /// What version of the app is it running
+    pub app_version: String,
 }
 
 #[cfg(feature = "no_std")]
@@ -66,6 +70,8 @@ pub struct HardwareDetails<'a> {
     pub revision: &'a str,
     pub serial: &'a str,
     pub wifi: bool,
+    pub app_name: &'a str,
+    pub app_version: &'a str,
 }
 
 #[cfg(not(feature = "no_std"))]
