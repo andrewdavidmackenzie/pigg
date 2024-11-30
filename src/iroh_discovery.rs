@@ -24,13 +24,18 @@ pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevi
 
     // get an iterator of all the remote nodes this endpoint knows about
     let remotes = endpoint.remote_info_iter();
-
     for remote in remotes {
+        let trunc = remote
+            .node_id
+            .to_string()
+            .chars()
+            .take(16)
+            .collect::<String>();
         map.insert(
-            "fake serial".to_string(),
+            trunc, // TODO substitute for real serial_number when Iroh discovery supports it
             (
                 IrohLocalSwarm,
-                hw::driver::get().description().unwrap(),
+                hw::driver::get().description().unwrap(), // TODO show the real hardware description when Iroh discovery supports it
                 None,
                 HardwareConnection::Iroh(remote.node_id, remote.relay_url.map(|ri| ri.relay_url)),
             ),
