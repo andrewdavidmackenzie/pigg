@@ -131,6 +131,36 @@ connected to remotely over TCP, just like to a `piglet` running on a Pi.
 
 For more details see [porky's README.md](porky/README.md)
 
+## Supported Hardware and Operating Systems
+
+`pigg` has a number of binaries as part of the project (see descriptions above) and they are tested in CI, or
+manually or are known to work as follows:
+
+| Application | Arch Supported | Device    | OS Supported       |
+|-------------|----------------|-----------|--------------------|
+| piggui      | Apple Silicon  |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | Ubuntu 24.04       |
+|             | x86_64         |           | Windows 10         |
+|             | aarch64        | Pi400     | Pi OS              | 
+|             | aarch64        | Pi4       | Pi OS              | 
+|             | aarch64        | Pi5       | Pi OS              | 
+|             | aarch64        | PiZero 2  | Pi OS              | 
+|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS |
+| piglet      | Apple Silicon  |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | Ubuntu 24.04       |
+|             | x86_64         |           | Windows 10         |
+|             | aarch64        | Pi400     | Pi OS              | 
+|             | aarch64        | Pi4       | Pi OS              | 
+|             | aarch64        | Pi5       | Pi OS              | 
+|             | aarch64        | PiZero 2  | Pi OS              | 
+|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS |
+| porky_w     | armv7          | Pi Pico W |                    |
+| porky       | armv7          | Pi Pico   | Work in progress   |
+
 ## Input from Raspberry Pi users wanted
 
 We would like input from Raspberry Pi users to help us decide the order of things to work on in the future,
