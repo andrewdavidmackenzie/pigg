@@ -89,23 +89,25 @@ fn devices_submenu<'a>(
         }
 
         #[cfg(feature = "usb")]
-        if hardware_description.details.wifi && matches!(method, USBRaw) {
-            #[allow(unused_mut)]
-            menu_items.push(Item::new(
-                button("Configure Device Wi-Fi...")
-                    .width(Length::Fill)
-                    .on_press(Message::SsidDialog(SsidDialogMessage::Show(
-                        hardware_description.details.clone(),
-                        ssid_spec.as_ref().and_then(|wf| ssid_spec.clone()),
-                    )))
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    }),
-            ));
+        if hardware_description.details.wifi {
+            if matches!(method, USBRaw) {
+                #[allow(unused_mut)]
+                menu_items.push(Item::new(
+                    button("Configure Device Wi-Fi...")
+                        .width(Length::Fill)
+                        .on_press(Message::SsidDialog(SsidDialogMessage::Show(
+                            hardware_description.details.clone(),
+                            ssid_spec.as_ref().and_then(|wf| ssid_spec.clone()),
+                        )))
+                        .style(|_, status| {
+                            if status == Hovered {
+                                MENU_BUTTON_HOVER_STYLE
+                            } else {
+                                MENU_BUTTON_STYLE
+                            }
+                        }),
+                ));
+            }
 
             if matches!(method, USBRaw) {
                 menu_items.push(Item::new(
