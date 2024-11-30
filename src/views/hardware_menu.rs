@@ -1,5 +1,6 @@
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
+#[cfg(all(feature = "discovery", feature = "usb"))]
 use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::ConnectDialogMessage;

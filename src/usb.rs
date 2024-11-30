@@ -10,6 +10,7 @@ use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
     GET_HARDWARE_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
+#[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
@@ -72,8 +73,9 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                     let ssid = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
                     let tcp = wifi_details.and_then(|wf| wf.tcp);
                     let connection = match tcp {
-                        None => HardwareConnection::NoConnection,
+                        #[cfg(feature = "tcp")]
                         Some(tcp) => HardwareConnection::Tcp(tcp.0, tcp.1),
+                        _ => HardwareConnection::NoConnection,
                     };
                     map.insert(
                         hardware_description.details.serial.clone(),

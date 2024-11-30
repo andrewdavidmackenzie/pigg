@@ -73,8 +73,11 @@ impl Display for HardwareConnection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             NoConnection => write!(f, "No Connection"),
+            #[cfg(not(target_arch = "wasm32"))]
             Local => write!(f, "Local Hardware"),
+            #[cfg(feature = "iroh")]
             Iroh(nodeid, _relay_url) => write!(f, "Iroh Network: {nodeid}"),
+            #[cfg(feature = "tcp")]
             Tcp(ip, port) => write!(f, "TCP IP:Port: {ip}:{port}"),
         }
     }
