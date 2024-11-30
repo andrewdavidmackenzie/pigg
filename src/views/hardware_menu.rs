@@ -1,7 +1,6 @@
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
-#[cfg(all(feature = "usb", feature = "discovery", feature = "tcp"))]
-use crate::hw_definition::description::WiFiDetails;
+use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::hardware_view::{HardwareConnection, HardwareView};
@@ -29,13 +28,15 @@ use std::collections::HashMap;
 /// Create a submenu item for the known devices
 #[cfg(feature = "discovery")]
 fn devices_submenu<'a>(
-    known_devices: &HashMap<String, DiscoveredDevice>,
+    discovered_devices: &HashMap<String, DiscoveredDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
     #[allow(unused_mut)]
     let mut device_items = vec![];
 
     #[allow(unused_variables)]
-    for (serial_number, (method, hardware_description, wifi_details)) in known_devices {
+    for (serial_number, (method, hardware_description, ssid_spec, hardware_connection)) in
+        discovered_devices
+    {
         let device_button: Button<Message> = button(row!(
             text(format!(
                 "{} ({}) {}",
@@ -56,15 +57,46 @@ fn devices_submenu<'a>(
         #[allow(unused_mut)]
         let mut menu_items: Vec<Item<Message, Theme, Renderer>> = vec![];
 
+        menu_items.push(Item::new(
+            button("Display Device Details...")
+                .width(Length::Fill)
+                .on_press(Message::Modal(HardwareDetailsModal(
+                    hardware_description.details.clone(),
+                    hardware_connection.clone(),
+                )))
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                }),
+        ));
+
+        if !matches!(hardware_connection, NoConnection) {
+            menu_items.push(Item::new(
+                button("Connect to Device")
+                    .width(Length::Fill)
+                    .on_press(Message::ConnectRequest(hardware_connection.clone()))
+                    .style(|_, status| {
+                        if status == Hovered {
+                            MENU_BUTTON_HOVER_STYLE
+                        } else {
+                            MENU_BUTTON_STYLE
+                        }
+                    }),
+            ));
+        }
+
         #[cfg(feature = "usb")]
-        if hardware_description.details.wifi {
+        if hardware_description.details.wifi && matches!(method, USBRaw) {
             #[allow(unused_mut)]
             menu_items.push(Item::new(
                 button("Configure Device Wi-Fi...")
                     .width(Length::Fill)
                     .on_press(Message::SsidDialog(SsidDialogMessage::Show(
                         hardware_description.details.clone(),
-                        wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone()),
+                        ssid_spec.as_ref().and_then(|wf| ssid_spec.clone()),
                     )))
                     .style(|_, status| {
                         if status == Hovered {
@@ -75,48 +107,13 @@ fn devices_submenu<'a>(
                     }),
             ));
 
-            menu_items.push(Item::new(
-                button("Display Device Details...")
-                    .width(Length::Fill)
-                    .on_press(Message::Modal(HardwareDetailsModal(
-                        hardware_description.details.clone(),
-                        wifi_details.as_ref().unwrap().tcp,
-                    )))
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    }),
-            ));
-
-            menu_items.push(Item::new(
-                button("Reset Device Wi-Fi to Default")
-                    .width(Length::Fill)
-                    .on_press(Message::ResetSsid(
-                        hardware_description.details.serial.clone(),
-                    ))
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    }),
-            ));
-
-            #[cfg(feature = "tcp")]
-            if let Some(WiFiDetails {
-                ssid_spec: _,
-                tcp: Some((ip, port)),
-            }) = wifi_details
-            {
-                let target = Tcp(*ip, *port);
+            if matches!(method, USBRaw) {
                 menu_items.push(Item::new(
-                    button("Connect to Device by TCP")
+                    button("Reset Device Wi-Fi to Default")
                         .width(Length::Fill)
-                        .on_press(Message::ConnectRequest(target))
+                        .on_press(Message::ResetSsid(
+                            hardware_description.details.serial.clone(),
+                        ))
                         .style(|_, status| {
                             if status == Hovered {
                                 MENU_BUTTON_HOVER_STYLE
@@ -238,7 +235,7 @@ pub fn view<'a>(
             button("Show details...")
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_description.details.clone(),
-                    None,
+                    hardware_connection.clone(),
                 )))
                 .width(Length::Fill)
                 .style(|_, status| {

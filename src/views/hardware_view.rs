@@ -39,6 +39,8 @@ use iced_futures::Subscription;
 use iroh_net::{relay::RelayUrl, NodeId};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+#[cfg(feature = "tcp")]
 use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -65,6 +67,17 @@ pub enum HardwareConnection {
     Iroh(NodeId, Option<RelayUrl>),
     #[cfg(feature = "tcp")]
     Tcp(IpAddr, u16),
+}
+
+impl Display for HardwareConnection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NoConnection => write!(f, "No Connection"),
+            Local => write!(f, "Local Hardware"),
+            Iroh(nodeid, _relay_url) => write!(f, "Iroh Network: {nodeid}"),
+            Tcp(ip, port) => write!(f, "TCP IP:Port: {ip}:{port}"),
+        }
+    }
 }
 
 pub struct HardwareView {

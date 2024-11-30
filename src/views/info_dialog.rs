@@ -6,8 +6,7 @@ use crate::views::dialog_styles::{
     MODAL_CONTAINER_STYLE,
 };
 use crate::views::hardware_view::HardwareConnection;
-#[cfg(feature = "tcp")]
-use crate::views::hardware_view::HardwareConnection::Tcp;
+use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
@@ -16,14 +15,12 @@ use iced::widget::{button, column, container, horizontal_space, text, Row, Space
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
-#[cfg(feature = "tcp")]
-use std::net::IpAddr;
 
 pub struct InfoDialog {
     pub show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
-    target: Option<HardwareConnection>,
+    hardware_connection: HardwareConnection,
 }
 pub enum ModalType {
     Warning {
@@ -39,12 +36,13 @@ pub enum ModalType {
 }
 
 #[derive(Clone, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum InfoDialogMessage {
     HideModal,
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
     LoadFile,
-    HardwareDetailsModal(HardwareDetails, Option<(IpAddr, u16)>),
+    HardwareDetailsModal(HardwareDetails, HardwareConnection),
     AboutDialog,
     ExitApp,
     EscKeyEvent(Event),
@@ -57,7 +55,7 @@ impl InfoDialog {
             show_modal: false,
             is_warning: false,
             modal_type: None,
-            target: None,
+            hardware_connection: NoConnection,
         }
     }
 
@@ -83,16 +81,15 @@ impl InfoDialog {
 
             // Display hardware information
             #[allow(unused_variables)]
-            InfoDialogMessage::HardwareDetailsModal(hardware_details, tcp) => {
+            InfoDialogMessage::HardwareDetailsModal(hardware_details, hardware_connection) => {
                 self.show_modal = true;
                 self.is_warning = false;
                 #[allow(unused_mut)]
                 let mut body = format!("{hardware_details}");
 
-                #[cfg(feature = "tcp")]
-                if let Some(t) = tcp {
-                    self.target = Some(Tcp(t.0, t.1));
-                    body.push_str(&format!("\nIP Address/Port: {}:{}", t.0, t.1));
+                if !matches!(hardware_connection, NoConnection) {
+                    self.hardware_connection = hardware_connection.clone();
+                    body.push_str(&format!("\n{hardware_connection}"));
                 }
 
                 self.modal_type = Some(ModalType::Info {
@@ -258,12 +255,14 @@ impl InfoDialog {
                                 }
                             }),
                     );
-                    if let Some(target) = &self.target {
+                    if !matches!(self.hardware_connection, NoConnection) {
                         button_row = button_row
                             .push(horizontal_space())
                             .push(
                                 button("Connect")
-                                    .on_press(Message::ConnectRequest(target.clone()))
+                                    .on_press(Message::ConnectRequest(
+                                        self.hardware_connection.clone(),
+                                    ))
                                     .style(move |_theme, status| {
                                         if status == Hovered {
                                             MODAL_CONNECT_BUTTON_HOVER_STYLE

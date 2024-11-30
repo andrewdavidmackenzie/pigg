@@ -1,15 +1,15 @@
-use crate::hw_definition::description::{HardwareDescription, WiFiDetails};
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 #[cfg(feature = "iroh")]
 use crate::iroh_discovery;
 #[cfg(feature = "usb")]
 use crate::usb;
+use crate::views::hardware_view::HardwareConnection;
 use async_std::prelude::Stream;
 use futures::SinkExt;
 use iced_futures::stream;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
-
 //#[cfg(not(any(feature = "usb", feature = "iroh")))]
 //compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
 
@@ -36,7 +36,12 @@ impl Display for DiscoveryMethod {
 
 /// Information about a [DiscoveredDevice] includes the [DiscoveryMethod], its [HardwareDescription]
 /// and [Option<WiFiDetails>]
-pub type DiscoveredDevice = (DiscoveryMethod, HardwareDescription, Option<WiFiDetails>);
+pub type DiscoveredDevice = (
+    DiscoveryMethod,
+    HardwareDescription,
+    Option<SsidSpec>,
+    HardwareConnection,
+);
 
 #[allow(clippy::large_enum_variant)]
 /// An event for the GUI related to the discovery or loss of a [DiscoveredDevice]

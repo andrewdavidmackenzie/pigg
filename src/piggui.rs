@@ -57,6 +57,7 @@ const PIGGUI_ID: &str = "piggui";
 
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
+#[allow(clippy::large_enum_variant)]
 pub enum Message {
     ConfigLoaded(String, HardwareConfig),
     ConfigSaved,

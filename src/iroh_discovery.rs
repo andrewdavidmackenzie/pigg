@@ -1,7 +1,7 @@
 use crate::discovery::DiscoveredDevice;
 use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
 use crate::hw;
-use crate::hw_definition::description::WiFiDetails;
+use crate::views::hardware_view::HardwareConnection;
 use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
 use iroh_net::{key::SecretKey, Endpoint};
 use std::collections::HashMap;
@@ -26,21 +26,15 @@ pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevi
     let remotes = endpoint.remote_info_iter();
 
     for remote in remotes {
-        if let Some(address) = remote.addrs.first() {
-            let wifi = WiFiDetails {
-                ssid_spec: None,
-                tcp: Some((address.addr.ip(), address.addr.port())),
-            };
-
-            map.insert(
-                "fake serial".to_string(),
-                (
-                    IrohLocalSwarm,
-                    hw::driver::get().description().unwrap(),
-                    Some(wifi),
-                ),
-            );
-        }
+        map.insert(
+            "fake serial".to_string(),
+            (
+                IrohLocalSwarm,
+                hw::driver::get().description().unwrap(),
+                None,
+                HardwareConnection::Iroh(remote.node_id, remote.relay_url.map(|ri| ri.relay_url)),
+            ),
+        );
     }
 
     map
