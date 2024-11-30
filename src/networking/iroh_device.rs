@@ -1,24 +1,25 @@
 use super::PIGLET_ALPN;
 use crate::hw::driver::HW;
 use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
-use anyhow::{bail, Context};
-use futures::StreamExt;
-use iroh_net::{Endpoint, NodeId};
-use log::{debug, info, trace};
-use std::fmt;
-use std::fmt::{Display, Formatter};
-use std::time::Duration;
-
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
 use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 use crate::hw_definition::description::HardwareDescription;
+use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
+use anyhow::{bail, Context};
+use futures::StreamExt;
+#[cfg(feature = "discovery")]
+use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
 use iroh_net::endpoint::Connection;
 use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};
+use iroh_net::{Endpoint, NodeId};
+use log::{debug, info, trace};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct IrohDevice {
@@ -40,12 +41,15 @@ impl Display for IrohDevice {
 
 pub async fn get_device() -> anyhow::Result<IrohDevice> {
     let secret_key = SecretKey::generate();
+    #[cfg(feature = "discovery")]
+    let id = secret_key.public();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
     // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
     // connections between nodes when there are NATs or firewalls preventing direct connections.
     // If no direct connection can be made, packets are relayed over the relay servers.
-    let endpoint = Endpoint::builder()
+    #[allow(unused_mut)]
+    let mut builder = Endpoint::builder()
         // The secret key is used to authenticate with other nodes.
         // The PublicKey portion of this secret key is how we identify nodes, often referred
         // to as the `node_id` in our codebase.
@@ -57,12 +61,16 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
         // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
         // If you want to experiment with relaying using your own relay server,
         // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
-        .relay_mode(RelayMode::Default)
-        .bind()
-        .await?;
+        .relay_mode(RelayMode::Default);
+
+    #[cfg(feature = "discovery")]
+    {
+        builder = builder.discovery(Box::new(LocalSwarmDiscovery::new(id)?));
+    }
+    let endpoint = builder.bind().await?;
 
     let nodeid = endpoint.node_id();
-    println!("nodeid: {nodeid}"); // Don't removed - required by integration tests
+    println!("nodeid: {nodeid}"); // Don't remove - required by integration tests
 
     let local_addrs = endpoint
         .direct_addresses()
@@ -78,7 +86,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
     let relay_url = endpoint
             .home_relay()
             .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    println!("Relay URL: {relay_url}"); // Don't removed - required by integration tests
+    println!("Relay URL: {relay_url}"); // Don't remove - required by integration tests
 
     Ok(IrohDevice {
         nodeid,
@@ -227,6 +235,7 @@ fn send_input_level(
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
+    // TODO avoid recreating every time?
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;

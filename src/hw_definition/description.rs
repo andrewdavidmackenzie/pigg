@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
 #[cfg(not(feature = "no_std"))]
 use std::borrow::Cow;
-
+#[cfg(not(feature = "no_std"))]
+use std::net::IpAddr;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
 
@@ -90,7 +91,7 @@ pub struct SsidSpec {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WiFiDetails {
     pub ssid_spec: Option<SsidSpec>,
-    pub tcp: Option<([u8; 4], u16)>, // ("ip", port)
+    pub tcp: Option<(IpAddr, u16)>, // ("ip", port)
 }
 
 #[cfg(feature = "no_std")]

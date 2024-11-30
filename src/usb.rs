@@ -1,17 +1,22 @@
-use crate::hw_definition::description::{HardwareDescription, SsidSpec, WiFiDetails};
+#[cfg(feature = "discovery")]
+use crate::discovery::DiscoveredDevice;
+#[cfg(feature = "discovery")]
+use crate::discovery::DiscoveryMethod::USBRaw;
+#[cfg(feature = "discovery")]
+use crate::hw_definition::description::WiFiDetails;
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+#[cfg(feature = "discovery")]
+use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_VALUE, GET_WIFI_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+    GET_HARDWARE_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
-use crate::views::hardware_menu::DeviceEvent;
-use crate::views::hardware_menu::DiscoveryMethod::USBRaw;
-use async_std::prelude::Stream;
-use futures::SinkExt;
-use iced_futures::stream;
+#[cfg(feature = "discovery")]
+use crate::views::hardware_view::HardwareConnection;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use serde::Deserialize;
+#[cfg(feature = "discovery")]
 use std::collections::HashMap;
-use std::time::Duration;
 
 /// [ControlIn] "command" to request the HardwareDescription
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
@@ -24,6 +29,7 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
 };
 
 /// [ControlIn] "command" to request the WiFiDetails
+#[cfg(feature = "discovery")]
 const GET_WIFI_DETAILS: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
@@ -46,10 +52,11 @@ const RESET_SSID: ControlOut = ControlOut {
 /// Try and find an attached "porky" USB devices based on the vendor id and product id
 /// Return a hashmap of interfaces for each one, with the serial_number as the key, enabling
 /// us later to communicate with a specific device using its serial number
-async fn find_porkys() -> HashMap<String, Interface> {
+#[cfg(feature = "discovery")]
+pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
     match nusb::list_devices() {
         Ok(device_list) => {
-            let mut map = HashMap::<String, Interface>::new();
+            let mut map = HashMap::<String, DiscoveredDevice>::new();
             let interfaces = device_list
                 .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
                 .filter_map(|device_info| device_info.open().ok())
@@ -57,7 +64,23 @@ async fn find_porkys() -> HashMap<String, Interface> {
 
             for interface in interfaces {
                 if let Ok(hardware_description) = get_hardware_description(&interface).await {
-                    map.insert(hardware_description.details.serial, interface);
+                    let wifi_details = if hardware_description.details.wifi {
+                        get_wifi_details(&interface).await.ok()
+                    } else {
+                        None
+                    };
+
+                    let ssid = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
+                    let tcp = wifi_details.and_then(|wf| wf.tcp);
+                    let connection = match tcp {
+                        #[cfg(feature = "tcp")]
+                        Some(tcp) => HardwareConnection::Tcp(tcp.0, tcp.1),
+                        _ => HardwareConnection::NoConnection,
+                    };
+                    map.insert(
+                        hardware_description.details.serial.clone(),
+                        (USBRaw, hardware_description, ssid, connection),
+                    );
                 }
             }
 
@@ -67,10 +90,31 @@ async fn find_porkys() -> HashMap<String, Interface> {
     }
 }
 
+/// Get the Interface to talk to a device by USB if we can find a device with the specific serial
+async fn interface_from_serial(serial: &str) -> Result<Interface, String> {
+    if let Ok(device_list) = nusb::list_devices() {
+        let interfaces = device_list
+            .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+            .filter_map(|device_info| device_info.open().ok())
+            .filter_map(|device| device.claim_interface(0).ok());
+
+        for interface in interfaces {
+            if let Ok(hardware_description) = get_hardware_description(&interface).await {
+                if hardware_description.details.serial == serial {
+                    return Ok(interface);
+                }
+            }
+        }
+    }
+
+    Err("Could not find USB device with desired Serial Number".to_string())
+}
+
 /// Generic request to send data to porky over USB
 async fn usb_send_porky<'a>(porky: &Interface, control_out: ControlOut<'a>) -> Result<(), String> {
-    let response = porky.control_out(control_out).await;
-    response
+    porky
+        .control_out(control_out)
+        .await
         .status
         .map_err(|e| format!("Could not get response from porky over USB: {e}"))
 }
@@ -91,21 +135,19 @@ where
 }
 
 /// Request [HardwareDescription] from compatible porky device over USB
-async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, String> {
+pub async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, String> {
     usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
 }
 
 /// Request [WiFiDetails] from compatible porky device over USB
-async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, String> {
+#[cfg(feature = "discovery")]
+pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, String> {
     usb_get_porky(porky, GET_WIFI_DETAILS).await
 }
 
-/// Send a new Wi-Fi SsidSpec to the connected porky device
+/// Send a new Wi-Fi SsidSpec to the connected porky device over USB
 pub async fn send_ssid_spec(serial_number: String, ssid_spec: SsidSpec) -> Result<(), String> {
-    let porkys = find_porkys().await;
-    let porky = porkys
-        .get(&serial_number)
-        .ok_or("Cannot find USB attached porky with matching serial number".to_string())?;
+    let porky = interface_from_serial(&serial_number).await?;
 
     let mut buf = [0; 1024];
     let data = postcard::to_slice(&ssid_spec, &mut buf).unwrap();
@@ -119,73 +161,13 @@ pub async fn send_ssid_spec(serial_number: String, ssid_spec: SsidSpec) -> Resul
         data,
     };
 
-    usb_send_porky(porky, set_wifi_details).await
+    usb_send_porky(&porky, set_wifi_details).await
 }
 
 /// Reset the SsidSpec in a connected porky device
 pub async fn reset_ssid_spec(serial_number: String) -> Result<(), String> {
-    let porkys = find_porkys().await;
-    let porky = porkys
-        .get(&serial_number)
-        .ok_or("Cannot find USB attached porky with matching serial number".to_string())?;
-    usb_send_porky(porky, RESET_SSID).await
-}
-
-/// A stream of [DeviceEvent] announcing the discovery or loss of devices
-pub fn subscribe() -> impl Stream<Item = DeviceEvent> {
-    stream::channel(100, move |gui_sender| async move {
-        let mut previous_serials: Vec<String> = vec![];
-
-        loop {
-            let mut gui_sender_clone = gui_sender.clone();
-            let current_porkys = find_porkys().await;
-
-            // New devices
-            for (serial, porky) in &current_porkys {
-                if !previous_serials.contains(serial) {
-                    match get_hardware_description(porky).await {
-                        Ok(hardware_description) => {
-                            let wifi_details = if hardware_description.details.wifi {
-                                match get_wifi_details(porky).await {
-                                    Ok(details) => Some(details),
-                                    Err(_) => {
-                                        // TODO report error to UI
-                                        None
-                                    }
-                                }
-                            } else {
-                                None
-                            };
-
-                            println!("Found new device");
-                            let _ = gui_sender_clone
-                                .send(DeviceEvent::DeviceFound(
-                                    USBRaw,
-                                    hardware_description.clone(),
-                                    wifi_details,
-                                ))
-                                .await;
-                        }
-                        Err(e) => {
-                            let _ = gui_sender_clone.send(DeviceEvent::Error(e)).await;
-                        }
-                    }
-                }
-            }
-
-            // Lost devices
-            for serial in previous_serials {
-                if !current_porkys.contains_key(&serial) {
-                    let _ = gui_sender_clone
-                        .send(DeviceEvent::DeviceLost(serial.clone()))
-                        .await;
-                }
-            }
-
-            previous_serials = current_porkys.into_keys().collect();
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-    })
+    let porky = interface_from_serial(&serial_number).await?;
+    usb_send_porky(&porky, RESET_SSID).await
 }
 
 /*

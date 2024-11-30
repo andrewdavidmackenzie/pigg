@@ -1,3 +1,6 @@
+use super::PIGLET_ALPN;
+use crate::hw_definition::config::HardwareConfigMessage;
+use crate::hw_definition::description::HardwareDescription;
 use anyhow::ensure;
 use anyhow::Context;
 use iced::futures::StreamExt;
@@ -8,10 +11,6 @@ use iroh_net::{
     {Endpoint, NodeAddr, NodeId},
 };
 use std::io;
-
-use super::PIGLET_ALPN;
-use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::description::HardwareDescription;
 
 /// Wait until we receive a message from remote hardware
 pub async fn wait_for_remote_message(

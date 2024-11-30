@@ -1,8 +1,8 @@
+#[cfg(feature = "discovery")]
+use crate::discovery::{DeviceEvent, DiscoveredDevice};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw_definition::config::HardwareConfig;
-#[cfg(feature = "usb")]
-use crate::views::hardware_menu::{DeviceEvent, KnownDevice};
-use crate::views::hardware_view::{HardwareTarget, HardwareView, HardwareViewMessage};
+use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareViewMessage};
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
@@ -16,17 +16,15 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
-#[cfg(feature = "usb")]
+#[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-#[cfg(feature = "usb")]
-use crate::views::hardware_menu;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::views::hardware_view::HardwareTarget::NoHW;
+use crate::views::hardware_view::HardwareConnection::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "usb")]
@@ -38,16 +36,20 @@ use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 
+#[cfg(feature = "discovery")]
+mod discovery;
 pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
 mod hw;
 mod hw_definition;
+#[cfg(all(feature = "discovery", feature = "iroh"))]
+mod iroh_discovery;
 pub mod local_device;
 mod networking;
 #[cfg(feature = "usb")]
-mod usb_raw;
+mod usb;
 mod views;
 mod widgets;
 
@@ -55,6 +57,7 @@ const PIGGUI_ID: &str = "piggui";
 
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
+#[allow(clippy::large_enum_variant)]
 pub enum Message {
     ConfigLoaded(String, HardwareConfig),
     ConfigSaved,
@@ -68,12 +71,12 @@ pub enum Message {
     WindowEvent(iced::Event),
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     ConnectDialog(ConnectDialogMessage),
-    ConnectRequest(HardwareTarget),
+    ConnectRequest(HardwareConnection),
     Connected,
     Disconnected,
     ConnectionError(String),
     MenuBarButtonClicked,
-    #[cfg(feature = "usb")]
+    #[cfg(feature = "discovery")]
     Device(DeviceEvent),
     #[cfg(feature = "usb")]
     SsidDialog(SsidDialogMessage),
@@ -93,9 +96,9 @@ pub struct Piggui {
     hardware_view: HardwareView,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
-    hardware_target: HardwareTarget,
-    #[cfg(feature = "usb")]
-    known_devices: HashMap<String, KnownDevice>,
+    hardware_connection: HardwareConnection,
+    #[cfg(feature = "discovery")]
+    discovered_devices: HashMap<String, DiscoveredDevice>,
     #[cfg(feature = "usb")]
     ssid_dialog: SsidDialog,
 }
@@ -122,7 +125,7 @@ fn main() -> iced::Result {
 #[allow(unused_variables)]
 fn reset_ssid(serial_number: String) -> Task<Message> {
     #[cfg(feature = "usb")]
-    return Task::perform(usb_raw::reset_ssid_spec(serial_number), |res| match res {
+    return Task::perform(usb::reset_ssid_spec(serial_number), |res| match res {
         Ok(_) => InfoRow(ShowStatusMessage(Info(
             "Wi-Fi Setup reset to Default by USB".into(),
         ))),
@@ -143,14 +146,14 @@ impl Piggui {
             .add_info_message(Info("Disconnected from hardware".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_target = NoHW;
+        self.hardware_connection = NoConnection;
     }
 
     /// Connect to hardware - resetting the relevant control variables in the process
-    fn connect(&mut self, new_target: HardwareTarget) {
+    fn connect(&mut self, new_target: HardwareConnection) {
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_target = new_target.clone();
+        self.hardware_connection = new_target.clone();
         self.hardware_view.new_target(new_target);
     }
 
@@ -173,9 +176,9 @@ impl Piggui {
                 hardware_view: HardwareView::new(),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
-                hardware_target: get_hardware_target(&matches),
-                #[cfg(feature = "usb")]
-                known_devices: HashMap::new(),
+                hardware_connection: get_hardware_connection(&matches),
+                #[cfg(feature = "discovery")]
+                discovered_devices: HashMap::new(),
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
@@ -297,7 +300,7 @@ impl Piggui {
 
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
-            #[cfg(feature = "usb")]
+            #[cfg(feature = "discovery")]
             Device(event) => self.device_event(event),
 
             #[cfg(feature = "usb")]
@@ -349,15 +352,15 @@ impl Piggui {
         let main_col = Column::new()
             .push(
                 self.hardware_view
-                    .view(self.layout_selector.get(), &self.hardware_target),
+                    .view(self.layout_selector.get(), &self.hardware_connection),
             )
             .push(self.info_row.view(
                 self.unsaved_changes,
                 &self.layout_selector,
                 &self.hardware_view,
-                &self.hardware_target,
-                #[cfg(feature = "usb")]
-                &self.known_devices,
+                &self.hardware_connection,
+                #[cfg(feature = "discovery")]
+                &self.discovered_devices,
             ));
 
         let content = container(main_col)
@@ -401,10 +404,10 @@ impl Piggui {
             self.modal_handler.subscription().map(Modal), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view
-                .subscription(&self.hardware_target)
+                .subscription(&self.hardware_connection)
                 .map(Hardware),
-            #[cfg(feature = "usb")]
-            hardware_menu::subscription().map(Device),
+            #[cfg(feature = "discovery")]
+            Subscription::run(discovery::subscribe).map(Device),
         ];
 
         // Handle Keyboard events for ConnectDialog
@@ -417,22 +420,20 @@ impl Piggui {
         Subscription::batch(subscriptions)
     }
 
-    #[cfg(feature = "usb")]
+    #[cfg(feature = "discovery")]
     /// Process messages related to USB raw discovery of attached devices
     fn device_event(&mut self, event: DeviceEvent) {
         match event {
-            DeviceEvent::DeviceFound(method, hardware_description, wifi_details) => {
+            DeviceEvent::DeviceFound(serial_number, discovered_device) => {
                 self.info_row
-                    .add_info_message(Info("USB Device Found".to_string()));
-                self.known_devices.insert(
-                    hardware_description.details.serial.clone(),
-                    KnownDevice::Porky(method, hardware_description, wifi_details),
-                );
+                    .add_info_message(Info("Device Found".to_string()));
+                self.discovered_devices
+                    .insert(serial_number, discovered_device);
             }
             DeviceEvent::DeviceLost(serial_number) => {
                 self.info_row
-                    .add_info_message(Info("USB Device Lost".to_string()));
-                self.known_devices.remove(&serial_number);
+                    .add_info_message(Info("Device Lost".to_string()));
+                self.discovered_devices.remove(&serial_number);
             }
             DeviceEvent::Error(e) => {
                 self.info_row
@@ -444,14 +445,14 @@ impl Piggui {
 
 /// Determine the hardware target based on command line options
 #[allow(unused_variables)]
-fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
+fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
     #[allow(unused_mut)]
-    let mut target = HardwareTarget::default();
+    let mut target = HardwareConnection::default();
 
     #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid") {
         if let Ok(nodeid) = NodeId::from_str(node_str) {
-            target = HardwareTarget::Iroh(nodeid, None);
+            target = HardwareConnection::Iroh(nodeid, None);
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }
@@ -468,13 +469,13 @@ fn get_hardware_target(matches: &ArgMatches) -> HardwareTarget {
 }
 
 #[cfg(feature = "tcp")]
-fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareTarget> {
+fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareConnection> {
     let (ip_str, port_str) = ip_str
         .split_once(':')
         .ok_or(anyhow::anyhow!("Could not parse ip:port"))?;
     let ip = std::net::IpAddr::from_str(ip_str)?;
     let port = u16::from_str(port_str)?;
-    Ok(HardwareTarget::Tcp(ip, port))
+    Ok(HardwareConnection::Tcp(ip, port))
 }
 
 #[cfg(not(target_arch = "wasm32"))]

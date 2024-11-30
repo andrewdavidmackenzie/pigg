@@ -14,7 +14,7 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 use crate::networking::iroh_host;
 #[cfg(feature = "tcp")]
 use crate::networking::tcp_host;
-use crate::views::hardware_view::HardwareTarget;
+use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
 use futures::SinkExt;
 use iced::futures::channel::mpsc;
@@ -30,12 +30,12 @@ use iced::{
 /// A message type sent from the UI to the subscriber
 pub enum SubscriberMessage {
     /// We wish to switch the connection to a new device
-    NewConnection(HardwareTarget),
+    NewConnection(HardwareConnection),
     Hardware(HardwareConfigMessage),
 }
 
 /// This enum describes the states of the subscription
-pub enum HWState {
+enum HWState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
@@ -60,7 +60,7 @@ async fn report_error(mut gui_sender: Sender<HardwareEvent>, e: &str) {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent> {
+pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareEvent> {
     let mut target = hw_target.clone();
 
     stream::channel(100, move |gui_sender| async move {
@@ -75,10 +75,10 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                         mpsc::channel::<SubscriberMessage>(100);
 
                     match target.clone() {
-                        HardwareTarget::NoHW => {}
+                        HardwareConnection::NoConnection => {}
 
                         #[cfg(not(target_arch = "wasm32"))]
-                        HardwareTarget::Local => {
+                        HardwareConnection::Local => {
                             // Connect immediately - nothing to wait for!
                             match connected_hardware.description() {
                                 Ok(hardware_description) => {
@@ -104,7 +104,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                         }
 
                         #[cfg(feature = "iroh")]
-                        HardwareTarget::Iroh(nodeid, relay) => {
+                        HardwareConnection::Iroh(nodeid, relay) => {
                             match iroh_host::connect(&nodeid, relay.clone()).await {
                                 Ok((hardware_description, connection)) => {
                                     // Send the sender back to the GUI
@@ -131,7 +131,7 @@ pub fn subscribe(hw_target: &HardwareTarget) -> impl Stream<Item = HardwareEvent
                         }
 
                         #[cfg(feature = "tcp")]
-                        HardwareTarget::Tcp(ip, port) => {
+                        HardwareConnection::Tcp(ip, port) => {
                             match tcp_host::connect(ip, port).await {
                                 Ok((hardware_description, stream)) => {
                                     // Send the stream back to the GUI

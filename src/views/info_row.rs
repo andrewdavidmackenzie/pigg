@@ -1,6 +1,6 @@
-#[cfg(feature = "usb")]
-use crate::views::hardware_menu::KnownDevice;
-use crate::views::hardware_view::{HardwareTarget, HardwareView};
+#[cfg(feature = "discovery")]
+use crate::discovery::DiscoveredDevice;
+use crate::views::hardware_view::{HardwareConnection, HardwareView};
 use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
@@ -12,7 +12,7 @@ use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
 use iced_aw::style::menu_bar;
 use iced_aw::MenuBar;
 use iced_futures::Subscription;
-#[cfg(feature = "usb")]
+#[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
 const MENU_BACKGROUND_COLOR: Color = Color::from_rgba(0.15, 0.15, 0.15, 1.0);
@@ -128,19 +128,19 @@ impl InfoRow {
         unsaved_changes: bool,
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
-        hardware_target: &'a HardwareTarget,
-        #[cfg(feature = "usb")] known_devices: &HashMap<String, KnownDevice>,
+        hardware_connection: &'a HardwareConnection,
+        #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
     ) -> Element<'a, Message> {
         let menu_bar: Element<Message> = MenuBar::new(vec![
             version_button(),
-            layout_selector.view(hardware_target),
+            layout_selector.view(hardware_connection),
             hardware_menu::view(
                 hardware_view,
-                hardware_target,
-                #[cfg(feature = "usb")]
-                known_devices,
+                hardware_connection,
+                #[cfg(feature = "discovery")]
+                discovered_devices,
             ),
-            config_menu::view(unsaved_changes, hardware_target),
+            config_menu::view(unsaved_changes, hardware_connection),
         ])
         .style(|_, _| MENU_BAR_STYLE)
         .into();

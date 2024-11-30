@@ -14,7 +14,7 @@ use crate::views::hardware_styles::{
     PULLUP_WIDTH, SPACE_BETWEEN_PIN_COLUMNS, SPACE_BETWEEN_PIN_ROWS, TOGGLER_HOVER_STYLE,
     TOGGLER_SIZE, TOGGLER_STYLE, TOGGLER_WIDTH, TOOLTIP_STYLE, WIDGET_ROW_SPACING,
 };
-use crate::views::hardware_view::HardwareTarget::*;
+use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
 };
@@ -39,6 +39,9 @@ use iced_futures::Subscription;
 use iroh_net::{relay::RelayUrl, NodeId};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+#[cfg(feature = "tcp")]
+use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// [HardwareViewMessage] covers all messages that are handled by hardware_view
@@ -52,17 +55,32 @@ pub enum HardwareViewMessage {
     UpdateCharts,
 }
 
+/// A type of connection to a piece of hardware
 #[derive(Debug, Clone, Default, PartialEq)]
-pub enum HardwareTarget {
+pub enum HardwareConnection {
     #[cfg_attr(target_arch = "wasm32", default)]
-    NoHW,
+    NoConnection,
     #[cfg(not(target_arch = "wasm32"))]
     #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
     #[cfg(feature = "iroh")]
     Iroh(NodeId, Option<RelayUrl>),
     #[cfg(feature = "tcp")]
-    Tcp(core::net::IpAddr, u16),
+    Tcp(IpAddr, u16),
+}
+
+impl Display for HardwareConnection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NoConnection => write!(f, "No Connection"),
+            #[cfg(not(target_arch = "wasm32"))]
+            Local => write!(f, "Local Hardware"),
+            #[cfg(feature = "iroh")]
+            Iroh(nodeid, _relay_url) => write!(f, "Iroh Network: {nodeid}"),
+            #[cfg(feature = "tcp")]
+            Tcp(ip, port) => write!(f, "TCP IP:Port: {ip}:{port}"),
+        }
+    }
 }
 
 pub struct HardwareView {
@@ -107,7 +125,7 @@ impl HardwareView {
     }
 
     /// Send a message to request the subscription to switch connections to a new target
-    pub fn new_target(&mut self, new_target: HardwareTarget) {
+    pub fn new_target(&mut self, new_target: HardwareConnection) {
         if let Some(ref mut hardware_sender) = &mut self.subscriber_sender {
             let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(new_target));
         }
@@ -232,9 +250,9 @@ impl HardwareView {
     fn hw_view(
         &self,
         layout: Layout,
-        hardware_target: &HardwareTarget,
+        hardware_connection: &HardwareConnection,
     ) -> Element<HardwareViewMessage> {
-        if hardware_target == &NoHW {
+        if hardware_connection == &NoConnection {
             return Row::new().into();
         }
 
@@ -263,10 +281,13 @@ impl HardwareView {
     pub fn view<'a>(
         &'a self,
         layout: Layout,
-        hardware_target: &'a HardwareTarget,
+        hardware_connection: &'a HardwareConnection,
     ) -> Element<'a, Message> {
         let hw_column = Column::new()
-            .push(self.hw_view(layout, hardware_target).map(Message::Hardware))
+            .push(
+                self.hw_view(layout, hardware_connection)
+                    .map(Message::Hardware),
+            )
             .align_x(Center)
             .height(Length::Fill)
             .width(Length::Fill);
@@ -277,7 +298,7 @@ impl HardwareView {
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
     pub fn subscription(
         &self,
-        hardware_target: &HardwareTarget,
+        hardware_connection: &HardwareConnection,
     ) -> Subscription<HardwareViewMessage> {
         let mut subscriptions =
             vec![
@@ -285,11 +306,11 @@ impl HardwareView {
                     .map(|_| UpdateCharts),
             ];
 
-        if hardware_target != &NoHW {
+        if hardware_connection != &NoConnection {
             subscriptions.push(
                 Subscription::run_with_id(
                     "hardware",
-                    hardware_subscription::subscribe(hardware_target),
+                    hardware_subscription::subscribe(hardware_connection),
                 )
                 .map(HardwareSubscription),
             );

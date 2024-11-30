@@ -35,7 +35,7 @@ path = "src/piglet.rs"
 default = ["iroh", "tcp", "usb", "discovery"]
 iroh = ["iroh-net"]
 tcp = ["portpicker", "local-ip-address"]
-discovery = []
+discovery = ["iroh-net/discovery-local-network"]
 no_std = []
 usb = ["nusb"]
 
@@ -114,6 +114,7 @@ inherits = "release"
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
 denylist = ["no_std"]
+
 
 [package.metadata.docs.rs]
 features = ["iroh", "tcp"]
