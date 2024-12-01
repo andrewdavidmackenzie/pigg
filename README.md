@@ -1,6 +1,10 @@
 ![GH Action](https://github.com/andrewdavidmackenzie/pigg/actions/workflows/build_and_test.yml/badge.svg)
 [![codecov](https://codecov.io/gh/andrewdavidmackenzie/pigg/graph/badge.svg?token=Lv5SstEMGO)](https://codecov.io/gh/andrewdavidmackenzie/pigg)
 
+<a href="https://repology.org/project/pigg-x86-64-unknown-linux-gnu/versions">
+<img src="https://repology.org/badge/vertical-allrepos/pigg-x86-64-unknown-linux-gnu.svg" alt="Packaging status">
+</a>
+
 # pigg - Raspberry Pi GPIO GUI
 
 An app for Raspberry Pi GPIO Output control and Input visualization, built in rust using the
