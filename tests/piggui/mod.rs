@@ -17,7 +17,7 @@ fn help() {
     let mut child = run("piggui", vec!["--help".into()], None);
     wait_for_output(
         &mut child,
-        "'piggui' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
+        "'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware",
     )
     .expect("Failed to get expected output");
     kill(child);
