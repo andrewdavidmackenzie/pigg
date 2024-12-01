@@ -14,11 +14,9 @@ mod piggui;
 mod piglet;
 
 use std::io::{BufRead, BufReader};
-#[cfg(feature = "tcp")]
 use std::net::IpAddr;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-#[cfg(feature = "tcp")]
 use std::str::FromStr;
 
 pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
@@ -74,7 +72,6 @@ pub fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
     None
 }
 
-#[cfg(feature = "tcp")]
 pub fn ip_port(output: &str) -> (IpAddr, u16) {
     let ip = output
         .split("ip:")
