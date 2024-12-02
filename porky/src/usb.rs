@@ -77,7 +77,7 @@ pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
     tcp: Option<([u8; 4], u16)>,
-    db: Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    db: &'h Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
     watchdog: Watchdog,
 }
@@ -209,7 +209,10 @@ pub async fn start(
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
     tcp: Option<([u8; 4], u16)>,
-    db: Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    db: &'static Database<
+        DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
+        NoopRawMutex,
+    >,
     watchdog: Watchdog,
 ) {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);

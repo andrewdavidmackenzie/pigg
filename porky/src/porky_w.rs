@@ -68,6 +68,7 @@ mod hw_definition;
 /// Functions for interacting with the Flash ROM
 mod flash;
 
+mod persistence;
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
 
@@ -209,7 +210,10 @@ async fn main(spawner: Spawner) {
     let driver = Driver::new(peripherals.USB, Irqs);
 
     // start the flash database
-    let db = flash::db_init(flash).await;
+    static DATABASE: StaticCell<
+        Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    > = StaticCell::new();
+    let db = DATABASE.init(flash::db_init(flash).await);
 
     static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();
     let static_buf = STATIC_BUF.init([0u8; 200]);
@@ -251,9 +255,14 @@ async fn main(spawner: Spawner) {
                                             gpio::apply_config_change(
                                                 &mut control,
                                                 &spawner,
+                                                &hardware_config_message,
+                                            )
+                                            .await;
+                                            let _ = persistence::store_config_change(
+                                                &db,
                                                 hardware_config_message,
                                             )
-                                            .await
+                                            .await;
                                         }
                                     },
                                     Either::Second(hardware_config_message) => {

@@ -133,7 +133,10 @@ async fn main(spawner: Spawner) {
     let driver = Driver::new(peripherals.USB, Irqs);
 
     // start the flash database
-    let db = flash::db_init(flash).await;
+    static DATABASE: StaticCell<
+        Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    > = StaticCell::new();
+    let db = DATABASE.init(flash::db_init(flash).await);
 
     #[cfg(feature = "usb")]
     let watchdog = Watchdog::new(peripherals.WATCHDOG);

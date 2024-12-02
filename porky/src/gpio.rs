@@ -258,7 +258,7 @@ async fn apply_config<'a>(
 pub async fn apply_config_change<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
     spawner: &Spawner,
-    config_change: HardwareConfigMessage,
+    config_change: &HardwareConfigMessage,
 ) {
     match config_change {
         NewConfig(config) => {
@@ -275,7 +275,7 @@ pub async fn apply_config_change<'a>(
                 #[cfg(feature = "wifi")]
                 control,
                 spawner,
-                bcm,
+                *bcm,
                 &pin_function,
             )
             .await
@@ -284,7 +284,7 @@ pub async fn apply_config_change<'a>(
             set_output_level(
                 #[cfg(feature = "wifi")]
                 control,
-                bcm,
+                *bcm,
                 level_change.new_level,
             )
             .await;
