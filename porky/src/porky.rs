@@ -52,6 +52,9 @@ mod hw_definition;
 /// Functions for interacting with the Flash ROM
 mod flash;
 
+/// Persistence layer built on top of flash
+mod persistence;
+
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
 

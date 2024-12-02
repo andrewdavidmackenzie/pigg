@@ -1,4 +1,3 @@
-use crate::flash;
 use crate::flash::DbFlash;
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
@@ -6,8 +5,7 @@ use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{GET_HARDWARE_VALUE, PIGGUI_REQUEST};
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
-#[cfg(feature = "wifi")]
-use crate::{get_ssid_spec, SSID_SPEC_KEY};
+use crate::{flash, persistence};
 use core::str;
 use defmt::{error, info, unwrap};
 use ekv::Database;
@@ -82,29 +80,7 @@ pub(crate) struct ControlHandler<'h> {
     watchdog: Watchdog,
 }
 
-impl<'h> ControlHandler<'h> {
-    #[cfg(feature = "wifi")]
-    /// Write the [SsidSpec] to the flash database
-    async fn store_ssid_spec(&mut self, ssid_spec: SsidSpec) -> Result<(), &'static str> {
-        let mut wtx = self.db.write_transaction().await;
-        let bytes =
-            postcard::to_slice(&ssid_spec, &mut self.buf).map_err(|_| "Deserialization error")?;
-        wtx.write(SSID_SPEC_KEY, bytes)
-            .await
-            .map_err(|_| "Write error")?;
-        wtx.commit().await.map_err(|_| "Commit error")
-    }
-
-    #[cfg(feature = "wifi")]
-    /// Delete the [SsidSpec] from the flash database
-    async fn delete_ssid_spec(&mut self) -> Result<(), &'static str> {
-        let mut wtx = self.db.write_transaction().await;
-        wtx.delete(SSID_SPEC_KEY)
-            .await
-            .map_err(|_| "Delete error")?;
-        wtx.commit().await.map_err(|_| "Commit error")
-    }
-}
+impl<'h> ControlHandler<'h> {}
 
 impl<'h> Handler for ControlHandler<'h> {
     #[allow(unused_variables)] // TODO for now as not used in non-wifi yet
@@ -124,7 +100,7 @@ impl<'h> Handler for ControlHandler<'h> {
         match (req.request, req.value) {
             #[cfg(feature = "wifi")]
             (PIGGUI_REQUEST, SET_SSID_VALUE) => match postcard::from_bytes::<SsidSpec>(buf) {
-                Ok(spec) => match block_on(self.store_ssid_spec(spec)) {
+                Ok(spec) => match block_on(persistence::store_ssid_spec(self.db, spec)) {
                     Ok(_) => {
                         info!("SsidSpec for SSID: stored to Flash Database, restarting in 1sec",);
                         self.watchdog.start(Duration::from_millis(1_000));
@@ -141,18 +117,20 @@ impl<'h> Handler for ControlHandler<'h> {
                 }
             },
             #[cfg(feature = "wifi")]
-            (PIGGUI_REQUEST, RESET_SSID_VALUE) => match block_on(self.delete_ssid_spec()) {
-                Ok(_) => {
-                    info!("SsidSpec deleted from Flash Database");
-                    info!("Restarting in 1sec");
-                    self.watchdog.start(Duration::from_millis(1_000));
-                    Some(OutResponse::Accepted)
+            (PIGGUI_REQUEST, RESET_SSID_VALUE) => {
+                match block_on(persistence::delete_ssid_spec(self.db)) {
+                    Ok(_) => {
+                        info!("SsidSpec deleted from Flash Database");
+                        info!("Restarting in 1sec");
+                        self.watchdog.start(Duration::from_millis(1_000));
+                        Some(OutResponse::Accepted)
+                    }
+                    Err(e) => {
+                        error!("Error ({}) deleting SsidSpec from Flash Database", e);
+                        Some(OutResponse::Rejected)
+                    }
                 }
-                Err(e) => {
-                    error!("Error ({}) deleting SsidSpec from Flash Database", e);
-                    Some(OutResponse::Rejected)
-                }
-            },
+            }
             (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -184,7 +162,7 @@ impl<'h> Handler for ControlHandler<'h> {
             (PIGGUI_REQUEST, GET_WIFI_VALUE) => unsafe {
                 static mut STATIC_BUF: [u8; 200] = [0u8; 200];
                 #[allow(static_mut_refs)]
-                let ssid_spec = block_on(get_ssid_spec(&self.db, &mut STATIC_BUF));
+                let ssid_spec = block_on(persistence::get_ssid_spec(&self.db, &mut STATIC_BUF));
                 let wifi = WiFiDetails {
                     ssid_spec,
                     tcp: self.tcp,

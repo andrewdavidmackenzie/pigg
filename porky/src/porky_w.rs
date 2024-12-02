@@ -3,16 +3,14 @@
 
 use crate::flash::DbFlash;
 use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::description::{
-    HardwareDescription, HardwareDetails, PinDescriptionSet, SsidSpec,
-};
+use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use crate::tcp::TCP_PORT;
 use core::str;
 use cyw43_pio::PioSpi;
 use defmt::{error, info};
 use defmt_rtt as _;
-use ekv::{Database, ReadError};
+use ekv::Database;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_rp::bind_interrupts;
@@ -68,12 +66,11 @@ mod hw_definition;
 /// Functions for interacting with the Flash ROM
 mod flash;
 
+/// Persistence layer built on top of flash
 mod persistence;
+
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
-
-/// [SSID_SPEC_KEY] is the key to a possible entry in the Flash DB for SsidSpec override
-const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
 #[cfg(feature = "usb")]
 bind_interrupts!(struct Irqs {
@@ -107,39 +104,6 @@ fn hardware_description(serial: &str) -> HardwareDescription {
             pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
         },
     }
-}
-
-/// Return an [Option<SsidSpec>] if one could be found in Flash Database or a default.
-/// The default, if it exists was built from `ssid.toml` file in project root folder
-pub async fn get_ssid_spec<'a>(
-    db: &Database<DbFlash<Flash<'a, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
-    buf: &'a mut [u8],
-) -> Option<SsidSpec> {
-    let rtx = db.read_transaction().await;
-    let spec = match rtx.read(SSID_SPEC_KEY, buf).await {
-        Ok(size) => match postcard::from_bytes::<SsidSpec>(&buf[..size]) {
-            Ok(spec) => Some(spec),
-            Err(_) => {
-                error!("Error deserializing SsidSpec from Flash database, trying default");
-                ssid::get_default_ssid_spec()
-            }
-        },
-        Err(ReadError::KeyNotFound) => {
-            info!("No SsidSpec found in Flash database, trying default");
-            ssid::get_default_ssid_spec()
-        }
-        Err(_) => {
-            info!("Error reading SsidSpec from Flash database, trying default");
-            ssid::get_default_ssid_spec()
-        }
-    };
-
-    match &spec {
-        None => info!("No SsidSpec used"),
-        Some(s) => info!("SsidSpec used for SSID: {}", s.ssid_name),
-    }
-
-    spec
 }
 
 #[embassy_executor::main]
@@ -222,7 +186,7 @@ async fn main(spawner: Spawner) {
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
 
     // If we have a valid SsidSpec, then try and join that network using it
-    match get_ssid_spec(&db, static_buf).await {
+    match persistence::get_ssid_spec(&db, static_buf).await {
         Some(ssid) => match wifi::join(&mut control, wifi_stack, &ssid).await {
             Ok(ip) => {
                 info!("Assigned IP: {}", ip);
