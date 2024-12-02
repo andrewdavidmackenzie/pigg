@@ -5,11 +5,15 @@ use crate::hw_definition::config::HardwareConfigMessage::{
 };
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::SsidSpec;
+use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::Output;
+use crate::hw_definition::BCMPinNumber;
 #[cfg(feature = "wifi")]
 use crate::ssid;
 use defmt::{error, info};
-use ekv::{Database, ReadError};
+use ekv::Database;
+#[cfg(feature = "wifi")]
+use ekv::ReadError;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
@@ -19,11 +23,32 @@ use heapless::FnvIndexMap;
 const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
 /// Load any pre-existing config from flash, if there is none then just return a default config
-pub async fn get_config() -> HardwareConfig {
-    // TODO load from flash
-    HardwareConfig {
-        pin_functions: FnvIndexMap::new(),
+pub async fn get_config<'p>(
+    db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+) -> HardwareConfig {
+    let mut pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 32> = FnvIndexMap::new();
+    let mut buf: [u8; 1024] = [0; 1024];
+    let wtx = db.read_transaction().await;
+
+    for pin_number in 0u8..32u8 {
+        if let Ok(size) = wtx.read(&[pin_number], &mut buf).await {
+            info!("Found config in flash for pin: {}", pin_number);
+            if let Ok(pin_function) = postcard::from_bytes::<PinFunction>(&buf[..size]) {
+                let pin_no = pin_number as BCMPinNumber;
+                let _ = pin_functions.insert(pin_no, pin_function);
+            }
+        }
     }
+
+    match pin_functions.is_empty() {
+        true => info!("No Config found in flash, starting with default config"),
+        false => info!(
+            "Config retreived from Flash DB for {} pins",
+            pin_functions.len()
+        ),
+    }
+
+    HardwareConfig { pin_functions }
 }
 
 pub async fn store_config_change<'p>(
@@ -39,6 +64,14 @@ pub async fn store_config_change<'p>(
             for pin_number in 0u8..32u8 {
                 let _ = wtx.delete(&[pin_number]).await;
             }
+            wtx.commit().await.map_err(|_| "Commit error")?;
+
+            // Need to do deletes and writes in separate transactions - with keys in ascending order
+            wtx = db.write_transaction().await;
+            info!(
+                "Storing config for {} pins in Flash DB",
+                config.pin_functions.len()
+            );
             // Write the new pin configs for all pins in the config
             for (bcm, pin_function) in config.pin_functions {
                 let bytes = postcard::to_slice(&pin_function, &mut buf)
@@ -51,6 +84,7 @@ pub async fn store_config_change<'p>(
             let bytes =
                 postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
             wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+            info!("Stored config for 1 pin in FlashDB");
         }
         IOLevelChanged(bcm, level_change) => {
             // Write the new pin config (including the new output level), replacing any old one
@@ -58,6 +92,10 @@ pub async fn store_config_change<'p>(
             let bytes =
                 postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
             wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+            info!(
+                "Stored config for 1 Output pin with value '{}' in FlashDB",
+                level_change.new_level
+            );
         }
     }
 

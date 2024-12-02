@@ -145,13 +145,14 @@ async fn main(spawner: Spawner) {
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
 
     // Load initial config from flash
-    let _hardware_config = persistence::get_config().await;
+    let mut hardware_config = persistence::get_config(db).await;
 
     // apply the loaded config to the hardware immediately
+    // TODO overwrites itself
     gpio::apply_config_change(
-        &mut control,
         &spawner,
-        &HardwareConfigMessage::NewConfig(hardware_config),
+        &HardwareConfigMessage::NewConfig(hardware_config.clone()),
+        &mut hardware_config,
     )
     .await;
 

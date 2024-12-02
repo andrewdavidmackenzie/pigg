@@ -45,7 +45,7 @@ static RETURNER: Channel<ThreadModeRawMutex, Flex, 1> = Channel::new();
 static SIGNALLER: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
 
 /// Wait until a level change on an input occurs and then send it via TCP to GUI
-#[embassy_executor::task]
+#[embassy_executor::task(pool_size = 32)]
 async fn monitor_input(
     bcm_pin_number: BCMPinNumber,
     signaller: Receiver<'static, ThreadModeRawMutex, bool, 1>,
@@ -84,7 +84,6 @@ fn into_level(value: PinLevel) -> Level {
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Set an output's level using the bcm pin number
 async fn set_output_level<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
@@ -107,7 +106,6 @@ async fn set_output_level<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Apply the requested config to one pin, using bcm_pin_number
 async fn apply_pin_config<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
@@ -163,14 +161,14 @@ async fn apply_pin_config<'a>(
                         Some(InputPull::PullDown) => flex.set_pull(Pull::Down),
                     };
 
-                    spawner
-                        .spawn(monitor_input(
-                            bcm_pin_number,
-                            SIGNALLER.receiver(),
-                            RETURNER.sender(),
-                            flex,
-                        ))
-                        .unwrap();
+                    if let Err(e) = spawner.spawn(monitor_input(
+                        bcm_pin_number,
+                        SIGNALLER.receiver(),
+                        RETURNER.sender(),
+                        flex,
+                    )) {
+                        error!("Spawn Error: {}", e);
+                    }
 
                     unsafe {
                         let _ = GPIO_PINS.insert(
@@ -227,8 +225,7 @@ async fn apply_pin_config<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
-/// This takes the GPIOConfig struct and configures all the pins in it
+/// This takes the [HardwareConfig] struct and configures all the pins in it
 async fn apply_config<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
     spawner: &Spawner,
@@ -251,7 +248,6 @@ async fn apply_config<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Apply a config change to the hardware
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
