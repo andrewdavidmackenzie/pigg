@@ -5,6 +5,7 @@ use crate::hw_definition::config::HardwareConfigMessage::{
 use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
+use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 use crate::HARDWARE_EVENT_CHANNEL;
 #[cfg(feature = "wifi")]
@@ -259,6 +260,7 @@ pub async fn apply_config_change<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
     spawner: &Spawner,
     config_change: &HardwareConfigMessage,
+    hardware_config: &mut HardwareConfig,
 ) {
     match config_change {
         NewConfig(config) => {
@@ -268,7 +270,9 @@ pub async fn apply_config_change<'a>(
                 spawner,
                 &config,
             )
-            .await
+            .await;
+            // Update the hardware config to reflect the change
+            *hardware_config = config.clone();
         }
         NewPinConfig(bcm, pin_function) => {
             apply_pin_config(
@@ -278,7 +282,11 @@ pub async fn apply_config_change<'a>(
                 *bcm,
                 &pin_function,
             )
-            .await
+            .await;
+            // Update the hardware config to reflect the change
+            let _ = hardware_config
+                .pin_functions
+                .insert(*bcm, pin_function.clone());
         }
         IOLevelChanged(bcm, level_change) => {
             set_output_level(
@@ -288,6 +296,10 @@ pub async fn apply_config_change<'a>(
                 level_change.new_level,
             )
             .await;
+            // Update the hardware config to reflect the change
+            let _ = hardware_config
+                .pin_functions
+                .insert(*bcm, Output(Some(level_change.new_level)));
         }
     }
 }

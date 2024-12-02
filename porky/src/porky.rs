@@ -144,6 +144,17 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb")]
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
 
+    // Load initial config from flash
+    let _hardware_config = persistence::get_config().await;
+
+    // apply the loaded config to the hardware immediately
+    gpio::apply_config_change(
+        &mut control,
+        &spawner,
+        &HardwareConfigMessage::NewConfig(hardware_config),
+    )
+    .await;
+
     #[cfg(feature = "usb")]
     usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
 }

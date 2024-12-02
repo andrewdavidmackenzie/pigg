@@ -1,18 +1,30 @@
+use crate::flash;
 use crate::flash::DbFlash;
-use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::SsidSpec;
-use crate::{flash, ssid};
+use crate::hw_definition::pin_function::PinFunction::Output;
+#[cfg(feature = "wifi")]
+use crate::ssid;
 use defmt::{error, info};
 use ekv::{Database, ReadError};
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use heapless::FnvIndexMap;
 
 /// [SSID_SPEC_KEY] is the key to a possible entry in the Flash DB for SsidSpec override
 const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
+
+/// Load any pre-existing config from flash, if there is none then just return a default config
+pub async fn get_config() -> HardwareConfig {
+    // TODO load from flash
+    HardwareConfig {
+        pin_functions: FnvIndexMap::new(),
+    }
+}
 
 pub async fn store_config_change<'p>(
     db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
@@ -20,16 +32,35 @@ pub async fn store_config_change<'p>(
 ) -> Result<(), &'static str> {
     let mut buf: [u8; 1024] = [0; 1024];
     let mut wtx = db.write_transaction().await;
-    let bytes = postcard::to_slice(&hardware_config_message, &mut buf)
-        .map_err(|_| "Deserialization error")?;
 
     match hardware_config_message {
-        NewConfig(config) => {}
-        NewPinConfig(bcm, pin_function) => {}
-        IOLevelChanged(bcm, level_change) => {}
+        NewConfig(config) => {
+            // Delete all previous pin configs
+            for pin_number in 0u8..32u8 {
+                let _ = wtx.delete(&[pin_number]).await;
+            }
+            // Write the new pin configs for all pins in the config
+            for (bcm, pin_function) in config.pin_functions {
+                let bytes = postcard::to_slice(&pin_function, &mut buf)
+                    .map_err(|_| "Deserialization error")?;
+                wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+            }
+        }
+        NewPinConfig(bcm, pin_function) => {
+            // Write the new pin config, replacing an old one if it exists
+            let bytes =
+                postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
+            wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+        }
+        IOLevelChanged(bcm, level_change) => {
+            // Write the new pin config (including the new output level), replacing any old one
+            let pin_function = Some(Output(Some(level_change.new_level)));
+            let bytes =
+                postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
+            wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+        }
     }
 
-    wtx.write(b"pin", bytes).await.map_err(|_| "Write error")?;
     wtx.commit().await.map_err(|_| "Commit error")
 }
 

@@ -185,6 +185,18 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb")]
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
 
+    // Load initial config from flash
+    let mut hardware_config = persistence::get_config().await;
+    // TODO overwrites itself
+    // apply the loaded config to the hardware immediately
+    gpio::apply_config_change(
+        &mut control,
+        &spawner,
+        &HardwareConfigMessage::NewConfig(hardware_config.clone()),
+        &mut hardware_config,
+    )
+    .await;
+
     // If we have a valid SsidSpec, then try and join that network using it
     match persistence::get_ssid_spec(&db, static_buf).await {
         Some(ssid) => match wifi::join(&mut control, wifi_stack, &ssid).await {
@@ -220,6 +232,7 @@ async fn main(spawner: Spawner) {
                                                 &mut control,
                                                 &spawner,
                                                 &hardware_config_message,
+                                                &mut hardware_config,
                                             )
                                             .await;
                                             let _ = persistence::store_config_change(
