@@ -22,7 +22,7 @@ use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct IrohDevice {
+pub struct IrohDevice {
     pub nodeid: NodeId,
     pub local_addrs: String,
     pub relay_url: RelayUrl,
@@ -119,7 +119,11 @@ pub async fn accept_connection(
 }
 
 /// Process incoming config change messages from the GUI. On end of stream exit the loop
-pub async fn iroh_message_loop(connection: Connection, hardware: &mut HW) -> anyhow::Result<()> {
+pub async fn iroh_message_loop(
+    connection: Connection,
+    _hardware_config: &mut HardwareConfig,
+    hardware: &mut HW,
+) -> anyhow::Result<()> {
     loop {
         let mut config_receiver = connection.accept_uni().await?;
         info!("Waiting for message");

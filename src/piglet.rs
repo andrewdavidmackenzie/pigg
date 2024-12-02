@@ -16,7 +16,6 @@ use anyhow::Context;
 use clap::{Arg, ArgMatches};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
-use hw_definition::config::HardwareConfig;
 use log::{info, trace};
 use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
@@ -33,12 +32,15 @@ use crate::networking::iroh_device;
 use crate::networking::tcp_device;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use serde::{Deserialize, Serialize};
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-use std::{fs::File, io::Write};
 
+/// Module for interacting with the GPIO hardware
 mod hw;
+/// Module that defines the structs shared back and fore between GUI and piglet/porky
 mod hw_definition;
+/// Module for performing the network transfer of config and events between GUI and piglet
 mod networking;
+/// Module for persisting configs across runs
+mod persistence;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
@@ -78,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
 
     let info_path = check_unique(&exec_path)?;
 
-    run_service(&info_path, &matches).await
+    run_service(&info_path, &matches, exec_path).await
 }
 
 /// Handle any service installation or uninstallation tasks specified on the command line
@@ -102,23 +104,25 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
 /// Run piglet as a service - this could be interactively by a user in foreground or started
 /// by the system as a user service, in background - use logging for output from here on
 #[allow(unused_variables)]
-async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
+async fn run_service(
+    info_path: &Path,
+    matches: &ArgMatches,
+    exec_path: PathBuf,
+) -> anyhow::Result<()> {
     setup_logging(matches);
 
     let mut hw = hw::driver::get();
     info!("\n{}", hw.description()?.details);
 
-    // Load any config file specified on the command line
-    if let Some(config_filename) = matches.get_one::<String>("config-file") {
-        let config = HardwareConfig::load(config_filename)?;
-        info!("Config loaded from file: {config_filename}");
-        trace!("{config}");
-        hw.apply_config(&config, |bcm_pin_number, level_change| {
-            info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
-        })
-        .await?;
-        trace!("Configuration applied to hardware");
-    };
+    // Get the boot config for the hardware
+    let mut hardware_config = persistence::get_config(matches, exec_path).await;
+
+    // Apply the initial config to the hardware, whatever it is
+    hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
+        info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
+    })
+    .await?;
+    trace!("Configuration applied to hardware");
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     let listener_info = ListenerInfo {
@@ -130,7 +134,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
 
     // write the info about the node to the info_path file for use in piggui
     #[cfg(any(feature = "iroh", feature = "tcp"))]
-    write_info_file(info_path, &listener_info)?;
+    persistence::write_info_file(info_path, &listener_info)?;
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     let desc = hw.description()?;
@@ -142,7 +146,7 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
             println!("Waiting for TCP connection");
             if let Ok(stream) = tcp_device::accept_connection(&mut listener, &desc).await {
                 println!("Connected via TCP");
-                let _ = tcp_device::tcp_message_loop(stream, &mut hw).await;
+                let _ = tcp_device::tcp_message_loop(stream, &mut hardware_config, &mut hw).await;
             }
         }
     }
@@ -153,7 +157,8 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
             println!("Waiting for Iroh connection");
             if let Ok(connection) = iroh_device::accept_connection(&endpoint, &desc).await {
                 println!("Connected via Iroh");
-                let _ = iroh_device::iroh_message_loop(connection, &mut hw).await;
+                let _ =
+                    iroh_device::iroh_message_loop(connection, &mut hardware_config, &mut hw).await;
             }
         }
     }
@@ -174,11 +179,11 @@ async fn run_service(info_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
-                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hw).await;
+                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &mut hw).await;
                 },
                 iroh_connection = fused_iroh => {
                     println!("Connected via Iroh");
-                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hw).await;
+                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &mut hw).await;
                 }
                 complete => {}
             }
@@ -295,15 +300,6 @@ fn get_matches() -> ArgMatches {
     app.get_matches()
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-/// Write a [ListenerInfo] file that captures information that can be used to connect to piglet
-fn write_info_file(info_path: &Path, listener_info: &ListenerInfo) -> anyhow::Result<()> {
-    let mut output = File::create(info_path)?;
-    write!(output, "{}", serde_json::to_string(listener_info)?)?;
-    info!("Info file written at: {info_path:?}");
-    Ok(())
-}
-
 /// Get a [ServiceManager] instance to use to install or remove system services
 fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
     // Get generic service by detecting what is available on the platform
@@ -374,82 +370,4 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
     println!("service '{}' uninstalled", service_name);
 
     Ok(())
-}
-
-#[cfg(feature = "iroh")]
-#[cfg(test)]
-mod test {
-    use std::fs;
-    use std::path::PathBuf;
-    use std::str::FromStr;
-
-    use crate::ListenerInfo;
-    use tempfile::tempdir;
-
-    #[cfg(feature = "iroh")]
-    #[test]
-    fn write_info_file() {
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.info");
-        let nodeid =
-            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-                .expect("Could not create nodeid");
-        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
-        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
-            .expect("Could not create Relay URL");
-
-        let info = ListenerInfo {
-            iroh_info: crate::iroh_device::IrohDevice {
-                nodeid,
-                local_addrs: local_addrs.to_string(),
-                relay_url,
-                alpn: "".to_string(),
-                endpoint: None,
-            },
-            #[cfg(feature = "tcp")]
-            tcp_info: crate::tcp_device::TcpDevice {
-                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
-                port: 9001,
-                listener: None,
-            },
-        };
-
-        super::write_info_file(&test_file, &info).expect("Writing info file failed");
-        assert!(test_file.exists(), "File was not created as expected");
-        let piglet_info = fs::read(test_file).expect("Could not read info file");
-        let read_info: ListenerInfo =
-            serde_json::from_slice(&piglet_info).expect("Could not parse info file");
-        assert_eq!(nodeid, read_info.iroh_info.nodeid);
-    }
-
-    #[cfg(feature = "iroh")]
-    #[test]
-    fn write_info_file_non_existent() {
-        let output_dir = PathBuf::from("/foo");
-        let test_file = output_dir.join("test.info");
-        let nodeid =
-            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-                .expect("Could not create nodeid");
-        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
-        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
-            .expect("Could not create Relay URL");
-        let info = ListenerInfo {
-            iroh_info: crate::iroh_device::IrohDevice {
-                nodeid,
-                local_addrs: local_addrs.to_string(),
-                relay_url,
-                alpn: "".to_string(),
-                endpoint: None,
-            },
-            #[cfg(feature = "tcp")]
-            tcp_info: crate::tcp_device::TcpDevice {
-                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
-                port: 9001,
-                listener: None,
-            },
-        };
-
-        assert!(super::write_info_file(&test_file, &info).is_err());
-        assert!(!test_file.exists(), "File was created!");
-    }
 }

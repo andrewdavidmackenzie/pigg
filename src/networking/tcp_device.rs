@@ -22,7 +22,7 @@ use std::net::IpAddr;
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct TcpDevice {
+pub struct TcpDevice {
     pub ip: IpAddr,
     pub port: u16,
     #[serde(skip)]
@@ -37,7 +37,7 @@ impl Display for TcpDevice {
     }
 }
 
-pub(crate) async fn get_device() -> anyhow::Result<TcpDevice> {
+pub async fn get_device() -> anyhow::Result<TcpDevice> {
     let ip = local_ip()?;
     let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
     println!("ip: '{ip}:{port}'");
@@ -53,7 +53,7 @@ pub(crate) async fn get_device() -> anyhow::Result<TcpDevice> {
 }
 
 /// accept incoming connections, returns a TcpStream
-pub(crate) async fn accept_connection(
+pub async fn accept_connection(
     listener: &mut TcpListener,
     desc: &HardwareDescription,
 ) -> anyhow::Result<TcpStream> {
@@ -71,8 +71,9 @@ pub(crate) async fn accept_connection(
     Ok(stream?)
 }
 
-pub(crate) async fn tcp_message_loop(
+pub async fn tcp_message_loop(
     mut stream: TcpStream,
+    _hardware_config: &mut HardwareConfig,
     hardware: &mut HW,
 ) -> anyhow::Result<()> {
     let mut payload = vec![0u8; 1024];
