@@ -5,6 +5,7 @@ use crate::hw_definition::config::HardwareConfigMessage::{
 use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
+use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 use crate::HARDWARE_EVENT_CHANNEL;
 #[cfg(feature = "wifi")]
@@ -44,7 +45,7 @@ static RETURNER: Channel<ThreadModeRawMutex, Flex, 1> = Channel::new();
 static SIGNALLER: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
 
 /// Wait until a level change on an input occurs and then send it via TCP to GUI
-#[embassy_executor::task]
+#[embassy_executor::task(pool_size = 32)]
 async fn monitor_input(
     bcm_pin_number: BCMPinNumber,
     signaller: Receiver<'static, ThreadModeRawMutex, bool, 1>,
@@ -83,7 +84,6 @@ fn into_level(value: PinLevel) -> Level {
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Set an output's level using the bcm pin number
 async fn set_output_level<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
@@ -106,7 +106,6 @@ async fn set_output_level<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Apply the requested config to one pin, using bcm_pin_number
 async fn apply_pin_config<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
@@ -162,14 +161,14 @@ async fn apply_pin_config<'a>(
                         Some(InputPull::PullDown) => flex.set_pull(Pull::Down),
                     };
 
-                    spawner
-                        .spawn(monitor_input(
-                            bcm_pin_number,
-                            SIGNALLER.receiver(),
-                            RETURNER.sender(),
-                            flex,
-                        ))
-                        .unwrap();
+                    if let Err(e) = spawner.spawn(monitor_input(
+                        bcm_pin_number,
+                        SIGNALLER.receiver(),
+                        RETURNER.sender(),
+                        flex,
+                    )) {
+                        error!("Spawn Error: {}", e);
+                    }
 
                     unsafe {
                         let _ = GPIO_PINS.insert(
@@ -226,8 +225,7 @@ async fn apply_pin_config<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
-/// This takes the GPIOConfig struct and configures all the pins in it
+/// This takes the [HardwareConfig] struct and configures all the pins in it
 async fn apply_config<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
     spawner: &Spawner,
@@ -250,7 +248,6 @@ async fn apply_config<'a>(
     }
 }
 
-#[cfg(feature = "wifi")]
 /// Apply a config change to the hardware
 /// NOTE: Initially the callback to Config/PinConfig change was async, and that compiles and runs
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
@@ -258,7 +255,8 @@ async fn apply_config<'a>(
 pub async fn apply_config_change<'a>(
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
     spawner: &Spawner,
-    config_change: HardwareConfigMessage,
+    config_change: &HardwareConfigMessage,
+    hardware_config: &mut HardwareConfig,
 ) {
     match config_change {
         NewConfig(config) => {
@@ -268,26 +266,36 @@ pub async fn apply_config_change<'a>(
                 spawner,
                 &config,
             )
-            .await
+            .await;
+            // Update the hardware config to reflect the change
+            *hardware_config = config.clone();
         }
         NewPinConfig(bcm, pin_function) => {
             apply_pin_config(
                 #[cfg(feature = "wifi")]
                 control,
                 spawner,
-                bcm,
+                *bcm,
                 &pin_function,
             )
-            .await
+            .await;
+            // Update the hardware config to reflect the change
+            let _ = hardware_config
+                .pin_functions
+                .insert(*bcm, pin_function.clone());
         }
         IOLevelChanged(bcm, level_change) => {
             set_output_level(
                 #[cfg(feature = "wifi")]
                 control,
-                bcm,
+                *bcm,
                 level_change.new_level,
             )
             .await;
+            // Update the hardware config to reflect the change
+            let _ = hardware_config
+                .pin_functions
+                .insert(*bcm, Output(Some(level_change.new_level)));
         }
     }
 }

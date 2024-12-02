@@ -52,6 +52,9 @@ mod hw_definition;
 /// Functions for interacting with the Flash ROM
 mod flash;
 
+/// Persistence layer built on top of flash
+mod persistence;
+
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
 
@@ -133,10 +136,25 @@ async fn main(spawner: Spawner) {
     let driver = Driver::new(peripherals.USB, Irqs);
 
     // start the flash database
-    let db = flash::db_init(flash).await;
+    static DATABASE: StaticCell<
+        Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    > = StaticCell::new();
+    let db = DATABASE.init(flash::db_init(flash).await);
 
     #[cfg(feature = "usb")]
     let watchdog = Watchdog::new(peripherals.WATCHDOG);
+
+    // Load initial config from flash
+    let mut hardware_config = persistence::get_config(db).await;
+
+    // apply the loaded config to the hardware immediately
+    // TODO overwrites itself
+    gpio::apply_config_change(
+        &spawner,
+        &HardwareConfigMessage::NewConfig(hardware_config.clone()),
+        &mut hardware_config,
+    )
+    .await;
 
     #[cfg(feature = "usb")]
     usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
