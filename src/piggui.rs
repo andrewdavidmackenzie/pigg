@@ -42,13 +42,13 @@ pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 mod host_net;
 mod hw;
 mod hw_definition;
 #[cfg(all(feature = "discovery", feature = "iroh"))]
 mod iroh_discovery;
 pub mod local_device;
+mod net;
 #[cfg(feature = "usb")]
 mod usb;
 mod views;

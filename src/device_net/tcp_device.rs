@@ -8,7 +8,6 @@ use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
 use crate::hw::driver::HW;
-use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::persistence;
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
@@ -17,48 +16,19 @@ use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{debug, info, trace};
 use portpicker::pick_unused_port;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 use std::path::Path;
 use std::time::Duration;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TcpDevice {
     pub ip: IpAddr,
     pub port: u16,
     #[serde(skip)]
-    pub listener: TcpListener,
-}
-
-impl TcpDevice {
-    pub async fn new() -> anyhow::Result<Self> {
-        let ip = local_ip()?;
-        let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
-        println!("ip: '{ip}:{port}'");
-        let address = format!("{}:{}", ip, port);
-        info!("Waiting for TCP connection @ {address}");
-        let listener = TcpListener::bind(&address).await?;
-
-        Ok(TcpDevice { ip, port, listener })
-    }
-
-    /// accept incoming connections, returns a TcpStream
-    pub async fn accept_connection(&self, desc: &HardwareDescription) -> anyhow::Result<TcpStream> {
-        debug!("Waiting for connection");
-        let mut incoming = self.listener.incoming();
-        let stream = incoming.next().await;
-        let mut stream = stream.ok_or(anyhow!("No more Tcp streams"))?;
-
-        if let Ok(st) = &mut stream {
-            debug!("Connected, sending hardware description");
-            let message = postcard::to_allocvec(&desc)?;
-            st.write_all(&message).await?;
-        }
-
-        Ok(stream?)
-    }
+    pub listener: Option<TcpListener>,
 }
 
 impl Display for TcpDevice {
@@ -67,6 +37,40 @@ impl Display for TcpDevice {
         writeln!(f, "Port: {}", self.port)?;
         Ok(())
     }
+}
+
+pub async fn get_device() -> anyhow::Result<TcpDevice> {
+    let ip = local_ip()?;
+    let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
+    println!("ip: '{ip}:{port}'");
+    let address = format!("{}:{}", ip, port);
+    info!("Waiting for TCP connection @ {address}");
+    let listener = TcpListener::bind(&address).await?;
+
+    Ok(TcpDevice {
+        ip,
+        port,
+        listener: Some(listener),
+    })
+}
+
+/// accept incoming connections, returns a TcpStream
+pub async fn accept_connection(
+    listener: &mut TcpListener,
+    desc: &HardwareDescription,
+) -> anyhow::Result<TcpStream> {
+    debug!("Waiting for connection");
+    let mut incoming = listener.incoming();
+    let stream = incoming.next().await;
+    let mut stream = stream.ok_or(anyhow!("No more Tcp streams"))?;
+
+    if let Ok(st) = &mut stream {
+        debug!("Connected, sending hardware description");
+        let message = postcard::to_allocvec(&desc)?;
+        st.write_all(&message).await?;
+    }
+
+    Ok(stream?)
 }
 
 pub async fn tcp_message_loop(
@@ -84,8 +88,8 @@ pub async fn tcp_message_loop(
         }
 
         let config_message = postcard::from_bytes(&payload[0..length])?;
-        apply_config_change(hardware, config_message, hardware_config, stream.clone()).await?;
-        persistence::store_config(exec_path, hardware_config).await?;
+        apply_config_change(hardware, config_message, stream.clone()).await?;
+        let _ = persistence::store_config(hardware_config, exec_path).await;
     }
 }
 
@@ -96,7 +100,6 @@ pub async fn tcp_message_loop(
 async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
-    hardware_config: &mut HardwareConfig,
     writer: TcpStream,
 ) -> anyhow::Result<()> {
     match config_change {
@@ -108,8 +111,6 @@ async fn apply_config_change(
                     let _ = send_input_level(wc.clone(), bcm, level_change);
                 })
                 .await?;
-            // Update the hardware config to reflect the change
-            *hardware_config = config.clone();
 
             send_current_input_states(writer.clone(), &config, hardware).await?;
         }
@@ -121,18 +122,12 @@ async fn apply_config_change(
                     let _ = send_input_level(writer.clone(), bcm, level_change);
                 })
                 .await?;
-            // Update the hardware config to reflect the change
-            let _ = hardware_config.pin_functions.insert(bcm, pin_function);
 
             send_current_input_state(&bcm, &pin_function, wc, hardware).await?;
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             let _ = hardware.set_output_level(bcm, level_change.new_level);
-            // Update the hardware config to reflect the change
-            let _ = hardware_config
-                .pin_functions
-                .insert(bcm, Output(Some(level_change.new_level)));
         }
     }
 

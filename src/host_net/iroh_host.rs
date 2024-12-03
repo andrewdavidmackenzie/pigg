@@ -1,6 +1,6 @@
-use super::PIGLET_ALPN;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::HardwareDescription;
+use crate::net::PIGLET_ALPN;
 use anyhow::ensure;
 use anyhow::Context;
 use iced::futures::StreamExt;

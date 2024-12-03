@@ -7,15 +7,13 @@ use log::{info, trace};
 use std::fs::File;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::path::Path;
-use std::path::PathBuf;
 
 /// Get the initial [HardwareConfig] determined following:
 /// - A config file specified on the command line, or
 /// - A config file saved from a previous run
 /// - The default (empty) config
-pub(crate) async fn get_config(matches: &ArgMatches, exec_path: PathBuf) -> HardwareConfig {
+pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
     // A config file specified on the command line overrides any config file from previous run
     let config_file = matches.get_one::<String>("config-file");
 
@@ -42,6 +40,17 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: PathBuf) -> Hard
             }
         }
     }
+}
+
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+/// Save the config to a file that will be picked up on restart
+pub(crate) async fn store_config(
+    hardware_config: &HardwareConfig,
+    exec_path: &Path,
+) -> anyhow::Result<()> {
+    let last_run_filename = exec_path.join(".piglet_config.json");
+    hardware_config.save(&last_run_filename.to_string_lossy())?;
+    Ok(())
 }
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
