@@ -1,8 +1,8 @@
 use crate::hw_definition::config::HardwareConfig;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::ListenerInfo;
 use clap::ArgMatches;
 use log::{info, trace};
-use std::fs::File;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
 use std::path::Path;
@@ -39,7 +39,7 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> Hardwa
         }
     }
 }
-
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Persist the current config in file, for picking up at restart
 pub(crate) async fn store_config(exec_path: &Path, config: &HardwareConfig) -> anyhow::Result<()> {
     let last_run_filename = exec_path.join(".piglet_config.json");
@@ -53,7 +53,7 @@ pub(crate) fn write_info_file(
     info_path: &Path,
     listener_info: &ListenerInfo,
 ) -> anyhow::Result<()> {
-    let mut output = File::create(info_path)?;
+    let mut output = std::fs::File::create(info_path)?;
     write!(output, "{}", serde_json::to_string(listener_info)?)?;
     info!("Info file written at: {info_path:?}");
     Ok(())

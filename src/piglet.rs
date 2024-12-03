@@ -28,9 +28,11 @@ use tracing_subscriber::EnvFilter;
 
 #[cfg(feature = "iroh")]
 use crate::device_net::iroh_device;
+#[cfg(feature = "iroh")]
 use crate::device_net::iroh_device::IrohDevice;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
+#[cfg(feature = "tcp")]
 use crate::device_net::tcp_device::TcpDevice;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use serde::Serialize;
@@ -117,6 +119,7 @@ async fn run_service(
     info!("\n{}", hw.description()?.details);
 
     // Get the boot config for the hardware
+    #[allow(unused_mut)]
     let mut hardware_config = persistence::get_config(matches, &exec_path).await;
 
     // Apply the initial config to the hardware, whatever it is
@@ -143,22 +146,19 @@ async fn run_service(
 
     // Then listen for remote connections and "serve" them
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
-    if let Some(mut listener) = listener_info.tcp_info.listener {
-        loop {
-            println!("Waiting for TCP connection");
-            if let Ok(stream) = tcp_device::accept_connection(&mut listener, &desc).await {
-                println!("Connected via TCP");
-                let _ =
-                    tcp_device::tcp_message_loop(stream, &mut hardware_config, exec_path, &mut hw)
-                        .await;
-            }
+    loop {
+        println!("Waiting for TCP connection");
+        if let Ok(stream) = listener_info.tcp_device.accept_connection(&desc).await {
+            println!("Connected via TCP");
+            let _ = tcp_device::tcp_message_loop(stream, &mut hardware_config, &exec_path, &mut hw)
+                .await;
         }
     }
 
     #[cfg(all(feature = "iroh", not(feature = "tcp")))]
     loop {
         println!("Waiting for Iroh connection");
-        if let Ok(connection) = listerer_info.iroh_device.accept_connection(&desc).await {
+        if let Ok(connection) = listener_info.iroh_device.accept_connection(&desc).await {
             println!("Connected via Iroh");
             let _ = iroh_device::iroh_message_loop(
                 connection,
@@ -192,6 +192,9 @@ async fn run_service(
         }
         println!("Disconnected");
     }
+
+    #[cfg(not(any(feature = "iroh", feature = "tcp")))]
+    Ok(())
 }
 
 /// Check that this is the only instance of piglet running, both user process or system process
