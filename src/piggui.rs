@@ -42,12 +42,13 @@ pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
+mod host_net;
 mod hw;
 mod hw_definition;
 #[cfg(all(feature = "discovery", feature = "iroh"))]
 mod iroh_discovery;
 pub mod local_device;
-mod networking;
+mod net;
 #[cfg(feature = "usb")]
 mod usb;
 mod views;
@@ -147,6 +148,7 @@ impl Piggui {
         self.config_filename = None;
         self.unsaved_changes = false;
         self.hardware_connection = NoConnection;
+        self.hardware_view = HardwareView::new();
     }
 
     /// Connect to hardware - resetting the relevant control variables in the process

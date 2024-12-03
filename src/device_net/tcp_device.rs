@@ -8,24 +8,24 @@ use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 
 use crate::hw::driver::HW;
-use anyhow::{anyhow, bail};
+use crate::hw_definition::pin_function::PinFunction::Output;
+use crate::persistence;
+use anyhow::{anyhow, bail, Context};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{debug, info, trace};
 use portpicker::pick_unused_port;
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
+use std::path::Path;
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize)]
-pub(crate) struct TcpDevice {
+pub struct TcpDevice {
     pub ip: IpAddr,
     pub port: u16,
-    #[serde(skip)]
     pub listener: Option<TcpListener>,
 }
 
@@ -37,7 +37,7 @@ impl Display for TcpDevice {
     }
 }
 
-pub(crate) async fn get_device() -> anyhow::Result<TcpDevice> {
+pub async fn get_device() -> anyhow::Result<TcpDevice> {
     let ip = local_ip()?;
     let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
     println!("ip: '{ip}:{port}'");
@@ -53,7 +53,7 @@ pub(crate) async fn get_device() -> anyhow::Result<TcpDevice> {
 }
 
 /// accept incoming connections, returns a TcpStream
-pub(crate) async fn accept_connection(
+pub async fn accept_connection(
     listener: &mut TcpListener,
     desc: &HardwareDescription,
 ) -> anyhow::Result<TcpStream> {
@@ -71,8 +71,10 @@ pub(crate) async fn accept_connection(
     Ok(stream?)
 }
 
-pub(crate) async fn tcp_message_loop(
+pub async fn tcp_message_loop(
     mut stream: TcpStream,
+    hardware_config: &mut HardwareConfig,
+    exec_path: &Path,
     hardware: &mut HW,
 ) -> anyhow::Result<()> {
     let mut payload = vec![0u8; 1024];
@@ -84,7 +86,10 @@ pub(crate) async fn tcp_message_loop(
         }
 
         let config_message = postcard::from_bytes(&payload[0..length])?;
-        apply_config_change(hardware, config_message, stream.clone()).await?;
+        apply_config_change(hardware, config_message, hardware_config, stream.clone())
+            .await
+            .with_context(|| "Failed to apply config change to hardware")?;
+        let _ = persistence::store_config(hardware_config, exec_path).await;
     }
 }
 
@@ -95,6 +100,7 @@ pub(crate) async fn tcp_message_loop(
 async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
+    hardware_config: &mut HardwareConfig,
     writer: TcpStream,
 ) -> anyhow::Result<()> {
     match config_change {
@@ -108,6 +114,8 @@ async fn apply_config_change(
                 .await?;
 
             send_current_input_states(writer.clone(), &config, hardware).await?;
+            // replace the entire config with the new one
+            *hardware_config = config;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
@@ -119,10 +127,16 @@ async fn apply_config_change(
                 .await?;
 
             send_current_input_state(&bcm, &pin_function, wc, hardware).await?;
+            // add/replace the new pin config to the hardware config
+            hardware_config.pin_functions.insert(bcm, pin_function);
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             let _ = hardware.set_output_level(bcm, level_change.new_level);
+            // add/replace the new pin config to the hardware config
+            hardware_config
+                .pin_functions
+                .insert(bcm, Output(Some(level_change.new_level)));
         }
     }
 
