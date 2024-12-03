@@ -18,19 +18,14 @@ use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};
 use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize)]
 pub struct IrohDevice {
     pub nodeid: NodeId,
-    pub local_addrs: String,
     pub relay_url: RelayUrl,
-    pub alpn: String,
-    #[serde(skip)]
     pub endpoint: Option<Endpoint>,
 }
 
@@ -93,9 +88,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
 
     Ok(IrohDevice {
         nodeid,
-        local_addrs,
         relay_url,
-        alpn: String::from_utf8_lossy(PIGLET_ALPN).parse()?,
         endpoint: Some(endpoint),
     })
 }
@@ -144,7 +137,8 @@ pub async fn iroh_message_loop(
             hardware_config,
             connection.clone(),
         )
-        .await?;
+        .await
+        .with_context(|| "Failed to apply config change to hardware")?;
         let _ = persistence::store_config(hardware_config, exec_path).await;
     }
 }

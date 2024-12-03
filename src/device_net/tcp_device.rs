@@ -10,25 +10,22 @@ use crate::hw_definition::{BCMPinNumber, PinLevel};
 use crate::hw::driver::HW;
 use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::persistence;
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{debug, info, trace};
 use portpicker::pick_unused_port;
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 use std::path::Path;
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize)]
 pub struct TcpDevice {
     pub ip: IpAddr,
     pub port: u16,
-    #[serde(skip)]
     pub listener: Option<TcpListener>,
 }
 
@@ -89,7 +86,9 @@ pub async fn tcp_message_loop(
         }
 
         let config_message = postcard::from_bytes(&payload[0..length])?;
-        apply_config_change(hardware, config_message, hardware_config, stream.clone()).await?;
+        apply_config_change(hardware, config_message, hardware_config, stream.clone())
+            .await
+            .with_context(|| "Failed to apply config change to hardware")?;
         let _ = persistence::store_config(hardware_config, exec_path).await;
     }
 }

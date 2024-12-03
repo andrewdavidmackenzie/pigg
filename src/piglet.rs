@@ -30,8 +30,6 @@ use tracing_subscriber::EnvFilter;
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-use serde::{Deserialize, Serialize};
 
 /// Module for performing the network transfer of config and events between GUI and piglet
 mod device_net;
@@ -48,7 +46,6 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
 /// `piglet` is listening on, that can be used with `piggui` to start a remote GPIO session
-#[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
     pub iroh_info: iroh_device::IrohDevice,
@@ -234,9 +231,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
             let info_path = path.with_file_name("piglet.info");
             if info_path.exists() {
                 println!("You can use the following info to connect to it:");
-                let piglet_info = fs::read(info_path)?;
-                let info: ListenerInfo = serde_json::from_slice(&piglet_info)?;
-                println!("{}", info);
+                println!("{}", fs::read_to_string(info_path)?);
             }
         }
 

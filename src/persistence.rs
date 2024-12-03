@@ -1,6 +1,7 @@
 use crate::hw_definition::config::HardwareConfig;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::ListenerInfo;
+use anyhow::Context;
 use clap::ArgMatches;
 use log::{info, trace};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -55,7 +56,9 @@ pub(crate) async fn store_config(
     exec_path: &Path,
 ) -> anyhow::Result<()> {
     let last_run_filename = exec_path.with_file_name(".piglet_config.json");
-    hardware_config.save(&last_run_filename.to_string_lossy())?;
+    hardware_config
+        .save(&last_run_filename.to_string_lossy())
+        .with_context(|| "Saving hardware config")?;
     Ok(())
 }
 
@@ -66,7 +69,7 @@ pub(crate) fn write_info_file(
     listener_info: &ListenerInfo,
 ) -> anyhow::Result<()> {
     let mut output = File::create(info_path)?;
-    write!(output, "{}", serde_json::to_string(listener_info)?)?;
+    write!(output, "{}", listener_info)?;
     info!("Info file written at: {info_path:?}");
     Ok(())
 }
@@ -89,16 +92,13 @@ mod test {
         let nodeid =
             iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
                 .expect("Could not create nodeid");
-        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
 
         let info = ListenerInfo {
             iroh_info: crate::iroh_device::IrohDevice {
                 nodeid,
-                local_addrs: local_addrs.to_string(),
                 relay_url,
-                alpn: "".to_string(),
                 endpoint: None,
             },
             #[cfg(feature = "tcp")]
@@ -111,10 +111,8 @@ mod test {
 
         persistence::write_info_file(&test_file, &info).expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
-        let piglet_info = fs::read(test_file).expect("Could not read info file");
-        let read_info: ListenerInfo =
-            serde_json::from_slice(&piglet_info).expect("Could not parse info file");
-        assert_eq!(nodeid, read_info.iroh_info.nodeid);
+        let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
+        assert!(piglet_info.contains(&nodeid.to_string()))
     }
 
     #[cfg(feature = "iroh")]
@@ -125,15 +123,12 @@ mod test {
         let nodeid =
             iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
                 .expect("Could not create nodeid");
-        let local_addrs = "79.154.163.213:58604 192.168.1.77:58604";
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         let info = ListenerInfo {
             iroh_info: crate::iroh_device::IrohDevice {
                 nodeid,
-                local_addrs: local_addrs.to_string(),
                 relay_url,
-                alpn: "".to_string(),
                 endpoint: None,
             },
             #[cfg(feature = "tcp")]
