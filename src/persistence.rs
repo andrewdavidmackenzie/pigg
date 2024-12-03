@@ -4,14 +4,18 @@ use crate::ListenerInfo;
 use clap::ArgMatches;
 use log::{info, trace};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
+use std::fs::File;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::path::Path;
+use std::path::PathBuf;
 
 /// Get the initial [HardwareConfig] determined following:
 /// - A config file specified on the command line, or
 /// - A config file saved from a previous run
 /// - The default (empty) config
-pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
+pub(crate) async fn get_config(matches: &ArgMatches, exec_path: PathBuf) -> HardwareConfig {
     // A config file specified on the command line overrides any config file from previous run
     let config_file = matches.get_one::<String>("config-file");
 
@@ -39,13 +43,6 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> Hardwa
         }
     }
 }
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-/// Persist the current config in file, for picking up at restart
-pub(crate) async fn store_config(exec_path: &Path, config: &HardwareConfig) -> anyhow::Result<()> {
-    let last_run_filename = exec_path.join(".piglet_config.json");
-    config.save(&last_run_filename.to_string_lossy())?;
-    Ok(())
-}
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Write a [ListenerInfo] file that captures information that can be used to connect to piglet
@@ -53,7 +50,7 @@ pub(crate) fn write_info_file(
     info_path: &Path,
     listener_info: &ListenerInfo,
 ) -> anyhow::Result<()> {
-    let mut output = std::fs::File::create(info_path)?;
+    let mut output = File::create(info_path)?;
     write!(output, "{}", serde_json::to_string(listener_info)?)?;
     info!("Info file written at: {info_path:?}");
     Ok(())
@@ -62,34 +59,12 @@ pub(crate) fn write_info_file(
 #[cfg(feature = "iroh")]
 #[cfg(test)]
 mod test {
-    use crate::device_net::PIGLET_ALPN;
-    use crate::{persistence, ListenerInfo};
-    #[cfg(feature = "tcp")]
-    use async_std::net::TcpListener;
-    use futures::executor::block_on;
-    use iroh_net::key::SecretKey;
-    use iroh_net::relay::RelayMode;
-    use iroh_net::Endpoint;
     use std::fs;
     use std::path::PathBuf;
     use std::str::FromStr;
+
+    use crate::{persistence, ListenerInfo};
     use tempfile::tempdir;
-
-    #[cfg(feature = "iroh")]
-    async fn test_iroh_endpoint() -> Endpoint {
-        let secret_key = SecretKey::generate();
-        let builder = Endpoint::builder()
-            .secret_key(secret_key)
-            .alpns(vec![PIGLET_ALPN.to_vec()])
-            .relay_mode(RelayMode::Default);
-
-        builder.bind().await.expect("Could not bind")
-    }
-
-    #[cfg(feature = "tcp")]
-    async fn test_tcp_listener(address: &str) -> TcpListener {
-        TcpListener::bind(&address).await.expect("Could not bind")
-    }
 
     #[cfg(feature = "iroh")]
     #[test]
@@ -104,25 +79,27 @@ mod test {
             .expect("Could not create Relay URL");
 
         let info = ListenerInfo {
-            iroh_device: crate::iroh_device::IrohDevice {
+            iroh_info: crate::iroh_device::IrohDevice {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
                 alpn: "".to_string(),
-                endpoint: block_on(test_iroh_endpoint()),
+                endpoint: None,
             },
             #[cfg(feature = "tcp")]
-            tcp_device: crate::tcp_device::TcpDevice {
+            tcp_info: crate::tcp_device::TcpDevice {
                 ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
                 port: 9001,
-                listener: block_on(test_tcp_listener("10.0.0.0:9001")),
+                listener: None,
             },
         };
 
         persistence::write_info_file(&test_file, &info).expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
-        let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
-        assert!(piglet_info.contains(&nodeid.to_string()));
+        let piglet_info = fs::read(test_file).expect("Could not read info file");
+        let read_info: ListenerInfo =
+            serde_json::from_slice(&piglet_info).expect("Could not parse info file");
+        assert_eq!(nodeid, read_info.iroh_info.nodeid);
     }
 
     #[cfg(feature = "iroh")]
@@ -137,18 +114,18 @@ mod test {
         let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         let info = ListenerInfo {
-            iroh_device: crate::iroh_device::IrohDevice {
+            iroh_info: crate::iroh_device::IrohDevice {
                 nodeid,
                 local_addrs: local_addrs.to_string(),
                 relay_url,
                 alpn: "".to_string(),
-                endpoint: block_on(test_iroh_endpoint()),
+                endpoint: None,
             },
             #[cfg(feature = "tcp")]
-            tcp_device: crate::tcp_device::TcpDevice {
+            tcp_info: crate::tcp_device::TcpDevice {
                 ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
                 port: 9001,
-                listener: block_on(test_tcp_listener("10.0.0.0:9001")),
+                listener: None,
             },
         };
 

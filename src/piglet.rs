@@ -27,22 +27,18 @@ use tracing_subscriber::filter::{Directive, LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 #[cfg(feature = "iroh")]
-use crate::device_net::iroh_device;
-#[cfg(feature = "iroh")]
-use crate::device_net::iroh_device::IrohDevice;
+use crate::networking::iroh_device;
 #[cfg(feature = "tcp")]
-use crate::device_net::tcp_device;
-#[cfg(feature = "tcp")]
-use crate::device_net::tcp_device::TcpDevice;
+use crate::networking::tcp_device;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-/// Module for performing the network transfer of config and events between GUI and piglet
-mod device_net;
 /// Module for interacting with the GPIO hardware
 mod hw;
 /// Module that defines the structs shared back and fore between GUI and piglet/porky
 mod hw_definition;
+/// Module for performing the network transfer of config and events between GUI and piglet
+mod networking;
 /// Module for persisting configs across runs
 mod persistence;
 
@@ -51,22 +47,22 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
 /// `piglet` is listening on, that can be used with `piggui` to start a remote GPIO session
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
-    pub iroh_device: IrohDevice,
+    pub iroh_info: iroh_device::IrohDevice,
     #[cfg(feature = "tcp")]
-    pub tcp_device: TcpDevice,
+    pub tcp_info: tcp_device::TcpDevice,
 }
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 impl std::fmt::Display for ListenerInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         #[cfg(feature = "iroh")]
-        writeln!(f, "{}", self.iroh_device)?;
+        writeln!(f, "{}", self.iroh_info)?;
 
         #[cfg(feature = "tcp")]
-        writeln!(f, "{}", self.tcp_device)?;
+        writeln!(f, "{}", self.tcp_info)?;
 
         Ok(())
     }
@@ -120,7 +116,7 @@ async fn run_service(
 
     // Get the boot config for the hardware
     #[allow(unused_mut)]
-    let mut hardware_config = persistence::get_config(matches, &exec_path).await;
+    let mut hardware_config = persistence::get_config(matches, exec_path).await;
 
     // Apply the initial config to the hardware, whatever it is
     hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
@@ -132,9 +128,9 @@ async fn run_service(
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     let listener_info = ListenerInfo {
         #[cfg(feature = "iroh")]
-        iroh_device: IrohDevice::new().await?,
+        iroh_info: iroh_device::get_device().await?,
         #[cfg(feature = "tcp")]
-        tcp_device: TcpDevice::new().await?,
+        tcp_info: tcp_device::get_device().await?,
     };
 
     // write the info about the node to the info_path file for use in piggui
@@ -146,54 +142,56 @@ async fn run_service(
 
     // Then listen for remote connections and "serve" them
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
-    loop {
-        println!("Waiting for TCP connection");
-        if let Ok(stream) = listener_info.tcp_device.accept_connection(&desc).await {
-            println!("Connected via TCP");
-            let _ = tcp_device::tcp_message_loop(stream, &mut hardware_config, &exec_path, &mut hw)
-                .await;
+    if let Some(mut listener) = listener_info.tcp_info.listener {
+        loop {
+            println!("Waiting for TCP connection");
+            if let Ok(stream) = tcp_device::accept_connection(&mut listener, &desc).await {
+                println!("Connected via TCP");
+                let _ = tcp_device::tcp_message_loop(stream, &mut hardware_config, &mut hw).await;
+            }
         }
     }
 
     #[cfg(all(feature = "iroh", not(feature = "tcp")))]
-    loop {
-        println!("Waiting for Iroh connection");
-        if let Ok(connection) = listener_info.iroh_device.accept_connection(&desc).await {
-            println!("Connected via Iroh");
-            let _ = iroh_device::iroh_message_loop(
-                connection,
-                &mut hardware_config,
-                &exec_path,
-                &mut hw,
-            )
-            .await;
+    if let Some(endpoint) = listener_info.iroh_info.endpoint {
+        loop {
+            println!("Waiting for Iroh connection");
+            if let Ok(connection) = iroh_device::accept_connection(&endpoint, &desc).await {
+                println!("Connected via Iroh");
+                let _ =
+                    iroh_device::iroh_message_loop(connection, &mut hardware_config, &mut hw).await;
+            }
         }
     }
 
     // loop forever selecting the next connection made and then process those messages
     #[cfg(all(feature = "iroh", feature = "tcp"))]
-    loop {
-        println!("Waiting for Iroh or TCP connection");
-        let fused_tcp = listener_info.tcp_device.accept_connection(&desc).fuse();
-        let fused_iroh = listener_info.iroh_device.accept_connection(&desc).fuse();
+    if let (Some(mut tcp_listener), Some(iroh_endpoint)) = (
+        listener_info.tcp_info.listener,
+        listener_info.iroh_info.endpoint,
+    ) {
+        loop {
+            println!("Waiting for Iroh or TCP connection");
+            let fused_tcp = tcp_device::accept_connection(&mut tcp_listener, &desc).fuse();
+            let fused_iroh = iroh_device::accept_connection(&iroh_endpoint, &desc).fuse();
 
-        futures::pin_mut!(fused_tcp, fused_iroh);
+            futures::pin_mut!(fused_tcp, fused_iroh);
 
-        futures::select! {
-            tcp_stream = fused_tcp => {
-                println!("Connected via Tcp");
-                let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
-            },
-            iroh_connection = fused_iroh => {
-                println!("Connected via Iroh");
-                let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
+            futures::select! {
+                tcp_stream = fused_tcp => {
+                    println!("Connected via Tcp");
+                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &mut hw).await;
+                },
+                iroh_connection = fused_iroh => {
+                    println!("Connected via Iroh");
+                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &mut hw).await;
+                }
+                complete => {}
             }
-            complete => {}
+            println!("Disconnected");
         }
-        println!("Disconnected");
     }
 
-    #[cfg(not(any(feature = "iroh", feature = "tcp")))]
     Ok(())
 }
 
@@ -228,8 +226,9 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
             let info_path = path.with_file_name("piglet.info");
             if info_path.exists() {
                 println!("You can use the following info to connect to it:");
-                let piglet_info = fs::read_to_string(info_path)?;
-                println!("{piglet_info}");
+                let piglet_info = fs::read(info_path)?;
+                let info: ListenerInfo = serde_json::from_slice(&piglet_info)?;
+                println!("{}", info);
             }
         }
 

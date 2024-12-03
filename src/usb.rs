@@ -17,7 +17,7 @@ use nusb::Interface;
 use serde::Deserialize;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
-#[cfg(all(feature = "tcp", feature = "discovery"))]
+#[cfg(all(feature = "discovery", feature = "tcp"))]
 use std::net::IpAddr;
 
 /// [ControlIn] "command" to request the HardwareDescription
