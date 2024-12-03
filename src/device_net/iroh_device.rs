@@ -5,6 +5,7 @@ use crate::hw_definition::config::HardwareConfigMessage::{
 };
 use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 use crate::hw_definition::description::HardwareDescription;
+use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 use crate::net::PIGLET_ALPN;
 use crate::persistence;
@@ -137,7 +138,13 @@ pub async fn iroh_message_loop(
         }
 
         let config_message = postcard::from_bytes(&payload)?;
-        apply_config_change(hardware, config_message, connection.clone()).await?;
+        apply_config_change(
+            hardware,
+            config_message,
+            hardware_config,
+            connection.clone(),
+        )
+        .await?;
         let _ = persistence::store_config(hardware_config, exec_path).await;
     }
 }
@@ -149,6 +156,7 @@ pub async fn iroh_message_loop(
 async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
+    hardware_config: &mut HardwareConfig,
     connection: Connection,
 ) -> anyhow::Result<()> {
     match config_change {
@@ -162,6 +170,8 @@ async fn apply_config_change(
                 .await?;
 
             send_current_input_states(cc, &config, hardware).await?;
+            // replace the entire config with the new one
+            *hardware_config = config;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
@@ -173,10 +183,16 @@ async fn apply_config_change(
                 .await?;
 
             send_current_input_state(&bcm, &pin_function, cc, hardware).await?;
+            // add/replace the new pin config to the hardware config
+            hardware_config.pin_functions.insert(bcm, pin_function);
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
+            // add/replace the new pin config to the hardware config
+            hardware_config
+                .pin_functions
+                .insert(bcm, Output(Some(level_change.new_level)));
         }
     }
 

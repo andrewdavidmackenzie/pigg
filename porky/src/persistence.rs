@@ -88,7 +88,7 @@ pub async fn store_config_change<'p>(
         }
         IOLevelChanged(bcm, level_change) => {
             // Write the new pin config (including the new output level), replacing any old one
-            let pin_function = Some(Output(Some(level_change.new_level)));
+            let pin_function: PinFunction = Output(Some(level_change.new_level));
             let bytes =
                 postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
             wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
