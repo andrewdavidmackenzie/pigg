@@ -6,7 +6,9 @@ use crate::hw_definition::config::HardwareConfigMessage::{
 };
 use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 use crate::hw_definition::description::HardwareDescription;
+use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
+use crate::persistence;
 use anyhow::{bail, Context};
 use futures::StreamExt;
 #[cfg(feature = "discovery")]
@@ -16,19 +18,101 @@ use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};
 use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::path::Path;
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct IrohDevice {
     pub nodeid: NodeId,
     pub local_addrs: String,
     pub relay_url: RelayUrl,
     pub alpn: String,
     #[serde(skip)]
-    pub endpoint: Option<Endpoint>,
+    pub endpoint: Endpoint,
+}
+
+impl IrohDevice {
+    pub async fn new() -> anyhow::Result<Self> {
+        let secret_key = SecretKey::generate();
+        #[cfg(feature = "discovery")]
+        let id = secret_key.public();
+
+        // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
+        // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
+        // connections between nodes when there are NATs or firewalls preventing direct connections.
+        // If no direct connection can be made, packets are relayed over the relay servers.
+        #[allow(unused_mut)]
+        let mut builder = Endpoint::builder()
+            // The secret key is used to authenticate with other nodes.
+            // The PublicKey portion of this secret key is how we identify nodes, often referred
+            // to as the `node_id` in our codebase.
+            .secret_key(secret_key)
+            // set the ALPN protocols this endpoint will accept on incoming connections
+            .alpns(vec![PIGLET_ALPN.to_vec()])
+            // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
+            // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
+            // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
+            // If you want to experiment with relaying using your own relay server,
+            // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
+            .relay_mode(RelayMode::Default);
+
+        #[cfg(feature = "discovery")]
+        {
+            builder = builder.discovery(Box::new(LocalSwarmDiscovery::new(id)?));
+        }
+        let endpoint = builder.bind().await?;
+
+        let nodeid = endpoint.node_id();
+        println!("nodeid: {nodeid}"); // Don't remove - required by integration tests
+
+        let local_addrs = endpoint
+            .direct_addresses()
+            .next()
+            .await
+            .context("no endpoints")?
+            .into_iter()
+            .map(|endpoint| endpoint.addr.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+        info!("local Addresses: {local_addrs}");
+
+        let relay_url = endpoint
+            .home_relay()
+            .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
+        println!("Relay URL: {relay_url}"); // Don't remove - required by integration tests
+
+        Ok(IrohDevice {
+            nodeid,
+            local_addrs,
+            relay_url,
+            alpn: String::from_utf8_lossy(PIGLET_ALPN).parse()?,
+            endpoint,
+        })
+    }
+
+    /// accept incoming connections, returns a normal QUIC connection
+    pub async fn accept_connection(
+        &self,
+        desc: &HardwareDescription,
+    ) -> anyhow::Result<Connection> {
+        debug!("Waiting for connection");
+        if let Some(connecting) = self.endpoint.accept().await {
+            let connection = connecting.await?;
+            let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
+            debug!("New connection from nodeid: '{node_id}'",);
+            trace!("Sending hardware description");
+            let mut gui_sender = connection.open_uni().await?;
+            let message = postcard::to_allocvec(&desc)?;
+            gui_sender.write_all(&message).await?;
+            gui_sender.finish()?;
+            Ok(connection)
+        } else {
+            bail!("Could not connect to iroh")
+        }
+    }
 }
 
 impl Display for IrohDevice {
@@ -39,89 +123,11 @@ impl Display for IrohDevice {
     }
 }
 
-pub async fn get_device() -> anyhow::Result<IrohDevice> {
-    let secret_key = SecretKey::generate();
-    #[cfg(feature = "discovery")]
-    let id = secret_key.public();
-
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
-    // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
-    // connections between nodes when there are NATs or firewalls preventing direct connections.
-    // If no direct connection can be made, packets are relayed over the relay servers.
-    #[allow(unused_mut)]
-    let mut builder = Endpoint::builder()
-        // The secret key is used to authenticate with other nodes.
-        // The PublicKey portion of this secret key is how we identify nodes, often referred
-        // to as the `node_id` in our codebase.
-        .secret_key(secret_key)
-        // set the ALPN protocols this endpoint will accept on incoming connections
-        .alpns(vec![PIGLET_ALPN.to_vec()])
-        // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
-        // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
-        // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
-        // If you want to experiment with relaying using your own relay server,
-        // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
-        .relay_mode(RelayMode::Default);
-
-    #[cfg(feature = "discovery")]
-    {
-        builder = builder.discovery(Box::new(LocalSwarmDiscovery::new(id)?));
-    }
-    let endpoint = builder.bind().await?;
-
-    let nodeid = endpoint.node_id();
-    println!("nodeid: {nodeid}"); // Don't remove - required by integration tests
-
-    let local_addrs = endpoint
-        .direct_addresses()
-        .next()
-        .await
-        .context("no endpoints")?
-        .into_iter()
-        .map(|endpoint| endpoint.addr.to_string())
-        .collect::<Vec<_>>()
-        .join(" ");
-    info!("local Addresses: {local_addrs}");
-
-    let relay_url = endpoint
-            .home_relay()
-            .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
-    println!("Relay URL: {relay_url}"); // Don't remove - required by integration tests
-
-    Ok(IrohDevice {
-        nodeid,
-        local_addrs,
-        relay_url,
-        alpn: String::from_utf8_lossy(PIGLET_ALPN).parse()?,
-        endpoint: Some(endpoint),
-    })
-}
-
-/// accept incoming connections, returns a normal QUIC connection
-pub async fn accept_connection(
-    endpoint: &Endpoint,
-    desc: &HardwareDescription,
-) -> anyhow::Result<Connection> {
-    debug!("Waiting for connection");
-    if let Some(connecting) = endpoint.accept().await {
-        let connection = connecting.await?;
-        let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
-        debug!("New connection from nodeid: '{node_id}'",);
-        trace!("Sending hardware description");
-        let mut gui_sender = connection.open_uni().await?;
-        let message = postcard::to_allocvec(&desc)?;
-        gui_sender.write_all(&message).await?;
-        gui_sender.finish()?;
-        Ok(connection)
-    } else {
-        bail!("Could not connect to iroh")
-    }
-}
-
 /// Process incoming config change messages from the GUI. On end of stream exit the loop
 pub async fn iroh_message_loop(
     connection: Connection,
-    _hardware_config: &mut HardwareConfig,
+    hardware_config: &mut HardwareConfig,
+    exec_path: &Path,
     hardware: &mut HW,
 ) -> anyhow::Result<()> {
     loop {
@@ -134,7 +140,14 @@ pub async fn iroh_message_loop(
         }
 
         let config_message = postcard::from_bytes(&payload)?;
-        apply_config_change(hardware, config_message, connection.clone()).await?;
+        apply_config_change(
+            hardware,
+            config_message,
+            hardware_config,
+            connection.clone(),
+        )
+        .await?;
+        persistence::store_config(exec_path, hardware_config).await?;
     }
 }
 
@@ -145,6 +158,7 @@ pub async fn iroh_message_loop(
 async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
+    hardware_config: &mut HardwareConfig,
     connection: Connection,
 ) -> anyhow::Result<()> {
     match config_change {
@@ -157,6 +171,8 @@ async fn apply_config_change(
                 })
                 .await?;
 
+            // Update the hardware config to reflect the change
+            *hardware_config = config.clone();
             send_current_input_states(cc, &config, hardware).await?;
         }
         NewPinConfig(bcm, pin_function) => {
@@ -167,12 +183,18 @@ async fn apply_config_change(
                     let _ = send_input_level(connection.clone(), bcm, level);
                 })
                 .await?;
+            // Update the hardware config to reflect the change
+            let _ = hardware_config.pin_functions.insert(bcm, pin_function);
 
             send_current_input_state(&bcm, &pin_function, cc, hardware).await?;
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
+            // Update the hardware config to reflect the change
+            let _ = hardware_config
+                .pin_functions
+                .insert(bcm, Output(Some(level_change.new_level)));
         }
     }
 

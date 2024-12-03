@@ -11,9 +11,9 @@ use crate::event::HardwareEvent::InputChange;
 use crate::hardware_subscription::HWState::Disconnected;
 use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(feature = "iroh")]
-use crate::networking::iroh_host;
+use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
-use crate::networking::tcp_host;
+use crate::host_net::tcp_host;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
 use futures::SinkExt;
