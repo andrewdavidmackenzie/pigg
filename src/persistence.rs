@@ -22,7 +22,7 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> Hardwa
     match config_file {
         Some(config_filename) => match HardwareConfig::load(config_filename) {
             Ok(config) => {
-                info!("Config loaded from file: {config_filename}");
+                println!("Config loaded from file: {config_filename}");
                 trace!("{config}");
                 config
             }
@@ -36,12 +36,12 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> Hardwa
             let last_run_filename = exec_path.with_file_name(".piglet_config.json");
             match HardwareConfig::load(&last_run_filename.to_string_lossy()) {
                 Ok(config) => {
-                    info!("Config loaded from file: {}", last_run_filename.display());
+                    println!("Config loaded from file: {}", last_run_filename.display());
                     trace!("{config}");
                     config
                 }
                 Err(_) => {
-                    info!("Loaded default config");
+                    println!("Loaded default config");
                     HardwareConfig::default()
                 }
             }
