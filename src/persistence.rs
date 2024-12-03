@@ -25,18 +25,24 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> Hardwa
                 trace!("{config}");
                 config
             }
-            Err(_) => HardwareConfig::default(),
+            Err(_) => {
+                info!("Loaded default config");
+                HardwareConfig::default()
+            }
         },
         None => {
             // look for config file from last run
-            let last_run_filename = exec_path.join(".piglet_config.json");
+            let last_run_filename = exec_path.with_file_name(".piglet_config.json");
             match HardwareConfig::load(&last_run_filename.to_string_lossy()) {
                 Ok(config) => {
                     info!("Config loaded from file: {}", last_run_filename.display());
                     trace!("{config}");
                     config
                 }
-                Err(_) => HardwareConfig::default(),
+                Err(_) => {
+                    info!("Loaded default config");
+                    HardwareConfig::default()
+                }
             }
         }
     }
@@ -48,7 +54,7 @@ pub(crate) async fn store_config(
     hardware_config: &HardwareConfig,
     exec_path: &Path,
 ) -> anyhow::Result<()> {
-    let last_run_filename = exec_path.join(".piglet_config.json");
+    let last_run_filename = exec_path.with_file_name(".piglet_config.json");
     hardware_config.save(&last_run_filename.to_string_lossy())?;
     Ok(())
 }
