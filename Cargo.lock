@@ -2527,7 +2527,7 @@ dependencies = [
 [[package]]
 name = "iced_aw"
 version = "0.11.0"
-source = "git+https://github.com/iced-rs/iced_aw.git#7073768af0a977d583bd55c0136d4e10b57415dc"
+source = "git+https://github.com/iced-rs/iced_aw.git#9fe902ed355d4a6909f6b0fff91509363b97d2fd"
 dependencies = [
  "cfg-if",
  "getrandom",
