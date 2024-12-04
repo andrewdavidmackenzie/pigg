@@ -38,7 +38,7 @@ pub async fn send_config_change(
 pub async fn connect(ip: IpAddr, port: u16) -> anyhow::Result<(HardwareDescription, TcpStream)> {
     let mut stream = TcpStream::connect(format!("{ip}:{port}")).await?;
     // This array needs to be big enough for HardwareDescription
-    let mut payload = vec![0u8; 4096];
+    let mut payload = vec![0u8; 1024];
     let length = stream.read(&mut payload).await?;
     let desc = postcard::from_bytes(&payload[0..length])?;
     Ok((desc, stream))

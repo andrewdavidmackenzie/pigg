@@ -1,8 +1,9 @@
 use crate::flash::DbFlash;
+use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
-use crate::hw_definition::usb_values::{GET_HARDWARE_VALUE, PIGGUI_REQUEST};
+use crate::hw_definition::usb_values::{GET_CONFIG_VALUE, GET_HARDWARE_VALUE, PIGGUI_REQUEST};
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
 use crate::{flash, persistence};
@@ -74,6 +75,7 @@ fn get_usb_builder(
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
+    hardware_config: HardwareConfig,
     tcp: Option<([u8; 4], u16)>,
     db: &'h Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
@@ -169,6 +171,11 @@ impl<'h> Handler for ControlHandler<'h> {
                 };
                 postcard::to_slice(&wifi, &mut self.buf).ok()?
             },
+            (PIGGUI_REQUEST, GET_CONFIG_VALUE) => {
+                // TODO not updated with changes :-(
+                postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?
+            }
+
             _ => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -186,6 +193,7 @@ pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
+    hardware_config: HardwareConfig,
     tcp: Option<([u8; 4], u16)>,
     db: &'static Database<
         DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
@@ -209,9 +217,10 @@ pub async fn start(
     ));
 
     static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
-    let handle = HANDLER.init(ControlHandler {
+    let handler = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
+        hardware_config,
         tcp,
         db,
         buf: [0; 1024],
@@ -223,13 +232,13 @@ pub async fn start(
     let mut function = builder.function(0xFF, 0, 0);
     let mut interface = function.interface();
     let _alt = interface.alt_setting(0xFF, 0, 0, None);
-    handle.if_num = interface.interface_number();
+    handler.if_num = interface.interface_number();
     drop(function);
-    builder.handler(handle);
+    builder.handler(handler);
 
     // Build the builder.
     let usb = builder.build();
 
     info!("USB raw interface started");
-    unwrap!(spawner.spawn(usb_task(usb)))
+    unwrap!(spawner.spawn(usb_task(usb)));
 }

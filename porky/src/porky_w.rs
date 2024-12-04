@@ -187,7 +187,7 @@ async fn main(spawner: Spawner) {
 
     // Load initial config from flash
     let mut hardware_config = persistence::get_config(db).await;
-    // TODO overwrites itself
+
     // apply the loaded config to the hardware immediately
     gpio::apply_config_change(
         &mut control,
@@ -205,7 +205,16 @@ async fn main(spawner: Spawner) {
 
                 let tcp = (ip.octets(), TCP_PORT);
                 #[cfg(feature = "usb")]
-                usb::start(spawner, driver, hw_desc, Some(tcp), db, watchdog).await;
+                usb::start(
+                    spawner,
+                    driver,
+                    hw_desc,
+                    hardware_config.clone(),
+                    Some(tcp),
+                    db,
+                    watchdog,
+                )
+                .await;
 
                 let mut wifi_tx_buffer = [0; 4096];
                 let mut wifi_rx_buffer = [0; 4096];
@@ -237,9 +246,19 @@ async fn main(spawner: Spawner) {
                                             .await;
                                             let _ = persistence::store_config_change(
                                                 &db,
-                                                hardware_config_message,
+                                                &hardware_config_message,
                                             )
                                             .await;
+                                            if matches!(
+                                                hardware_config_message,
+                                                HardwareConfigMessage::GetConfig
+                                            ) {
+                                                tcp::send_hardware_config(
+                                                    &mut socket,
+                                                    &hardware_config,
+                                                )
+                                                .await;
+                                            }
                                         }
                                     },
                                     Either::Second(hardware_config_message) => {
@@ -257,13 +276,31 @@ async fn main(spawner: Spawner) {
             Err(e) => {
                 error!("Could not join Wi-Fi network: {}, starting USB", e);
                 #[cfg(feature = "usb")]
-                usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
+                usb::start(
+                    spawner,
+                    driver,
+                    hw_desc,
+                    hardware_config,
+                    None,
+                    db,
+                    watchdog,
+                )
+                .await;
             }
         },
         None => {
             info!("No valid SsidSpec was found, starting USB alone");
             #[cfg(feature = "usb")]
-            usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
+            usb::start(
+                spawner,
+                driver,
+                hw_desc,
+                hardware_config,
+                None,
+                db,
+                watchdog,
+            )
+            .await;
         }
     }
 }
