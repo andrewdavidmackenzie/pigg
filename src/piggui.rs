@@ -23,6 +23,7 @@ use std::collections::HashMap;
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareConnection::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
