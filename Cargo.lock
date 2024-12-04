@@ -2527,7 +2527,7 @@ dependencies = [
 [[package]]
 name = "iced_aw"
 version = "0.11.0"
-source = "git+https://github.com/iced-rs/iced_aw.git#7073768af0a977d583bd55c0136d4e10b57415dc"
+source = "git+https://github.com/iced-rs/iced_aw.git#9fe902ed355d4a6909f6b0fff91509363b97d2fd"
 dependencies = [
  "cfg-if",
  "getrandom",
@@ -7298,7 +7298,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
