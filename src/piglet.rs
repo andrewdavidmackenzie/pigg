@@ -143,7 +143,9 @@ async fn run_service(
     if let Some(mut listener) = listener_info.tcp_info.listener {
         loop {
             println!("Waiting for TCP connection");
-            if let Ok(stream) = tcp_device::accept_connection(&mut listener, &desc).await {
+            if let Ok(stream) =
+                tcp_device::accept_connection(&mut listener, &desc, hardware_config.clone()).await
+            {
                 println!("Connected via TCP");
                 let _ =
                     tcp_device::tcp_message_loop(stream, &mut hardware_config, &exec_path, &mut hw)
@@ -156,7 +158,9 @@ async fn run_service(
     if let Some(endpoint) = listener_info.iroh_info.endpoint {
         loop {
             println!("Waiting for Iroh connection");
-            if let Ok(connection) = iroh_device::accept_connection(&endpoint, &desc).await {
+            if let Ok(connection) =
+                iroh_device::accept_connection(&endpoint, &desc, hardware_config.clone()).await
+            {
                 println!("Connected via Iroh");
                 let _ = iroh_device::iroh_message_loop(
                     connection,
@@ -177,8 +181,12 @@ async fn run_service(
     ) {
         loop {
             println!("Waiting for Iroh or TCP connection");
-            let fused_tcp = tcp_device::accept_connection(&mut tcp_listener, &desc).fuse();
-            let fused_iroh = iroh_device::accept_connection(&iroh_endpoint, &desc).fuse();
+            let fused_tcp =
+                tcp_device::accept_connection(&mut tcp_listener, &desc, hardware_config.clone())
+                    .fuse();
+            let fused_iroh =
+                iroh_device::accept_connection(&iroh_endpoint, &desc, hardware_config.clone())
+                    .fuse();
 
             futures::pin_mut!(fused_tcp, fused_iroh);
 

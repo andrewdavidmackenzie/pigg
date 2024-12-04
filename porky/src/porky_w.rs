@@ -224,7 +224,12 @@ async fn main(spawner: Spawner) {
                         .await
                     {
                         Ok(mut socket) => {
-                            tcp::send_hardware_description(&mut socket, hw_desc).await;
+                            tcp::send_hardware_description_and_config(
+                                &mut socket,
+                                hw_desc,
+                                &hardware_config,
+                            )
+                            .await;
 
                             info!("Entering message loop");
                             loop {

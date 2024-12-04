@@ -84,6 +84,7 @@ impl Display for HardwareConnection {
 }
 
 pub struct HardwareView {
+    hardware_connection: HardwareConnection,
     hardware_config: HardwareConfig,
     subscriber_sender: Option<Sender<SubscriberMessage>>,
     pub hardware_description: Option<HardwareDescription>,
@@ -94,8 +95,10 @@ pub struct HardwareView {
 async fn empty() {}
 
 impl HardwareView {
-    pub fn new() -> Self {
+    #[must_use]
+    pub fn new(hardware_connection: HardwareConnection) -> Self {
         Self {
+            hardware_connection,
             hardware_config: HardwareConfig::default(),
             hardware_description: None, // Until listener is ready
             subscriber_sender: None,    // Until listener is ready
@@ -103,8 +106,16 @@ impl HardwareView {
         }
     }
 
+    /// Get the current [HardwareConfig]
+    #[must_use]
     pub fn get_config(&self) -> HardwareConfig {
         self.hardware_config.clone()
+    }
+
+    /// Get the current [HardwareConnection]
+    #[must_use]
+    pub fn get_hardware_connection(&self) -> &HardwareConnection {
+        &self.hardware_connection
     }
 
     /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
@@ -115,7 +126,7 @@ impl HardwareView {
             .map(|desc| desc.details.model.clone())
     }
 
-    /// Send the GPIOConfig from the GUI to the hardware to have it applied
+    /// Apply the [HardwareConfig] active here to the GPIO hardware
     fn update_hw_config(&mut self) {
         if let Some(ref mut subscriber_sender) = &mut self.subscriber_sender {
             let _ = subscriber_sender.try_send(Hardware(HardwareConfigMessage::NewConfig(
@@ -124,12 +135,16 @@ impl HardwareView {
         }
     }
 
-    /// Send a message to request the subscription to switch connections to a new target
-    pub fn new_target(&mut self, new_target: HardwareConnection) {
+    /// Send a message to request the subscription to switch connections to a new one
+    pub fn new_connection(&mut self, new_connection: HardwareConnection) {
+        self.hardware_connection = new_connection;
         if let Some(ref mut hardware_sender) = &mut self.subscriber_sender {
-            let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(new_target));
+            let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(
+                self.hardware_connection.clone(),
+            ));
         }
     }
+
     /// A new function has been selected for a pin via the UI, this function:
     /// - updates the pin_selected_function array for the UI
     /// - saves it in the gpio_config, so when we save later it's there
@@ -179,7 +194,7 @@ impl HardwareView {
         }
     }
 
-    /// Apply a new config to the connected hardware
+    /// Save the new config in the view, update pin states and apply it to the connected hardware
     pub fn new_config(&mut self, new_config: HardwareConfig) {
         self.hardware_config = new_config;
         self.set_pin_states_after_load();
@@ -205,9 +220,10 @@ impl HardwareView {
             }
 
             HardwareSubscription(event) => match event {
-                HardwareEvent::Connected(config_change_sender, hw_desc) => {
+                HardwareEvent::Connected(config_change_sender, hw_desc, hw_config) => {
                     self.subscriber_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
+                    self.hardware_config = hw_config;
                     self.set_pin_states_after_load();
                     self.update_hw_config();
                     return Task::perform(empty(), |_| Message::Connected);
@@ -278,14 +294,10 @@ impl HardwareView {
     }
 
     /// Construct the view that represents the main row of the app
-    pub fn view<'a>(
-        &'a self,
-        layout: Layout,
-        hardware_connection: &'a HardwareConnection,
-    ) -> Element<'a, Message> {
+    pub fn view(&self, layout: Layout) -> Element<Message> {
         let hw_column = Column::new()
             .push(
-                self.hw_view(layout, hardware_connection)
+                self.hw_view(layout, &self.hardware_connection)
                     .map(Message::Hardware),
             )
             .align_x(Center)
@@ -296,21 +308,18 @@ impl HardwareView {
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
-    pub fn subscription(
-        &self,
-        hardware_connection: &HardwareConnection,
-    ) -> Subscription<HardwareViewMessage> {
+    pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
         let mut subscriptions =
             vec![
                 iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                     .map(|_| UpdateCharts),
             ];
 
-        if hardware_connection != &NoConnection {
+        if self.hardware_connection != NoConnection {
             subscriptions.push(
                 Subscription::run_with_id(
                     "hardware",
-                    hardware_subscription::subscribe(hardware_connection),
+                    hardware_subscription::subscribe(&self.hardware_connection),
                 )
                 .map(HardwareSubscription),
             );
@@ -560,7 +569,7 @@ fn create_pin_view_side<'a>(
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
 
         if !config_options.is_empty() {
-            let selected = pin_function.filter(|&pin_function| *pin_function != PinFunction::None);
+            let selected = pin_function.filter(|&pin_function| pin_function != &PinFunction::None);
 
             let pick_list = pick_list(config_options, selected, move |pin_function| {
                 PinFunctionSelected(bcm_pin_number, pin_function)
@@ -568,7 +577,6 @@ fn create_pin_view_side<'a>(
             .width(Length::Fixed(PIN_OPTION_WIDTH))
             .placeholder("Select function");
 
-            // select a slightly small font on RPi, to make it fit within pick_list
             pin_options_row = pin_options_row.push(pick_list);
         }
 
@@ -634,17 +642,18 @@ fn create_pin_view_side<'a>(
 
 #[cfg(test)]
 mod test {
+    use crate::views::hardware_view::HardwareConnection::NoConnection;
     use crate::views::hardware_view::HardwareView;
 
     #[test]
     fn no_hardware_description() {
-        let hw_view = HardwareView::new();
+        let hw_view = HardwareView::new(NoConnection);
         assert!(hw_view.hardware_description.is_none());
     }
 
     #[test]
     fn no_hardware_model() {
-        let hw_view = HardwareView::new();
+        let hw_view = HardwareView::new(NoConnection);
         assert_eq!(hw_view.hw_model(), None);
     }
 

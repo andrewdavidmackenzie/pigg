@@ -1,4 +1,4 @@
-use crate::hw_definition::config::HardwareConfigMessage;
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 use crate::net::PIGLET_ALPN;
 use anyhow::ensure;
@@ -46,7 +46,7 @@ pub async fn send_config_change(
 pub async fn connect(
     nodeid: &NodeId,
     relay: Option<RelayUrl>,
-) -> anyhow::Result<(HardwareDescription, Connection)> {
+) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection)> {
     let secret_key = SecretKey::generate();
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
@@ -83,7 +83,7 @@ pub async fn connect(
     // create a uni receiver to receive the hardware description on
     let mut gui_receiver = connection.accept_uni().await?;
     let message = gui_receiver.read_to_end(4096).await?;
-    let desc = postcard::from_bytes(&message)?;
+    let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&message)?;
 
-    Ok((desc, connection))
+    Ok((reply.0, reply.1, connection))
 }

@@ -56,6 +56,7 @@ pub async fn get_device() -> anyhow::Result<TcpDevice> {
 pub async fn accept_connection(
     listener: &mut TcpListener,
     desc: &HardwareDescription,
+    hardware_config: HardwareConfig,
 ) -> anyhow::Result<TcpStream> {
     debug!("Waiting for connection");
     let mut incoming = listener.incoming();
@@ -64,7 +65,7 @@ pub async fn accept_connection(
 
     if let Ok(st) = &mut stream {
         debug!("Connected, sending hardware description");
-        let message = postcard::to_allocvec(&desc)?;
+        let message = postcard::to_allocvec(&(&desc, &hardware_config))?;
         st.write_all(&message).await?;
     }
 
