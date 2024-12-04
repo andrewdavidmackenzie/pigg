@@ -136,6 +136,7 @@ pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareE
                         HardwareConnection::Tcp(ip, port) => {
                             match tcp_host::connect(ip, port).await {
                                 Ok((hardware_description, hardware_config, stream)) => {
+                                    println!("Config received on connect: {:?}", hardware_config);
                                     // Send the stream back to the GUI
                                     if let Err(e) = gui_sender_clone
                                         .send(HardwareEvent::Connected(

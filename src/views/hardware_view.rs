@@ -223,9 +223,8 @@ impl HardwareView {
                 HardwareEvent::Connected(config_change_sender, hw_desc, hw_config) => {
                     self.subscriber_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
-                    self.set_pin_states_after_load();
-                    // TODO only of pre-loaded from a file
                     self.hardware_config = hw_config;
+                    self.set_pin_states_after_load();
                     self.update_hw_config();
                     return Task::perform(empty(), |_| Message::Connected);
                 }
@@ -570,7 +569,7 @@ fn create_pin_view_side<'a>(
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
 
         if !config_options.is_empty() {
-            let selected = pin_function.filter(|&pin_function| *pin_function != PinFunction::None);
+            let selected = pin_function.filter(|&pin_function| pin_function != &PinFunction::None);
 
             let pick_list = pick_list(config_options, selected, move |pin_function| {
                 PinFunctionSelected(bcm_pin_number, pin_function)
@@ -578,7 +577,6 @@ fn create_pin_view_side<'a>(
             .width(Length::Fixed(PIN_OPTION_WIDTH))
             .placeholder("Select function");
 
-            // select a slightly small font on RPi, to make it fit within pick_list
             pin_options_row = pin_options_row.push(pick_list);
         }
 
