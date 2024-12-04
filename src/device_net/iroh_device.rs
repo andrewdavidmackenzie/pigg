@@ -97,6 +97,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
 pub async fn accept_connection(
     endpoint: &Endpoint,
     desc: &HardwareDescription,
+    hardware_config: HardwareConfig,
 ) -> anyhow::Result<Connection> {
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
@@ -105,7 +106,7 @@ pub async fn accept_connection(
         debug!("New connection from nodeid: '{node_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
-        let message = postcard::to_allocvec(&desc)?;
+        let message = postcard::to_allocvec(&(&desc, hardware_config))?;
         gui_sender.write_all(&message).await?;
         gui_sender.finish()?;
         Ok(connection)

@@ -95,6 +95,7 @@ pub struct HardwareView {
 async fn empty() {}
 
 impl HardwareView {
+    #[must_use]
     pub fn new(hardware_connection: HardwareConnection) -> Self {
         Self {
             hardware_connection,
@@ -106,11 +107,13 @@ impl HardwareView {
     }
 
     /// Get the current [HardwareConfig]
+    #[must_use]
     pub fn get_config(&self) -> HardwareConfig {
         self.hardware_config.clone()
     }
 
     /// Get the current [HardwareConnection]
+    #[must_use]
     pub fn get_hardware_connection(&self) -> &HardwareConnection {
         &self.hardware_connection
     }
@@ -129,7 +132,6 @@ impl HardwareView {
             let _ = subscriber_sender.try_send(Hardware(HardwareConfigMessage::NewConfig(
                 self.hardware_config.clone(),
             )));
-            println!("update_hw_config: config sent to subscriber");
         }
     }
 
@@ -218,10 +220,12 @@ impl HardwareView {
             }
 
             HardwareSubscription(event) => match event {
-                HardwareEvent::Connected(config_change_sender, hw_desc) => {
+                HardwareEvent::Connected(config_change_sender, hw_desc, hw_config) => {
                     self.subscriber_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
                     self.set_pin_states_after_load();
+                    // TODO only of pre-loaded from a file
+                    self.hardware_config = hw_config;
                     self.update_hw_config();
                     return Task::perform(empty(), |_| Message::Connected);
                 }
