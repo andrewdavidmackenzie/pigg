@@ -188,6 +188,9 @@ async fn apply_config_change(
                 .pin_functions
                 .insert(bcm, Output(Some(level_change.new_level)));
         }
+        HardwareConfigMessage::GetConfig => {
+            send_hardware_config(connection, hardware_config).await?
+        }
     }
 
     Ok(())
@@ -226,6 +229,15 @@ async fn send_current_input_state(
     }
 
     Ok(())
+}
+
+/// Send [HardwareConfig] over the [Connection]
+async fn send_hardware_config(
+    connection: Connection,
+    hardware_config: &HardwareConfig,
+) -> anyhow::Result<()> {
+    let message = postcard::to_allocvec(hardware_config)?;
+    send(connection, &message).await
 }
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],

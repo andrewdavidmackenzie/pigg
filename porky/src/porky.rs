@@ -148,7 +148,6 @@ async fn main(spawner: Spawner) {
     let mut hardware_config = persistence::get_config(db).await;
 
     // apply the loaded config to the hardware immediately
-    // TODO overwrites itself
     gpio::apply_config_change(
         &spawner,
         &HardwareConfigMessage::NewConfig(hardware_config.clone()),
@@ -157,5 +156,14 @@ async fn main(spawner: Spawner) {
     .await;
 
     #[cfg(feature = "usb")]
-    usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
+    usb::start(
+        spawner,
+        driver,
+        hw_desc,
+        hardware_config.clone(),
+        None,
+        db,
+        watchdog,
+    )
+    .await;
 }

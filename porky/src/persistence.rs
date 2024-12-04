@@ -53,7 +53,7 @@ pub async fn get_config<'p>(
 
 pub async fn store_config_change<'p>(
     db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
-    hardware_config_message: HardwareConfigMessage,
+    hardware_config_message: &HardwareConfigMessage,
 ) -> Result<(), &'static str> {
     let mut buf: [u8; 1024] = [0; 1024];
     let mut wtx = db.write_transaction().await;
@@ -73,17 +73,17 @@ pub async fn store_config_change<'p>(
                 config.pin_functions.len()
             );
             // Write the new pin configs for all pins in the config
-            for (bcm, pin_function) in config.pin_functions {
+            for (bcm, pin_function) in &config.pin_functions {
                 let bytes = postcard::to_slice(&pin_function, &mut buf)
                     .map_err(|_| "Deserialization error")?;
-                wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+                wtx.write(&[*bcm], bytes).await.map_err(|_| "Write Error")?;
             }
         }
         NewPinConfig(bcm, pin_function) => {
             // Write the new pin config, replacing an old one if it exists
             let bytes =
                 postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
-            wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+            wtx.write(&[*bcm], bytes).await.map_err(|_| "Write Error")?;
             info!("Stored config for 1 pin in FlashDB");
         }
         IOLevelChanged(bcm, level_change) => {
@@ -91,12 +91,13 @@ pub async fn store_config_change<'p>(
             let pin_function: PinFunction = Output(Some(level_change.new_level));
             let bytes =
                 postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
-            wtx.write(&[bcm], bytes).await.map_err(|_| "Write Error")?;
+            wtx.write(&[*bcm], bytes).await.map_err(|_| "Write Error")?;
             info!(
                 "Stored config for 1 Output pin with value '{}' in FlashDB",
                 level_change.new_level
             );
         }
+        HardwareConfigMessage::GetConfig => { /* Nothing to do in persistence */ }
     }
 
     wtx.commit().await.map_err(|_| "Commit error")

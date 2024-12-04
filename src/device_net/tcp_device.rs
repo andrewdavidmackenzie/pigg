@@ -101,28 +101,28 @@ async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
     hardware_config: &mut HardwareConfig,
-    writer: TcpStream,
+    tcp_stream: TcpStream,
 ) -> anyhow::Result<()> {
     match config_change {
         NewConfig(config) => {
             info!("New config applied");
-            let wc = writer.clone();
+            let wc = tcp_stream.clone();
             hardware
                 .apply_config(&config, move |bcm, level_change| {
                     let _ = send_input_level(wc.clone(), bcm, level_change);
                 })
                 .await?;
 
-            send_current_input_states(writer.clone(), &config, hardware).await?;
+            send_current_input_states(tcp_stream.clone(), &config, hardware).await?;
             // replace the entire config with the new one
             *hardware_config = config;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
-            let wc = writer.clone();
+            let wc = tcp_stream.clone();
             hardware
                 .apply_pin_config(bcm, &pin_function, move |bcm, level_change| {
-                    let _ = send_input_level(writer.clone(), bcm, level_change);
+                    let _ = send_input_level(tcp_stream.clone(), bcm, level_change);
                 })
                 .await?;
 
@@ -137,6 +137,9 @@ async fn apply_config_change(
             hardware_config
                 .pin_functions
                 .insert(bcm, Output(Some(level_change.new_level)));
+        }
+        HardwareConfigMessage::GetConfig => {
+            send_hardware_config(tcp_stream, hardware_config).await?
         }
     }
 
@@ -175,6 +178,15 @@ async fn send_current_input_state(
     }
 
     Ok(())
+}
+
+/// Send the [HardwareConfig] via the [TcpStream]
+async fn send_hardware_config(
+    writer: TcpStream,
+    hardware_config: &HardwareConfig,
+) -> anyhow::Result<()> {
+    let message = postcard::to_allocvec(hardware_config)?;
+    send(writer, &message).await
 }
 
 /// Send a detected input level change back to the GUI using `writer` [TcpStream],

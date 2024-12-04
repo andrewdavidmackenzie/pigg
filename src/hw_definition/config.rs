@@ -13,7 +13,7 @@ use std::time::Duration;
     not(feature = "no_std"),
     derive(Debug, Clone, Serialize, Deserialize, Default)
 )]
-#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize))]
+#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize, Default))]
 pub struct HardwareConfig {
     #[cfg(not(feature = "no_std"))]
     pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
@@ -37,6 +37,8 @@ pub enum HardwareConfigMessage {
     NewPinConfig(BCMPinNumber, PinFunction),
     /// The level of a pin has changed
     IOLevelChanged(BCMPinNumber, LevelChange),
+    /// A request for device to send back the hardware config
+    GetConfig,
 }
 
 #[cfg(feature = "no_std")]
