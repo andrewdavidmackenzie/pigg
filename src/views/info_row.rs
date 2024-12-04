@@ -1,6 +1,6 @@
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
-use crate::views::hardware_view::{HardwareConnection, HardwareView};
+use crate::views::hardware_view::HardwareView;
 use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
@@ -128,19 +128,18 @@ impl InfoRow {
         unsaved_changes: bool,
         layout_selector: &'a LayoutSelector,
         hardware_view: &'a HardwareView,
-        hardware_connection: &'a HardwareConnection,
         #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
     ) -> Element<'a, Message> {
         let menu_bar: Element<Message> = MenuBar::new(vec![
             version_button(),
-            layout_selector.view(hardware_connection),
+            layout_selector.view(hardware_view.get_hardware_connection()),
             hardware_menu::view(
                 hardware_view,
-                hardware_connection,
+                hardware_view.get_hardware_connection(),
                 #[cfg(feature = "discovery")]
                 discovered_devices,
             ),
-            config_menu::view(unsaved_changes, hardware_connection),
+            config_menu::view(unsaved_changes, hardware_view.get_hardware_connection()),
         ])
         .style(|_, _| MENU_BAR_STYLE)
         .into();

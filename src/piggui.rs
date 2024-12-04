@@ -23,7 +23,6 @@ use std::collections::HashMap;
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareConnection::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
@@ -97,7 +96,6 @@ pub struct Piggui {
     hardware_view: HardwareView,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
-    hardware_connection: HardwareConnection,
     #[cfg(feature = "discovery")]
     discovered_devices: HashMap<String, DiscoveredDevice>,
     #[cfg(feature = "usb")]
@@ -147,16 +145,7 @@ impl Piggui {
             .add_info_message(Info("Disconnected from hardware".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_connection = NoConnection;
-        self.hardware_view = HardwareView::new();
-    }
-
-    /// Connect to hardware - resetting the relevant control variables in the process
-    fn connect(&mut self, new_target: HardwareConnection) {
-        self.config_filename = None;
-        self.unsaved_changes = false;
-        self.hardware_connection = new_target.clone();
-        self.hardware_view.new_target(new_target);
+        self.hardware_view = HardwareView::new(NoConnection);
     }
 
     fn new() -> (Self, Task<Message>) {
@@ -175,10 +164,9 @@ impl Piggui {
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
-                hardware_view: HardwareView::new(),
+                hardware_view: HardwareView::new(get_hardware_connection(&matches)),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
-                hardware_connection: get_hardware_connection(&matches),
                 #[cfg(feature = "discovery")]
                 discovered_devices: HashMap::new(),
                 #[cfg(feature = "usb")]
@@ -264,12 +252,13 @@ impl Piggui {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
                 self.hardware_view.new_config(config);
+                println!("ConfigLoaded - and saved in hardware view");
             }
 
-            ConnectRequest(new_target) => {
+            ConnectRequest(new_connection) => {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.disable_widgets_and_load_spinner();
-                self.connect(new_target);
+                self.hardware_view.new_connection(new_connection);
             }
 
             Connected => {
@@ -352,15 +341,11 @@ impl Piggui {
     */
     fn view(&self) -> Element<Message> {
         let main_col = Column::new()
-            .push(
-                self.hardware_view
-                    .view(self.layout_selector.get(), &self.hardware_connection),
-            )
+            .push(self.hardware_view.view(self.layout_selector.get()))
             .push(self.info_row.view(
                 self.unsaved_changes,
                 &self.layout_selector,
                 &self.hardware_view,
-                &self.hardware_connection,
                 #[cfg(feature = "discovery")]
                 &self.discovered_devices,
             ));
@@ -405,9 +390,7 @@ impl Piggui {
             iced::event::listen().map(WindowEvent),
             self.modal_handler.subscription().map(Modal), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
-            self.hardware_view
-                .subscription(&self.hardware_connection)
-                .map(Hardware),
+            self.hardware_view.subscription().map(Hardware),
             #[cfg(feature = "discovery")]
             Subscription::run(discovery::subscribe).map(Device),
         ];

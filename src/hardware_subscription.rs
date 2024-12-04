@@ -200,6 +200,8 @@ pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareE
                                         {
                                             report_error(gui_sender_clone, &format!("Hardware error: {e}"))
                                                 .await;
+                                        } else {
+                                            println!("ConnectedIroh: Subscriber sent config change to remote: {:?}", config_change);
                                         }
                                     }
                                 }
