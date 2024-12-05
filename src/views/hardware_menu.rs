@@ -164,7 +164,7 @@ fn devices_submenu<'a>(
                     MENU_BUTTON_STYLE
                 }
             }),
-            Menu::new(device_items).width(280.0).offset(10.0),
+            Menu::new(device_items).width(290.0).offset(10.0),
         )
     }
 }
