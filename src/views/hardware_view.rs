@@ -577,15 +577,8 @@ fn create_pin_view_side<'a>(
     if let Some(bcm_pin_number) = pin_description.bcm {
         let mut pin_options_row = Row::new().align_y(Center);
 
-        println!(
-            "BEFORE: options: {:?}, pin_function: {:?}",
-            &pin_description.options, pin_function
-        );
-
         // Filter options to remove currently selected one
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
-
-        println!("Filtered: options: {:?}", config_options);
 
         if !config_options.is_empty() {
             let selected = pin_function.filter(|&pin_function| pin_function != &PinFunction::None);
