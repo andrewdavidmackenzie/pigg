@@ -447,18 +447,22 @@ fn get_pin_widget<'a>(
             }
         }
 
-        Some(Output(_)) => {
-            let output_toggler = toggler(pin_state.get_level().unwrap_or(false as PinLevel))
-                .on_toggle(move |b| {
-                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
-                })
-                .width(TOGGLER_WIDTH)
-                .size(TOGGLER_SIZE)
-                .style(move |_theme, status| match status {
-                    Hovered { .. } => TOGGLER_HOVER_STYLE,
-                    _ => TOGGLER_STYLE,
-                });
+        Some(Output(level)) => {
+            let output_toggler = toggler(
+                pin_state
+                    .get_level()
+                    .unwrap_or(level.unwrap_or(false as PinLevel)),
+            )
+            .on_toggle(move |b| {
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
+            })
+            .width(TOGGLER_WIDTH)
+            .size(TOGGLER_SIZE)
+            .style(move |_theme, status| match status {
+                Hovered { .. } => TOGGLER_HOVER_STYLE,
+                _ => TOGGLER_STYLE,
+            });
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(CLICKER_WIDTH, Color::BLACK, Color::WHITE)
@@ -565,7 +569,7 @@ fn create_pin_view_side<'a>(
     if let Some(bcm_pin_number) = pin_description.bcm {
         let mut pin_options_row = Row::new().align_y(Center);
 
-        // Filter options
+        // Filter options to remove currently selected one
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
 
         if !config_options.is_empty() {
