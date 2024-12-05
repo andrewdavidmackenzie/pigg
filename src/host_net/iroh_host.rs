@@ -42,7 +42,7 @@ pub async fn send_config_change(
     Ok(())
 }
 
-//noinspection SpellCheckingInspection
+/// Connect to an Iroh-Net node using the [NodeId] and an optional [RelayUrl]
 pub async fn connect(
     nodeid: &NodeId,
     relay: Option<RelayUrl>,
