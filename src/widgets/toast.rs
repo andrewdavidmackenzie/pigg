@@ -115,7 +115,7 @@ where
     }
 }
 
-impl<'a, Message> Widget<Message, Theme, Renderer> for Manager<'a, Message> {
+impl<Message> Widget<Message, Theme, Renderer> for Manager<'_, Message> {
     fn size(&self) -> Size<Length> {
         self.content.as_widget().size()
     }
@@ -289,7 +289,7 @@ struct Overlay<'a, 'b, Message> {
     timeout_secs: u64,
 }
 
-impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a, 'b, Message> {
+impl<Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'_, '_, Message> {
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
         let limits = layout::Limits::new(Size::ZERO, bounds);
 
@@ -306,6 +306,47 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
             self.state,
         )
         .translate(Vector::new(self.position.x, self.position.y))
+    }
+
+    fn draw(
+        &self,
+        renderer: &mut Renderer,
+        theme: &Theme,
+        style: &renderer::Style,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+    ) {
+        let viewport = layout.bounds();
+
+        for ((child, state), layout) in self
+            .toasts
+            .iter()
+            .zip(self.state.iter())
+            .zip(layout.children())
+        {
+            child
+                .as_widget()
+                .draw(state, renderer, theme, style, layout, cursor, &viewport);
+        }
+    }
+
+    fn operate(
+        &mut self,
+        layout: Layout<'_>,
+        renderer: &Renderer,
+        operation: &mut dyn widget::Operation,
+    ) {
+        operation.container(None, layout.bounds(), &mut |operation| {
+            self.toasts
+                .iter()
+                .zip(self.state.iter_mut())
+                .zip(layout.children())
+                .for_each(|((child, state), layout)| {
+                    child
+                        .as_widget()
+                        .operate(state, layout, renderer, operation);
+                });
+        });
     }
 
     fn on_event(
@@ -377,47 +418,6 @@ impl<'a, 'b, Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'a,
                 status
             })
             .fold(event::Status::Ignored, event::Status::merge)
-    }
-
-    fn draw(
-        &self,
-        renderer: &mut Renderer,
-        theme: &Theme,
-        style: &renderer::Style,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-    ) {
-        let viewport = layout.bounds();
-
-        for ((child, state), layout) in self
-            .toasts
-            .iter()
-            .zip(self.state.iter())
-            .zip(layout.children())
-        {
-            child
-                .as_widget()
-                .draw(state, renderer, theme, style, layout, cursor, &viewport);
-        }
-    }
-
-    fn operate(
-        &mut self,
-        layout: Layout<'_>,
-        renderer: &Renderer,
-        operation: &mut dyn widget::Operation,
-    ) {
-        operation.container(None, layout.bounds(), &mut |operation| {
-            self.toasts
-                .iter()
-                .zip(self.state.iter_mut())
-                .zip(layout.children())
-                .for_each(|((child, state), layout)| {
-                    child
-                        .as_widget()
-                        .operate(state, layout, renderer, operation);
-                });
-        });
     }
 
     fn mouse_interaction(
