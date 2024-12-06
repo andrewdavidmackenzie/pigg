@@ -4,8 +4,10 @@
 - You'll need git to clone the repo (I chose `brew install git` so that needs `homebrew` first...). On a 
 Mac, that will also install Xcode command line tools for you.
 - a rust toolchain, recommended to install with [rust](https://rustup.rs/)
-- `cross` for cross compiling to armv7 and aarch64 (install with `cargo install cross`)
+- `cargo binstall` is pretty handy to install pre-build binaries. You can use `cargo install` instead if you prefer.
+- `cross` for cross compiling to armv7 and aarch64 (install with `cargo binstall/install cross`)
 - `make` but you will probably have that installed already
+- `probe-rs`if you are working with the Pi Pico `porky`app (`cargo binstall probe-rs-tools`)
 
 ## General
 NOTE: For details on building `porky` the embedded binary for Pi Pico W devices,
