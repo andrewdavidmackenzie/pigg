@@ -1,5 +1,13 @@
 # Building Piggui and Piglet from source
 
+## Pre requisites
+- You'll need git to clone the repo (I chose `brew install git` so that needs `homebrew` first...). On a 
+Mac, that will also install Xcode command line tools for you.
+- a rust toolchain, recommended to install with [rust](https://rustup.rs/)
+- `cross` for cross compiling to armv7 and aarch64 (install with `cargo install cross`)
+- `make` but you will probably have that installed already
+
+## General
 NOTE: For details on building `porky` the embedded binary for Pi Pico W devices,
 see [porky/BUILDING.md](porky/BUILDING.md)
 
@@ -21,7 +29,7 @@ below to build from source.
 make
 ```
 
-This will run clippy, build, and run tests, generating these binaries:
+This will run clip, build, and run tests, generating these binaries:
 
 - `target/debug/piggui` - GUI with a GPIO backend and ability to connect to remote `piglet` and `porky` devices
 - `target/debug/piglet` - CLI with a GPIO backend
@@ -50,7 +58,7 @@ real GPIO hardware present.
 NOTE: For this option you will need a working rust toolchain installed on your Raspberry Pi. Also, these builds make
 take a very long time. Large intermediate files are also generated and can fill-up the storage of your Pi.
 
-On your Raspberry Pi, use `make` to build and `make run` (etc) as above.
+On your Raspberry Pi, use `make` to build and `make run` as above.
 
 ## Building for Pi on another host
 
