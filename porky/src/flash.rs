@@ -89,7 +89,7 @@ pub fn get_flash<'a>(flash_pin: FLASH) -> Flash<'a, FLASH, Blocking, FLASH_SIZE>
 
 pub async fn db_init(
     flash: Flash<'static, FLASH, Blocking, FLASH_SIZE>,
-) -> Database<DbFlash<Flash<FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex> {
+) -> Database<DbFlash<Flash<'static, FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex> {
     let flash: DbFlash<Flash<_, _, FLASH_SIZE>> = DbFlash {
         flash,
         start: unsafe { &__config_start as *const u32 as usize },
