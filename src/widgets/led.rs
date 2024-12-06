@@ -71,7 +71,7 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Led> for Element<'a, Message, Theme, Renderer>
+impl<Message, Theme, Renderer> From<Led> for Element<'_, Message, Theme, Renderer>
 where
     Renderer: renderer::Renderer,
 {

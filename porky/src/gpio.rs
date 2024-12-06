@@ -5,7 +5,7 @@ use crate::hw_definition::config::HardwareConfigMessage::{
 use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::pin_function::PinFunction::Output;
+use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{BCMPinNumber, PinLevel};
 use crate::HARDWARE_EVENT_CHANNEL;
 #[cfg(feature = "wifi")]
@@ -95,7 +95,7 @@ async fn set_output_level<'a>(
         bcm_pin_number, pin_level
     );
 
-    // GPIO 0 and 1 are connected via cyw43 wifi chip
+    // GPIO 0 and 1 are connected via cyw43 Wi-Fi chip
     unsafe {
         match GPIO_PINS.get_mut(&bcm_pin_number) {
             #[cfg(feature = "wifi")]
@@ -148,7 +148,7 @@ async fn apply_pin_config<'a>(
             info!("Pin #{} - Set as Available", bcm_pin_number);
         }
 
-        PinFunction::Input(pull) => {
+        Input(pull) => {
             info!("Setting new pin function to: Input");
             match flex_pin {
                 Some(mut flex) => {
@@ -180,7 +180,7 @@ async fn apply_pin_config<'a>(
                 None => {
                     #[cfg(feature = "wifi")]
                     {
-                        // Must be GPIO 2 is connected via cyw43 wifi chip
+                        // Must be GPIO 2 is connected via cyw43 Wi-Fi chip
                         unsafe {
                             let _ = GPIO_PINS.insert(bcm_pin_number, GPIOPin::CYW43Input);
                         }
@@ -190,7 +190,7 @@ async fn apply_pin_config<'a>(
             }
         }
 
-        PinFunction::Output(pin_level) => {
+        Output(pin_level) => {
             match flex_pin {
                 Some(mut flex) => {
                     if let Some(l) = pin_level {
@@ -208,7 +208,7 @@ async fn apply_pin_config<'a>(
                 None => {
                     #[cfg(feature = "wifi")]
                     {
-                        // Must be GPIO 0 and 1 are connected via cyw43 wifi chip
+                        // Must be GPIO 0 and 1 are connected via cyw43 Wi-Fi chip
                         info!("Pin #{} cyw43 pin used as Output ", bcm_pin_number);
 
                         if let Some(l) = pin_level {
