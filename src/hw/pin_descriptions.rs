@@ -23,7 +23,7 @@ use std::borrow::Cow;
 /// each with two hardware chip selects. These extra SPI buses are available via alternate function
 /// assignments on certain GPIO pins. For more information, see the BCM2711 Arm peripherals
 /// datasheet."
-
+/// Pin 1 is just a 3.3V power pin
 const PIN_1: PinDescription = PinDescription {
     bpn: 1,
     bcm: None,
