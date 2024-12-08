@@ -36,8 +36,15 @@ fn devices_submenu<'a>(
     let mut device_items = vec![];
 
     #[allow(unused_variables)]
-    for (serial_number, (method, hardware_description, ssid_spec, hardware_connection)) in
-        discovered_devices
+    for (
+        serial_number,
+        DiscoveredDevice {
+            discovery_method: method,
+            hardware_description,
+            ssid_spec,
+            hardware_connection,
+        },
+    ) in discovered_devices
     {
         let device_button: Button<Message> = button(row!(
             text(format!(
@@ -177,7 +184,7 @@ fn devices_submenu<'a>(
                     MENU_BUTTON_STYLE
                 }
             }),
-            Menu::new(device_items).width(290.0).offset(10.0),
+            Menu::new(device_items).width(310.0).offset(10.0),
         )
     }
 }
