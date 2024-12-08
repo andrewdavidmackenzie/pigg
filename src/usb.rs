@@ -81,7 +81,12 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                     };
                     map.insert(
                         hardware_description.details.serial.clone(),
-                        (USBRaw, hardware_description, ssid, connection),
+                        DiscoveredDevice {
+                            discovery_method: USBRaw,
+                            hardware_description,
+                            ssid_spec: ssid,
+                            hardware_connection: connection,
+                        },
                     );
                 }
             }
