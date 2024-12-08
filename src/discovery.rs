@@ -13,7 +13,9 @@ use std::time::Duration;
 //#[cfg(not(any(feature = "usb", feature = "iroh")))]
 //compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
 
-/// What method was used to discover a device? Currently we support Iroh and USB
+pub type SerialNumber = String;
+
+/// What method was used to discover a device? Currently, we support Iroh and USB
 #[derive(Debug, Clone)]
 pub enum DiscoveryMethod {
     #[cfg(feature = "usb")]
@@ -48,9 +50,9 @@ pub type DiscoveredDevice = (
 /// An event for the GUI related to the discovery or loss of a [DiscoveredDevice]
 #[derive(Debug, Clone)]
 pub enum DeviceEvent {
-    DeviceFound(String, DiscoveredDevice),
-    DeviceLost(String),
-    Error(String),
+    DeviceFound(SerialNumber, DiscoveredDevice),
+    DeviceLost(SerialNumber),
+    Error(SerialNumber),
 }
 
 /// A stream of [DeviceEvent] announcing the discovery or loss of devices
