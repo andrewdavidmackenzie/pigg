@@ -162,10 +162,6 @@ async fn run_service(
                         .await;
             }
         }
-
-        #[cfg(feature = "discovery")]
-        #[allow(unreachable_code)]
-        crate::unregister_mdns(service_info, service_daemon);
     }
 
     #[cfg(all(feature = "iroh", not(feature = "tcp")))]
@@ -225,10 +221,6 @@ async fn run_service(
             }
             println!("Disconnected");
         }
-
-        #[cfg(feature = "discovery")]
-        #[allow(unreachable_code)]
-        unregister_mdns(service_info, service_daemon)?;
     }
 
     Ok(())
@@ -447,6 +439,7 @@ fn register_mdns(
     Ok((service_info, service_daemon))
 }
 
+/*
 #[cfg(feature = "discovery")]
 /// Unregister this device from mDNS prior to exit
 fn unregister_mdns(service_info: ServiceInfo, service_daemon: ServiceDaemon) -> anyhow::Result<()> {
@@ -458,3 +451,4 @@ fn unregister_mdns(service_info: ServiceInfo, service_daemon: ServiceDaemon) -> 
 
     Ok(())
 }
+ */
