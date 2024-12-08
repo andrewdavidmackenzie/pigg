@@ -22,6 +22,9 @@ pub const SSID_PASS_MAX_LENGTH: usize = 63;
 #[allow(dead_code)] // Not used by piglet
 pub const SSID_PASS_MIN_LENGTH: usize = 8;
 
+/// Used in mDNS service discovery
+pub const TCP_MDNS_SERVICE_TYPE: &str = "_piggui._tcp.local.";
+
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
 #[cfg(not(feature = "no_std"))]
 #[derive(Serialize)]

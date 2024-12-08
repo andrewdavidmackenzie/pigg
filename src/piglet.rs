@@ -17,6 +17,7 @@ use clap::{Arg, ArgMatches};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
 use log::{info, trace};
+use mdns_sd::{ServiceDaemon, ServiceInfo};
 use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
     ServiceUninstallCtx,
@@ -30,6 +31,7 @@ use tracing_subscriber::EnvFilter;
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
+use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
 mod device_net;
@@ -141,6 +143,14 @@ async fn run_service(
     // Then listen for remote connections and "serve" them
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
     if let Some(mut listener) = listener_info.tcp_info.listener {
+        #[cfg(feature = "discovery")]
+        let (service_info, service_daemon) = register_mdns(
+            TCP_MDNS_SERVICE_TYPE,
+            listener_info.tcp_info.port,
+            &desc.details.serial,
+            &desc.details.model,
+        )?;
+
         loop {
             println!("Waiting for TCP connection");
             if let Ok(stream) =
@@ -179,6 +189,14 @@ async fn run_service(
         listener_info.tcp_info.listener,
         listener_info.iroh_info.endpoint,
     ) {
+        #[cfg(feature = "discovery")]
+        let (service_info, service_daemon) = register_mdns(
+            TCP_MDNS_SERVICE_TYPE,
+            listener_info.tcp_info.port,
+            &desc.details.serial,
+            &desc.details.model,
+        )?;
+
         loop {
             println!("Waiting for Iroh or TCP connection");
             let fused_tcp =
@@ -382,4 +400,41 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
     println!("service '{}' uninstalled", service_name);
 
     Ok(())
+}
+
+#[cfg(feature = "discovery")]
+/// Register a mDNS service so we can get discovered
+fn register_mdns(
+    service_type: &str,
+    port: u16,
+    serial_number: &str,
+    model_name: &str,
+) -> anyhow::Result<(ServiceInfo, ServiceDaemon)> {
+    let service_daemon = ServiceDaemon::new().context("Could not create service daemon")?;
+
+    let hostname = "host1".to_string(); // TODO what to put here?
+    let service_hostname = format!("{}.local.", hostname);
+
+    // The key string in TXT properties is case-insensitive.
+    let properties = [("Serial", serial_number), ("Model", model_name)];
+
+    // Register a service.
+    let service_info = ServiceInfo::new(
+        &service_type,
+        &serial_number,
+        &service_hostname,
+        "",
+        port,
+        &properties[..],
+    )
+    .context("Could not create mDNS ServiceInfo")?
+    .enable_addr_auto();
+
+    service_daemon
+        .register(service_info.clone())
+        .context("Could not register mDNS daemon")?;
+
+    println!("Registered an instance of service .{}", service_type);
+
+    Ok((service_info, service_daemon))
 }
