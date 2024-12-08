@@ -392,11 +392,13 @@ impl Piggui {
             self.modal_handler.subscription().map(Modal), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
-            #[cfg(feature = "discovery")]
-            Subscription::run(discovery::iroh_and_usb_discovery).map(Discovery),
-            #[cfg(feature = "discovery")]
-            Subscription::run(discovery::mdns_discovery).map(Discovery),
         ];
+
+        #[cfg(all(feature = "discovery", feature = "tcp"))]
+        subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
+
+        #[cfg(all(feature = "discovery", any(feature = "iroh", feature = "usb")))]
+        subscriptions.push(Subscription::run(discovery::iroh_and_usb_discovery).map(Discovery));
 
         // Handle Keyboard events for ConnectDialog
         #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -409,7 +411,7 @@ impl Piggui {
     }
 
     #[cfg(feature = "discovery")]
-    /// Process messages related to USB raw discovery of devices
+    /// Process [DiscoveryEvent] messages related to discovery/loss of devices
     fn discovery_event(&mut self, event: DiscoveryEvent) {
         match event {
             DiscoveryEvent::DeviceFound(serial_number, discovered_device) => {

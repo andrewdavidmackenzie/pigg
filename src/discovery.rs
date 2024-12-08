@@ -1,18 +1,29 @@
+#[cfg(feature = "tcp")]
 use crate::discovery::DiscoveryMethod::Mdns;
+#[cfg(feature = "tcp")] // TODO remove
 use crate::hw;
-use crate::hw_definition::description::{HardwareDescription, SsidSpec, TCP_MDNS_SERVICE_TYPE};
+#[cfg(feature = "tcp")]
+use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 #[cfg(feature = "iroh")]
 use crate::iroh_discovery;
 #[cfg(feature = "usb")]
 use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
+#[cfg(any(feature = "usb", feature = "iroh", feature = "tcp"))]
 use async_std::prelude::Stream;
+#[cfg(any(feature = "usb", feature = "iroh", feature = "tcp"))]
 use futures::SinkExt;
+#[cfg(any(feature = "usb", feature = "iroh", feature = "tcp"))]
 use iced_futures::stream;
+#[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
+#[cfg(any(feature = "iroh", feature = "usb"))]
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+#[cfg(feature = "tcp")]
 use std::net::IpAddr;
+#[cfg(any(feature = "iroh", feature = "usb"))]
 use std::time::Duration;
 //#[cfg(not(any(feature = "usb", feature = "iroh")))]
 //compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
@@ -26,6 +37,7 @@ pub enum DiscoveryMethod {
     USBRaw,
     #[cfg(feature = "iroh")]
     IrohLocalSwarm,
+    #[cfg(feature = "tcp")]
     Mdns,
 }
 
@@ -36,15 +48,16 @@ impl Display for DiscoveryMethod {
             DiscoveryMethod::USBRaw => f.write_str("on USB"),
             #[cfg(feature = "iroh")]
             DiscoveryMethod::IrohLocalSwarm => f.write_str("on Iroh network"),
+            #[cfg(feature = "tcp")]
             Mdns => f.write_str("on TCP"),
-            #[cfg(not(any(feature = "usb", feature = "iroh")))]
+            #[cfg(not(any(feature = "usb", feature = "iroh", feature = "tcp")))]
             _ => f.write_str(""),
         }
     }
 }
 
-/// Information about a [DiscoveredDevice] includes the [DiscoveryMethod], its [HardwareDescription]
-/// and [Option<WiFiDetails>]
+/// [DiscoveredDevice] includes the [DiscoveryMethod], its [HardwareDescription]
+/// and [Option<WiFiDetails>] as well as a [HardwareConnection] that can be used to connect to it
 #[derive(Debug, Clone)]
 pub struct DiscoveredDevice {
     pub discovery_method: DiscoveryMethod,
@@ -62,6 +75,7 @@ pub enum DiscoveryEvent {
     Error(SerialNumber),
 }
 
+#[cfg(any(feature = "iroh", feature = "usb"))]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices
 pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |gui_sender| async move {
@@ -115,6 +129,7 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     })
 }
 
+#[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
 pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |gui_sender| async move {
@@ -122,8 +137,6 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
         let receiver = mdns
             .browse(TCP_MDNS_SERVICE_TYPE)
             .expect("Failed to browse");
-
-        tokio::time::sleep(Duration::from_secs(3)).await;
 
         while let Ok(event) = receiver.recv() {
             let mut gui_sender_clone = gui_sender.clone();
@@ -135,19 +148,20 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                     let _model = device_properties.get("Model").unwrap();
                     if let Some(ip) = info.get_addresses_v4().drain().next() {
                         let port = info.get_port();
-                        println!("mDNS device discovery");
+                        let discovered_device = DiscoveredDevice {
+                            discovery_method: Mdns,
+                            hardware_description: hw::driver::get().description().unwrap(), // TODO show the real hardware description
+                            ssid_spec: None,
+                            hardware_connection: HardwareConnection::Tcp(IpAddr::V4(*ip), port),
+                        };
+                        println!(
+                            "mDNS device discovery: {:?}",
+                            discovered_device.hardware_connection
+                        );
                         if let Err(e) = gui_sender_clone
                             .send(DiscoveryEvent::DeviceFound(
                                 serial_number.to_string(),
-                                DiscoveredDevice {
-                                    discovery_method: Mdns,
-                                    hardware_description: hw::driver::get().description().unwrap(), // TODO show the real hardware description
-                                    ssid_spec: None,
-                                    hardware_connection: HardwareConnection::Tcp(
-                                        IpAddr::V4(*ip),
-                                        port,
-                                    ),
-                                },
+                                discovered_device,
                             ))
                             .await
                         {

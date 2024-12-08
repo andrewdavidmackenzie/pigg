@@ -17,6 +17,7 @@ use clap::{Arg, ArgMatches};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
 use log::{info, trace};
+#[cfg(all(feature = "discovery", feature = "tcp"))]
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
@@ -31,6 +32,7 @@ use tracing_subscriber::EnvFilter;
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
+#[cfg(all(feature = "discovery", feature = "tcp"))]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
@@ -402,7 +404,7 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
     Ok(())
 }
 
-#[cfg(feature = "discovery")]
+#[cfg(all(feature = "discovery", feature = "tcp"))]
 /// Register a mDNS service so we can get discovered
 fn register_mdns(
     service_type: &str,

@@ -22,6 +22,7 @@ pub const SSID_PASS_MAX_LENGTH: usize = 63;
 #[allow(dead_code)] // Not used by piglet
 pub const SSID_PASS_MIN_LENGTH: usize = 8;
 
+#[cfg(all(feature = "discovery", feature = "tcp"))]
 /// Used in mDNS service discovery
 pub const TCP_MDNS_SERVICE_TYPE: &str = "_pigg._tcp.local.";
 
