@@ -393,7 +393,7 @@ impl Piggui {
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
             #[cfg(feature = "discovery")]
-            Subscription::run(discovery::subscribe).map(Device),
+            Subscription::run(discovery::mdns_discovery).map(Device),
         ];
 
         // Handle Keyboard events for ConnectDialog
