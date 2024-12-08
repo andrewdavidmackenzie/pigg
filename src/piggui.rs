@@ -393,6 +393,8 @@ impl Piggui {
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
             #[cfg(feature = "discovery")]
+            Subscription::run(discovery::iroh_and_usb_discovery).map(Device),
+            #[cfg(feature = "discovery")]
             Subscription::run(discovery::mdns_discovery).map(Device),
         ];
 
