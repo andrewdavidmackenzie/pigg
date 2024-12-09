@@ -58,8 +58,8 @@ async fn report_error(mut gui_sender: Sender<HardwareEvent>, e: &str) {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareEvent> {
-    let mut target = hw_target.clone();
+pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item = HardwareEvent> {
+    let mut target = hardware_connection.clone();
 
     stream::channel(100, move |gui_sender| async move {
         let mut state = Disconnected;
