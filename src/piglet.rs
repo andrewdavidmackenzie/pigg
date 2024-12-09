@@ -436,7 +436,10 @@ fn register_mdns(
         .register(service_info.clone())
         .context("Could not register mDNS daemon")?;
 
-    println!("Registered an instance of service .{}", service_type);
+    println!(
+        "Registered piglet (instance #{}) with mDNS: {}",
+        serial_number, service_type
+    );
 
     Ok((service_info, service_daemon))
 }
