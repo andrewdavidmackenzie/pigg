@@ -50,12 +50,10 @@ enum HWState {
 
 /// Report an error to the GUI, if it cannot be sent print to STDERR
 async fn report_error(mut gui_sender: Sender<HardwareEvent>, e: &str) {
-    if let Err(e) = gui_sender
+    gui_sender
         .send(HardwareEvent::ConnectionError(e.to_string()))
         .await
-    {
-        eprintln!("{e}");
-    }
+        .unwrap_or_else(|e| eprintln!("{e}"));
 }
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
@@ -138,16 +136,14 @@ pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareE
                                 Ok((hardware_description, hardware_config, stream)) => {
                                     println!("Config received on connect: {:?}", hardware_config);
                                     // Send the stream back to the GUI
-                                    if let Err(e) = gui_sender_clone
+                                    gui_sender_clone
                                         .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
                                             hardware_description.clone(),
                                             hardware_config,
                                         ))
                                         .await
-                                    {
-                                        eprintln!("Send error: {e}");
-                                    }
+                                        .unwrap_or_else(|e| eprintln!("Send error: {e}"));
 
                                     // We are ready to receive messages from the GUI
                                     state = HWState::ConnectedTcp(hardware_event_receiver, stream);

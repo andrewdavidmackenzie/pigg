@@ -76,7 +76,7 @@ pub enum DiscoveryEvent {
 }
 
 #[cfg(any(feature = "iroh", feature = "usb"))]
-/// A stream of [DiscoveryEvent] announcing the discovery or loss of devices
+/// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB or Iroh
 pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         #[cfg(feature = "iroh")]
@@ -97,15 +97,13 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             // New devices
             for (serial, discovered_device) in current_devices {
                 if !previous_serials.contains(&serial) {
-                    if let Err(e) = gui_sender
+                    gui_sender
                         .send(DiscoveryEvent::DeviceFound(
                             serial.clone(),
                             discovered_device,
                         ))
                         .await
-                    {
-                        eprintln!("Send error: {e}");
-                    }
+                        .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
                 current_serials.push(serial);
             }
@@ -113,12 +111,10 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             // Lost devices
             for serial in previous_serials {
                 if !current_serials.contains(&serial) {
-                    if let Err(e) = gui_sender
+                    gui_sender
                         .send(DiscoveryEvent::DeviceLost(serial.clone()))
                         .await
-                    {
-                        eprintln!("Send error: {e}");
-                    }
+                        .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
             }
 
@@ -151,29 +147,28 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                             ssid_spec: None,
                             hardware_connection: HardwareConnection::Tcp(IpAddr::V4(*ip), port),
                         };
+
                         println!(
                             "mDNS device discovery: #{} - {:?}",
                             serial_number, discovered_device.hardware_connection
                         );
-                        if let Err(e) = gui_sender
+
+                        gui_sender
                             .send(DiscoveryEvent::DeviceFound(
                                 serial_number.to_string(),
                                 discovered_device,
                             ))
                             .await
-                        {
-                            eprintln!("Send error: {e}");
-                        }
+                            .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }
                 }
                 ServiceEvent::ServiceRemoved(_service_type, fullname) => {
+                    println!("mDNS device removed");
                     if let Some((serial_number, _)) = fullname.split_once(".") {
-                        if let Err(e) = gui_sender
+                        gui_sender
                             .send(DiscoveryEvent::DeviceLost(serial_number.to_string()))
                             .await
-                        {
-                            eprintln!("Send error: {e}");
-                        }
+                            .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }
                 }
                 ServiceEvent::SearchStarted(_) => {}
