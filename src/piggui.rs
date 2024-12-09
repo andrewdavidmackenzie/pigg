@@ -436,7 +436,7 @@ impl Piggui {
     }
 }
 
-/// Determine the hardware target based on command line options
+/// Determine the hardware connection based on command line options
 #[allow(unused_variables)]
 fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
     #[allow(unused_mut)]
