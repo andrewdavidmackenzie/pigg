@@ -78,14 +78,13 @@ pub enum DiscoveryEvent {
 #[cfg(any(feature = "iroh", feature = "usb"))]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices
 pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
-    stream::channel(100, move |gui_sender| async move {
+    stream::channel(100, move |mut gui_sender| async move {
         #[cfg(feature = "iroh")]
         let endpoint = iroh_discovery::iroh_endpoint().await.unwrap();
 
         let mut previous_serials: Vec<String> = vec![];
 
         loop {
-            let mut gui_sender_clone = gui_sender.clone();
             let mut current_serials = vec![];
             #[allow(unused_mut)]
             let mut current_devices = HashMap::new();
@@ -98,7 +97,7 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             // New devices
             for (serial, discovered_device) in current_devices {
                 if !previous_serials.contains(&serial) {
-                    if let Err(e) = gui_sender_clone
+                    if let Err(e) = gui_sender
                         .send(DiscoveryEvent::DeviceFound(
                             serial.clone(),
                             discovered_device,
@@ -114,7 +113,7 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             // Lost devices
             for serial in previous_serials {
                 if !current_serials.contains(&serial) {
-                    if let Err(e) = gui_sender_clone
+                    if let Err(e) = gui_sender
                         .send(DiscoveryEvent::DeviceLost(serial.clone()))
                         .await
                     {
@@ -132,20 +131,18 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
 pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
-    stream::channel(100, move |gui_sender| async move {
+    stream::channel(100, move |mut gui_sender| async move {
         let mdns = ServiceDaemon::new().expect("Failed to create daemon");
         let receiver = mdns
             .browse(TCP_MDNS_SERVICE_TYPE)
             .expect("Failed to browse");
 
         while let Ok(event) = receiver.recv() {
-            let mut gui_sender_clone = gui_sender.clone();
-
             match event {
                 ServiceEvent::ServiceResolved(info) => {
                     let device_properties = info.get_properties();
-                    let serial_number = device_properties.get("Serial").unwrap();
-                    let _model = device_properties.get("Model").unwrap();
+                    let serial_number = device_properties.get_property_val_str("Serial").unwrap();
+                    let _model = device_properties.get_property_val_str("Model").unwrap();
                     if let Some(ip) = info.get_addresses_v4().drain().next() {
                         let port = info.get_port();
                         let discovered_device = DiscoveredDevice {
@@ -155,10 +152,10 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                             hardware_connection: HardwareConnection::Tcp(IpAddr::V4(*ip), port),
                         };
                         println!(
-                            "mDNS device discovery: {:?}",
-                            discovered_device.hardware_connection
+                            "mDNS device discovery: #{} - {:?}",
+                            serial_number, discovered_device.hardware_connection
                         );
-                        if let Err(e) = gui_sender_clone
+                        if let Err(e) = gui_sender
                             .send(DiscoveryEvent::DeviceFound(
                                 serial_number.to_string(),
                                 discovered_device,
@@ -171,7 +168,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                 }
                 ServiceEvent::ServiceRemoved(_service_type, fullname) => {
                     if let Some((serial_number, _)) = fullname.split_once(".") {
-                        if let Err(e) = gui_sender_clone
+                        if let Err(e) = gui_sender
                             .send(DiscoveryEvent::DeviceLost(serial_number.to_string()))
                             .await
                         {
