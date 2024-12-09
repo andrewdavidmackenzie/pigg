@@ -16,6 +16,13 @@ use crate::hw_definition::description::{HardwareDescription, HardwareDetails, Pi
 ))]
 use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
 
+#[cfg(not(all(
+    target_os = "linux",
+    any(target_arch = "aarch64", target_arch = "arm"),
+    target_env = "gnu"
+)))]
+use rand::Rng;
+
 #[cfg(all(
     not(target_arch = "wasm32"),
     not(all(
@@ -147,6 +154,18 @@ impl HW {
                 Some(("Model", model)) => details.model = model.to_string(),
                 _ => {}
             }
+        }
+
+        #[cfg(not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        )))]
+        {
+            let mut rng = rand::thread_rng();
+            let random_serial: u32 = rng.gen();
+            // format as 16 character hex number
+            details.serial = format!("{:01$x}", random_serial, 18);
         }
 
         Ok(details)
