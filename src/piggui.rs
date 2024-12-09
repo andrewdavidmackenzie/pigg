@@ -417,8 +417,8 @@ impl Piggui {
             DiscoveryEvent::DeviceFound(serial_number, discovered_device) => {
                 println!("Device Found {}", discovered_device.discovery_method);
                 self.info_row.add_info_message(Info(format!(
-                    "{} {}",
-                    "Device Found", discovered_device.discovery_method
+                    "Device Found {}",
+                    discovered_device.discovery_method
                 )));
                 self.discovered_devices
                     .insert(serial_number, discovered_device);
