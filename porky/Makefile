@@ -19,6 +19,9 @@ build-pico-w:
 build-pico:
 	cargo build --release --bin porky --features "pico"
 
+run:
+	cargo run --release --bin porky_w --features "pico_w"
+
 install-uf2:
 	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 	cargo binstall elf2uf2-rs
