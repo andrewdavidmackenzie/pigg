@@ -16,6 +16,8 @@ use static_cell::StaticCell;
 
 const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
 
+pub const STACK_RESOURCES_N: usize = 3;
+
 #[embassy_executor::task]
 async fn wifi_task(
     runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
@@ -110,7 +112,7 @@ pub async fn start_net<'a>(
         .set_power_management(cyw43::PowerManagementMode::PowerSave)
         .await;
 
-    static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
+    static RESOURCES: StaticCell<StackResources<STACK_RESOURCES_N>> = StaticCell::new();
     let resources = RESOURCES.init(StackResources::new());
 
     let mut rng = RoscRng;

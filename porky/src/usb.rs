@@ -1,3 +1,6 @@
+#[cfg(feature = "wifi")]
+use crate::flash;
+#[cfg(feature = "wifi")]
 use crate::flash::DbFlash;
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::description::HardwareDescription;
@@ -6,17 +9,26 @@ use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{GET_CONFIG_VALUE, GET_HARDWARE_VALUE, PIGGUI_REQUEST};
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
-use crate::{flash, persistence};
+#[cfg(feature = "wifi")]
+use crate::persistence;
 use core::str;
 use defmt::{error, info, unwrap};
+#[cfg(feature = "wifi")]
 use ekv::Database;
 use embassy_executor::Spawner;
+#[cfg(feature = "wifi")]
 use embassy_futures::block_on;
+#[cfg(feature = "wifi")]
 use embassy_rp::flash::{Blocking, Flash};
-use embassy_rp::peripherals::{FLASH, USB};
+#[cfg(feature = "wifi")]
+use embassy_rp::peripherals::FLASH;
+use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
+#[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
+#[cfg(feature = "wifi")]
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+#[cfg(feature = "wifi")]
 use embassy_time::Duration;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
 use embassy_usb::msos::windows_version;
@@ -76,9 +88,12 @@ pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
     hardware_config: HardwareConfig,
+    #[cfg(feature = "wifi")]
     tcp: Option<([u8; 4], u16)>,
+    #[cfg(feature = "wifi")]
     db: &'h Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
+    #[cfg(feature = "wifi")]
     watchdog: Watchdog,
 }
 
@@ -164,7 +179,7 @@ impl<'h> Handler for ControlHandler<'h> {
             (PIGGUI_REQUEST, GET_WIFI_VALUE) => unsafe {
                 static mut STATIC_BUF: [u8; 200] = [0u8; 200];
                 #[allow(static_mut_refs)]
-                let ssid_spec = block_on(persistence::get_ssid_spec(&self.db, &mut STATIC_BUF));
+                let ssid_spec = block_on(persistence::get_ssid_spec(self.db, &mut STATIC_BUF));
                 let wifi = WiFiDetails {
                     ssid_spec,
                     tcp: self.tcp,
@@ -194,12 +209,12 @@ pub async fn start(
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
     hardware_config: HardwareConfig,
-    tcp: Option<([u8; 4], u16)>,
-    db: &'static Database<
+    #[cfg(feature = "wifi")] tcp: Option<([u8; 4], u16)>,
+    #[cfg(feature = "wifi")] db: &'static Database<
         DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
         NoopRawMutex,
     >,
-    watchdog: Watchdog,
+    #[cfg(feature = "wifi")] watchdog: Watchdog,
 ) {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
@@ -221,9 +236,12 @@ pub async fn start(
         if_num: InterfaceNumber(0),
         hardware_description,
         hardware_config,
+        #[cfg(feature = "wifi")]
         tcp,
+        #[cfg(feature = "wifi")]
         db,
         buf: [0; 1024],
+        #[cfg(feature = "wifi")]
         watchdog,
     });
 

@@ -264,7 +264,7 @@ pub async fn apply_config_change<'a>(
                 #[cfg(feature = "wifi")]
                 control,
                 spawner,
-                &config,
+                config,
             )
             .await;
             // Update the hardware config to reflect the change
@@ -276,13 +276,11 @@ pub async fn apply_config_change<'a>(
                 control,
                 spawner,
                 *bcm,
-                &pin_function,
+                pin_function,
             )
             .await;
             // Update the hardware config to reflect the change
-            let _ = hardware_config
-                .pin_functions
-                .insert(*bcm, pin_function.clone());
+            let _ = hardware_config.pin_functions.insert(*bcm, *pin_function);
         }
         IOLevelChanged(bcm, level_change) => {
             set_output_level(

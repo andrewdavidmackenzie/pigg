@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 
-use defmt::*;
 use embassy_executor::Spawner;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -10,12 +9,9 @@ use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use core::str;
-use defmt::{error, info};
-use ekv::{Database, ReadError};
-use embassy_futures::select::{select, Either};
+use ekv::Database;
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::{Blocking, Flash};
-use embassy_rp::gpio::{Level, Output};
 use embassy_rp::peripherals::FLASH;
 #[cfg(feature = "usb")]
 use embassy_rp::peripherals::USB;
@@ -23,7 +19,6 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 #[cfg(feature = "usb")]
 use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
-use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
 use heapless::Vec;
@@ -141,9 +136,6 @@ async fn main(spawner: Spawner) {
     > = StaticCell::new();
     let db = DATABASE.init(flash::db_init(flash).await);
 
-    #[cfg(feature = "usb")]
-    let watchdog = Watchdog::new(peripherals.WATCHDOG);
-
     // Load initial config from flash
     let mut hardware_config = persistence::get_config(db).await;
 
@@ -156,14 +148,5 @@ async fn main(spawner: Spawner) {
     .await;
 
     #[cfg(feature = "usb")]
-    usb::start(
-        spawner,
-        driver,
-        hw_desc,
-        hardware_config.clone(),
-        None,
-        db,
-        watchdog,
-    )
-    .await;
+    usb::start(spawner, driver, hw_desc, hardware_config.clone()).await;
 }

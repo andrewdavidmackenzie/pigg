@@ -205,14 +205,14 @@ async fn main(spawner: Spawner) {
     .await;
 
     // If we have a valid SsidSpec, then try and join that network using it
-    match persistence::get_ssid_spec(&db, static_buf).await {
+    match persistence::get_ssid_spec(db, static_buf).await {
         Some(ssid) => match wifi::join(&mut control, wifi_stack, &ssid).await {
             Ok(ip) => {
                 info!("Assigned IP: {}", ip);
 
                 let _ = spawner.spawn(mdns::mdns_responder(
                     wifi_stack,
-                    ip.clone(),
+                    ip,
                     TCP_PORT,
                     serial_number,
                     hw_desc.details.model,
@@ -267,7 +267,7 @@ async fn main(spawner: Spawner) {
                                             )
                                             .await;
                                             let _ = persistence::store_config_change(
-                                                &db,
+                                                db,
                                                 &hardware_config_message,
                                             )
                                             .await;

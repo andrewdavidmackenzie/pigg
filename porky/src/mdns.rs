@@ -1,3 +1,4 @@
+use crate::wifi;
 use core::net::{Ipv4Addr, Ipv6Addr};
 use edge_mdns::buf::VecBufAccess;
 use edge_mdns::domain::base::Ttl;
@@ -23,7 +24,7 @@ pub async fn mdns_responder(
     service: &'static str,
     protocol: &'static str,
 ) {
-    let udp_buffers: UdpBuffers<1, 1500, 1500, 2> = UdpBuffers::new();
+    let udp_buffers: UdpBuffers<{ wifi::STACK_RESOURCES_N }, 1500, 1500, 2> = UdpBuffers::new();
     let udp = Udp::new(stack, &udp_buffers);
     let mut socket = io::bind(&udp, DEFAULT_SOCKET, Some(Ipv4Addr::UNSPECIFIED), None)
         .await
