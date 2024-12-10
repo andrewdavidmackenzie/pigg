@@ -16,14 +16,14 @@ path = "src/porky.rs"
 required-features = ["pico"]
 
 [features]
-default = ["usb", "no_std", "discovery"]
+default = ["usb", "no_std"]
 pico = ["cyw43-pio"] # I don't know why yet  is needed. Reported to EMbassy
 pico_w = ["wifi"]
-wifi = ["cyw43", "cyw43-pio", "embassy-net", "tcp"]
+wifi = ["cyw43", "cyw43-pio", "embassy-net", "tcp", "discovery"]
 no_std = []
 debug-probe = []
 usb = ["embassy-usb"]
-discovery = []
+discovery = ["edge-mdns", "edge-nal-embassy", "edge-nal"]
 tcp = []
 
 [dependencies]
@@ -61,6 +61,10 @@ serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
+edge-mdns = { version = "0.3.1", optional = true, features = ["io"] }
+edge-nal-embassy = { version = "0.3.0", default-features = false, optional = true }
+edge-nal = { version = "0.3.0", default-features = false, optional = true }
+
 [build-dependencies]
 # for reading SSID config from a file in build.rs
 serde_derive = "~1.0"
@@ -86,6 +90,10 @@ cyw43 = { git = "https://github.com/embassy-rs/embassy.git" }
 cyw43-pio = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-net = { git = "https://github.com/embassy-rs/embassy.git" }
 embassy-usb = { git = "https://github.com/embassy-rs/embassy.git" }
+
+edge-mdns = { git = "https://github.com/ivmarkov/edge-net.git", branch = "embassy-net-05" }
+edge-nal-embassy = { git = "https://github.com/ivmarkov/edge-net.git", branch = "embassy-net-05" }
+edge-nal = { git = "https://github.com/ivmarkov/edge-net.git", branch = "embassy-net-05" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

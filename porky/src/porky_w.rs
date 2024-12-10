@@ -3,7 +3,10 @@
 
 use crate::flash::DbFlash;
 use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+use crate::hw_definition::description::{
+    HardwareDescription, HardwareDetails, PinDescriptionSet, TCP_MDNS_SERVICE_NAME,
+    TCP_MDNS_SERVICE_PROTOCOL,
+};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use crate::tcp::TCP_PORT;
 use core::str;
@@ -68,6 +71,10 @@ mod flash;
 
 /// Persistence layer built on top of flash
 mod persistence;
+
+#[cfg(feature = "discovery")]
+/// Discovery via mDNS
+mod mdns;
 
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
@@ -203,6 +210,16 @@ async fn main(spawner: Spawner) {
             Ok(ip) => {
                 info!("Assigned IP: {}", ip);
 
+                let _ = spawner.spawn(mdns::mdns_responder(
+                    wifi_stack,
+                    ip.clone(),
+                    TCP_PORT,
+                    serial_number,
+                    hw_desc.details.model,
+                    TCP_MDNS_SERVICE_NAME,
+                    TCP_MDNS_SERVICE_PROTOCOL,
+                ));
+
                 let tcp = (ip.octets(), TCP_PORT);
                 #[cfg(feature = "usb")]
                 usb::start(
@@ -279,7 +296,7 @@ async fn main(spawner: Spawner) {
                 }
             }
             Err(e) => {
-                error!("Could not join Wi-Fi network: {}, starting USB", e);
+                error!("Could not join Wi-Fi network: {}, so starting USB only", e);
                 #[cfg(feature = "usb")]
                 usb::start(
                     spawner,
@@ -294,7 +311,7 @@ async fn main(spawner: Spawner) {
             }
         },
         None => {
-            info!("No valid SsidSpec was found, starting USB alone");
+            info!("No valid SsidSpec was found, cannot start Wi-Fi, so starting USB only");
             #[cfg(feature = "usb")]
             usb::start(
                 spawner,

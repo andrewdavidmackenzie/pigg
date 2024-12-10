@@ -307,6 +307,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "deranged"
+version = "0.3.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b42b6fa04a440b495c8b04d0e71b707c585f83cb9cb28cf8cd0d976c315e31b4"
+dependencies = [
+ "powerfmt",
+]
+
+[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -340,6 +349,52 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb6969eaabd2421f8a2775cfd2471a2b634372b4a25d41e3bd647b79912850a0"
 dependencies = [
  "litrs",
+]
+
+[[package]]
+name = "domain"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64008666d9f3b6a88a63cd28ad8f3a5a859b8037e11bfb680c1b24945ea1c28d"
+dependencies = [
+ "heapless 0.8.0",
+ "octseq",
+ "time",
+]
+
+[[package]]
+name = "edge-mdns"
+version = "0.3.1"
+source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#0d5fabaf1ab039358d5542d787878dbd0c70a7e8"
+dependencies = [
+ "domain",
+ "edge-nal",
+ "embassy-futures",
+ "embassy-sync",
+ "embassy-time",
+ "heapless 0.8.0",
+ "log",
+]
+
+[[package]]
+name = "edge-nal"
+version = "0.3.0"
+source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#0d5fabaf1ab039358d5542d787878dbd0c70a7e8"
+dependencies = [
+ "embassy-time",
+ "embedded-io-async",
+]
+
+[[package]]
+name = "edge-nal-embassy"
+version = "0.3.0"
+source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#0d5fabaf1ab039358d5542d787878dbd0c70a7e8"
+dependencies = [
+ "edge-nal",
+ "embassy-futures",
+ "embassy-net",
+ "embedded-io-async",
+ "heapless 0.8.0",
 ]
 
 [[package]]
@@ -987,6 +1042,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
+name = "num-conv"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1013,6 +1074,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "octseq"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "126c3ca37c9c44cec575247f43a3e4374d8927684f129d2beeb0d2cef262fe12"
+dependencies = [
+ "heapless 0.8.0",
 ]
 
 [[package]]
@@ -1141,6 +1211,9 @@ dependencies = [
  "cyw43-pio",
  "defmt",
  "defmt-rtt",
+ "edge-mdns",
+ "edge-nal",
+ "edge-nal-embassy",
  "ekv",
  "embassy-executor",
  "embassy-futures",
@@ -1182,6 +1255,12 @@ dependencies = [
  "heapless 0.7.17",
  "serde",
 ]
+
+[[package]]
+name = "powerfmt"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
 
 [[package]]
 name = "precomputed-hash"
@@ -1604,6 +1683,24 @@ dependencies = [
  "quote",
  "syn 2.0.89",
 ]
+
+[[package]]
+name = "time"
+version = "0.3.37"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35e7868883861bd0e56d9ac6efcaaca0d6d5d82a2a7ec8209ff492c07cf37b21"
+dependencies = [
+ "deranged",
+ "num-conv",
+ "powerfmt",
+ "time-core",
+]
+
+[[package]]
+name = "time-core"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
 
 [[package]]
 name = "tiny-keccak"
