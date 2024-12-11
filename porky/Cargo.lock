@@ -365,7 +365,7 @@ dependencies = [
 [[package]]
 name = "edge-mdns"
 version = "0.3.1"
-source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#38d82bd3f1a1d3b9899962d878310163990a1cf8"
+source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#5a85bcc8b8726e8b7044e9526f01cdba1fd684da"
 dependencies = [
  "domain",
  "edge-nal",
@@ -379,7 +379,7 @@ dependencies = [
 [[package]]
 name = "edge-nal"
 version = "0.3.0"
-source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#38d82bd3f1a1d3b9899962d878310163990a1cf8"
+source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#5a85bcc8b8726e8b7044e9526f01cdba1fd684da"
 dependencies = [
  "embassy-time",
  "embedded-io-async",
@@ -388,7 +388,7 @@ dependencies = [
 [[package]]
 name = "edge-nal-embassy"
 version = "0.3.0"
-source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#38d82bd3f1a1d3b9899962d878310163990a1cf8"
+source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#5a85bcc8b8726e8b7044e9526f01cdba1fd684da"
 dependencies = [
  "edge-nal",
  "embassy-futures",
