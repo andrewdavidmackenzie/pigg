@@ -193,7 +193,7 @@ fn devices_submenu<'a>(
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_connection: &HardwareConnection,
-    #[cfg(feature = "discovery")] known_devices: &HashMap<String, DiscoveredDevice>,
+    #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
@@ -296,7 +296,7 @@ pub fn view<'a>(
 
     #[cfg(feature = "discovery")]
     menu_items.push(devices_submenu(
-        known_devices,
+        discovered_devices,
         hardware_view.get_hardware_connection(),
     ));
 
