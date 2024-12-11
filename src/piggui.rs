@@ -79,8 +79,6 @@ pub enum Message {
     MenuBarButtonClicked,
     #[cfg(feature = "discovery")]
     Discovery(DiscoveryEvent),
-    #[cfg(feature = "discovery")]
-    Mdnsdiscovery(DiscoveryEvent),
     #[cfg(feature = "usb")]
     SsidDialog(SsidDialogMessage),
     #[cfg(feature = "usb")]
@@ -297,9 +295,6 @@ impl Piggui {
             #[cfg(feature = "discovery")]
             Discovery(event) => self.discovery_event(event),
 
-            #[cfg(feature = "discovery")]
-            Mdnsdiscovery(event) => self.discovery_event(event),
-
             #[cfg(feature = "usb")]
             SsidDialog(ssid_dialog_message) => {
                 return self.ssid_dialog.update(ssid_dialog_message);
@@ -399,11 +394,11 @@ impl Piggui {
             self.hardware_view.subscription().map(Hardware),
         ];
 
-        #[cfg(all(feature = "discovery", feature = "tcp"))]
-        subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Mdnsdiscovery));
-
         #[cfg(all(feature = "discovery", any(feature = "iroh", feature = "usb")))]
         subscriptions.push(Subscription::run(discovery::iroh_and_usb_discovery).map(Discovery));
+
+        #[cfg(all(feature = "discovery", feature = "tcp"))]
+        subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
 
         // Handle Keyboard events for ConnectDialog
         #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -420,18 +415,22 @@ impl Piggui {
     fn discovery_event(&mut self, event: DiscoveryEvent) {
         match event {
             DiscoveryEvent::DeviceFound(serial_number, discovered_device) => {
-                println!("Device Found {}", discovered_device.discovery_method);
-                self.info_row.add_info_message(Info(format!(
-                    "Device Found {}",
-                    discovered_device.discovery_method
-                )));
-                self.discovered_devices
-                    .insert(serial_number, discovered_device);
+                let method = discovered_device.discovery_method.clone();
+                if self
+                    .discovered_devices
+                    .insert(serial_number, discovered_device)
+                    .is_none()
+                {
+                    println!("Device Found {method}");
+                    self.info_row
+                        .add_info_message(Info(format!("Device Found {method}")));
+                }
             }
             DiscoveryEvent::DeviceLost(serial_number) => {
-                self.info_row
-                    .add_info_message(Info("Device Lost".to_string()));
-                self.discovered_devices.remove(&serial_number);
+                if self.discovered_devices.remove(&serial_number).is_some() {
+                    self.info_row
+                        .add_info_message(Info("Device Lost".to_string()));
+                }
             }
             DiscoveryEvent::Error(e) => {
                 self.info_row

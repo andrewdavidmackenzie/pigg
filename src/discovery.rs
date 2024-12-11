@@ -95,17 +95,17 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             current_devices.extend(iroh_discovery::find_piglets(&endpoint).await);
 
             // New devices
-            for (serial, discovered_device) in current_devices {
-                if !previous_serials.contains(&serial) {
+            for (serial_number, discovered_device) in current_devices {
+                if !previous_serials.contains(&serial_number) {
                     gui_sender
                         .send(DiscoveryEvent::DeviceFound(
-                            serial.clone(),
+                            serial_number.clone(),
                             discovered_device,
                         ))
                         .await
                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
-                current_serials.push(serial);
+                current_serials.push(serial_number);
             }
 
             // Lost devices
@@ -133,7 +133,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
             .browse(TCP_MDNS_SERVICE_TYPE)
             .expect("Failed to browse");
 
-        while let Ok(event) = receiver.recv() {
+        while let Ok(event) = receiver.recv_async().await {
             match event {
                 ServiceEvent::ServiceResolved(info) => {
                     let device_properties = info.get_properties();
@@ -148,22 +148,16 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                             hardware_connection: HardwareConnection::Tcp(IpAddr::V4(*ip), port),
                         };
 
-                        println!(
-                            "mDNS device discovery: #{} - {:?}",
-                            serial_number, discovered_device.hardware_connection
-                        );
-
                         gui_sender
                             .send(DiscoveryEvent::DeviceFound(
                                 serial_number.to_string(),
-                                discovered_device,
+                                discovered_device.clone(),
                             ))
                             .await
                             .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }
                 }
                 ServiceEvent::ServiceRemoved(_service_type, fullname) => {
-                    println!("mDNS device removed");
                     if let Some((serial_number, _)) = fullname.split_once(".") {
                         gui_sender
                             .send(DiscoveryEvent::DeviceLost(serial_number.to_string()))
