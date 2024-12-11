@@ -4,7 +4,7 @@ use crate::discovery::DiscoveryMethod::Mdns;
 use crate::hw;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
-use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+use crate::hw_definition::description::{HardwareDetails, SsidSpec};
 #[cfg(feature = "iroh")]
 use crate::iroh_discovery;
 #[cfg(feature = "usb")]
@@ -56,12 +56,12 @@ impl Display for DiscoveryMethod {
     }
 }
 
-/// [DiscoveredDevice] includes the [DiscoveryMethod], its [HardwareDescription]
+/// [DiscoveredDevice] includes the [DiscoveryMethod], its [HardwareDetails]
 /// and [Option<WiFiDetails>] as well as a [HardwareConnection] that can be used to connect to it
 #[derive(Debug, Clone)]
 pub struct DiscoveredDevice {
     pub discovery_method: DiscoveryMethod,
-    pub hardware_description: HardwareDescription,
+    pub hardware_details: HardwareDetails,
     pub ssid_spec: Option<SsidSpec>,
     pub hardware_connection: HardwareConnection,
 }
@@ -143,7 +143,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                         let port = info.get_port();
                         let discovered_device = DiscoveredDevice {
                             discovery_method: Mdns,
-                            hardware_description: hw::driver::get().description().unwrap(), // TODO show the real hardware description
+                            hardware_details: hw::driver::get().description().unwrap().details, // TODO show the real hardware description
                             ssid_spec: None,
                             hardware_connection: HardwareConnection::Tcp(IpAddr::V4(*ip), port),
                         };

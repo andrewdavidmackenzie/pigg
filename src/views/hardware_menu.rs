@@ -40,7 +40,7 @@ fn devices_submenu<'a>(
         serial_number,
         DiscoveredDevice {
             discovery_method: method,
-            hardware_description,
+            hardware_details,
             ssid_spec,
             hardware_connection,
         },
@@ -49,7 +49,7 @@ fn devices_submenu<'a>(
         let device_button: Button<Message> = button(row!(
             text(format!(
                 "{} ({}) {}",
-                hardware_description.details.model, serial_number, method
+                hardware_details.model, serial_number, method
             )),
             horizontal_space(),
             text(" >").align_y(alignment::Vertical::Center),
@@ -70,7 +70,7 @@ fn devices_submenu<'a>(
             button("Display Device Details...")
                 .width(Length::Fill)
                 .on_press(Message::Modal(HardwareDetailsModal(
-                    hardware_description.details.clone(),
+                    hardware_details.clone(),
                     hardware_connection.clone(),
                 )))
                 .style(|_, status| {
@@ -110,14 +110,14 @@ fn devices_submenu<'a>(
         }
 
         #[cfg(feature = "usb")]
-        if hardware_description.details.wifi {
+        if hardware_details.wifi {
             if matches!(method, USBRaw) {
                 #[allow(unused_mut)]
                 menu_items.push(Item::new(
                     button("Configure Device Wi-Fi...")
                         .width(Length::Fill)
                         .on_press(Message::SsidDialog(SsidDialogMessage::Show(
-                            hardware_description.details.clone(),
+                            hardware_details.clone(),
                             ssid_spec.as_ref().and_then(|wf| ssid_spec.clone()),
                         )))
                         .style(|_, status| {
@@ -134,9 +134,7 @@ fn devices_submenu<'a>(
                 menu_items.push(Item::new(
                     button("Reset Device Wi-Fi to Default")
                         .width(Length::Fill)
-                        .on_press(Message::ResetSsid(
-                            hardware_description.details.serial.clone(),
-                        ))
+                        .on_press(Message::ResetSsid(hardware_details.serial.clone()))
                         .style(|_, status| {
                             if status == Hovered {
                                 MENU_BUTTON_HOVER_STYLE

@@ -35,7 +35,7 @@ pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevi
             trunc, // TODO substitute for real serial_number when Iroh discovery supports it
             DiscoveredDevice {
                 discovery_method: IrohLocalSwarm,
-                hardware_description: hw::driver::get().description().unwrap(), // TODO show the real hardware description when Iroh discovery supports it
+                hardware_details: hw::driver::get().description().unwrap().details, // TODO show the real hardware description when Iroh discovery supports it
                 ssid_spec: None,
                 hardware_connection: HardwareConnection::Iroh(
                     remote.node_id,

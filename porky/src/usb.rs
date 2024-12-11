@@ -6,7 +6,9 @@ use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
-use crate::hw_definition::usb_values::{GET_CONFIG_VALUE, GET_HARDWARE_VALUE, PIGGUI_REQUEST};
+use crate::hw_definition::usb_values::{
+    GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, PIGGUI_REQUEST,
+};
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
 #[cfg(feature = "wifi")]
@@ -172,8 +174,11 @@ impl<'h> Handler for ControlHandler<'h> {
 
         // Respond to valid requests from piggui
         let msg = match (req.request, req.value) {
-            (PIGGUI_REQUEST, GET_HARDWARE_VALUE) => {
+            (PIGGUI_REQUEST, GET_HARDWARE_DESCRIPTION_VALUE) => {
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
+            }
+            (PIGGUI_REQUEST, GET_HARDWARE_DETAILS_VALUE) => {
+                postcard::to_slice(&self.hardware_description.details, &mut self.buf).ok()?
             }
             #[cfg(feature = "wifi")]
             (PIGGUI_REQUEST, GET_WIFI_VALUE) => unsafe {
