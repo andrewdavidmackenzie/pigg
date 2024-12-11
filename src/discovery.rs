@@ -45,11 +45,11 @@ impl Display for DiscoveryMethod {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             #[cfg(feature = "usb")]
-            DiscoveryMethod::USBRaw => f.write_str("on USB"),
+            DiscoveryMethod::USBRaw => f.write_str("USB"),
             #[cfg(feature = "iroh")]
-            DiscoveryMethod::IrohLocalSwarm => f.write_str("on Iroh network"),
+            DiscoveryMethod::IrohLocalSwarm => f.write_str("Iroh network"),
             #[cfg(feature = "tcp")]
-            Mdns => f.write_str("on TCP"),
+            Mdns => f.write_str("TCP"),
             #[cfg(not(any(feature = "usb", feature = "iroh", feature = "tcp")))]
             _ => f.write_str(""),
         }
@@ -82,10 +82,10 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
         #[cfg(feature = "iroh")]
         let endpoint = iroh_discovery::iroh_endpoint().await.unwrap();
 
-        let mut previous_serials: Vec<String> = vec![];
+        let mut previous_keys: Vec<String> = vec![];
 
         loop {
-            let mut current_serials = vec![];
+            let mut current_keys = vec![];
             #[allow(unused_mut)]
             let mut current_devices = HashMap::new();
 
@@ -96,29 +96,27 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 
             // New devices
             for (serial_number, discovered_device) in current_devices {
-                if !previous_serials.contains(&serial_number) {
+                let key = format!("{serial_number}/{}", discovered_device.discovery_method);
+                if !previous_keys.contains(&key) {
                     gui_sender
-                        .send(DiscoveryEvent::DeviceFound(
-                            serial_number.clone(),
-                            discovered_device,
-                        ))
+                        .send(DiscoveryEvent::DeviceFound(key, discovered_device))
                         .await
                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
-                current_serials.push(serial_number);
+                current_keys.push(serial_number);
             }
 
             // Lost devices
-            for serial in previous_serials {
-                if !current_serials.contains(&serial) {
+            for key in previous_keys {
+                if !current_keys.contains(&key) {
                     gui_sender
-                        .send(DiscoveryEvent::DeviceLost(serial.clone()))
+                        .send(DiscoveryEvent::DeviceLost(key.clone()))
                         .await
                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
             }
 
-            previous_serials = current_serials;
+            previous_keys = current_keys;
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
     })
@@ -147,20 +145,19 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                             ssid_spec: None,
                             hardware_connection: HardwareConnection::Tcp(IpAddr::V4(*ip), port),
                         };
+                        let key = format!("{serial_number}/TCP");
 
                         gui_sender
-                            .send(DiscoveryEvent::DeviceFound(
-                                serial_number.to_string(),
-                                discovered_device.clone(),
-                            ))
+                            .send(DiscoveryEvent::DeviceFound(key, discovered_device.clone()))
                             .await
                             .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }
                 }
                 ServiceEvent::ServiceRemoved(_service_type, fullname) => {
                     if let Some((serial_number, _)) = fullname.split_once(".") {
+                        let key = format!("{serial_number}/TCP");
                         gui_sender
-                            .send(DiscoveryEvent::DeviceLost(serial_number.to_string()))
+                            .send(DiscoveryEvent::DeviceLost(key))
                             .await
                             .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }

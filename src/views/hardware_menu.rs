@@ -37,9 +37,9 @@ fn devices_submenu<'a>(
 
     #[allow(unused_variables)]
     for (
-        serial_number,
+        key,
         DiscoveredDevice {
-            discovery_method: method,
+            discovery_method,
             hardware_details,
             ssid_spec,
             hardware_connection,
@@ -47,10 +47,7 @@ fn devices_submenu<'a>(
     ) in discovered_devices
     {
         let device_button: Button<Message> = button(row!(
-            text(format!(
-                "{} ({}) {}",
-                hardware_details.model, serial_number, method
-            )),
+            text(format!("{} ({})", hardware_details.model, key)),
             horizontal_space(),
             text(" >").align_y(alignment::Vertical::Center),
         ))
@@ -85,16 +82,19 @@ fn devices_submenu<'a>(
         if !matches!(hardware_connection, NoConnection) {
             // disable connect to option if already connected to it
             let connect = if current_connection != hardware_connection {
-                button("Connect to Device")
-                    .on_press(Message::ConnectRequest(hardware_connection.clone()))
-                    .width(Length::Fill)
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    })
+                button(text(format!(
+                    "Connect via {}",
+                    hardware_connection.to_string()
+                )))
+                .on_press(Message::ConnectRequest(hardware_connection.clone()))
+                .width(Length::Fill)
+                .style(|_, status| {
+                    if status == Hovered {
+                        MENU_BUTTON_HOVER_STYLE
+                    } else {
+                        MENU_BUTTON_STYLE
+                    }
+                })
             } else {
                 button("Connected to Device")
                     .width(Length::Fill)
@@ -111,7 +111,7 @@ fn devices_submenu<'a>(
 
         #[cfg(feature = "usb")]
         if hardware_details.wifi {
-            if matches!(method, USBRaw) {
+            if matches!(discovery_method, USBRaw) {
                 #[allow(unused_mut)]
                 menu_items.push(Item::new(
                     button("Configure Device Wi-Fi...")
@@ -130,7 +130,7 @@ fn devices_submenu<'a>(
                 ));
             }
 
-            if matches!(method, USBRaw) {
+            if matches!(discovery_method, USBRaw) {
                 menu_items.push(Item::new(
                     button("Reset Device Wi-Fi to Default")
                         .width(Length::Fill)

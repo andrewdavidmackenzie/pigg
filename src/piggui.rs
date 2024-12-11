@@ -414,20 +414,20 @@ impl Piggui {
     /// Process [DiscoveryEvent] messages related to discovery/loss of devices
     fn discovery_event(&mut self, event: DiscoveryEvent) {
         match event {
-            DiscoveryEvent::DeviceFound(serial_number, discovered_device) => {
+            DiscoveryEvent::DeviceFound(key, discovered_device) => {
                 let method = discovered_device.discovery_method.clone();
                 if self
                     .discovered_devices
-                    .insert(serial_number, discovered_device)
+                    .insert(key, discovered_device)
                     .is_none()
                 {
                     println!("Device Found {method}");
                     self.info_row
-                        .add_info_message(Info(format!("Device Found {method}")));
+                        .add_info_message(Info(format!("Device Found on {method}")));
                 }
             }
-            DiscoveryEvent::DeviceLost(serial_number) => {
-                if self.discovered_devices.remove(&serial_number).is_some() {
+            DiscoveryEvent::DeviceLost(key) => {
+                if self.discovered_devices.remove(&key).is_some() {
                     self.info_row
                         .add_info_message(Info("Device Lost".to_string()));
                 }

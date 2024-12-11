@@ -83,6 +83,21 @@ impl Display for HardwareConnection {
     }
 }
 
+impl HardwareConnection {
+    pub fn to_string(&self) -> String {
+        match self {
+            NoConnection => "No Connection",
+            #[cfg(not(target_arch = "wasm32"))]
+            Local => "Local",
+            #[cfg(feature = "iroh")]
+            Iroh(_, _) => "Iroh",
+            #[cfg(feature = "tcp")]
+            Tcp(_, _) => "TCP",
+        }
+        .to_string()
+    }
+}
+
 pub struct HardwareView {
     hardware_connection: HardwareConnection,
     hardware_config: HardwareConfig,
