@@ -82,19 +82,16 @@ fn devices_submenu<'a>(
         if !matches!(hardware_connection, NoConnection) {
             // disable connect to option if already connected to it
             let connect = if current_connection != hardware_connection {
-                button(text(format!(
-                    "Connect via {}",
-                    hardware_connection.to_string()
-                )))
-                .on_press(Message::ConnectRequest(hardware_connection.clone()))
-                .width(Length::Fill)
-                .style(|_, status| {
-                    if status == Hovered {
-                        MENU_BUTTON_HOVER_STYLE
-                    } else {
-                        MENU_BUTTON_STYLE
-                    }
-                })
+                button(text(format!("Connect via {}", hardware_connection.name())))
+                    .on_press(Message::ConnectRequest(hardware_connection.clone()))
+                    .width(Length::Fill)
+                    .style(|_, status| {
+                        if status == Hovered {
+                            MENU_BUTTON_HOVER_STYLE
+                        } else {
+                            MENU_BUTTON_STYLE
+                        }
+                    })
             } else {
                 button("Connected to Device")
                     .width(Length::Fill)

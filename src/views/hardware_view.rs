@@ -84,7 +84,7 @@ impl Display for HardwareConnection {
 }
 
 impl HardwareConnection {
-    pub fn to_string(&self) -> String {
+    pub fn name(&self) -> String {
         match self {
             NoConnection => "No Connection",
             #[cfg(not(target_arch = "wasm32"))]
