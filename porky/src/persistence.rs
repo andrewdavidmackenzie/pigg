@@ -120,7 +120,7 @@ pub async fn get_ssid_spec<'a>(
     buf: &'a mut [u8],
 ) -> Option<SsidSpec> {
     let rtx = db.read_transaction().await;
-    let spec = match rtx.read(SSID_SPEC_KEY, buf).await {
+    match rtx.read(SSID_SPEC_KEY, buf).await {
         Ok(size) => match postcard::from_bytes::<SsidSpec>(&buf[..size]) {
             Ok(spec) => Some(spec),
             Err(_) => {
@@ -136,14 +136,7 @@ pub async fn get_ssid_spec<'a>(
             info!("Error reading SsidSpec from Flash database, trying default");
             ssid::get_default_ssid_spec()
         }
-    };
-
-    match &spec {
-        None => info!("No SsidSpec used"),
-        Some(s) => info!("SsidSpec used for SSID: {}", s.ssid_name),
     }
-
-    spec
 }
 
 #[cfg(feature = "wifi")]

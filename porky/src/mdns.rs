@@ -1,9 +1,11 @@
 use crate::wifi;
 use core::net::{Ipv4Addr, Ipv6Addr};
+use defmt::info;
 use edge_mdns::buf::VecBufAccess;
 use edge_mdns::domain::base::Ttl;
 use edge_mdns::host::{Service, ServiceAnswers};
-use edge_mdns::io::{self, DEFAULT_SOCKET};
+use edge_mdns::io;
+use edge_mdns::io::IPV4_DEFAULT_SOCKET;
 use edge_mdns::{host::Host, HostAnswersMdnsHandler};
 use edge_nal::UdpSplit;
 use edge_nal_embassy::{Udp, UdpBuffers};
@@ -24,9 +26,10 @@ pub async fn mdns_responder(
     service: &'static str,
     protocol: &'static str,
 ) {
-    let udp_buffers: UdpBuffers<{ wifi::STACK_RESOURCES_N }, 1500, 1500, 2> = UdpBuffers::new();
+    let udp_buffers: UdpBuffers<{ wifi::STACK_RESOURCES_SOCKET_COUNT }, 1500, 1500, 2> =
+        UdpBuffers::new();
     let udp = Udp::new(stack, &udp_buffers);
-    let mut socket = io::bind(&udp, DEFAULT_SOCKET, Some(Ipv4Addr::UNSPECIFIED), None)
+    let mut socket = io::bind(&udp, IPV4_DEFAULT_SOCKET, Some(Ipv4Addr::UNSPECIFIED), None)
         .await
         .unwrap();
 
@@ -60,7 +63,7 @@ pub async fn mdns_responder(
 
     // The service we will be announcing over mDNS
     let service = Service {
-        name: "Pigg",
+        name: serial_number,
         priority: 1,
         weight: 5,
         service,
@@ -69,6 +72,8 @@ pub async fn mdns_responder(
         service_subtypes: &[],
         txt_kvs: &[("Serial", serial_number), ("Model", model)],
     };
+
+    info!("Starting mDNS responder");
 
     let _ = mdns
         .run(HostAnswersMdnsHandler::new(ServiceAnswers::new(
