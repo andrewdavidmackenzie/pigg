@@ -79,6 +79,8 @@ pub enum Message {
     MenuBarButtonClicked,
     #[cfg(feature = "discovery")]
     Discovery(DiscoveryEvent),
+    #[cfg(feature = "discovery")]
+    Mdnsdiscovery(DiscoveryEvent),
     #[cfg(feature = "usb")]
     SsidDialog(SsidDialogMessage),
     #[cfg(feature = "usb")]
@@ -295,6 +297,9 @@ impl Piggui {
             #[cfg(feature = "discovery")]
             Discovery(event) => self.discovery_event(event),
 
+            #[cfg(feature = "discovery")]
+            Mdnsdiscovery(event) => self.discovery_event(event),
+
             #[cfg(feature = "usb")]
             SsidDialog(ssid_dialog_message) => {
                 return self.ssid_dialog.update(ssid_dialog_message);
@@ -395,7 +400,7 @@ impl Piggui {
         ];
 
         #[cfg(all(feature = "discovery", feature = "tcp"))]
-        subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
+        subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Mdnsdiscovery));
 
         #[cfg(all(feature = "discovery", any(feature = "iroh", feature = "usb")))]
         subscriptions.push(Subscription::run(discovery::iroh_and_usb_discovery).map(Discovery));
