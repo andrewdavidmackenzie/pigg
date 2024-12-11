@@ -58,7 +58,7 @@ pub async fn mdns_responder(
         hostname: "host1",
         ipv4,
         ipv6: Ipv6Addr::UNSPECIFIED,
-        ttl: Ttl::from_secs(60),
+        ttl: Ttl::CAP,
     };
 
     // The service we will be announcing over mDNS
@@ -80,4 +80,6 @@ pub async fn mdns_responder(
             &host, &service,
         )))
         .await;
+
+    info!("Exiting mDNS responder");
 }
