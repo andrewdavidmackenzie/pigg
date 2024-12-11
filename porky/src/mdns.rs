@@ -70,7 +70,12 @@ pub async fn mdns_responder(
         protocol,
         port,
         service_subtypes: &[],
-        txt_kvs: &[("Serial", serial_number), ("Model", model)],
+        txt_kvs: &[
+            ("Serial", serial_number),
+            ("Model", model),
+            ("AppName", env!("CARGO_BIN_NAME")),
+            ("AppVersion", env!("CARGO_PKG_VERSION")),
+        ],
     };
 
     info!("Starting mDNS responder");

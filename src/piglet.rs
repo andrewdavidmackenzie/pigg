@@ -418,7 +418,12 @@ fn register_mdns(
     let service_hostname = format!("{}.local.", hostname);
 
     // The key string in TXT properties is case-insensitive.
-    let properties = [("Serial", serial_number), ("Model", model_name)];
+    let properties = [
+        ("Serial", serial_number),
+        ("Model", model_name),
+        ("AppName", env!("CARGO_BIN_NAME")),
+        ("AppVersion", env!("CARGO_PKG_VERSION")),
+    ];
 
     // Register a service.
     let service_info = ServiceInfo::new(

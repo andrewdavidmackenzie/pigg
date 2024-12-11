@@ -1,7 +1,5 @@
 #[cfg(feature = "tcp")]
 use crate::discovery::DiscoveryMethod::Mdns;
-#[cfg(feature = "tcp")] // TODO remove
-use crate::hw;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SsidSpec};
@@ -136,12 +134,25 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                 ServiceEvent::ServiceResolved(info) => {
                     let device_properties = info.get_properties();
                     let serial_number = device_properties.get_property_val_str("Serial").unwrap();
-                    let _model = device_properties.get_property_val_str("Model").unwrap();
+                    let model = device_properties.get_property_val_str("Model").unwrap();
+                    let app_name = device_properties.get_property_val_str("AppName").unwrap();
+                    let app_version = device_properties
+                        .get_property_val_str("AppVersion")
+                        .unwrap();
+
                     if let Some(ip) = info.get_addresses_v4().drain().next() {
                         let port = info.get_port();
                         let discovered_device = DiscoveredDevice {
                             discovery_method: Mdns,
-                            hardware_details: hw::driver::get().description().unwrap().details, // TODO show the real hardware description
+                            hardware_details: HardwareDetails {
+                                model: model.to_string(),
+                                hardware: "".to_string(),
+                                revision: "".to_string(),
+                                serial: serial_number.to_string(),
+                                wifi: true,
+                                app_name: app_name.to_string(),
+                                app_version: app_version.to_string(),
+                            },
                             ssid_spec: None,
                             hardware_connection: HardwareConnection::Tcp(IpAddr::V4(*ip), port),
                         };
