@@ -63,12 +63,18 @@ fn devices_submenu<'a>(
         #[allow(unused_mut)]
         let mut menu_items: Vec<Item<Message, Theme, Renderer>> = vec![];
 
+        // disable connect to option if already connected to it
+        let connect_option = if current_connection != hardware_connection {
+            hardware_connection.clone()
+        } else {
+            NoConnection
+        };
         menu_items.push(Item::new(
             button("Display Device Details...")
                 .width(Length::Fill)
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_details.clone(),
-                    hardware_connection.clone(),
+                    connect_option,
                 )))
                 .style(|_, status| {
                     if status == Hovered {
