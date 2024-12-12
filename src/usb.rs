@@ -3,13 +3,16 @@ use crate::discovery::DiscoveredDevice;
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "discovery")]
+use crate::hw_definition::description::HardwareDetails;
+#[cfg(feature = "discovery")]
 use crate::hw_definition::description::WiFiDetails;
-use crate::hw_definition::description::{HardwareDescription, HardwareDetails, SsidSpec};
+use crate::hw_definition::description::{HardwareDescription, SsidSpec};
+#[cfg(feature = "discovery")]
+use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 #[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE,
-    SET_SSID_VALUE,
+    GET_HARDWARE_DESCRIPTION_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
@@ -31,6 +34,7 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     length: 1000,
 };
 
+#[cfg(feature = "discovery")]
 /// [ControlIn] "command" to request the [HardwareDetails]
 const GET_HARDWARE_DETAILS: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
@@ -157,6 +161,7 @@ pub async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescr
     usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
 }
 
+#[cfg(feature = "discovery")]
 /// Request [HardwareDetails] from compatible porky device over USB
 pub async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, String> {
     usb_get_porky(porky, GET_HARDWARE_DETAILS).await

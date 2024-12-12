@@ -1,5 +1,6 @@
 #[cfg(feature = "tcp")]
 use crate::discovery::DiscoveryMethod::Mdns;
+#[cfg(feature = "iroh")]
 use crate::host_net;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
@@ -36,6 +37,8 @@ pub enum DiscoveryMethod {
     IrohLocalSwarm,
     #[cfg(feature = "tcp")]
     Mdns,
+    #[cfg(not(any(feature = "usb", feature = "iroh", feature = "tcp")))]
+    NoDiscovery,
 }
 
 impl Display for DiscoveryMethod {
@@ -46,9 +49,9 @@ impl Display for DiscoveryMethod {
             #[cfg(feature = "iroh")]
             DiscoveryMethod::IrohLocalSwarm => f.write_str("Iroh network"),
             #[cfg(feature = "tcp")]
-            Mdns => f.write_str("TCP"),
+            DiscoveryMethod::Mdns => f.write_str("TCP"),
             #[cfg(not(any(feature = "usb", feature = "iroh", feature = "tcp")))]
-            _ => f.write_str(""),
+            DiscoveryMethod::NoDiscovery => f.write_str(""),
         }
     }
 }

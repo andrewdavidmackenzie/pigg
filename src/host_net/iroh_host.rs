@@ -12,11 +12,17 @@ use iroh_net::{
 };
 use std::io;
 
+#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
+#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
+#[cfg(feature = "discovery")]
 use crate::hw;
+#[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
+#[cfg(feature = "discovery")]
 use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
+#[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
 /// Wait until we receive a message from remote hardware
