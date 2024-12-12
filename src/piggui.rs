@@ -45,8 +45,6 @@ mod hardware_subscription;
 mod host_net;
 mod hw;
 mod hw_definition;
-#[cfg(all(feature = "discovery", feature = "iroh"))]
-mod iroh_discovery;
 pub mod local_device;
 mod net;
 #[cfg(feature = "usb")]

@@ -12,6 +12,13 @@ use iroh_net::{
 };
 use std::io;
 
+use crate::discovery::DiscoveredDevice;
+use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
+use crate::hw;
+use crate::views::hardware_view::HardwareConnection;
+use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
+use std::collections::HashMap;
+
 /// Wait until we receive a message from remote hardware
 pub async fn wait_for_remote_message(
     connection: &mut Connection,
@@ -86,4 +93,48 @@ pub async fn connect(
     let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&message)?;
 
     Ok((reply.0, reply.1, connection))
+}
+
+#[cfg(feature = "discovery")]
+/// Create an iroh-net [Endpoint] for use in discovery
+pub async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
+    let key = SecretKey::generate();
+    let id = key.public();
+
+    Endpoint::builder()
+        .secret_key(key)
+        .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
+        .bind()
+        .await
+}
+
+#[cfg(feature = "discovery")]
+/// Try and find devices visible over iroh net
+pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevice> {
+    let mut map = HashMap::<String, DiscoveredDevice>::new();
+
+    // get an iterator of all the remote nodes this endpoint knows about
+    let remotes = endpoint.remote_info_iter();
+    for remote in remotes {
+        let trunc = remote
+            .node_id
+            .to_string()
+            .chars()
+            .take(16)
+            .collect::<String>();
+        map.insert(
+            trunc, // TODO substitute for real serial_number when Iroh discovery supports it
+            DiscoveredDevice {
+                discovery_method: IrohLocalSwarm,
+                hardware_details: hw::driver::get().description().unwrap().details, // TODO show the real hardware description when Iroh discovery supports it
+                ssid_spec: None,
+                hardware_connection: HardwareConnection::Iroh(
+                    remote.node_id,
+                    remote.relay_url.map(|ri| ri.relay_url),
+                ),
+            },
+        );
+    }
+
+    map
 }

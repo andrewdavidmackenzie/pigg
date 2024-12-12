@@ -1,10 +1,9 @@
 #[cfg(feature = "tcp")]
 use crate::discovery::DiscoveryMethod::Mdns;
+use crate::host_net;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SsidSpec};
-#[cfg(feature = "iroh")]
-use crate::iroh_discovery;
 #[cfg(feature = "usb")]
 use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
@@ -78,7 +77,7 @@ pub enum DiscoveryEvent {
 pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         #[cfg(feature = "iroh")]
-        let endpoint = iroh_discovery::iroh_endpoint().await.unwrap();
+        let endpoint = host_net::iroh_host::iroh_endpoint().await.unwrap();
 
         let mut previous_keys: Vec<String> = vec![];
 
@@ -90,7 +89,7 @@ pub fn iroh_and_usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             #[cfg(feature = "usb")]
             current_devices.extend(usb::find_porkys().await);
             #[cfg(feature = "iroh")]
-            current_devices.extend(iroh_discovery::find_piglets(&endpoint).await);
+            current_devices.extend(host_net::iroh_host::find_piglets(&endpoint).await);
 
             // New devices
             for (serial_number, discovered_device) in current_devices {
