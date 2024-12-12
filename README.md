@@ -1,6 +1,9 @@
 ![GH Action](https://github.com/andrewdavidmackenzie/pigg/actions/workflows/build_and_test.yml/badge.svg)
 [![codecov](https://codecov.io/gh/andrewdavidmackenzie/pigg/graph/badge.svg?token=Lv5SstEMGO)](https://codecov.io/gh/andrewdavidmackenzie/pigg)
 
+<a href="https://repology.org/project/pigg-x86-64-unknown-linux-gnu/versions">
+<img src="https://repology.org/badge/vertical-allrepos/pigg-x86-64-unknown-linux-gnu.svg" alt="Packaging status">
+</a>
 <a href="https://www.drips.network/app/projects/github/andrewdavidmackenzie/pigg" target="_blank"><img src="https://www.drips.network/api/embed/project/https%3A%2F%2Fgithub.com%2Fandrewdavidmackenzie%2Fpigg/support.png?background=blue&style=drips&text=project&stat=dependencies" alt="Support pigg on drips.network" height="32"></a>
 
 # pigg - Raspberry Pi GPIO GUI
@@ -132,6 +135,36 @@ add support for Pico, Pico 2 and Pico 2 W soon) for remote interaction with the 
 connected to remotely over TCP, just like to a `piglet` running on a Pi.
 
 For more details see [porky's README.md](porky/README.md)
+
+## Supported Hardware and Operating Systems
+
+`pigg` has a number of binaries as part of the project (see descriptions above) and they are tested in CI, or
+manually or are known to work as follows:
+
+| Application | Arch Supported | Device    | OS Supported       |
+|-------------|----------------|-----------|--------------------|
+| piggui      | Apple Silicon  |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | Ubuntu 24.04       |
+|             | x86_64         |           | Windows 10         |
+|             | aarch64        | Pi400     | Pi OS              | 
+|             | aarch64        | Pi4       | Pi OS              | 
+|             | aarch64        | Pi5       | Pi OS              | 
+|             | aarch64        | PiZero 2  | Pi OS              | 
+|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS |
+| piglet      | Apple Silicon  |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | macOS 15           |
+|             | x86_64         |           | Ubuntu 24.04       |
+|             | x86_64         |           | Windows 10         |
+|             | aarch64        | Pi400     | Pi OS              | 
+|             | aarch64        | Pi4       | Pi OS              | 
+|             | aarch64        | Pi5       | Pi OS              | 
+|             | aarch64        | PiZero 2  | Pi OS              | 
+|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS |
+| porky_w     | armv7          | Pi Pico W |                    |
+| porky       | armv7          | Pi Pico   | Work in progress   |
 
 ## Input from Raspberry Pi users wanted
 
