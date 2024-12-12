@@ -1,4 +1,4 @@
-use crate::hw_definition::config::HardwareConfigMessage;
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 use defmt::info;
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
@@ -33,14 +33,23 @@ async fn accept(mut wifi_socket: TcpSocket<'_>) -> Result<TcpSocket<'_>, AcceptE
     Ok(socket)
 }
 
-/// Send the [HardwareDescription] over the [TcpSocket]
-pub async fn send_hardware_description(
+/// Send the [HardwareDescription] and [HardwareConfig] over the [TcpSocket]
+pub async fn send_hardware_description_and_config(
     socket: &mut TcpSocket<'_>,
     hw_desc: &HardwareDescription<'_>,
+    hw_config: &HardwareConfig,
 ) {
-    let mut hw_buf = [0; 1024];
-    let slice = postcard::to_slice(hw_desc, &mut hw_buf).unwrap();
+    let mut hw_buf = [0; 2048];
+    let slice = postcard::to_slice(&(hw_desc, hw_config), &mut hw_buf).unwrap();
     info!("Sending hardware description (length: {})", slice.len());
+    socket.write_all(slice).await.unwrap()
+}
+
+/// Send the [HardwareConfig] over the [TcpSocket]
+pub async fn send_hardware_config(socket: &mut TcpSocket<'_>, hw_config: &HardwareConfig) {
+    let mut hw_buf = [0; 1024];
+    let slice = postcard::to_slice(hw_config, &mut hw_buf).unwrap();
+    info!("Sending hardware config (length: {})", slice.len());
     socket.write_all(slice).await.unwrap()
 }
 

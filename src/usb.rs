@@ -17,6 +17,8 @@ use nusb::Interface;
 use serde::Deserialize;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
+#[cfg(all(feature = "discovery", feature = "tcp"))]
+use std::net::IpAddr;
 
 /// [ControlIn] "command" to request the HardwareDescription
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
@@ -74,7 +76,7 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                     let tcp = wifi_details.and_then(|wf| wf.tcp);
                     let connection = match tcp {
                         #[cfg(feature = "tcp")]
-                        Some(tcp) => HardwareConnection::Tcp(tcp.0, tcp.1),
+                        Some(tcp) => HardwareConnection::Tcp(IpAddr::from(tcp.0), tcp.1),
                         _ => HardwareConnection::NoConnection,
                     };
                     map.insert(

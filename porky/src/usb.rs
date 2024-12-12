@@ -1,13 +1,12 @@
-use crate::flash;
 use crate::flash::DbFlash;
+use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
-use crate::hw_definition::usb_values::{GET_HARDWARE_VALUE, PIGGUI_REQUEST};
+use crate::hw_definition::usb_values::{GET_CONFIG_VALUE, GET_HARDWARE_VALUE, PIGGUI_REQUEST};
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
-#[cfg(feature = "wifi")]
-use crate::{get_ssid_spec, SSID_SPEC_KEY};
+use crate::{flash, persistence};
 use core::str;
 use defmt::{error, info, unwrap};
 use ekv::Database;
@@ -76,35 +75,14 @@ fn get_usb_builder(
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
+    hardware_config: HardwareConfig,
     tcp: Option<([u8; 4], u16)>,
-    db: Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    db: &'h Database<DbFlash<Flash<'h, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     buf: [u8; 1024],
     watchdog: Watchdog,
 }
 
-impl<'h> ControlHandler<'h> {
-    #[cfg(feature = "wifi")]
-    /// Write the [SsidSpec] to the flash database
-    async fn store_ssid_spec(&mut self, ssid_spec: SsidSpec) -> Result<(), &'static str> {
-        let mut wtx = self.db.write_transaction().await;
-        let bytes =
-            postcard::to_slice(&ssid_spec, &mut self.buf).map_err(|_| "Deserialization error")?;
-        wtx.write(SSID_SPEC_KEY, bytes)
-            .await
-            .map_err(|_| "Write error")?;
-        wtx.commit().await.map_err(|_| "Commit error")
-    }
-
-    #[cfg(feature = "wifi")]
-    /// Delete the [SsidSpec] from the flash database
-    async fn delete_ssid_spec(&mut self) -> Result<(), &'static str> {
-        let mut wtx = self.db.write_transaction().await;
-        wtx.delete(SSID_SPEC_KEY)
-            .await
-            .map_err(|_| "Delete error")?;
-        wtx.commit().await.map_err(|_| "Commit error")
-    }
-}
+impl<'h> ControlHandler<'h> {}
 
 impl<'h> Handler for ControlHandler<'h> {
     #[allow(unused_variables)] // TODO for now as not used in non-wifi yet
@@ -124,7 +102,7 @@ impl<'h> Handler for ControlHandler<'h> {
         match (req.request, req.value) {
             #[cfg(feature = "wifi")]
             (PIGGUI_REQUEST, SET_SSID_VALUE) => match postcard::from_bytes::<SsidSpec>(buf) {
-                Ok(spec) => match block_on(self.store_ssid_spec(spec)) {
+                Ok(spec) => match block_on(persistence::store_ssid_spec(self.db, spec)) {
                     Ok(_) => {
                         info!("SsidSpec for SSID: stored to Flash Database, restarting in 1sec",);
                         self.watchdog.start(Duration::from_millis(1_000));
@@ -141,18 +119,20 @@ impl<'h> Handler for ControlHandler<'h> {
                 }
             },
             #[cfg(feature = "wifi")]
-            (PIGGUI_REQUEST, RESET_SSID_VALUE) => match block_on(self.delete_ssid_spec()) {
-                Ok(_) => {
-                    info!("SsidSpec deleted from Flash Database");
-                    info!("Restarting in 1sec");
-                    self.watchdog.start(Duration::from_millis(1_000));
-                    Some(OutResponse::Accepted)
+            (PIGGUI_REQUEST, RESET_SSID_VALUE) => {
+                match block_on(persistence::delete_ssid_spec(self.db)) {
+                    Ok(_) => {
+                        info!("SsidSpec deleted from Flash Database");
+                        info!("Restarting in 1sec");
+                        self.watchdog.start(Duration::from_millis(1_000));
+                        Some(OutResponse::Accepted)
+                    }
+                    Err(e) => {
+                        error!("Error ({}) deleting SsidSpec from Flash Database", e);
+                        Some(OutResponse::Rejected)
+                    }
                 }
-                Err(e) => {
-                    error!("Error ({}) deleting SsidSpec from Flash Database", e);
-                    Some(OutResponse::Rejected)
-                }
-            },
+            }
             (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -184,13 +164,18 @@ impl<'h> Handler for ControlHandler<'h> {
             (PIGGUI_REQUEST, GET_WIFI_VALUE) => unsafe {
                 static mut STATIC_BUF: [u8; 200] = [0u8; 200];
                 #[allow(static_mut_refs)]
-                let ssid_spec = block_on(get_ssid_spec(&self.db, &mut STATIC_BUF));
+                let ssid_spec = block_on(persistence::get_ssid_spec(&self.db, &mut STATIC_BUF));
                 let wifi = WiFiDetails {
                     ssid_spec,
                     tcp: self.tcp,
                 };
                 postcard::to_slice(&wifi, &mut self.buf).ok()?
             },
+            (PIGGUI_REQUEST, GET_CONFIG_VALUE) => {
+                // TODO not updated with changes :-(
+                postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?
+            }
+
             _ => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -208,8 +193,12 @@ pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
+    hardware_config: HardwareConfig,
     tcp: Option<([u8; 4], u16)>,
-    db: Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+    db: &'static Database<
+        DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
+        NoopRawMutex,
+    >,
     watchdog: Watchdog,
 ) {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
@@ -228,9 +217,10 @@ pub async fn start(
     ));
 
     static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
-    let handle = HANDLER.init(ControlHandler {
+    let handler = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
+        hardware_config,
         tcp,
         db,
         buf: [0; 1024],
@@ -242,13 +232,13 @@ pub async fn start(
     let mut function = builder.function(0xFF, 0, 0);
     let mut interface = function.interface();
     let _alt = interface.alt_setting(0xFF, 0, 0, None);
-    handle.if_num = interface.interface_number();
+    handler.if_num = interface.interface_number();
     drop(function);
-    builder.handler(handle);
+    builder.handler(handler);
 
     // Build the builder.
     let usb = builder.build();
 
     info!("USB raw interface started");
-    unwrap!(spawner.spawn(usb_task(usb)))
+    unwrap!(spawner.spawn(usb_task(usb)));
 }

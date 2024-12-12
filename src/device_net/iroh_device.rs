@@ -1,4 +1,3 @@
-use super::PIGLET_ALPN;
 use crate::hw::driver::HW;
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage::{
@@ -6,7 +5,10 @@ use crate::hw_definition::config::HardwareConfigMessage::{
 };
 use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
 use crate::hw_definition::description::HardwareDescription;
+use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
+use crate::net::PIGLET_ALPN;
+use crate::persistence;
 use anyhow::{bail, Context};
 use futures::StreamExt;
 #[cfg(feature = "discovery")]
@@ -16,18 +18,14 @@ use iroh_net::key::SecretKey;
 use iroh_net::relay::{RelayMode, RelayUrl};
 use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::path::Path;
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize)]
-pub(crate) struct IrohDevice {
+pub struct IrohDevice {
     pub nodeid: NodeId,
-    pub local_addrs: String,
     pub relay_url: RelayUrl,
-    pub alpn: String,
-    #[serde(skip)]
     pub endpoint: Option<Endpoint>,
 }
 
@@ -90,9 +88,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
 
     Ok(IrohDevice {
         nodeid,
-        local_addrs,
         relay_url,
-        alpn: String::from_utf8_lossy(PIGLET_ALPN).parse()?,
         endpoint: Some(endpoint),
     })
 }
@@ -101,6 +97,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
 pub async fn accept_connection(
     endpoint: &Endpoint,
     desc: &HardwareDescription,
+    hardware_config: HardwareConfig,
 ) -> anyhow::Result<Connection> {
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
@@ -109,7 +106,7 @@ pub async fn accept_connection(
         debug!("New connection from nodeid: '{node_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
-        let message = postcard::to_allocvec(&desc)?;
+        let message = postcard::to_allocvec(&(&desc, hardware_config))?;
         gui_sender.write_all(&message).await?;
         gui_sender.finish()?;
         Ok(connection)
@@ -119,7 +116,12 @@ pub async fn accept_connection(
 }
 
 /// Process incoming config change messages from the GUI. On end of stream exit the loop
-pub async fn iroh_message_loop(connection: Connection, hardware: &mut HW) -> anyhow::Result<()> {
+pub async fn iroh_message_loop(
+    connection: Connection,
+    hardware_config: &mut HardwareConfig,
+    exec_path: &Path,
+    hardware: &mut HW,
+) -> anyhow::Result<()> {
     loop {
         let mut config_receiver = connection.accept_uni().await?;
         info!("Waiting for message");
@@ -130,7 +132,15 @@ pub async fn iroh_message_loop(connection: Connection, hardware: &mut HW) -> any
         }
 
         let config_message = postcard::from_bytes(&payload)?;
-        apply_config_change(hardware, config_message, connection.clone()).await?;
+        apply_config_change(
+            hardware,
+            config_message,
+            hardware_config,
+            connection.clone(),
+        )
+        .await
+        .with_context(|| "Failed to apply config change to hardware")?;
+        let _ = persistence::store_config(hardware_config, exec_path).await;
     }
 }
 
@@ -141,6 +151,7 @@ pub async fn iroh_message_loop(connection: Connection, hardware: &mut HW) -> any
 async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
+    hardware_config: &mut HardwareConfig,
     connection: Connection,
 ) -> anyhow::Result<()> {
     match config_change {
@@ -154,6 +165,8 @@ async fn apply_config_change(
                 .await?;
 
             send_current_input_states(cc, &config, hardware).await?;
+            // replace the entire config with the new one
+            *hardware_config = config;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function}");
@@ -165,10 +178,19 @@ async fn apply_config_change(
                 .await?;
 
             send_current_input_state(&bcm, &pin_function, cc, hardware).await?;
+            // add/replace the new pin config to the hardware config
+            hardware_config.pin_functions.insert(bcm, pin_function);
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");
             hardware.set_output_level(bcm, level_change.new_level)?;
+            // add/replace the new pin config to the hardware config
+            hardware_config
+                .pin_functions
+                .insert(bcm, Output(Some(level_change.new_level)));
+        }
+        HardwareConfigMessage::GetConfig => {
+            send_hardware_config(connection, hardware_config).await?
         }
     }
 
@@ -208,6 +230,15 @@ async fn send_current_input_state(
     }
 
     Ok(())
+}
+
+/// Send [HardwareConfig] over the [Connection]
+async fn send_hardware_config(
+    connection: Connection,
+    hardware_config: &HardwareConfig,
+) -> anyhow::Result<()> {
+    let message = postcard::to_allocvec(hardware_config)?;
+    send(connection, &message).await
 }
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],

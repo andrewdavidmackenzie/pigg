@@ -48,20 +48,18 @@ nusb = { version = "0.1.12", default-features = false, optional = true }
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
-serde = { version = "1.0.215", default-features = false, features = ["derive"] }
-serde_arrays = { version = "0.1.0", default-features = false }
+serde = { version = "1.0.216", default-features = false, features = ["derive"] }
 
 # for config serialization to/from file
 serde_json = { version = "1.0.133", default-features = false, features = ["std"] }
 # for alloc/no_alloc over the wire serialization/deserialization
-postcard = { version = "1.1.0", features = ["alloc"] }
-heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
+postcard = { version = "1.1.1", features = ["alloc"] }
 
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
-tracing-subscriber = { version = "0.3.18", default-features = false, features = ["fmt", "env-filter"] }
+tracing-subscriber = { version = "0.3.19", default-features = false, features = ["fmt", "env-filter"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
-tokio = { version = "1.41", default-features = false, features = ["time", "rt", "macros"] }
+tokio = { version = "1.42", default-features = false, features = ["time", "rt", "macros"] }
 
 # used in piglet only
 log = { version = "0.4.22", default-features = false }
@@ -85,17 +83,17 @@ tempfile = "3"
 serial_test = "3.1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sysinfo = { version = "0.32.0", default-features = false, features = ["system"] }
+sysinfo = { version = "0.33.0", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
 rfd = "0.15.1"
-clap = { version = "4.5.21", default-features = false, features = ["std", "help", "error-context"] }
+clap = { version = "4.5.23", default-features = false, features = ["std", "help", "error-context"] }
 
 # Raspberry Pi specific dependencies
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
 # Use 'tiny-skia' renderer in iced
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
-rppal = "0.19.0"
-libc = "0.2.167"
+rppal = "0.22.1"
+libc = "0.2.168"
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(not(any( all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]

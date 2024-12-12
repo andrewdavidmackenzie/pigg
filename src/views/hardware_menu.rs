@@ -30,6 +30,7 @@ use std::collections::HashMap;
 #[cfg(feature = "discovery")]
 fn devices_submenu<'a>(
     discovered_devices: &HashMap<String, DiscoveredDevice>,
+    current_connection: &HardwareConnection,
 ) -> Item<'a, Message, Theme, Renderer> {
     #[allow(unused_mut)]
     let mut device_items = vec![];
@@ -75,18 +76,30 @@ fn devices_submenu<'a>(
         ));
 
         if !matches!(hardware_connection, NoConnection) {
-            menu_items.push(Item::new(
+            // disable connect to option if already connected to it
+            let connect = if current_connection != hardware_connection {
                 button("Connect to Device")
-                    .width(Length::Fill)
                     .on_press(Message::ConnectRequest(hardware_connection.clone()))
+                    .width(Length::Fill)
                     .style(|_, status| {
                         if status == Hovered {
                             MENU_BUTTON_HOVER_STYLE
                         } else {
                             MENU_BUTTON_STYLE
                         }
-                    }),
-            ));
+                    })
+            } else {
+                button("Connected to Device")
+                    .width(Length::Fill)
+                    .style(|_, status| {
+                        if status == Hovered {
+                            MENU_BUTTON_HOVER_STYLE
+                        } else {
+                            MENU_BUTTON_STYLE
+                        }
+                    })
+            };
+            menu_items.push(Item::new(connect));
         }
 
         #[cfg(feature = "usb")]
@@ -164,7 +177,7 @@ fn devices_submenu<'a>(
                     MENU_BUTTON_STYLE
                 }
             }),
-            Menu::new(device_items).width(280.0).offset(10.0),
+            Menu::new(device_items).width(290.0).offset(10.0),
         )
     }
 }
@@ -275,7 +288,10 @@ pub fn view<'a>(
     }
 
     #[cfg(feature = "discovery")]
-    menu_items.push(devices_submenu(known_devices));
+    menu_items.push(devices_submenu(
+        known_devices,
+        hardware_view.get_hardware_connection(),
+    ));
 
     Item::with_menu(
         button(text(model))

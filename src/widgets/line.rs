@@ -59,7 +59,7 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Line> for Element<'a, Message, Theme, Renderer>
+impl<Message, Theme, Renderer> From<Line> for Element<'_, Message, Theme, Renderer>
 where
     Renderer: renderer::Renderer,
 {

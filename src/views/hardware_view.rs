@@ -84,6 +84,7 @@ impl Display for HardwareConnection {
 }
 
 pub struct HardwareView {
+    hardware_connection: HardwareConnection,
     hardware_config: HardwareConfig,
     subscriber_sender: Option<Sender<SubscriberMessage>>,
     pub hardware_description: Option<HardwareDescription>,
@@ -94,8 +95,10 @@ pub struct HardwareView {
 async fn empty() {}
 
 impl HardwareView {
-    pub fn new() -> Self {
+    #[must_use]
+    pub fn new(hardware_connection: HardwareConnection) -> Self {
         Self {
+            hardware_connection,
             hardware_config: HardwareConfig::default(),
             hardware_description: None, // Until listener is ready
             subscriber_sender: None,    // Until listener is ready
@@ -103,8 +106,16 @@ impl HardwareView {
         }
     }
 
+    /// Get the current [HardwareConfig]
+    #[must_use]
     pub fn get_config(&self) -> HardwareConfig {
         self.hardware_config.clone()
+    }
+
+    /// Get the current [HardwareConnection]
+    #[must_use]
+    pub fn get_hardware_connection(&self) -> &HardwareConnection {
+        &self.hardware_connection
     }
 
     /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
@@ -115,7 +126,7 @@ impl HardwareView {
             .map(|desc| desc.details.model.clone())
     }
 
-    /// Send the GPIOConfig from the GUI to the hardware to have it applied
+    /// Apply the [HardwareConfig] active here to the GPIO hardware
     fn update_hw_config(&mut self) {
         if let Some(ref mut subscriber_sender) = &mut self.subscriber_sender {
             let _ = subscriber_sender.try_send(Hardware(HardwareConfigMessage::NewConfig(
@@ -124,12 +135,16 @@ impl HardwareView {
         }
     }
 
-    /// Send a message to request the subscription to switch connections to a new target
-    pub fn new_target(&mut self, new_target: HardwareConnection) {
+    /// Send a message to request the subscription to switch connections to a new one
+    pub fn new_connection(&mut self, new_connection: HardwareConnection) {
+        self.hardware_connection = new_connection;
         if let Some(ref mut hardware_sender) = &mut self.subscriber_sender {
-            let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(new_target));
+            let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(
+                self.hardware_connection.clone(),
+            ));
         }
     }
+
     /// A new function has been selected for a pin via the UI, this function:
     /// - updates the pin_selected_function array for the UI
     /// - saves it in the gpio_config, so when we save later it's there
@@ -179,7 +194,7 @@ impl HardwareView {
         }
     }
 
-    /// Apply a new config to the connected hardware
+    /// Save the new config in the view, update pin states and apply it to the connected hardware
     pub fn new_config(&mut self, new_config: HardwareConfig) {
         self.hardware_config = new_config;
         self.set_pin_states_after_load();
@@ -205,9 +220,10 @@ impl HardwareView {
             }
 
             HardwareSubscription(event) => match event {
-                HardwareEvent::Connected(config_change_sender, hw_desc) => {
+                HardwareEvent::Connected(config_change_sender, hw_desc, hw_config) => {
                     self.subscriber_sender = Some(config_change_sender);
                     self.hardware_description = Some(hw_desc);
+                    self.hardware_config = hw_config;
                     self.set_pin_states_after_load();
                     self.update_hw_config();
                     return Task::perform(empty(), |_| Message::Connected);
@@ -278,14 +294,10 @@ impl HardwareView {
     }
 
     /// Construct the view that represents the main row of the app
-    pub fn view<'a>(
-        &'a self,
-        layout: Layout,
-        hardware_connection: &'a HardwareConnection,
-    ) -> Element<'a, Message> {
+    pub fn view(&self, layout: Layout) -> Element<Message> {
         let hw_column = Column::new()
             .push(
-                self.hw_view(layout, hardware_connection)
+                self.hw_view(layout, &self.hardware_connection)
                     .map(Message::Hardware),
             )
             .align_x(Center)
@@ -296,21 +308,18 @@ impl HardwareView {
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
-    pub fn subscription(
-        &self,
-        hardware_connection: &HardwareConnection,
-    ) -> Subscription<HardwareViewMessage> {
+    pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
         let mut subscriptions =
             vec![
                 iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                     .map(|_| UpdateCharts),
             ];
 
-        if hardware_connection != &NoConnection {
+        if self.hardware_connection != NoConnection {
             subscriptions.push(
                 Subscription::run_with_id(
                     "hardware",
-                    hardware_subscription::subscribe(hardware_connection),
+                    hardware_subscription::subscribe(&self.hardware_connection),
                 )
                 .map(HardwareSubscription),
             );
@@ -438,18 +447,22 @@ fn get_pin_widget<'a>(
             }
         }
 
-        Some(Output(_)) => {
-            let output_toggler = toggler(pin_state.get_level().unwrap_or(false as PinLevel))
-                .on_toggle(move |b| {
-                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
-                })
-                .width(TOGGLER_WIDTH)
-                .size(TOGGLER_SIZE)
-                .style(move |_theme, status| match status {
-                    Hovered { .. } => TOGGLER_HOVER_STYLE,
-                    _ => TOGGLER_STYLE,
-                });
+        Some(Output(level)) => {
+            let output_toggler = toggler(
+                pin_state
+                    .get_level()
+                    .unwrap_or(level.unwrap_or(false as PinLevel)),
+            )
+            .on_toggle(move |b| {
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
+            })
+            .width(TOGGLER_WIDTH)
+            .size(TOGGLER_SIZE)
+            .style(move |_theme, status| match status {
+                Hovered { .. } => TOGGLER_HOVER_STYLE,
+                _ => TOGGLER_STYLE,
+            });
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(CLICKER_WIDTH, Color::BLACK, Color::WHITE)
@@ -504,7 +517,10 @@ fn get_pin_widget<'a>(
         .into()
 }
 
-// Filter options for PickList
+/// Filter the selected_option out of the list of other selectable options for the PickList
+/// The options returned should be generic as to the sub-options. i.e. pullup/pulldown/none for an
+/// [Input] or true/false for an [Output], as those sub-selections are taken care of by other
+/// widgets
 fn filter_options(
     options: &[PinFunction],
     selected_function: Option<PinFunction>,
@@ -512,18 +528,23 @@ fn filter_options(
     let mut config_options: Vec<_> = options
         .iter()
         .filter(|&&option| match selected_function {
-            Some(Input(Some(_))) => {
-                matches!(option, Output(None) | PinFunction::None)
+            Some(Input(_)) => {
+                matches!(option, Output(_) | PinFunction::None)
             }
-            Some(Output(Some(_))) => {
-                matches!(option, Input(None) | PinFunction::None)
+            Some(Output(_)) => {
+                matches!(option, Input(_) | PinFunction::None)
             }
             Some(selected) => selected != option,
             None => option != PinFunction::None,
         })
-        .cloned()
+        .map(|option| match option {
+            Input(_) => Input(None),
+            Output(_) => Output(None),
+            PinFunction::None => PinFunction::None,
+        })
         .collect();
 
+    // Always ensure there is a [PinFunction::None] option present
     if !config_options.contains(&PinFunction::None)
         && selected_function.is_some()
         && selected_function != Some(PinFunction::None)
@@ -556,11 +577,11 @@ fn create_pin_view_side<'a>(
     if let Some(bcm_pin_number) = pin_description.bcm {
         let mut pin_options_row = Row::new().align_y(Center);
 
-        // Filter options
+        // Filter options to remove currently selected one
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
 
         if !config_options.is_empty() {
-            let selected = pin_function.filter(|&pin_function| *pin_function != PinFunction::None);
+            let selected = pin_function.filter(|&pin_function| pin_function != &PinFunction::None);
 
             let pick_list = pick_list(config_options, selected, move |pin_function| {
                 PinFunctionSelected(bcm_pin_number, pin_function)
@@ -568,7 +589,6 @@ fn create_pin_view_side<'a>(
             .width(Length::Fixed(PIN_OPTION_WIDTH))
             .placeholder("Select function");
 
-            // select a slightly small font on RPi, to make it fit within pick_list
             pin_options_row = pin_options_row.push(pick_list);
         }
 
@@ -634,17 +654,19 @@ fn create_pin_view_side<'a>(
 
 #[cfg(test)]
 mod test {
+    use crate::hw_definition::config::InputPull::{PullDown, PullUp};
+    use crate::views::hardware_view::HardwareConnection::NoConnection;
     use crate::views::hardware_view::HardwareView;
 
     #[test]
     fn no_hardware_description() {
-        let hw_view = HardwareView::new();
+        let hw_view = HardwareView::new(NoConnection);
         assert!(hw_view.hardware_description.is_none());
     }
 
     #[test]
     fn no_hardware_model() {
-        let hw_view = HardwareView::new();
+        let hw_view = HardwareView::new(NoConnection);
         assert_eq!(hw_view.hw_model(), None);
     }
 
@@ -662,12 +684,39 @@ mod test {
         let result = filter_options(&options, Some(Input(None)));
         assert_eq!(result, vec![Output(None), PinFunction::None]);
 
+        // Test case: Input selected
+        let result = filter_options(&options, Some(Input(Some(PullUp))));
+        assert_eq!(result, vec![Output(None), PinFunction::None]);
+
+        // Test case: Input selected
+        let result = filter_options(&options, Some(Input(Some(PullDown))));
+        assert_eq!(result, vec![Output(None), PinFunction::None]);
+
         // Test case: Output selected
         let result = filter_options(&options, Some(Output(None)));
+        assert_eq!(result, vec![Input(None), PinFunction::None]);
+
+        // Test case: Output with value selected
+        let result = filter_options(&options, Some(Output(Some(true))));
+        assert_eq!(result, vec![Input(None), PinFunction::None]);
+
+        // Test case: Output with value selected
+        let result = filter_options(&options, Some(Output(Some(false))));
         assert_eq!(result, vec![Input(None), PinFunction::None]);
 
         // Test case: None selected
         let result = filter_options(&options, Some(PinFunction::None));
         assert_eq!(result, vec![Input(None), Output(None)]);
+    }
+
+    // Test the filter option when the inputs are not generic, but have sub-selections
+    #[test]
+    fn test_other_filter_options() {
+        use super::*;
+
+        let options = vec![Input(Some(PullDown)), Output(None)];
+
+        let result = filter_options(&options, Some(Output(Some(true))));
+        assert_eq!(result, vec![Input(None), PinFunction::None]);
     }
 }

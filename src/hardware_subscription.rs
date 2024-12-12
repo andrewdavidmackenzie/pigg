@@ -1,9 +1,9 @@
 use crate::{hw, local_device};
 use futures::channel::mpsc::Sender;
 
-use crate::hw_definition::config::HardwareConfigMessage;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 
 use crate::event::HardwareEvent;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -11,9 +11,9 @@ use crate::event::HardwareEvent::InputChange;
 use crate::hardware_subscription::HWState::Disconnected;
 use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(feature = "iroh")]
-use crate::networking::iroh_host;
+use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
-use crate::networking::tcp_host;
+use crate::host_net::tcp_host;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
 use futures::SinkExt;
@@ -86,6 +86,7 @@ pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareE
                                         .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
                                             hardware_description.clone(),
+                                            HardwareConfig::default(), // Local HW doesn't save a config
                                         ))
                                         .await
                                     {
@@ -106,12 +107,13 @@ pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareE
                         #[cfg(feature = "iroh")]
                         HardwareConnection::Iroh(nodeid, relay) => {
                             match iroh_host::connect(&nodeid, relay.clone()).await {
-                                Ok((hardware_description, connection)) => {
+                                Ok((hardware_description, hardware_config, connection)) => {
                                     // Send the sender back to the GUI
                                     if let Err(e) = gui_sender_clone
                                         .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
                                             hardware_description.clone(),
+                                            hardware_config,
                                         ))
                                         .await
                                     {
@@ -133,12 +135,14 @@ pub fn subscribe(hw_target: &HardwareConnection) -> impl Stream<Item = HardwareE
                         #[cfg(feature = "tcp")]
                         HardwareConnection::Tcp(ip, port) => {
                             match tcp_host::connect(ip, port).await {
-                                Ok((hardware_description, stream)) => {
+                                Ok((hardware_description, hardware_config, stream)) => {
+                                    println!("Config received on connect: {:?}", hardware_config);
                                     // Send the stream back to the GUI
                                     if let Err(e) = gui_sender_clone
                                         .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
                                             hardware_description.clone(),
+                                            hardware_config,
                                         ))
                                         .await
                                     {
