@@ -58,7 +58,7 @@ pub async fn mdns_responder(
         hostname: "host1",
         ipv4,
         ipv6: Ipv6Addr::UNSPECIFIED,
-        ttl: Ttl::CAP,
+        ttl: Ttl::CAP, // TODO make 60secs when solve Ttl issue dropping mdns service registry
     };
 
     // The service we will be announcing over mDNS
