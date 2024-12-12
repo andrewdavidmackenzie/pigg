@@ -259,7 +259,7 @@ pub fn view<'a>(
             button("Show details...")
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_description.details.clone(),
-                    hardware_connection.clone(),
+                    NoConnection,
                 )))
                 .width(Length::Fill)
                 .style(|_, status| {
