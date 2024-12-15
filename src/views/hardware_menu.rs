@@ -42,7 +42,7 @@ fn devices_submenu<'a>(
             discovery_method,
             hardware_details,
             ssid_spec,
-            hardware_connection,
+            hardware_connections,
         },
     ) in discovered_devices
     {
@@ -63,18 +63,15 @@ fn devices_submenu<'a>(
         #[allow(unused_mut)]
         let mut menu_items: Vec<Item<Message, Theme, Renderer>> = vec![];
 
-        // disable connect to option if already connected to it
-        let connect_option = if current_connection != hardware_connection {
-            hardware_connection.clone()
-        } else {
-            NoConnection
-        };
+        // Avoid the current connection being a connect option in the details dialog
+        let mut connect_options = hardware_connections.clone();
+        connect_options.remove(&current_connection.name());
         menu_items.push(Item::new(
             button("Display Device Details...")
                 .width(Length::Fill)
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_details.clone(),
-                    connect_option,
+                    connect_options,
                 )))
                 .style(|_, status| {
                     if status == Hovered {
@@ -85,31 +82,33 @@ fn devices_submenu<'a>(
                 }),
         ));
 
-        if !matches!(hardware_connection, NoConnection) {
-            // disable connect to option if already connected to it
-            let connect = if current_connection != hardware_connection {
-                button(text(format!("Connect via {}", hardware_connection.name())))
-                    .on_press(Message::ConnectRequest(hardware_connection.clone()))
-                    .width(Length::Fill)
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    })
-            } else {
-                button("Connected to Device")
-                    .width(Length::Fill)
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    })
-            };
-            menu_items.push(Item::new(connect));
+        for (name, hardware_connection) in hardware_connections {
+            if !matches!(hardware_connection, NoConnection) {
+                // disable connect to option if already connected to it
+                let connect = if current_connection != hardware_connection {
+                    button(text(format!("Connect via {}", hardware_connection.name())))
+                        .on_press(Message::ConnectRequest(hardware_connection.clone()))
+                        .width(Length::Fill)
+                        .style(|_, status| {
+                            if status == Hovered {
+                                MENU_BUTTON_HOVER_STYLE
+                            } else {
+                                MENU_BUTTON_STYLE
+                            }
+                        })
+                } else {
+                    button("Connected to Device")
+                        .width(Length::Fill)
+                        .style(|_, status| {
+                            if status == Hovered {
+                                MENU_BUTTON_HOVER_STYLE
+                            } else {
+                                MENU_BUTTON_STYLE
+                            }
+                        })
+                };
+                menu_items.push(Item::new(connect));
+            }
         }
 
         #[cfg(feature = "usb")]
@@ -259,7 +258,7 @@ pub fn view<'a>(
             button("Show details...")
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_description.details.clone(),
-                    NoConnection,
+                    HashMap::default(),
                 )))
                 .width(Length::Fill)
                 .style(|_, status| {

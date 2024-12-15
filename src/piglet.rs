@@ -146,11 +146,20 @@ async fn run_service(
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
     if let Some(mut listener) = listener_info.tcp_info.listener {
         #[cfg(feature = "discovery")]
+        // The key string in TXT properties is case-insensitive.
+        let properties = [
+            ("Serial", &desc.details.serial as &str),
+            ("Model", &desc.details.model as &str),
+            ("AppName", env!("CARGO_BIN_NAME")),
+            ("AppVersion", env!("CARGO_PKG_VERSION")),
+        ];
+
+        #[cfg(feature = "discovery")]
         let (service_info, service_daemon) = register_mdns(
             TCP_MDNS_SERVICE_TYPE,
             listener_info.tcp_info.port,
             &desc.details.serial,
-            &desc.details.model,
+            &properties,
         )?;
 
         loop {
@@ -192,11 +201,25 @@ async fn run_service(
         listener_info.iroh_info.endpoint,
     ) {
         #[cfg(feature = "discovery")]
+        // The key string in TXT properties is case-insensitive.
+        let properties = [
+            ("Serial", &desc.details.serial as &str),
+            ("Model", &desc.details.model as &str),
+            ("AppName", env!("CARGO_BIN_NAME")),
+            ("AppVersion", env!("CARGO_PKG_VERSION")),
+            ("IrohNodeID", &listener_info.iroh_info.nodeid.to_string()),
+            (
+                "IrohRelayURL",
+                &listener_info.iroh_info.relay_url.to_string(),
+            ),
+        ];
+
+        #[cfg(feature = "discovery")]
         let (service_info, service_daemon) = register_mdns(
             TCP_MDNS_SERVICE_TYPE,
             listener_info.tcp_info.port,
             &desc.details.serial,
-            &desc.details.model,
+            &properties,
         )?;
 
         loop {
@@ -410,20 +433,12 @@ fn register_mdns(
     service_type: &str,
     port: u16,
     serial_number: &str,
-    model_name: &str,
+    properties: &[(&str, &str)],
 ) -> anyhow::Result<(ServiceInfo, ServiceDaemon)> {
     let service_daemon = ServiceDaemon::new().context("Could not create service daemon")?;
 
     let hostname = "host1".to_string(); // TODO what to put here?
     let service_hostname = format!("{}.local.", hostname);
-
-    // The key string in TXT properties is case-insensitive.
-    let properties = [
-        ("Serial", serial_number),
-        ("Model", model_name),
-        ("AppName", env!("CARGO_BIN_NAME")),
-        ("AppVersion", env!("CARGO_PKG_VERSION")),
-    ];
 
     // Register a service.
     let service_info = ServiceInfo::new(
@@ -432,7 +447,7 @@ fn register_mdns(
         &service_hostname,
         "",
         port,
-        &properties[..],
+        properties,
     )
     .context("Could not create mDNS ServiceInfo")?
     .enable_addr_auto();

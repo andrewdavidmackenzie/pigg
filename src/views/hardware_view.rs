@@ -56,7 +56,7 @@ pub enum HardwareViewMessage {
 }
 
 /// A type of connection to a piece of hardware
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub enum HardwareConnection {
     #[cfg_attr(target_arch = "wasm32", default)]
     NoConnection,
