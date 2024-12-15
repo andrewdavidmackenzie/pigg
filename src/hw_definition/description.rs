@@ -22,6 +22,17 @@ pub const SSID_PASS_MAX_LENGTH: usize = 63;
 #[allow(dead_code)] // Not used by piglet
 pub const SSID_PASS_MIN_LENGTH: usize = 8;
 
+#[allow(dead_code)] // Not used in piggui
+#[cfg(all(feature = "discovery", feature = "tcp"))]
+/// Used in mDNS service discovery
+pub const TCP_MDNS_SERVICE_NAME: &str = "_pigg";
+#[allow(dead_code)] // Not used in piggui
+#[cfg(all(feature = "discovery", feature = "tcp"))]
+pub const TCP_MDNS_SERVICE_PROTOCOL: &str = "_tcp";
+#[allow(dead_code)] // Not used by porky
+#[cfg(all(feature = "discovery", feature = "tcp"))]
+pub const TCP_MDNS_SERVICE_TYPE: &str = "_pigg._tcp.local.";
+
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
 #[cfg(not(feature = "no_std"))]
 #[derive(Serialize)]

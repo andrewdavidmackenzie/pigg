@@ -17,8 +17,8 @@ pub async fn wait_connection<'a>(
     // TODO check these are needed
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(wifi_stack, &client_state);
-
-    accept(TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer)).await
+    let tcp_socket = TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer);
+    accept(tcp_socket).await
 }
 
 /// Wait for an incoming TCP connection

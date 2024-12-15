@@ -1,5 +1,5 @@
 #[cfg(feature = "discovery")]
-use crate::discovery::{DeviceEvent, DiscoveredDevice};
+use crate::discovery::{DiscoveredDevice, DiscoveryEvent};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 use crate::hw_definition::config::HardwareConfig;
 use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareViewMessage};
@@ -45,8 +45,6 @@ mod hardware_subscription;
 mod host_net;
 mod hw;
 mod hw_definition;
-#[cfg(all(feature = "discovery", feature = "iroh"))]
-mod iroh_discovery;
 pub mod local_device;
 mod net;
 #[cfg(feature = "usb")]
@@ -78,7 +76,7 @@ pub enum Message {
     ConnectionError(String),
     MenuBarButtonClicked,
     #[cfg(feature = "discovery")]
-    Device(DeviceEvent),
+    Discovery(DiscoveryEvent),
     #[cfg(feature = "usb")]
     SsidDialog(SsidDialogMessage),
     #[cfg(feature = "usb")]
@@ -98,7 +96,7 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     #[cfg(feature = "discovery")]
-    discovered_devices: HashMap<String, DiscoveredDevice>,
+    discovered_devices: HashMap<String, DiscoveredDevice>, // TODO handle multiple discovery methods per serial number
     #[cfg(feature = "usb")]
     ssid_dialog: SsidDialog,
 }
@@ -293,7 +291,7 @@ impl Piggui {
             MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
 
             #[cfg(feature = "discovery")]
-            Device(event) => self.device_event(event),
+            Discovery(event) => self.discovery_event(event),
 
             #[cfg(feature = "usb")]
             SsidDialog(ssid_dialog_message) => {
@@ -392,9 +390,13 @@ impl Piggui {
             self.modal_handler.subscription().map(Modal), // Handle Esc key event for modal
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
-            #[cfg(feature = "discovery")]
-            Subscription::run(discovery::subscribe).map(Device),
         ];
+
+        #[cfg(all(feature = "discovery", any(feature = "iroh", feature = "usb")))]
+        subscriptions.push(Subscription::run(discovery::iroh_and_usb_discovery).map(Discovery));
+
+        #[cfg(all(feature = "discovery", feature = "tcp"))]
+        subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
 
         // Handle Keyboard events for ConnectDialog
         #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -407,21 +409,28 @@ impl Piggui {
     }
 
     #[cfg(feature = "discovery")]
-    /// Process messages related to USB raw discovery of attached devices
-    fn device_event(&mut self, event: DeviceEvent) {
+    /// Process [DiscoveryEvent] messages related to discovery/loss of devices
+    fn discovery_event(&mut self, event: DiscoveryEvent) {
         match event {
-            DeviceEvent::DeviceFound(serial_number, discovered_device) => {
-                self.info_row
-                    .add_info_message(Info("Device Found".to_string()));
-                self.discovered_devices
-                    .insert(serial_number, discovered_device);
+            DiscoveryEvent::DeviceFound(key, discovered_device) => {
+                let method = discovered_device.discovery_method.clone();
+                if self
+                    .discovered_devices
+                    .insert(key, discovered_device)
+                    .is_none()
+                {
+                    println!("Device Found {method}");
+                    self.info_row
+                        .add_info_message(Info(format!("Device Found on {method}")));
+                }
             }
-            DeviceEvent::DeviceLost(serial_number) => {
-                self.info_row
-                    .add_info_message(Info("Device Lost".to_string()));
-                self.discovered_devices.remove(&serial_number);
+            DiscoveryEvent::DeviceLost(key) => {
+                if self.discovered_devices.remove(&key).is_some() {
+                    self.info_row
+                        .add_info_message(Info("Device Lost".to_string()));
+                }
             }
-            DeviceEvent::Error(e) => {
+            DiscoveryEvent::Error(e) => {
                 self.info_row
                     .add_info_message(Error("Connection Error".to_string(), e.clone()));
             }
@@ -429,7 +438,7 @@ impl Piggui {
     }
 }
 
-/// Determine the hardware target based on command line options
+/// Determine the hardware connection based on command line options
 #[allow(unused_variables)]
 fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
     #[allow(unused_mut)]

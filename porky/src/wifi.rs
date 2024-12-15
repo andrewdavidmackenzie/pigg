@@ -16,6 +16,8 @@ use static_cell::StaticCell;
 
 const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
 
+pub const STACK_RESOURCES_SOCKET_COUNT: usize = 5;
+
 #[embassy_executor::task]
 async fn wifi_task(
     runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
@@ -56,7 +58,7 @@ pub async fn join(
         match control.join(&wifi_spec.ssid_name, join_options).await {
             Ok(_) => {
                 info!("Joined Wi-Fi network: '{}'", wifi_spec.ssid_name);
-                return wait_for_ip("WiFi", &stack).await;
+                return wait_for_ip(&stack).await;
             }
             Err(_) => {
                 attempt += 1;
@@ -69,8 +71,8 @@ pub async fn join(
 }
 
 /// Wait for the DHCP service to come up and for us to get an IP address
-async fn wait_for_ip(name: &str, stack: &Stack<'static>) -> Result<Ipv4Addr, &'static str> {
-    info!("Waiting for IP Address assignment {}", name);
+async fn wait_for_ip(stack: &Stack<'static>) -> Result<Ipv4Addr, &'static str> {
+    info!("Waiting for an IP address");
     while !stack.is_config_up() {
         Timer::after_millis(100).await;
     }
@@ -110,7 +112,7 @@ pub async fn start_net<'a>(
         .set_power_management(cyw43::PowerManagementMode::PowerSave)
         .await;
 
-    static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
+    static RESOURCES: StaticCell<StackResources<STACK_RESOURCES_SOCKET_COUNT>> = StaticCell::new();
     let resources = RESOURCES.init(StackResources::new());
 
     let mut rng = RoscRng;

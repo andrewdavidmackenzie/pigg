@@ -36,14 +36,18 @@ fn devices_submenu<'a>(
     let mut device_items = vec![];
 
     #[allow(unused_variables)]
-    for (serial_number, (method, hardware_description, ssid_spec, hardware_connection)) in
-        discovered_devices
+    for (
+        key,
+        DiscoveredDevice {
+            discovery_method,
+            hardware_details,
+            ssid_spec,
+            hardware_connection,
+        },
+    ) in discovered_devices
     {
         let device_button: Button<Message> = button(row!(
-            text(format!(
-                "{} ({}) {}",
-                hardware_description.details.model, serial_number, method
-            )),
+            text(format!("{} ({})", hardware_details.model, key)),
             horizontal_space(),
             text(" >").align_y(alignment::Vertical::Center),
         ))
@@ -59,12 +63,18 @@ fn devices_submenu<'a>(
         #[allow(unused_mut)]
         let mut menu_items: Vec<Item<Message, Theme, Renderer>> = vec![];
 
+        // disable connect to option if already connected to it
+        let connect_option = if current_connection != hardware_connection {
+            hardware_connection.clone()
+        } else {
+            NoConnection
+        };
         menu_items.push(Item::new(
             button("Display Device Details...")
                 .width(Length::Fill)
                 .on_press(Message::Modal(HardwareDetailsModal(
-                    hardware_description.details.clone(),
-                    hardware_connection.clone(),
+                    hardware_details.clone(),
+                    connect_option,
                 )))
                 .style(|_, status| {
                     if status == Hovered {
@@ -78,7 +88,7 @@ fn devices_submenu<'a>(
         if !matches!(hardware_connection, NoConnection) {
             // disable connect to option if already connected to it
             let connect = if current_connection != hardware_connection {
-                button("Connect to Device")
+                button(text(format!("Connect via {}", hardware_connection.name())))
                     .on_press(Message::ConnectRequest(hardware_connection.clone()))
                     .width(Length::Fill)
                     .style(|_, status| {
@@ -103,14 +113,14 @@ fn devices_submenu<'a>(
         }
 
         #[cfg(feature = "usb")]
-        if hardware_description.details.wifi {
-            if matches!(method, USBRaw) {
+        if hardware_details.wifi {
+            if matches!(discovery_method, USBRaw) {
                 #[allow(unused_mut)]
                 menu_items.push(Item::new(
                     button("Configure Device Wi-Fi...")
                         .width(Length::Fill)
                         .on_press(Message::SsidDialog(SsidDialogMessage::Show(
-                            hardware_description.details.clone(),
+                            hardware_details.clone(),
                             ssid_spec.as_ref().and_then(|wf| ssid_spec.clone()),
                         )))
                         .style(|_, status| {
@@ -123,13 +133,11 @@ fn devices_submenu<'a>(
                 ));
             }
 
-            if matches!(method, USBRaw) {
+            if matches!(discovery_method, USBRaw) {
                 menu_items.push(Item::new(
                     button("Reset Device Wi-Fi to Default")
                         .width(Length::Fill)
-                        .on_press(Message::ResetSsid(
-                            hardware_description.details.serial.clone(),
-                        ))
+                        .on_press(Message::ResetSsid(hardware_details.serial.clone()))
                         .style(|_, status| {
                             if status == Hovered {
                                 MENU_BUTTON_HOVER_STYLE
@@ -177,7 +185,7 @@ fn devices_submenu<'a>(
                     MENU_BUTTON_STYLE
                 }
             }),
-            Menu::new(device_items).width(290.0).offset(10.0),
+            Menu::new(device_items).width(310.0).offset(10.0),
         )
     }
 }
@@ -186,7 +194,7 @@ fn devices_submenu<'a>(
 pub fn view<'a>(
     hardware_view: &'a HardwareView,
     hardware_connection: &HardwareConnection,
-    #[cfg(feature = "discovery")] known_devices: &HashMap<String, DiscoveredDevice>,
+    #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
         None => "hardware: none".to_string(),
@@ -251,7 +259,7 @@ pub fn view<'a>(
             button("Show details...")
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_description.details.clone(),
-                    hardware_connection.clone(),
+                    NoConnection,
                 )))
                 .width(Length::Fill)
                 .style(|_, status| {
@@ -289,7 +297,7 @@ pub fn view<'a>(
 
     #[cfg(feature = "discovery")]
     menu_items.push(devices_submenu(
-        known_devices,
+        discovered_devices,
         hardware_view.get_hardware_connection(),
     ));
 

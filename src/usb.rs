@@ -3,12 +3,16 @@ use crate::discovery::DiscoveredDevice;
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "discovery")]
+use crate::hw_definition::description::HardwareDetails;
+#[cfg(feature = "discovery")]
 use crate::hw_definition::description::WiFiDetails;
 use crate::hw_definition::description::{HardwareDescription, SsidSpec};
 #[cfg(feature = "discovery")]
+use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
+#[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+    GET_HARDWARE_DESCRIPTION_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
@@ -20,12 +24,23 @@ use std::collections::HashMap;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use std::net::IpAddr;
 
-/// [ControlIn] "command" to request the HardwareDescription
+/// [ControlIn] "command" to request the [HardwareDescription]
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
     request: PIGGUI_REQUEST,
-    value: GET_HARDWARE_VALUE,
+    value: GET_HARDWARE_DESCRIPTION_VALUE,
+    index: 0,
+    length: 1000,
+};
+
+#[cfg(feature = "discovery")]
+/// [ControlIn] "command" to request the [HardwareDetails]
+const GET_HARDWARE_DETAILS: ControlIn = ControlIn {
+    control_type: ControlType::Vendor,
+    recipient: Recipient::Interface,
+    request: PIGGUI_REQUEST,
+    value: GET_HARDWARE_DETAILS_VALUE,
     index: 0,
     length: 1000,
 };
@@ -65,8 +80,8 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                 .filter_map(|device| device.claim_interface(0).ok());
 
             for interface in interfaces {
-                if let Ok(hardware_description) = get_hardware_description(&interface).await {
-                    let wifi_details = if hardware_description.details.wifi {
+                if let Ok(hardware_details) = get_hardware_details(&interface).await {
+                    let wifi_details = if hardware_details.wifi {
                         get_wifi_details(&interface).await.ok()
                     } else {
                         None
@@ -80,8 +95,13 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                         _ => HardwareConnection::NoConnection,
                     };
                     map.insert(
-                        hardware_description.details.serial.clone(),
-                        (USBRaw, hardware_description, ssid, connection),
+                        hardware_details.serial.clone(),
+                        DiscoveredDevice {
+                            discovery_method: USBRaw,
+                            hardware_details,
+                            ssid_spec: ssid,
+                            hardware_connection: connection,
+                        },
                     );
                 }
             }
@@ -139,6 +159,12 @@ where
 /// Request [HardwareDescription] from compatible porky device over USB
 pub async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, String> {
     usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
+}
+
+#[cfg(feature = "discovery")]
+/// Request [HardwareDetails] from compatible porky device over USB
+pub async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, String> {
+    usb_get_porky(porky, GET_HARDWARE_DETAILS).await
 }
 
 /// Request [WiFiDetails] from compatible porky device over USB

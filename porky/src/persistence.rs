@@ -1,16 +1,23 @@
 use crate::flash;
 use crate::flash::DbFlash;
+use crate::hw_definition::config::HardwareConfig;
+#[cfg(feature = "wifi")]
+use crate::hw_definition::config::HardwareConfigMessage;
+#[cfg(feature = "wifi")]
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
+#[cfg(feature = "wifi")]
 use crate::hw_definition::description::SsidSpec;
 use crate::hw_definition::pin_function::PinFunction;
+#[cfg(feature = "wifi")]
 use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::BCMPinNumber;
 #[cfg(feature = "wifi")]
 use crate::ssid;
-use defmt::{error, info};
+#[cfg(feature = "wifi")]
+use defmt::error;
+use defmt::info;
 use ekv::Database;
 #[cfg(feature = "wifi")]
 use ekv::ReadError;
@@ -19,6 +26,7 @@ use embassy_rp::peripherals::FLASH;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use heapless::FnvIndexMap;
 
+#[cfg(feature = "wifi")]
 /// [SSID_SPEC_KEY] is the key to a possible entry in the Flash DB for SsidSpec override
 const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
@@ -51,6 +59,7 @@ pub async fn get_config<'p>(
     HardwareConfig { pin_functions }
 }
 
+#[cfg(feature = "wifi")]
 pub async fn store_config_change<'p>(
     db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     hardware_config_message: &HardwareConfigMessage,
@@ -111,7 +120,7 @@ pub async fn get_ssid_spec<'a>(
     buf: &'a mut [u8],
 ) -> Option<SsidSpec> {
     let rtx = db.read_transaction().await;
-    let spec = match rtx.read(SSID_SPEC_KEY, buf).await {
+    match rtx.read(SSID_SPEC_KEY, buf).await {
         Ok(size) => match postcard::from_bytes::<SsidSpec>(&buf[..size]) {
             Ok(spec) => Some(spec),
             Err(_) => {
@@ -127,14 +136,7 @@ pub async fn get_ssid_spec<'a>(
             info!("Error reading SsidSpec from Flash database, trying default");
             ssid::get_default_ssid_spec()
         }
-    };
-
-    match &spec {
-        None => info!("No SsidSpec used"),
-        Some(s) => info!("SsidSpec used for SSID: {}", s.ssid_name),
     }
-
-    spec
 }
 
 #[cfg(feature = "wifi")]
