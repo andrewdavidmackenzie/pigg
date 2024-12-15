@@ -392,7 +392,7 @@ impl Piggui {
             self.hardware_view.subscription().map(Hardware),
         ];
 
-        #[cfg(all(feature = "discovery", any(feature = "iroh", feature = "usb")))]
+        #[cfg(all(feature = "discovery", feature = "usb"))]
         subscriptions.push(Subscription::run(discovery::usb_discovery).map(Discovery));
 
         #[cfg(all(feature = "discovery", feature = "tcp"))]

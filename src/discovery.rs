@@ -10,13 +10,15 @@ use crate::hw_definition::description::{HardwareDetails, SsidSpec};
 #[cfg(feature = "usb")]
 use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
-#[cfg(any(feature = "usb", feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
-#[cfg(any(feature = "usb", feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "usb", feature = "tcp"))]
 use futures::SinkExt;
-#[cfg(any(feature = "usb", feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "usb", feature = "tcp"))]
 use iced_futures::stream;
+#[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh_net::relay::RelayUrl;
+#[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh_net::NodeId;
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
@@ -24,8 +26,9 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
+#[cfg(all(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
-#[cfg(any(feature = "iroh", feature = "usb"))]
+#[cfg(feature = "usb")]
 use std::time::Duration;
 //#[cfg(not(any(feature = "usb", feature = "iroh")))]
 //compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");

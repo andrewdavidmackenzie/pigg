@@ -23,7 +23,6 @@ use iced::widget::{button, text};
 use iced::widget::{horizontal_space, row};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
-#[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
 /// Create a submenu item for the known devices
