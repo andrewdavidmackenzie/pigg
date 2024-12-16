@@ -254,7 +254,7 @@ pub fn view<'a>(
 
     if let Some(hardware_description) = hardware_view.hardware_description.as_ref() {
         let show_details = Item::new(
-            button("Show details...")
+            button("Display Device Details...")
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_description.details.clone(),
                     HashMap::default(),
