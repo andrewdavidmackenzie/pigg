@@ -141,6 +141,8 @@ async fn run_service(
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     let desc = hw.description()?;
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    println!("Serial Number: {}", desc.details.serial);
 
     // Then listen for remote connections and "serve" them
     #[cfg(all(feature = "tcp", not(feature = "iroh")))]
