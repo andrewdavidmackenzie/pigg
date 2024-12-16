@@ -94,13 +94,15 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                         Some(tcp) => HardwareConnection::Tcp(IpAddr::from(tcp.0), tcp.1),
                         _ => HardwareConnection::NoConnection,
                     };
+                    let mut hardware_connections = HashMap::new();
+                    hardware_connections.insert(connection.name(), connection);
                     map.insert(
                         hardware_details.serial.clone(),
                         DiscoveredDevice {
                             discovery_method: USBRaw,
                             hardware_details,
                             ssid_spec: ssid,
-                            hardware_connection: connection,
+                            hardware_connections,
                         },
                     );
                 }

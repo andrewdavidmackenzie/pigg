@@ -6,7 +6,6 @@ use crate::views::dialog_styles::{
     MODAL_CONTAINER_STYLE,
 };
 use crate::views::hardware_view::HardwareConnection;
-use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
@@ -15,12 +14,13 @@ use iced::widget::{button, column, container, horizontal_space, text, Row, Space
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
+use std::collections::HashMap;
 
 pub struct InfoDialog {
     pub show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
-    hardware_connection: HardwareConnection,
+    hardware_connections: HashMap<String, HardwareConnection>,
 }
 pub enum ModalType {
     Warning {
@@ -42,7 +42,7 @@ pub enum InfoDialogMessage {
     UnsavedChangesExitModal,
     UnsavedLoadConfigChangesModal,
     LoadFile,
-    HardwareDetailsModal(HardwareDetails, HardwareConnection),
+    HardwareDetailsModal(HardwareDetails, HashMap<String, HardwareConnection>),
     AboutDialog,
     ExitApp,
     EscKeyEvent(Event),
@@ -55,7 +55,7 @@ impl InfoDialog {
             show_modal: false,
             is_warning: false,
             modal_type: None,
-            hardware_connection: NoConnection,
+            hardware_connections: HashMap::default(),
         }
     }
 
@@ -81,15 +81,14 @@ impl InfoDialog {
 
             // Display hardware information
             #[allow(unused_variables)]
-            InfoDialogMessage::HardwareDetailsModal(hardware_details, hardware_connection) => {
+            InfoDialogMessage::HardwareDetailsModal(hardware_details, hardware_connections) => {
                 self.show_modal = true;
                 self.is_warning = false;
                 #[allow(unused_mut)]
                 let mut body = format!("{hardware_details}");
 
-                if !matches!(hardware_connection, NoConnection) {
-                    self.hardware_connection = hardware_connection.clone();
-                    body.push_str(&format!("\n{hardware_connection}"));
+                if !hardware_connections.is_empty() {
+                    self.hardware_connections = hardware_connections.clone();
                 }
 
                 self.modal_type = Some(ModalType::Info {
@@ -255,14 +254,12 @@ impl InfoDialog {
                                 }
                             }),
                     );
-                    if !matches!(self.hardware_connection, NoConnection) {
+                    for (name, hardware_connection) in &self.hardware_connections {
                         button_row = button_row
                             .push(horizontal_space())
                             .push(
-                                button("Connect")
-                                    .on_press(Message::ConnectRequest(
-                                        self.hardware_connection.clone(),
-                                    ))
+                                button(text(format!("Connect via {}", name)))
+                                    .on_press(Message::ConnectRequest(hardware_connection.clone()))
                                     .style(move |_theme, status| {
                                         if status == Hovered {
                                             MODAL_CONNECT_BUTTON_HOVER_STYLE

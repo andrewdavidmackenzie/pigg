@@ -12,19 +12,6 @@ use iroh_net::{
 };
 use std::io;
 
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveredDevice;
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
-#[cfg(feature = "discovery")]
-use crate::hw;
-#[cfg(feature = "discovery")]
-use crate::views::hardware_view::HardwareConnection;
-#[cfg(feature = "discovery")]
-use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
-#[cfg(feature = "discovery")]
-use std::collections::HashMap;
-
 /// Wait until we receive a message from remote hardware
 pub async fn wait_for_remote_message(
     connection: &mut Connection,
@@ -101,6 +88,22 @@ pub async fn connect(
     Ok((reply.0, reply.1, connection))
 }
 
+/*
+
+#[cfg(feature = "discovery")]
+use crate::discovery::DiscoveredDevice;
+#[cfg(feature = "discovery")]
+use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
+#[cfg(feature = "discovery")]
+use crate::hw;
+#[cfg(feature = "discovery")]
+use crate::views::hardware_view::HardwareConnection;
+#[cfg(feature = "discovery")]
+use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
+#[cfg(feature = "discovery")]
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 #[cfg(feature = "discovery")]
 /// Create an iroh-net [Endpoint] for use in discovery
 pub async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
@@ -128,19 +131,22 @@ pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevi
             .chars()
             .take(16)
             .collect::<String>();
+        let mut hardware_connections = HashSet::new();
+        hardware_connections.insert(HardwareConnection::Iroh(
+            remote.node_id,
+            remote.relay_url.map(|ri| ri.relay_url),
+        ));
         map.insert(
             trunc, // TODO substitute for real serial_number when Iroh discovery supports it
             DiscoveredDevice {
                 discovery_method: IrohLocalSwarm,
                 hardware_details: hw::driver::get().description().unwrap().details, // TODO show the real hardware description when Iroh discovery supports it
                 ssid_spec: None,
-                hardware_connection: HardwareConnection::Iroh(
-                    remote.node_id,
-                    remote.relay_url.map(|ri| ri.relay_url),
-                ),
+                hardware_connections,
             },
         );
     }
 
     map
 }
+ */

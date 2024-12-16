@@ -392,8 +392,8 @@ impl Piggui {
             self.hardware_view.subscription().map(Hardware),
         ];
 
-        #[cfg(all(feature = "discovery", any(feature = "iroh", feature = "usb")))]
-        subscriptions.push(Subscription::run(discovery::iroh_and_usb_discovery).map(Discovery));
+        #[cfg(all(feature = "discovery", feature = "usb"))]
+        subscriptions.push(Subscription::run(discovery::usb_discovery).map(Discovery));
 
         #[cfg(all(feature = "discovery", feature = "tcp"))]
         subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
@@ -412,16 +412,21 @@ impl Piggui {
     /// Process [DiscoveryEvent] messages related to discovery/loss of devices
     fn discovery_event(&mut self, event: DiscoveryEvent) {
         match event {
-            DiscoveryEvent::DeviceFound(key, discovered_device) => {
+            DiscoveryEvent::DeviceFound(serial_number, discovered_device) => {
                 let method = discovered_device.discovery_method.clone();
-                if self
-                    .discovered_devices
-                    .insert(key, discovered_device)
-                    .is_none()
-                {
-                    println!("Device Found {method}");
-                    self.info_row
-                        .add_info_message(Info(format!("Device Found on {method}")));
+                println!("Device Found {method}");
+                self.info_row
+                    .add_info_message(Info(format!("Device Found by {method}")));
+                // if the device is already in the list of discovered devices, make sure this method
+                // exists in the set of methods that can be used to connect to it
+                if let Some(known_device) = self.discovered_devices.get_mut(&serial_number) {
+                    known_device
+                        .hardware_connections
+                        .extend(discovered_device.hardware_connections);
+                } else {
+                    // new device, add to the map
+                    self.discovered_devices
+                        .insert(serial_number, discovered_device);
                 }
             }
             DiscoveryEvent::DeviceLost(key) => {
