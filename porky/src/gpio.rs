@@ -52,11 +52,18 @@ async fn monitor_input(
     returner: Sender<'static, ThreadModeRawMutex, Flex<'static>, 1>,
     mut flex: Flex<'static>,
 ) {
-    send_input_level(bcm_pin_number, flex.get_level()).await;
+    let mut level = flex.get_level();
+    send_input_level(bcm_pin_number, level).await;
 
     loop {
         match select(flex.wait_for_any_edge(), signaller.receive()).await {
-            Either::First(()) => send_input_level(bcm_pin_number, flex.get_level()).await,
+            Either::First(()) => {
+                let new_level = flex.get_level();
+                if new_level != level {
+                    send_input_level(bcm_pin_number, flex.get_level()).await;
+                    level = new_level;
+                }
+            }
             Either::Second(_) => {
                 info!("Monitor returning Pin");
                 // Return the Flex pin and exit the task

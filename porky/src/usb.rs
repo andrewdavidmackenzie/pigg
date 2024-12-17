@@ -99,9 +99,7 @@ pub(crate) struct ControlHandler<'h> {
     watchdog: Watchdog,
 }
 
-impl<'h> ControlHandler<'h> {}
-
-impl<'h> Handler for ControlHandler<'h> {
+impl Handler for ControlHandler<'_> {
     #[allow(unused_variables)] // TODO for now as not used in non-wifi yet
     /// Respond to HostToDevice control messages, where the host sends us a command and
     /// optionally some data, and we can only acknowledge or reject it.

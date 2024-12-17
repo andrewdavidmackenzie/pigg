@@ -53,7 +53,7 @@ impl From<embassy_time::Duration> for Duration {
     fn from(duration: embassy_time::Duration) -> Self {
         Duration {
             secs: duration.as_secs(),
-            nanos: duration.as_millis() as u32 * 1000,
+            nanos: ((duration.as_micros() % 1_000_000) * 1000) as u32,
         }
     }
 }
