@@ -45,7 +45,7 @@ iroh-net = { version = "0.28.1", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.3", default-features = false, optional = true }
 nusb = { version = "0.1.12", default-features = false, optional = true }
-mdns-sd = { version = "0.13.0", default-features = false, optional = true }
+mdns-sd = { version = "0.13.1", default-features = false, optional = true }
 
 # use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
