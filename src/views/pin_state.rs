@@ -11,7 +11,7 @@ use crate::views::waveform::{ChartType, Sample, Waveform};
 
 pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 pub const CHART_WIDTH: f32 = 256.0;
-const CHART_HEIGHT: f32 = 30.0;
+const CHART_HEIGHT: f32 = 28.0;
 // If we move 2 pixel per update, that's CHART_WIDTH / 2 updates in the window.
 // If we update CHART_UPDATES_PER_SECOND that's 2 * CHART_UPDATES_PER_SECOND pixels per second.
 // So CHART_DURATION = CHART_WIDTH / CHART_UPDATES_PER_SECOND * 2(seconds)

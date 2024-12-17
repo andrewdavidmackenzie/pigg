@@ -14,12 +14,12 @@ pub(crate) const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
 pub(crate) const PIN_ARROW_WIDTH: f32 = PIN_ARROW_LINE_WIDTH + PIN_ARROW_CIRCLE_RADIUS * 2.0;
 pub(crate) const PIN_NAME_WIDTH: f32 = 60.0;
 pub(crate) const PIN_OPTION_WIDTH: f32 = 135.0; // Pi needs 135px
-pub(crate) const TOGGLER_SIZE: f32 = 30.0;
+pub(crate) const TOGGLER_SIZE: f32 = 28.0;
 pub(crate) const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
 pub(crate) const CLICKER_WIDTH: f32 = 13.0;
 // We want the pullup on an Input to be the same width as the clicker + toggler on an Output
 pub(crate) const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH;
-pub(crate) const LED_WIDTH: f32 = 16.0;
+pub(crate) const LED_WIDTH: f32 = 14.0;
 pub(crate) const WIDGET_ROW_SPACING: f32 = 5.0;
 pub(crate) const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
