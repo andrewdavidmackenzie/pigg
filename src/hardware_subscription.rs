@@ -75,6 +75,8 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                     match target.clone() {
                         HardwareConnection::NoConnection => {}
 
+                        HardwareConnection::Usb(_) => {}
+
                         #[cfg(not(target_arch = "wasm32"))]
                         HardwareConnection::Local => {
                             // Connect immediately - nothing to wait for!

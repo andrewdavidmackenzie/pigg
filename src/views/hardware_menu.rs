@@ -199,10 +199,12 @@ pub fn view<'a>(
         Some(model) => match hardware_connection {
             NoConnection => "hardware: none".to_string(),
             Local => format!("hardware: {}@Local", model),
+            #[cfg(feature = "usb")]
+            Usb(_) => format!("hardware: {}@USB", model),
             #[cfg(feature = "iroh")]
-            Iroh(_, _) => format!("hardware: {}@Remote", model),
+            Iroh(_, _) => format!("hardware: {}@Iroh", model),
             #[cfg(feature = "tcp")]
-            Tcp(_, _) => format!("hardware: {}@Remote", model),
+            Tcp(_, _) => format!("hardware: {}@TCP", model),
         },
     };
 
