@@ -58,10 +58,8 @@ pub enum HardwareViewMessage {
 /// A type of connection to a piece of hardware
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub enum HardwareConnection {
-    #[cfg_attr(target_arch = "wasm32", default)]
     NoConnection,
-    #[cfg(not(target_arch = "wasm32"))]
-    #[cfg_attr(not(target_arch = "wasm32"), default)]
+    #[default]
     Local,
     #[cfg(feature = "iroh")]
     Iroh(NodeId, Option<RelayUrl>),

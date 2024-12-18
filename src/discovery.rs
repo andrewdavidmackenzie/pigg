@@ -38,6 +38,7 @@ pub type SerialNumber = String;
 /// What method was used to discover a device? Currently, we support Iroh and USB
 #[derive(Debug, Clone)]
 pub enum DiscoveryMethod {
+    Local,
     #[cfg(feature = "usb")]
     USBRaw,
     #[cfg(feature = "iroh")]
@@ -51,6 +52,7 @@ pub enum DiscoveryMethod {
 impl Display for DiscoveryMethod {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            DiscoveryMethod::Local => f.write_str("Local"),
             #[cfg(feature = "usb")]
             USBRaw => f.write_str("USB"),
             #[cfg(feature = "iroh")]
