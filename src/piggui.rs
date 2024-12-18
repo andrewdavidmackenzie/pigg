@@ -452,7 +452,9 @@ impl Piggui {
                         .insert(serial_number, discovered_device);
                 }
             }
-            DiscoveryEvent::DeviceLost(key) => {
+            DiscoveryEvent::DeviceLost(key, _method) => {
+                // TODO only remove if not also discovered by some other method?
+                // WIll need changes in discovery of device and how stored in discovered_devices too
                 if self.discovered_devices.remove(&key).is_some() {
                     self.info_row
                         .add_info_message(Info("Device Lost".to_string()));

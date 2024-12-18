@@ -80,7 +80,7 @@ pub struct DiscoveredDevice {
 #[derive(Debug, Clone)]
 pub enum DiscoveryEvent {
     DeviceFound(SerialNumber, DiscoveredDevice),
-    DeviceLost(SerialNumber),
+    DeviceLost(SerialNumber, DiscoveryMethod),
     Error(SerialNumber),
 }
 
@@ -112,7 +112,10 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             for key in previous_serial_numbers {
                 if !current_serial_numbers.contains(&key) {
                     gui_sender
-                        .send(DiscoveryEvent::DeviceLost(key.clone()))
+                        .send(DiscoveryEvent::DeviceLost(
+                            key.clone(),
+                            DiscoveryMethod::USBRaw,
+                        ))
                         .await
                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
@@ -195,7 +198,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                     if let Some((serial_number, _)) = fullname.split_once(".") {
                         let key = format!("{serial_number}/TCP");
                         gui_sender
-                            .send(DiscoveryEvent::DeviceLost(key))
+                            .send(DiscoveryEvent::DeviceLost(key, DiscoveryMethod::Mdns))
                             .await
                             .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }

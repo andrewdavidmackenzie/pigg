@@ -89,13 +89,22 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
 
                     let ssid = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
                     let tcp = wifi_details.and_then(|wf| wf.tcp);
-                    let connection = match tcp {
-                        #[cfg(feature = "tcp")]
-                        Some(tcp) => HardwareConnection::Tcp(IpAddr::from(tcp.0), tcp.1),
-                        _ => HardwareConnection::NoConnection,
-                    };
                     let mut hardware_connections = HashMap::new();
-                    hardware_connections.insert(connection.name(), connection);
+                    #[cfg(feature = "tcp")]
+                    if let Some(tcp_connection) = tcp {
+                        let connection = HardwareConnection::Tcp(
+                            IpAddr::from(tcp_connection.0),
+                            tcp_connection.1,
+                        );
+                        hardware_connections.insert(connection.name(), connection);
+                    }
+
+                    #[cfg(feature = "usb")]
+                    hardware_connections.insert(
+                        "USB".to_string(),
+                        HardwareConnection::Usb(hardware_details.serial.clone()),
+                    );
+
                     map.insert(
                         hardware_details.serial.clone(),
                         DiscoveredDevice {
