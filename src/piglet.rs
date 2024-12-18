@@ -14,9 +14,10 @@ use std::{
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
+use env_logger::{Builder, Target};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
-use log::{info, trace};
+use log::{info, trace, LevelFilter};
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use service_manager::{
@@ -24,9 +25,6 @@ use service_manager::{
     ServiceUninstallCtx,
 };
 use sysinfo::{Process, System};
-use tracing::Level;
-use tracing_subscriber::filter::{Directive, LevelFilter};
-use tracing_subscriber::EnvFilter;
 
 #[cfg(feature = "iroh")]
 use crate::device_net::iroh_device;
@@ -297,17 +295,16 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
     Ok(info_path)
 }
 
-/// Setup logging with the requested verbosity level - or default if none was specified
+/// Setup logging to StdOut with the requested verbosity level - or default (ERROR) if no valid
+/// debug level was specified
 fn setup_logging(matches: &ArgMatches) {
-    let default: Directive = LevelFilter::from_level(Level::ERROR).into();
-    let verbosity_option = matches
+    let default_verbosity = "error".to_string();
+    let verbosity = matches
         .get_one::<String>("verbosity")
-        .and_then(|v| Directive::from_str(v).ok());
-    let directive = verbosity_option.unwrap_or(default);
-    let env_filter = EnvFilter::builder()
-        .with_default_directive(directive)
-        .from_env_lossy();
-    tracing_subscriber::fmt().with_env_filter(env_filter).init();
+        .unwrap_or(&default_verbosity);
+    let level = LevelFilter::from_str(verbosity).unwrap_or(LevelFilter::Error);
+    let mut builder = Builder::from_default_env();
+    builder.filter_level(level).target(Target::Stdout).init();
 }
 
 /// Parse the command line arguments using clap into a set of [ArgMatches]

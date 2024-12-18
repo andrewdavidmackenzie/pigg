@@ -1,11 +1,11 @@
-use super::super::{ip_port, kill, run, wait_for_output};
+use super::super::{ip_port, kill, run, wait_for_stdout};
 use serial_test::serial;
 
 #[test]
 #[serial]
 fn connect_via_ip() {
     let mut piglet = run("piglet", vec![], None);
-    let line = wait_for_output(&mut piglet, "ip:").expect("Could not get IP address");
+    let line = wait_for_stdout(&mut piglet, "ip:").expect("Could not get IP address");
     let (a, p) = ip_port(&line);
 
     let mut piggui = run(
@@ -14,7 +14,7 @@ fn connect_via_ip() {
         None,
     );
 
-    wait_for_output(&mut piggui, "Connected to hardware").expect("Did not get connected message");
+    wait_for_stdout(&mut piggui, "Connected to hardware").expect("Did not get connected message");
 
     kill(piggui);
     kill(piglet);

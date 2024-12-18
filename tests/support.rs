@@ -13,7 +13,8 @@ mod integration;
 mod piggui;
 mod piglet;
 
-use std::io::{BufRead, BufReader};
+use std::io::prelude::*;
+use std::io::BufReader;
 use std::net::IpAddr;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -58,9 +59,7 @@ pub fn kill(mut child: Child) {
     child.wait().expect("Failed to wait until child exited");
 }
 
-pub fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
-    let stdout = piglet.stdout.as_mut().expect("Could not read stdout");
-    let mut reader = BufReader::new(stdout);
+fn wait_for<R: BufRead>(token: &str, reader: &mut R) -> Option<String> {
     let mut line = String::new();
 
     while reader.read_line(&mut line).is_ok() {
@@ -70,6 +69,12 @@ pub fn wait_for_output(piglet: &mut Child, token: &str) -> Option<String> {
     }
 
     None
+}
+
+pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
+    let stdout = child.stdout.as_mut().expect("Could not read stdout");
+    let mut reader = BufReader::new(stdout);
+    wait_for(token, &mut reader)
 }
 
 pub fn ip_port(output: &str) -> (IpAddr, u16) {
