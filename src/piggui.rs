@@ -19,6 +19,7 @@ use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Tas
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
+use crate::discovery::DiscoveryMethod::Local;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
@@ -96,7 +97,7 @@ pub struct Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     #[cfg(feature = "discovery")]
-    discovered_devices: HashMap<String, DiscoveredDevice>, // TODO handle multiple discovery methods per serial number
+    discovered_devices: HashMap<String, DiscoveredDevice>,
     #[cfg(feature = "usb")]
     ssid_dialog: SsidDialog,
 }
@@ -156,6 +157,27 @@ impl Piggui {
             .map(|s| s.to_string());
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
+        #[cfg(feature = "discovery")]
+        let mut discovered_devices = HashMap::new();
+        #[cfg(feature = "discovery")]
+        let local_hardware = hw::driver::get();
+        #[cfg(feature = "discovery")]
+        let serial = local_hardware.description().unwrap().details.serial;
+        #[cfg(feature = "discovery")]
+        let mut hardware_connections = HashMap::new();
+        #[cfg(feature = "discovery")]
+        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
+        #[cfg(feature = "discovery")]
+        discovered_devices.insert(
+            serial,
+            DiscoveredDevice {
+                discovery_method: Local,
+                hardware_details: local_hardware.description().unwrap().details,
+                ssid_spec: None,
+                hardware_connections,
+            },
+        );
+
         (
             Self {
                 config_filename: config_filename.clone(),
@@ -167,7 +189,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 #[cfg(feature = "discovery")]
-                discovered_devices: HashMap::new(),
+                discovered_devices,
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },

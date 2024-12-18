@@ -238,20 +238,6 @@ pub fn view<'a>(
             }),
     );
 
-    #[cfg(not(target_arch = "wasm32"))]
-    let connect_local: Item<'a, Message, _, _> = Item::new(
-        button("Connect to local")
-            .width(Length::Fill)
-            .on_press(Message::ConnectRequest(Local))
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
-    );
-
     if let Some(hardware_description) = hardware_view.hardware_description.as_ref() {
         let show_details = Item::new(
             button("Display Device Details...")
@@ -275,8 +261,6 @@ pub fn view<'a>(
         NoConnection => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
-            #[cfg(not(target_arch = "wasm32"))]
-            menu_items.push(connect_local);
         }
         #[cfg(not(target_arch = "wasm32"))]
         Local => {
@@ -288,8 +272,6 @@ pub fn view<'a>(
         _ => {
             menu_items.push(connect);
             menu_items.push(disconnect);
-            #[cfg(not(target_arch = "wasm32"))]
-            menu_items.push(connect_local);
         }
     }
 
