@@ -1,11 +1,11 @@
-use super::{kill, run, wait_for_output};
+use super::{kill, run, wait_for_stdout};
 use serial_test::serial;
 
 #[test]
 #[serial]
 fn version_number() {
     let mut child = run("piggui", vec!["--version".into()], None);
-    let line = wait_for_output(&mut child, "piggui").expect("Failed to get expected output");
+    let line = wait_for_stdout(&mut child, "piggui").expect("Failed to get expected output");
     kill(child);
     let version = line.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
@@ -15,7 +15,7 @@ fn version_number() {
 #[serial]
 fn help() {
     let mut child = run("piggui", vec!["--help".into()], None);
-    wait_for_output(
+    wait_for_stdout(
         &mut child,
         "'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware",
     )

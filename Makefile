@@ -12,6 +12,10 @@
 # target/armv7-unknown-linux-gnueabihf/release/piggui - GUI version for armv7 based architecture with GPIO, can be run natively
 # target/armv7-unknown-linux-gnueabihf/release/piglet - Headless version for armv7 based architecture with GPIO, can be run natively
 
+# MacOS pre-requisites for cross compiling to armv7
+# brew install arm-linux-gnueabihf-binutils
+# rustup target add armv7-unknown-linux-musleabihf
+
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 

@@ -14,7 +14,7 @@ use std::{
 
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
-use env_logger::Builder;
+use env_logger::{Builder, Target};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
 use log::{info, trace, LevelFilter};
@@ -295,7 +295,8 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
     Ok(info_path)
 }
 
-/// Setup logging with the requested verbosity level - or default if none was specified
+/// Setup logging to StdOut with the requested verbosity level - or default (ERROR) if no valid
+/// debug level was specified
 fn setup_logging(matches: &ArgMatches) {
     let default_verbosity = "error".to_string();
     let verbosity = matches
@@ -303,7 +304,7 @@ fn setup_logging(matches: &ArgMatches) {
         .unwrap_or(&default_verbosity);
     let level = LevelFilter::from_str(verbosity).unwrap_or(LevelFilter::Error);
     let mut builder = Builder::from_default_env();
-    builder.filter_level(level).init();
+    builder.filter_level(level).target(Target::Stdout).init();
 }
 
 /// Parse the command line arguments using clap into a set of [ArgMatches]
