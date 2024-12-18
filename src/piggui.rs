@@ -19,6 +19,7 @@ use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Tas
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
+#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::Local;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
