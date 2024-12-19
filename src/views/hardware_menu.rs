@@ -83,7 +83,7 @@ fn devices_submenu<'a>(
 
         for (name, hardware_connection) in hardware_connections {
             if !matches!(hardware_connection, NoConnection) {
-                // disable connect to option if already connected to it
+                // avoid re-offering the current connection method if connected
                 let connect = if current_connection != hardware_connection {
                     button(text(format!("Connect via {}", hardware_connection.name())))
                         .on_press(Message::ConnectRequest(hardware_connection.clone()))
@@ -96,7 +96,7 @@ fn devices_submenu<'a>(
                             }
                         })
                 } else {
-                    button("Connected to Device")
+                    button(text("Connected to Device"))
                         .width(Length::Fill)
                         .style(|_, status| {
                             if status == Hovered {
@@ -199,10 +199,12 @@ pub fn view<'a>(
         Some(model) => match hardware_connection {
             NoConnection => "hardware: none".to_string(),
             Local => format!("hardware: {}@Local", model),
+            #[cfg(feature = "usb")]
+            Usb(_) => format!("hardware: {}@USB", model),
             #[cfg(feature = "iroh")]
-            Iroh(_, _) => format!("hardware: {}@Remote", model),
+            Iroh(_, _) => format!("hardware: {}@Iroh", model),
             #[cfg(feature = "tcp")]
-            Tcp(_, _) => format!("hardware: {}@Remote", model),
+            Tcp(_, _) => format!("hardware: {}@TCP", model),
         },
     };
 
@@ -262,14 +264,14 @@ pub fn view<'a>(
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
         }
-        #[cfg(not(target_arch = "wasm32"))]
         Local => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
         }
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
         _ => {
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
         }

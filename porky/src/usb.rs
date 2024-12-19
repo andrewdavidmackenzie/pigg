@@ -2,7 +2,7 @@
 use crate::flash;
 #[cfg(feature = "wifi")]
 use crate::flash::DbFlash;
-use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
@@ -32,6 +32,7 @@ use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 #[cfg(feature = "wifi")]
 use embassy_time::Duration;
+use embassy_time::Instant;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
 use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
@@ -148,6 +149,19 @@ impl Handler for ControlHandler<'_> {
                     }
                 }
             }
+            (PIGGUI_REQUEST, SEND_HARDWARE_CONFIG_VALUE) => {
+                match postcard::from_bytes::<HardwareConfigMessage>(buf) {
+                    Ok(message) => {
+                        info!("Config change sent by USB:");
+                        Some(OutResponse::Accepted)
+                    }
+                    _ => {
+                        error!("Error receiving config message over USB");
+                        Some(OutResponse::Rejected)
+                    }
+                }
+            }
+
             (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -192,6 +206,18 @@ impl Handler for ControlHandler<'_> {
             (PIGGUI_REQUEST, GET_CONFIG_VALUE) => {
                 // TODO not updated with changes :-(
                 postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?
+            }
+            (PIGGUI_REQUEST, GET_CONFIG_MESSAGE_VALUE) => {
+                // TODO send any pending message
+                info!("Config message requested by USB");
+                let message = HardwareConfigMessage::IOLevelChanged(
+                    12,
+                    LevelChange {
+                        new_level: true,
+                        timestamp: Instant::now().duration_since(Instant::MIN).into(),
+                    },
+                );
+                postcard::to_slice(&message, &mut self.buf).ok()?
             }
 
             _ => {

@@ -25,7 +25,7 @@ pub async fn wait_for_remote_message(
 /// Send config change received form the GUI to the remote hardware over `stream`[TcpStream]
 pub async fn send_config_change(
     mut stream: TcpStream,
-    config_change_message: HardwareConfigMessage,
+    config_change_message: &HardwareConfigMessage,
 ) -> anyhow::Result<()> {
     stream
         .write_all(&postcard::to_allocvec(&config_change_message)?)
