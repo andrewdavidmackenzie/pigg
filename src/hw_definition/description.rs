@@ -32,6 +32,7 @@ pub const TCP_MDNS_SERVICE_PROTOCOL: &str = "_tcp";
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 pub const TCP_MDNS_SERVICE_TYPE: &str = "_pigg._tcp.local.";
 
+#[cfg(not(feature = "no_std"))]
 /// A 16 character String represents a serial number for a device
 pub type SerialNumber = String;
 
