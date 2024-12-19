@@ -58,7 +58,7 @@ pub enum SsidDialogMessage {
 fn send_ssid(serial_number: String, ssid_spec: SsidSpec) -> Task<Message> {
     #[cfg(feature = "usb")]
     return Task::perform(usb::send_ssid_spec(serial_number, ssid_spec), |res| {
-        Message::SsidSpecSent(res)
+        Message::SsidSpecSent(res.map_err(|e| format!("Could not send SSID Spec: {}", e)))
     });
     #[cfg(not(feature = "usb"))]
     Task::none()

@@ -2,7 +2,7 @@
 use crate::discovery::DiscoveredDevice;
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::USBRaw;
-use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
 use crate::hw_definition::description::HardwareDetails;
 #[cfg(feature = "discovery")]
@@ -13,11 +13,12 @@ use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 #[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE,
-    SET_SSID_VALUE,
+    GET_CONFIG_MESSAGE_VALUE, GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, PIGGUI_REQUEST,
+    RESET_SSID_VALUE, SEND_HARDWARE_CONFIG_VALUE, SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
+use anyhow::anyhow;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use serde::Deserialize;
@@ -78,8 +79,18 @@ const GET_HARDWARE_CONFIG: ControlIn = ControlIn {
     length: 2000,
 };
 
+/// [ControlIn] "command" to get a [HardwareConfigMessage] of an attached "porky"
+const GET_HARDWARE_CONFIG_MESSAGE: ControlIn = ControlIn {
+    control_type: ControlType::Vendor,
+    recipient: Recipient::Interface,
+    request: PIGGUI_REQUEST,
+    value: GET_CONFIG_MESSAGE_VALUE,
+    index: 0,
+    length: 2000,
+};
+
 /// Get the Interface to talk to a device by USB if we can find a device with the specific serial
-async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, String> {
+async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, anyhow::Error> {
     if let Ok(device_list) = nusb::list_devices() {
         let interfaces = device_list
             .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
@@ -95,52 +106,57 @@ async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, Strin
         }
     }
 
-    Err("Could not find USB device with desired Serial Number".to_string())
+    Err(anyhow!(
+        "Could not find USB device with desired Serial Number: {serial}"
+    ))
 }
 
 /// Generic request to send data to porky over USB
-async fn usb_send_porky<'a>(porky: &Interface, control_out: ControlOut<'a>) -> Result<(), String> {
-    porky
-        .control_out(control_out)
-        .await
-        .status
-        .map_err(|e| format!("Could not get response from porky over USB: {e}"))
+async fn usb_send_porky<'a>(
+    porky: &Interface,
+    control_out: ControlOut<'a>,
+) -> Result<(), anyhow::Error> {
+    Ok(porky.control_out(control_out).await.status?)
 }
 
 /// Generic request to get data from porky over USB
-async fn usb_get_porky<T>(porky: &Interface, control_in: ControlIn) -> Result<T, String>
+async fn usb_get_porky<T>(porky: &Interface, control_in: ControlIn) -> Result<T, anyhow::Error>
 where
     T: for<'a> Deserialize<'a>,
 {
     let response = porky.control_in(control_in).await;
-    response
-        .status
-        .map_err(|e| format!("Could not get response from porky over USB: {e}"))?;
+    response.status?;
     let data = response.data;
     let length = data.len();
-    postcard::from_bytes(&data[0..length])
-        .map_err(|e| format!("Could not deserialize USB message: {e}"))
+    Ok(postcard::from_bytes(&data[0..length])?)
 }
 
 /// Request [HardwareDescription] from compatible porky device over USB
-async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, String> {
+async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, anyhow::Error> {
     usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
 }
 
 #[cfg(feature = "discovery")]
 /// Request [HardwareDetails] from compatible porky device over USB
-async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, String> {
+async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, anyhow::Error> {
     usb_get_porky(porky, GET_HARDWARE_DETAILS).await
 }
 
 /// Request [HardwareDetails] from compatible porky device over USB
-async fn get_hardware_config(porky: &Interface) -> Result<HardwareConfig, String> {
+async fn get_hardware_config(porky: &Interface) -> Result<HardwareConfig, anyhow::Error> {
     usb_get_porky(porky, GET_HARDWARE_CONFIG).await
+}
+
+/// Request [HardwareConfigMessage] from a specific porky device over USB
+async fn get_hardware_config_message(
+    porky: &Interface,
+) -> Result<HardwareConfigMessage, anyhow::Error> {
+    usb_get_porky(porky, GET_HARDWARE_CONFIG_MESSAGE).await
 }
 
 /// Request [WiFiDetails] from compatible porky device over USB
 #[cfg(feature = "discovery")]
-async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, String> {
+async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, anyhow::Error> {
     usb_get_porky(porky, GET_WIFI_DETAILS).await
 }
 
@@ -148,7 +164,7 @@ async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, String> {
 /// specified [SerialNumber]
 pub async fn get_description_and_config(
     serial_number: &SerialNumber,
-) -> Result<(HardwareDescription, HardwareConfig), String> {
+) -> Result<(HardwareDescription, HardwareConfig), anyhow::Error> {
     let porky = interface_from_serial(serial_number).await?;
     let hardware_description = get_hardware_description(&porky).await?;
     let hardware_config = get_hardware_config(&porky).await?;
@@ -160,11 +176,11 @@ pub async fn get_description_and_config(
 pub async fn send_ssid_spec(
     serial_number: SerialNumber,
     ssid_spec: SsidSpec,
-) -> Result<(), String> {
+) -> Result<(), anyhow::Error> {
     let porky = interface_from_serial(&serial_number).await?;
 
     let mut buf = [0; 1024];
-    let data = postcard::to_slice(&ssid_spec, &mut buf).unwrap();
+    let data = postcard::to_slice(&ssid_spec, &mut buf)?;
 
     let set_wifi_details: ControlOut = ControlOut {
         control_type: ControlType::Vendor,
@@ -179,7 +195,7 @@ pub async fn send_ssid_spec(
 }
 
 /// Reset the SsidSpec in a connected porky device
-pub async fn reset_ssid_spec(serial_number: SerialNumber) -> Result<(), String> {
+pub async fn reset_ssid_spec(serial_number: SerialNumber) -> Result<(), anyhow::Error> {
     let porky = interface_from_serial(&serial_number).await?;
     usb_send_porky(&porky, RESET_SSID).await
 }
@@ -191,7 +207,7 @@ pub async fn reset_ssid_spec(serial_number: SerialNumber) -> Result<(), String> 
 pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
     match nusb::list_devices() {
         Ok(device_list) => {
-            let mut map = HashMap::<String, DiscoveredDevice>::new();
+            let mut devices = HashMap::<String, DiscoveredDevice>::new();
             let interfaces = device_list
                 .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
                 .filter_map(|device_info| device_info.open().ok())
@@ -224,7 +240,7 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                         HardwareConnection::Usb(hardware_details.serial.clone()),
                     );
 
-                    map.insert(
+                    devices.insert(
                         hardware_details.serial.clone(),
                         DiscoveredDevice {
                             discovery_method: USBRaw,
@@ -236,10 +252,40 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                 }
             }
 
-            map
+            devices
         }
         Err(_) => HashMap::default(),
     }
+}
+
+/// Wait until we receive a message from remote hardware
+pub async fn wait_for_remote_message(
+    serial_number: SerialNumber,
+) -> Result<HardwareConfigMessage, anyhow::Error> {
+    let porky = interface_from_serial(&serial_number).await?;
+    get_hardware_config_message(&porky).await
+}
+
+/// Send a new [HardwareConfigMessage] to the connected porky device over USB
+pub async fn send_config_change(
+    serial_number: &SerialNumber,
+    hardware_config_message: &HardwareConfigMessage,
+) -> Result<(), anyhow::Error> {
+    let porky = interface_from_serial(serial_number).await?;
+
+    let mut buf = [0; 2048];
+    let data = postcard::to_slice(hardware_config_message, &mut buf)?;
+
+    let message: ControlOut = ControlOut {
+        control_type: ControlType::Vendor,
+        recipient: Recipient::Interface,
+        request: PIGGUI_REQUEST,
+        value: SEND_HARDWARE_CONFIG_VALUE,
+        index: 0,
+        data,
+    };
+
+    usb_send_porky(&porky, message).await
 }
 
 /*
