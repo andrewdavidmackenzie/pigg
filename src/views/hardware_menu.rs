@@ -199,10 +199,12 @@ pub fn view<'a>(
         Some(model) => match hardware_connection {
             NoConnection => "hardware: none".to_string(),
             Local => format!("hardware: {}@Local", model),
+            #[cfg(feature = "usb")]
+            Usb(_) => format!("hardware: {}@USB", model),
             #[cfg(feature = "iroh")]
-            Iroh(_, _) => format!("hardware: {}@Remote", model),
+            Iroh(_, _) => format!("hardware: {}@Iroh", model),
             #[cfg(feature = "tcp")]
-            Tcp(_, _) => format!("hardware: {}@Remote", model),
+            Tcp(_, _) => format!("hardware: {}@TCP", model),
         },
     };
 
@@ -262,14 +264,14 @@ pub fn view<'a>(
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
         }
-        #[cfg(not(target_arch = "wasm32"))]
         Local => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
         }
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
         _ => {
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
         }
