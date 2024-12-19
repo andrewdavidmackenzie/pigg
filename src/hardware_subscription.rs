@@ -1,12 +1,12 @@
-use crate::{hw, local_device, usb};
+use crate::{hw, local_device};
 use futures::channel::mpsc::Sender;
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 
 use crate::event::HardwareEvent;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use crate::event::HardwareEvent::InputChange;
 #[cfg(feature = "iroh")]
 use crate::hardware_subscription::HWState::ConnectedIroh;
@@ -18,7 +18,10 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
+#[cfg(feature = "usb")]
 use crate::hw_definition::description::SerialNumber;
+#[cfg(feature = "usb")]
+use crate::usb;
 #[cfg(feature = "usb")]
 use crate::usb::get_description_and_config;
 use crate::views::hardware_view::HardwareConnection;
@@ -28,7 +31,7 @@ use iced::futures::channel::mpsc;
 use iced::futures::channel::mpsc::Receiver;
 use iced::futures::StreamExt;
 use iced::stream;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use iced::{
     futures,
     futures::{pin_mut, FutureExt},
