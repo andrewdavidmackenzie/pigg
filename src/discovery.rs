@@ -6,7 +6,7 @@ use crate::discovery::DiscoveryMethod::Mdns;
 use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
-use crate::hw_definition::description::{HardwareDetails, SsidSpec};
+use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
 #[cfg(feature = "usb")]
 use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
@@ -32,8 +32,6 @@ use std::str::FromStr;
 use std::time::Duration;
 //#[cfg(not(any(feature = "usb", feature = "iroh")))]
 //compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
-
-pub type SerialNumber = String;
 
 /// What method was used to discover a device? Currently, we support Iroh and USB
 #[derive(Debug, Clone)]
@@ -112,10 +110,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
             for key in previous_serial_numbers {
                 if !current_serial_numbers.contains(&key) {
                     gui_sender
-                        .send(DiscoveryEvent::DeviceLost(
-                            key.clone(),
-                            DiscoveryMethod::USBRaw,
-                        ))
+                        .send(DiscoveryEvent::DeviceLost(key.clone(), USBRaw))
                         .await
                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
@@ -198,7 +193,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                     if let Some((serial_number, _)) = fullname.split_once(".") {
                         let key = format!("{serial_number}/TCP");
                         gui_sender
-                            .send(DiscoveryEvent::DeviceLost(key, DiscoveryMethod::Mdns))
+                            .send(DiscoveryEvent::DeviceLost(key, Mdns))
                             .await
                             .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }

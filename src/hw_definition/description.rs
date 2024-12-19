@@ -6,14 +6,13 @@ use std::borrow::Cow;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
 
+use crate::hw_definition::pin_function::PinFunction;
 #[cfg(feature = "no_std")]
 use heapless::String;
 #[cfg(feature = "no_std")]
 use heapless::Vec;
 #[cfg(not(feature = "no_std"))]
 use std::vec::Vec;
-
-use crate::hw_definition::pin_function::PinFunction;
 
 #[allow(dead_code)] // Not used by piglet
 pub const SSID_NAME_MAX_LENGTH: usize = 32;
@@ -32,6 +31,9 @@ pub const TCP_MDNS_SERVICE_PROTOCOL: &str = "_tcp";
 #[allow(dead_code)] // Not used by porky
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 pub const TCP_MDNS_SERVICE_TYPE: &str = "_pigg._tcp.local.";
+
+/// A 16 character String represents a serial number for a device
+pub type SerialNumber = String;
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
 #[cfg(not(feature = "no_std"))]
@@ -61,7 +63,7 @@ pub struct HardwareDetails {
     /// A Pi specific revision number that identifies the hardware board and chip used
     pub revision: String,
     /// A serial number unique to each device
-    pub serial: String,
+    pub serial: SerialNumber,
     /// Whether the device supports wifi or not
     pub wifi: bool,
     /// WHat binary/application name is running on the device

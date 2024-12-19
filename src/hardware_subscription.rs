@@ -1,5 +1,6 @@
 use crate::{hw, local_device};
 use futures::channel::mpsc::Sender;
+use std::time::Duration;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
@@ -14,6 +15,7 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
+use crate::usb::get_description_and_config;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
 use futures::SinkExt;
@@ -40,6 +42,10 @@ enum HWState {
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedLocal(Receiver<SubscriberMessage>),
+    #[cfg(feature = "usb")]
+    /// The subscription is connected to a device over USB, will listen for events and send to GUI
+    #[allow(dead_code)] // TODO
+    ConnectedUsb(Receiver<SubscriberMessage>),
     #[cfg(feature = "iroh")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedIroh(Receiver<SubscriberMessage>, iroh_net::endpoint::Connection),
@@ -75,9 +81,6 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                     match target.clone() {
                         HardwareConnection::NoConnection => {}
 
-                        HardwareConnection::Usb(_) => {}
-
-                        #[cfg(not(target_arch = "wasm32"))]
                         HardwareConnection::Local => {
                             // Connect immediately - nothing to wait for!
                             match connected_hardware.description() {
@@ -100,6 +103,31 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                                 Err(e) => {
                                     report_error(gui_sender_clone, &format!("LocalHW error: {e}"))
                                         .await
+                                }
+                            }
+                        }
+
+                        #[cfg(feature = "usb")]
+                        HardwareConnection::Usb(serial) => {
+                            match get_description_and_config(&serial).await {
+                                Ok((hardware_description, hardware_config)) => {
+                                    if let Err(e) = gui_sender_clone
+                                        .send(HardwareEvent::Connected(
+                                            hardware_event_sender.clone(),
+                                            hardware_description.clone(),
+                                            hardware_config,
+                                        ))
+                                        .await
+                                    {
+                                        report_error(gui_sender_clone, &format!("Send error: {e}"))
+                                            .await;
+                                    }
+
+                                    // We are ready to receive messages from the GUI and send messages to it
+                                    state = HWState::ConnectedUsb(hardware_event_receiver);
+                                }
+                                Err(e) => {
+                                    report_error(gui_sender_clone, &format!("USB error: {e}")).await
                                 }
                             }
                         }
@@ -136,7 +164,6 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                         HardwareConnection::Tcp(ip, port) => {
                             match tcp_host::connect(ip, port).await {
                                 Ok((hardware_description, hardware_config, stream)) => {
-                                    println!("Config received on connect: {:?}", hardware_config);
                                     // Send the stream back to the GUI
                                     gui_sender_clone
                                         .send(HardwareEvent::Connected(
@@ -179,6 +206,12 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                             }
                         }
                     }
+                }
+
+                #[cfg(feature = "usb")]
+                HWState::ConnectedUsb(_) => {
+                    println!("Connected by USB");
+                    tokio::time::sleep(Duration::from_secs(1)).await;
                 }
 
                 #[cfg(feature = "iroh")]

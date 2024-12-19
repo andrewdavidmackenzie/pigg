@@ -1,11 +1,12 @@
-use crate::discovery::SerialNumber;
 use crate::event::HardwareEvent;
 use crate::hardware_subscription;
 use crate::hardware_subscription::SubscriberMessage;
 use crate::hardware_subscription::SubscriberMessage::Hardware;
 use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
-use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
+use crate::hw_definition::description::{
+    HardwareDescription, PinDescription, PinDescriptionSet, SerialNumber,
+};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
