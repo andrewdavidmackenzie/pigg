@@ -1,6 +1,5 @@
 use crate::{hw, local_device};
 use futures::channel::mpsc::Sender;
-use std::time::Duration;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
@@ -15,6 +14,7 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
+#[cfg(feature = "usb")]
 use crate::usb::get_description_and_config;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
@@ -211,7 +211,8 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                 #[cfg(feature = "usb")]
                 HWState::ConnectedUsb(_) => {
                     println!("Connected by USB");
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    // TODO
                 }
 
                 #[cfg(feature = "iroh")]

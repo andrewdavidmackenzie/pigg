@@ -206,6 +206,7 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
                     };
 
                     let ssid = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
+                    #[cfg(feature = "tcp")]
                     let tcp = wifi_details.and_then(|wf| wf.tcp);
                     let mut hardware_connections = HashMap::new();
                     #[cfg(feature = "tcp")]

@@ -264,14 +264,14 @@ pub fn view<'a>(
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
         }
-        #[cfg(not(target_arch = "wasm32"))]
         Local => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
         }
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
         _ => {
+            #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
         }
