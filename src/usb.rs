@@ -19,13 +19,14 @@ use crate::hw_definition::usb_values::{
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
 use anyhow::anyhow;
-use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
+use nusb::transfer::{Control, ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use serde::Deserialize;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use std::net::IpAddr;
+use std::time::Duration;
 
 /// [ControlIn] "command" to request the [HardwareDescription]
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
@@ -80,13 +81,12 @@ const GET_HARDWARE_CONFIG: ControlIn = ControlIn {
 };
 
 /// [ControlIn] "command" to get a [HardwareConfigMessage] of an attached "porky"
-const GET_HARDWARE_CONFIG_MESSAGE: ControlIn = ControlIn {
+const GET_HARDWARE_CONFIG_MESSAGE: Control = Control {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
     request: PIGGUI_REQUEST,
     value: GET_CONFIG_MESSAGE_VALUE,
     index: 0,
-    length: 2000,
 };
 
 /// Get the Interface to talk to a device by USB if we can find a device with the specific serial
@@ -131,6 +131,16 @@ where
     Ok(postcard::from_bytes(&data[0..length])?)
 }
 
+/// Generic request to get data from porky over USB
+async fn usb_get_blocking_porky<T>(porky: &Interface, control: Control) -> Result<T, anyhow::Error>
+where
+    T: for<'a> Deserialize<'a>,
+{
+    let mut buf = [0; 1024];
+    let length = porky.control_in_blocking(control, &mut buf, Duration::MAX)?;
+    Ok(postcard::from_bytes(&buf[0..length])?)
+}
+
 /// Request [HardwareDescription] from compatible porky device over USB
 async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, anyhow::Error> {
     usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
@@ -151,7 +161,7 @@ async fn get_hardware_config(porky: &Interface) -> Result<HardwareConfig, anyhow
 async fn get_hardware_config_message(
     porky: &Interface,
 ) -> Result<HardwareConfigMessage, anyhow::Error> {
-    usb_get_porky(porky, GET_HARDWARE_CONFIG_MESSAGE).await
+    usb_get_blocking_porky(porky, GET_HARDWARE_CONFIG_MESSAGE).await
 }
 
 /// Request [WiFiDetails] from compatible porky device over USB

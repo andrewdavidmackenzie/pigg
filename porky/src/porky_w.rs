@@ -222,7 +222,7 @@ async fn main(spawner: Spawner) {
 
                 let tcp = (ip.octets(), TCP_PORT);
                 #[cfg(feature = "usb")]
-                usb::start(
+                let usb_sender = usb::start(
                     spawner,
                     driver,
                     hw_desc,
@@ -284,8 +284,13 @@ async fn main(spawner: Spawner) {
                                         }
                                     },
                                     Either::Second(hardware_config_message) => {
-                                        tcp::send_message(&mut socket, hardware_config_message)
-                                            .await;
+                                        tcp::send_message(
+                                            &mut socket,
+                                            hardware_config_message.clone(),
+                                        )
+                                        .await;
+                                        // TODO if not being taken then the channel will fill eventually
+                                        let _ = usb_sender.try_send(hardware_config_message);
                                     }
                                 }
                             }

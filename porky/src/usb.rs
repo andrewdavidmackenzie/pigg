@@ -2,12 +2,13 @@
 use crate::flash;
 #[cfg(feature = "wifi")]
 use crate::flash::DbFlash;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
-    GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, PIGGUI_REQUEST,
+    GET_CONFIG_MESSAGE_VALUE, GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE,
+    GET_HARDWARE_DETAILS_VALUE, PIGGUI_REQUEST,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -28,11 +29,10 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 #[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
-#[cfg(feature = "wifi")]
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_sync::channel::{Channel, Receiver, Sender};
 #[cfg(feature = "wifi")]
 use embassy_time::Duration;
-use embassy_time::Instant;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
 use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
@@ -98,6 +98,7 @@ pub(crate) struct ControlHandler<'h> {
     buf: [u8; 1024],
     #[cfg(feature = "wifi")]
     watchdog: Watchdog,
+    receiver: Receiver<'h, NoopRawMutex, HardwareConfigMessage, 10>,
 }
 
 impl Handler for ControlHandler<'_> {
@@ -209,15 +210,13 @@ impl Handler for ControlHandler<'_> {
             }
             (PIGGUI_REQUEST, GET_CONFIG_MESSAGE_VALUE) => {
                 // TODO send any pending message
-                info!("Config message requested by USB");
-                let message = HardwareConfigMessage::IOLevelChanged(
-                    12,
-                    LevelChange {
-                        new_level: true,
-                        timestamp: Instant::now().duration_since(Instant::MIN).into(),
-                    },
-                );
-                postcard::to_slice(&message, &mut self.buf).ok()?
+                if let Ok(message) = self.receiver.try_receive() {
+                    info!("Sending requested HardwareConfigMessage by USB");
+                    postcard::to_slice(&message, &mut self.buf).ok()?
+                } else {
+                    info!("No HardwareConfigMessage to send by USB");
+                    return Some(InResponse::Rejected);
+                }
             }
 
             _ => {
@@ -244,7 +243,7 @@ pub async fn start(
         NoopRawMutex,
     >,
     #[cfg(feature = "wifi")] watchdog: Watchdog,
-) {
+) -> Sender<'static, NoopRawMutex, HardwareConfigMessage, 10> {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
     // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
@@ -260,6 +259,11 @@ pub async fn start(
         msos::PropertyData::RegMultiSz(DEVICE_INTERFACE_GUIDS),
     ));
 
+    // TODO test channel to send to the handler
+    static CHANNEL: StaticCell<Channel<NoopRawMutex, HardwareConfigMessage, 10>> =
+        StaticCell::new();
+    let channel = CHANNEL.init(Channel::<NoopRawMutex, HardwareConfigMessage, 10>::new());
+
     static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
     let handler = HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
@@ -272,6 +276,7 @@ pub async fn start(
         buf: [0; 1024],
         #[cfg(feature = "wifi")]
         watchdog,
+        receiver: channel.receiver(),
     });
 
     // Add a vendor-specific function (class 0xFF), and corresponding interface,
@@ -288,4 +293,6 @@ pub async fn start(
 
     info!("USB raw interface started");
     unwrap!(spawner.spawn(usb_task(usb)));
+
+    channel.sender()
 }
