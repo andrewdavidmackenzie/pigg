@@ -20,9 +20,3 @@ pub const GET_CONFIG_VALUE: u16 = 205;
 
 /// Command Value to get the [HardwareDetails] from porky
 pub const GET_HARDWARE_DETAILS_VALUE: u16 = 206;
-
-/// Command Value to get a hardware config message from porky
-pub const GET_CONFIG_MESSAGE_VALUE: u16 = 207;
-
-/// Command value to send a [HardwareConfigChange] to
-pub const SEND_HARDWARE_CONFIG_VALUE: u16 = 208;
