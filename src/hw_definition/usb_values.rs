@@ -9,7 +9,7 @@ pub const GET_HARDWARE_DESCRIPTION_VALUE: u16 = 201;
 /// Command value to get the [WiFiDetails] from porky
 pub const GET_WIFI_VALUE: u16 = 202;
 
-/// Command value to set the ssid details from porky
+/// Command value to set the ssid details for porky
 pub const SET_SSID_VALUE: u16 = 203;
 
 /// Command value to reset the ssid details to default

@@ -22,7 +22,7 @@ pico_w = ["wifi"]
 wifi = ["cyw43", "cyw43-pio", "embassy-net", "tcp", "discovery"]
 no_std = []
 debug-probe = []
-usb = ["embassy-usb"]
+usb = ["embassy-usb", "embassy-usb-driver"]
 discovery = ["edge-mdns", "edge-nal-embassy", "edge-nal"]
 tcp = []
 
@@ -39,6 +39,7 @@ cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"], opt
 cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"], optional = true }
 embassy-net = { version = "0.5.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"], optional = true }
 embassy-usb = { version = "0.3.0", default-features = false, optional = true }
+embassy-usb-driver = { version = "0.1.0", default-features = false, optional = true }
 
 # Other dependencies (repos in https://github.com/embassy-rs)
 ekv = { version = "1.0.0", default-features = false }
