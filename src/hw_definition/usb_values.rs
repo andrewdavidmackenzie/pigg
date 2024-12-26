@@ -20,3 +20,7 @@ pub const GET_CONFIG_VALUE: u16 = 205;
 
 /// Command Value to get the [HardwareDetails] from porky
 pub const GET_HARDWARE_DETAILS_VALUE: u16 = 206;
+
+#[allow(dead_code)]
+/// A constant used in USB packet sizes
+pub const USB_PACKET_SIZE: u16 = 64;

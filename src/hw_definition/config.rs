@@ -28,7 +28,6 @@ pub struct HardwareConfig {
 ///    * OutputLevelChanged
 #[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Serialize, Deserialize))]
 #[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize))]
-#[allow(clippy::large_enum_variant)]
 pub enum HardwareConfigMessage {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
     /// start listening for level changes on each of the input pins it contains

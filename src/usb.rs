@@ -13,20 +13,19 @@ use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 #[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_CONFIG_MESSAGE_VALUE, GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, PIGGUI_REQUEST,
-    RESET_SSID_VALUE, SEND_HARDWARE_CONFIG_VALUE, SET_SSID_VALUE,
+    GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE,
+    SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
 use anyhow::anyhow;
-use nusb::transfer::{Control, ControlIn, ControlOut, ControlType, Recipient};
+use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::Deserialize;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use std::net::IpAddr;
-use std::time::Duration;
 
 /// [ControlIn] "command" to request the [HardwareDescription]
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
@@ -80,15 +79,6 @@ const GET_HARDWARE_CONFIG: ControlIn = ControlIn {
     length: 2000,
 };
 
-/// [ControlIn] "command" to get a [HardwareConfigMessage] of an attached "porky"
-const GET_HARDWARE_CONFIG_MESSAGE: Control = Control {
-    control_type: ControlType::Vendor,
-    recipient: Recipient::Interface,
-    request: PIGGUI_REQUEST,
-    value: GET_CONFIG_MESSAGE_VALUE,
-    index: 0,
-};
-
 /// Get the Interface to talk to a device by USB if we can find a device with the specific serial
 async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, anyhow::Error> {
     if let Ok(device_list) = nusb::list_devices() {
@@ -131,16 +121,6 @@ where
     Ok(postcard::from_bytes(&data[0..length])?)
 }
 
-/// Generic request to get data from porky over USB
-async fn usb_get_blocking_porky<T>(porky: &Interface, control: Control) -> Result<T, anyhow::Error>
-where
-    T: for<'a> Deserialize<'a>,
-{
-    let mut buf = [0; 1024];
-    let length = porky.control_in_blocking(control, &mut buf, Duration::MAX)?;
-    Ok(postcard::from_bytes(&buf[0..length])?)
-}
-
 /// Request [HardwareDescription] from compatible porky device over USB
 async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, anyhow::Error> {
     usb_get_porky(porky, GET_HARDWARE_DESCRIPTION).await
@@ -155,13 +135,6 @@ async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, anyh
 /// Request [HardwareDetails] from compatible porky device over USB
 async fn get_hardware_config(porky: &Interface) -> Result<HardwareConfig, anyhow::Error> {
     usb_get_porky(porky, GET_HARDWARE_CONFIG).await
-}
-
-/// Request [HardwareConfigMessage] from a specific porky device over USB
-async fn get_hardware_config_message(
-    porky: &Interface,
-) -> Result<HardwareConfigMessage, anyhow::Error> {
-    usb_get_blocking_porky(porky, GET_HARDWARE_CONFIG_MESSAGE).await
 }
 
 /// Request [WiFiDetails] from compatible porky device over USB
@@ -273,7 +246,9 @@ pub async fn wait_for_remote_message(
     serial_number: SerialNumber,
 ) -> Result<HardwareConfigMessage, anyhow::Error> {
     let porky = interface_from_serial(&serial_number).await?;
-    get_hardware_config_message(&porky).await
+    let buf = RequestBuffer::new(1024);
+    let bytes = porky.interrupt_in(0x80, buf).await;
+    Ok(postcard::from_bytes(&bytes.data)?)
 }
 
 /// Send a new [HardwareConfigMessage] to the connected porky device over USB
@@ -282,31 +257,20 @@ pub async fn send_config_change(
     hardware_config_message: &HardwareConfigMessage,
 ) -> Result<(), anyhow::Error> {
     let porky = interface_from_serial(serial_number).await?;
-
-    let mut buf = [0; 2048];
+    let mut buf = [0u8; 2048];
     let data = postcard::to_slice(hardware_config_message, &mut buf)?;
-
-    let message: ControlOut = ControlOut {
-        control_type: ControlType::Vendor,
-        recipient: Recipient::Interface,
-        request: PIGGUI_REQUEST,
-        value: SEND_HARDWARE_CONFIG_VALUE,
-        index: 0,
-        data,
-    };
-
-    usb_send_porky(&porky, message).await
+    let _ = porky.interrupt_out(0x80, data.to_vec()).await;
+    Ok(())
 }
 
-/*
+#[cfg(feature = "usb")]
+#[cfg(test)]
+mod test {
+    use crate::hw_definition::config::HardwareConfigMessage;
+    use crate::hw_definition::usb_values::USB_PACKET_SIZE;
 
-    loop {
-        let request_buffer = RequestBuffer::new(1024);
-        let buf_in = porky.interrupt_in(0x80, request_buffer).await;
-        if buf_in.status.is_ok() {
-            let data_in = buf_in.data;
-            println!("Data In: {}", String::from_utf8_lossy(&data_in));
-        }
-        std::thread::sleep(Duration::from_secs(1));
+    #[test]
+    fn check_buf_size() {
+        assert!(size_of::<HardwareConfigMessage>() < USB_PACKET_SIZE.into());
     }
-*/
+}

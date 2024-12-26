@@ -8,6 +8,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
     GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, PIGGUI_REQUEST,
+    USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -25,13 +26,15 @@ use embassy_rp::flash::{Blocking, Flash};
 #[cfg(feature = "wifi")]
 use embassy_rp::peripherals::FLASH;
 use embassy_rp::peripherals::USB;
-use embassy_rp::usb::Driver;
+use embassy_rp::usb::{Driver, Endpoint, In, Out};
 #[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
+#[cfg(feature = "wifi")]
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 #[cfg(feature = "wifi")]
 use embassy_time::Duration;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
+use embassy_usb::driver::{EndpointIn, EndpointOut};
 use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
 use embassy_usb::{msos, Handler, UsbDevice};
@@ -147,18 +150,6 @@ impl Handler for ControlHandler<'_> {
                     }
                 }
             }
-            (PIGGUI_REQUEST, SEND_HARDWARE_CONFIG_VALUE) => {
-                match postcard::from_bytes::<HardwareConfigMessage>(buf) {
-                    Ok(message) => {
-                        info!("Config change sent by USB:");
-                        Some(OutResponse::Accepted)
-                    }
-                    _ => {
-                        error!("Error receiving config message over USB");
-                        Some(OutResponse::Rejected)
-                    }
-                }
-            }
 
             (_, _) => {
                 error!(
@@ -217,14 +208,26 @@ impl Handler for ControlHandler<'_> {
     }
 }
 
-pub struct UsbConnection<D: embassy_usb_driver::Driver<'static>> {
-    ep_in: D::EndpointIn,
-    ep_out: D::EndpointIn,
+/// [UsbConnection] is used to send and receive messages back and forth to the host, but not using
+/// the Control transfers, instead using InterruptIn or InterruptOut transfers
+pub struct UsbConnection<D: EndpointIn, E: EndpointOut> {
+    ep_in: D,
+    ep_out: E,
+    buf: &'static mut [u8; 1024],
 }
 
-impl<D: embassy_usb_driver::Driver<'static>> UsbConnection<D> {
-    pub fn try_send(&mut self, _hardware_config_message: HardwareConfigMessage) {
-        todo!()
+impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
+    /// Take the [HardwareConfigMessage] serialize it using postcard and send it to the host
+    /// via the [EndpointIn]
+    pub async fn send(&mut self, hardware_config_message: HardwareConfigMessage) {
+        let msg = postcard::to_slice(&hardware_config_message, self.buf).unwrap(); // TODO
+        self.ep_in.write(msg).await.unwrap(); // TODO
+    }
+
+    /// Receive a [HardwareConfigMessage] from the host over the usb Endpoint out
+    pub async fn receive(&mut self) -> HardwareConfigMessage {
+        let size = self.ep_out.read(self.buf).await.unwrap(); // TODO
+        postcard::from_bytes(&self.buf[..size]).unwrap()
     }
 }
 
@@ -241,7 +244,7 @@ pub async fn start(
         NoopRawMutex,
     >,
     #[cfg(feature = "wifi")] watchdog: Watchdog,
-) -> UsbConnection {
+) -> UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>> {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
     // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
@@ -262,8 +265,8 @@ pub async fn start(
     let mut function = builder.function(0xFF, 0, 0);
     let mut interface = function.interface();
     let mut alt = interface.alt_setting(0xFF, 0, 0, None);
-    let ep_in = alt.endpoint_interrupt_in(1024, 10);
-    let ep_out = alt.endpoint_interrupt_out(1024, 10);
+    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
+    let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
 
     static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
     let handler = HANDLER.init(ControlHandler {
@@ -274,7 +277,7 @@ pub async fn start(
         tcp,
         #[cfg(feature = "wifi")]
         db,
-        buf: [0; 1024],
+        buf: [0u8; 1024],
         #[cfg(feature = "wifi")]
         watchdog,
     });
@@ -284,8 +287,10 @@ pub async fn start(
 
     let usb = builder.build();
 
-    info!("USB raw interface started");
+    info!("USB started");
     unwrap!(spawner.spawn(usb_task(usb)));
 
-    UsbConnection { ep_in, ep_out }
+    static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
+    let buf = BUF.init([0u8; 1024]);
+    UsbConnection { ep_in, ep_out, buf }
 }

@@ -133,7 +133,7 @@ pub struct PinDescriptionSet {
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize)]
 pub struct PinDescriptionSet<'a> {
-    pub(crate) pins: Vec<PinDescription<'a>, 40>,
+    pub pins: Vec<PinDescription<'a>, 40>,
 }
 
 #[cfg(not(feature = "no_std"))]
