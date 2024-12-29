@@ -290,7 +290,8 @@ async fn main(spawner: Spawner) {
                                             hardware_config_message.clone(),
                                         )
                                         .await;
-                                        let _ = usb_connection.send(hardware_config_message).await;
+                                        //info!("Sending hw message via USB");
+                                        //let _ = usb_connection.send(hardware_config_message).await;
                                     }
                                 }
                             }

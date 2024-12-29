@@ -16,7 +16,7 @@ pub const SET_SSID_VALUE: u16 = 203;
 pub const RESET_SSID_VALUE: u16 = 204;
 
 /// Command Value to get the hardware config from porky
-pub const GET_CONFIG_VALUE: u16 = 205;
+pub const GET_INITIAL_CONFIG_VALUE: u16 = 205;
 
 /// Command Value to get the [HardwareDetails] from porky
 pub const GET_HARDWARE_DETAILS_VALUE: u16 = 206;

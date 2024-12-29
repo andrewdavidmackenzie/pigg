@@ -13,12 +13,13 @@ use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 #[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE,
+    GET_HARDWARE_DESCRIPTION_VALUE, GET_INITIAL_CONFIG_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE,
     SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
 use anyhow::anyhow;
+use log::info;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::Deserialize;
@@ -70,11 +71,11 @@ const RESET_SSID: ControlOut = ControlOut {
 };
 
 /// [ControlIn] "command" to get the [HardwareConfig] of an attached "porky"
-const GET_HARDWARE_CONFIG: ControlIn = ControlIn {
+const GET_INITIAL_HARDWARE_CONFIG: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,
     request: PIGGUI_REQUEST,
-    value: GET_CONFIG_VALUE,
+    value: GET_INITIAL_CONFIG_VALUE,
     index: 0,
     length: 2000,
 };
@@ -133,8 +134,8 @@ async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, anyh
 }
 
 /// Request [HardwareDetails] from compatible porky device over USB
-async fn get_hardware_config(porky: &Interface) -> Result<HardwareConfig, anyhow::Error> {
-    usb_get_porky(porky, GET_HARDWARE_CONFIG).await
+async fn get_initial_hardware_config(porky: &Interface) -> Result<HardwareConfig, anyhow::Error> {
+    usb_get_porky(porky, GET_INITIAL_HARDWARE_CONFIG).await
 }
 
 /// Request [WiFiDetails] from compatible porky device over USB
@@ -143,16 +144,16 @@ async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, anyhow::Erro
     usb_get_porky(porky, GET_WIFI_DETAILS).await
 }
 
-/// Get the [HardwareDescription] and [HardwareConfig] for a USB connected device with the
-/// specified [SerialNumber]
-pub async fn get_description_and_config(
+/// Connect to a device by USB with the specified `serial_number` [SerialNumber]
+/// Return the [HardwareDescription] and [HardwareConfig] along with the [Interface] to use
+pub async fn connect(
     serial_number: &SerialNumber,
-) -> Result<(HardwareDescription, HardwareConfig), anyhow::Error> {
+) -> Result<(Interface, HardwareDescription, HardwareConfig), anyhow::Error> {
     let porky = interface_from_serial(serial_number).await?;
     let hardware_description = get_hardware_description(&porky).await?;
-    let hardware_config = get_hardware_config(&porky).await?;
+    let hardware_config = get_initial_hardware_config(&porky).await?;
 
-    Ok((hardware_description, hardware_config))
+    Ok((porky, hardware_description, hardware_config))
 }
 
 /// Send a new Wi-Fi SsidSpec to the connected porky device over USB
@@ -243,22 +244,25 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
 
 /// Wait until we receive a message from remote hardware
 pub async fn wait_for_remote_message(
-    serial_number: SerialNumber,
+    porky: &Interface,
 ) -> Result<HardwareConfigMessage, anyhow::Error> {
-    let porky = interface_from_serial(&serial_number).await?;
     let buf = RequestBuffer::new(1024);
+    info!("Waiting for remote message over USB");
     let bytes = porky.interrupt_in(0x80, buf).await;
-    Ok(postcard::from_bytes(&bytes.data)?)
+    match bytes.status {
+        Ok(_) => Ok(postcard::from_bytes(&bytes.data)?),
+        Err(_e) => Err(anyhow!("Error receiving over USB")),
+    }
 }
 
 /// Send a new [HardwareConfigMessage] to the connected porky device over USB
 pub async fn send_config_change(
-    serial_number: &SerialNumber,
+    porky: &Interface,
     hardware_config_message: &HardwareConfigMessage,
 ) -> Result<(), anyhow::Error> {
-    let porky = interface_from_serial(serial_number).await?;
     let mut buf = [0u8; 2048];
     let data = postcard::to_slice(hardware_config_message, &mut buf)?;
+    info!("Sending {} bytes via USB", data.len());
     let _ = porky.interrupt_out(0x80, data.to_vec()).await;
     Ok(())
 }

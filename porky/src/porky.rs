@@ -148,6 +148,7 @@ async fn main(spawner: Spawner) {
     )
     .await;
 
+    /*
     #[cfg(feature = "usb")]
     let mut usb_connection = usb::start(spawner, driver, hw_desc, hardware_config.clone()).await;
 
@@ -156,4 +157,6 @@ async fn main(spawner: Spawner) {
         info!("got USB config message");
         gpio::apply_config_change(&spawner, &message, &mut hardware_config).await;
     }
+
+     */
 }

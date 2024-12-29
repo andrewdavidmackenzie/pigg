@@ -7,8 +7,8 @@ use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
-    GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, PIGGUI_REQUEST,
-    USB_PACKET_SIZE,
+    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, GET_INITIAL_CONFIG_VALUE,
+    PIGGUI_REQUEST, USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -48,6 +48,7 @@ const DEVICE_INTERFACE_GUIDS: &[&str] = &["{AFB9A6FB-30BA-44BC-9232-806CFC875321
 
 #[embassy_executor::task]
 async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
+    info!("USB started");
     device.run().await
 }
 
@@ -192,8 +193,7 @@ impl Handler for ControlHandler<'_> {
                 };
                 postcard::to_slice(&wifi, &mut self.buf).ok()?
             },
-            (PIGGUI_REQUEST, GET_CONFIG_VALUE) => {
-                // TODO not updated with changes :-(
+            (PIGGUI_REQUEST, GET_INITIAL_CONFIG_VALUE) => {
                 postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?
             }
             _ => {
@@ -221,12 +221,14 @@ impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
     /// via the [EndpointIn]
     pub async fn send(&mut self, hardware_config_message: HardwareConfigMessage) {
         let msg = postcard::to_slice(&hardware_config_message, self.buf).unwrap(); // TODO
+        info!("USB Send {} bytes", msg.len());
         self.ep_in.write(msg).await.unwrap(); // TODO
     }
 
     /// Receive a [HardwareConfigMessage] from the host over the usb Endpoint out
     pub async fn receive(&mut self) -> HardwareConfigMessage {
         let size = self.ep_out.read(self.buf).await.unwrap(); // TODO
+        info!("USB Receive: {} bytes", size);
         postcard::from_bytes(&self.buf[..size]).unwrap()
     }
 }
@@ -244,7 +246,8 @@ pub async fn start(
         NoopRawMutex,
     >,
     #[cfg(feature = "wifi")] watchdog: Watchdog,
-) -> UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>> {
+) {
+    //) -> UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>> {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
     // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
@@ -260,37 +263,41 @@ pub async fn start(
         msos::PropertyData::RegMultiSz(DEVICE_INTERFACE_GUIDS),
     ));
 
-    // Add a vendor-specific function (class 0xFF), and corresponding interface,
-    // that uses our custom handler.
-    let mut function = builder.function(0xFF, 0, 0);
-    let mut interface = function.interface();
-    let mut alt = interface.alt_setting(0xFF, 0, 0, None);
-    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
-    let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
-
-    static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
-    let handler = HANDLER.init(ControlHandler {
-        if_num: interface.interface_number(),
+    static CONTROL_HANDLER: StaticCell<ControlHandler> = StaticCell::new();
+    let control_handler = CONTROL_HANDLER.init(ControlHandler {
+        if_num: InterfaceNumber(0),
         hardware_description,
         hardware_config,
         #[cfg(feature = "wifi")]
         tcp,
         #[cfg(feature = "wifi")]
         db,
-        buf: [0u8; 1024],
+        buf: [0; 1024],
         #[cfg(feature = "wifi")]
         watchdog,
     });
 
+    // Add a vendor-specific function (class 0xFF), and corresponding interface,
+    // that uses our custom handler.
+    let mut function = builder.function(0xFF, 0, 0);
+    let mut interface = function.interface();
+    let _alt = interface.alt_setting(0xFF, 0, 0, None);
+    control_handler.if_num = interface.interface_number();
+
+    //    let mut alt = interface.alt_setting(0xFF, 0, 0, None);
+    //    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
+    //    let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
+
     drop(function);
-    builder.handler(handler);
+    builder.handler(control_handler);
 
     let usb = builder.build();
 
-    info!("USB started");
     unwrap!(spawner.spawn(usb_task(usb)));
 
+    /*
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);
     UsbConnection { ep_in, ep_out, buf }
+     */
 }

@@ -19,11 +19,7 @@ use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
 #[cfg(feature = "usb")]
-use crate::hw_definition::description::SerialNumber;
-#[cfg(feature = "usb")]
 use crate::usb;
-#[cfg(feature = "usb")]
-use crate::usb::get_description_and_config;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
 use futures::SinkExt;
@@ -36,6 +32,8 @@ use iced::{
     futures,
     futures::{pin_mut, FutureExt},
 };
+#[cfg(feature = "usb")]
+use nusb::Interface;
 
 /// A message type sent from the UI to the subscriber
 pub enum SubscriberMessage {
@@ -52,8 +50,7 @@ enum HWState {
     ConnectedLocal(Receiver<SubscriberMessage>),
     #[cfg(feature = "usb")]
     /// The subscription is connected to a device over USB, will listen for events and send to GUI
-    #[allow(dead_code)] // TODO
-    ConnectedUsb(Receiver<SubscriberMessage>, SerialNumber),
+    ConnectedUsb(Interface, Receiver<SubscriberMessage>),
     #[cfg(feature = "iroh")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedIroh(Receiver<SubscriberMessage>, iroh_net::endpoint::Connection),
@@ -117,10 +114,8 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
 
                         #[cfg(feature = "usb")]
                         HardwareConnection::Usb(serial) => {
-                            match get_description_and_config(&serial).await {
-                                Ok((hardware_description, hardware_config)) => {
-                                    let serial_number = hardware_description.details.serial.clone();
-
+                            match usb::connect(&serial).await {
+                                Ok((interface, hardware_description, hardware_config)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
@@ -134,7 +129,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                                     }
 
                                     // We are ready to receive messages from the GUI and send messages to it
-                                    state = ConnectedUsb(hardware_event_receiver, serial_number);
+                                    state = ConnectedUsb(interface, hardware_event_receiver);
                                 }
                                 Err(e) => {
                                     report_error(gui_sender_clone, &format!("USB error: {e}")).await
@@ -218,9 +213,10 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                 }
 
                 #[cfg(feature = "usb")]
-                ConnectedUsb(config_change_receiver, serial_number) => {
+                ConnectedUsb(interface, config_change_receiver) => {
+                    let interface_clone = interface.clone();
                     let fused_wait_for_remote_message =
-                        usb::wait_for_remote_message(serial_number.clone()).fuse();
+                        usb::wait_for_remote_message(&interface_clone).fuse();
                     pin_mut!(fused_wait_for_remote_message);
 
                     futures::select! {
@@ -233,7 +229,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                                         state = Disconnected;
                                     },
                                     Hardware(config_change) => {
-                                        if let Err(e) = usb::send_config_change(serial_number, config_change).await
+                                        if let Err(e) = usb::send_config_change(interface, config_change).await
                                         {
                                             report_error(gui_sender_clone, &format!("Hardware error: {e}"))
                                                 .await;
