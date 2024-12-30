@@ -2,6 +2,8 @@
 #![no_main]
 
 use crate::flash::DbFlash;
+use crate::gpio::GPIOPin::Available;
+use crate::gpio::GPIO_PINS;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{
     HardwareDescription, HardwareDetails, PinDescriptionSet, TCP_MDNS_SERVICE_NAME,
@@ -17,7 +19,7 @@ use ekv::Database;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::{Blocking, Flash};
-use embassy_rp::gpio::{Level, Output};
+use embassy_rp::gpio::{Flex, Level, Output};
 #[cfg(feature = "usb")]
 use embassy_rp::peripherals::USB;
 use embassy_rp::peripherals::{FLASH, PIO0};
@@ -137,38 +139,53 @@ async fn main(spawner: Spawner) {
     // PIN_23 - OP wireless power on signal
     let (mut control, wifi_stack) = wifi::start_net(spawner, peripherals.PIN_23, spi).await;
 
+    // Pins available to be programmed, but are not connected to header
+    //  WL_GPIO0 - via CYW43 - Connected to user LED
+    //  WL_GPIO1 - via CYW43 - Output controls on-board SMPS power save pin
+    //  WL_GPIO2 - via CYW43 - Input VBUS sense - high if VBUS is present, else low
+    //
+    // GPIO Pins Used Internally that are not in the list below
+    //  GP23 - Output wireless on signal - used by embassy
+    //  GP24 - Output/Input wireless SPI data/IRQ
+    //  GP25 - Output wireless SPI CS- when high enables GPIO29 ADC pin to read VSYS
+    //  GP29 - Output/Input SPI CLK/ADC Mode to measure VSYS/3
+    //
+    // Refer to $ProjectRoot/assets/images/pi_pico_w_pinout.png
+    // Take the set of available pins not used by other functions, including the three pins that
+    // are connected via the CYW43 Wi-Fi chip. Create [Flex] Pins out of each of the GPIO pins.
+    // Put them all into the GPIO_PINS map, marking them as available
+    // NOTE: All pin numbers are GPIO (BCM) Pin Numbers, not physical pin numbers
     // Take the following pins out of peripherals for use a GPIO
-    let header_pins = gpio::HeaderPins {
+    unsafe {
         #[cfg(not(feature = "debug-probe"))]
-        pin_0: peripherals.PIN_0,
+        let _ = GPIO_PINS.insert(0, Available(Flex::new(peripherals.PIN_0)));
         #[cfg(not(feature = "debug-probe"))]
-        pin_1: peripherals.PIN_1,
-        pin_2: peripherals.PIN_2,
-        pin_3: peripherals.PIN_3,
-        pin_4: peripherals.PIN_4,
-        pin_5: peripherals.PIN_5,
-        pin_6: peripherals.PIN_6,
-        pin_7: peripherals.PIN_7,
-        pin_8: peripherals.PIN_8,
-        pin_9: peripherals.PIN_9,
-        pin_10: peripherals.PIN_10,
-        pin_11: peripherals.PIN_11,
-        pin_12: peripherals.PIN_12,
-        pin_13: peripherals.PIN_13,
-        pin_14: peripherals.PIN_14,
-        pin_15: peripherals.PIN_15,
-        pin_16: peripherals.PIN_16,
-        pin_17: peripherals.PIN_17,
-        pin_18: peripherals.PIN_18,
-        pin_19: peripherals.PIN_19,
-        pin_20: peripherals.PIN_20,
-        pin_21: peripherals.PIN_21,
-        pin_22: peripherals.PIN_22,
-        pin_26: peripherals.PIN_26,
-        pin_27: peripherals.PIN_27,
-        pin_28: peripherals.PIN_28,
-    };
-    gpio::setup_pins(header_pins);
+        let _ = GPIO_PINS.insert(1, Available(Flex::new(peripherals.PIN_1)));
+        let _ = GPIO_PINS.insert(2, Available(Flex::new(peripherals.PIN_2)));
+        let _ = GPIO_PINS.insert(3, Available(Flex::new(peripherals.PIN_3)));
+        let _ = GPIO_PINS.insert(4, Available(Flex::new(peripherals.PIN_4)));
+        let _ = GPIO_PINS.insert(5, Available(Flex::new(peripherals.PIN_5)));
+        let _ = GPIO_PINS.insert(6, Available(Flex::new(peripherals.PIN_6)));
+        let _ = GPIO_PINS.insert(7, Available(Flex::new(peripherals.PIN_7)));
+        let _ = GPIO_PINS.insert(8, Available(Flex::new(peripherals.PIN_8)));
+        let _ = GPIO_PINS.insert(9, Available(Flex::new(peripherals.PIN_9)));
+        let _ = GPIO_PINS.insert(10, Available(Flex::new(peripherals.PIN_10)));
+        let _ = GPIO_PINS.insert(11, Available(Flex::new(peripherals.PIN_11)));
+        let _ = GPIO_PINS.insert(12, Available(Flex::new(peripherals.PIN_12)));
+        let _ = GPIO_PINS.insert(13, Available(Flex::new(peripherals.PIN_13)));
+        let _ = GPIO_PINS.insert(14, Available(Flex::new(peripherals.PIN_14)));
+        let _ = GPIO_PINS.insert(15, Available(Flex::new(peripherals.PIN_15)));
+        let _ = GPIO_PINS.insert(16, Available(Flex::new(peripherals.PIN_16)));
+        let _ = GPIO_PINS.insert(17, Available(Flex::new(peripherals.PIN_17)));
+        let _ = GPIO_PINS.insert(18, Available(Flex::new(peripherals.PIN_18)));
+        let _ = GPIO_PINS.insert(19, Available(Flex::new(peripherals.PIN_19)));
+        let _ = GPIO_PINS.insert(20, Available(Flex::new(peripherals.PIN_20)));
+        let _ = GPIO_PINS.insert(21, Available(Flex::new(peripherals.PIN_21)));
+        let _ = GPIO_PINS.insert(22, Available(Flex::new(peripherals.PIN_22)));
+        let _ = GPIO_PINS.insert(26, Available(Flex::new(peripherals.PIN_26)));
+        let _ = GPIO_PINS.insert(27, Available(Flex::new(peripherals.PIN_27)));
+        let _ = GPIO_PINS.insert(28, Available(Flex::new(peripherals.PIN_28)));
+    }
 
     // create hardware description
     let mut flash = flash::get_flash(peripherals.FLASH);
@@ -222,7 +239,7 @@ async fn main(spawner: Spawner) {
                 let tcp = (ip.octets(), TCP_PORT);
 
                 #[cfg(feature = "usb")]
-                let usb_connection = usb::start(
+                let _usb_connection = usb::start(
                     spawner,
                     driver,
                     hw_desc,
