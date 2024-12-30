@@ -13,8 +13,8 @@ use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 #[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_DESCRIPTION_VALUE, GET_INITIAL_CONFIG_VALUE, PIGGUI_REQUEST, RESET_SSID_VALUE,
-    SET_SSID_VALUE,
+    GET_HARDWARE_DESCRIPTION_VALUE, GET_INITIAL_CONFIG_VALUE, GET_SERIAL_NUMBER_VALUE,
+    PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
@@ -27,6 +27,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use std::net::IpAddr;
+use std::time::Duration;
 
 /// [ControlIn] "command" to request the [HardwareDescription]
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
@@ -36,6 +37,16 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     value: GET_HARDWARE_DESCRIPTION_VALUE,
     index: 0,
     length: 1000,
+};
+
+/// [ControlIn] "command" to request the [SerialNumber]
+const GET_SERIAL_NUMBER: ControlIn = ControlIn {
+    control_type: ControlType::Vendor,
+    recipient: Recipient::Interface,
+    request: PIGGUI_REQUEST,
+    value: GET_SERIAL_NUMBER_VALUE,
+    index: 0,
+    length: 64,
 };
 
 #[cfg(feature = "discovery")]
@@ -89,8 +100,8 @@ async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, anyho
             .filter_map(|device| device.claim_interface(0).ok());
 
         for interface in interfaces {
-            if let Ok(hardware_description) = get_hardware_description(&interface).await {
-                if hardware_description.details.serial == *serial {
+            if let Ok(serial_number) = get_serial_number(&interface).await {
+                if serial_number == *serial {
                     return Ok(interface);
                 }
             }
@@ -120,6 +131,11 @@ where
     let data = response.data;
     let length = data.len();
     Ok(postcard::from_bytes(&data[0..length])?)
+}
+
+/// Request [SerialNumber] from compatible porky device over USB
+async fn get_serial_number(porky: &Interface) -> Result<SerialNumber, anyhow::Error> {
+    usb_get_porky(porky, GET_SERIAL_NUMBER).await
 }
 
 /// Request [HardwareDescription] from compatible porky device over USB
@@ -246,12 +262,14 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
 pub async fn wait_for_remote_message(
     porky: &Interface,
 ) -> Result<HardwareConfigMessage, anyhow::Error> {
-    let buf = RequestBuffer::new(1024);
     info!("Waiting for remote message over USB");
-    let bytes = porky.interrupt_in(0x80, buf).await;
-    match bytes.status {
-        Ok(_) => Ok(postcard::from_bytes(&bytes.data)?),
-        Err(_e) => Err(anyhow!("Error receiving over USB")),
+    loop {
+        let buf = RequestBuffer::new(1024);
+        let bytes = porky.interrupt_in(0x80, buf).await;
+        if bytes.status.is_ok() {
+            return Ok(postcard::from_bytes(&bytes.data)?);
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }
 
@@ -263,7 +281,8 @@ pub async fn send_config_change(
     let mut buf = [0u8; 2048];
     let data = postcard::to_slice(hardware_config_message, &mut buf)?;
     info!("Sending {} bytes via USB", data.len());
-    let _ = porky.interrupt_out(0x80, data.to_vec()).await;
+    let tf = porky.interrupt_out(0x00, data.to_vec()).await;
+    tf.into_result()?;
     Ok(())
 }
 

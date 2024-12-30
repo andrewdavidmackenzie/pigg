@@ -8,7 +8,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, GET_INITIAL_CONFIG_VALUE,
-    PIGGUI_REQUEST, USB_PACKET_SIZE,
+    GET_SERIAL_NUMBER_VALUE, PIGGUI_REQUEST, USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -177,9 +177,15 @@ impl Handler for ControlHandler<'_> {
         // Respond to valid requests from piggui
         let msg = match (req.request, req.value) {
             (PIGGUI_REQUEST, GET_HARDWARE_DESCRIPTION_VALUE) => {
+                info!("Hardware Description returned by USB");
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
             }
+            (PIGGUI_REQUEST, GET_SERIAL_NUMBER_VALUE) => {
+                info!("Serial Number returned by USB");
+                postcard::to_slice(self.hardware_description.details.serial, &mut self.buf).ok()?
+            }
             (PIGGUI_REQUEST, GET_HARDWARE_DETAILS_VALUE) => {
+                info!("Hardware Details returned by USB");
                 postcard::to_slice(&self.hardware_description.details, &mut self.buf).ok()?
             }
             #[cfg(feature = "wifi")]
@@ -194,7 +200,12 @@ impl Handler for ControlHandler<'_> {
                 postcard::to_slice(&wifi, &mut self.buf).ok()?
             },
             (PIGGUI_REQUEST, GET_INITIAL_CONFIG_VALUE) => {
-                postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?
+                let slice = postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?;
+                info!(
+                    "Returning Initial hardware config by USB: size = {}",
+                    slice.len()
+                );
+                slice
             }
             _ => {
                 error!(
@@ -246,8 +257,7 @@ pub async fn start(
         NoopRawMutex,
     >,
     #[cfg(feature = "wifi")] watchdog: Watchdog,
-) {
-    //) -> UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>> {
+) -> UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>> {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
     // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
@@ -284,9 +294,9 @@ pub async fn start(
     let _alt = interface.alt_setting(0xFF, 0, 0, None);
     control_handler.if_num = interface.interface_number();
 
-    //    let mut alt = interface.alt_setting(0xFF, 0, 0, None);
-    //    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
-    //    let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
+    let mut alt = interface.alt_setting(0xFF, 0, 0, None);
+    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
+    let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
 
     drop(function);
     builder.handler(control_handler);
@@ -295,9 +305,7 @@ pub async fn start(
 
     unwrap!(spawner.spawn(usb_task(usb)));
 
-    /*
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);
     UsbConnection { ep_in, ep_out, buf }
-     */
 }

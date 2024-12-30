@@ -21,6 +21,9 @@ pub const GET_INITIAL_CONFIG_VALUE: u16 = 205;
 /// Command Value to get the [HardwareDetails] from porky
 pub const GET_HARDWARE_DETAILS_VALUE: u16 = 206;
 
+/// Command Value to get the [SerialNumber] from porky
+pub const GET_SERIAL_NUMBER_VALUE: u16 = 207;
+
 #[allow(dead_code)]
 /// A constant used in USB packet sizes
 pub const USB_PACKET_SIZE: u16 = 64;
