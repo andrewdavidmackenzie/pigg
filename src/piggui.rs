@@ -274,7 +274,6 @@ impl Piggui {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
                 self.hardware_view.new_config(config);
-                println!("ConfigLoaded - and saved in hardware view");
             }
 
             ConnectRequest(new_connection) => {
@@ -453,7 +452,7 @@ impl Piggui {
             }
             DiscoveryEvent::DeviceLost(key, _method) => {
                 // TODO only remove if not also discovered by some other method?
-                // WIll need changes in discovery of device and how stored in discovered_devices too
+                // TODO WIll need changes in discovery of device and how stored in discovered_devices too
                 if self.discovered_devices.remove(&key).is_some() {
                     self.info_row
                         .add_info_message(Info("Device Lost".to_string()));

@@ -232,6 +232,8 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                                     Hardware(config_change) => {
                                         info!("Hw Config Message sent via USB: {config_change:?}");
                                         // TODO understand what causes the sending of first message after connecting
+                                        // It might be the application of the config from the device getting
+                                        // re-applied to the device
                                         /*
                                         if let Err(e) = usb::send_config_change(interface, config_change).await
                                         {

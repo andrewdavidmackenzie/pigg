@@ -9,7 +9,6 @@ use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use core::str;
-use defmt::info;
 use ekv::Database;
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::{Blocking, Flash};
@@ -148,15 +147,8 @@ async fn main(spawner: Spawner) {
     )
     .await;
 
-    /*
     #[cfg(feature = "usb")]
-    let mut usb_connection = usb::start(spawner, driver, hw_desc, hardware_config.clone()).await;
-
-    loop {
-        let message = usb_connection.receive().await;
-        info!("got USB config message");
-        gpio::apply_config_change(&spawner, &message, &mut hardware_config).await;
-    }
-
-     */
+    let usb_connection = usb::start(spawner, driver, hw_desc, hardware_config.clone()).await;
+    #[cfg(feature = "usb")]
+    usb::message_loop(usb_connection, hw_desc, &mut hardware_config, &spawner, db).await;
 }

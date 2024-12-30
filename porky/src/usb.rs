@@ -1,6 +1,4 @@
-#[cfg(feature = "wifi")]
 use crate::flash;
-#[cfg(feature = "wifi")]
 use crate::flash::DbFlash;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
@@ -12,24 +10,23 @@ use crate::hw_definition::usb_values::{
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
-#[cfg(feature = "wifi")]
 use crate::persistence;
+use crate::{gpio, HARDWARE_EVENT_CHANNEL};
 use core::str;
-use defmt::{error, info, unwrap};
 #[cfg(feature = "wifi")]
+use cyw43::Control;
+use defmt::{error, info, unwrap};
 use ekv::Database;
 use embassy_executor::Spawner;
 #[cfg(feature = "wifi")]
 use embassy_futures::block_on;
-#[cfg(feature = "wifi")]
+use embassy_futures::select::{select, Either};
 use embassy_rp::flash::{Blocking, Flash};
-#[cfg(feature = "wifi")]
 use embassy_rp::peripherals::FLASH;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::{Driver, Endpoint, In, Out};
 #[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
-#[cfg(feature = "wifi")]
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 #[cfg(feature = "wifi")]
 use embassy_time::Duration;
@@ -39,6 +36,7 @@ use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
 use embassy_usb::{msos, Handler, UsbDevice};
 use embassy_usb::{Builder, Config};
+use serde::Serialize;
 use static_cell::StaticCell;
 
 type MyDriver = Driver<'static, USB>;
@@ -230,8 +228,8 @@ pub struct UsbConnection<D: EndpointIn, E: EndpointOut> {
 impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
     /// Take the [HardwareConfigMessage] serialize it using postcard and send it to the host
     /// via the [EndpointIn]
-    pub async fn send(&mut self, hardware_config_message: HardwareConfigMessage) {
-        let msg = postcard::to_slice(&hardware_config_message, self.buf).unwrap(); // TODO
+    pub async fn send(&mut self, msg: impl Serialize) {
+        let msg = postcard::to_slice(&msg, self.buf).unwrap(); // TODO
         info!("USB Send {} bytes", msg.len());
         self.ep_in.write(msg).await.unwrap(); // TODO
     }
@@ -308,4 +306,47 @@ pub async fn start(
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);
     UsbConnection { ep_in, ep_out, buf }
+}
+
+pub async fn message_loop(
+    mut usb_connection: UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
+    _hw_desc: &HardwareDescription<'_>,
+    hw_config: &mut HardwareConfig,
+    spawner: &Spawner,
+    #[cfg(feature = "wifi")] control: &mut Control<'_>,
+    db: &'static Database<
+        DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
+        NoopRawMutex,
+    >,
+) {
+    // TODO Wait for message requesting hardware_description and config that initiates a 'connection'
+
+    info!("Entering USB message loop");
+    loop {
+        match select(
+            usb_connection.receive(),
+            HARDWARE_EVENT_CHANNEL.receiver().receive(),
+        )
+        .await
+        {
+            Either::First(hardware_config_message) => {
+                gpio::apply_config_change(
+                    #[cfg(feature = "wifi")]
+                    control,
+                    spawner,
+                    &hardware_config_message,
+                    hw_config,
+                )
+                .await;
+                let _ = persistence::store_config_change(db, &hardware_config_message).await;
+                if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
+                    usb_connection.send(&hw_config).await;
+                }
+            }
+            Either::Second(hardware_config_message) => {
+                usb_connection.send(hardware_config_message).await;
+            }
+        }
+    }
+    //info!("Exiting Message Loop");
 }

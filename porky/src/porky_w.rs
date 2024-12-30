@@ -15,7 +15,6 @@ use defmt::{error, info};
 use defmt_rtt as _;
 use ekv::Database;
 use embassy_executor::Spawner;
-use embassy_futures::select::{select, Either};
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::gpio::{Level, Output};
@@ -223,7 +222,7 @@ async fn main(spawner: Spawner) {
                 let tcp = (ip.octets(), TCP_PORT);
 
                 #[cfg(feature = "usb")]
-                let mut usb_connection = usb::start(
+                let usb_connection = usb::start(
                     spawner,
                     driver,
                     hw_desc,
@@ -241,60 +240,16 @@ async fn main(spawner: Spawner) {
                     match tcp::wait_connection(wifi_stack, &mut wifi_tx_buffer, &mut wifi_rx_buffer)
                         .await
                     {
-                        Ok(mut socket) => {
-                            tcp::send_hardware_description_and_config(
-                                &mut socket,
+                        Ok(socket) => {
+                            tcp::message_loop(
+                                socket,
                                 hw_desc,
-                                &hardware_config,
+                                &mut hardware_config,
+                                &spawner,
+                                &mut control,
+                                db,
                             )
-                            .await;
-
-                            info!("Entering message loop");
-                            loop {
-                                match select(
-                                    tcp::wait_message(&mut socket),
-                                    HARDWARE_EVENT_CHANNEL.receiver().receive(),
-                                )
-                                .await
-                                {
-                                    Either::First(config_message) => match config_message {
-                                        None => break,
-                                        Some(hardware_config_message) => {
-                                            gpio::apply_config_change(
-                                                &mut control,
-                                                &spawner,
-                                                &hardware_config_message,
-                                                &mut hardware_config,
-                                            )
-                                            .await;
-                                            let _ = persistence::store_config_change(
-                                                db,
-                                                &hardware_config_message,
-                                            )
-                                            .await;
-                                            if matches!(
-                                                hardware_config_message,
-                                                HardwareConfigMessage::GetConfig
-                                            ) {
-                                                tcp::send_hardware_config(
-                                                    &mut socket,
-                                                    &hardware_config,
-                                                )
-                                                .await;
-                                            }
-                                        }
-                                    },
-                                    Either::Second(hardware_config_message) => {
-                                        tcp::send_message(
-                                            &mut socket,
-                                            hardware_config_message.clone(),
-                                        )
-                                        .await;
-                                        //let _ = usb_connection.send(hardware_config_message).await;
-                                    }
-                                }
-                            }
-                            info!("Exiting Message Loop");
+                            .await
                         }
                         Err(_) => error!("TCP accept error"),
                     }

@@ -262,12 +262,14 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
 pub async fn wait_for_remote_message(
     porky: &Interface,
 ) -> Result<HardwareConfigMessage, anyhow::Error> {
-    info!("Waiting for remote message over USB");
+    println!("Waiting for remote message over USB");
     loop {
         let buf = RequestBuffer::new(1024);
         let bytes = porky.interrupt_in(0x80, buf).await;
         if bytes.status.is_ok() {
-            return Ok(postcard::from_bytes(&bytes.data)?);
+            let msg = postcard::from_bytes(&bytes.data)?;
+            println!("USB message from device: {msg:?}");
+            return Ok(msg);
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
@@ -280,7 +282,8 @@ pub async fn send_config_change(
 ) -> Result<(), anyhow::Error> {
     let mut buf = [0u8; 2048];
     let data = postcard::to_slice(hardware_config_message, &mut buf)?;
-    info!("Sending {} bytes via USB", data.len());
+    println!("Sending {:?} via USB", hardware_config_message);
+    println!("Sending {} bytes via USB", data.len());
     let tf = porky.interrupt_out(0x00, data.to_vec()).await;
     tf.into_result()?;
     Ok(())
