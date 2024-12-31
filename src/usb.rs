@@ -19,7 +19,6 @@ use crate::hw_definition::usb_values::{
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
 use anyhow::anyhow;
-use log::info;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::Deserialize;
