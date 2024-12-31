@@ -28,8 +28,8 @@ use embassy_rp::usb::{Driver, Endpoint, In, Out};
 #[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-#[cfg(feature = "wifi")]
 use embassy_time::Duration;
+use embassy_time::Timer;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
 use embassy_usb::driver::{EndpointIn, EndpointOut};
 use embassy_usb::msos::windows_version;
@@ -236,9 +236,16 @@ impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
 
     /// Receive a [HardwareConfigMessage] from the host over the usb Endpoint out
     pub async fn receive(&mut self) -> HardwareConfigMessage {
-        let size = self.ep_out.read(self.buf).await.unwrap(); // TODO
-        info!("USB Receive: {} bytes", size);
-        postcard::from_bytes(&self.buf[..size]).unwrap()
+        let delay = Duration::from_secs(1);
+        loop {
+            let size = self.ep_out.read(self.buf).await.unwrap(); // TODO
+            if size != 0 {
+                info!("USB Receive: {} bytes", size);
+                postcard::from_bytes(&self.buf[..size]).unwrap()
+            } else {
+                Timer::after(delay).await;
+            }
+        }
     }
 }
 
