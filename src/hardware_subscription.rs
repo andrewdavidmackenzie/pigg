@@ -32,7 +32,6 @@ use iced::{
     futures,
     futures::{pin_mut, FutureExt},
 };
-use log::info;
 #[cfg(feature = "usb")]
 use nusb::Interface;
 
@@ -230,17 +229,15 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                                         state = Disconnected;
                                     },
                                     Hardware(config_change) => {
-                                        info!("Hw Config Message sent via USB: {config_change:?}");
+                                        log::info!("Hw Config Message sent via USB: {config_change:?}");
                                         // TODO understand what causes the sending of first message after connecting
                                         // It might be the application of the config from the device getting
                                         // re-applied to the device
-                                        /*
                                         if let Err(e) = usb::send_config_change(interface, config_change).await
                                         {
                                             report_error(gui_sender_clone, &format!("Hardware error: {e}"))
                                                 .await;
                                         }
-                                         */
                                     }
                                 }
                             }
@@ -248,6 +245,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
 
                         // receive an input level change from remote hardware
                         remote_event = fused_wait_for_remote_message => {
+                            log::info!("Remove Hw event Message received via USB: {remote_event:?}");
                             match remote_event {
                                  Ok(IOLevelChanged(bcm, level_change)) => {
                                     if let Err(e) = gui_sender_clone.send(InputChange(bcm, level_change)).await {

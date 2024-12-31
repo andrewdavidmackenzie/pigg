@@ -59,7 +59,7 @@ fn devices_submenu<'a>(
             }
         });
 
-        #[allow(unused_mut)]
+        // Menu items under each device menu
         let mut menu_items: Vec<Item<Message, Theme, Renderer>> = vec![];
 
         // Avoid the current connection being a connect option in the details dialog
@@ -81,10 +81,12 @@ fn devices_submenu<'a>(
                 }),
         ));
 
-        for (name, hardware_connection) in hardware_connections {
+        // Add buttons to connect to the device for each available connection type, except
+        // for a [HardwareConnection] type currently used to connect to the device
+        for hardware_connection in hardware_connections.values() {
             if !matches!(hardware_connection, NoConnection) {
                 // avoid re-offering the current connection method if connected
-                let connect = if current_connection != hardware_connection {
+                let connect_button = if current_connection != hardware_connection {
                     button(text(format!("Connect via {}", hardware_connection.name())))
                         .on_press(Message::ConnectRequest(hardware_connection.clone()))
                         .width(Length::Fill)
@@ -106,10 +108,11 @@ fn devices_submenu<'a>(
                             }
                         })
                 };
-                menu_items.push(Item::new(connect));
+                menu_items.push(Item::new(connect_button));
             }
         }
 
+        // Section for menu items to allow config of Wi-Fi of a Pico W via USB
         #[cfg(feature = "usb")]
         if hardware_details.wifi {
             if matches!(discovery_method, USBRaw) {
@@ -119,7 +122,7 @@ fn devices_submenu<'a>(
                         .width(Length::Fill)
                         .on_press(Message::SsidDialog(SsidDialogMessage::Show(
                             hardware_details.clone(),
-                            ssid_spec.as_ref().and_then(|wf| ssid_spec.clone()),
+                            ssid_spec.as_ref().and_then(|_wf| ssid_spec.clone()),
                         )))
                         .style(|_, status| {
                             if status == Hovered {
@@ -145,14 +148,12 @@ fn devices_submenu<'a>(
                         }),
                 ));
             }
-
-            device_items.push(Item::with_menu(
-                device_button,
-                Menu::new(menu_items).width(280.0).offset(10.0),
-            ));
-        } else {
-            device_items.push(Item::new(device_button));
         }
+
+        device_items.push(Item::with_menu(
+            device_button,
+            Menu::new(menu_items).width(280.0).offset(10.0),
+        ));
     }
 
     if device_items.is_empty() {

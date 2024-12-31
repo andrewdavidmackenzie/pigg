@@ -257,7 +257,7 @@ pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
     }
 }
 
-/// Wait until we receive a message from remote hardware
+/// Wait until we receive a message from remote hardware over interrupt_in transfer
 pub async fn wait_for_remote_message(
     porky: &Interface,
 ) -> Result<HardwareConfigMessage, anyhow::Error> {

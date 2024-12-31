@@ -175,15 +175,12 @@ impl Handler for ControlHandler<'_> {
         // Respond to valid requests from piggui
         let msg = match (req.request, req.value) {
             (PIGGUI_REQUEST, GET_HARDWARE_DESCRIPTION_VALUE) => {
-                info!("Hardware Description returned by USB");
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
             }
             (PIGGUI_REQUEST, GET_SERIAL_NUMBER_VALUE) => {
-                info!("Serial Number returned by USB");
                 postcard::to_slice(self.hardware_description.details.serial, &mut self.buf).ok()?
             }
             (PIGGUI_REQUEST, GET_HARDWARE_DETAILS_VALUE) => {
-                info!("Hardware Details returned by USB");
                 postcard::to_slice(&self.hardware_description.details, &mut self.buf).ok()?
             }
             #[cfg(feature = "wifi")]
