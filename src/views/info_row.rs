@@ -1,10 +1,12 @@
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
+#[cfg(feature = "discovery")]
+use crate::views::devices_menu;
 use crate::views::hardware_view::HardwareView;
 use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
-use crate::views::{config_menu, connection_menu, devices_menu};
+use crate::views::{config_menu, connection_menu};
 use crate::Message;
 use iced::border::Radius;
 use iced::widget::{button, container, Row};
