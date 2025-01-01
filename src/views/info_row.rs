@@ -4,7 +4,7 @@ use crate::views::hardware_view::HardwareView;
 use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
-use crate::views::{config_menu, connection_menu};
+use crate::views::{config_menu, connection_menu, devices_menu};
 use crate::Message;
 use iced::border::Radius;
 use iced::widget::{button, container, Row};
@@ -133,12 +133,9 @@ impl InfoRow {
         let menu_bar: Element<Message> = MenuBar::new(vec![
             version_button(),
             layout_selector.view(hardware_view.get_hardware_connection()),
-            connection_menu::view(
-                hardware_view,
-                hardware_view.get_hardware_connection(),
-                #[cfg(feature = "discovery")]
-                discovered_devices,
-            ),
+            connection_menu::view(hardware_view),
+            #[cfg(feature = "discovery")]
+            devices_menu::view(hardware_view.get_hardware_connection(), discovered_devices),
             config_menu::view(unsaved_changes, hardware_view.get_hardware_connection()),
         ])
         .style(|_, _| MENU_BAR_STYLE)
@@ -157,8 +154,6 @@ impl InfoRow {
     }
 
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
-        let subscriptions = vec![self.message_row.subscription()];
-
-        Subscription::batch(subscriptions)
+        self.message_row.subscription()
     }
 }
