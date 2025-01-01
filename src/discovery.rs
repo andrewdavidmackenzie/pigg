@@ -86,24 +86,25 @@ pub enum DiscoveryEvent {
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB
 pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
-        let mut previous_serial_numbers: Vec<String> = vec![];
+        let mut previous_serial_numbers = vec![];
 
         loop {
-            let mut current_serial_numbers = vec![];
-            let current_devices = usb::find_porkys().await;
+            // Get the vector of all visible serial numbers
+            let current_serial_numbers = usb::get_serials().await.unwrap();
 
             // New devices
-            for (serial_number, discovered_device) in current_devices {
-                if !previous_serial_numbers.contains(&serial_number) {
-                    gui_sender
-                        .send(DiscoveryEvent::DeviceFound(
-                            serial_number.clone(),
-                            discovered_device,
-                        ))
-                        .await
-                        .unwrap_or_else(|e| eprintln!("Send error: {e}"));
-                }
-                current_serial_numbers.push(serial_number);
+            let mut new_serial_numbers = current_serial_numbers.clone();
+            new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
+
+            for (new_serial_number, new_device) in usb::get_details(&new_serial_numbers).await {
+                // inform UI of new device found
+                gui_sender
+                    .send(DiscoveryEvent::DeviceFound(
+                        new_serial_number.clone(),
+                        new_device,
+                    ))
+                    .await
+                    .unwrap_or_else(|e| eprintln!("Send error: {e}"));
             }
 
             // Lost devices

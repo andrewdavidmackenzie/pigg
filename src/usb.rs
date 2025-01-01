@@ -182,62 +182,78 @@ pub async fn reset_ssid_spec(serial_number: SerialNumber) -> Result<(), anyhow::
     usb_send_porky(&porky, RESET_SSID).await
 }
 
-/// Try and find an attached "porky" USB devices based on the vendor id and product id
-/// Return a hashmap of interfaces for each one, with the serial_number as the key, enabling
-/// us later to communicate with a specific device using its serial number
+/// Get the details of the devices in the list of [SerialNumber] passed in
 #[cfg(feature = "discovery")]
-pub async fn find_porkys() -> HashMap<String, DiscoveredDevice> {
-    match nusb::list_devices() {
-        Ok(device_list) => {
-            let mut devices = HashMap::<String, DiscoveredDevice>::new();
-            let interfaces = device_list
-                .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
-                .filter_map(|device_info| device_info.open().ok())
-                .filter_map(|device| device.claim_interface(0).ok());
+pub async fn get_details(
+    serial_numbers: &[SerialNumber],
+) -> HashMap<SerialNumber, DiscoveredDevice> {
+    let mut devices = HashMap::<String, DiscoveredDevice>::new();
 
-            for interface in interfaces {
-                if let Ok(hardware_details) = get_hardware_details(&interface).await {
-                    let wifi_details = if hardware_details.wifi {
-                        get_wifi_details(&interface).await.ok()
-                    } else {
-                        None
-                    };
+    if let Ok(device_list) = nusb::list_devices() {
+        for device_info in
+            device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+        {
+            if let Some(serial_number) = device_info.serial_number() {
+                if serial_numbers.contains(&serial_number.to_string()) {
+                    let device = device_info.open().unwrap();
+                    let interface = device.claim_interface(0).unwrap();
 
-                    let ssid = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
-                    #[cfg(feature = "tcp")]
-                    let tcp = wifi_details.and_then(|wf| wf.tcp);
-                    let mut hardware_connections = HashMap::new();
-                    #[cfg(feature = "tcp")]
-                    if let Some(tcp_connection) = tcp {
-                        let connection = HardwareConnection::Tcp(
-                            IpAddr::from(tcp_connection.0),
-                            tcp_connection.1,
+                    if let Ok(hardware_details) = get_hardware_details(&interface).await {
+                        let wifi_details = if hardware_details.wifi {
+                            get_wifi_details(&interface).await.ok()
+                        } else {
+                            None
+                        };
+
+                        let ssid = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
+                        #[cfg(feature = "tcp")]
+                        let tcp = wifi_details.and_then(|wf| wf.tcp);
+                        let mut hardware_connections = HashMap::new();
+                        #[cfg(feature = "tcp")]
+                        if let Some(tcp_connection) = tcp {
+                            let connection = HardwareConnection::Tcp(
+                                IpAddr::from(tcp_connection.0),
+                                tcp_connection.1,
+                            );
+                            hardware_connections.insert(connection.name(), connection);
+                        }
+
+                        #[cfg(feature = "usb")]
+                        hardware_connections.insert(
+                            "USB".to_string(),
+                            HardwareConnection::Usb(hardware_details.serial.clone()),
                         );
-                        hardware_connections.insert(connection.name(), connection);
+
+                        devices.insert(
+                            hardware_details.serial.clone(),
+                            DiscoveredDevice {
+                                discovery_method: USBRaw,
+                                hardware_details,
+                                ssid_spec: ssid,
+                                hardware_connections,
+                            },
+                        );
                     }
-
-                    #[cfg(feature = "usb")]
-                    hardware_connections.insert(
-                        "USB".to_string(),
-                        HardwareConnection::Usb(hardware_details.serial.clone()),
-                    );
-
-                    devices.insert(
-                        hardware_details.serial.clone(),
-                        DiscoveredDevice {
-                            discovery_method: USBRaw,
-                            hardware_details,
-                            ssid_spec: ssid,
-                            hardware_connections,
-                        },
-                    );
                 }
             }
-
-            devices
         }
-        Err(_) => HashMap::default(),
     }
+
+    devices
+}
+
+/// Return a Vec of the [SerialNumber] of all compatible connected devices
+#[cfg(feature = "discovery")]
+pub async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
+    let device_list = nusb::list_devices()?;
+    Ok(device_list
+        .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+        .filter_map(|device_info| {
+            device_info
+                .serial_number()
+                .and_then(|s| Option::from(s.to_string()))
+        })
+        .collect())
 }
 
 /// Wait until we receive a message from remote hardware over interrupt_in transfer
