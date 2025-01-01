@@ -1,4 +1,5 @@
 use crate::flash::DbFlash;
+use crate::hw_definition::config::HardwareConfigMessage::NewConfig;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 use crate::{flash, gpio, persistence, HARDWARE_EVENT_CHANNEL};

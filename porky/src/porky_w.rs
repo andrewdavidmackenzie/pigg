@@ -249,6 +249,7 @@ async fn main(spawner: Spawner) {
                     watchdog,
                 )
                 .await;
+                // TODO Wait for message requesting hardware_description and config that initiates a 'connection'
 
                 let mut wifi_tx_buffer = [0; 4096];
                 let mut wifi_rx_buffer = [0; 4096];

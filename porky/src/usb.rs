@@ -6,7 +6,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, GET_INITIAL_CONFIG_VALUE,
-    PIGGUI_REQUEST, USB_PACKET_SIZE,
+    HW_CONFIG_MESSAGE, PIGGUI_REQUEST, USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -18,7 +18,6 @@ use cyw43::Control;
 use defmt::{error, info, unwrap};
 use ekv::Database;
 use embassy_executor::Spawner;
-#[cfg(feature = "wifi")]
 use embassy_futures::block_on;
 use embassy_futures::select::{select, Either};
 use embassy_rp::flash::{Blocking, Flash};
@@ -27,7 +26,8 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::usb::{Driver, Endpoint, In, Out};
 #[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
-use embassy_sync::blocking_mutex::raw::NoopRawMutex;
+use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
+use embassy_sync::channel::Channel;
 use embassy_time::Duration;
 use embassy_time::Timer;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
@@ -43,6 +43,8 @@ type MyDriver = Driver<'static, USB>;
 
 // This is a randomly generated GUID to allow clients on Windows to find our device
 const DEVICE_INTERFACE_GUIDS: &[&str] = &["{AFB9A6FB-30BA-44BC-9232-806CFC875321}"];
+
+static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> = Channel::new();
 
 #[embassy_executor::task]
 async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
@@ -153,8 +155,8 @@ impl Handler for ControlHandler<'_> {
 
             (PIGGUI_REQUEST, HW_CONFIG_MESSAGE) => {
                 match postcard::from_bytes::<HardwareConfigMessage>(buf) {
-                    Ok(spec) => {
-                        info!("Received HardwareConfigMessage over USB");
+                    Ok(hardware_config_message) => {
+                        block_on(USB_MESSAGE_CHANNEL.sender().send(hardware_config_message));
                         Some(OutResponse::Accepted)
                     }
                     Err(_) => {
@@ -234,15 +236,14 @@ pub struct UsbConnection<D: EndpointIn, E: EndpointOut> {
 }
 
 impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
-    /// Take the [HardwareConfigMessage] serialize it using postcard and send it to the host
-    /// via the [EndpointIn]
+    /// Serialize input using postcard and send it to the host via the [EndpointIn]
     pub async fn send(&mut self, msg: impl Serialize) {
         let msg = postcard::to_slice(&msg, self.buf).unwrap(); // TODO
-        info!("USB Send {} bytes", msg.len());
+        info!("Attempting to send {} bytes by USB", msg.len());
         self.ep_in.write(msg).await.unwrap(); // TODO
     }
 
-    /// Receive a [HardwareConfigMessage] from the host over the usb Endpoint out
+    /// Receive a [HardwareConfigMessage] from the host over the usb [EndpointOut]
     pub async fn receive(&mut self) -> HardwareConfigMessage {
         let delay = Duration::from_secs(1);
         loop {
@@ -334,17 +335,18 @@ pub async fn message_loop(
         NoopRawMutex,
     >,
 ) {
-    // TODO Wait for message requesting hardware_description and config that initiates a 'connection'
-
     info!("Entering USB message loop");
+
     loop {
+        info!("Waiting for USB config message or hardware event");
         match select(
-            usb_connection.receive(),
+            USB_MESSAGE_CHANNEL.receiver().receive(),
             HARDWARE_EVENT_CHANNEL.receiver().receive(),
         )
         .await
         {
             Either::First(hardware_config_message) => {
+                info!("HW Config message received over USB, applying to hardware");
                 gpio::apply_config_change(
                     #[cfg(feature = "wifi")]
                     control,
@@ -355,11 +357,15 @@ pub async fn message_loop(
                 .await;
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
                 if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
+                    info!("GetConfig received");
+                    // TODO Send not working
                     usb_connection.send(&hw_config).await;
                 }
             }
-            Either::Second(hardware_config_message) => {
-                usb_connection.send(hardware_config_message).await;
+            Either::Second(hardware_event) => {
+                info!("Hardware event, forwarding via USB");
+                // TODO Send not working
+                usb_connection.send(hardware_event).await;
             }
         }
     }

@@ -22,7 +22,7 @@ pub const GET_INITIAL_CONFIG_VALUE: u16 = 205;
 pub const GET_HARDWARE_DETAILS_VALUE: u16 = 206;
 
 /// Command Value to send a [HardwareConfigMessage] to device
-pub const HW_CONFIG_MESSAGE: u16 = 208;
+pub const HW_CONFIG_MESSAGE: u16 = 207;
 
 #[allow(dead_code)]
 /// A constant used in USB packet sizes

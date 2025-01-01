@@ -145,7 +145,6 @@ async fn apply_pin_config<'a>(
 
     match new_pin_function {
         PinFunction::None => {
-            info!("Setting new pin function to: None");
             // if we recovered a pin above - then leave it as
             if let Some(flex) = flex_pin {
                 unsafe {
@@ -156,7 +155,6 @@ async fn apply_pin_config<'a>(
         }
 
         Input(pull) => {
-            info!("Setting new pin function to: Input");
             match flex_pin {
                 Some(mut flex) => {
                     flex.set_as_input();
