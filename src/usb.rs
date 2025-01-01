@@ -14,7 +14,7 @@ use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, GET_INITIAL_CONFIG_VALUE, GET_SERIAL_NUMBER_VALUE,
-    PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+    HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
@@ -274,7 +274,27 @@ pub async fn wait_for_remote_message(
     }
 }
 
-/// Send a new [HardwareConfigMessage] to the connected porky device over USB
+/// Send a [HardwareConfigMessage] to a connected porky device using Control Out
+pub async fn send_hardware_config_message(
+    porky: &Interface,
+    hardware_config_message: &HardwareConfigMessage,
+) -> Result<(), anyhow::Error> {
+    let mut buf = [0; 1024];
+    let data = postcard::to_slice(hardware_config_message, &mut buf)?;
+
+    let send_hw_message: ControlOut = ControlOut {
+        control_type: ControlType::Vendor,
+        recipient: Recipient::Interface,
+        request: PIGGUI_REQUEST,
+        value: HW_CONFIG_MESSAGE,
+        index: 0,
+        data,
+    };
+
+    usb_send_porky(porky, send_hw_message).await
+}
+
+/// Send a new [HardwareConfigMessage] to the connected porky device over USB endpoint
 pub async fn send_config_change(
     porky: &Interface,
     hardware_config_message: &HardwareConfigMessage,

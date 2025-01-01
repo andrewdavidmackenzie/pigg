@@ -150,6 +150,19 @@ impl Handler for ControlHandler<'_> {
                 }
             }
 
+            (PIGGUI_REQUEST, HW_CONFIG_MESSAGE) => {
+                match postcard::from_bytes::<HardwareConfigMessage>(buf) {
+                    Ok(spec) => {
+                        info!("Received HardwareConfigMessage over USB");
+                        Some(OutResponse::Accepted)
+                    }
+                    Err(_) => {
+                        error!("Could not deserialize HardwareConfigMessage sent via USB");
+                        Some(OutResponse::Rejected)
+                    }
+                }
+            }
+
             (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
