@@ -13,8 +13,8 @@ use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 #[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_DESCRIPTION_VALUE, GET_INITIAL_CONFIG_VALUE, GET_SERIAL_NUMBER_VALUE,
-    HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE, SET_SSID_VALUE,
+    GET_HARDWARE_DESCRIPTION_VALUE, GET_INITIAL_CONFIG_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST,
+    RESET_SSID_VALUE, SET_SSID_VALUE,
 };
 #[cfg(feature = "discovery")]
 use crate::views::hardware_view::HardwareConnection;
@@ -36,16 +36,6 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     value: GET_HARDWARE_DESCRIPTION_VALUE,
     index: 0,
     length: 1000,
-};
-
-/// [ControlIn] "command" to request the [SerialNumber]
-const GET_SERIAL_NUMBER: ControlIn = ControlIn {
-    control_type: ControlType::Vendor,
-    recipient: Recipient::Interface,
-    request: PIGGUI_REQUEST,
-    value: GET_SERIAL_NUMBER_VALUE,
-    index: 0,
-    length: 64,
 };
 
 #[cfg(feature = "discovery")]
@@ -93,15 +83,13 @@ const GET_INITIAL_HARDWARE_CONFIG: ControlIn = ControlIn {
 /// Get the Interface to talk to a device by USB if we can find a device with the specific serial
 async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, anyhow::Error> {
     if let Ok(device_list) = nusb::list_devices() {
-        let interfaces = device_list
-            .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
-            .filter_map(|device_info| device_info.open().ok())
-            .filter_map(|device| device.claim_interface(0).ok());
-
-        for interface in interfaces {
-            if let Ok(serial_number) = get_serial_number(&interface).await {
-                if serial_number == *serial {
-                    return Ok(interface);
+        for device_info in
+            device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+        {
+            if let Some(serial_number) = device_info.serial_number() {
+                if serial_number == serial {
+                    let device = device_info.open()?;
+                    return Ok(device.claim_interface(0)?);
                 }
             }
         }
@@ -130,11 +118,6 @@ where
     let data = response.data;
     let length = data.len();
     Ok(postcard::from_bytes(&data[0..length])?)
-}
-
-/// Request [SerialNumber] from compatible porky device over USB
-async fn get_serial_number(porky: &Interface) -> Result<SerialNumber, anyhow::Error> {
-    usb_get_porky(porky, GET_SERIAL_NUMBER).await
 }
 
 /// Request [HardwareDescription] from compatible porky device over USB
@@ -264,7 +247,7 @@ pub async fn wait_for_remote_message(
     println!("Waiting for remote message over USB");
     loop {
         let buf = RequestBuffer::new(1024);
-        let bytes = porky.interrupt_in(0x80, buf).await;
+        let bytes = porky.interrupt_in(0x81, buf).await;
         if bytes.status.is_ok() {
             let msg = postcard::from_bytes(&bytes.data)?;
             println!("USB message from device: {msg:?}");
@@ -303,7 +286,7 @@ pub async fn send_config_change(
     let data = postcard::to_slice(hardware_config_message, &mut buf)?;
     println!("Sending {:?} via USB", hardware_config_message);
     println!("Sending {} bytes via USB", data.len());
-    let tf = porky.interrupt_out(0x00, data.to_vec()).await;
+    let tf = porky.interrupt_out(0x01, data.to_vec()).await;
     tf.into_result()?;
     Ok(())
 }

@@ -6,7 +6,7 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, GET_INITIAL_CONFIG_VALUE,
-    GET_SERIAL_NUMBER_VALUE, PIGGUI_REQUEST, USB_PACKET_SIZE,
+    PIGGUI_REQUEST, USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -70,6 +70,7 @@ fn get_usb_builder(
     config.device_sub_class = 0x02;
     config.device_protocol = 0x01;
     config.composite_with_iads = true;
+    config.serial_number = Some(serial);
 
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
@@ -189,9 +190,6 @@ impl Handler for ControlHandler<'_> {
         let msg = match (req.request, req.value) {
             (PIGGUI_REQUEST, GET_HARDWARE_DESCRIPTION_VALUE) => {
                 postcard::to_slice(self.hardware_description, &mut self.buf).ok()?
-            }
-            (PIGGUI_REQUEST, GET_SERIAL_NUMBER_VALUE) => {
-                postcard::to_slice(self.hardware_description.details.serial, &mut self.buf).ok()?
             }
             (PIGGUI_REQUEST, GET_HARDWARE_DETAILS_VALUE) => {
                 postcard::to_slice(&self.hardware_description.details, &mut self.buf).ok()?
