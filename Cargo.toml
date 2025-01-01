@@ -68,8 +68,7 @@ log = { version = "0.4.22", default-features = false }
 # used by piggui in GUI only
 # TODO
 #iced_aw = { git = "https://github.com/iced-rs/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
-#iced_aw = { git = "https://github.com/andrewdavidmackenzie/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
-iced_aw = { path = "../iced_aw", version = "0.11", default-features = false, features = ["menu"] }
+iced_aw = { git = "https://github.com/andrewdavidmackenzie/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
 iced_futures = { version = "0.13", default-features = false }
 plotters-iced = { version = "0.11", default-features = false }
 plotters = { version = "0.3", default-features = false, features = [
