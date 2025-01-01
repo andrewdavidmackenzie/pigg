@@ -196,16 +196,16 @@ pub fn view<'a>(
     #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
     let model = match hardware_view.hw_model() {
-        None => "hardware: none".to_string(),
+        None => "connection: none".to_string(),
         Some(model) => match hardware_connection {
-            NoConnection => "hardware: none".to_string(),
-            Local => format!("hardware: {}@Local", model),
+            NoConnection => "connection: none".to_string(),
+            Local => format!("connection: {}@Local", model),
             #[cfg(feature = "usb")]
-            Usb(_) => format!("hardware: {}@USB", model),
+            Usb(_) => format!("connection: {}@USB", model),
             #[cfg(feature = "iroh")]
-            Iroh(_, _) => format!("hardware: {}@Iroh", model),
+            Iroh(_, _) => format!("connection: {}@Iroh", model),
             #[cfg(feature = "tcp")]
-            Tcp(_, _) => format!("hardware: {}@TCP", model),
+            Tcp(_, _) => format!("connection: {}@TCP", model),
         },
     };
 
