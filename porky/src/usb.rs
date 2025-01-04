@@ -1,42 +1,42 @@
-#[cfg(feature = "wifi")]
 use crate::flash;
-#[cfg(feature = "wifi")]
 use crate::flash::DbFlash;
-use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
-    GET_CONFIG_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, PIGGUI_REQUEST,
+    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, GET_INITIAL_CONFIG_VALUE,
+    HW_CONFIG_MESSAGE, PIGGUI_REQUEST, USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
-#[cfg(feature = "wifi")]
 use crate::persistence;
+use crate::{gpio, HARDWARE_EVENT_CHANNEL};
 use core::str;
-use defmt::{error, info, unwrap};
 #[cfg(feature = "wifi")]
+use cyw43::Control;
+use defmt::{error, info, unwrap};
 use ekv::Database;
 use embassy_executor::Spawner;
-#[cfg(feature = "wifi")]
 use embassy_futures::block_on;
-#[cfg(feature = "wifi")]
+use embassy_futures::select::{select, Either};
 use embassy_rp::flash::{Blocking, Flash};
-#[cfg(feature = "wifi")]
 use embassy_rp::peripherals::FLASH;
 use embassy_rp::peripherals::USB;
-use embassy_rp::usb::Driver;
+use embassy_rp::usb::{Driver, Endpoint, In, Out};
 #[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
-#[cfg(feature = "wifi")]
-use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-#[cfg(feature = "wifi")]
+use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
+use embassy_sync::channel::Channel;
 use embassy_time::Duration;
+use embassy_time::Timer;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
+use embassy_usb::driver::{EndpointIn, EndpointOut};
 use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
 use embassy_usb::{msos, Handler, UsbDevice};
 use embassy_usb::{Builder, Config};
+use serde::Serialize;
 use static_cell::StaticCell;
 
 type MyDriver = Driver<'static, USB>;
@@ -44,8 +44,11 @@ type MyDriver = Driver<'static, USB>;
 // This is a randomly generated GUID to allow clients on Windows to find our device
 const DEVICE_INTERFACE_GUIDS: &[&str] = &["{AFB9A6FB-30BA-44BC-9232-806CFC875321}"];
 
+static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> = Channel::new();
+
 #[embassy_executor::task]
 async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
+    info!("USB started");
     device.run().await
 }
 
@@ -69,6 +72,7 @@ fn get_usb_builder(
     config.device_sub_class = 0x02;
     config.device_protocol = 0x01;
     config.composite_with_iads = true;
+    config.serial_number = Some(serial);
 
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
@@ -148,6 +152,20 @@ impl Handler for ControlHandler<'_> {
                     }
                 }
             }
+
+            (PIGGUI_REQUEST, HW_CONFIG_MESSAGE) => {
+                match postcard::from_bytes::<HardwareConfigMessage>(buf) {
+                    Ok(hardware_config_message) => {
+                        block_on(USB_MESSAGE_CHANNEL.sender().send(hardware_config_message));
+                        Some(OutResponse::Accepted)
+                    }
+                    Err(_) => {
+                        error!("Could not deserialize HardwareConfigMessage sent via USB");
+                        Some(OutResponse::Rejected)
+                    }
+                }
+            }
+
             (_, _) => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -189,11 +207,14 @@ impl Handler for ControlHandler<'_> {
                 };
                 postcard::to_slice(&wifi, &mut self.buf).ok()?
             },
-            (PIGGUI_REQUEST, GET_CONFIG_VALUE) => {
-                // TODO not updated with changes :-(
-                postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?
+            (PIGGUI_REQUEST, GET_INITIAL_CONFIG_VALUE) => {
+                let slice = postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?;
+                info!(
+                    "Returning Initial hardware config by USB: size = {}",
+                    slice.len()
+                );
+                slice
             }
-
             _ => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -206,7 +227,39 @@ impl Handler for ControlHandler<'_> {
     }
 }
 
+/// [UsbConnection] is used to send and receive messages back and forth to the host, but not using
+/// the Control transfers, instead using InterruptIn or InterruptOut transfers
+pub struct UsbConnection<D: EndpointIn, E: EndpointOut> {
+    ep_in: D,
+    ep_out: E,
+    buf: &'static mut [u8; 1024],
+}
+
+impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
+    /// Serialize input using postcard and send it to the host via the [EndpointIn]
+    pub async fn send(&mut self, msg: impl Serialize) {
+        let msg = postcard::to_slice(&msg, self.buf).unwrap(); // TODO
+        info!("Attempting to send {} bytes by USB", msg.len());
+        self.ep_in.write(msg).await.unwrap(); // TODO
+    }
+
+    /// Receive a [HardwareConfigMessage] from the host over the usb [EndpointOut]
+    pub async fn receive(&mut self) -> HardwareConfigMessage {
+        let delay = Duration::from_secs(1);
+        loop {
+            let size = self.ep_out.read(self.buf).await.unwrap(); // TODO
+            if size != 0 {
+                info!("USB Receive: {} bytes", size);
+                postcard::from_bytes(&self.buf[..size]).unwrap()
+            } else {
+                Timer::after(delay).await;
+            }
+        }
+    }
+}
+
 /// Start the USB stack and raw communications over it
+// <D: embassy_usb_driver::Driver<'static>>
 pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
@@ -218,7 +271,7 @@ pub async fn start(
         NoopRawMutex,
     >,
     #[cfg(feature = "wifi")] watchdog: Watchdog,
-) {
+) -> UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>> {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
     // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
@@ -234,8 +287,8 @@ pub async fn start(
         msos::PropertyData::RegMultiSz(DEVICE_INTERFACE_GUIDS),
     ));
 
-    static HANDLER: StaticCell<ControlHandler> = StaticCell::new();
-    let handler = HANDLER.init(ControlHandler {
+    static CONTROL_HANDLER: StaticCell<ControlHandler> = StaticCell::new();
+    let control_handler = CONTROL_HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
         hardware_config,
@@ -253,13 +306,68 @@ pub async fn start(
     let mut function = builder.function(0xFF, 0, 0);
     let mut interface = function.interface();
     let _alt = interface.alt_setting(0xFF, 0, 0, None);
-    handler.if_num = interface.interface_number();
-    drop(function);
-    builder.handler(handler);
+    control_handler.if_num = interface.interface_number();
 
-    // Build the builder.
+    let mut alt = interface.alt_setting(0xFF, 0, 0, None);
+    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
+    let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
+
+    drop(function);
+    builder.handler(control_handler);
+
     let usb = builder.build();
 
-    info!("USB raw interface started");
     unwrap!(spawner.spawn(usb_task(usb)));
+
+    static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
+    let buf = BUF.init([0u8; 1024]);
+    UsbConnection { ep_in, ep_out, buf }
+}
+
+pub async fn message_loop(
+    mut usb_connection: UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
+    _hw_desc: &HardwareDescription<'_>,
+    hw_config: &mut HardwareConfig,
+    spawner: &Spawner,
+    #[cfg(feature = "wifi")] control: &mut Control<'_>,
+    db: &'static Database<
+        DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
+        NoopRawMutex,
+    >,
+) {
+    info!("Entering USB message loop");
+
+    loop {
+        info!("Waiting for USB config message or hardware event");
+        match select(
+            USB_MESSAGE_CHANNEL.receiver().receive(),
+            HARDWARE_EVENT_CHANNEL.receiver().receive(),
+        )
+        .await
+        {
+            Either::First(hardware_config_message) => {
+                info!("HW Config message received over USB, applying to hardware");
+                gpio::apply_config_change(
+                    #[cfg(feature = "wifi")]
+                    control,
+                    spawner,
+                    &hardware_config_message,
+                    hw_config,
+                )
+                .await;
+                let _ = persistence::store_config_change(db, &hardware_config_message).await;
+                if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
+                    info!("GetConfig received");
+                    // TODO Send not working
+                    usb_connection.send(&hw_config).await;
+                }
+            }
+            Either::Second(hardware_event) => {
+                info!("Hardware event, forwarding via USB");
+                // TODO Send not working
+                usb_connection.send(hardware_event).await;
+            }
+        }
+    }
+    //info!("Exiting Message Loop");
 }

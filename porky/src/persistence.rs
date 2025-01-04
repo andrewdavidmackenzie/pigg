@@ -1,16 +1,13 @@
 use crate::flash;
 use crate::flash::DbFlash;
 use crate::hw_definition::config::HardwareConfig;
-#[cfg(feature = "wifi")]
 use crate::hw_definition::config::HardwareConfigMessage;
-#[cfg(feature = "wifi")]
 use crate::hw_definition::config::HardwareConfigMessage::{
-    IOLevelChanged, NewConfig, NewPinConfig,
+    GetConfig, IOLevelChanged, NewConfig, NewPinConfig,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::SsidSpec;
 use crate::hw_definition::pin_function::PinFunction;
-#[cfg(feature = "wifi")]
 use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::BCMPinNumber;
 #[cfg(feature = "wifi")]
@@ -59,7 +56,6 @@ pub async fn get_config<'p>(
     HardwareConfig { pin_functions }
 }
 
-#[cfg(feature = "wifi")]
 pub async fn store_config_change<'p>(
     db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     hardware_config_message: &HardwareConfigMessage,
@@ -77,10 +73,6 @@ pub async fn store_config_change<'p>(
 
             // Need to do deletes and writes in separate transactions - with keys in ascending order
             wtx = db.write_transaction().await;
-            info!(
-                "Storing config for {} pins in Flash DB",
-                config.pin_functions.len()
-            );
             // Write the new pin configs for all pins in the config
             for (bcm, pin_function) in &config.pin_functions {
                 let bytes = postcard::to_slice(&pin_function, &mut buf)
@@ -93,7 +85,6 @@ pub async fn store_config_change<'p>(
             let bytes =
                 postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
             wtx.write(&[*bcm], bytes).await.map_err(|_| "Write Error")?;
-            info!("Stored config for 1 pin in FlashDB");
         }
         IOLevelChanged(bcm, level_change) => {
             // Write the new pin config (including the new output level), replacing any old one
@@ -101,12 +92,8 @@ pub async fn store_config_change<'p>(
             let bytes =
                 postcard::to_slice(&pin_function, &mut buf).map_err(|_| "Deserialization error")?;
             wtx.write(&[*bcm], bytes).await.map_err(|_| "Write Error")?;
-            info!(
-                "Stored config for 1 Output pin with value '{}' in FlashDB",
-                level_change.new_level
-            );
         }
-        HardwareConfigMessage::GetConfig => { /* Nothing to do in persistence */ }
+        GetConfig => { /* Nothing to do in persistence */ }
     }
 
     wtx.commit().await.map_err(|_| "Commit error")
