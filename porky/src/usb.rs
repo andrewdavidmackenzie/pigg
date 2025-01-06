@@ -5,8 +5,8 @@ use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, GET_INITIAL_CONFIG_VALUE,
-    HW_CONFIG_MESSAGE, PIGGUI_REQUEST, USB_PACKET_SIZE,
+    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST,
+    USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -63,16 +63,17 @@ fn get_usb_builder(
     let mut config = Config::new(0xbabe, 0xface);
     config.manufacturer = Some("pigg");
     config.product = Some("porky"); // Same for all variants of porky, for Pico, Pico W, Pico 2, Pico 2 W etc.
-    config.serial_number = Some(serial);
     config.max_power = 100;
     config.max_packet_size_0 = 64;
+
+    // Allow to enumerate device serial numbers using just USB primitives
+    config.serial_number = Some(serial);
 
     // Required for Windows support.
     config.device_class = 0xEF;
     config.device_sub_class = 0x02;
     config.device_protocol = 0x01;
     config.composite_with_iads = true;
-    config.serial_number = Some(serial);
 
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
@@ -93,7 +94,6 @@ fn get_usb_builder(
 pub(crate) struct ControlHandler<'h> {
     if_num: InterfaceNumber,
     hardware_description: &'h HardwareDescription<'h>,
-    hardware_config: HardwareConfig,
     #[cfg(feature = "wifi")]
     tcp: Option<([u8; 4], u16)>,
     #[cfg(feature = "wifi")]
@@ -207,14 +207,6 @@ impl Handler for ControlHandler<'_> {
                 };
                 postcard::to_slice(&wifi, &mut self.buf).ok()?
             },
-            (PIGGUI_REQUEST, GET_INITIAL_CONFIG_VALUE) => {
-                let slice = postcard::to_slice(&self.hardware_config, &mut self.buf).ok()?;
-                info!(
-                    "Returning Initial hardware config by USB: size = {}",
-                    slice.len()
-                );
-                slice
-            }
             _ => {
                 error!(
                     "Unknown USB request and/or value: {}:{}",
@@ -291,7 +283,6 @@ pub async fn start(
     let control_handler = CONTROL_HANDLER.init(ControlHandler {
         if_num: InterfaceNumber(0),
         hardware_description,
-        hardware_config,
         #[cfg(feature = "wifi")]
         tcp,
         #[cfg(feature = "wifi")]
@@ -305,9 +296,9 @@ pub async fn start(
     // that uses our custom handler.
     let mut function = builder.function(0xFF, 0, 0);
     let mut interface = function.interface();
-    let _alt = interface.alt_setting(0xFF, 0, 0, None);
     control_handler.if_num = interface.interface_number();
 
+    // This should set alt_settings #0
     let mut alt = interface.alt_setting(0xFF, 0, 0, None);
     let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
     let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
@@ -321,9 +312,23 @@ pub async fn start(
 
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);
-    UsbConnection { ep_in, ep_out, buf }
+    let mut usb_connection = UsbConnection { ep_in, ep_out, buf };
+
+    info!("Waiting for the GetConfig message that starts the USB connection");
+    while !matches!(
+        USB_MESSAGE_CHANNEL.receiver().receive().await,
+        HardwareConfigMessage::GetConfig
+    ) {}
+
+    info!("Sending HardwareConfig in response to GetConfig");
+    usb_connection.send(&hardware_config).await;
+
+    usb_connection
 }
 
+/// Enter a loop waiting for messages either via USB (from Piggui) or from the Hardware.
+/// - When receive a message over USB from Piggui, apply to the hardware, save in Flash
+/// - WHen receiving from hardware, send the message to Piggui over USB
 pub async fn message_loop(
     mut usb_connection: UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
     _hw_desc: &HardwareDescription<'_>,
@@ -336,6 +341,9 @@ pub async fn message_loop(
     >,
 ) {
     info!("Entering USB message loop");
+
+    // Clear out any level change messages sent before the GUI app connected
+    HARDWARE_EVENT_CHANNEL.clear();
 
     loop {
         info!("Waiting for USB config message or hardware event");
@@ -356,15 +364,9 @@ pub async fn message_loop(
                 )
                 .await;
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
-                if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
-                    info!("GetConfig received");
-                    // TODO Send not working
-                    usb_connection.send(&hw_config).await;
-                }
             }
             Either::Second(hardware_event) => {
                 info!("Hardware event, forwarding via USB");
-                // TODO Send not working
                 usb_connection.send(hardware_event).await;
             }
         }

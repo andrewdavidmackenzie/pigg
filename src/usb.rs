@@ -70,21 +70,6 @@ const RESET_SSID: ControlOut = ControlOut {
     data: &[],
 };
 
-/*/// [ControlIn] "command" to get the [HardwareConfig] of an attached "porky"
-const GET_INITIAL_HARDWARE_CONFIG: ControlIn = ControlIn {
-    control_type: ControlType::Vendor,
-    recipient: Recipient::Interface,
-    request: PIGGUI_REQUEST,
-    value: GET_INITIAL_CONFIG_VALUE,
-    index: 0,
-    length: 2000,
-};*/
-
-/*/// Request [HardwareDetails] from compatible porky device over USB
-async fn get_initial_hardware_config(porky: &Interface) -> Result<HardwareConfig, anyhow::Error> {
-    receive(porky, GET_INITIAL_HARDWARE_CONFIG).await
-}*/
-
 /// Get the Interface to talk to a device by USB if we can find a device with the specific serial
 async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, anyhow::Error> {
     if let Ok(device_list) = nusb::list_devices() {
@@ -150,10 +135,8 @@ pub async fn connect(
     // one that has changed since startup
     // let hardware_config = get_initial_hardware_config(&porky).await?;
     send_hardware_config_message(&porky, &HardwareConfigMessage::GetConfig).await?;
-    match wait_for_hardware_config(&porky).await {
-        Ok(hardware_config) => Ok((porky, hardware_description, hardware_config)),
-        _ => Err(anyhow!("Did not get expected Config")),
-    }
+    let hardware_config = wait_for_hardware_config(&porky).await?;
+    Ok((porky, hardware_description, hardware_config))
 }
 
 /// Send a new Wi-Fi SsidSpec to the connected porky device over USB
@@ -199,6 +182,7 @@ pub async fn get_details(
                 if serial_numbers.contains(&serial_number.to_string()) {
                     let device = device_info.open().unwrap();
                     let interface = device.claim_interface(0).unwrap();
+                    interface.set_alt_setting(0).unwrap();
 
                     if let Ok(hardware_details) = get_hardware_details(&interface).await {
                         let wifi_details = if hardware_details.wifi {
@@ -279,6 +263,10 @@ pub async fn wait_for_hardware_config(porky: &Interface) -> Result<HardwareConfi
     loop {
         let buf = RequestBuffer::new(1024);
         let bytes = porky.interrupt_in(0x81, buf).await;
+        println!(
+            "USB (config expected) {} bytes from device",
+            bytes.data.len()
+        );
         if bytes.status.is_ok() {
             let msg = postcard::from_bytes(&bytes.data)?;
             println!("USB message from device: {msg:?}");
@@ -296,7 +284,7 @@ pub async fn send_hardware_config_message(
     let mut buf = [0; 1024];
     let data = postcard::to_slice(hardware_config_message, &mut buf)?;
 
-    let send_hw_message: ControlOut = ControlOut {
+    let hw_message: ControlOut = ControlOut {
         control_type: ControlType::Vendor,
         recipient: Recipient::Interface,
         request: PIGGUI_REQUEST,
@@ -305,7 +293,7 @@ pub async fn send_hardware_config_message(
         data,
     };
 
-    send(porky, send_hw_message).await
+    send(porky, hw_message).await
 }
 
 /*
