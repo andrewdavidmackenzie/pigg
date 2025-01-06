@@ -28,8 +28,8 @@ use embassy_rp::usb::{Driver, Endpoint, In, Out};
 use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
+#[cfg(feature = "wifi")]
 use embassy_time::Duration;
-use embassy_time::Timer;
 use embassy_usb::control::{InResponse, OutResponse, Recipient, Request, RequestType};
 use embassy_usb::driver::{EndpointIn, EndpointOut};
 use embassy_usb::msos::windows_version;
@@ -223,7 +223,7 @@ impl Handler for ControlHandler<'_> {
 /// the Control transfers, instead using InterruptIn or InterruptOut transfers
 pub struct UsbConnection<D: EndpointIn, E: EndpointOut> {
     ep_in: D,
-    ep_out: E,
+    _ep_out: E,
     buf: &'static mut [u8; 1024],
 }
 
@@ -235,11 +235,12 @@ impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
         self.ep_in.write(msg).await.unwrap(); // TODO
     }
 
+    /*
     /// Receive a [HardwareConfigMessage] from the host over the usb [EndpointOut]
     pub async fn receive(&mut self) -> HardwareConfigMessage {
         let delay = Duration::from_secs(1);
         loop {
-            let size = self.ep_out.read(self.buf).await.unwrap(); // TODO
+            let size = self._ep_out.read(self.buf).await.unwrap(); // TODO
             if size != 0 {
                 info!("USB Receive: {} bytes", size);
                 postcard::from_bytes(&self.buf[..size]).unwrap()
@@ -248,6 +249,7 @@ impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
             }
         }
     }
+     */
 }
 
 /// Start the USB stack and raw communications over it
@@ -256,7 +258,6 @@ pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
-    hardware_config: HardwareConfig,
     #[cfg(feature = "wifi")] tcp: Option<([u8; 4], u16)>,
     #[cfg(feature = "wifi")] db: &'static Database<
         DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
@@ -301,7 +302,7 @@ pub async fn start(
     // This should set alt_settings #0
     let mut alt = interface.alt_setting(0xFF, 0, 0, None);
     let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
-    let ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
+    let _ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
 
     drop(function);
     builder.handler(control_handler);
@@ -312,8 +313,19 @@ pub async fn start(
 
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);
-    let mut usb_connection = UsbConnection { ep_in, ep_out, buf };
+    UsbConnection {
+        ep_in,
+        _ep_out,
+        buf,
+    }
+}
 
+/// Wait for a connection from the GUI host over USB, initiated by it asking for the config
+/// using a `GetConfig` request
+pub async fn wait_connection(
+    usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
+    hardware_config: &HardwareConfig,
+) {
     info!("Waiting for the GetConfig message that starts the USB connection");
     while !matches!(
         USB_MESSAGE_CHANNEL.receiver().receive().await,
@@ -321,17 +333,14 @@ pub async fn start(
     ) {}
 
     info!("Sending HardwareConfig in response to GetConfig");
-    usb_connection.send(&hardware_config).await;
-
-    usb_connection
+    usb_connection.send(hardware_config).await;
 }
 
 /// Enter a loop waiting for messages either via USB (from Piggui) or from the Hardware.
 /// - When receive a message over USB from Piggui, apply to the hardware, save in Flash
 /// - WHen receiving from hardware, send the message to Piggui over USB
 pub async fn message_loop(
-    mut usb_connection: UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
-    _hw_desc: &HardwareDescription<'_>,
+    usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
     hw_config: &mut HardwareConfig,
     spawner: &Spawner,
     #[cfg(feature = "wifi")] control: &mut Control<'_>,

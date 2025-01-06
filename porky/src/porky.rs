@@ -166,7 +166,9 @@ async fn main(spawner: Spawner) {
     .await;
 
     #[cfg(feature = "usb")]
-    let usb_connection = usb::start(spawner, driver, hw_desc, hardware_config.clone()).await;
+    let mut usb_connection = usb::start(spawner, driver, hw_desc).await;
     #[cfg(feature = "usb")]
-    usb::message_loop(usb_connection, hw_desc, &mut hardware_config, &spawner, db).await;
+    usb::wait_connection(&mut usb_connection, &hardware_config).await;
+    #[cfg(feature = "usb")]
+    usb::message_loop(&mut usb_connection, &mut hardware_config, &spawner, db).await;
 }

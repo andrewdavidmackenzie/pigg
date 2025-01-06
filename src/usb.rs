@@ -251,7 +251,6 @@ pub async fn wait_for_remote_message(porky: &Interface) -> Result<HardwareConfig
         let bytes = porky.interrupt_in(0x81, buf).await;
         if bytes.status.is_ok() {
             let msg = postcard::from_bytes(&bytes.data)?;
-            println!("USB message from device: {msg:?}");
             return Ok(msg);
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
@@ -263,13 +262,8 @@ pub async fn wait_for_hardware_config(porky: &Interface) -> Result<HardwareConfi
     loop {
         let buf = RequestBuffer::new(1024);
         let bytes = porky.interrupt_in(0x81, buf).await;
-        println!(
-            "USB (config expected) {} bytes from device",
-            bytes.data.len()
-        );
         if bytes.status.is_ok() {
             let msg = postcard::from_bytes(&bytes.data)?;
-            println!("USB message from device: {msg:?}");
             return Ok(msg);
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
@@ -295,23 +289,6 @@ pub async fn send_hardware_config_message(
 
     send(porky, hw_message).await
 }
-
-/*
-/// Alternative method to send data via USbv to device - using Interrupt Out endpoint
-/// Send a new [HardwareConfigMessage] to the connected porky device over USB endpoint
-pub async fn send_config_change(
-    porky: &Interface,
-    hardware_config_message: &HardwareConfigMessage,
-) -> Result<(), anyhow::Error> {
-    let mut buf = [0u8; 2048];
-    let data = postcard::to_slice(hardware_config_message, &mut buf)?;
-    println!("Sending {:?} via USB", hardware_config_message);
-    println!("Sending {} bytes via USB", data.len());
-    let tf = porky.interrupt_out(0x01, data.to_vec()).await;
-    tf.into_result()?;
-    Ok(())
-}
- */
 
 #[cfg(feature = "usb")]
 #[cfg(test)]
