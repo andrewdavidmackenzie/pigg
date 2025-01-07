@@ -14,7 +14,8 @@ a Raspberry Pi (not Pico) and connected to remotely.
 `piggui` takes an optional filename argument, to load a config from. If there is an error
 loading a config, the default config will be used.
 
-- `piggui <filename>`
+- `piggui -c <filename>`
+- `piggui --config <filename>`
 
 ## Running Piglet
 
@@ -27,12 +28,19 @@ If run that on a Raspberry Pi, it will start with the real Pi GPIO hardware back
 `piglet` will print to the terminal a series of values that you can use with `piggui` to connect remotely to that
 `piglet` instance, such `nodeid` for an Iroh connection, or IP Address and Port for a TCP connection.
 
+`piglet` also takes an optional filename argument, to load a config from. If there is an error
+loading a config, the default config will be used.
+
+- `piggui -c <filename>`
+- `piggui --config <filename>`
+-
+
 ## Running Porky
 
 For details on how to install the embedded `porky` application binary on your Raspberry Pi Pico W and run it, refer
 to `porky`'s own [README.md](porky/README.md)
 
-### Connecting Piggui to a remote Piglet - Command Line Options
+### Connecting Piggui to a remote Piglet or Porky - Command Line Options
 
 To connect to a remote `piglet` using the Iroh network method, get the `nodeid` value from the piglet instance (see
 above)
@@ -45,6 +53,11 @@ To connect to a remote `piglet` using TCP, get the `ip` value (ip address and po
 ':') from the piglet instance (see above) and pass it to `piggui` as a command line option.
 
 - `piggui --ip $ip`
+
+To connect to a USB attached 'porky' device, you need to get the devices porky serial number (from debug logs or
+a previous connection to it) and have 'piggui' connect to it using the 'usb' argument
+
+- `piggui --usb $serial_number`
 
 ### Connecting Piggui to a remote Piglet/Porky - Using the GUI
 

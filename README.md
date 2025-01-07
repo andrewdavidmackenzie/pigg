@@ -164,7 +164,7 @@ manually or are known to work as follows:
 |             | aarch64        | PiZero 2  | Pi OS              | 
 |             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS |
 | porky_w     | armv7          | Pi Pico W |                    |
-| porky       | armv7          | Pi Pico   | Work in progress   |
+| porky       | armv7          | Pi Pico   |                    |
 
 ## Input from Raspberry Pi users wanted
 
