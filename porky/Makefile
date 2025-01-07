@@ -1,37 +1,30 @@
-all: build-pico-w build-pico
+all: build-w build
 
 clean:
 	cargo clean
 
 clippy:
-	cargo clippy --features "wifi"
-
-run-pico-w:
-	cargo run --release --bin porky_w --features "wifi"
-
-run-pico:
-	cargo run --release --bin porky
-
-build-pico-w:
-	cargo build --release --bin porky_w --features "wifi"
-
-build-pico:
-	cargo build --release --bin porky
+	cargo clippy --bin porky_w --features "usb, wifi"
+	cargo clippy --bin porky --features "usb"
 
 run-w:
-	cargo run --release --bin porky_w --features "wifi"
+	cargo run --release --bin porky_w --features "usb, wifi"
 
 run:
-	cargo run --release --bin porky
+	cargo run --release --bin porky --features "usb"
+
+build-w:
+	cargo build --release --bin porky_w --features "usb, wifi"
+
+build:
+	cargo build --release --bin porky --features "usb"
 
 install-uf2:
 	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 	cargo binstall elf2uf2-rs
 
-uf2-pico-w: build-pico-w
+uf2-w: build-w
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky_w target/thumbv6m-none-eabi/release/porky_pico_w.uf2
 
-uf2-pico: build-pico
+uf2: build
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico.uf2
-
-uf2: uf2-pico-w

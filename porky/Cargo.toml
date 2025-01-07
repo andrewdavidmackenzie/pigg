@@ -8,7 +8,6 @@ rust-version = "1.80"
 [[bin]]
 name = "porky_w"
 path = "src/porky_w.rs"
-required-features = ["wifi"]
 
 [[bin]]
 name = "porky"
@@ -16,7 +15,7 @@ path = "src/porky.rs"
 required-features = ["usb"]
 
 [features]
-default = ["usb", "no_std"]
+default = ["no_std"]
 wifi = ["cyw43", "embassy-net", "tcp", "discovery"]
 no_std = []
 debug-probe = []
