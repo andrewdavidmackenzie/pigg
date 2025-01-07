@@ -1,25 +1,23 @@
+use crate::gpio_input_monitor::monitor_input;
+use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
 use crate::hw_definition::config::InputPull;
-use crate::hw_definition::config::{HardwareConfig, LevelChange};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{BCMPinNumber, PinLevel};
-use crate::HARDWARE_EVENT_CHANNEL;
 #[cfg(feature = "wifi")]
 use cyw43::Control;
 use defmt::{error, info};
 use embassy_executor::Spawner;
-use embassy_futures::select::{select, Either};
 use embassy_rp::gpio::Flex;
 use embassy_rp::gpio::Level;
 use embassy_rp::gpio::Pull;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::channel::{Receiver, Sender};
-use embassy_time::Instant;
 use heapless::FnvIndexMap;
 
 /// The configured/not-configured state of the GPIO Pins on the Pi Pico, and how to access them
@@ -43,46 +41,6 @@ pub static mut GPIO_PINS: FnvIndexMap<BCMPinNumber, GPIOPin, 32> = FnvIndexMap::
 
 static RETURNER: Channel<ThreadModeRawMutex, Flex, 1> = Channel::new();
 static SIGNALLER: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
-
-/// Wait until a level change on an input occurs and then send it via TCP to GUI
-#[embassy_executor::task(pool_size = 32)]
-async fn monitor_input(
-    bcm_pin_number: BCMPinNumber,
-    signaller: Receiver<'static, ThreadModeRawMutex, bool, 1>,
-    returner: Sender<'static, ThreadModeRawMutex, Flex<'static>, 1>,
-    mut flex: Flex<'static>,
-) {
-    let mut level = flex.get_level();
-    send_input_level(bcm_pin_number, level).await;
-
-    loop {
-        match select(flex.wait_for_any_edge(), signaller.receive()).await {
-            Either::First(()) => {
-                let new_level = flex.get_level();
-                if new_level != level {
-                    send_input_level(bcm_pin_number, flex.get_level()).await;
-                    level = new_level;
-                }
-            }
-            Either::Second(_) => {
-                info!("Monitor returning Pin");
-                // Return the Flex pin and exit the task
-                let _ = returner.send(flex).await;
-                break;
-            }
-        }
-    }
-}
-
-/// Send a detected input level change back to the GUI, timestamping with the Duration since boot
-async fn send_input_level(bcm: BCMPinNumber, level: Level) {
-    let level_change = LevelChange::new(
-        level == Level::High,
-        Instant::now().duration_since(Instant::MIN).into(),
-    );
-    let hardware_event = IOLevelChanged(bcm, level_change);
-    HARDWARE_EVENT_CHANNEL.sender().send(hardware_event).await;
-}
 
 fn into_level(value: PinLevel) -> Level {
     match value {

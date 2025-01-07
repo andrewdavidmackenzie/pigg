@@ -42,6 +42,7 @@ mod usb;
 
 /// GPIO control related functions
 mod gpio;
+mod gpio_input_monitor;
 
 /// Definition of hardware structs passed back and fore between porky and the GUI
 #[path = "../../src/hw_definition/mod.rs"]
