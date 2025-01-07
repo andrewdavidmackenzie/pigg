@@ -1,7 +1,8 @@
 use crate::flash::DbFlash;
+use crate::gpio::Gpio;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
-use crate::{flash, gpio, persistence, HARDWARE_EVENT_CHANNEL};
+use crate::{flash, persistence, HARDWARE_EVENT_CHANNEL};
 use cyw43::Control;
 use defmt::info;
 use ekv::Database;
@@ -83,7 +84,8 @@ pub async fn wait_connection<'a>(
     accept(tcp_socket).await
 }
 
-pub async fn message_loop(
+pub async fn message_loop<'a>(
+    gpio: &mut Gpio,
     mut socket: TcpSocket<'_>,
     hw_desc: &HardwareDescription<'_>,
     hw_config: &mut HardwareConfig,
@@ -107,13 +109,8 @@ pub async fn message_loop(
             Either::First(config_message) => match config_message {
                 None => break,
                 Some(hardware_config_message) => {
-                    gpio::apply_config_change(
-                        control,
-                        spawner,
-                        &hardware_config_message,
-                        hw_config,
-                    )
-                    .await;
+                    gpio.apply_config_change(control, spawner, &hardware_config_message, hw_config)
+                        .await;
                     let _ = persistence::store_config_change(db, &hardware_config_message).await;
                     if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
                         send_hardware_config(&mut socket, hw_config).await;

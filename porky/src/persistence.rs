@@ -126,6 +126,7 @@ pub async fn get_ssid_spec<'a>(
     }
 }
 
+#[allow(dead_code)] // Not used in porky
 #[cfg(feature = "wifi")]
 /// Write the [SsidSpec] to the flash database
 pub async fn store_ssid_spec<'p>(
@@ -142,6 +143,7 @@ pub async fn store_ssid_spec<'p>(
     wtx.commit().await.map_err(|_| "Commit error")
 }
 
+#[allow(dead_code)] // Not used in porky
 #[cfg(feature = "wifi")]
 /// Delete the [SsidSpec] from the flash database
 pub async fn delete_ssid_spec<'p>(
