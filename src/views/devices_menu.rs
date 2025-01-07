@@ -160,7 +160,7 @@ pub fn view<'a>(
     let device_items = device_items(discovered_devices, hardware_connection);
 
     Item::with_menu(
-        button(text(format!("Discovered devices ({})", device_items.len())))
+        button(text(format!("devices ({})", device_items.len())))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(|_, status| {
                 if status == Hovered {
