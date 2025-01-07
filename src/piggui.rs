@@ -507,9 +507,18 @@ fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareConnection> {
 #[cfg(not(target_arch = "wasm32"))]
 /// Parse the command line arguments using clap
 fn get_matches() -> ArgMatches {
-    let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
-
-    let app = app.about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware");
+    let app = clap::Command::new(env!("CARGO_BIN_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware")
+        .arg(
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .num_args(1)
+                .number_of_values(1)
+                .value_name("Config File")
+                .help("Path of a '.pigg' config file to load"),
+        );
 
     #[cfg(feature = "iroh")]
     let app = app.arg(
@@ -544,18 +553,5 @@ fn get_matches() -> ArgMatches {
             .help("Serial Number of a device to connect to via USB"),
     );
 
-    let mut app = app.arg(
-        Arg::new("config")
-            .short('c')
-            .long("config")
-            .num_args(1)
-            .number_of_values(1)
-            .value_name("Config File")
-            .help("Path of a '.pigg' config file to load"),
-    );
-
-    app.clone().try_get_matches().unwrap_or_else(|e| {
-        let _ = app.print_help();
-        e.exit()
-    })
+    app.get_matches()
 }
