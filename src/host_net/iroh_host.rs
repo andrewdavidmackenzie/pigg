@@ -29,7 +29,7 @@ pub async fn wait_for_remote_message(
 /// Send config change received form the GUI to the remote hardware
 pub async fn send_config_change(
     connection: &mut Connection,
-    config_change_message: HardwareConfigMessage,
+    config_change_message: &HardwareConfigMessage,
 ) -> anyhow::Result<()> {
     // open a quick stream to the connected hardware
     let mut config_sender = connection.open_uni().await?;

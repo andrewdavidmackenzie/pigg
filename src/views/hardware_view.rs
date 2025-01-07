@@ -4,6 +4,8 @@ use crate::hardware_subscription::SubscriberMessage;
 use crate::hardware_subscription::SubscriberMessage::Hardware;
 use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
+#[cfg(feature = "usb")]
+use crate::hw_definition::description::SerialNumber;
 use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
@@ -61,6 +63,8 @@ pub enum HardwareConnection {
     NoConnection,
     #[default]
     Local,
+    #[cfg(feature = "usb")]
+    Usb(SerialNumber),
     #[cfg(feature = "iroh")]
     Iroh(NodeId, Option<RelayUrl>),
     #[cfg(feature = "tcp")]
@@ -71,8 +75,9 @@ impl Display for HardwareConnection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             NoConnection => write!(f, "No Connection"),
-            #[cfg(not(target_arch = "wasm32"))]
             Local => write!(f, "Local Hardware"),
+            #[cfg(feature = "usb")]
+            Usb(_) => write!(f, "USB"),
             #[cfg(feature = "iroh")]
             Iroh(nodeid, _relay_url) => write!(f, "Iroh Network: {nodeid}"),
             #[cfg(feature = "tcp")]
@@ -87,6 +92,8 @@ impl HardwareConnection {
             NoConnection => "No Connection",
             #[cfg(not(target_arch = "wasm32"))]
             Local => "Local",
+            #[cfg(feature = "usb")]
+            Usb(_) => "USB",
             #[cfg(feature = "iroh")]
             Iroh(_, _) => "Iroh",
             #[cfg(feature = "tcp")]

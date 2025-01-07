@@ -26,7 +26,7 @@ const BOARD_LAYOUT_SIZE: Size = Size {
 };
 
 const BCM_LAYOUT_SIZE: Size = Size {
-    width: 700.0,
+    width: 720.0,
     height: 916.0,
 };
 

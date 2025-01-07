@@ -131,7 +131,7 @@ fn reset_ssid(serial_number: String) -> Task<Message> {
         ))),
         Err(e) => InfoRow(ShowStatusMessage(Error(
             "Error resetting Wi-Fi Setup via USB".into(),
-            e,
+            e.to_string(),
         ))),
     });
     #[cfg(not(feature = "usb"))]
@@ -274,7 +274,6 @@ impl Piggui {
                 self.config_filename = Some(filename);
                 self.unsaved_changes = false;
                 self.hardware_view.new_config(config);
-                println!("ConfigLoaded - and saved in hardware view");
             }
 
             ConnectRequest(new_connection) => {
@@ -437,9 +436,8 @@ impl Piggui {
         match event {
             DiscoveryEvent::DeviceFound(serial_number, discovered_device) => {
                 let method = discovered_device.discovery_method.clone();
-                println!("Device Found {method}");
                 self.info_row
-                    .add_info_message(Info(format!("Device Found by {method}")));
+                    .add_info_message(Info(format!("Device Found via {method}")));
                 // if the device is already in the list of discovered devices, make sure this method
                 // exists in the set of methods that can be used to connect to it
                 if let Some(known_device) = self.discovered_devices.get_mut(&serial_number) {
@@ -452,7 +450,9 @@ impl Piggui {
                         .insert(serial_number, discovered_device);
                 }
             }
-            DiscoveryEvent::DeviceLost(key) => {
+            DiscoveryEvent::DeviceLost(key, _method) => {
+                // TODO only remove if not also discovered by some other method?
+                // TODO WIll need changes in discovery of device and how stored in discovered_devices too
                 if self.discovered_devices.remove(&key).is_some() {
                     self.info_row
                         .add_info_message(Info("Device Lost".to_string()));

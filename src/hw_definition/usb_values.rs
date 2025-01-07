@@ -9,14 +9,18 @@ pub const GET_HARDWARE_DESCRIPTION_VALUE: u16 = 201;
 /// Command value to get the [WiFiDetails] from porky
 pub const GET_WIFI_VALUE: u16 = 202;
 
-/// Command value to set the ssid details from porky
+/// Command value to set the ssid details for porky
 pub const SET_SSID_VALUE: u16 = 203;
 
 /// Command value to reset the ssid details to default
 pub const RESET_SSID_VALUE: u16 = 204;
 
-/// Command Value to get the hardware config from porky
-pub const GET_CONFIG_VALUE: u16 = 205;
-
 /// Command Value to get the [HardwareDetails] from porky
-pub const GET_HARDWARE_DETAILS_VALUE: u16 = 206;
+pub const GET_HARDWARE_DETAILS_VALUE: u16 = 205;
+
+/// Command Value to send a [HardwareConfigMessage] to device
+pub const HW_CONFIG_MESSAGE: u16 = 206;
+
+#[allow(dead_code)]
+/// A constant used in USB packet sizes
+pub const USB_PACKET_SIZE: u16 = 64;

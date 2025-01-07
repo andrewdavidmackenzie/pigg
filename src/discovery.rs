@@ -6,7 +6,7 @@ use crate::discovery::DiscoveryMethod::Mdns;
 use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
-use crate::hw_definition::description::{HardwareDetails, SsidSpec};
+use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
 #[cfg(feature = "usb")]
 use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
@@ -32,8 +32,6 @@ use std::str::FromStr;
 use std::time::Duration;
 //#[cfg(not(any(feature = "usb", feature = "iroh")))]
 //compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
-
-pub type SerialNumber = String;
 
 /// What method was used to discover a device? Currently, we support Iroh and USB
 #[derive(Debug, Clone)]
@@ -80,7 +78,7 @@ pub struct DiscoveredDevice {
 #[derive(Debug, Clone)]
 pub enum DiscoveryEvent {
     DeviceFound(SerialNumber, DiscoveredDevice),
-    DeviceLost(SerialNumber),
+    DeviceLost(SerialNumber, DiscoveryMethod),
     Error(SerialNumber),
 }
 
@@ -88,31 +86,32 @@ pub enum DiscoveryEvent {
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB
 pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
-        let mut previous_serial_numbers: Vec<String> = vec![];
+        let mut previous_serial_numbers = vec![];
 
         loop {
-            let mut current_serial_numbers = vec![];
-            let current_devices = usb::find_porkys().await;
+            // Get the vector of all visible serial numbers
+            let current_serial_numbers = usb::get_serials().await.unwrap();
 
             // New devices
-            for (serial_number, discovered_device) in current_devices {
-                if !previous_serial_numbers.contains(&serial_number) {
-                    gui_sender
-                        .send(DiscoveryEvent::DeviceFound(
-                            serial_number.clone(),
-                            discovered_device,
-                        ))
-                        .await
-                        .unwrap_or_else(|e| eprintln!("Send error: {e}"));
-                }
-                current_serial_numbers.push(serial_number);
+            let mut new_serial_numbers = current_serial_numbers.clone();
+            new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
+
+            for (new_serial_number, new_device) in usb::get_details(&new_serial_numbers).await {
+                // inform UI of new device found
+                gui_sender
+                    .send(DiscoveryEvent::DeviceFound(
+                        new_serial_number.clone(),
+                        new_device,
+                    ))
+                    .await
+                    .unwrap_or_else(|e| eprintln!("Send error: {e}"));
             }
 
             // Lost devices
             for key in previous_serial_numbers {
                 if !current_serial_numbers.contains(&key) {
                     gui_sender
-                        .send(DiscoveryEvent::DeviceLost(key.clone()))
+                        .send(DiscoveryEvent::DeviceLost(key.clone(), USBRaw))
                         .await
                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
@@ -195,7 +194,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                     if let Some((serial_number, _)) = fullname.split_once(".") {
                         let key = format!("{serial_number}/TCP");
                         gui_sender
-                            .send(DiscoveryEvent::DeviceLost(key))
+                            .send(DiscoveryEvent::DeviceLost(key, Mdns))
                             .await
                             .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }
