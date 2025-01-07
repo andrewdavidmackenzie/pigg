@@ -231,7 +231,6 @@ impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
     /// Serialize input using postcard and send it to the host via the [EndpointIn]
     pub async fn send(&mut self, msg: impl Serialize) {
         let msg = postcard::to_slice(&msg, self.buf).unwrap(); // TODO
-        info!("Attempting to send {} bytes by USB", msg.len());
         self.ep_in.write(msg).await.unwrap(); // TODO
     }
 
@@ -355,7 +354,6 @@ pub async fn message_loop(
     HARDWARE_EVENT_CHANNEL.clear();
 
     loop {
-        info!("Waiting for USB config message or hardware event");
         match select(
             USB_MESSAGE_CHANNEL.receiver().receive(),
             HARDWARE_EVENT_CHANNEL.receiver().receive(),
@@ -363,7 +361,6 @@ pub async fn message_loop(
         .await
         {
             Either::First(hardware_config_message) => {
-                info!("HW Config message received over USB, applying to hardware");
                 gpio::apply_config_change(
                     #[cfg(feature = "wifi")]
                     control,
@@ -373,9 +370,11 @@ pub async fn message_loop(
                 )
                 .await;
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
+                if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
+                    usb_connection.send(&hw_config).await;
+                }
             }
             Either::Second(hardware_event) => {
-                info!("Hardware event, forwarding via USB");
                 usb_connection.send(hardware_event).await;
             }
         }
