@@ -17,12 +17,11 @@ required-features = ["usb"]
 
 [features]
 default = ["usb", "no_std"]
-wifi = ["cyw43", "embassy-net", "tcp", "discovery"]
+wifi = ["cyw43", "embassy-net", "discovery"]
 no_std = []
 debug-probe = []
 usb = ["embassy-usb"]
 discovery = ["edge-mdns", "edge-nal-embassy", "edge-nal"]
-tcp = []
 
 [dependencies]
 # Embassy Dependencies (crates in https://github.com/embassy-rs/embassy)
