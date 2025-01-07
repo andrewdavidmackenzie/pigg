@@ -1,5 +1,6 @@
 use crate::flash;
 use crate::flash::DbFlash;
+use crate::gpio::Gpio;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
@@ -11,7 +12,7 @@ use crate::hw_definition::usb_values::{
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
 use crate::persistence;
-use crate::{gpio, HARDWARE_EVENT_CHANNEL};
+use crate::HARDWARE_EVENT_CHANNEL;
 use core::str;
 #[cfg(feature = "wifi")]
 use cyw43::Control;
@@ -338,7 +339,8 @@ pub async fn wait_connection(
 /// Enter a loop waiting for messages either via USB (from Piggui) or from the Hardware.
 /// - When receive a message over USB from Piggui, apply to the hardware, save in Flash
 /// - WHen receiving from hardware, send the message to Piggui over USB
-pub async fn message_loop(
+pub async fn message_loop<'a>(
+    gpio: &mut Gpio,
     usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
     hw_config: &mut HardwareConfig,
     spawner: &Spawner,
@@ -361,7 +363,7 @@ pub async fn message_loop(
         .await
         {
             Either::First(hardware_config_message) => {
-                gpio::apply_config_change(
+                gpio.apply_config_change(
                     #[cfg(feature = "wifi")]
                     control,
                     spawner,

@@ -8,18 +8,16 @@ rust-version = "1.80"
 [[bin]]
 name = "porky_w"
 path = "src/porky_w.rs"
-required-features = ["pico_w"]
+required-features = ["wifi"]
 
 [[bin]]
 name = "porky"
 path = "src/porky.rs"
-required-features = ["pico"]
+required-features = ["usb"]
 
 [features]
 default = ["usb", "no_std"]
-pico = ["cyw43-pio"] # I don't know why yet  is needed. Reported to EMbassy
-pico_w = ["wifi"]
-wifi = ["cyw43", "cyw43-pio", "embassy-net", "tcp", "discovery"]
+wifi = ["cyw43", "embassy-net", "tcp", "discovery"]
 no_std = []
 debug-probe = []
 usb = ["embassy-usb"]
@@ -34,9 +32,11 @@ embassy-rp = { version = "0.2.0", default-features = false, features = ["rp2040"
 embassy-sync = { version = "0.6.0", default-features = false }
 embassy-futures = { version = "0.1.1", default-features = false }
 
+# Needed even when no wifi - I don't know why yet. Reported to Embassy
+cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"] }
+
 # Optional Embassy Dependencies
 cyw43 = { version = "0.2.0", default-features = false, features = ["defmt"], optional = true }
-cyw43-pio = { version = "0.2.0", default-features = false, features = ["defmt"], optional = true }
 embassy-net = { version = "0.5.0", default-features = false, features = ["defmt", "tcp", "udp", "dns", "dhcpv4"], optional = true }
 embassy-usb = { version = "0.3.0", default-features = false, optional = true }
 
@@ -97,5 +97,4 @@ edge-nal = { git = "https://github.com/ivmarkov/edge-net.git", branch = "embassy
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-denylist = ["usb"]
-always_include_features = ["no_std"]
+always_include_features = ["no_std", "wifi"]

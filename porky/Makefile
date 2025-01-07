@@ -4,26 +4,25 @@ clean:
 	cargo clean
 
 clippy:
-	cargo clippy --features "pico_w"
-	cargo clippy --features "pico"
+	cargo clippy --features "wifi"
 
 run-pico-w:
-	cargo run --release --bin porky_w --features "pico_w"
+	cargo run --release --bin porky_w --features "wifi"
 
 run-pico:
-	cargo run --release --bin porky --features "pico"
+	cargo run --release --bin porky
 
 build-pico-w:
-	cargo build --release --bin porky_w --features "pico_w"
+	cargo build --release --bin porky_w --features "wifi"
 
 build-pico:
-	cargo build --release --bin porky --features "pico"
+	cargo build --release --bin porky
 
 run-w:
-	cargo run --release --bin porky_w --features "pico_w"
+	cargo run --release --bin porky_w --features "wifi"
 
 run:
-	cargo run --release --bin porky --features "pico"
+	cargo run --release --bin porky
 
 install-uf2:
 	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
