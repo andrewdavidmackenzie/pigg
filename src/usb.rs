@@ -180,45 +180,48 @@ pub async fn get_details(
         {
             if let Some(serial_number) = device_info.serial_number() {
                 if serial_numbers.contains(&serial_number.to_string()) {
-                    let device = device_info.open().unwrap();
-                    let interface = device.claim_interface(0).unwrap();
-                    interface.set_alt_setting(0).unwrap();
+                    if let Ok(device) = device_info.open() {
+                        if let Ok(interface) = device.claim_interface(0) {
+                            interface.set_alt_setting(0).unwrap();
 
-                    if let Ok(hardware_details) = get_hardware_details(&interface).await {
-                        let wifi_details = if hardware_details.wifi {
-                            get_wifi_details(&interface).await.ok()
-                        } else {
-                            None
-                        };
+                            if let Ok(hardware_details) = get_hardware_details(&interface).await {
+                                let wifi_details = if hardware_details.wifi {
+                                    get_wifi_details(&interface).await.ok()
+                                } else {
+                                    None
+                                };
 
-                        let ssid = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
-                        #[cfg(feature = "tcp")]
-                        let tcp = wifi_details.and_then(|wf| wf.tcp);
-                        let mut hardware_connections = HashMap::new();
-                        #[cfg(feature = "tcp")]
-                        if let Some(tcp_connection) = tcp {
-                            let connection = HardwareConnection::Tcp(
-                                IpAddr::from(tcp_connection.0),
-                                tcp_connection.1,
-                            );
-                            hardware_connections.insert(connection.name(), connection);
+                                let ssid =
+                                    wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
+                                #[cfg(feature = "tcp")]
+                                let tcp = wifi_details.and_then(|wf| wf.tcp);
+                                let mut hardware_connections = HashMap::new();
+                                #[cfg(feature = "tcp")]
+                                if let Some(tcp_connection) = tcp {
+                                    let connection = HardwareConnection::Tcp(
+                                        IpAddr::from(tcp_connection.0),
+                                        tcp_connection.1,
+                                    );
+                                    hardware_connections.insert(connection.name(), connection);
+                                }
+
+                                #[cfg(feature = "usb")]
+                                hardware_connections.insert(
+                                    "USB".to_string(),
+                                    HardwareConnection::Usb(hardware_details.serial.clone()),
+                                );
+
+                                devices.insert(
+                                    hardware_details.serial.clone(),
+                                    DiscoveredDevice {
+                                        discovery_method: USBRaw,
+                                        hardware_details,
+                                        ssid_spec: ssid,
+                                        hardware_connections,
+                                    },
+                                );
+                            }
                         }
-
-                        #[cfg(feature = "usb")]
-                        hardware_connections.insert(
-                            "USB".to_string(),
-                            HardwareConnection::Usb(hardware_details.serial.clone()),
-                        );
-
-                        devices.insert(
-                            hardware_details.serial.clone(),
-                            DiscoveredDevice {
-                                discovery_method: USBRaw,
-                                hardware_details,
-                                ssid_spec: ssid,
-                                hardware_connections,
-                            },
-                        );
                     }
                 }
             }

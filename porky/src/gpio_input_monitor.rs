@@ -30,7 +30,7 @@ pub async fn monitor_input(
                 }
             }
             Either::Second(_) => {
-                info!("Monitor returning Pin");
+                debug!("Input Monitor returning Pin");
                 let _ = returner.send(flex).await;
                 break;
             }

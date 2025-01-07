@@ -289,7 +289,7 @@ impl Piggui {
                 self.connect_dialog.hide_modal();
                 self.modal_handler.show_modal = false;
                 self.info_row
-                    .add_info_message(Info("Connected to hardware".to_string()));
+                    .add_info_message(Info("Connected".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
                 println!("Connected to hardware");
             }
@@ -488,6 +488,11 @@ fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
         }
     }
 
+    #[cfg(feature = "usb")]
+    if let Some(usb_str) = matches.get_one::<String>("usb") {
+        target = HardwareConnection::Usb(usb_str.to_string());
+    }
+
     target
 }
 
@@ -516,7 +521,7 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("NODEID")
-            .help("Node Id of a piglet instance to connect to"),
+            .help("Node Id of device to connect to via Iroh"),
     );
 
     #[cfg(feature = "tcp")]
@@ -527,7 +532,18 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("IP")
-            .help("'IP:port' of a piglet instance to connect to"),
+            .help("'IP:port' of device to connect to via TCP"),
+    );
+
+    #[cfg(feature = "usb")]
+    let app = app.arg(
+        Arg::new("usb")
+            .short('u')
+            .long("usb")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("Serial")
+            .help("Serial Number of a device to connect to via USB"),
     );
 
     let app = app.arg(
