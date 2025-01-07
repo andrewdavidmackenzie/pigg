@@ -17,7 +17,7 @@ use std::path::Path;
 /// - The default (empty) config
 pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
     // A config file specified on the command line overrides any config file from previous run
-    let config_file = matches.get_one::<String>("config-file");
+    let config_file = matches.get_one::<String>("config");
 
     // Load any config file specified on the command line
     match config_file {

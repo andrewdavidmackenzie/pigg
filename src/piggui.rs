@@ -153,9 +153,7 @@ impl Piggui {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
         #[cfg(not(target_arch = "wasm32"))]
-        let config_filename = matches
-            .get_one::<String>("config-file")
-            .map(|s| s.to_string());
+        let config_filename = matches.get_one::<String>("config").map(|s| s.to_string());
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
         #[cfg(feature = "discovery")]
@@ -546,11 +544,18 @@ fn get_matches() -> ArgMatches {
             .help("Serial Number of a device to connect to via USB"),
     );
 
-    let app = app.arg(
-        Arg::new("config-file")
-            .num_args(0..)
+    let mut app = app.arg(
+        Arg::new("config")
+            .short('c')
+            .long("config")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("Config File")
             .help("Path of a '.pigg' config file to load"),
     );
 
-    app.get_matches()
+    app.clone().try_get_matches().unwrap_or_else(|e| {
+        let _ = app.print_help();
+        e.exit()
+    })
 }

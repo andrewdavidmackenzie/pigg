@@ -345,13 +345,20 @@ fn get_matches() -> ArgMatches {
             ),
     );
 
-    let app = app.arg(
-        Arg::new("config-file")
-            .num_args(0..)
+    let mut app = app.arg(
+        Arg::new("config")
+            .short('c')
+            .long("config")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("Config File")
             .help("Path of a '.pigg' config file to load"),
     );
 
-    app.get_matches()
+    app.clone().try_get_matches().unwrap_or_else(|e| {
+        let _ = app.print_help();
+        e.exit()
+    })
 }
 
 /// Get a [ServiceManager] instance to use to install or remove system services
