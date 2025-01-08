@@ -45,7 +45,7 @@ type MyDriver = Driver<'static, USB>;
 // This is a randomly generated GUID to allow clients on Windows to find our device
 const DEVICE_INTERFACE_GUIDS: &[&str] = &["{AFB9A6FB-30BA-44BC-9232-806CFC875321}"];
 
-static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> = Channel::new();
+static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 16> = Channel::new();
 
 #[embassy_executor::task]
 async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
@@ -155,6 +155,7 @@ impl Handler for ControlHandler<'_> {
             }
 
             (PIGGUI_REQUEST, HW_CONFIG_MESSAGE) => {
+                info!("Got HW Config message, forwarding to message loop");
                 match postcard::from_bytes::<HardwareConfigMessage>(buf) {
                     Ok(hardware_config_message) => {
                         block_on(USB_MESSAGE_CHANNEL.sender().send(hardware_config_message));
@@ -363,6 +364,10 @@ pub async fn message_loop<'a>(
         .await
         {
             Either::First(hardware_config_message) => {
+                if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
+                    info!("Disconnect message received, exiting USB Message loop");
+                    return;
+                }
                 gpio.apply_config_change(
                     #[cfg(feature = "wifi")]
                     control,
@@ -371,14 +376,9 @@ pub async fn message_loop<'a>(
                     hw_config,
                 )
                 .await;
-                info!("Config message received over USB");
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
                 if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
                     usb_connection.send(&hw_config).await;
-                }
-                if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
-                    info!("Disconnect message received, exiting USB Message loop");
-                    return;
                 }
             }
             Either::Second(hardware_event) => {
