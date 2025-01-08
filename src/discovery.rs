@@ -143,12 +143,6 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                             let app_version = device_properties
                                 .get_property_val_str("AppVersion")
                                 .unwrap();
-                            #[cfg(feature = "iroh")]
-                            let iroh_nodeid = device_properties.get_property_val_str("IrohNodeID");
-                            #[cfg(feature = "iroh")]
-                            let iroh_relay_url_str =
-                                device_properties.get_property_val_str("IrohRelayURL");
-
                             if let Some(ip) = info.get_addresses_v4().drain().next() {
                                 let port = info.get_port();
                                 let mut hardware_connections = HashMap::new();
@@ -158,14 +152,18 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                                 );
 
                                 #[cfg(feature = "iroh")]
-                                if let Some(nodeid_str) = iroh_nodeid {
-                                    let nodeid = NodeId::from_str(nodeid_str).unwrap();
-                                    let relay_url =
-                                        iroh_relay_url_str.map(|s| RelayUrl::from_str(s).unwrap());
-                                    hardware_connections.insert(
-                                        "Iroh".to_string(),
-                                        HardwareConnection::Iroh(nodeid, relay_url),
-                                    );
+                                if let Some(nodeid_str) =
+                                    device_properties.get_property_val_str("IrohNodeID")
+                                {
+                                    if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
+                                        let relay_url = device_properties
+                                            .get_property_val_str("IrohRelayURL")
+                                            .map(|s| RelayUrl::from_str(s).unwrap());
+                                        hardware_connections.insert(
+                                            "Iroh".to_string(),
+                                            HardwareConnection::Iroh(nodeid, relay_url),
+                                        );
+                                    }
                                 }
 
                                 let discovered_device = DiscoveredDevice {
