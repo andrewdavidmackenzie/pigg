@@ -25,7 +25,6 @@ use crate::discovery::DiscoveryMethod::Local;
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareConnection::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
@@ -139,7 +138,6 @@ fn reset_ssid(serial_number: String) -> Task<Message> {
 }
 
 impl Piggui {
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
     /// Disconnect from the hardware
     fn disconnect(&mut self) {
         self.info_row

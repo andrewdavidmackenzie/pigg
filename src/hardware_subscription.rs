@@ -2,7 +2,7 @@ use crate::{hw, local_device};
 use futures::channel::mpsc::Sender;
 
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
-use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
+use crate::hw_definition::config::HardwareConfigMessage::{Disconnect, IOLevelChanged};
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 
 use crate::event::HardwareEvent;
@@ -18,7 +18,6 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
-use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 #[cfg(feature = "usb")]
 use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
