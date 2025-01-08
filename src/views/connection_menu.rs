@@ -15,15 +15,6 @@ use std::collections::HashMap;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Renderer> {
-    let model_string = match hardware_view.get_hardware_connection() {
-        NoConnection => "disconnected".to_string(),
-        _ => format!(
-            "connected: {}@{}",
-            hardware_view.hw_model().unwrap_or(""),
-            hardware_view.get_hardware_connection().name()
-        ),
-    };
-
     // Conditionally render menu items based on hardware features
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
@@ -93,6 +84,11 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
         }
     }
 
+    let model_string = format!(
+        "{}: {}",
+        hardware_view.get_hardware_connection().name(),
+        hardware_view.hw_model().unwrap_or(""),
+    );
     Item::with_menu(
         button(text(model_string))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting

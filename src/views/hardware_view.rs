@@ -158,6 +158,7 @@ impl HardwareView {
 
     /// Send a message to request the subscription to switch connections to a new one
     pub fn new_connection(&mut self, new_connection: HardwareConnection) {
+        self.hardware_description = None;
         self.hardware_connection = new_connection;
         if let Some(ref mut hardware_sender) = &mut self.subscriber_sender {
             let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(
@@ -256,6 +257,7 @@ impl HardwareView {
                         .set_level(level_change);
                 }
                 HardwareEvent::Disconnected => {
+                    self.hardware_description = None;
                     return Task::perform(empty(), move |_| Message::Disconnected);
                 }
                 HardwareEvent::ConnectionError(error) => {
