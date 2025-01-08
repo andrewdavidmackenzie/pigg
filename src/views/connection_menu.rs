@@ -21,7 +21,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
     let disconnect: Item<'a, Message, _, _> = Item::new(
         button("Disconnect")
             .width(Length::Fill)
-            .on_press(Message::ConnectRequest(NoConnection))
+            .on_press(Message::Disconnect)
             .style(|_, status| {
                 if status == Hovered {
                     MENU_BUTTON_HOVER_STYLE

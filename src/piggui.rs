@@ -74,7 +74,7 @@ pub enum Message {
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareConnection),
     Connected,
-    Disconnected,
+    Disconnect,
     ConnectionError(String),
     MenuBarButtonClicked,
     #[cfg(feature = "discovery")]
@@ -140,13 +140,13 @@ fn reset_ssid(serial_number: String) -> Task<Message> {
 
 impl Piggui {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
-    /// We have disconnected, or been disconnected from the hardware
-    fn disconnected(&mut self) {
+    /// Disconnect from the hardware
+    fn disconnect(&mut self) {
         self.info_row
             .add_info_message(Info("Disconnected".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_view = HardwareView::new(NoConnection); // TODO needed?
+        self.hardware_view.new_connection(NoConnection);
     }
 
     fn new() -> (Self, Task<Message>) {
@@ -292,13 +292,6 @@ impl Piggui {
                 println!("Connected to hardware");
             }
 
-            Disconnected => {
-                #[cfg(any(feature = "iroh", feature = "tcp"))]
-                self.connect_dialog.enable_widgets_and_hide_spinner();
-                #[cfg(any(feature = "iroh", feature = "tcp"))]
-                self.disconnected();
-            }
-
             ConnectionError(details) => {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
@@ -339,6 +332,7 @@ impl Piggui {
                     ));
                 }
             },
+            Disconnect => self.disconnect(),
         }
 
         Task::none()

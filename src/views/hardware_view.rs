@@ -256,10 +256,6 @@ impl HardwareView {
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HardwareEvent::Disconnected => {
-                    self.hardware_description = None;
-                    return Task::perform(empty(), move |_| Message::Disconnected);
-                }
                 HardwareEvent::ConnectionError(error) => {
                     return Task::perform(empty(), move |_| {
                         Message::ConnectionError(error.clone())
