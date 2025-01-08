@@ -88,7 +88,7 @@ serial_test = "3.1.1"
 sysinfo = { version = "0.33.1", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
 rfd = "0.15.2"
-clap = { version = "4.5.23", default-features = false, features = ["std", "help", "error-context"] }
+clap = { version = "4.5.24", default-features = false, features = ["std", "help", "error-context"] }
 
 # Raspberry Pi specific dependencies
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
