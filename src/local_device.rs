@@ -47,6 +47,7 @@ pub async fn apply_config_change(
             hardware.set_output_level(bcm, level_change.new_level)?;
         }
         HardwareConfigMessage::GetConfig => {}
+        HardwareConfigMessage::Disconnect => {}
     }
     Ok(())
 }

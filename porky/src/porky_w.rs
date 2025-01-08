@@ -213,20 +213,19 @@ async fn main(spawner: Spawner) {
                     TCP_MDNS_SERVICE_PROTOCOL,
                 ));
 
-                #[cfg(all(feature = "usb", feature = "wifi"))]
+                #[cfg(feature = "usb")]
                 let mut usb_connection = usb::start(
                     spawner,
                     driver,
                     hw_desc,
+                    #[cfg(feature = "wifi")]
                     Some((ip.octets(), TCP_PORT)),
+                    #[cfg(feature = "wifi")]
                     db,
+                    #[cfg(feature = "wifi")]
                     watchdog,
                 )
                 .await;
-
-                #[cfg(all(feature = "usb", not(feature = "wifi")))]
-                let mut usb_connection =
-                    usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
 
                 #[cfg(feature = "wifi")]
                 let mut wifi_tx_buffer = [0; 4096];
@@ -257,13 +256,11 @@ async fn main(spawner: Spawner) {
                             Err(_) => error!("TCP accept error"),
                         },
                         Either::Second(_) => {
-                            #[cfg(feature = "usb")]
                             usb::message_loop(
                                 &mut gpio,
                                 &mut usb_connection,
                                 &mut hardware_config,
                                 &spawner,
-                                #[cfg(feature = "wifi")]
                                 &mut control,
                                 db,
                             )
@@ -294,9 +291,9 @@ async fn main(spawner: Spawner) {
                 }
             }
             Err(e) => {
-                error!("Could not join Wi-Fi network: {}, so starting USB only", e);
                 #[cfg(feature = "usb")]
                 {
+                    error!("Could not join Wi-Fi network: {}, so starting USB only", e);
                     let mut usb_connection =
                         usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
                     usb::wait_connection(&mut usb_connection, &hardware_config).await;
@@ -314,9 +311,9 @@ async fn main(spawner: Spawner) {
             }
         },
         None => {
-            info!("No valid SsidSpec was found, cannot start Wi-Fi, so starting USB only");
             #[cfg(feature = "usb")]
             {
+                info!("No valid SsidSpec was found, cannot start Wi-Fi, so starting USB only");
                 let mut usb_connection =
                     usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
                 usb::wait_connection(&mut usb_connection, &hardware_config).await;

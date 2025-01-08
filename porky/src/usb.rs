@@ -375,11 +375,14 @@ pub async fn message_loop<'a>(
                 if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
                     usb_connection.send(&hw_config).await;
                 }
+                if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
+                    info!("Disconnect message received, exiting USB Message loop");
+                    return;
+                }
             }
             Either::Second(hardware_event) => {
                 usb_connection.send(hardware_event).await;
             }
         }
     }
-    //info!("Exiting Message Loop");
 }

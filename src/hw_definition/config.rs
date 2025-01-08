@@ -39,6 +39,8 @@ pub enum HardwareConfigMessage {
     IOLevelChanged(BCMPinNumber, LevelChange),
     /// A request for device to send back the hardware config
     GetConfig,
+    /// A message sent from the GUI to the device to tell it it will be disconnecting
+    Disconnect,
 }
 
 #[cfg(feature = "no_std")]

@@ -140,8 +140,9 @@ async fn apply_config_change(
                 .insert(bcm, Output(Some(level_change.new_level)));
         }
         HardwareConfigMessage::GetConfig => {
-            send_hardware_config(tcp_stream, hardware_config).await?
+            send_hardware_config(tcp_stream, hardware_config).await?;
         }
+        HardwareConfigMessage::Disconnect => return Err(anyhow!("Disconnect message received")),
     }
 
     Ok(())

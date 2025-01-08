@@ -18,6 +18,7 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 use crate::host_net::iroh_host;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
+use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 #[cfg(feature = "usb")]
 use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
@@ -225,6 +226,8 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
+                                        println!("Sending disconnect message");
+                                        let _ = usb::send_hardware_config_message(interface, &Disconnect).await;
                                         target = new_target.clone();
                                         state = Disconnected;
                                     },
@@ -242,7 +245,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
 
                         // receive an input level change from remote hardware
                         remote_event = fused_wait_for_remote_message => {
-                            log::info!("Remove Hw event Message received via USB: {remote_event:?}");
+                            log::info!("Remote Hw event Message received via USB: {remote_event:?}");
                             match remote_event {
                                  Ok(IOLevelChanged(bcm, level_change)) => {
                                     if let Err(e) = gui_sender_clone.send(InputChange(bcm, level_change)).await {
@@ -276,6 +279,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
+                                        let _ = iroh_host::send_config_change(connection, &Disconnect).await;
                                         target = new_target.clone();
                                         state = Disconnected;
                                     },
@@ -324,6 +328,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
+                                        let _ = tcp_host::send_config_change(stream.clone(), &Disconnect).await;
                                         target = new_target.clone();
                                         state = Disconnected;
                                     },

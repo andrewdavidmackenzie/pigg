@@ -143,10 +143,10 @@ impl Piggui {
     /// We have disconnected, or been disconnected from the hardware
     fn disconnected(&mut self) {
         self.info_row
-            .add_info_message(Info("Disconnected from hardware".to_string()));
+            .add_info_message(Info("Disconnected".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_view = HardwareView::new(NoConnection);
+        self.hardware_view = HardwareView::new(NoConnection); // TODO needed?
     }
 
     fn new() -> (Self, Task<Message>) {

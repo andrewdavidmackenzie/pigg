@@ -3,7 +3,7 @@ use crate::flash::DbFlash;
 use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::config::HardwareConfigMessage::{
-    GetConfig, IOLevelChanged, NewConfig, NewPinConfig,
+    Disconnect, GetConfig, IOLevelChanged, NewConfig, NewPinConfig,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::SsidSpec;
@@ -94,6 +94,7 @@ pub async fn store_config_change<'p>(
             wtx.write(&[*bcm], bytes).await.map_err(|_| "Write Error")?;
         }
         GetConfig => { /* Nothing to do in persistence */ }
+        Disconnect => { /* Nothing to do in persistence */ }
     }
 
     wtx.commit().await.map_err(|_| "Commit error")
