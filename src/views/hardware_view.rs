@@ -138,7 +138,7 @@ impl HardwareView {
         &self.hardware_connection
     }
 
-    /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
+    /// Returns Some(&str) describing the Model of HW Piggui is connected to, or None
     #[must_use]
     pub fn hw_model(&self) -> Option<&str> {
         self.hardware_description
