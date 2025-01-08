@@ -215,7 +215,8 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                 #[cfg(feature = "usb")]
                 ConnectedUsb(interface, config_change_receiver) => {
                     let interface_clone = interface.clone();
-                    let fused_wait_for_remote_message = usb::wait_for(&interface_clone).fuse();
+                    let fused_wait_for_remote_message =
+                        usb::receive_interrupt_in(&interface_clone).fuse();
                     pin_mut!(fused_wait_for_remote_message);
 
                     futures::select! {

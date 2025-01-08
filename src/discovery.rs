@@ -79,7 +79,8 @@ pub struct DiscoveredDevice {
 pub enum DiscoveryEvent {
     DeviceFound(SerialNumber, DiscoveredDevice),
     DeviceLost(SerialNumber, DiscoveryMethod),
-    Error(SerialNumber),
+    DeviceError(SerialNumber),
+    Error(String),
 }
 
 #[cfg(feature = "usb")]
@@ -90,34 +91,34 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 
         loop {
             // Get the vector of all visible serial numbers
-            let current_serial_numbers = usb::get_serials().await.unwrap();
+            if let Ok(current_serial_numbers) = usb::get_serials().await {
+                // New devices
+                let mut new_serial_numbers = current_serial_numbers.clone();
+                new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
 
-            // New devices
-            let mut new_serial_numbers = current_serial_numbers.clone();
-            new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
-
-            for (new_serial_number, new_device) in usb::get_details(&new_serial_numbers).await {
-                // inform UI of new device found
-                gui_sender
-                    .send(DiscoveryEvent::DeviceFound(
-                        new_serial_number.clone(),
-                        new_device,
-                    ))
-                    .await
-                    .unwrap_or_else(|e| eprintln!("Send error: {e}"));
-            }
-
-            // Lost devices
-            for key in previous_serial_numbers {
-                if !current_serial_numbers.contains(&key) {
+                for (new_serial_number, new_device) in usb::get_details(&new_serial_numbers).await {
+                    // inform UI of new device found
                     gui_sender
-                        .send(DiscoveryEvent::DeviceLost(key.clone(), USBRaw))
+                        .send(DiscoveryEvent::DeviceFound(
+                            new_serial_number.clone(),
+                            new_device,
+                        ))
                         .await
                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                 }
-            }
 
-            previous_serial_numbers = current_serial_numbers;
+                // Lost devices
+                for key in previous_serial_numbers {
+                    if !current_serial_numbers.contains(&key) {
+                        gui_sender
+                            .send(DiscoveryEvent::DeviceLost(key.clone(), USBRaw))
+                            .await
+                            .unwrap_or_else(|e| eprintln!("Send error: {e}"));
+                    }
+                }
+
+                previous_serial_numbers = current_serial_numbers;
+            }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
     })
@@ -128,80 +129,89 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mdns = ServiceDaemon::new().expect("Failed to create daemon");
-        let receiver = mdns
-            .browse(TCP_MDNS_SERVICE_TYPE)
-            .expect("Failed to browse");
+        match mdns.browse(TCP_MDNS_SERVICE_TYPE) {
+            Ok(receiver) => {
+                while let Ok(event) = receiver.recv_async().await {
+                    match event {
+                        ServiceEvent::ServiceResolved(info) => {
+                            let device_properties = info.get_properties();
+                            let serial_number =
+                                device_properties.get_property_val_str("Serial").unwrap();
+                            let model = device_properties.get_property_val_str("Model").unwrap();
+                            let app_name =
+                                device_properties.get_property_val_str("AppName").unwrap();
+                            let app_version = device_properties
+                                .get_property_val_str("AppVersion")
+                                .unwrap();
+                            #[cfg(feature = "iroh")]
+                            let iroh_nodeid = device_properties.get_property_val_str("IrohNodeID");
+                            #[cfg(feature = "iroh")]
+                            let iroh_relay_url_str =
+                                device_properties.get_property_val_str("IrohRelayURL");
 
-        while let Ok(event) = receiver.recv_async().await {
-            match event {
-                ServiceEvent::ServiceResolved(info) => {
-                    let device_properties = info.get_properties();
-                    let serial_number = device_properties.get_property_val_str("Serial").unwrap();
-                    let model = device_properties.get_property_val_str("Model").unwrap();
-                    let app_name = device_properties.get_property_val_str("AppName").unwrap();
-                    let app_version = device_properties
-                        .get_property_val_str("AppVersion")
-                        .unwrap();
-                    #[cfg(feature = "iroh")]
-                    let iroh_nodeid = device_properties.get_property_val_str("IrohNodeID");
-                    #[cfg(feature = "iroh")]
-                    let iroh_relay_url_str = device_properties.get_property_val_str("IrohRelayURL");
+                            if let Some(ip) = info.get_addresses_v4().drain().next() {
+                                let port = info.get_port();
+                                let mut hardware_connections = HashMap::new();
+                                hardware_connections.insert(
+                                    "TCP".to_string(),
+                                    HardwareConnection::Tcp(IpAddr::V4(*ip), port),
+                                );
 
-                    if let Some(ip) = info.get_addresses_v4().drain().next() {
-                        let port = info.get_port();
-                        let mut hardware_connections = HashMap::new();
-                        hardware_connections.insert(
-                            "TCP".to_string(),
-                            HardwareConnection::Tcp(IpAddr::V4(*ip), port),
-                        );
+                                #[cfg(feature = "iroh")]
+                                if let Some(nodeid_str) = iroh_nodeid {
+                                    let nodeid = NodeId::from_str(nodeid_str).unwrap();
+                                    let relay_url =
+                                        iroh_relay_url_str.map(|s| RelayUrl::from_str(s).unwrap());
+                                    hardware_connections.insert(
+                                        "Iroh".to_string(),
+                                        HardwareConnection::Iroh(nodeid, relay_url),
+                                    );
+                                }
 
-                        #[cfg(feature = "iroh")]
-                        if let Some(nodeid_str) = iroh_nodeid {
-                            let nodeid = NodeId::from_str(nodeid_str).unwrap();
-                            let relay_url =
-                                iroh_relay_url_str.map(|s| RelayUrl::from_str(s).unwrap());
-                            hardware_connections.insert(
-                                "Iroh".to_string(),
-                                HardwareConnection::Iroh(nodeid, relay_url),
-                            );
+                                let discovered_device = DiscoveredDevice {
+                                    discovery_method: Mdns,
+                                    hardware_details: HardwareDetails {
+                                        model: model.to_string(),
+                                        hardware: "".to_string(),
+                                        revision: "".to_string(),
+                                        serial: serial_number.to_string(),
+                                        wifi: true,
+                                        app_name: app_name.to_string(),
+                                        app_version: app_version.to_string(),
+                                    },
+                                    ssid_spec: None,
+                                    hardware_connections,
+                                };
+
+                                gui_sender
+                                    .send(DiscoveryEvent::DeviceFound(
+                                        serial_number.to_owned(),
+                                        discovered_device.clone(),
+                                    ))
+                                    .await
+                                    .unwrap_or_else(|e| eprintln!("Send error: {e}"));
+                            }
                         }
-
-                        let discovered_device = DiscoveredDevice {
-                            discovery_method: Mdns,
-                            hardware_details: HardwareDetails {
-                                model: model.to_string(),
-                                hardware: "".to_string(),
-                                revision: "".to_string(),
-                                serial: serial_number.to_string(),
-                                wifi: true,
-                                app_name: app_name.to_string(),
-                                app_version: app_version.to_string(),
-                            },
-                            ssid_spec: None,
-                            hardware_connections,
-                        };
-
-                        gui_sender
-                            .send(DiscoveryEvent::DeviceFound(
-                                serial_number.to_owned(),
-                                discovered_device.clone(),
-                            ))
-                            .await
-                            .unwrap_or_else(|e| eprintln!("Send error: {e}"));
+                        ServiceEvent::ServiceRemoved(_service_type, fullname) => {
+                            if let Some((serial_number, _)) = fullname.split_once(".") {
+                                let key = format!("{serial_number}/TCP");
+                                gui_sender
+                                    .send(DiscoveryEvent::DeviceLost(key, Mdns))
+                                    .await
+                                    .unwrap_or_else(|e| eprintln!("Send error: {e}"));
+                            }
+                        }
+                        _ => {}
                     }
                 }
-                ServiceEvent::ServiceRemoved(_service_type, fullname) => {
-                    if let Some((serial_number, _)) = fullname.split_once(".") {
-                        let key = format!("{serial_number}/TCP");
-                        gui_sender
-                            .send(DiscoveryEvent::DeviceLost(key, Mdns))
-                            .await
-                            .unwrap_or_else(|e| eprintln!("Send error: {e}"));
-                    }
-                }
-                ServiceEvent::SearchStarted(_) => {}
-                ServiceEvent::ServiceFound(_, _) => {}
-                ServiceEvent::SearchStopped(_) => {}
+            }
+            Err(_) => {
+                gui_sender
+                    .send(DiscoveryEvent::DeviceError(
+                        "Could not browse mDNS".to_string(),
+                    ))
+                    .await
+                    .unwrap_or_else(|e| eprintln!("Could not browse mDNS:{e}"));
             }
         }
     })

@@ -448,9 +448,13 @@ impl Piggui {
                         .add_info_message(Info("Device Lost".to_string()));
                 }
             }
-            DiscoveryEvent::Error(e) => {
+            DiscoveryEvent::DeviceError(e) => {
                 self.info_row
                     .add_info_message(Error("Connection Error".to_string(), e.clone()));
+            }
+            DiscoveryEvent::Error(e) => {
+                self.info_row
+                    .add_info_message(Error("Discovery Error".to_string(), e.clone()));
             }
         }
     }
