@@ -42,7 +42,7 @@ fn device_items<'a>(
         // TODO avoid the current connected device altogether
         // Avoid the current connection being a connect option in the details dialog
         let mut connect_options = hardware_connections.clone();
-        connect_options.remove(&current_connection.name());
+        connect_options.remove(current_connection.name());
         device_menu_items.push(Item::new(
             button("Display Device Details...")
                 .width(Length::Fill)

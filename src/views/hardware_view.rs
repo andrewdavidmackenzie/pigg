@@ -87,9 +87,10 @@ impl Display for HardwareConnection {
 }
 
 impl HardwareConnection {
-    pub fn name(&self) -> String {
+    /// Return a short name describing the connection type
+    pub const fn name(&self) -> &'static str {
         match self {
-            NoConnection => "No Connection",
+            NoConnection => "disconnected",
             #[cfg(not(target_arch = "wasm32"))]
             Local => "Local",
             #[cfg(feature = "usb")]
@@ -99,7 +100,6 @@ impl HardwareConnection {
             #[cfg(feature = "tcp")]
             Tcp(_, _) => "TCP",
         }
-        .to_string()
     }
 }
 
@@ -140,13 +140,14 @@ impl HardwareView {
 
     /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
     #[must_use]
-    pub fn hw_model(&self) -> Option<String> {
+    pub fn hw_model(&self) -> Option<&str> {
         self.hardware_description
             .as_ref()
-            .map(|desc| desc.details.model.clone())
+            .map(|desc| desc.details.model.as_str())
     }
 
     /// Apply the [HardwareConfig] active here to the GPIO hardware
+    // TODO this might cause a re-apply of same config coming _from_ the hardware?
     fn update_hw_config(&mut self) {
         if let Some(ref mut subscriber_sender) = &mut self.subscriber_sender {
             let _ = subscriber_sender.try_send(Hardware(HardwareConfigMessage::NewConfig(

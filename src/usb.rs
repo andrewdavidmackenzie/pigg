@@ -202,7 +202,8 @@ pub async fn get_details(
                                         IpAddr::from(tcp_connection.0),
                                         tcp_connection.1,
                                     );
-                                    hardware_connections.insert(connection.name(), connection);
+                                    hardware_connections
+                                        .insert(connection.name().to_string(), connection);
                                 }
 
                                 #[cfg(feature = "usb")]

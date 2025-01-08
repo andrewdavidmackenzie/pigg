@@ -15,18 +15,13 @@ use std::collections::HashMap;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Renderer> {
-    let model = match hardware_view.hw_model() {
-        None => "connection: none".to_string(),
-        Some(model) => match hardware_view.get_hardware_connection() {
-            NoConnection => "connection: none".to_string(),
-            Local => format!("connection: {}@Local", model),
-            #[cfg(feature = "usb")]
-            Usb(_) => format!("connection: {}@USB", model),
-            #[cfg(feature = "iroh")]
-            Iroh(_, _) => format!("connection: {}@Iroh", model),
-            #[cfg(feature = "tcp")]
-            Tcp(_, _) => format!("connection: {}@TCP", model),
-        },
+    let model_string = match hardware_view.get_hardware_connection() {
+        NoConnection => "disconnected".to_string(),
+        _ => format!(
+            "connected: {}@{}",
+            hardware_view.hw_model().unwrap_or(""),
+            hardware_view.get_hardware_connection().name()
+        ),
     };
 
     // Conditionally render menu items based on hardware features
@@ -99,7 +94,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
     }
 
     Item::with_menu(
-        button(text(model))
+        button(text(model_string))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(move |_theme, status| {
                 if status == Hovered {

@@ -371,6 +371,7 @@ pub async fn message_loop<'a>(
                     hw_config,
                 )
                 .await;
+                info!("Config message received over USB");
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
                 if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
                     usb_connection.send(&hw_config).await;
