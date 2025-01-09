@@ -56,10 +56,10 @@ enum HWState {
     ConnectedUsb(Interface, Receiver<SubscriberMessage>),
     #[cfg(feature = "iroh")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedIroh(Receiver<SubscriberMessage>, iroh_net::endpoint::Connection),
+    ConnectedIroh(iroh_net::endpoint::Connection, Receiver<SubscriberMessage>),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedTcp(Receiver<SubscriberMessage>, async_std::net::TcpStream),
+    ConnectedTcp(async_std::net::TcpStream, Receiver<SubscriberMessage>),
 }
 
 /// Report an error to the GUI, if it cannot be sent print to STDERR
@@ -157,7 +157,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                                     }
 
                                     // We are ready to receive messages from the GUI
-                                    state = ConnectedIroh(hardware_event_receiver, connection);
+                                    state = ConnectedIroh(connection, hardware_event_receiver);
                                 }
                                 Err(e) => {
                                     report_error(gui_sender_clone, &format!("Iroh error: {e}"))
@@ -181,7 +181,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
 
                                     // We are ready to receive messages from the GUI
-                                    state = HWState::ConnectedTcp(hardware_event_receiver, stream);
+                                    state = HWState::ConnectedTcp(stream, hardware_event_receiver);
                                 }
                                 Err(e) => {
                                     report_error(gui_sender_clone, &format!("TCP error: {e}")).await
@@ -273,7 +273,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                 }
 
                 #[cfg(feature = "iroh")]
-                ConnectedIroh(config_change_receiver, connection) => {
+                ConnectedIroh(connection, config_change_receiver) => {
                     let mut connection_clone = connection.clone();
                     let fused_wait_for_remote_message =
                         iroh_host::wait_for_remote_message(&mut connection_clone).fuse();
@@ -327,7 +327,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                 }
 
                 #[cfg(feature = "tcp")]
-                ConnectedTcp(config_change_receiver, stream) => {
+                ConnectedTcp(stream, config_change_receiver) => {
                     let fused_wait_for_remote_message =
                         tcp_host::wait_for_remote_message(stream.clone()).fuse();
                     pin_mut!(fused_wait_for_remote_message);
