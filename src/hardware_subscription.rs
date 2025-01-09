@@ -16,11 +16,11 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(feature = "iroh")]
 use crate::host_net::iroh_host;
 use crate::host_net::local_host;
+use crate::host_net::local_host::LocalConnection;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
 #[cfg(feature = "usb")]
 use crate::host_net::usb_host;
-use crate::hw::driver::HW;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
 use futures::SinkExt;
@@ -49,7 +49,7 @@ enum HWState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedLocal(HW, Receiver<SubscriberMessage>),
+    ConnectedLocal(LocalConnection, Receiver<SubscriberMessage>),
     #[cfg(feature = "usb")]
     /// The subscription is connected to a device over USB, will listen for events and send to GUI
     ConnectedUsb(Interface, Receiver<SubscriberMessage>),
@@ -187,7 +187,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                     }
                 }
 
-                ConnectedLocal(local_hw, config_change_receiver) => {
+                ConnectedLocal(connection, config_change_receiver) => {
                     if let Some(config_change) = config_change_receiver.next().await {
                         match &config_change {
                             NewConnection(new_target) => {
@@ -196,7 +196,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                             }
                             Hardware(config_change) => {
                                 if let Err(e) = local_host::send_config_message(
-                                    local_hw,
+                                    connection,
                                     config_change,
                                     gui_sender_clone.clone(),
                                 )
