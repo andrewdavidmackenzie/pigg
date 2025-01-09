@@ -201,7 +201,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                             Hardware(config_change) => {
                                 if let Err(e) = local_host::send_config_message(
                                     local_hw,
-                                    config_change.clone(),
+                                    config_change,
                                     gui_sender_clone.clone(),
                                 )
                                 .await
@@ -239,7 +239,6 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                                         state = Disconnected;
                                     },
                                     Hardware(config_change) => {
-                                        log::info!("Hw Config Message sent via USB: {config_change:?}");
                                         if let Err(e) = usb_host::send_config_message(interface, config_change).await
                                         {
                                             report_error(gui_sender_clone, &format!("USB error: {e}"))
