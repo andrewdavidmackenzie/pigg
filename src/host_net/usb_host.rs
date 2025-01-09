@@ -1,7 +1,3 @@
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveredDevice;
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveryMethod::USBRaw;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
 use crate::hw_definition::description::HardwareDetails;
@@ -16,17 +12,11 @@ use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
     SET_SSID_VALUE,
 };
-#[cfg(feature = "discovery")]
-use crate::views::hardware_view::HardwareConnection;
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
-#[cfg(feature = "discovery")]
-use std::collections::HashMap;
-#[cfg(all(feature = "discovery", feature = "tcp"))]
-use std::net::IpAddr;
 use std::time::Duration;
 
 /// [ControlIn] "command" to request the [HardwareDescription]
@@ -36,7 +26,7 @@ const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
     request: PIGGUI_REQUEST,
     value: GET_HARDWARE_DESCRIPTION_VALUE,
     index: 0,
-    length: 1000,
+    length: 1024,
 };
 
 #[cfg(feature = "discovery")]
@@ -47,7 +37,7 @@ const GET_HARDWARE_DETAILS: ControlIn = ControlIn {
     request: PIGGUI_REQUEST,
     value: GET_HARDWARE_DETAILS_VALUE,
     index: 0,
-    length: 1000,
+    length: 1024,
 };
 
 /// [ControlIn] "command" to request the WiFiDetails
@@ -58,7 +48,7 @@ const GET_WIFI_DETAILS: ControlIn = ControlIn {
     request: PIGGUI_REQUEST,
     value: GET_WIFI_VALUE,
     index: 0,
-    length: 1000,
+    length: 1024,
 };
 
 /// [ControlOut] "command" to reset the [WiFiDetails] of an attached "porky"
@@ -90,13 +80,13 @@ async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescripti
 
 #[cfg(feature = "discovery")]
 /// Request [HardwareDetails] from compatible porky device over USB [ControlIn]
-async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, Error> {
+pub async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, Error> {
     receive_control_in(porky, GET_HARDWARE_DETAILS).await
 }
 
 #[cfg(feature = "discovery")]
 /// Request [WiFiDetails] from compatible porky device over USB [ControlIn]
-async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, Error> {
+pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, Error> {
     receive_control_in(porky, GET_WIFI_DETAILS).await
 }
 
@@ -151,7 +141,7 @@ pub async fn reset_ssid_spec(serial_number: SerialNumber) -> Result<(), Error> {
 }
 
 /// Wait until we receive a message from device over USB Interrupt In
-pub async fn receive_interrupt_in<'de, T>(porky: &Interface) -> Result<T, Error>
+pub async fn wait_for_remote_message<'de, T>(porky: &Interface) -> Result<T, Error>
 where
     T: DeserializeOwned,
 {
@@ -167,7 +157,7 @@ where
 }
 
 /// Send a [HardwareConfigMessage] to a connected porky device using [ControlOut]
-pub async fn send_hardware_config_message(
+pub async fn send_config_message(
     porky: &Interface,
     hardware_config_message: &HardwareConfigMessage,
 ) -> Result<(), Error> {
@@ -193,87 +183,9 @@ pub async fn connect(
 ) -> Result<(Interface, HardwareDescription, HardwareConfig), Error> {
     let porky = interface_from_serial(serial_number).await?;
     let hardware_description = get_hardware_description(&porky).await?;
-    send_hardware_config_message(&porky, &HardwareConfigMessage::GetConfig).await?;
-    let hardware_config: HardwareConfig = receive_interrupt_in(&porky).await?;
+    send_config_message(&porky, &HardwareConfigMessage::GetConfig).await?;
+    let hardware_config: HardwareConfig = wait_for_remote_message(&porky).await?;
     Ok((porky, hardware_description, hardware_config))
-}
-
-/// Get the details of the devices in the list of [SerialNumber] passed in
-#[cfg(feature = "discovery")]
-pub async fn get_details(
-    serial_numbers: &[SerialNumber],
-) -> HashMap<SerialNumber, DiscoveredDevice> {
-    let mut devices = HashMap::<String, DiscoveredDevice>::new();
-
-    if let Ok(device_list) = nusb::list_devices() {
-        for device_info in
-            device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
-        {
-            if let Some(serial_number) = device_info.serial_number() {
-                if serial_numbers.contains(&serial_number.to_string()) {
-                    if let Ok(device) = device_info.open() {
-                        if let Ok(interface) = device.claim_interface(0) {
-                            interface.set_alt_setting(0).unwrap();
-
-                            if let Ok(hardware_details) = get_hardware_details(&interface).await {
-                                let wifi_details = if hardware_details.wifi {
-                                    get_wifi_details(&interface).await.ok()
-                                } else {
-                                    None
-                                };
-
-                                let ssid =
-                                    wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
-                                #[cfg(feature = "tcp")]
-                                let tcp = wifi_details.and_then(|wf| wf.tcp);
-                                let mut hardware_connections = HashMap::new();
-                                #[cfg(feature = "tcp")]
-                                if let Some(tcp_connection) = tcp {
-                                    let connection = HardwareConnection::Tcp(
-                                        IpAddr::from(tcp_connection.0),
-                                        tcp_connection.1,
-                                    );
-                                    hardware_connections
-                                        .insert(connection.name().to_string(), connection);
-                                }
-
-                                #[cfg(feature = "usb")]
-                                hardware_connections.insert(
-                                    "USB".to_string(),
-                                    HardwareConnection::Usb(hardware_details.serial.clone()),
-                                );
-
-                                devices.insert(
-                                    hardware_details.serial.clone(),
-                                    DiscoveredDevice {
-                                        discovery_method: USBRaw,
-                                        hardware_details,
-                                        ssid_spec: ssid,
-                                        hardware_connections,
-                                    },
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    devices
-}
-
-/// Return a Vec of the [SerialNumber] of all compatible connected devices
-#[cfg(feature = "discovery")]
-pub async fn get_serials() -> Result<Vec<SerialNumber>, Error> {
-    Ok(nusb::list_devices()?
-        .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
-        .filter_map(|device_info| {
-            device_info
-                .serial_number()
-                .and_then(|s| Option::from(s.to_string()))
-        })
-        .collect())
 }
 
 #[cfg(feature = "usb")]

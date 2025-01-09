@@ -27,7 +27,7 @@ pub async fn wait_for_remote_message(
 }
 
 /// Send config change received form the GUI to the remote hardware
-pub async fn send_config_change(
+pub async fn send_config_message(
     connection: &mut Connection,
     config_change_message: &HardwareConfigMessage,
 ) -> anyhow::Result<()> {

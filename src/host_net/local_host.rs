@@ -11,47 +11,6 @@ use iced::futures::channel::mpsc::Sender;
 use log::{info, trace};
 use std::time::Duration;
 
-/// Apply a config change to the local hardware
-pub async fn apply_config_change(
-    hardware: &mut HW,
-    config_change: HardwareConfigMessage,
-    gui_sender_clone: Sender<HardwareEvent>,
-) -> anyhow::Result<()> {
-    match config_change {
-        NewConfig(config) => {
-            info!("New config applied");
-            let gc = gui_sender_clone.clone();
-            hardware
-                .apply_config(&config, move |bcm_pin_number, level_change| {
-                    let _ =
-                        send_input_level(gui_sender_clone.clone(), bcm_pin_number, level_change);
-                })
-                .await?;
-
-            send_current_input_states(gc, &config, hardware).await?;
-        }
-        NewPinConfig(bcm, pin_function) => {
-            info!("New pin config for pin #{bcm}: {pin_function}");
-            let gc = gui_sender_clone.clone();
-            hardware
-                .apply_pin_config(bcm, &pin_function, move |bcm_pin_number, level_change| {
-                    let _ =
-                        send_input_level(gui_sender_clone.clone(), bcm_pin_number, level_change);
-                })
-                .await?;
-
-            send_current_input_state(&bcm, &pin_function, gc, hardware).await?;
-        }
-        IOLevelChanged(bcm, level_change) => {
-            trace!("Pin #{bcm} Output level change: {level_change:?}");
-            hardware.set_output_level(bcm, level_change.new_level)?;
-        }
-        HardwareConfigMessage::GetConfig => {}
-        HardwareConfigMessage::Disconnect => {}
-    }
-    Ok(())
-}
-
 /// Send the current input state for all inputs configured in the config
 async fn send_current_input_states(
     gui_sender_clone: Sender<HardwareEvent>,
@@ -122,5 +81,44 @@ fn send_input_level(
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = InputChange(bcm, level_change);
     gui_sender_clone.try_send(hardware_event)?;
+    Ok(())
+}
+
+/// Send (apply) a [HardwareConfigMessage] to the local hardware
+pub async fn send_config_message(
+    hardware: &mut HW,
+    config_change: HardwareConfigMessage,
+    gui_sender: Sender<HardwareEvent>,
+) -> anyhow::Result<()> {
+    match config_change {
+        NewConfig(config) => {
+            info!("New config applied");
+            let gui_sender_clone = gui_sender.clone();
+            hardware
+                .apply_config(&config, move |bcm_pin_number, level_change| {
+                    let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
+                })
+                .await?;
+
+            send_current_input_states(gui_sender_clone, &config, hardware).await?;
+        }
+        NewPinConfig(bcm, pin_function) => {
+            info!("New pin config for pin #{bcm}: {pin_function}");
+            let gc = gui_sender.clone();
+            hardware
+                .apply_pin_config(bcm, &pin_function, move |bcm_pin_number, level_change| {
+                    let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
+                })
+                .await?;
+
+            send_current_input_state(&bcm, &pin_function, gc, hardware).await?;
+        }
+        IOLevelChanged(bcm, level_change) => {
+            trace!("Pin #{bcm} Output level change: {level_change:?}");
+            hardware.set_output_level(bcm, level_change.new_level)?;
+        }
+        HardwareConfigMessage::GetConfig => {}
+        HardwareConfigMessage::Disconnect => {}
+    }
     Ok(())
 }

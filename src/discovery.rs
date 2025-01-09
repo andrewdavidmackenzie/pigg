@@ -4,12 +4,12 @@ use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
 use crate::discovery::DiscoveryMethod::Mdns;
 #[cfg(feature = "usb")]
 use crate::discovery::DiscoveryMethod::USBRaw;
-#[cfg(feature = "usb")]
 use crate::host_net::usb_host;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
 use crate::views::hardware_view::HardwareConnection;
+use anyhow::Error;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
 #[cfg(any(feature = "usb", feature = "tcp"))]
@@ -30,8 +30,6 @@ use std::net::IpAddr;
 use std::str::FromStr;
 #[cfg(feature = "usb")]
 use std::time::Duration;
-//#[cfg(not(any(feature = "usb", feature = "iroh")))]
-//compile_error!("In order for discovery to work you must enable either \"usb\" or \"iroh\" feature");
 
 /// What method was used to discover a device? Currently, we support Iroh and USB
 #[derive(Debug, Clone)]
@@ -83,6 +81,84 @@ pub enum DiscoveryEvent {
     Error(String),
 }
 
+/// Return a Vec of the [SerialNumber] of all compatible connected devices
+#[cfg(feature = "usb")]
+async fn get_serials() -> Result<Vec<SerialNumber>, Error> {
+    Ok(nusb::list_devices()?
+        .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+        .filter_map(|device_info| {
+            device_info
+                .serial_number()
+                .and_then(|s| Option::from(s.to_string()))
+        })
+        .collect())
+}
+
+/// Get the details of the devices in the list of [SerialNumber] passed in
+#[cfg(feature = "usb")]
+async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, DiscoveredDevice> {
+    let mut devices = HashMap::<String, DiscoveredDevice>::new();
+
+    if let Ok(device_list) = nusb::list_devices() {
+        for device_info in
+            device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+        {
+            if let Some(serial_number) = device_info.serial_number() {
+                if serial_numbers.contains(&serial_number.to_string()) {
+                    if let Ok(device) = device_info.open() {
+                        if let Ok(interface) = device.claim_interface(0) {
+                            interface.set_alt_setting(0).unwrap();
+
+                            if let Ok(hardware_details) =
+                                usb_host::get_hardware_details(&interface).await
+                            {
+                                let wifi_details = if hardware_details.wifi {
+                                    usb_host::get_wifi_details(&interface).await.ok()
+                                } else {
+                                    None
+                                };
+
+                                let ssid =
+                                    wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
+                                #[cfg(feature = "tcp")]
+                                let tcp = wifi_details.and_then(|wf| wf.tcp);
+                                let mut hardware_connections = HashMap::new();
+                                #[cfg(feature = "tcp")]
+                                if let Some(tcp_connection) = tcp {
+                                    let connection = HardwareConnection::Tcp(
+                                        IpAddr::from(tcp_connection.0),
+                                        tcp_connection.1,
+                                    );
+                                    hardware_connections
+                                        .insert(connection.name().to_string(), connection);
+                                }
+
+                                #[cfg(feature = "usb")]
+                                hardware_connections.insert(
+                                    "USB".to_string(),
+                                    HardwareConnection::Usb(hardware_details.serial.clone()),
+                                );
+
+                                devices.insert(
+                                    hardware_details.serial.clone(),
+                                    DiscoveredDevice {
+                                        discovery_method: USBRaw,
+                                        hardware_details,
+                                        ssid_spec: ssid,
+                                        hardware_connections,
+                                    },
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    devices
+}
+
 #[cfg(feature = "usb")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB
 pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
@@ -91,14 +167,12 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 
         loop {
             // Get the vector of all visible serial numbers
-            if let Ok(current_serial_numbers) = usb_host::get_serials().await {
+            if let Ok(current_serial_numbers) = get_serials().await {
                 // New devices
                 let mut new_serial_numbers = current_serial_numbers.clone();
                 new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
 
-                for (new_serial_number, new_device) in
-                    usb_host::get_details(&new_serial_numbers).await
-                {
+                for (new_serial_number, new_device) in get_details(&new_serial_numbers).await {
                     // inform UI of new device found
                     gui_sender
                         .send(DiscoveryEvent::DeviceFound(
