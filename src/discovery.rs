@@ -4,12 +4,12 @@ use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
 use crate::discovery::DiscoveryMethod::Mdns;
 #[cfg(feature = "usb")]
 use crate::discovery::DiscoveryMethod::USBRaw;
+#[cfg(feature = "usb")]
 use crate::host_net::usb_host;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
 use crate::views::hardware_view::HardwareConnection;
-use anyhow::Error;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
 #[cfg(any(feature = "usb", feature = "tcp"))]
@@ -83,7 +83,7 @@ pub enum DiscoveryEvent {
 
 /// Return a Vec of the [SerialNumber] of all compatible connected devices
 #[cfg(feature = "usb")]
-async fn get_serials() -> Result<Vec<SerialNumber>, Error> {
+async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
     Ok(nusb::list_devices()?
         .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
         .filter_map(|device_info| {

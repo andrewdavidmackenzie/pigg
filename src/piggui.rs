@@ -32,6 +32,7 @@ use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::views::ssid_dialog::SsidDialogMessage;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
+#[cfg(feature = "usb")]
 use host_net::usb_host;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;

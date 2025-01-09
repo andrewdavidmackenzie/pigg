@@ -9,9 +9,11 @@ use crate::event::HardwareEvent;
 use crate::event::HardwareEvent::InputChange;
 #[cfg(feature = "iroh")]
 use crate::hardware_subscription::HWState::ConnectedIroh;
+#[cfg(feature = "tcp")]
+use crate::hardware_subscription::HWState::ConnectedTcp;
 #[cfg(feature = "usb")]
 use crate::hardware_subscription::HWState::ConnectedUsb;
-use crate::hardware_subscription::HWState::{ConnectedLocal, ConnectedTcp, Disconnected};
+use crate::hardware_subscription::HWState::{ConnectedLocal, Disconnected};
 use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(feature = "iroh")]
 use crate::host_net::iroh_host;
