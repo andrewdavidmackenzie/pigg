@@ -180,12 +180,12 @@ pub async fn send_config_message(
 /// Return the [HardwareDescription] and [HardwareConfig] along with the [Interface] to use
 pub async fn connect(
     serial_number: &SerialNumber,
-) -> Result<(Interface, HardwareDescription, HardwareConfig), Error> {
+) -> Result<(HardwareDescription, HardwareConfig, Interface), Error> {
     let porky = interface_from_serial(serial_number).await?;
     let hardware_description = get_hardware_description(&porky).await?;
     send_config_message(&porky, &HardwareConfigMessage::GetConfig).await?;
     let hardware_config: HardwareConfig = wait_for_remote_message(&porky).await?;
-    Ok((porky, hardware_description, hardware_config))
+    Ok((hardware_description, hardware_config, porky))
 }
 
 #[cfg(feature = "usb")]

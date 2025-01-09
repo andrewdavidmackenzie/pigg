@@ -1,9 +1,8 @@
-use crate::hw;
 use futures::channel::mpsc::Sender;
 
+use crate::hw_definition::config::HardwareConfigMessage;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use crate::hw_definition::config::HardwareConfigMessage::{Disconnect, IOLevelChanged};
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 
 use crate::event::HardwareEvent;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
@@ -87,16 +86,13 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                         HardwareConnection::NoConnection => {}
 
                         HardwareConnection::Local => {
-                            let local_hardware = hw::driver::get();
-
-                            // Connect immediately - nothing to wait for!
-                            match local_hardware.description() {
-                                Ok(hardware_description) => {
+                            match local_host::connect().await {
+                                Ok((hardware_description, hardware_config, local_hardware)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
                                             hardware_description.clone(),
-                                            HardwareConfig::default(), // Local HW doesn't save a config
+                                            hardware_config,
                                         ))
                                         .await
                                     {
@@ -117,7 +113,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                         #[cfg(feature = "usb")]
                         HardwareConnection::Usb(serial) => {
                             match usb_host::connect(&serial).await {
-                                Ok((interface, hardware_description, hardware_config)) => {
+                                Ok((hardware_description, hardware_config, interface)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(HardwareEvent::Connected(
                                             hardware_event_sender.clone(),
@@ -181,7 +177,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
 
                                     // We are ready to receive messages from the GUI
-                                    state = HWState::ConnectedTcp(stream, hardware_event_receiver);
+                                    state = ConnectedTcp(stream, hardware_event_receiver);
                                 }
                                 Err(e) => {
                                     report_error(gui_sender_clone, &format!("TCP error: {e}")).await

@@ -1,12 +1,15 @@
 use crate::event::HardwareEvent;
 use crate::event::HardwareEvent::InputChange;
+use crate::hw;
 use crate::hw::driver::HW;
 use crate::hw_definition::config::HardwareConfigMessage::{
     IOLevelChanged, NewConfig, NewPinConfig,
 };
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
+use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
+use anyhow::Error;
 use iced::futures::channel::mpsc::Sender;
 use log::{info, trace};
 use std::time::Duration;
@@ -121,4 +124,13 @@ pub async fn send_config_message(
         HardwareConfigMessage::Disconnect => {}
     }
     Ok(())
+}
+
+/// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
+pub async fn connect() -> anyhow::Result<(HardwareDescription, HardwareConfig, HW), Error> {
+    let hw = hw::driver::get();
+    let hw_description = hw.description()?;
+    let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
+
+    Ok((hw_description, hw_config, hw))
 }
