@@ -338,7 +338,7 @@ impl HardwareView {
             subscriptions.push(
                 Subscription::run_with_id(
                     "hardware",
-                    hardware_subscription::subscribe(&self.hardware_connection),
+                    hardware_subscription::subscribe(self.hardware_connection.clone()),
                 )
                 .map(HardwareSubscription),
             );
