@@ -21,6 +21,7 @@ use crate::host_net::local_host;
 use crate::host_net::tcp_host;
 #[cfg(feature = "usb")]
 use crate::host_net::usb_host;
+use crate::hw::driver::HW;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
 use futures::SinkExt;
@@ -49,7 +50,7 @@ enum HWState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedLocal(Receiver<SubscriberMessage>),
+    ConnectedLocal(HW, Receiver<SubscriberMessage>),
     #[cfg(feature = "usb")]
     /// The subscription is connected to a device over USB, will listen for events and send to GUI
     ConnectedUsb(Interface, Receiver<SubscriberMessage>),
@@ -76,7 +77,6 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
 
     stream::channel(100, move |gui_sender| async move {
         let mut state = Disconnected;
-        let mut connected_hardware = hw::driver::get();
 
         loop {
             let mut gui_sender_clone = gui_sender.clone();
@@ -89,8 +89,10 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                         HardwareConnection::NoConnection => {}
 
                         HardwareConnection::Local => {
+                            let local_hardware = hw::driver::get();
+
                             // Connect immediately - nothing to wait for!
-                            match connected_hardware.description() {
+                            match local_hardware.description() {
                                 Ok(hardware_description) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(HardwareEvent::Connected(
@@ -105,7 +107,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                                     }
 
                                     // We are ready to receive messages from the GUI and send messages to it
-                                    state = ConnectedLocal(hardware_event_receiver);
+                                    state = ConnectedLocal(local_hardware, hardware_event_receiver);
                                 }
                                 Err(e) => {
                                     report_error(gui_sender_clone, &format!("LocalHW error: {e}"))
@@ -191,7 +193,7 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                     }
                 }
 
-                ConnectedLocal(config_change_receiver) => {
+                ConnectedLocal(local_hw, config_change_receiver) => {
                     if let Some(config_change) = config_change_receiver.next().await {
                         match &config_change {
                             NewConnection(new_target) => {
@@ -200,13 +202,13 @@ pub fn subscribe(hardware_connection: &HardwareConnection) -> impl Stream<Item =
                             }
                             Hardware(config_change) => {
                                 if let Err(e) = local_host::send_config_message(
-                                    &mut connected_hardware,
+                                    local_hw,
                                     config_change.clone(),
                                     gui_sender_clone.clone(),
                                 )
                                 .await
                                 {
-                                    report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                    report_error(gui_sender_clone, &format!("Local error: {e}"))
                                         .await;
                                 }
                             }
