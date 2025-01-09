@@ -4,11 +4,11 @@ use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
 use crate::discovery::DiscoveryMethod::Mdns;
 #[cfg(feature = "usb")]
 use crate::discovery::DiscoveryMethod::USBRaw;
+#[cfg(feature = "usb")]
+use crate::host_net::usb_host;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
-#[cfg(feature = "usb")]
-use crate::usb;
 use crate::views::hardware_view::HardwareConnection;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
@@ -91,12 +91,14 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 
         loop {
             // Get the vector of all visible serial numbers
-            if let Ok(current_serial_numbers) = usb::get_serials().await {
+            if let Ok(current_serial_numbers) = usb_host::get_serials().await {
                 // New devices
                 let mut new_serial_numbers = current_serial_numbers.clone();
                 new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
 
-                for (new_serial_number, new_device) in usb::get_details(&new_serial_numbers).await {
+                for (new_serial_number, new_device) in
+                    usb_host::get_details(&new_serial_numbers).await
+                {
                     // inform UI of new device found
                     gui_sender
                         .send(DiscoveryEvent::DeviceFound(
