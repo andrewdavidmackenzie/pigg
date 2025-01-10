@@ -6,7 +6,7 @@ use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareView
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
-use crate::views::message_box::MessageMessage::{Error, Info};
+use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialog;

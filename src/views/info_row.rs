@@ -4,7 +4,7 @@ use crate::discovery::DiscoveredDevice;
 use crate::views::devices_menu;
 use crate::views::hardware_view::HardwareView;
 use crate::views::layout_menu::LayoutSelector;
-use crate::views::message_box::{MessageMessage, MessageRow, MessageRowMessage};
+use crate::views::message_box::{InfoMessage, MessageRow, MessageRowMessage};
 use crate::views::version::version_button;
 use crate::views::{config_menu, connection_menu};
 use crate::Message;
@@ -115,7 +115,7 @@ impl InfoRow {
     }
 
     /// Add a message to the queue of messages to display in the message_row
-    pub fn add_info_message(&mut self, msg: MessageMessage) {
+    pub fn add_info_message(&mut self, msg: InfoMessage) {
         self.message_row.add_message(msg);
     }
 
@@ -140,8 +140,8 @@ impl InfoRow {
             devices_menu::view(hardware_view.get_hardware_connection(), discovered_devices),
             config_menu::view(unsaved_changes, hardware_view.get_hardware_connection()),
         ])
-        .style(|_, _| MENU_BAR_STYLE)
-        .into();
+            .style(|_, _| MENU_BAR_STYLE)
+            .into();
 
         container(
             Row::new()
@@ -151,8 +151,8 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding(Padding::new(0.0)),
         )
-        .style(|_theme| INFO_BAR_STYLE)
-        .into()
+            .style(|_theme| INFO_BAR_STYLE)
+            .into()
     }
 
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {

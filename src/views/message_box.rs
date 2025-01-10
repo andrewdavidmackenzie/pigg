@@ -18,7 +18,7 @@ use std::time::Duration;
 /// Clicking a message removes it and shows next message.
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u8)]
-pub enum MessageMessage {
+pub enum InfoMessage {
     Error(String, String) = 2,
     Warning(String) = 1,
     Info(String) = 0,
@@ -27,21 +27,21 @@ pub enum MessageMessage {
 /// [MessageRow] reacts to these message types
 #[derive(Debug, Clone)]
 pub enum MessageRowMessage {
-    ShowStatusMessage(MessageMessage),
+    ShowStatusMessage(InfoMessage),
     ClearStatusMessage,
 }
 
 #[derive(Default)]
 pub struct MessageQueue {
-    queue: Vec<MessageMessage>,
-    current_message: Option<MessageMessage>,
+    queue: Vec<InfoMessage>,
+    current_message: Option<InfoMessage>,
 }
 
 impl MessageQueue {
-    /// Add a new [MessageMessage] to be displayed
+    /// Add a new [InfoMessage] to be displayed
     /// If none is being displayed currently, set it as the one that will be displayed by view().
     /// If a message is currently being displayed, add this one to the queue.
-    pub fn add_message(&mut self, message: MessageMessage) {
+    pub fn add_message(&mut self, message: InfoMessage) {
         match self.current_message {
             None => self.current_message = Some(message),
             Some(_) => {
@@ -62,9 +62,9 @@ impl MessageQueue {
         }
     }
 
-    /// Are there any [MessageMessage]  of type Info in the queue waiting to be displayed?
+    /// Are there any [InfoMessage]  of type Info in the queue waiting to be displayed?
     pub fn showing_info_message(&self) -> bool {
-        matches!(self.current_message, Some(MessageMessage::Info(_)))
+        matches!(self.current_message, Some(InfoMessage::Info(_)))
     }
 }
 
@@ -80,7 +80,8 @@ impl MessageRow {
         }
     }
 
-    pub fn add_message(&mut self, msg: MessageMessage) {
+    /// Add a Message to the queue of messages to be displayed in the info row
+    pub fn add_message(&mut self, msg: InfoMessage) {
         self.message_queue.add_message(msg);
     }
 
@@ -99,15 +100,15 @@ impl MessageRow {
         let (text_color, message_text, details) = match &self.message_queue.current_message {
             None => (Color::TRANSPARENT, "".to_string(), ""),
             Some(msg) => match msg {
-                MessageMessage::Error(text, details) => {
+                InfoMessage::Error(text, details) => {
                     (Color::from_rgb8(255, 0, 0), text.into(), details as &str)
                 }
-                MessageMessage::Warning(text) => (
+                InfoMessage::Warning(text) => (
                     Color::new(1.0, 0.647, 0.0, 1.0),
                     text.into(),
                     "No additional details",
                 ),
-                MessageMessage::Info(text) => (Color::WHITE, text.into(), "No additional details"),
+                InfoMessage::Info(text) => (Color::WHITE, text.into(), "No additional details"),
             },
         };
 
@@ -142,7 +143,7 @@ impl MessageRow {
 
 #[cfg(test)]
 mod test {
-    use crate::views::message_box::MessageMessage::{Error, Info, Warning};
+    use crate::views::message_box::InfoMessage::{Error, Info, Warning};
     use crate::views::message_box::MessageQueue;
 
     #[test]
