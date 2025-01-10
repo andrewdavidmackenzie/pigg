@@ -103,67 +103,70 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
         for device_info in
             device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
         {
-            if let Some(serial_number) = device_info.serial_number() {
-                if serial_numbers.contains(&serial_number.to_string()) {
-                    match device_info.open() {
-                        Ok(device) => match device.claim_interface(0) {
-                            Ok(interface) => {
-                                if interface.set_alt_setting(0).is_ok() {
-                                    match usb_host::get_hardware_details(&interface).await {
-                                        Ok(hardware_details) => {
-                                            let wifi_details = if hardware_details.wifi {
-                                                usb_host::get_wifi_details(&interface).await.ok()
-                                            } else {
-                                                None
-                                            };
+            match device_info.serial_number() {
+                Some(serial_number) => {
+                    if serial_numbers.contains(&serial_number.to_string()) {
+                        match device_info.open() {
+                            Ok(device) => match device.claim_interface(0) {
+                                Ok(interface) => {
+                                    if interface.set_alt_setting(0).is_ok() {
+                                        match usb_host::get_hardware_details(&interface).await {
+                                            Ok(hardware_details) => {
+                                                let wifi_details = if hardware_details.wifi {
+                                                    usb_host::get_wifi_details(&interface).await.ok()
+                                                } else {
+                                                    None
+                                                };
 
-                                            let ssid = wifi_details
-                                                .as_ref()
-                                                .and_then(|wf| wf.ssid_spec.clone());
-                                            let mut hardware_connections = HashMap::new();
-                                            #[cfg(feature = "tcp")]
-                                            let tcp = wifi_details.and_then(|wf| wf.tcp);
-                                            #[cfg(feature = "tcp")]
-                                            if let Some(tcp_connection) = tcp {
-                                                let connection = HardwareConnection::Tcp(
-                                                    IpAddr::from(tcp_connection.0),
-                                                    tcp_connection.1,
+                                                let ssid = wifi_details
+                                                    .as_ref()
+                                                    .and_then(|wf| wf.ssid_spec.clone());
+                                                let mut hardware_connections = HashMap::new();
+                                                #[cfg(feature = "tcp")]
+                                                let tcp = wifi_details.and_then(|wf| wf.tcp);
+                                                #[cfg(feature = "tcp")]
+                                                if let Some(tcp_connection) = tcp {
+                                                    let connection = HardwareConnection::Tcp(
+                                                        IpAddr::from(tcp_connection.0),
+                                                        tcp_connection.1,
+                                                    );
+                                                    hardware_connections
+                                                        .insert(connection.name().to_string(), connection);
+                                                }
+
+                                                #[cfg(feature = "usb")]
+                                                hardware_connections.insert(
+                                                    "USB".to_string(),
+                                                    HardwareConnection::Usb(
+                                                        hardware_details.serial.clone(),
+                                                    ),
                                                 );
-                                                hardware_connections
-                                                    .insert(connection.name().to_string(), connection);
-                                            }
 
-                                            #[cfg(feature = "usb")]
-                                            hardware_connections.insert(
-                                                "USB".to_string(),
-                                                HardwareConnection::Usb(
+                                                devices.insert(
                                                     hardware_details.serial.clone(),
-                                                ),
-                                            );
-
-                                            devices.insert(
-                                                hardware_details.serial.clone(),
-                                                DiscoveredDevice {
-                                                    discovery_method: USBRaw,
-                                                    hardware_details,
-                                                    ssid_spec: ssid,
-                                                    hardware_connections,
-                                                },
-                                            );
+                                                    DiscoveredDevice {
+                                                        discovery_method: USBRaw,
+                                                        hardware_details,
+                                                        ssid_spec: ssid,
+                                                        hardware_connections,
+                                                    },
+                                                );
+                                            }
+                                            Err(e) => eprintln!("USB error getting hardware details of device with serial number: {serial_number}: {e}"),
                                         }
-                                        Err(e) => eprintln!("USB error getting hardware details of device with serial number: {serial_number}: {e}"),
                                     }
                                 }
-                            }
+                                Err(e) => eprintln!(
+                                    "USB error claiming interface of device with serial number: {serial_number}: {e}"
+                                ),
+                            },
                             Err(e) => eprintln!(
-                                "USB error claiming interface of device with serial number: {serial_number}: {e}"
+                                "USB error opening device with serial number: {serial_number}: {e}"
                             ),
-                        },
-                        Err(e) => eprintln!(
-                            "USB error opening device with serial number: {serial_number}: {e}"
-                        ),
+                        }
                     }
                 }
+                None => eprintln!("USB error getting device serial number"),
             }
         }
     }
