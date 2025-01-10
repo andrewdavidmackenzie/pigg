@@ -95,6 +95,9 @@ async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
 }
 
 /// Get the details of the devices in the list of [SerialNumber] passed in
+/// Since the result is used in a continuous loop in the subscription, we always return a HashMap
+/// and not a Result that can fail. Also we want to skip errors for one device and keep trying for
+/// the others.
 #[cfg(feature = "usb")]
 async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut devices = HashMap::<SerialNumber, DiscoveredDevice>::new();
