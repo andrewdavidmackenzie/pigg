@@ -22,6 +22,7 @@ use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
+use nusb::{Error, Interface};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 #[cfg(feature = "tcp")]
@@ -106,8 +107,8 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
             if let Some(serial_number) = device_info.serial_number() {
                 if serial_numbers.contains(&serial_number.to_string()) {
                     match device_info.open() {
-                        Ok(device) => {
-                            if let Ok(interface) = device.claim_interface(0) {
+                        Ok(device) => match device.claim_interface(0) {
+                            Ok(interface) => {
                                 if interface.set_alt_setting(0).is_ok() {
                                     if let Ok(hardware_details) =
                                         usb_host::get_hardware_details(&interface).await
@@ -154,7 +155,10 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
                                     }
                                 }
                             }
-                        }
+                            Err(_) => eprintln!(
+                                "USB error claiming interface of device with serial number: {serial_number}: {e}"
+                            ),
+                        },
                         Err(e) => eprintln!(
                             "USB error opening device with serial number: {serial_number}: {e}"
                         ),
