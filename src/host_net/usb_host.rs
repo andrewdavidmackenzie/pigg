@@ -97,15 +97,13 @@ async fn send_control_out<'a>(porky: &Interface, control_out: ControlOut<'a>) ->
 
 /// Get the [Interface] of a specific USB device using its [SerialNumber]
 async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, Error> {
-    if let Ok(device_list) = nusb::list_devices() {
-        for device_info in
-            device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
-        {
-            if let Some(serial_number) = device_info.serial_number() {
-                if serial_number == serial {
-                    let device = device_info.open()?;
-                    return Ok(device.claim_interface(0)?);
-                }
+    for device_info in
+        nusb::list_devices()?.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+    {
+        if let Some(serial_number) = device_info.serial_number() {
+            if serial_number == serial {
+                let device = device_info.open()?;
+                return Ok(device.claim_interface(0)?);
             }
         }
     }
