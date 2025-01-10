@@ -22,7 +22,6 @@ use iroh_net::relay::RelayUrl;
 use iroh_net::NodeId;
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
-use nusb::{Error, Interface};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 #[cfg(feature = "tcp")]
@@ -110,52 +109,53 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
                         Ok(device) => match device.claim_interface(0) {
                             Ok(interface) => {
                                 if interface.set_alt_setting(0).is_ok() {
-                                    if let Ok(hardware_details) =
-                                        usb_host::get_hardware_details(&interface).await
-                                    {
-                                        let wifi_details = if hardware_details.wifi {
-                                            usb_host::get_wifi_details(&interface).await.ok()
-                                        } else {
-                                            None
-                                        };
+                                    match usb_host::get_hardware_details(&interface).await {
+                                        Ok(hardware_details) => {
+                                            let wifi_details = if hardware_details.wifi {
+                                                usb_host::get_wifi_details(&interface).await.ok()
+                                            } else {
+                                                None
+                                            };
 
-                                        let ssid = wifi_details
-                                            .as_ref()
-                                            .and_then(|wf| wf.ssid_spec.clone());
-                                        #[cfg(feature = "tcp")]
-                                        let tcp = wifi_details.and_then(|wf| wf.tcp);
-                                        let mut hardware_connections = HashMap::new();
-                                        #[cfg(feature = "tcp")]
-                                        if let Some(tcp_connection) = tcp {
-                                            let connection = HardwareConnection::Tcp(
-                                                IpAddr::from(tcp_connection.0),
-                                                tcp_connection.1,
+                                            let ssid = wifi_details
+                                                .as_ref()
+                                                .and_then(|wf| wf.ssid_spec.clone());
+                                            let mut hardware_connections = HashMap::new();
+                                            #[cfg(feature = "tcp")]
+                                            let tcp = wifi_details.and_then(|wf| wf.tcp);
+                                            #[cfg(feature = "tcp")]
+                                            if let Some(tcp_connection) = tcp {
+                                                let connection = HardwareConnection::Tcp(
+                                                    IpAddr::from(tcp_connection.0),
+                                                    tcp_connection.1,
+                                                );
+                                                hardware_connections
+                                                    .insert(connection.name().to_string(), connection);
+                                            }
+
+                                            #[cfg(feature = "usb")]
+                                            hardware_connections.insert(
+                                                "USB".to_string(),
+                                                HardwareConnection::Usb(
+                                                    hardware_details.serial.clone(),
+                                                ),
                                             );
-                                            hardware_connections
-                                                .insert(connection.name().to_string(), connection);
-                                        }
 
-                                        #[cfg(feature = "usb")]
-                                        hardware_connections.insert(
-                                            "USB".to_string(),
-                                            HardwareConnection::Usb(
+                                            devices.insert(
                                                 hardware_details.serial.clone(),
-                                            ),
-                                        );
-
-                                        devices.insert(
-                                            hardware_details.serial.clone(),
-                                            DiscoveredDevice {
-                                                discovery_method: USBRaw,
-                                                hardware_details,
-                                                ssid_spec: ssid,
-                                                hardware_connections,
-                                            },
-                                        );
+                                                DiscoveredDevice {
+                                                    discovery_method: USBRaw,
+                                                    hardware_details,
+                                                    ssid_spec: ssid,
+                                                    hardware_connections,
+                                                },
+                                            );
+                                        }
+                                        Err(e) => eprintln!("USB error getting hardware details of device with serial number: {serial_number}: {e}"),
                                     }
                                 }
                             }
-                            Err(_) => eprintln!(
+                            Err(e) => eprintln!(
                                 "USB error claiming interface of device with serial number: {serial_number}: {e}"
                             ),
                         },
@@ -179,33 +179,36 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 
         loop {
             // Get the vector of all visible serial numbers
-            if let Ok(current_serial_numbers) = get_serials().await {
-                // New devices
-                let mut new_serial_numbers = current_serial_numbers.clone();
-                new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
+            match get_serials().await {
+                Ok(current_serial_numbers) => {
+                    // New devices
+                    let mut new_serial_numbers = current_serial_numbers.clone();
+                    new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
 
-                for (new_serial_number, new_device) in get_details(&new_serial_numbers).await {
-                    // inform UI of new device found
-                    gui_sender
-                        .send(DiscoveryEvent::DeviceFound(
-                            new_serial_number.clone(),
-                            new_device,
-                        ))
-                        .await
-                        .unwrap_or_else(|e| eprintln!("Send error: {e}"));
-                }
-
-                // Lost devices
-                for key in previous_serial_numbers {
-                    if !current_serial_numbers.contains(&key) {
+                    for (new_serial_number, new_device) in get_details(&new_serial_numbers).await {
+                        // inform UI of new device found
                         gui_sender
-                            .send(DiscoveryEvent::DeviceLost(key.clone(), USBRaw))
+                            .send(DiscoveryEvent::DeviceFound(
+                                new_serial_number.clone(),
+                                new_device,
+                            ))
                             .await
                             .unwrap_or_else(|e| eprintln!("Send error: {e}"));
                     }
-                }
 
-                previous_serial_numbers = current_serial_numbers;
+                    // Lost devices
+                    for key in previous_serial_numbers {
+                        if !current_serial_numbers.contains(&key) {
+                            gui_sender
+                                .send(DiscoveryEvent::DeviceLost(key.clone(), USBRaw))
+                                .await
+                                .unwrap_or_else(|e| eprintln!("Send error: {e}"));
+                        }
+                    }
+
+                    previous_serial_numbers = current_serial_numbers;
+                }
+                Err(e) => eprintln!("USB error getting list of compatible devices: {e}"),
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
