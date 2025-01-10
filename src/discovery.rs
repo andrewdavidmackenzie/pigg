@@ -125,12 +125,10 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
                                                             .and_then(|wf| wf.ssid_spec.clone());
                                                         let mut hardware_connections = HashMap::new();
                                                         #[cfg(feature = "tcp")]
-                                                        let tcp = wifi_details.and_then(|wf| wf.tcp);
-                                                        #[cfg(feature = "tcp")]
-                                                        if let Some(tcp_connection) = tcp {
+                                                        if let Some((ip, port)) = wifi_details.and_then(|wf| wf.tcp) {
                                                             let connection = HardwareConnection::Tcp(
-                                                                IpAddr::from(tcp_connection.0),
-                                                                tcp_connection.1,
+                                                                IpAddr::from(ip),
+                                                                port,
                                                             );
                                                             hardware_connections
                                                                 .insert(connection.name().to_string(), connection);
