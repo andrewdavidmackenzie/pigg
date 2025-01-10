@@ -51,7 +51,7 @@ run-piglet:
 .PHONY: run-release-piglet
 run-release-piglet:
 	cargo run --bin piglet --release
-
+sudo udev
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
 .PHONY: build-release
 build-release:
@@ -155,3 +155,7 @@ web-build:
 .PHONY: web-run
 web-run: web-build
 	trunk serve
+
+.PHONY: usb
+usb:
+	cp 70.pigg.rules  /etc/udev/rules.d/
