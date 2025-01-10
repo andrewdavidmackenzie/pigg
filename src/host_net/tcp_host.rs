@@ -6,6 +6,7 @@ use async_std::prelude::*;
 use std::io;
 use std::net::IpAddr;
 
+use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 
 /// Wait until we receive a message from remote hardware over `stream`[TcpStream]
@@ -45,4 +46,9 @@ pub async fn connect(
     let length = stream.read(&mut payload).await?;
     let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&payload[0..length])?;
     Ok((reply.0, reply.1, stream))
+}
+
+/// Inform the device that we are disconnecting from TCP connection
+pub async fn disconnect(stream: TcpStream) -> anyhow::Result<()> {
+    send_config_message(stream, &Disconnect).await
 }

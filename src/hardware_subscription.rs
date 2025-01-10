@@ -2,7 +2,7 @@ use futures::channel::mpsc::Sender;
 
 use crate::hw_definition::config::HardwareConfigMessage;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
-use crate::hw_definition::config::HardwareConfigMessage::{Disconnect, IOLevelChanged};
+use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
 
 use crate::event::HardwareEvent;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
@@ -193,6 +193,11 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                     if let Some(config_change) = config_change_receiver.next().await {
                         match &config_change {
                             NewConnection(new_target) => {
+                                if let Err(e) = local_host::disconnect(connection).await {
+                                    println!("Error Sending Disconnect message");
+                                    report_error(gui_sender_clone, &format!("USB error: {e}"))
+                                        .await;
+                                }
                                 target = new_target.clone();
                                 state = Disconnected;
                             }
@@ -225,8 +230,8 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
-                                        println!("Sending Disconnect message");
-                                        if let Err(e) = usb_host::send_config_message(interface, &Disconnect).await
+                                        println!("Disconnecting from USB");
+                                        if let Err(e) = usb_host::disconnect(interface).await
                                         {
                                             println!("Error Sending Disconnect message");
                                             report_error(gui_sender_clone, &format!("USB error: {e}"))
@@ -257,12 +262,8 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                                                 .await;
                                     }
                                 },
-                                Ok(ev) => {
-                                    report_error(gui_sender_clone, &format!("Unexpected Hardware event: {ev:?}"))
-                                                .await;
-                                }
-                                Err(e) => {
-                                    report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                _ => {
+                                    report_error(gui_sender_clone, "Hardware event error")
                                                 .await;
                                 }
                              }
@@ -283,7 +284,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
-                                        if let Err(e) = iroh_host::send_config_message(connection, &Disconnect).await
+                                        if let Err(e) = iroh_host::disconnect(connection).await
                                         {
                                             report_error(gui_sender_clone, &format!("Iroh error: {e}"))
                                                 .await;
@@ -311,12 +312,8 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                                                 .await;
                                     }
                                 }
-                                Ok(ev) => {
-                                    report_error(gui_sender_clone, &format!("Unexpected Hardware event: {ev:?}"))
-                                                .await;
-                                },
-                                Err(e) => {
-                                    report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                _ => {
+                                    report_error(gui_sender_clone, "Hardware event error")
                                                 .await;
                                 }
                             }
@@ -336,7 +333,7 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
-                                        if let Err(e) = tcp_host::send_config_message(stream.clone(), &Disconnect).await
+                                        if let Err(e) = tcp_host::disconnect(stream.clone()).await
                                         {
                                             report_error(gui_sender_clone, &format!("Iroh error: {e}"))
                                                 .await;
@@ -364,12 +361,8 @@ pub fn subscribe(mut target: HardwareConnection) -> impl Stream<Item = HardwareE
                                             .await;
                                     }
                                 }
-                                Ok(ev) => {
-                                    report_error(gui_sender_clone, &format!("Unexpected Hardware event: {ev:?}"))
-                                                .await;
-                                },
-                                Err(e) => {
-                                    report_error(gui_sender_clone, &format!("Hardware error: {e}"))
+                                _ => {
+                                    report_error(gui_sender_clone, "Hardware event error")
                                                 .await;
                                 }
                              }

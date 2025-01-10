@@ -6,8 +6,8 @@ use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
 use crate::hw_definition::description::{SsidSpec, WiFiDetails};
 use crate::hw_definition::usb_values::{
-    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST,
-    USB_PACKET_SIZE,
+    DISCONNECT_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE,
+    HW_CONFIG_MESSAGE, PIGGUI_REQUEST, USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
 use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
@@ -198,6 +198,15 @@ impl Handler for ControlHandler<'_> {
             (PIGGUI_REQUEST, GET_HARDWARE_DETAILS_VALUE) => {
                 postcard::to_slice(&self.hardware_description.details, &mut self.buf).ok()?
             }
+            (PIGGUI_REQUEST, DISCONNECT_VALUE) => {
+                block_on(
+                    USB_MESSAGE_CHANNEL
+                        .sender()
+                        .send(HardwareConfigMessage::Disconnect),
+                );
+                &mut []
+            }
+
             #[cfg(feature = "wifi")]
             (PIGGUI_REQUEST, GET_WIFI_VALUE) => unsafe {
                 static mut STATIC_BUF: [u8; 200] = [0u8; 200];
@@ -365,7 +374,7 @@ pub async fn message_loop<'a>(
         {
             Either::First(hardware_config_message) => {
                 if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
-                    info!("Disconnect message received, exiting USB Message loop");
+                    info!("USB Disconnect, exiting USB Message loop");
                     return;
                 }
                 gpio.apply_config_change(

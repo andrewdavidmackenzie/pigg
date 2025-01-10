@@ -142,3 +142,8 @@ pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConn
 
     Ok((hw_description, hw_config, LocalConnection { hw }))
 }
+
+/// Disconnect from the local hardware
+pub async fn disconnect(_connection: &mut LocalConnection) -> Result<(), Error> {
+    Ok(())
+}
