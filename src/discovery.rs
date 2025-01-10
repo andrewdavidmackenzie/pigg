@@ -97,7 +97,7 @@ async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
 /// Get the details of the devices in the list of [SerialNumber] passed in
 #[cfg(feature = "usb")]
 async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, DiscoveredDevice> {
-    let mut devices = HashMap::<String, DiscoveredDevice>::new();
+    let mut devices = HashMap::<SerialNumber, DiscoveredDevice>::new();
 
     match nusb::list_devices() {
         Ok(device_list) => {
@@ -184,7 +184,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
         let mut previous_serial_numbers = vec![];
 
         loop {
-            // Get the vector of all visible serial numbers
+            // Get the vector of serial numbers of all compatible devices
             match get_serials().await {
                 Ok(current_serial_numbers) => {
                     // New devices
