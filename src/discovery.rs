@@ -120,9 +120,10 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
                                                             None
                                                         };
 
-                                                        let ssid = wifi_details
+                                                        let ssid_spec = wifi_details
                                                             .as_ref()
                                                             .and_then(|wf| wf.ssid_spec.clone());
+
                                                         let mut hardware_connections = HashMap::new();
                                                         #[cfg(feature = "tcp")]
                                                         if let Some((ip, port)) = wifi_details.and_then(|wf| wf.tcp) {
@@ -142,7 +143,7 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
                                                             DiscoveredDevice {
                                                                 discovery_method: USBRaw,
                                                                 hardware_details,
-                                                                ssid_spec: ssid,
+                                                                ssid_spec,
                                                                 hardware_connections,
                                                             },
                                                         );
