@@ -134,13 +134,8 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
                                                                 .insert(connection.name().to_string(), connection);
                                                         }
 
-                                                        #[cfg(feature = "usb")]
-                                                        hardware_connections.insert(
-                                                            "USB".to_string(),
-                                                            HardwareConnection::Usb(
-                                                                hardware_details.serial.clone(),
-                                                            ),
-                                                        );
+                                                        let usb_connection = HardwareConnection::Usb(hardware_details.serial.clone());
+                                                        hardware_connections.insert(usb_connection.name().to_string(), usb_connection);
 
                                                         devices.insert(
                                                             hardware_details.serial.clone(),
