@@ -155,8 +155,8 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> HashMap<SerialNumber, D
                                 }
                             }
                         }
-                        Err(_) => eprintln!(
-                            "Could not open USB device with serial number: {serial_number}"
+                        Err(e) => eprintln!(
+                            "USB error opening device with serial number: {serial_number}: {e}"
                         ),
                     }
                 }
