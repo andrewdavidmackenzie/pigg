@@ -62,7 +62,6 @@ const RESET_SSID: ControlOut = ControlOut {
 };
 
 /// [ControlIn] "command" to request the device disconnect
-#[cfg(feature = "discovery")]
 const DISCONNECT: ControlIn = ControlIn {
     control_type: ControlType::Vendor,
     recipient: Recipient::Interface,

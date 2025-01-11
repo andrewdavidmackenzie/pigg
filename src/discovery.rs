@@ -10,9 +10,11 @@ use crate::host_net::usb_host;
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
 use crate::views::hardware_view::HardwareConnection;
+#[cfg(feature = "usb")]
 use anyhow::anyhow;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
+#[cfg(feature = "usb")]
 use futures::channel::mpsc::Sender;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use futures::SinkExt;
@@ -83,6 +85,7 @@ pub enum DiscoveryEvent {
     Error(String),
 }
 
+#[cfg(feature = "usb")]
 /// Report an error to the GUI, if it cannot be sent print to STDERR
 async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) {
     gui_sender
@@ -106,14 +109,16 @@ async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
 
 /// Get the details of the devices in the list of [SerialNumber] passed in
 #[cfg(feature = "usb")]
-async fn get_details(serial_numbers: &[SerialNumber]) -> Result<HashMap<SerialNumber, DiscoveredDevice>, anyhow::Error> {
+async fn get_details(
+    serial_numbers: &[SerialNumber],
+) -> Result<HashMap<SerialNumber, DiscoveredDevice>, anyhow::Error> {
     let device_list = nusb::list_devices()?;
     let mut devices = HashMap::<SerialNumber, DiscoveredDevice>::new();
 
-    for device_info in
-        device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
-    {
-        let serial_number = device_info.serial_number().ok_or(anyhow!("Could not get device serial_number"))?;
+    for device_info in device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface) {
+        let serial_number = device_info
+            .serial_number()
+            .ok_or(anyhow!("Could not get device serial_number"))?;
         if serial_numbers.contains(&serial_number.to_string()) {
             let device = device_info.open()?;
             let interface = device.claim_interface(0)?;
@@ -125,19 +130,13 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> Result<HashMap<SerialNu
                 None
             };
 
-            let ssid_spec = wifi_details
-                .as_ref()
-                .and_then(|wf| wf.ssid_spec.clone());
+            let ssid_spec = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
 
             let mut hardware_connections = HashMap::new();
             #[cfg(feature = "tcp")]
             if let Some((ip, port)) = wifi_details.and_then(|wf| wf.tcp) {
-                let connection = HardwareConnection::Tcp(
-                    IpAddr::from(ip),
-                    port,
-                );
-                hardware_connections
-                    .insert(connection.name().to_string(), connection);
+                let connection = HardwareConnection::Tcp(IpAddr::from(ip), port);
+                hardware_connections.insert(connection.name().to_string(), connection);
             }
 
             let usb_connection = HardwareConnection::Usb(hardware_details.serial.clone());
@@ -160,7 +159,7 @@ async fn get_details(serial_numbers: &[SerialNumber]) -> Result<HashMap<SerialNu
 
 #[cfg(feature = "usb")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB
-pub fn usb_discovery() -> impl Stream<Item=DiscoveryEvent> {
+pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mut previous_serial_numbers = vec![];
 
@@ -215,7 +214,7 @@ pub fn usb_discovery() -> impl Stream<Item=DiscoveryEvent> {
 
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
-pub fn mdns_discovery() -> impl Stream<Item=DiscoveryEvent> {
+pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mdns = ServiceDaemon::new().expect("Failed to create daemon");
         match mdns.browse(TCP_MDNS_SERVICE_TYPE) {
