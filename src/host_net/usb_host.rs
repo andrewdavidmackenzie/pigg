@@ -148,14 +148,19 @@ pub async fn reset_ssid_spec(serial_number: SerialNumber) -> Result<(), Error> {
     send_control_out(&porky, RESET_SSID).await
 }
 
+#[derive(Clone)]
+pub struct UsbConnection {
+    interface: Interface,
+}
+
 /// Wait until we receive a message from device over USB Interrupt In
-pub async fn wait_for_remote_message<'de, T>(porky: &Interface) -> Result<T, Error>
+pub async fn wait_for_remote_message<'de, T>(porky: &UsbConnection) -> Result<T, Error>
 where
     T: DeserializeOwned,
 {
     loop {
         let buf = RequestBuffer::new(1024);
-        let bytes = porky.interrupt_in(0x81, buf).await;
+        let bytes = porky.interface.interrupt_in(0x81, buf).await;
         if bytes.status.is_ok() {
             let msg = postcard::from_bytes(&bytes.data)?;
             return Ok(msg);
@@ -166,7 +171,7 @@ where
 
 /// Send a [HardwareConfigMessage] to a connected porky device using [ControlOut]
 pub async fn send_config_message(
-    porky: &Interface,
+    porky: &UsbConnection,
     hardware_config_message: &HardwareConfigMessage,
 ) -> Result<(), Error> {
     let mut buf = [0; 1024];
@@ -181,24 +186,25 @@ pub async fn send_config_message(
         data,
     };
 
-    send_control_out(porky, hw_message).await
+    send_control_out(&porky.interface, hw_message).await
 }
 
 /// Send special message to request device to disconnect
-pub async fn disconnect(porky: &Interface) -> Result<(), Error> {
-    receive_control_in(porky, DISCONNECT).await
+pub async fn disconnect(porky: &UsbConnection) -> Result<(), Error> {
+    receive_control_in(&porky.interface, DISCONNECT).await
 }
 
 /// Connect to a device by USB with the specified `serial_number` [SerialNumber]
 /// Return the [HardwareDescription] and [HardwareConfig] along with the [Interface] to use
 pub async fn connect(
     serial_number: &SerialNumber,
-) -> Result<(HardwareDescription, HardwareConfig, Interface), Error> {
-    let porky = interface_from_serial(serial_number).await?;
-    let hardware_description = get_hardware_description(&porky).await?;
-    send_config_message(&porky, &HardwareConfigMessage::GetConfig).await?;
-    let hardware_config: HardwareConfig = wait_for_remote_message(&porky).await?;
-    Ok((hardware_description, hardware_config, porky))
+) -> Result<(HardwareDescription, HardwareConfig, UsbConnection), Error> {
+    let interface = interface_from_serial(serial_number).await?;
+    let connection = UsbConnection { interface };
+    let hardware_description = get_hardware_description(&connection.interface).await?;
+    send_config_message(&connection, &HardwareConfigMessage::GetConfig).await?;
+    let hardware_config: HardwareConfig = wait_for_remote_message(&connection).await?;
+    Ok((hardware_description, hardware_config, connection))
 }
 
 #[cfg(feature = "usb")]
