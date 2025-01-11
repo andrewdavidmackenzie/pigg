@@ -62,7 +62,7 @@ pub fn save(gpio_config: HardwareConfig) -> Task<Message> {
         Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
         Err(e) => Message::InfoRow(ShowStatusMessage(Error(
             "Error saving file".into(),
-            format!("Error saving file. {e}", ),
+            format!("Error saving file. {e}"),
         ))),
     })
 }

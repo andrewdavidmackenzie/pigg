@@ -140,8 +140,8 @@ impl InfoRow {
             devices_menu::view(hardware_view.get_hardware_connection(), discovered_devices),
             config_menu::view(unsaved_changes, hardware_view.get_hardware_connection()),
         ])
-            .style(|_, _| MENU_BAR_STYLE)
-            .into();
+        .style(|_, _| MENU_BAR_STYLE)
+        .into();
 
         container(
             Row::new()
@@ -151,8 +151,8 @@ impl InfoRow {
                 .spacing(20.0)
                 .padding(Padding::new(0.0)),
         )
-            .style(|_theme| INFO_BAR_STYLE)
-            .into()
+        .style(|_theme| INFO_BAR_STYLE)
+        .into()
     }
 
     pub fn subscription(&self) -> Subscription<MessageRowMessage> {
