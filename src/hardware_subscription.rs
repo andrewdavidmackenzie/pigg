@@ -23,6 +23,7 @@ use crate::host_net::local_host::LocalConnection;
 use crate::host_net::tcp_host;
 #[cfg(feature = "usb")]
 use crate::host_net::usb_host;
+#[cfg(feature = "usb")]
 use crate::host_net::usb_host::UsbConnection;
 use crate::views::hardware_view::HardwareConnection;
 use futures::stream::Stream;
