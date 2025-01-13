@@ -169,6 +169,6 @@ pub fn view<'a>(
                     MENU_BUTTON_STYLE
                 }
             }),
-        Menu::new(device_items).width(310.0).offset(10.0),
+        Menu::new(device_items).width(Length::Shrink).offset(10.0),
     )
 }

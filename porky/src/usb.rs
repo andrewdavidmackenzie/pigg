@@ -49,7 +49,6 @@ static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1
 
 #[embassy_executor::task]
 async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
-    info!("USB started");
     device.run().await
 }
 
@@ -295,21 +294,22 @@ pub async fn start(
 
     // Add a vendor-specific function (class 0xFF), and corresponding interface,
     // that uses our custom handler.
-    let mut function = builder.function(0xFF, 0, 0);
-    let mut interface = function.interface();
-    control_handler.if_num = interface.interface_number();
+    let mut function_builder = builder.function(0xFF, 0, 0);
+    let mut interface_builder = function_builder.interface();
+    control_handler.if_num = interface_builder.interface_number();
 
     // This should set alt_settings #0
-    let mut alt = interface.alt_setting(0xFF, 0, 0, None);
-    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
-    let _ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
+    let mut interface_alt_builder = interface_builder.alt_setting(0xFF, 0, 0, None);
+    let ep_in = interface_alt_builder.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
+    let _ep_out = interface_alt_builder.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
 
-    drop(function);
+    drop(function_builder);
     builder.handler(control_handler);
 
     let usb = builder.build();
 
     unwrap!(spawner.spawn(usb_task(usb)));
+    info!("USB task started on alt_setting #0");
 
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);
