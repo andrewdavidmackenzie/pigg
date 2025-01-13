@@ -41,7 +41,6 @@ use std::str::FromStr;
 
 #[cfg(feature = "discovery")]
 mod discovery;
-pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;

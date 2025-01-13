@@ -1,5 +1,5 @@
-use crate::event::HardwareEvent;
-use crate::event::HardwareEvent::InputChange;
+use crate::hardware_subscription::SubscriptionEvent;
+use crate::hardware_subscription::SubscriptionEvent::InputChange;
 use crate::hw;
 use crate::hw::driver::HW;
 use crate::hw_definition::config::HardwareConfigMessage::{
@@ -20,7 +20,7 @@ pub struct LocalConnection {
 
 /// Send the current input state for all inputs configured in the config
 async fn send_current_input_states(
-    gui_sender_clone: Sender<HardwareEvent>,
+    gui_sender_clone: Sender<SubscriptionEvent>,
     config: &HardwareConfig,
     hardware: &LocalConnection,
 ) -> Result<(), Error> {
@@ -41,7 +41,7 @@ async fn send_current_input_states(
 async fn send_current_input_state(
     bcm_pin_number: &BCMPinNumber,
     pin_function: &PinFunction,
-    gui_sender_clone: Sender<HardwareEvent>,
+    gui_sender_clone: Sender<SubscriptionEvent>,
     connection: &LocalConnection,
 ) -> Result<(), Error> {
     let now = connection.hw.get_time_since_boot();
@@ -66,7 +66,7 @@ async fn send_current_input_state(
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
 async fn send_input_level_async(
-    mut gui_sender_clone: Sender<HardwareEvent>,
+    mut gui_sender_clone: Sender<SubscriptionEvent>,
     bcm: BCMPinNumber,
     level: PinLevel,
     timestamp: Duration,
@@ -81,7 +81,7 @@ async fn send_input_level_async(
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
 fn send_input_level(
-    mut gui_sender_clone: Sender<HardwareEvent>,
+    mut gui_sender_clone: Sender<SubscriptionEvent>,
     bcm: BCMPinNumber,
     level_change: LevelChange,
 ) -> Result<(), Error> {
@@ -95,7 +95,7 @@ fn send_input_level(
 pub async fn send_config_message(
     connection: &mut LocalConnection,
     config_change: &HardwareConfigMessage,
-    gui_sender: Sender<HardwareEvent>,
+    gui_sender: Sender<SubscriptionEvent>,
 ) -> Result<(), Error> {
     match config_change {
         NewConfig(config) => {
