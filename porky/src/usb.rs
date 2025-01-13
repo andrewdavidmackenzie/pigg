@@ -1,6 +1,7 @@
 use crate::flash;
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
+use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
@@ -49,7 +50,6 @@ static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1
 
 #[embassy_executor::task]
 async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
-    info!("USB started");
     device.run().await
 }
 
@@ -218,6 +218,15 @@ impl Handler for ControlHandler<'_> {
         };
         Some(InResponse::Accepted(msg))
     }
+
+    /// This is called when the host resets the al_setting number to 0, which should be when
+    /// the process dies - allowing us to detect "disconnect" by the host and exit the USB message
+    /// loop
+    fn set_alternate_setting(&mut self, iface: InterfaceNumber, alternate_setting: u8) {
+        if iface == InterfaceNumber(0) && alternate_setting == 0 {
+            block_on(USB_MESSAGE_CHANNEL.sender().send(Disconnect));
+        }
+    }
 }
 
 /// [UsbConnection] is used to send and receive messages back and forth to the host, but not using
@@ -230,9 +239,9 @@ pub struct UsbConnection<D: EndpointIn, E: EndpointOut> {
 
 impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
     /// Serialize input using postcard and send it to the host via the [EndpointIn]
-    pub async fn send(&mut self, msg: impl Serialize) {
-        let msg = postcard::to_slice(&msg, self.buf).unwrap(); // TODO
-        self.ep_in.write(msg).await.unwrap(); // TODO
+    pub async fn send(&mut self, msg: impl Serialize) -> Result<(), &'static str> {
+        let msg = postcard::to_slice(&msg, self.buf).map_err(|_| "Serialization error")?;
+        self.ep_in.write(msg).await.map_err(|_| "USB Write error")
     }
 
     /*
@@ -253,7 +262,6 @@ impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
 }
 
 /// Start the USB stack and raw communications over it
-// <D: embassy_usb_driver::Driver<'static>>
 pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
@@ -295,21 +303,24 @@ pub async fn start(
 
     // Add a vendor-specific function (class 0xFF), and corresponding interface,
     // that uses our custom handler.
-    let mut function = builder.function(0xFF, 0, 0);
-    let mut interface = function.interface();
-    control_handler.if_num = interface.interface_number();
+    let mut function_builder = builder.function(0xFF, 0, 0);
+    let mut interface_builder = function_builder.interface();
+    control_handler.if_num = interface_builder.interface_number();
 
     // This should set alt_settings #0
-    let mut alt = interface.alt_setting(0xFF, 0, 0, None);
-    let ep_in = alt.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
-    let _ep_out = alt.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
+    let _ = interface_builder.alt_setting(0xFF, 0, 0, None);
+    // This should set alt_settings #1
+    let mut interface_alt_builder = interface_builder.alt_setting(0xFF, 0, 0, None);
+    let ep_in = interface_alt_builder.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
+    let _ep_out = interface_alt_builder.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
 
-    drop(function);
+    drop(function_builder);
     builder.handler(control_handler);
 
     let usb = builder.build();
 
     unwrap!(spawner.spawn(usb_task(usb)));
+    info!("USB task started on alt_setting #1");
 
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);
@@ -325,15 +336,15 @@ pub async fn start(
 pub async fn wait_connection(
     usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
     hardware_config: &HardwareConfig,
-) {
-    info!("Waiting for the GetConfig message that starts the USB connection");
+) -> Result<(), &'static str> {
+    info!("Waiting for the USB Connect");
     while !matches!(
         USB_MESSAGE_CHANNEL.receiver().receive().await,
         HardwareConfigMessage::GetConfig
     ) {}
 
     info!("Sending HardwareConfig in response to GetConfig");
-    usb_connection.send(hardware_config).await;
+    usb_connection.send(hardware_config).await
 }
 
 /// Enter a loop waiting for messages either via USB (from Piggui) or from the Hardware.
@@ -349,7 +360,7 @@ pub async fn message_loop<'a>(
         DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
         NoopRawMutex,
     >,
-) {
+) -> Result<(), &'static str> {
     info!("Entering USB message loop");
 
     // Clear out any level change messages sent before the GUI app connected
@@ -365,7 +376,7 @@ pub async fn message_loop<'a>(
             Either::First(hardware_config_message) => {
                 if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
                     info!("USB Disconnect, exiting USB Message loop");
-                    return;
+                    return Ok(());
                 }
                 gpio.apply_config_change(
                     #[cfg(feature = "wifi")]
@@ -377,11 +388,11 @@ pub async fn message_loop<'a>(
                 .await;
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
                 if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
-                    usb_connection.send(&hw_config).await;
+                    usb_connection.send(&hw_config).await?;
                 }
             }
             Either::Second(hardware_event) => {
-                usb_connection.send(hardware_event).await;
+                usb_connection.send(hardware_event).await?;
             }
         }
     }

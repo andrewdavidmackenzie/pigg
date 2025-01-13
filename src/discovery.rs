@@ -10,8 +10,6 @@ use crate::host_net::usb_host;
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
 use crate::views::hardware_view::HardwareConnection;
-#[cfg(feature = "usb")]
-use anyhow::anyhow;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
 #[cfg(feature = "usb")]
@@ -94,69 +92,6 @@ async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) 
         .unwrap_or_else(|e| eprintln!("{e}"));
 }
 
-/// Return a Vec of the [SerialNumber] of all compatible connected devices
-#[cfg(feature = "usb")]
-async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
-    Ok(nusb::list_devices()?
-        .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
-        .filter_map(|device_info| {
-            device_info
-                .serial_number()
-                .and_then(|s| Option::from(s.to_string()))
-        })
-        .collect())
-}
-
-/// Get the details of the devices in the list of [SerialNumber] passed in
-#[cfg(feature = "usb")]
-async fn get_details(
-    serial_numbers: &[SerialNumber],
-) -> Result<HashMap<SerialNumber, DiscoveredDevice>, anyhow::Error> {
-    let device_list = nusb::list_devices()?;
-    let mut devices = HashMap::<SerialNumber, DiscoveredDevice>::new();
-
-    for device_info in device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface) {
-        let serial_number = device_info
-            .serial_number()
-            .ok_or(anyhow!("Could not get device serial_number"))?;
-        if serial_numbers.contains(&serial_number.to_string()) {
-            let device = device_info.open()?;
-            let interface = device.claim_interface(0)?;
-            interface.set_alt_setting(0)?;
-            let hardware_details = usb_host::get_hardware_details(&interface).await?;
-            let wifi_details = if hardware_details.wifi {
-                usb_host::get_wifi_details(&interface).await.ok()
-            } else {
-                None
-            };
-
-            let ssid_spec = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
-
-            let mut hardware_connections = HashMap::new();
-            #[cfg(feature = "tcp")]
-            if let Some((ip, port)) = wifi_details.and_then(|wf| wf.tcp) {
-                let connection = HardwareConnection::Tcp(IpAddr::from(ip), port);
-                hardware_connections.insert(connection.name().to_string(), connection);
-            }
-
-            let usb_connection = HardwareConnection::Usb(hardware_details.serial.clone());
-            hardware_connections.insert(usb_connection.name().to_string(), usb_connection);
-
-            devices.insert(
-                hardware_details.serial.clone(),
-                DiscoveredDevice {
-                    discovery_method: USBRaw,
-                    hardware_details,
-                    ssid_spec,
-                    hardware_connections,
-                },
-            );
-        }
-    }
-
-    Ok(devices)
-}
-
 #[cfg(feature = "usb")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB
 pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
@@ -165,13 +100,13 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 
         loop {
             // Get the vector of serial numbers of all compatible devices
-            match get_serials().await {
+            match usb_host::get_serials().await {
                 Ok(current_serial_numbers) => {
                     // Filter out old devices, retaining new devices in the list
                     let mut new_serial_numbers = current_serial_numbers.clone();
                     new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
 
-                    match get_details(&new_serial_numbers).await {
+                    match usb_host::get_details(&new_serial_numbers).await {
                         Ok(details) => {
                             for (new_serial_number, new_device) in details {
                                 // inform UI of new device found

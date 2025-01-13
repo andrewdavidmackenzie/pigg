@@ -10,6 +10,7 @@ use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use core::str;
+use defmt::error;
 use ekv::Database;
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::{Blocking, Flash};
@@ -134,13 +135,22 @@ async fn main(spawner: Spawner) {
     .await;
 
     let mut usb_connection = usb::start(spawner, driver, hw_desc).await;
-    usb::wait_connection(&mut usb_connection, &hardware_config).await;
-    usb::message_loop(
-        &mut gpio,
-        &mut usb_connection,
-        &mut hardware_config,
-        &spawner,
-        db,
-    )
-    .await;
+
+    loop {
+        if usb::wait_connection(&mut usb_connection, &hardware_config)
+            .await
+            .is_err()
+        {
+            error!("Could not establish USB connection");
+        } else {
+            let _ = usb::message_loop(
+                &mut gpio,
+                &mut usb_connection,
+                &mut hardware_config,
+                &spawner,
+                db,
+            )
+            .await;
+        }
+    }
 }
