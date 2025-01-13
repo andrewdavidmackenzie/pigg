@@ -117,6 +117,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                 Disconnected => {
                     match target.clone() {
                         NoConnection => {
+                            println!("Disconnected");
                             // Wait for a message from the UI to request that we connect to a new target
                             if let Some(NewConnection(new_target)) =
                                 subscriber_receiver.next().await
@@ -242,7 +243,6 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                         match &config_change {
                             NewConnection(new_target) => {
                                 if let Err(e) = local_host::disconnect(connection).await {
-                                    println!("Error Sending Disconnect message");
                                     report_error(&mut gui_sender_clone, &format!("USB error: {e}"))
                                         .await;
                                 }
@@ -286,7 +286,6 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                             report_error(&mut gui_sender_clone, &format!("USB error: {e}"))
                                                 .await;
                                         }
-                                        println!("Sent USB Disconnect message");
                                         target = new_target.clone();
                                         state = Disconnected;
                                     },
