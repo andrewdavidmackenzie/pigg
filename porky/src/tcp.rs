@@ -116,7 +116,7 @@ pub async fn message_loop<'a>(
                         send_hardware_config(&mut socket, hw_config).await;
                     }
                     if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
-                        info!("Disconnect message received");
+                        info!("TCP, Disconnect, exiting TCP Message loop");
                         return;
                     }
                 }
