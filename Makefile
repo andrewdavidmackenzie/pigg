@@ -51,7 +51,7 @@ run-piglet:
 .PHONY: run-release-piglet
 run-release-piglet:
 	cargo run --bin piglet --release
-sudo udev
+
 # This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
 .PHONY: build-release
 build-release:
@@ -158,4 +158,5 @@ web-run: web-build
 
 .PHONY: usb
 usb:
-	cp 70.pigg.rules  /etc/udev/rules.d/
+	@echo "Echo your root password at the prompt to copy udev rules for piggui to the system folder for them"
+	sudo cp 70.pigg.rules  /etc/udev/rules.d/
