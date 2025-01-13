@@ -1,3 +1,4 @@
+use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
 use crate::hw_definition::description::HardwareDetails;
@@ -9,8 +10,8 @@ use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
 #[cfg(feature = "discovery")]
 use crate::hw_definition::usb_values::GET_WIFI_VALUE;
 use crate::hw_definition::usb_values::{
-    DISCONNECT_VALUE, GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST,
-    RESET_SSID_VALUE, SET_SSID_VALUE,
+    GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
+    SET_SSID_VALUE,
 };
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
@@ -59,16 +60,6 @@ const RESET_SSID: ControlOut = ControlOut {
     value: RESET_SSID_VALUE,
     index: 0,
     data: &[],
-};
-
-/// [ControlIn] "command" to request the device disconnect
-const DISCONNECT: ControlIn = ControlIn {
-    control_type: ControlType::Vendor,
-    recipient: Recipient::Interface,
-    request: PIGGUI_REQUEST,
-    value: DISCONNECT_VALUE,
-    index: 0,
-    length: 64,
 };
 
 /// Generic request to get data from device over USB [ControlIn]
@@ -191,7 +182,8 @@ pub async fn send_config_message(
 
 /// Send special message to request device to disconnect
 pub async fn disconnect(porky: &UsbConnection) -> Result<(), Error> {
-    receive_control_in(&porky.interface, DISCONNECT).await
+    send_config_message(porky, &Disconnect).await
+    //    receive_control_in(&porky.interface, DISCONNECT).await
 }
 
 /// Connect to a device by USB with the specified `serial_number` [SerialNumber]

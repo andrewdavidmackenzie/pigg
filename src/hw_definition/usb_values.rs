@@ -21,9 +21,6 @@ pub const GET_HARDWARE_DETAILS_VALUE: u16 = 205;
 /// Command Value to send a [HardwareConfigMessage] to device
 pub const HW_CONFIG_MESSAGE: u16 = 206;
 
-/// Command Value to send request device to Disconnect
-pub const DISCONNECT_VALUE: u16 = 207;
-
 #[allow(dead_code)]
 /// A constant used in USB packet sizes
 pub const USB_PACKET_SIZE: u16 = 64;
