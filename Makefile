@@ -67,6 +67,7 @@ build-porky:
 .PHONY: test
 test:
 	cargo test
+	cargo build-all-features
 
 #### arm builds
 .PHONY: build-arm
