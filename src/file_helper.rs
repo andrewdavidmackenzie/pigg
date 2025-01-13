@@ -1,5 +1,5 @@
 use crate::hw_definition::config::HardwareConfig;
-use crate::views::message_box::MessageMessage::{Error, Info};
+use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::Message;
 use crate::Message::{ConfigLoaded, InfoRow};
@@ -62,7 +62,7 @@ pub fn save(gpio_config: HardwareConfig) -> Task<Message> {
         Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
         Err(e) => Message::InfoRow(ShowStatusMessage(Error(
             "Error saving file".into(),
-            format!("Error saving file. {e}",),
+            format!("Error saving file. {e}"),
         ))),
     })
 }

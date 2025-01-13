@@ -1,7 +1,6 @@
-use crate::event::HardwareEvent;
 use crate::hardware_subscription;
-use crate::hardware_subscription::SubscriberMessage;
 use crate::hardware_subscription::SubscriberMessage::Hardware;
+use crate::hardware_subscription::{SubscriberMessage, SubscriptionEvent};
 use crate::hw_definition::config::InputPull;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "usb")]
@@ -18,7 +17,7 @@ use crate::views::hardware_styles::{
 };
 use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
-    Activate, ChangeOutputLevel, HardwareSubscription, NewConfig, PinFunctionSelected, UpdateCharts,
+    Activate, ChangeOutputLevel, NewConfig, PinFunctionSelected, SubscriptionMessage, UpdateCharts,
 };
 use crate::views::layout_menu::Layout;
 use crate::views::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
@@ -52,7 +51,7 @@ pub enum HardwareViewMessage {
     Activate(BoardPinNumber),
     PinFunctionSelected(BCMPinNumber, PinFunction),
     NewConfig(HardwareConfig),
-    HardwareSubscription(HardwareEvent),
+    SubscriptionMessage(SubscriptionEvent),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
 }
@@ -87,9 +86,10 @@ impl Display for HardwareConnection {
 }
 
 impl HardwareConnection {
-    pub fn name(&self) -> String {
+    /// Return a short name describing the connection type
+    pub const fn name(&self) -> &'static str {
         match self {
-            NoConnection => "No Connection",
+            NoConnection => "disconnected",
             #[cfg(not(target_arch = "wasm32"))]
             Local => "Local",
             #[cfg(feature = "usb")]
@@ -99,7 +99,6 @@ impl HardwareConnection {
             #[cfg(feature = "tcp")]
             Tcp(_, _) => "TCP",
         }
-        .to_string()
     }
 }
 
@@ -138,15 +137,16 @@ impl HardwareView {
         &self.hardware_connection
     }
 
-    /// Return a String describing the Model of HW Piggui is connected to, or a placeholder string
+    /// Returns Some(&str) describing the Model of HW Piggui is connected to, or None
     #[must_use]
-    pub fn hw_model(&self) -> Option<String> {
+    pub fn hw_model(&self) -> Option<&str> {
         self.hardware_description
             .as_ref()
-            .map(|desc| desc.details.model.clone())
+            .map(|desc| desc.details.model.as_str())
     }
 
     /// Apply the [HardwareConfig] active here to the GPIO hardware
+    // TODO this might cause a re-apply of same config coming _from_ the hardware?
     fn update_hw_config(&mut self) {
         if let Some(ref mut subscriber_sender) = &mut self.subscriber_sender {
             let _ = subscriber_sender.try_send(Hardware(HardwareConfigMessage::NewConfig(
@@ -157,9 +157,10 @@ impl HardwareView {
 
     /// Send a message to request the subscription to switch connections to a new one
     pub fn new_connection(&mut self, new_connection: HardwareConnection) {
+        self.hardware_description = None;
         self.hardware_connection = new_connection;
-        if let Some(ref mut hardware_sender) = &mut self.subscriber_sender {
-            let _ = hardware_sender.try_send(SubscriberMessage::NewConnection(
+        if let Some(ref mut subscription_sender) = &mut self.subscriber_sender {
+            let _ = subscription_sender.try_send(SubscriberMessage::NewConnection(
                 self.hardware_connection.clone(),
             ));
         }
@@ -239,28 +240,30 @@ impl HardwareView {
                 self.new_config(config);
             }
 
-            HardwareSubscription(event) => match event {
-                HardwareEvent::Connected(config_change_sender, hw_desc, hw_config) => {
-                    self.subscriber_sender = Some(config_change_sender);
+            SubscriptionMessage(event) => match event {
+                SubscriptionEvent::Connected(hw_desc, hw_config) => {
                     self.hardware_description = Some(hw_desc);
                     self.hardware_config = hw_config;
                     self.set_pin_states_after_load();
                     self.update_hw_config();
                     return Task::perform(empty(), |_| Message::Connected);
                 }
-                HardwareEvent::InputChange(bcm_pin_number, level_change) => {
+                SubscriptionEvent::InputChange(bcm_pin_number, level_change) => {
                     self.pin_states
                         .entry(bcm_pin_number)
                         .or_insert(PinState::new())
                         .set_level(level_change);
                 }
-                HardwareEvent::Disconnected => {
-                    return Task::perform(empty(), move |_| Message::Disconnected);
-                }
-                HardwareEvent::ConnectionError(error) => {
+                SubscriptionEvent::ConnectionError(error) => {
                     return Task::perform(empty(), move |_| {
                         Message::ConnectionError(error.clone())
                     });
+                }
+                SubscriptionEvent::Ready(mut subscriber_sender) => {
+                    let _ = subscriber_sender.try_send(SubscriberMessage::NewConnection(
+                        self.hardware_connection.clone(),
+                    ));
+                    self.subscriber_sender = Some(subscriber_sender);
                 }
             },
 
@@ -329,21 +332,12 @@ impl HardwareView {
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
     pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
-        let mut subscriptions =
-            vec![
-                iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
-                    .map(|_| UpdateCharts),
-            ];
-
-        if self.hardware_connection != NoConnection {
-            subscriptions.push(
-                Subscription::run_with_id(
-                    "hardware",
-                    hardware_subscription::subscribe(&self.hardware_connection),
-                )
-                .map(HardwareSubscription),
-            );
-        }
+        let subscriptions = vec![
+            iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
+                .map(|_| UpdateCharts),
+            Subscription::run_with_id("hardware", hardware_subscription::subscribe())
+                .map(SubscriptionMessage),
+        ];
 
         Subscription::batch(subscriptions)
     }

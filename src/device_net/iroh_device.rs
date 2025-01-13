@@ -9,7 +9,7 @@ use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 use crate::net::PIGLET_ALPN;
 use crate::persistence;
-use anyhow::{bail, Context};
+use anyhow::{anyhow, bail, Context};
 use futures::StreamExt;
 #[cfg(feature = "discovery")]
 use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
@@ -192,6 +192,7 @@ async fn apply_config_change(
         HardwareConfigMessage::GetConfig => {
             send_hardware_config(connection, hardware_config).await?
         }
+        HardwareConfigMessage::Disconnect => return Err(anyhow!("Disconnect message received")),
     }
 
     Ok(())

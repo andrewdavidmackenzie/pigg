@@ -6,7 +6,7 @@ use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareView
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
-use crate::views::message_box::MessageMessage::{Error, Info};
+use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialog;
@@ -25,7 +25,6 @@ use crate::discovery::DiscoveryMethod::Local;
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::hardware_view::HardwareConnection::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
@@ -33,6 +32,8 @@ use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::views::ssid_dialog::SsidDialogMessage;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
+#[cfg(feature = "usb")]
+use host_net::usb_host;
 #[cfg(feature = "iroh")]
 use iroh_net::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -40,17 +41,13 @@ use std::str::FromStr;
 
 #[cfg(feature = "discovery")]
 mod discovery;
-pub mod event;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
 mod host_net;
 mod hw;
 mod hw_definition;
-pub mod local_device;
 mod net;
-#[cfg(feature = "usb")]
-mod usb;
 mod views;
 mod widgets;
 
@@ -74,7 +71,7 @@ pub enum Message {
     ConnectDialog(ConnectDialogMessage),
     ConnectRequest(HardwareConnection),
     Connected,
-    Disconnected,
+    Disconnect,
     ConnectionError(String),
     MenuBarButtonClicked,
     #[cfg(feature = "discovery")]
@@ -125,7 +122,7 @@ fn main() -> iced::Result {
 #[allow(unused_variables)]
 fn reset_ssid(serial_number: String) -> Task<Message> {
     #[cfg(feature = "usb")]
-    return Task::perform(usb::reset_ssid_spec(serial_number), |res| match res {
+    return Task::perform(usb_host::reset_ssid_spec(serial_number), |res| match res {
         Ok(_) => InfoRow(ShowStatusMessage(Info(
             "Wi-Fi Setup reset to Default by USB".into(),
         ))),
@@ -139,14 +136,13 @@ fn reset_ssid(serial_number: String) -> Task<Message> {
 }
 
 impl Piggui {
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
-    /// We have disconnected, or been disconnected from the hardware
-    fn disconnected(&mut self) {
+    /// Disconnect from the hardware
+    fn disconnect(&mut self) {
         self.info_row
-            .add_info_message(Info("Disconnected from hardware".to_string()));
+            .add_info_message(Info("Disconnected".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_view = HardwareView::new(NoConnection);
+        self.hardware_view.new_connection(NoConnection);
     }
 
     fn new() -> (Self, Task<Message>) {
@@ -292,13 +288,6 @@ impl Piggui {
                 println!("Connected to hardware");
             }
 
-            Disconnected => {
-                #[cfg(any(feature = "iroh", feature = "tcp"))]
-                self.connect_dialog.enable_widgets_and_hide_spinner();
-                #[cfg(any(feature = "iroh", feature = "tcp"))]
-                self.disconnected();
-            }
-
             ConnectionError(details) => {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
@@ -339,6 +328,7 @@ impl Piggui {
                     ));
                 }
             },
+            Disconnect => self.disconnect(),
         }
 
         Task::none()
@@ -456,9 +446,13 @@ impl Piggui {
                         .add_info_message(Info("Device Lost".to_string()));
                 }
             }
-            DiscoveryEvent::Error(e) => {
+            DiscoveryEvent::DeviceError(e) => {
                 self.info_row
                     .add_info_message(Error("Connection Error".to_string(), e.clone()));
+            }
+            DiscoveryEvent::Error(e) => {
+                self.info_row
+                    .add_info_message(Error("Discovery Error".to_string(), e.clone()));
             }
         }
     }

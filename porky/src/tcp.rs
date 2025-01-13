@@ -115,6 +115,10 @@ pub async fn message_loop<'a>(
                     if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
                         send_hardware_config(&mut socket, hw_config).await;
                     }
+                    if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
+                        info!("TCP, Disconnect, exiting TCP Message loop");
+                        return;
+                    }
                 }
             },
             Either::Second(hardware_config_message) => {

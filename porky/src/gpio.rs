@@ -356,6 +356,7 @@ impl Gpio {
                     .insert(*bcm, Output(Some(level_change.new_level)));
             }
             HardwareConfigMessage::GetConfig => { /* Nothing to do in GPIO */ }
+            HardwareConfigMessage::Disconnect => { /* Nothing to do in GPIO */ }
         }
     }
 }

@@ -1,3 +1,4 @@
+use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 use crate::net::PIGLET_ALPN;
@@ -27,7 +28,7 @@ pub async fn wait_for_remote_message(
 }
 
 /// Send config change received form the GUI to the remote hardware
-pub async fn send_config_change(
+pub async fn send_config_message(
     connection: &mut Connection,
     config_change_message: &HardwareConfigMessage,
 ) -> anyhow::Result<()> {
@@ -86,6 +87,11 @@ pub async fn connect(
     let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&message)?;
 
     Ok((reply.0, reply.1, connection))
+}
+
+/// Inform the device that we are disconnecting from the Iroh connection
+pub async fn disconnect(connection: &mut Connection) -> anyhow::Result<()> {
+    send_config_message(connection, &Disconnect).await
 }
 
 /*

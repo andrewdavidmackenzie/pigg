@@ -15,27 +15,13 @@ use std::collections::HashMap;
 
 /// Create the view that represents the clickable button that shows what hardware is connected
 pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Renderer> {
-    let model = match hardware_view.hw_model() {
-        None => "connection: none".to_string(),
-        Some(model) => match hardware_view.get_hardware_connection() {
-            NoConnection => "connection: none".to_string(),
-            Local => format!("connection: {}@Local", model),
-            #[cfg(feature = "usb")]
-            Usb(_) => format!("connection: {}@USB", model),
-            #[cfg(feature = "iroh")]
-            Iroh(_, _) => format!("connection: {}@Iroh", model),
-            #[cfg(feature = "tcp")]
-            Tcp(_, _) => format!("connection: {}@TCP", model),
-        },
-    };
-
     // Conditionally render menu items based on hardware features
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
     let disconnect: Item<'a, Message, _, _> = Item::new(
         button("Disconnect")
             .width(Length::Fill)
-            .on_press(Message::Disconnected)
+            .on_press(Message::Disconnect)
             .style(|_, status| {
                 if status == Hovered {
                     MENU_BUTTON_HOVER_STYLE
@@ -98,8 +84,13 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
         }
     }
 
+    let model_string = format!(
+        "{}: {}",
+        hardware_view.get_hardware_connection().name(),
+        hardware_view.hw_model().unwrap_or(""),
+    );
     Item::with_menu(
-        button(text(model))
+        button(text(model_string))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(move |_theme, status| {
                 if status == Hovered {

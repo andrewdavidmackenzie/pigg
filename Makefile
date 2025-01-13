@@ -68,6 +68,10 @@ build-porky:
 test:
 	cargo test
 
+.PHONY: features
+features:
+	cargo build-all-features
+
 #### arm builds
 .PHONY: build-arm
 build-arm: build-armv7 build-armv7-musl build-aarch64
@@ -151,3 +155,8 @@ web-build:
 .PHONY: web-run
 web-run: web-build
 	trunk serve
+
+.PHONY: usb
+usb:
+	@echo "Echo your root password at the prompt to copy udev rules for piggui to the system folder for them"
+	sudo cp 70.pigg.rules  /etc/udev/rules.d/

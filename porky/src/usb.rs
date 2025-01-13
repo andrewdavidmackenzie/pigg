@@ -45,7 +45,7 @@ type MyDriver = Driver<'static, USB>;
 // This is a randomly generated GUID to allow clients on Windows to find our device
 const DEVICE_INTERFACE_GUIDS: &[&str] = &["{AFB9A6FB-30BA-44BC-9232-806CFC875321}"];
 
-static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> = Channel::new();
+static USB_MESSAGE_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 16> = Channel::new();
 
 #[embassy_executor::task]
 async fn usb_task(mut device: UsbDevice<'static, MyDriver>) -> ! {
@@ -363,6 +363,10 @@ pub async fn message_loop<'a>(
         .await
         {
             Either::First(hardware_config_message) => {
+                if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
+                    info!("USB Disconnect, exiting USB Message loop");
+                    return;
+                }
                 gpio.apply_config_change(
                     #[cfg(feature = "wifi")]
                     control,
@@ -381,5 +385,4 @@ pub async fn message_loop<'a>(
             }
         }
     }
-    //info!("Exiting Message Loop");
 }
