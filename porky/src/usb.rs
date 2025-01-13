@@ -1,6 +1,7 @@
 use crate::flash;
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
+use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 #[cfg(feature = "wifi")]
@@ -217,6 +218,15 @@ impl Handler for ControlHandler<'_> {
         };
         Some(InResponse::Accepted(msg))
     }
+
+    /// This is called when the host resets the al_setting number to 0, which should be when
+    /// the process dies - allowing us to detect "disconnect" by the host and exit the USB message
+    /// loop
+    fn set_alternate_setting(&mut self, iface: InterfaceNumber, alternate_setting: u8) {
+        if iface == InterfaceNumber(0) && alternate_setting == 0 {
+            block_on(USB_MESSAGE_CHANNEL.sender().send(Disconnect));
+        }
+    }
 }
 
 /// [UsbConnection] is used to send and receive messages back and forth to the host, but not using
@@ -298,6 +308,8 @@ pub async fn start(
     control_handler.if_num = interface_builder.interface_number();
 
     // This should set alt_settings #0
+    let _ = interface_builder.alt_setting(0xFF, 0, 0, None);
+    // This should set alt_settings #1
     let mut interface_alt_builder = interface_builder.alt_setting(0xFF, 0, 0, None);
     let ep_in = interface_alt_builder.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
     let _ep_out = interface_alt_builder.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
@@ -308,7 +320,7 @@ pub async fn start(
     let usb = builder.build();
 
     unwrap!(spawner.spawn(usb_task(usb)));
-    info!("USB task started on alt_setting #0");
+    info!("USB task started on alt_setting #1");
 
     static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
     let buf = BUF.init([0u8; 1024]);

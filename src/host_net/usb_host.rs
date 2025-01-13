@@ -1,3 +1,6 @@
+use crate::discovery::DiscoveredDevice;
+use crate::discovery::DiscoveryMethod::USBRaw;
+use crate::host_net::usb_host;
 use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
@@ -13,11 +16,14 @@ use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
     SET_SSID_VALUE,
 };
+use crate::views::hardware_view::HardwareConnection;
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::net::IpAddr;
 use std::time::Duration;
 
 /// [ControlIn] "command" to request the [HardwareDescription]
@@ -104,7 +110,9 @@ async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, Error
         if let Some(serial_number) = device_info.serial_number() {
             if serial_number == serial {
                 let device = device_info.open()?;
-                return Ok(device.claim_interface(0)?);
+                let interface = device.claim_interface(0)?;
+                interface.set_alt_setting(1)?;
+                return Ok(interface);
             }
         }
     }
@@ -197,6 +205,69 @@ pub async fn connect(
     send_config_message(&connection, &HardwareConfigMessage::GetConfig).await?;
     let hardware_config: HardwareConfig = wait_for_remote_message(&connection).await?;
     Ok((hardware_description, hardware_config, connection))
+}
+
+/// Return a Vec of the [SerialNumber] of all compatible connected devices
+#[cfg(feature = "usb")]
+pub async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
+    Ok(nusb::list_devices()?
+        .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+        .filter_map(|device_info| {
+            device_info
+                .serial_number()
+                .and_then(|s| Option::from(s.to_string()))
+        })
+        .collect())
+}
+
+/// Get the details of the devices in the list of [SerialNumber] passed in
+#[cfg(feature = "usb")]
+pub async fn get_details(
+    serial_numbers: &[SerialNumber],
+) -> Result<HashMap<SerialNumber, DiscoveredDevice>, anyhow::Error> {
+    let device_list = nusb::list_devices()?;
+    let mut devices = HashMap::<SerialNumber, DiscoveredDevice>::new();
+
+    for device_info in device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface) {
+        let serial_number = device_info
+            .serial_number()
+            .ok_or(anyhow!("Could not get device serial_number"))?;
+        if serial_numbers.contains(&serial_number.to_string()) {
+            let device = device_info.open()?;
+            let interface = device.claim_interface(0)?;
+            interface.set_alt_setting(1)?;
+            let hardware_details = usb_host::get_hardware_details(&interface).await?;
+            let wifi_details = if hardware_details.wifi {
+                usb_host::get_wifi_details(&interface).await.ok()
+            } else {
+                None
+            };
+
+            let ssid_spec = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
+
+            let mut hardware_connections = HashMap::new();
+            #[cfg(feature = "tcp")]
+            if let Some((ip, port)) = wifi_details.and_then(|wf| wf.tcp) {
+                let connection = HardwareConnection::Tcp(IpAddr::from(ip), port);
+                hardware_connections.insert(connection.name().to_string(), connection);
+            }
+
+            let usb_connection = HardwareConnection::Usb(hardware_details.serial.clone());
+            hardware_connections.insert(usb_connection.name().to_string(), usb_connection);
+
+            devices.insert(
+                hardware_details.serial.clone(),
+                DiscoveredDevice {
+                    discovery_method: USBRaw,
+                    hardware_details,
+                    ssid_spec,
+                    hardware_connections,
+                },
+            );
+        }
+    }
+
+    Ok(devices)
 }
 
 #[cfg(feature = "usb")]
