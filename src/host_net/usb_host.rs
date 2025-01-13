@@ -1,6 +1,7 @@
+#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
+#[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::USBRaw;
-use crate::host_net::usb_host;
 use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
@@ -16,13 +17,16 @@ use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
     SET_SSID_VALUE,
 };
+#[cfg(all(feature = "usb", feature = "discovery"))]
 use crate::views::hardware_view::HardwareConnection;
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
+#[cfg(all(feature = "usb", feature = "discovery"))]
 use std::collections::HashMap;
+#[cfg(all(feature = "usb", feature = "discovery", feature = "tcp"))]
 use std::net::IpAddr;
 use std::time::Duration;
 
@@ -208,8 +212,8 @@ pub async fn connect(
 }
 
 /// Return a Vec of the [SerialNumber] of all compatible connected devices
-#[cfg(feature = "usb")]
-pub async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
+#[cfg(all(feature = "usb", feature = "discovery"))]
+pub async fn get_serials() -> Result<Vec<SerialNumber>, Error> {
     Ok(nusb::list_devices()?
         .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
         .filter_map(|device_info| {
@@ -221,10 +225,10 @@ pub async fn get_serials() -> Result<Vec<SerialNumber>, anyhow::Error> {
 }
 
 /// Get the details of the devices in the list of [SerialNumber] passed in
-#[cfg(feature = "usb")]
+#[cfg(all(feature = "usb", feature = "discovery"))]
 pub async fn get_details(
     serial_numbers: &[SerialNumber],
-) -> Result<HashMap<SerialNumber, DiscoveredDevice>, anyhow::Error> {
+) -> Result<HashMap<SerialNumber, DiscoveredDevice>, Error> {
     let device_list = nusb::list_devices()?;
     let mut devices = HashMap::<SerialNumber, DiscoveredDevice>::new();
 
@@ -236,9 +240,9 @@ pub async fn get_details(
             let device = device_info.open()?;
             let interface = device.claim_interface(0)?;
             interface.set_alt_setting(1)?;
-            let hardware_details = usb_host::get_hardware_details(&interface).await?;
+            let hardware_details = get_hardware_details(&interface).await?;
             let wifi_details = if hardware_details.wifi {
-                usb_host::get_wifi_details(&interface).await.ok()
+                get_wifi_details(&interface).await.ok()
             } else {
                 None
             };
