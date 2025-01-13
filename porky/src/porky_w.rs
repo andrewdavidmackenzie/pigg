@@ -256,7 +256,7 @@ async fn main(spawner: Spawner) {
                             Err(_) => error!("TCP accept error"),
                         },
                         Either::Second(_) => {
-                            usb::message_loop(
+                            let _ = usb::message_loop(
                                 &mut gpio,
                                 &mut usb_connection,
                                 &mut hardware_config,
@@ -296,8 +296,39 @@ async fn main(spawner: Spawner) {
                     error!("Could not join Wi-Fi network: {}, so starting USB only", e);
                     let mut usb_connection =
                         usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
-                    usb::wait_connection(&mut usb_connection, &hardware_config).await;
-                    usb::message_loop(
+                    if usb::wait_connection(&mut usb_connection, &hardware_config)
+                        .await
+                        .is_err()
+                    {
+                        error!("Could not establish USB connection");
+                    } else {
+                        let _ = usb::message_loop(
+                            &mut gpio,
+                            &mut usb_connection,
+                            &mut hardware_config,
+                            &spawner,
+                            #[cfg(feature = "wifi")]
+                            &mut control,
+                            db,
+                        )
+                        .await;
+                    }
+                }
+            }
+        },
+        None => {
+            #[cfg(feature = "usb")]
+            {
+                info!("No valid SsidSpec was found, cannot start Wi-Fi, so starting USB only");
+                let mut usb_connection =
+                    usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
+                if usb::wait_connection(&mut usb_connection, &hardware_config)
+                    .await
+                    .is_err()
+                {
+                    error!("Could not establish USB connection");
+                } else {
+                    let _ = usb::message_loop(
                         &mut gpio,
                         &mut usb_connection,
                         &mut hardware_config,
@@ -308,25 +339,6 @@ async fn main(spawner: Spawner) {
                     )
                     .await;
                 }
-            }
-        },
-        None => {
-            #[cfg(feature = "usb")]
-            {
-                info!("No valid SsidSpec was found, cannot start Wi-Fi, so starting USB only");
-                let mut usb_connection =
-                    usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
-                usb::wait_connection(&mut usb_connection, &hardware_config).await;
-                usb::message_loop(
-                    &mut gpio,
-                    &mut usb_connection,
-                    &mut hardware_config,
-                    &spawner,
-                    #[cfg(feature = "wifi")]
-                    &mut control,
-                    db,
-                )
-                .await;
             }
         }
     }
