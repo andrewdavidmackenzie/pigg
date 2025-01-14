@@ -43,15 +43,14 @@ hardware remotely.
   </tr>
 </table>
 
-## What's new in Release 0.5.0 - Pi Pico W Support!
+## What's new in Release 0.6.0 - USB, Pi Pico and Discovery
 
-The `pigg` project now has initial Raspberry Pi Pico W support!!!
-
-It's a first version and is missing a few things we have planned on the [roadmap](#roadmap), but it's a great start!
+The `pigg` project now has full support for Pi Pico W and Pi Pico, USB discovery, SSID configuration, GPIO control
+and mDNS discovery...
 
 Pi Pico support includes:
 
-- Embedded application `porky` for running on the Pi Pico W
+- Embedded application `porky` for running on the Pi Pico W and Pi Pico
 - UF2 Image provided as part of release to aid programming Pi Pico W devices with `porky`
 - Ability to build `porky` yourself with default SSID information so all devices with built binary connect
   automatically to Wi-Fi
@@ -60,15 +59,22 @@ Pi Pico support includes:
     - View information about the device
     - Determine if it is connected to the Wi-Fi network and if it is, get its IP and Port for remote GUI use
     - Program an "override" Wi-Fi network it will use to connect to, instead of the default one as part of the build.
-      This
-      is persisted in Flash memory, so it is used again on restart/reboot.
+      This is persisted in Flash memory, so it is used again on restart/reboot.
     - Reset the "override" Wi-Fi (removing it) so that on restart the device will connect to the default one if it
       exists.
       If not, it will restart, connect to USB and wait to be programmed with a Wi-Fi network to connect to.
+    - Full functionality (i.e. Control the device and get input signal level changes) via USB, so now on a par
+      with TCP connections to the Pi Pico W.
 - Remote network access to the (headless) Pico W's GPIO, in the same GUI as remote access to Raspberry Pis (not Pico).
 - Pi Pico specific pin layout and numbering displayed in GUI
+- Persisting of GPIO config to flash and recovery at reboot/restart so that the GPIO continues to work as before
+- `udev` rules file for allowing user access (for `piggui` application) to USB devices on Linux machines
 
-NOTE: Support for Pi Pico (not W), Pi Pico 2 (not W) and Pi Pico 2 W is planned for next releases.
+Additions to `piglet` functionality:
+
+- Persisting of GPIO config to disk and recovery at reboot/restart so that the GPIO continues where you left off
+- mDNS discoverability of `piglets` on the network and get the details required to connect to them by `TCP` or
+  `Iroh`
 
 ## Other Features
 
@@ -76,7 +82,8 @@ NOTE: Support for Pi Pico (not W), Pi Pico 2 (not W) and Pi Pico 2 W is planned 
   details.
 - Visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
   physical layout of the Pi's GPIO connector/header, or a "BCM Pin Layout" with only the programmable
-  GPIO pins, ordered by BCM pin number
+  GPIO pins, ordered by BCM pin number. Physical pin layout adapts to reflect the device that `piggui` is connected
+  to as Pi and Pi Pico pin outs are different.
 - Each pin has its board pin number, name and function.
 - Drop down selector to config each pin (Currently as an Input with or without pull-up/pull-down, or
   as an Output)
@@ -85,11 +92,14 @@ NOTE: Support for Pi Pico (not W), Pi Pico 2 (not W) and Pi Pico 2 W is planned 
 - Outputs have a toggle switch that can be used to change the stable value of the output, plus a "clicker" for quick
   inversions of the stable level, plus a waveform view showing the recent history of the level set on the Output.
 - GPIO configurations can be loaded at startup with a command line filename option, or loaded via
-  file-picker from the UI or saved to file via file picker.
-- The GUI (`piggui`) can connect to a Pi (that is running `piglet`) over the network, to control and view the GPIO
-  hardware from a distance. The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped at source
-  (as close to the hardware as possible) so network delays should not affect the waveforms displayed. Provide us
-  feedback and ideas related to networking in Discussions or GH issues.
+  file-picker from the UI or saved to file via file picker, or the device will communicate it's current configuration
+  to the GUI, allowing you to continue with the configuration currently being used by the GPIO hardware.
+- GUI discovery of devices using mDNS for networked `piglet`s and `porky`s, or USB for direct connected `porky`s.
+- The GUI (`piggui`) can connect to a Pi (running `piglet`) over the network, or to a Pi Pico/Pi Pico W (over the
+  network or USB direct connect) to control and view the GPIO hardware from a distance.
+- The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped at source (as close to the hardware
+  as possible) so network delays should not affect the waveforms displayed. Please provide us feedback and ideas related
+  to networking in Discussions or GH issues.
 - The data required to connect to a remote node via iroh-net is called the `nodeid`. `piglet` prints this out for you
   if it is started in the foreground. When `piglet` has been started as a system service, start another instance in the
   foreground and this will detect the background instance and display its `nodeid` for you then exit.
@@ -130,9 +140,8 @@ then the user can interact with it and visualize inputs level changes from the `
 
 ## Porky
 
-`porky` is an embedded application developer for the Raspberry Pi Pico (Pi Pico W only currently, but I plan to
-add support for Pico, Pico 2 and Pico 2 W soon) for remote interaction with the Pi Pico's GPIO hardware. It can be
-connected to remotely over TCP, just like to a `piglet` running on a Pi.
+`porky` is an embedded application developer for the Raspberry Pi Pico and Pi Pico W for remote interaction with the
+Pico's GPIO hardware. It can be connected to over TCP or USB.
 
 For more details see [porky's README.md](porky/README.md)
 
@@ -163,8 +172,8 @@ manually or are known to work as follows:
 |             | aarch64        | Pi5       | Pi OS              | 
 |             | aarch64        | PiZero 2  | Pi OS              | 
 |             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS |
-| porky_w     | armv7          | Pi Pico W |                    |
-| porky       | armv7          | Pi Pico   |                    |
+| porky_w     | armv7          | Pi Pico W | N/A                |
+| porky       | armv7          | Pi Pico   | N/A                |
 
 ## Input from Raspberry Pi users wanted
 
@@ -180,26 +189,27 @@ We have identified a number of areas to work on in future releases, but we would
 on what could be most useful or just the coolest, many have GH issues.
 
 See issues in
-milestones [0.6.0](https://github.com/andrewdavidmackenzie/pigg/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6.0)
-and [0.7.0](https://github.com/andrewdavidmackenzie/pigg/issues?q=is%3Aopen+is%3Aissue+milestone%3A%220.7.0+Release%22)
-for the entire up-to-date list and progress.
+milestone [0.7.0](https://github.com/andrewdavidmackenzie/pigg/issues?q=is%3Aopen+is%3Aissue+milestone%3A%220.7.0+Release%22)
+for the up-to-date list and progress.
 
 - Extend Pi Pico support:
-    - Persisting of GPIO config to flash and recovery at reboot/restart so that the GPIO continues to work as before
-    - Full functionality over USB, not just getting hardware details and Wi-Fi config as in 0.5.0
-    - Support for Pi Pico (not W) using USB above
     - Support for Pi Pico 2 and Pi Pico 2 W
-- Discovery of compatible Pi and Pi Pico devices on the local network
 - Expand support beyond Inputs and Outputs ( e.g. Clocks, PWM, I2C, UART, SPI etc.).
-  Issue [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53),
-  [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
+  Issue [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53), [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
 - True logical layout, grouping pins by function [Issue #94](https://github.com/andrewdavidmackenzie/pigg/issues/94)
+- Custom layouts to order, group pins and only show pins in use
+- Smaller window sizes for devices running `piggui` with small displays
 - Allow connections between pins [Issue #95](https://github.com/andrewdavidmackenzie/pigg/issues/95)
 - Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 
 ## Installing
 
-TODO
+See [INSTALLING.md](INSTALLING.md)
+
+## Help
+
+See [HELP.md](HELP.md) for help with known issues. We hope to grow this and maybe link with the GUI and reported
+errors.
 
 ## Building from Source
 

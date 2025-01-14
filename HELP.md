@@ -4,6 +4,8 @@ This files lists help for common problems found
 
 ## "Permission denied (os error 13)" (Linux ONLY)
 
+### Issue Description
+
 This error is due to the user/application not having permissions to write to the USB device folders and
 files under `/dev/bus/usb/`.
 
@@ -42,5 +44,6 @@ in the folder listing above. As you can see that device belongs to the `root` us
 user group and my current user (who is not `root` or in the `root` user group) only has read
 permissions, not write permission.
 
-Fixing the Issue:
-- 
+### Fixing the Issue:
+
+See [relevant section in INSTALLING.md](INSTALLING.md#installing-udev-rules-on-linux)

@@ -54,6 +54,29 @@ where you can find "tar.xz" downloads for Linux x86 machines
 
 Expand the downloaded file with `tar -xvf` and then run or manually install the binary
 
+## Installing `udev` rules on Linux
+
+In order for `piggui` to discover and control a USB connected `porky` device the user running it will need write
+permissions on the USB device folders. This is controlled by the Linux `udev` system. The file
+[70.pigg.rules](70.pigg.rules) that gives these permissions to the user, is part of the project repository and should
+be an asset in the release.
+
+If you installed `piggui` on Linux using a provided installation script, it may well have installed these rules for you
+already. Try `piggui`. If it works without an error then you are done!
+
+If `piggui` reports a USB permissions error in the UI, then the cause is most likely a lack of these `udev` rules.
+
+To install them manually:
+
+- Download the `70.pigg.rules` file from the assets of the release or the repository
+- Run this command from the command line in a terminal window:
+    - `sudo cp 70.pigg.rules /etc/udev/rules.d/`
+
+Or if you have cloned the project repository, you can run this command from the command line in a terminal window,
+in the root folder of the project:
+
+- `make usb`
+
 ## Checking the version installed
 
 Check the version you have installed is the latest with
