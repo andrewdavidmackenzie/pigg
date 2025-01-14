@@ -364,8 +364,9 @@ dependencies = [
 
 [[package]]
 name = "edge-mdns"
-version = "0.3.1"
-source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#5a85bcc8b8726e8b7044e9526f01cdba1fd684da"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "543d3556dcde40c2db014dfcc2274b3f2a78c43f13014545a073438af87bb698"
 dependencies = [
  "domain",
  "edge-nal",
@@ -378,8 +379,9 @@ dependencies = [
 
 [[package]]
 name = "edge-nal"
-version = "0.3.0"
-source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#5a85bcc8b8726e8b7044e9526f01cdba1fd684da"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2cfec541b2ac8196050c8662e22403000c221a5999148496e62df7e76e9f6b29"
 dependencies = [
  "embassy-time",
  "embedded-io-async",
@@ -387,8 +389,9 @@ dependencies = [
 
 [[package]]
 name = "edge-nal-embassy"
-version = "0.3.0"
-source = "git+https://github.com/ivmarkov/edge-net.git?branch=embassy-net-05#5a85bcc8b8726e8b7044e9526f01cdba1fd684da"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae3c210c904d95704e0e1df473256c3673abbc9a36a2dd9a7f7ecc2e3715591e"
 dependencies = [
  "edge-nal",
  "embassy-futures",

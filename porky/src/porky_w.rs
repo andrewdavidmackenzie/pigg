@@ -203,15 +203,20 @@ async fn main(spawner: Spawner) {
             Ok(ip) => {
                 info!("Assigned IP: {}", ip);
 
-                let _ = spawner.spawn(mdns::mdns_responder(
-                    wifi_stack,
-                    ip,
-                    TCP_PORT,
-                    serial_number,
-                    hw_desc.details.model,
-                    TCP_MDNS_SERVICE_NAME,
-                    TCP_MDNS_SERVICE_PROTOCOL,
-                ));
+                if spawner
+                    .spawn(mdns::mdns_responder(
+                        wifi_stack,
+                        ip,
+                        TCP_PORT,
+                        serial_number,
+                        hw_desc.details.model,
+                        TCP_MDNS_SERVICE_NAME,
+                        TCP_MDNS_SERVICE_PROTOCOL,
+                    ))
+                    .is_err()
+                {
+                    error!("Could not spawn mDNS responder task");
+                }
 
                 #[cfg(feature = "usb")]
                 let mut usb_connection = usb::start(
