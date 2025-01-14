@@ -112,6 +112,11 @@ pub async fn start_net<'a>(
         .set_power_management(cyw43::PowerManagementMode::PowerSave)
         .await;
 
+    // Add the multicast address to solve issues in mDNS discovery
+    let _ = control
+        .add_multicast_address([0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb])
+        .await;
+
     static RESOURCES: StaticCell<StackResources<STACK_RESOURCES_SOCKET_COUNT>> = StaticCell::new();
     let resources = RESOURCES.init(StackResources::new());
 
@@ -119,11 +124,6 @@ pub async fn start_net<'a>(
     let seed = rng.next_u64();
 
     let config = Config::dhcpv4(Default::default());
-    //let config = embassy_net::Config::ipv4_static(embassy_net::StaticConfigV4 {
-    //    address: Ipv4Cidr::new(Ipv4Address::new(192, 168, 69, 2), 24),
-    //    dns_servers: Vec::new(),
-    //    gateway: Some(Ipv4Address::new(192, 168, 69, 1)),
-    //});
 
     // Init network stack
     let (stack, runner) = embassy_net::new(net_device, config, resources, seed);
