@@ -337,7 +337,7 @@ pub async fn wait_connection(
     usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
     hardware_config: &HardwareConfig,
 ) -> Result<(), &'static str> {
-    info!("Waiting for the USB Connect");
+    info!("Waiting for USB Connect");
     while !matches!(
         USB_MESSAGE_CHANNEL.receiver().receive().await,
         HardwareConfigMessage::GetConfig
