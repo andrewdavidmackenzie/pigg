@@ -31,5 +31,5 @@ x86_64-pc-windows-msvc = "windows-latest"
 armv7-unknown-linux-musleabihf = "ubuntu-latest"
 
 [[dist.extra-artifacts]]
-artifacts = ["porky/target/thumbv6m-none-eabi/release/porky_pico_w.uf2"]
-build = ["make", "-C", "porky", "install-uf2", "uf2"]
+artifacts = ["porky/target/thumbv6m-none-eabi/release/porky_pico_w.uf2", "porky/target/thumbv6m-none-eabi/release/porky_pico.uf2"]
+build = ["make", "-C", "porky", "install-uf2", "uf2-w", "uf2"]
