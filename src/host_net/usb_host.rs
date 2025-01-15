@@ -25,7 +25,7 @@ use crate::Message;
 use crate::Message::InfoRow;
 use anyhow::{anyhow, Error};
 #[cfg(all(feature = "usb", target_os = "linux"))]
-use glob::{glob, GlobResult};
+use glob::{glob};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::de::DeserializeOwned;
@@ -85,7 +85,7 @@ pub const UDEV_RULES_FOLDER: &str = "/etc/udev/rules.d/";
 
 #[cfg(target_os = "linux")]
 /// On linux check that we have write permissions to the required USB directories
-async fn check_usb_permissions() -> Message {
+pub fn check_usb_permissions() -> Message {
     match glob(USB_DEVICE_FOLDER_GLOB) {
         Ok(globs) => {
             for entry in globs {
@@ -101,11 +101,11 @@ async fn check_usb_permissions() -> Message {
                             );
                         }
                     }
-                    Err(_) => {
+                    Err(e) => {
                         return InfoRow(
                             crate::views::message_box::MessageRowMessage::ShowStatusMessage(
                                 crate::views::message_box::InfoMessage::Error(
-                                    "Could not check USB permissions".into(),
+                                    "Could not check USB permissions".into(), e.to_string()
                                 ),
                             ),
                         );
@@ -113,11 +113,11 @@ async fn check_usb_permissions() -> Message {
                 }
             }
         }
-        Err(_) => {
+        Err(e) => {
             return InfoRow(
                 crate::views::message_box::MessageRowMessage::ShowStatusMessage(
                     crate::views::message_box::InfoMessage::Error(
-                        "Could not check USB permissions".into(),
+                        "Could not check USB permissions".into(), e.to_string()
                     ),
                 ),
             );

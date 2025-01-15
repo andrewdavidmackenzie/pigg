@@ -9,8 +9,8 @@ pub fn run_preflight_checks() -> Task<Message> {
 
 /// perform he preflight checks asynchronously
 async fn checks() -> Message {
-    #[cfg(target_os = "linux")]
-    return check_usb_permissions();
+    #[cfg(all(feature = "usb", target_os = "linux"))]
+    return crate::host_net::usb_host::check_usb_permissions();
     #[cfg(not(target_os = "linux"))]
     Message::PreflightChecksDone
 }
