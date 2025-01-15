@@ -19,8 +19,6 @@ use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Tas
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveryMethod::Local;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
@@ -152,26 +150,6 @@ impl Piggui {
         let config_filename = matches.get_one::<String>("config").map(|s| s.to_string());
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
-        #[cfg(feature = "discovery")]
-        let mut discovered_devices = HashMap::new();
-        #[cfg(feature = "discovery")]
-        let local_hardware = hw::driver::get();
-        #[cfg(feature = "discovery")]
-        let serial = local_hardware.description().unwrap().details.serial;
-        #[cfg(feature = "discovery")]
-        let mut hardware_connections = HashMap::new();
-        #[cfg(feature = "discovery")]
-        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
-        #[cfg(feature = "discovery")]
-        discovered_devices.insert(
-            serial,
-            DiscoveredDevice {
-                discovery_method: Local,
-                hardware_details: local_hardware.description().unwrap().details,
-                ssid_spec: None,
-                hardware_connections,
-            },
-        );
 
         (
             Self {
@@ -184,7 +162,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 #[cfg(feature = "discovery")]
-                discovered_devices,
+                discovered_devices: HashMap::new(),
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
@@ -401,6 +379,9 @@ impl Piggui {
             self.info_row.subscription().map(InfoRow),
             self.hardware_view.subscription().map(Hardware),
         ];
+
+        #[cfg(feature = "discovery")]
+        subscriptions.push(Subscription::run(discovery::local_discovery).map(Discovery));
 
         #[cfg(all(feature = "discovery", feature = "usb"))]
         subscriptions.push(Subscription::run(discovery::usb_discovery).map(Discovery));

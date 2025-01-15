@@ -1,11 +1,13 @@
 #[cfg(feature = "iroh")]
 use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
+use crate::discovery::DiscoveryMethod::Local;
 #[cfg(feature = "tcp")]
 use crate::discovery::DiscoveryMethod::Mdns;
 #[cfg(feature = "usb")]
 use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "usb")]
 use crate::host_net::usb_host;
+use crate::hw;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
@@ -90,6 +92,28 @@ async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) 
         .send(DiscoveryEvent::Error(e.to_string()))
         .await
         .unwrap_or_else(|e| eprintln!("{e}"));
+}
+
+/// A stream of [DiscoveryEvent] announcing the discovery or loss of local hardware
+pub fn local_discovery() -> impl Stream<Item = DiscoveryEvent> {
+    stream::channel(10, move |mut gui_sender| async move {
+        let local_hardware = hw::driver::get();
+        let serial = local_hardware.description().unwrap().details.serial;
+        let mut hardware_connections = HashMap::new();
+        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
+        let local_device = DiscoveredDevice {
+            discovery_method: Local,
+            hardware_details: local_hardware.description().unwrap().details,
+            ssid_spec: None,
+            hardware_connections,
+        };
+
+        // inform UI of new device found
+        gui_sender
+            .send(DiscoveryEvent::DeviceFound(serial, local_device))
+            .await
+            .unwrap_or_else(|e| eprintln!("Send error: {e}"));
+    })
 }
 
 #[cfg(feature = "usb")]
