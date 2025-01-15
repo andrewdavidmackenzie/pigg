@@ -19,6 +19,7 @@ use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Tas
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
+use crate::help::run_preflight_checks;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
@@ -42,6 +43,7 @@ mod discovery;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
+mod help;
 mod host_net;
 mod hw;
 mod hw_definition;
@@ -80,6 +82,7 @@ pub enum Message {
     ResetSsid(String),
     #[cfg(feature = "usb")]
     SsidSpecSent(Result<(), String>),
+    PreflightChecksDone,
 }
 
 /// [Piggui] Is the struct that holds application state and implements [Application] for Iced
@@ -166,7 +169,10 @@ impl Piggui {
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
-            maybe_load_no_picker(config_filename),
+            Task::batch([
+                maybe_load_no_picker(config_filename),
+                run_preflight_checks(),
+            ]),
         )
     }
 
@@ -307,6 +313,7 @@ impl Piggui {
                 }
             },
             Disconnect => self.disconnect(),
+            PreflightChecksDone => {}
         }
 
         Task::none()
