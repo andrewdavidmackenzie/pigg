@@ -12,13 +12,10 @@ use crate::hw;
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
 use crate::views::hardware_view::HardwareConnection;
-#[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
 #[cfg(feature = "usb")]
 use futures::channel::mpsc::Sender;
-#[cfg(any(feature = "usb", feature = "tcp"))]
 use futures::SinkExt;
-#[cfg(any(feature = "usb", feature = "tcp"))]
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh_net::relay::RelayUrl;

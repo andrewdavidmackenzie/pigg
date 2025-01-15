@@ -37,7 +37,7 @@ iroh = ["iroh-net"]
 tcp = ["portpicker", "local-ip-address"]
 discovery = ["iroh-net/discovery-local-network", "mdns-sd"]
 no_std = []
-usb = ["nusb"]
+usb = ["nusb", "glob"]
 
 [dependencies]
 # Optional Dependencies
@@ -100,6 +100,9 @@ libc = "0.2.169"
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(not(any( all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+glob = { version = "0.3", default-features = false, optional = true }
 
 [profile.release]
 opt-level = "s"

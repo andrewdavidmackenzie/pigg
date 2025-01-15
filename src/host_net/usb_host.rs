@@ -19,7 +19,13 @@ use crate::hw_definition::usb_values::{
 };
 #[cfg(all(feature = "usb", feature = "discovery"))]
 use crate::views::hardware_view::HardwareConnection;
+#[cfg(all(feature = "usb", target_os = "linux"))]
+use crate::Message;
+#[cfg(all(feature = "usb", target_os = "linux"))]
+use crate::Message::InfoRow;
 use anyhow::{anyhow, Error};
+#[cfg(all(feature = "usb", target_os = "linux"))]
+use glob::{glob, GlobResult};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
 use serde::de::DeserializeOwned;
@@ -71,6 +77,55 @@ const RESET_SSID: ControlOut = ControlOut {
     index: 0,
     data: &[],
 };
+
+#[cfg(target_os = "linux")]
+const USB_DEVICE_FOLDER_GLOB: &str = "/dev/bus/usb/*/*";
+#[cfg(target_os = "linux")]
+pub const UDEV_RULES_FOLDER: &str = "/etc/udev/rules.d/";
+
+#[cfg(target_os = "linux")]
+/// On linux check that we have write permissions to the required USB directories
+async fn check_usb_permissions() -> Message {
+    match glob(USB_DEVICE_FOLDER_GLOB) {
+        Ok(globs) => {
+            for entry in globs {
+                match entry {
+                    Ok(path) => {
+                        if path.metadata().unwrap().permissions().readonly() {
+                            return InfoRow(
+                                crate::views::message_box::MessageRowMessage::ShowStatusMessage(
+                                    crate::views::message_box::InfoMessage::Warning(
+                                        "Permissions required for USB".into(),
+                                    ),
+                                ),
+                            );
+                        }
+                    }
+                    Err(_) => {
+                        return InfoRow(
+                            crate::views::message_box::MessageRowMessage::ShowStatusMessage(
+                                crate::views::message_box::InfoMessage::Error(
+                                    "Could not check USB permissions".into(),
+                                ),
+                            ),
+                        );
+                    }
+                }
+            }
+        }
+        Err(_) => {
+            return InfoRow(
+                crate::views::message_box::MessageRowMessage::ShowStatusMessage(
+                    crate::views::message_box::InfoMessage::Error(
+                        "Could not check USB permissions".into(),
+                    ),
+                ),
+            );
+        }
+    }
+
+    Message::PreflightChecksDone
+}
 
 /// Generic request to get data from device over USB [ControlIn]
 async fn receive_control_in<T>(porky: &Interface, control_in: ControlIn) -> Result<T, Error>

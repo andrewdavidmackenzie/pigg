@@ -4500,6 +4500,7 @@ dependencies = [
  "clap",
  "env_logger",
  "futures",
+ "glob",
  "iced",
  "iced_aw",
  "iced_futures",
