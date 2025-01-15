@@ -22,6 +22,7 @@ install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
 github-build-setup = "../install-arm-linkers.yml"
+include = ["70.pigg.rules"] # udev rules file for USB access on Linux
 
 [dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
