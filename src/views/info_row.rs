@@ -1,11 +1,11 @@
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
+use crate::views::about::about_button;
 #[cfg(feature = "discovery")]
 use crate::views::devices_menu;
 use crate::views::hardware_view::HardwareView;
 use crate::views::layout_menu::LayoutSelector;
 use crate::views::message_box::{InfoMessage, MessageRow, MessageRowMessage};
-use crate::views::version::version_button;
 use crate::views::{config_menu, connection_menu};
 use crate::Message;
 use iced::border::Radius;
@@ -133,7 +133,7 @@ impl InfoRow {
         #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
     ) -> Element<'a, Message> {
         let menu_bar: Element<Message> = MenuBar::new(vec![
-            version_button(),
+            about_button(),
             layout_selector.view(hardware_view.get_hardware_connection()),
             connection_menu::view(hardware_view),
             #[cfg(feature = "discovery")]

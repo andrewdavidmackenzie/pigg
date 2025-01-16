@@ -12,7 +12,7 @@ const LICENSE: &str = env!("CARGO_PKG_LICENSE");
 pub const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 #[must_use]
-pub fn version() -> String {
+pub fn about() -> String {
     format!(
         "{bin_name} {version}\n\
         Copyright (C) 2024 The {pkg_name} Developers \n\
@@ -29,7 +29,7 @@ pub fn version() -> String {
     )
 }
 
-pub fn version_button<'a>() -> Item<'a, Message, Theme, Renderer> {
+pub fn about_button<'a>() -> Item<'a, Message, Theme, Renderer> {
     Item::new(
         button("about")
             .on_press(Message::Modal(InfoDialogMessage::AboutDialog))

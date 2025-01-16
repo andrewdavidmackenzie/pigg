@@ -1,12 +1,12 @@
 use crate::file_helper::pick_and_load;
 use crate::hw_definition::description::HardwareDetails;
+use crate::views::about::REPOSITORY;
 use crate::views::dialog_styles::{
     HYPERLINK_BUTTON_HOVER_STYLE, HYPERLINK_BUTTON_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
     MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
     MODAL_CONTAINER_STYLE,
 };
 use crate::views::hardware_view::HardwareConnection;
-use crate::views::version::REPOSITORY;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::button::Status::Hovered;
@@ -17,12 +17,17 @@ use iced_futures::Subscription;
 use std::collections::HashMap;
 
 pub struct InfoDialog {
-    pub show_modal: bool,
+    show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
     hardware_connections: HashMap<String, HardwareConnection>,
 }
 pub enum ModalType {
+    Error {
+        title: &'static str,
+        body: &'static str,
+        help_link: &'static str,
+    },
     Warning {
         title: String,
         body: String,
@@ -44,9 +49,10 @@ pub enum InfoDialogMessage {
     LoadFile,
     HardwareDetailsModal(HardwareDetails, HashMap<String, HardwareConnection>),
     AboutDialog,
+    ErrorWithHelp(&'static str, &'static str, &'static str),
     ExitApp,
     EscKeyEvent(Event),
-    OpenRepoLink,
+    OpenLink(&'static str),
 }
 
 impl InfoDialog {
@@ -57,6 +63,10 @@ impl InfoDialog {
             modal_type: None,
             hardware_connections: HashMap::default(),
         }
+    }
+
+    pub fn showing_modal(&self) -> bool {
+        self.show_modal
     }
 
     pub fn update(&mut self, message: InfoDialogMessage) -> Task<Message> {
@@ -121,14 +131,25 @@ impl InfoDialog {
                 self.is_warning = false;
                 self.modal_type = Some(ModalType::Info {
                     title: "About Piggui".to_string(),
-                    body: crate::views::version::version().to_string(),
+                    body: crate::views::about::about().to_string(),
                     is_version: true,
                 });
                 Task::none()
             }
 
-            InfoDialogMessage::OpenRepoLink => {
-                if let Err(e) = webbrowser::open(REPOSITORY) {
+            InfoDialogMessage::ErrorWithHelp(title, body, help_link) => {
+                self.show_modal = true;
+                self.is_warning = false;
+                self.modal_type = Some(ModalType::Error {
+                    title,
+                    body,
+                    help_link,
+                });
+                Task::none()
+            }
+
+            InfoDialogMessage::OpenLink(link) => {
+                if let Err(e) = webbrowser::open(link) {
                     eprintln!("failed to open project repository: {}", e);
                 }
                 Task::none()
@@ -220,7 +241,7 @@ impl InfoDialog {
                     hyperlink_row = hyperlink_row
                         .push(
                             button(Text::new("github"))
-                                .on_press(Message::Modal(InfoDialogMessage::OpenRepoLink))
+                                .on_press(Message::Modal(InfoDialogMessage::OpenLink(REPOSITORY)))
                                 .style(move |_theme, status| {
                                     if status == Hovered {
                                         HYPERLINK_BUTTON_HOVER_STYLE
@@ -289,6 +310,54 @@ impl InfoDialog {
                 .into()
             }
             None => container(column![]).into(), // Render empty container
+
+            Some(ModalType::Error {
+                title,
+                body,
+                help_link,
+            }) => {
+                let text_style = text::Style {
+                    color: Some(Color::WHITE),
+                };
+                let mut button_row = Row::new();
+                let help_button = button(Text::new("Help"))
+                    .on_press(Message::Modal(InfoDialogMessage::OpenLink(help_link)))
+                    .style(move |_theme, status| {
+                        if status == Hovered {
+                            HYPERLINK_BUTTON_HOVER_STYLE
+                        } else {
+                            HYPERLINK_BUTTON_STYLE
+                        }
+                    });
+                button_row = button_row.push(help_button);
+                button_row = button_row.push(
+                    button("Close")
+                        .on_press(Message::Modal(InfoDialogMessage::HideModal))
+                        .style(move |_theme, status| {
+                            if status == Hovered {
+                                MODAL_CANCEL_BUTTON_HOVER_STYLE
+                            } else {
+                                MODAL_CANCEL_BUTTON_STYLE
+                            }
+                        }),
+                );
+
+                container(
+                    column![column![
+                        text(title.to_string())
+                            .size(20)
+                            .style(move |_theme| { text_style }),
+                        column![text(body.to_string()),].spacing(10),
+                        column![button_row].spacing(5),
+                    ]
+                    .spacing(10)]
+                    .spacing(20),
+                )
+                .style(move |_theme| MODAL_CONTAINER_STYLE)
+                .width(520)
+                .padding(15)
+                .into()
+            }
         }
     }
 
@@ -354,7 +423,7 @@ mod tests {
         {
             assert!(is_version);
             assert_eq!(title, "About Piggui");
-            assert_eq!(body, &crate::views::version::version().to_string());
+            assert_eq!(body, &crate::views::about::about().to_string());
         } else {
             panic!("ModalType should be Info");
         }

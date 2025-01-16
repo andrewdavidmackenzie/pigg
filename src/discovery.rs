@@ -80,12 +80,23 @@ pub enum DiscoveryEvent {
     DeviceFound(SerialNumber, DiscoveredDevice),
     DeviceLost(SerialNumber, DiscoveryMethod),
     DeviceError(SerialNumber),
+    #[cfg(target_os = "linux")]
+    USBPermissionsError(String),
     Error(String),
 }
 
 #[cfg(feature = "usb")]
 /// Report an error to the GUI, if it cannot be sent print to STDERR
 async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) {
+    #[cfg(target_os = "linux")]
+    if e.to_string().contains("Permission denied") {
+        gui_sender
+            .send(DiscoveryEvent::USBPermissionsError(e.to_string()))
+            .await
+            .unwrap_or_else(|e| eprintln!("{e}"));
+        return;
+    }
+
     gui_sender
         .send(DiscoveryEvent::Error(e.to_string()))
         .await
