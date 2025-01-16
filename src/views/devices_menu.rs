@@ -145,7 +145,7 @@ fn device_items<'a>(
 
         device_items.push(Item::with_menu(
             device_button,
-            Menu::new(device_menu_items).width(280.0).offset(10.0),
+            Menu::new(device_menu_items).width(320.0).offset(10.0),
         ));
     }
 
@@ -169,6 +169,7 @@ pub fn view<'a>(
                     MENU_BUTTON_STYLE
                 }
             }),
-        Menu::new(device_items).width(320.0).offset(10.0),
+        Menu::new(device_items).width(390.0).offset(10.0),
+        // WIDE menu but needed when displaying devices with a long model name
     )
 }
