@@ -455,7 +455,7 @@ impl Piggui {
                     .add_info_message(Error("Discovery Error".to_string(), e.clone()));
             }
             #[cfg(target_os = "linux")]
-            DiscoveryEvent::USBPermissionsError(error_string) => {
+            DiscoveryEvent::USBPermissionsError(_) => {
                 // SHow the dialog explaining the error
                 let _ = self.modal_handler.update(InfoDialogMessage::ErrorWithHelp("USB Permissions Error",
                 "Your user lacks the required permissions on USB device folders and files to write \
