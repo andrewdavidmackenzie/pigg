@@ -19,9 +19,11 @@ is part of the project and shipped as part of releases.
 
 To install the `udev` rules manually:
 
-- Download the [70.pigg.rules]((https://github.com/andrewdavidmackenzie/pigg/releases/latest/70.pigg.rules)) file
-  from the latest release or
-  [70.pigg.rules](https://github.com/andrewdavidmackenzie/pigg/blob/master/70.pigg.rules) from the root of repository
+- Download the `70.pigg.rules` file from:
+- <!---
+  the [latest release]((https://github.com/andrewdavidmackenzie/pigg/releases/latest/70.pigg.rules))
+  -->
+    - the [repository](https://github.com/andrewdavidmackenzie/pigg/blob/master/70.pigg.rules)
 - Run this command from the command line in a terminal window from the folder where you downloaded the file:
     - `sudo cp 70.pigg.rules /etc/udev/rules.d/`
 
@@ -30,4 +32,4 @@ in the root folder of the project:
 
 - `make usb` (requites `root` permissions and will ask for your `root` password)
 
-NOTE: For these rules to take affect you will need to restart your computer.
+NOTE: For these rules to take effect you will need to restart your computer.

@@ -8,10 +8,11 @@
 
 # pigg - Raspberry Pi GPIO GUI
 
-An app for Raspberry Pi GPIO Output control and Input visualization, built in rust using the
-[Iced](https://github.com/iced-rs) GUI toolkit and [rppal](https://github.com/golemparts/rppal/) GPIO crate.
+An app for Raspberry Pi GPIO Output control and Input visualization, with GUI and CLI Support for macos, Linux
+(including Raspberry Pi) and Windows; GPIO CLI agent for Raspberry Pi and embedded applications for Pi Pico (USB)
+and Pi Pico W (USB, TCP).
 
-The GUI binary (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
+The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
 
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
@@ -26,11 +27,6 @@ The GUI binary (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
   </tr>
 </table>
 
-Currently, when run on a Pi, you can configure the Pi's GPIO hardware Inputs or Outputs, controlling the
-level of the Outputs and view the level of the Inputs.
-
-It runs on macOS/Linux/Windows. When we add networking support, this will allow you to control the Pi GPIO
-hardware remotely.
 
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
@@ -45,27 +41,25 @@ hardware remotely.
 
 ## What's new in Release 0.6.0 - USB, Pi Pico and Discovery
 
-The `pigg` project now has full support for Pi Pico W and Pi Pico, USB discovery, SSID configuration, GPIO control
-and mDNS discovery...
+Full feature support for Pi Pico W and Pi Pico, USB discovery, SSID configuration, GPIO control and mDNS discovery.
 
 Pi Pico support includes:
 
-- Embedded application `porky` for running on the Pi Pico W and Pi Pico
-- UF2 Image provided as part of release to aid programming Pi Pico W devices with `porky`
-- Ability to build `porky` yourself with default SSID information so all devices with built binary connect
+- Embedded application `porky` and `porky_w` for running on the Pi Pico and Pi Pico W.
+- UF2 firmware files provided as part of release to aid programming Pi Pico devices with `porky` or `porky_w`
+- Ability to build `porky` yourself with default SSID information so all devices programmed with that binary connect
   automatically to Wi-Fi
 - USB direct connection between `piggui` and `porky` that allows you to:
     - Discover USB connected `porky` devices
     - View information about the device
     - Determine if it is connected to the Wi-Fi network and if it is, get its IP and Port for remote GUI use
-    - Program an "override" Wi-Fi network it will use to connect to, instead of the default one as part of the build.
+    - Program the Wi-Fi network it will connect to, instead of the default one as part of the build.
       This is persisted in Flash memory, so it is used again on restart/reboot.
-    - Reset the "override" Wi-Fi (removing it) so that on restart the device will connect to the default one if it
+    - Reset a previously programmed Wi-Fi network so that on restart the device will connect to the default one if it
       exists.
-      If not, it will restart, connect to USB and wait to be programmed with a Wi-Fi network to connect to.
-    - Full functionality (i.e. Control the device and get input signal level changes) via USB, so now on a par
-      with TCP connections to the Pi Pico W.
-- Remote network access to the (headless) Pico W's GPIO, in the same GUI as remote access to Raspberry Pis (not Pico).
+    - Full functionality (i.e. Control the device and get input signal level changes) via USB, so on a par
+      with TCP connections to the Pi Pico W, but via USB to either a Pi Pico or Pi Pico W
+- Remote network access to the Pi Pico W's GPIO, in the same GUI as remote access to Raspberry Pis (not Pico).
 - Pi Pico specific pin layout and numbering displayed in GUI
 - Persisting of GPIO config to flash and recovery at reboot/restart so that the GPIO continues to work as before
 - `udev` rules file for allowing user access (for `piggui` application) to USB devices on Linux machines
@@ -78,6 +72,8 @@ Additions to `piglet` functionality:
 
 ## Other Features
 
+- Directly on a Pi or Pi Pico or remotely from other platforms you can configure the GPIO hardware Inputs and Outputs,
+  controlling the level of the Outputs and view the level of the Inputs in the GUI.
 - Pre-built images for different OS and CPU architecture, along with installers. See [INSTALLING.md](INSTALLING.md) for
   details.
 - Visual representation of the GPIO pins in two layouts, a "Board Pin Layout" that mimics the
