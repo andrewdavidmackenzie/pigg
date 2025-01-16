@@ -454,6 +454,14 @@ impl Piggui {
                 self.info_row
                     .add_info_message(Error("Discovery Error".to_string(), e.clone()));
             }
+            #[cfg(target_os = "linux")]
+            DiscoveryEvent::USBPermissionsError(error_string) => {
+                // SHow the dialog explaining the error
+                let _ = self.modal_handler.update(InfoDialogMessage::ErrorWithHelp("USB Permissions Error",
+                "Your user lacks the required permissions on USB device folders and files to write \
+                to USB. Please consult the help at the link below on how to fix it",
+               "https://github.com/andrewdavidmackenzie/pigg/blob/master/HELP.md#permission-denied-os-error-13-linux-only"));
+            }
         }
     }
 }

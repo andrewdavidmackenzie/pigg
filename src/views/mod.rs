@@ -1,3 +1,4 @@
+pub mod about;
 pub mod config_menu;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 pub mod connect_dialog;
@@ -14,5 +15,4 @@ pub mod message_box;
 pub mod pin_state;
 #[cfg(feature = "usb")]
 pub mod ssid_dialog;
-pub mod version;
 pub mod waveform;
