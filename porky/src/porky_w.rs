@@ -11,7 +11,7 @@ use crate::hw_definition::description::{
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 use crate::tcp::TCP_PORT;
 use core::str;
-use cyw43_pio::PioSpi;
+use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{error, info};
 use defmt_rtt as _;
 use ekv::Database;
@@ -124,6 +124,7 @@ async fn main(spawner: Spawner) {
     let spi = PioSpi::new(
         &mut pio.common,
         pio.sm0,
+        DEFAULT_CLOCK_DIVIDER,
         pio.irq0,
         cs,
         // PIN_24 - OP/IP wireless SPI data/IRQ
@@ -132,6 +133,7 @@ async fn main(spawner: Spawner) {
         peripherals.PIN_29,
         peripherals.DMA_CH0,
     );
+
     // PIN_23 - OP wireless power on signal
     let (mut control, wifi_stack) = wifi::start_net(spawner, peripherals.PIN_23, spi).await;
 
