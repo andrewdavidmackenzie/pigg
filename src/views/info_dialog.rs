@@ -17,7 +17,7 @@ use iced_futures::Subscription;
 use std::collections::HashMap;
 
 pub struct InfoDialog {
-    pub show_modal: bool,
+    show_modal: bool,
     is_warning: bool,
     modal_type: Option<ModalType>,
     hardware_connections: HashMap<String, HardwareConnection>,
@@ -63,6 +63,10 @@ impl InfoDialog {
             modal_type: None,
             hardware_connections: HashMap::default(),
         }
+    }
+
+    pub fn showing_modal(&self) -> bool {
+        self.show_modal
     }
 
     pub fn update(&mut self, message: InfoDialogMessage) -> Task<Message> {

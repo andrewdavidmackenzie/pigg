@@ -281,7 +281,6 @@ impl Piggui {
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
-                self.modal_handler.show_modal = false;
                 self.info_row
                     .add_info_message(Info("Connected".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
@@ -381,7 +380,7 @@ impl Piggui {
             return modal(content, self.ssid_dialog.view(), SsidDialog(HideSsidDialog));
         }
 
-        if self.modal_handler.show_modal {
+        if self.modal_handler.showing_modal() {
             return modal(
                 content,
                 self.modal_handler.view(),
@@ -458,9 +457,9 @@ impl Piggui {
             DiscoveryEvent::USBPermissionsError(_) => {
                 // SHow the dialog explaining the error
                 let _ = self.modal_handler.update(InfoDialogMessage::ErrorWithHelp("USB Permissions Error",
-                "Your user lacks the required permissions on USB device folders and files to write \
+                                                                                   "Your user lacks the required permissions on USB device folders and files to write \
                 to USB. Please consult the help at the link below on how to fix it",
-               "https://github.com/andrewdavidmackenzie/pigg/blob/master/HELP.md#permission-denied-os-error-13-linux-only"));
+                                                                                   "https://github.com/andrewdavidmackenzie/pigg/blob/master/HELP.md#permission-denied-os-error-13-linux-only"));
             }
         }
     }
