@@ -89,7 +89,7 @@ pub enum DiscoveryEvent {
 /// Report an error to the GUI, if it cannot be sent print to STDERR
 async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) {
     #[cfg(target_os = "linux")]
-    if e.to_string().contains("permissions") {
+    if e.to_string().contains("Permission denied") {
         gui_sender
             .send(DiscoveryEvent::USBPermissionsError(e.to_string()))
             .await
