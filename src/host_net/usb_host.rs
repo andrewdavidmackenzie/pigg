@@ -91,11 +91,12 @@ pub fn check_usb_permissions() -> Message {
             for entry in globs {
                 match entry {
                     Ok(path) => {
+                        println!("usb file permissions: {:?}", path.metadata().unwrap().permissions());
                         if path.metadata().unwrap().permissions().readonly() {
                             return InfoRow(
                                 crate::views::message_box::MessageRowMessage::ShowStatusMessage(
                                     crate::views::message_box::InfoMessage::Warning(
-                                        "Permissions required for USB".into(),
+                                        "Write permissions missing for USB".into(),
                                     ),
                                 ),
                             );
