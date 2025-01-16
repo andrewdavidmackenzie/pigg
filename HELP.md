@@ -32,4 +32,4 @@ in the root folder of the project:
 
 - `make usb` (requites `root` permissions and will ask for your `root` password)
 
-NOTE: For these rules to take affect you will need to restart your computer.
+NOTE: For these rules to take effect you will need to restart your computer.
