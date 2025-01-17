@@ -1,15 +1,32 @@
 # Building Piggui and Piglet from source
 
 ## Pre requisites
-- You'll need git to clone the repo (I chose `brew install git` so that needs `homebrew` first...). On a 
-Mac, that will also install Xcode command line tools for you.
+
+- You'll need git to clone the repo (I chose `brew install git` so that needs `homebrew` first...). On a
+  Mac, that will also install Xcode command line tools for you.
 - a rust toolchain, recommended to install with [rust](https://rustup.rs/)
 - `cargo binstall` is pretty handy to install pre-build binaries. You can use `cargo install` instead if you prefer.
 - `cross` for cross compiling to armv7 and aarch64 (install with `cargo binstall/install cross`)
 - `make` but you will probably have that installed already
 - `probe-rs`if you are working with the Pi Pico `porky`app (`cargo binstall probe-rs-tools`)
 
+## Arm architecture pre-requisites
+
+These are pre-requisites for cross-compiling to armv7, armv7 with musl and aarch64
+
+* `brew install arm-linux-gnueabihf-binutils`
+* `rustup target add armv7-unknown-linux-musleabihf`
+
+Thanks to [this great resource](https://github.com/messense/homebrew-macos-cross-toolchains) for macOS cross compiling
+toolchains:
+
+* `brew tap messense/macos-cross-toolchains`
+* `brew install aarch64-unknown-linux-gnu`
+* `brew install arm-unknown-linux-gnueabihf`
+* `brew install arm-unknown-linux-musleabihf`
+
 ## General
+
 NOTE: For details on building `porky` the embedded binary for Pi Pico W devices,
 see [porky/BUILDING.md](porky/BUILDING.md)
 
