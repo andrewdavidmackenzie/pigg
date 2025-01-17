@@ -81,7 +81,8 @@ features:
 
 #### arm builds
 .PHONY: build-arm
-build-arm: build-armv7 build-armv7-musl build-aarch64
+# Don't build build-armv7-musl locally on macOS
+build-arm: build-armv7 build-aarch64
 
 #### armv7 targets
 # Don't build build-armv7-musl locally on macOS
@@ -98,7 +99,7 @@ build-armv7:
 
 .PHONY: build-armv7-musl
 build-armv7-musl:
-	CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSL_LINKER=arm-linux-musleabihf-gcc cargo build --target=armv7-unknown-linux-musleabihf
+	cargo build --target=armv7-unknown-linux-musleabihf
 
 .PHONY: release-build-armv7
 release-build-armv7:
