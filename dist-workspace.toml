@@ -22,14 +22,15 @@ install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
 github-build-setup = "../install-arm-linkers.yml"
-include = ["70.pigg.rules"] # udev rules file for USB access on Linux
+# Extra static files to include in each App (path relative to this Cargo.toml's dir)
+include = ["70.pigg.rules"]
 
 [dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
 x86_64-apple-darwin = "macos-13"
-x86_64-unknown-linux-gnu = "ubuntu-latest"
+x86_64-unknown-linux-gnu = "ubuntu-24.04"
 x86_64-pc-windows-msvc = "windows-latest"
-armv7-unknown-linux-musleabihf = "ubuntu-latest"
+armv7-unknown-linux-musleabihf = "ubuntu-24.04"
 
 [[dist.extra-artifacts]]
 artifacts = ["porky/target/thumbv6m-none-eabi/release/porky_pico_w.uf2", "porky/target/thumbv6m-none-eabi/release/porky_pico.uf2"]
