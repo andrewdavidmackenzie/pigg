@@ -20,9 +20,7 @@ is part of the project and shipped as part of releases.
 To install the `udev` rules manually:
 
 - Download the `70.pigg.rules` file from:
-- <!---
-  the [latest release]((https://github.com/andrewdavidmackenzie/pigg/releases/latest/70.pigg.rules))
-  -->
+    - the [latest release](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.6.0/70.pigg.rules)
     - the [repository](https://github.com/andrewdavidmackenzie/pigg/blob/master/70.pigg.rules)
 - Run this command from the command line in a terminal window from the folder where you downloaded the file:
     - `sudo cp 70.pigg.rules /etc/udev/rules.d/`
