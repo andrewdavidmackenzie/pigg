@@ -15,8 +15,13 @@
 # MacOS pre-requisites for cross-compiling to armv7
 # brew install arm-linux-gnueabihf-binutils
 # rustup target add armv7-unknown-linux-musleabihf
+#
+# See: https://github.com/messense/homebrew-macos-cross-toolchains
+#
 # brew tap messense/macos-cross-toolchains
+# brew install aarch64-unknown-linux-gnu
 # brew install arm-unknown-linux-gnueabihf
+# brew install arm-unknown-linux-musleabihf
 
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
