@@ -84,8 +84,9 @@ features:
 build-arm: build-armv7 build-armv7-musl build-aarch64
 
 #### armv7 targets
+# Don't build build-armv7-musl locally on macOS
 .PHONY: armv7
-armv7: clippy-armv7 build-armv7 build-armv7-musl
+armv7: clippy-armv7 build-armv7
 
 .PHONY: clippy-armv7
 clippy-armv7:
@@ -97,7 +98,7 @@ build-armv7:
 
 .PHONY: build-armv7-musl
 build-armv7-musl:
-	cargo build --target=armv7-unknown-linux-musleabihf
+	CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSL_LINKER=arm-linux-musleabihf-gcc cargo build --target=armv7-unknown-linux-musleabihf
 
 .PHONY: release-build-armv7
 release-build-armv7:
