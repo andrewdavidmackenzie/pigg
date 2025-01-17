@@ -17,7 +17,7 @@ These are pre-requisites for cross-compiling to armv7, armv7 with musl and aarch
 * `brew install arm-linux-gnueabihf-binutils`
 * `rustup target add armv7-unknown-linux-musleabihf`
 
-Thanks to [this great resource](https://github.com/messense/homebrew-macos-cross-toolchains) for macos cross compiling
+Thanks to [this great resource](https://github.com/messense/homebrew-macos-cross-toolchains) for macOS cross compiling
 toolchains:
 
 * `brew tap messense/macos-cross-toolchains`
