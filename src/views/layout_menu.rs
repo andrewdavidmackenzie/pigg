@@ -33,17 +33,22 @@ const BCM_LAYOUT_SIZE: Size = Size {
 #[derive(Clone, PartialEq, Default)]
 pub struct LayoutSelector {
     selected_layout: Layout,
+    scale_factor: f32,
 }
 
 impl LayoutSelector {
-    pub fn new() -> Self {
+    pub fn new(scale_factor: f32) -> Self {
         LayoutSelector {
             selected_layout: Layout::default(),
+            scale_factor,
         }
     }
 
-    pub const fn get_default_window_size() -> Size {
-        BOARD_LAYOUT_SIZE
+    pub const fn get_default_window_size(scale_factor: f32) -> Size {
+        Size {
+            width: BOARD_LAYOUT_SIZE.width * scale_factor,
+            height: BOARD_LAYOUT_SIZE.height * scale_factor,
+        }
     }
 
     /// Set the new layout as being selected and return the window size required
