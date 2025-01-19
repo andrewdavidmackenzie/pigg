@@ -18,7 +18,7 @@ use crate::hardware_subscription::SubscriptionEvent::InputChange;
 use crate::host::iroh::IrohConnection;
 use crate::host::local::LocalConnection;
 #[cfg(feature = "tcp")]
-use crate::host::tcp;
+use crate::host::tcp::TcpConnection;
 #[cfg(feature = "usb")]
 use crate::host::usb::UsbConnection;
 use crate::hw_definition::description::HardwareDescription;
@@ -64,7 +64,7 @@ enum HWState {
     ConnectedIroh(IrohConnection),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedTcp(async_std::net::TcpStream),
+    ConnectedTcp(TcpConnection),
 }
 
 /// This enum is for async events in the hardware that will be sent to the GUI
@@ -212,8 +212,8 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
 
                         #[cfg(feature = "tcp")]
                         Tcp(ip, port) => {
-                            match tcp::connect(ip, port).await {
-                                Ok((hardware_description, hardware_config, stream)) => {
+                            match TcpConnection::connect(ip, port).await {
+                                Ok((hardware_description, hardware_config, connection)) => {
                                     // Send the stream back to the GUI
                                     gui_sender_clone
                                         .send(SubscriptionEvent::Connected(
@@ -224,7 +224,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                                         .unwrap_or_else(|e| eprintln!("Send error: {e}"));
 
                                     // We are ready to receive messages from the GUI
-                                    state = ConnectedTcp(stream);
+                                    state = ConnectedTcp(connection);
                                 }
                                 Err(e) => {
                                     report_error(&mut gui_sender_clone, &format!("TCP error: {e}"))
@@ -366,9 +366,10 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                 }
 
                 #[cfg(feature = "tcp")]
-                ConnectedTcp(stream) => {
+                ConnectedTcp(connection) => {
+                    let mut connection_clone = connection.clone();
                     let fused_wait_for_remote_message =
-                        tcp::wait_for_remote_message(stream.clone()).fuse();
+                        connection_clone.wait_for_remote_message().fuse();
                     pin_mut!(fused_wait_for_remote_message);
 
                     futures::select! {
@@ -377,7 +378,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
-                                        if let Err(e) = tcp::disconnect(stream.clone()).await
+                                        if let Err(e) = connection.disconnect().await
                                         {
                                             report_error(&mut gui_sender_clone, &format!("Iroh error: {e}"))
                                                 .await;
@@ -386,7 +387,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                                         state = Disconnected;
                                     },
                                     Hardware(config_change) => {
-                                        if let Err(e) = tcp::send_config_message(stream.clone(), config_change).await
+                                        if let Err(e) = connection.send_config_message(config_change).await
                                         {
                                             report_error(&mut gui_sender_clone, &format!("Hardware error: {e}"))
                                                 .await;
