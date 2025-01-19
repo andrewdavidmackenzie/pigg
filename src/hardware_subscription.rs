@@ -16,7 +16,6 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 use crate::hardware_subscription::SubscriptionEvent::InputChange;
 #[cfg(feature = "iroh")]
 use crate::host_net::iroh_host;
-use crate::host_net::local_host;
 use crate::host_net::local_host::LocalConnection;
 #[cfg(feature = "tcp")]
 use crate::host_net::tcp_host;
@@ -95,7 +94,7 @@ async fn report_error(gui_sender: &mut Sender<SubscriptionEvent>, e: &str) {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
+pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mut state = Disconnected;
         let mut target = NoConnection;
@@ -127,7 +126,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                         }
 
                         Local => {
-                            match local_host::connect().await {
+                            match LocalConnection::connect().await {
                                 Ok((hardware_description, hardware_config, local_hardware)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(
@@ -140,7 +139,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
-                                        .await;
+                                            .await;
                                     }
 
                                     // We are ready to receive messages from the GUI and send messages to it
@@ -151,7 +150,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                         &mut gui_sender_clone,
                                         &format!("LocalHW error: {e}"),
                                     )
-                                    .await
+                                        .await
                                 }
                             }
                         }
@@ -171,7 +170,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
-                                        .await;
+                                            .await;
                                     }
 
                                     // We are ready to receive messages from the GUI and send messages to it
@@ -200,7 +199,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
-                                        .await;
+                                            .await;
                                     }
 
                                     // We are ready to receive messages from the GUI
@@ -242,7 +241,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                     if let Some(config_change) = subscriber_receiver.next().await {
                         match &config_change {
                             NewConnection(new_target) => {
-                                if let Err(e) = local_host::disconnect(connection).await {
+                                if let Err(e) = connection.disconnect().await {
                                     report_error(&mut gui_sender_clone, &format!("USB error: {e}"))
                                         .await;
                                 }
@@ -250,18 +249,17 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                 state = Disconnected;
                             }
                             Hardware(config_change) => {
-                                if let Err(e) = local_host::send_config_message(
-                                    connection,
+                                if let Err(e) = connection.send_config_message(
                                     config_change,
                                     gui_sender_clone.clone(),
                                 )
-                                .await
+                                    .await
                                 {
                                     report_error(
                                         &mut gui_sender_clone,
                                         &format!("Local error: {e}"),
                                     )
-                                    .await;
+                                        .await;
                                 }
                             }
                         }
