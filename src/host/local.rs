@@ -29,12 +29,6 @@ impl LocalConnection {
 
         Ok((hw_description, hw_config, LocalConnection { hw }))
     }
-
-    /// Disconnect from the local hardware
-    pub async fn disconnect(&mut self) -> Result<(), Error> {
-        Ok(())
-    }
-
     /// Send (apply) a [HardwareConfigMessage] to the local hardware
     pub async fn send_config_message(
         &mut self,
@@ -52,7 +46,7 @@ impl LocalConnection {
                     })
                     .await?;
 
-                self.send_current_input_states(gui_sender_clone, config).await?;
+                send_current_input_states(self, gui_sender_clone, config).await?;
             }
             NewPinConfig(bcm, pin_function) => {
                 info!("New pin config for pin #{bcm}: {pin_function}");
@@ -64,7 +58,7 @@ impl LocalConnection {
                     })
                     .await?;
 
-                self.send_current_input_state(bcm, pin_function, gc).await?;
+                send_current_input_state(self, bcm, pin_function, gc).await?;
             }
             IOLevelChanged(bcm, level_change) => {
                 trace!("Pin #{bcm} Output level change: {level_change:?}");
@@ -78,52 +72,58 @@ impl LocalConnection {
         Ok(())
     }
 
-    /// Send the current input state for all inputs configured in the config
-    async fn send_current_input_states(
-        &self,
-        gui_sender_clone: Sender<SubscriptionEvent>,
-        config: &HardwareConfig,
-    ) -> Result<(), Error> {
-        for (bcm_pin_number, pin_function) in &config.pin_functions {
-            self.send_current_input_state(
-                bcm_pin_number,
-                pin_function,
-                gui_sender_clone.clone(),
-            )
-                .await?;
-        }
 
-        Ok(())
-    }
-
-
-    /// Send the current input state for one input - with timestamp matching future LevelChanges
-    async fn send_current_input_state(
-        &self,
-        bcm_pin_number: &BCMPinNumber,
-        pin_function: &PinFunction,
-        gui_sender_clone: Sender<SubscriptionEvent>,
-    ) -> Result<(), Error> {
-        let now = self.hw.get_time_since_boot();
-
-        // Send initial levels
-        if let PinFunction::Input(_pullup) = pin_function {
-            // Update UI with initial state
-            if let Ok(initial_level) = self.hw.get_input_level(*bcm_pin_number) {
-                let _ = send_input_level_async(
-                    gui_sender_clone.clone(),
-                    *bcm_pin_number,
-                    initial_level,
-                    now,
-                )
-                    .await;
-            }
-        }
-
+    /// Disconnect from the local hardware
+    pub async fn disconnect(&mut self) -> Result<(), Error> {
         Ok(())
     }
 }
 
+
+/// Send the current input state for one input - with timestamp matching future LevelChanges
+async fn send_current_input_state(
+    connection: &LocalConnection,
+    bcm_pin_number: &BCMPinNumber,
+    pin_function: &PinFunction,
+    gui_sender_clone: Sender<SubscriptionEvent>,
+) -> Result<(), Error> {
+    let now = connection.hw.get_time_since_boot();
+
+    // Send initial levels
+    if let PinFunction::Input(_pullup) = pin_function {
+        // Update UI with initial state
+        if let Ok(initial_level) = connection.hw.get_input_level(*bcm_pin_number) {
+            let _ = send_input_level_async(
+                gui_sender_clone.clone(),
+                *bcm_pin_number,
+                initial_level,
+                now,
+            )
+                .await;
+        }
+    }
+
+    Ok(())
+}
+
+/// Send the current input state for all inputs configured in the config
+async fn send_current_input_states(
+    connection: &LocalConnection,
+    gui_sender_clone: Sender<SubscriptionEvent>,
+    config: &HardwareConfig,
+) -> Result<(), Error> {
+    for (bcm_pin_number, pin_function) in &config.pin_functions {
+        send_current_input_state(
+            connection,
+            bcm_pin_number,
+            pin_function,
+            gui_sender_clone.clone(),
+        )
+            .await?;
+    }
+
+    Ok(())
+}
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
