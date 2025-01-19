@@ -14,54 +14,115 @@ use iced::futures::channel::mpsc::Sender;
 use log::{info, trace};
 use std::time::Duration;
 
+/// Connection for interacting with "local" (on-board) GPIO Hardware
 pub struct LocalConnection {
     hw: HW,
 }
 
-/// Send the current input state for all inputs configured in the config
-async fn send_current_input_states(
-    gui_sender_clone: Sender<SubscriptionEvent>,
-    config: &HardwareConfig,
-    hardware: &LocalConnection,
-) -> Result<(), Error> {
-    for (bcm_pin_number, pin_function) in &config.pin_functions {
-        send_current_input_state(
-            bcm_pin_number,
-            pin_function,
-            gui_sender_clone.clone(),
-            hardware,
-        )
-        .await?;
+impl LocalConnection {
+    /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
+    pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
+        let hw = hw::driver::get();
+        let hw_description = hw.description()?;
+        let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
+
+        Ok((hw_description, hw_config, LocalConnection { hw }))
     }
 
-    Ok(())
-}
+    /// Disconnect from the local hardware
+    pub async fn disconnect(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
 
-/// Send the current input state for one input - with timestamp matching future LevelChanges
-async fn send_current_input_state(
-    bcm_pin_number: &BCMPinNumber,
-    pin_function: &PinFunction,
-    gui_sender_clone: Sender<SubscriptionEvent>,
-    connection: &LocalConnection,
-) -> Result<(), Error> {
-    let now = connection.hw.get_time_since_boot();
+    /// Send (apply) a [HardwareConfigMessage] to the local hardware
+    pub async fn send_config_message(
+        &mut self,
+        config_change: &HardwareConfigMessage,
+        gui_sender: Sender<SubscriptionEvent>,
+    ) -> Result<(), Error> {
+        match config_change {
+            NewConfig(config) => {
+                info!("New config applied");
+                let gui_sender_clone = gui_sender.clone();
+                self
+                    .hw
+                    .apply_config(config, move |bcm_pin_number, level_change| {
+                        let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
+                    })
+                    .await?;
 
-    // Send initial levels
-    if let PinFunction::Input(_pullup) = pin_function {
-        // Update UI with initial state
-        if let Ok(initial_level) = connection.hw.get_input_level(*bcm_pin_number) {
-            let _ = send_input_level_async(
-                gui_sender_clone.clone(),
-                *bcm_pin_number,
-                initial_level,
-                now,
-            )
-            .await;
+                self.send_current_input_states(gui_sender_clone, config).await?;
+            }
+            NewPinConfig(bcm, pin_function) => {
+                info!("New pin config for pin #{bcm}: {pin_function}");
+                let gc = gui_sender.clone();
+                self
+                    .hw
+                    .apply_pin_config(*bcm, pin_function, move |bcm_pin_number, level_change| {
+                        let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
+                    })
+                    .await?;
+
+                self.send_current_input_state(bcm, pin_function, gc).await?;
+            }
+            IOLevelChanged(bcm, level_change) => {
+                trace!("Pin #{bcm} Output level change: {level_change:?}");
+                self
+                    .hw
+                    .set_output_level(*bcm, level_change.new_level)?;
+            }
+            HardwareConfigMessage::GetConfig => {}
+            HardwareConfigMessage::Disconnect => {}
         }
+        Ok(())
     }
 
-    Ok(())
+    /// Send the current input state for all inputs configured in the config
+    async fn send_current_input_states(
+        &self,
+        gui_sender_clone: Sender<SubscriptionEvent>,
+        config: &HardwareConfig,
+    ) -> Result<(), Error> {
+        for (bcm_pin_number, pin_function) in &config.pin_functions {
+            self.send_current_input_state(
+                bcm_pin_number,
+                pin_function,
+                gui_sender_clone.clone(),
+            )
+                .await?;
+        }
+
+        Ok(())
+    }
+
+
+    /// Send the current input state for one input - with timestamp matching future LevelChanges
+    async fn send_current_input_state(
+        &self,
+        bcm_pin_number: &BCMPinNumber,
+        pin_function: &PinFunction,
+        gui_sender_clone: Sender<SubscriptionEvent>,
+    ) -> Result<(), Error> {
+        let now = self.hw.get_time_since_boot();
+
+        // Send initial levels
+        if let PinFunction::Input(_pullup) = pin_function {
+            // Update UI with initial state
+            if let Ok(initial_level) = self.hw.get_input_level(*bcm_pin_number) {
+                let _ = send_input_level_async(
+                    gui_sender_clone.clone(),
+                    *bcm_pin_number,
+                    initial_level,
+                    now,
+                )
+                    .await;
+            }
+        }
+
+        Ok(())
+    }
 }
+
 
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
