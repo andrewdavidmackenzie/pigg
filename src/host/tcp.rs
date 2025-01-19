@@ -1,13 +1,14 @@
 use crate::hw_definition::description::HardwareDescription;
-use anyhow::ensure;
+use anyhow::{anyhow, ensure};
 use async_std::io::ReadExt;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use std::io;
-use std::net::IpAddr;
 
 use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
+use crate::views::hardware_view::HardwareConnection;
+use crate::views::hardware_view::HardwareConnection::Tcp;
 
 #[derive(Clone)]
 pub struct TcpConnection {
@@ -17,16 +18,17 @@ pub struct TcpConnection {
 impl TcpConnection {
     /// Connect to a remote piglet and get the initial message with the [HardwareDescription],
     /// return that description plus the [TcpStream] to be used to communicate with it.
-    pub async fn connect(
-        ip: IpAddr,
-        port: u16,
-    ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Self)> {
-        let mut stream = TcpStream::connect(format!("{ip}:{port}")).await?;
-        // This array needs to be big enough for HardwareDescription
-        let mut payload = vec![0u8; 1024];
-        let length = stream.read(&mut payload).await?;
-        let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&payload[0..length])?;
-        Ok((reply.0, reply.1, Self { stream }))
+    pub async fn connect(hardware_connection: &HardwareConnection) -> anyhow::Result<(HardwareDescription, HardwareConfig, Self)> {
+        if let Tcp(ip, port) = hardware_connection {
+            let mut stream = TcpStream::connect(format!("{ip}:{port}")).await?;
+            // This array needs to be big enough for HardwareDescription
+            let mut payload = vec![0u8; 1024];
+            let length = stream.read(&mut payload).await?;
+            let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&payload[0..length])?;
+            Ok((reply.0, reply.1, Self { stream }))
+        } else {
+            Err(anyhow!("Not a TCP Hardware Connection"))
+        }
     }
 
     /// Send config change received form the GUI to the remote hardware over `stream`[TcpStream]

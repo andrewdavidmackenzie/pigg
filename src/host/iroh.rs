@@ -87,7 +87,6 @@ impl IrohConnection {
         Ok(())
     }
 
-
     /// Wait until we receive a message from remote hardware
     pub async fn wait_for_remote_message(&self) -> Result<HardwareConfigMessage, anyhow::Error> {
         let mut config_receiver = self.connection.accept_uni().await?;

@@ -15,50 +15,51 @@ use iced::futures::channel::mpsc::Sender;
 use log::{info, trace};
 use std::time::Duration;
 
+#[derive(Clone)]
 /// Connection for interacting with "local" (on-board) GPIO Hardware
 pub struct LocalConnection {
     hw: HW,
+    gui_sender: Sender<SubscriptionEvent>,
 }
 
 impl LocalConnection {
     /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
-    pub async fn connect(_hardware_connection: &HardwareConnection) -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
+    pub async fn connect(_hardware_connection: &HardwareConnection, gui_sender: Sender<SubscriptionEvent>) -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
         let hw = hw::driver::get();
         let hw_description = hw.description()?;
         let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
-        Ok((hw_description, hw_config, LocalConnection { hw }))
+        Ok((hw_description, hw_config, LocalConnection { hw, gui_sender }))
     }
     /// Send (apply) a [HardwareConfigMessage] to the local hardware
     pub async fn send_config_message(
         &mut self,
         config_change: &HardwareConfigMessage,
-        gui_sender: Sender<SubscriptionEvent>,
     ) -> Result<(), Error> {
         match config_change {
             NewConfig(config) => {
                 info!("New config applied");
-                let gui_sender_clone = gui_sender.clone();
+                let gui_sender_clone = self.gui_sender.clone();
                 self
                     .hw
                     .apply_config(config, move |bcm_pin_number, level_change| {
-                        let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
+                        let _ = send_input_level(gui_sender_clone.clone(), bcm_pin_number, level_change);
                     })
                     .await?;
 
-                send_current_input_states(self, gui_sender_clone, config).await?;
+                send_current_input_states(self, config).await?;
             }
             NewPinConfig(bcm, pin_function) => {
                 info!("New pin config for pin #{bcm}: {pin_function}");
-                let gc = gui_sender.clone();
+                let gui_sender_clone = self.gui_sender.clone();
                 self
                     .hw
                     .apply_pin_config(*bcm, pin_function, move |bcm_pin_number, level_change| {
-                        let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
+                        let _ = send_input_level(gui_sender_clone.clone(), bcm_pin_number, level_change);
                     })
                     .await?;
 
-                send_current_input_state(self, bcm, pin_function, gc).await?;
+                send_current_input_state(self, bcm, pin_function, self.gui_sender.clone()).await?;
             }
             IOLevelChanged(bcm, level_change) => {
                 trace!("Pin #{bcm} Output level change: {level_change:?}");
@@ -72,6 +73,12 @@ impl LocalConnection {
         Ok(())
     }
 
+    /// Wait until we receive a message from remote hardware
+    pub async fn wait_for_remote_message(&self) -> Result<HardwareConfigMessage, Error> {
+        loop {
+            tokio::time::sleep(Duration::MAX).await;
+        }
+    }
 
     /// Disconnect from the local hardware
     pub async fn disconnect(&mut self) -> Result<(), Error> {
@@ -109,7 +116,6 @@ async fn send_current_input_state(
 /// Send the current input state for all inputs configured in the config
 async fn send_current_input_states(
     connection: &LocalConnection,
-    gui_sender_clone: Sender<SubscriptionEvent>,
     config: &HardwareConfig,
 ) -> Result<(), Error> {
     for (bcm_pin_number, pin_function) in &config.pin_functions {
@@ -117,7 +123,7 @@ async fn send_current_input_states(
             connection,
             bcm_pin_number,
             pin_function,
-            gui_sender_clone.clone(),
+            connection.gui_sender.clone(),
         )
             .await?;
     }

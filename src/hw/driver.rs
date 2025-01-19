@@ -55,7 +55,7 @@ enum Pin {
 ///
 /// The second for hosts (macOS, Linux, etc.) to show and develop GUI without real HW, and is
 /// provided mainly to aid GUI development and demoing it.
-#[derive(Default)]
+#[derive(Default, Clone)] // TODO avoid the clone
 pub struct HW {
     #[cfg(all(
         target_os = "linux",
