@@ -55,14 +55,14 @@ enum Pin {
 ///
 /// The second for hosts (macOS, Linux, etc.) to show and develop GUI without real HW, and is
 /// provided mainly to aid GUI development and demoing it.
-#[derive(Default, Clone)] // TODO avoid the clone
+#[derive(Default, Clone)]
 pub struct HW {
     #[cfg(all(
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
     ))]
-    configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
+    configured_pins: Rc<std::collections::HashMap<BCMPinNumber, Pin>>,
 }
 
 /// Create a new HW instance - should only be called once
@@ -94,7 +94,7 @@ impl HW {
         Ok(())
     }
 
-    /// Write the output level of an output using the bcm pin number
+    /// Write the output level of an output using `bcm_pin_number`
     #[allow(unused_variables)]
     #[allow(dead_code)] // Not used by piglet
     pub fn set_output_level(
@@ -309,8 +309,8 @@ impl HW {
         Ok(())
     }
 
-    /// Read the input level of an input using the bcm pin number
-    #[allow(unused_variables)] // pin number not used in fake hw
+    /// Read the input level of an input using the `bcm_pin_number`
+    #[allow(unused_variables)] // bcm_pin_number not used in fake hw
     #[allow(dead_code)] // Only used by piglet hence the #allow
     pub fn get_input_level(&self, bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         #[cfg(all(
