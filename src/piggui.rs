@@ -33,7 +33,7 @@ use crate::views::ssid_dialog::SsidDialogMessage;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
 #[cfg(feature = "usb")]
-use host_net::usb_host;
+use host::usb;
 #[cfg(feature = "iroh")]
 use iroh::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -44,7 +44,7 @@ mod discovery;
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
-mod host_net;
+mod host;
 mod hw;
 mod hw_definition;
 mod net;
@@ -123,7 +123,7 @@ fn main() -> iced::Result {
 #[allow(unused_variables)]
 fn reset_ssid(serial_number: String) -> Task<Message> {
     #[cfg(feature = "usb")]
-    return Task::perform(usb_host::reset_ssid_spec(serial_number), |res| match res {
+    return Task::perform(usb::reset_ssid_spec(serial_number), |res| match res {
         Ok(_) => InfoRow(ShowStatusMessage(Info(
             "Wi-Fi Setup reset to Default by USB".into(),
         ))),

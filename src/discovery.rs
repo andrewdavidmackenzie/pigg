@@ -5,7 +5,7 @@ use crate::discovery::DiscoveryMethod::Mdns;
 #[cfg(feature = "usb")]
 use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "usb")]
-use crate::host_net::usb_host;
+use crate::host::usb;
 #[cfg(feature = "tcp")]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
@@ -103,19 +103,19 @@ async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) 
 
 #[cfg(feature = "usb")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB
-pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
+pub fn usb_discovery() -> impl Stream<Item=DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mut previous_serial_numbers = vec![];
 
         loop {
             // Get the vector of serial numbers of all compatible devices
-            match usb_host::get_serials().await {
+            match usb::get_serials().await {
                 Ok(current_serial_numbers) => {
                     // Filter out old devices, retaining new devices in the list
                     let mut new_serial_numbers = current_serial_numbers.clone();
                     new_serial_numbers.retain(|sn| !previous_serial_numbers.contains(sn));
 
-                    match usb_host::get_details(&new_serial_numbers).await {
+                    match usb::get_details(&new_serial_numbers).await {
                         Ok(details) => {
                             for (new_serial_number, new_device) in details {
                                 // inform UI of new device found
@@ -158,7 +158,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
-pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
+pub fn mdns_discovery() -> impl Stream<Item=DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mdns = ServiceDaemon::new().expect("Failed to create daemon");
         match mdns.browse(TCP_MDNS_SERVICE_TYPE) {
