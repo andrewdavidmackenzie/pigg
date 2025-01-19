@@ -15,12 +15,10 @@ use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use crate::hardware_subscription::SubscriptionEvent::InputChange;
 #[cfg(feature = "iroh")]
-use crate::host::iroh;
+use crate::host::iroh::IrohConnection;
 use crate::host::local::LocalConnection;
 #[cfg(feature = "tcp")]
 use crate::host::tcp;
-#[cfg(feature = "usb")]
-use crate::host::usb;
 #[cfg(feature = "usb")]
 use crate::host::usb::UsbConnection;
 use crate::hw_definition::description::HardwareDescription;
@@ -63,7 +61,7 @@ enum HWState {
     ConnectedUsb(UsbConnection),
     #[cfg(feature = "iroh")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedIroh(iroh::endpoint::Connection),
+    ConnectedIroh(IrohConnection),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedTcp(async_std::net::TcpStream),
@@ -126,7 +124,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                         }
 
                         Local => {
-                            match LocalConnection::connect().await {
+                            match LocalConnection::connect(&Local).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(
@@ -156,8 +154,8 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                         }
 
                         #[cfg(feature = "usb")]
-                        Usb(serial) => {
-                            match UsbConnection::connect(&serial).await {
+                        Usb(_) => {
+                            match UsbConnection::connect(&target).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(
@@ -184,8 +182,8 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                         }
 
                         #[cfg(feature = "iroh")]
-                        Iroh(nodeid, relay) => {
-                            match iroh::connect(&nodeid, relay.clone()).await {
+                        Iroh(_, _) => {
+                            match IrohConnection::connect(&target).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     // Send the sender back to the GUI
                                     if let Err(e) = gui_sender_clone
@@ -268,9 +266,9 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
 
                 #[cfg(feature = "usb")]
                 ConnectedUsb(connection) => {
-                    let interface_clone = connection.clone();
+                    let connection_clone = connection.clone();
                     let fused_wait_for_remote_message =
-                        usb::wait_for_remote_message(&interface_clone).fuse();
+                        connection_clone.wait_for_remote_message().fuse();
                     pin_mut!(fused_wait_for_remote_message);
 
                     futures::select! {
@@ -319,9 +317,9 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
 
                 #[cfg(feature = "iroh")]
                 ConnectedIroh(connection) => {
-                    let mut connection_clone = connection.clone();
+                    let connection_clone = connection.clone();
                     let fused_wait_for_remote_message =
-                        iroh::wait_for_remote_message(&mut connection_clone).fuse();
+                        connection_clone.wait_for_remote_message().fuse();
                     pin_mut!(fused_wait_for_remote_message);
 
                     futures::select! {
@@ -330,7 +328,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                             if let Some(config_change) = config_change_message {
                                 match &config_change {
                                     NewConnection(new_target) => {
-                                        if let Err(e) = iroh::disconnect(connection).await
+                                        if let Err(e) = connection.disconnect().await
                                         {
                                             report_error(&mut gui_sender_clone, &format!("Iroh error: {e}"))
                                                 .await;
@@ -339,7 +337,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                                         state = Disconnected;
                                     },
                                     Hardware(config_change) => {
-                                        if let Err(e) = iroh::send_config_message(connection, config_change).await
+                                        if let Err(e) = connection.send_config_message(config_change).await
                                         {
                                             report_error(&mut gui_sender_clone, &format!("Hardware error: {e}"))
                                                 .await;

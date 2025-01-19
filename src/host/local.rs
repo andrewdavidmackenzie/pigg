@@ -9,6 +9,7 @@ use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelC
 use crate::hw_definition::description::HardwareDescription;
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::{BCMPinNumber, PinLevel};
+use crate::views::hardware_view::HardwareConnection;
 use anyhow::Error;
 use iced::futures::channel::mpsc::Sender;
 use log::{info, trace};
@@ -21,7 +22,7 @@ pub struct LocalConnection {
 
 impl LocalConnection {
     /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
-    pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
+    pub async fn connect(_hardware_connection: &HardwareConnection) -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
         let hw = hw::driver::get();
         let hw_description = hw.description()?;
         let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
