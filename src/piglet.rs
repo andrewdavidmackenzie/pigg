@@ -27,14 +27,14 @@ use service_manager::{
 use sysinfo::{Process, System};
 
 #[cfg(feature = "iroh")]
-use crate::device_net::iroh_device;
+use crate::device::iroh_device;
 #[cfg(feature = "tcp")]
-use crate::device_net::tcp_device;
+use crate::device::tcp_device;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
-mod device_net;
+mod device;
 /// Module for interacting with the GPIO hardware
 mod hw;
 /// Module that defines the structs shared back and fore between GUI and piglet/porky
@@ -122,7 +122,7 @@ async fn run_service(
     hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
         info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
     })
-    .await?;
+        .await?;
     trace!("Configuration applied to hardware");
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -189,7 +189,7 @@ async fn run_service(
                     &exec_path,
                     &mut hw,
                 )
-                .await;
+                    .await;
             }
         }
     }
@@ -452,8 +452,8 @@ fn register_mdns(
         port,
         properties,
     )
-    .context("Could not create mDNS ServiceInfo")?
-    .enable_addr_auto();
+        .context("Could not create mDNS ServiceInfo")?
+        .enable_addr_auto();
 
     service_daemon
         .register(service_info.clone())
