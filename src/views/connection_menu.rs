@@ -2,12 +2,9 @@
 use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::hardware_view::HardwareView;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
-use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
-};
+use crate::views::{menu_bar_button, menu_button};
 use crate::HardwareConnection::*;
 use crate::Message;
-use iced::widget::button::Status::Hovered;
 use iced::widget::{button, text};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
@@ -22,13 +19,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
         button("Disconnect")
             .width(Length::Fill)
             .on_press(Message::Disconnect)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
+            .style(menu_button),
     );
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -38,13 +29,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
             .on_press(Message::ConnectDialog(
                 ConnectDialogMessage::ShowConnectDialog,
             ))
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
+            .style(menu_button),
     );
 
     if let Some(hardware_description) = hardware_view.hardware_description.as_ref() {
@@ -55,13 +40,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
                     HashMap::default(),
                 )))
                 .width(Length::Fill)
-                .style(|_, status| {
-                    if status == Hovered {
-                        MENU_BUTTON_HOVER_STYLE
-                    } else {
-                        MENU_BUTTON_STYLE
-                    }
-                }),
+                .style(menu_button),
         );
         menu_items.push(show_details);
     }
@@ -92,13 +71,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
     Item::with_menu(
         button(text(model_string))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-            .style(move |_theme, status| {
-                if status == Hovered {
-                    MENU_BAR_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BAR_BUTTON_STYLE
-                }
-            }),
+            .style(menu_bar_button),
         Menu::new(menu_items).width(215.0).offset(10.0),
     )
 }

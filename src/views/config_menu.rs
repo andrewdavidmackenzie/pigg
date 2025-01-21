@@ -3,11 +3,7 @@ use iced::widget::Button;
 
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::info_row::{
-    MENU_BAR_BUTTON_HIGHLIGHT_STYLE, MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE,
-    MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
-};
-use iced::widget::button::Status::Hovered;
+use crate::views::{menu_bar_button, menu_bar_highlight_button, menu_button};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
@@ -20,13 +16,7 @@ pub fn view<'a>(
 
     let mut load_from = Button::new("Load config from...")
         .width(180)
-        .style(|_, status| {
-            if status == Hovered {
-                MENU_BUTTON_HOVER_STYLE
-            } else {
-                MENU_BUTTON_STYLE
-            }
-        });
+        .style(menu_button);
 
     if hardware_connection != &NoConnection {
         load_from = load_from.on_press(Message::Load);
@@ -36,13 +26,7 @@ pub fn view<'a>(
     if unsaved_changes {
         let mut save_as = Button::new("Save config as...")
             .width(180)
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            });
+            .style(menu_button);
 
         if hardware_connection != &NoConnection {
             save_as = save_as.on_press(Message::Save);
@@ -52,20 +36,8 @@ pub fn view<'a>(
     }
 
     let mut button = match unsaved_changes {
-        true => Button::new("config: unsaved changes").style(|_, status| {
-            if status == Hovered {
-                MENU_BAR_BUTTON_HOVER_STYLE
-            } else {
-                MENU_BAR_BUTTON_HIGHLIGHT_STYLE
-            }
-        }),
-        false => Button::new("config").style(move |_theme, status| {
-            if status == Hovered {
-                MENU_BAR_BUTTON_HOVER_STYLE
-            } else {
-                MENU_BAR_BUTTON_STYLE
-            }
-        }),
+        true => Button::new("config: unsaved changes").style(menu_bar_highlight_button),
+        false => Button::new("config").style(menu_bar_button),
     };
     button = button.on_press(Message::MenuBarButtonClicked); // Needed for highlighting
 

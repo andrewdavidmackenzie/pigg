@@ -4,11 +4,8 @@ use iced::{Length, Size};
 
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::info_row::{
-    MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE, MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
-};
 use crate::views::layout_menu::Layout::{BCMLayout, BoardLayout};
-use iced::widget::button::Status::Hovered;
+use crate::views::{menu_bar_button, menu_button};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
@@ -69,16 +66,9 @@ impl LayoutSelector {
 
         let button = match self.selected_layout {
             BoardLayout => {
-                let mut show_bcp_layout =
-                    Button::new("BCP Pin Layout")
-                        .width(Length::Fill)
-                        .style(|_, status| {
-                            if status == Hovered {
-                                MENU_BUTTON_HOVER_STYLE
-                            } else {
-                                MENU_BUTTON_STYLE
-                            }
-                        });
+                let mut show_bcp_layout = Button::new("BCP Pin Layout")
+                    .width(Length::Fill)
+                    .style(menu_button);
 
                 if hardware_connection != &NoConnection {
                     show_bcp_layout = show_bcp_layout.on_press(Message::LayoutChanged(BCMLayout));
@@ -89,13 +79,7 @@ impl LayoutSelector {
             BCMLayout => {
                 let mut show_physical_layout = Button::new("Board Pin Layout")
                     .width(Length::Fill)
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MENU_BUTTON_HOVER_STYLE
-                        } else {
-                            MENU_BUTTON_STYLE
-                        }
-                    });
+                    .style(menu_button);
 
                 if hardware_connection != &NoConnection {
                     show_physical_layout =
@@ -108,13 +92,7 @@ impl LayoutSelector {
         };
 
         let button = button
-            .style(move |_theme, status| {
-                if status == Hovered {
-                    MENU_BAR_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BAR_BUTTON_STYLE
-                }
-            })
+            .style(menu_bar_button)
             .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;
 
         Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
