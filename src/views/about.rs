@@ -1,7 +1,6 @@
-use crate::views::info_row::{MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE};
+use crate::views::info_row::menu_bar_button;
 use crate::{InfoDialogMessage, Message};
 use iced::widget::button;
-use iced::widget::button::Status::Hovered;
 use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 
@@ -35,12 +34,6 @@ pub fn about_button<'a>() -> Item<'a, Message, Theme, Renderer> {
             .on_press(Message::Modal(InfoDialogMessage::AboutDialog))
             .clip(true)
             .height(iced::Length::Shrink)
-            .style(move |_theme, status| {
-                if status == Hovered {
-                    MENU_BAR_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BAR_BUTTON_STYLE
-                }
-            }),
+            .style(menu_bar_button),
     )
 }

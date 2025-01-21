@@ -2,14 +2,11 @@ use crate::file_helper::pick_and_load;
 use crate::hw_definition::description::HardwareDetails;
 use crate::views::about::REPOSITORY;
 use crate::views::dialog_styles::{
-    HYPERLINK_BUTTON_HOVER_STYLE, HYPERLINK_BUTTON_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
-    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
-    MODAL_CONTAINER_STYLE,
+    cancel_button, connect_button, hyperlink_button, MODAL_CONTAINER_STYLE,
 };
 use crate::views::hardware_view::HardwareConnection;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::button::Status::Hovered;
 use iced::widget::{button, column, container, horizontal_space, text, Row, Space, Text};
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
@@ -39,6 +36,10 @@ pub enum ModalType {
         is_version: bool,
     },
 }
+
+const WHITE_TEXT: text::Style = text::Style {
+    color: Some(Color::WHITE),
+};
 
 #[derive(Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
@@ -170,6 +171,27 @@ impl InfoDialog {
         }
     }
 
+    fn info_container<'a>(
+        title: &'a str,
+        body: &'a str,
+        button_row: Row<'a, Message>,
+        text_style: text::Style,
+    ) -> Element<'a, Message> {
+        container(
+            column![column![
+                text(title).size(20).style(move |_theme| { text_style }),
+                column![text(body),].spacing(10),
+                column![button_row].spacing(5),
+            ]
+            .spacing(10)]
+            .spacing(20),
+        )
+        .style(move |_theme| MODAL_CONTAINER_STYLE)
+        .width(520)
+        .padding(15)
+        .into()
+    }
+
     pub fn view(&self) -> Element<Message> {
         match &self.modal_type {
             Some(ModalType::Warning {
@@ -189,51 +211,22 @@ impl InfoDialog {
                         .on_press(Message::Modal(InfoDialogMessage::ExitApp))
                 };
 
-                action_button = action_button.style(move |_theme, status| {
-                    if status == Hovered {
-                        MODAL_CANCEL_BUTTON_HOVER_STYLE
-                    } else {
-                        MODAL_CANCEL_BUTTON_STYLE
-                    }
-                });
+                action_button = action_button.style(cancel_button);
                 let mut button_row = Row::new().push(action_button);
                 button_row = button_row.push(Space::new(Length::Fill, 10));
                 button_row = button_row.push(
                     button("Return to app")
                         .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                        .style(move |_theme, status| {
-                            if status == Hovered {
-                                MODAL_CONNECT_BUTTON_HOVER_STYLE
-                            } else {
-                                MODAL_CONNECT_BUTTON_STYLE
-                            }
-                        }),
+                        .style(connect_button),
                 );
 
-                container(
-                    column![column![
-                        text(title.clone())
-                            .size(20)
-                            .style(move |_theme| { text_style }),
-                        column![text(body.clone()),].spacing(10),
-                        column![button_row].spacing(5),
-                    ]
-                    .spacing(10)]
-                    .spacing(20),
-                )
-                .style(move |_theme| MODAL_CONTAINER_STYLE)
-                .width(520)
-                .padding(15)
-                .into()
+                Self::info_container(title, body, button_row, text_style)
             }
             Some(ModalType::Info {
                 title,
                 body,
                 is_version,
             }) => {
-                let text_style = text::Style {
-                    color: Some(Color::WHITE),
-                };
                 let mut hyperlink_row = Row::new().width(Length::Fill);
                 let mut button_row = Row::new();
                 if *is_version {
@@ -242,38 +235,20 @@ impl InfoDialog {
                         .push(
                             button(Text::new("github"))
                                 .on_press(Message::Modal(InfoDialogMessage::OpenLink(REPOSITORY)))
-                                .style(move |_theme, status| {
-                                    if status == Hovered {
-                                        HYPERLINK_BUTTON_HOVER_STYLE
-                                    } else {
-                                        HYPERLINK_BUTTON_STYLE
-                                    }
-                                }),
+                                .style(hyperlink_button),
                         )
                         .align_y(Alignment::Center);
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                            .style(move |_theme, status| {
-                                if status == Hovered {
-                                    MODAL_CANCEL_BUTTON_HOVER_STYLE
-                                } else {
-                                    MODAL_CANCEL_BUTTON_STYLE
-                                }
-                            }),
+                            .style(cancel_button),
                     );
                 } else {
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                            .style(move |_theme, status| {
-                                if status == Hovered {
-                                    MODAL_CANCEL_BUTTON_HOVER_STYLE
-                                } else {
-                                    MODAL_CANCEL_BUTTON_STYLE
-                                }
-                            }),
+                            .style(cancel_button),
                     );
                     for (name, hardware_connection) in &self.hardware_connections {
                         button_row = button_row
@@ -281,33 +256,13 @@ impl InfoDialog {
                             .push(
                                 button(text(format!("Connect via {}", name)))
                                     .on_press(Message::ConnectRequest(hardware_connection.clone()))
-                                    .style(move |_theme, status| {
-                                        if status == Hovered {
-                                            MODAL_CONNECT_BUTTON_HOVER_STYLE
-                                        } else {
-                                            MODAL_CONNECT_BUTTON_STYLE
-                                        }
-                                    }),
+                                    .style(connect_button),
                             )
                             .align_y(Alignment::Center);
                     }
                 }
 
-                container(
-                    column![column![
-                        text(title.clone())
-                            .size(20)
-                            .style(move |_theme| { text_style }),
-                        column![text(body.clone()),].spacing(10),
-                        column![button_row].spacing(5),
-                    ]
-                    .spacing(10)]
-                    .spacing(20),
-                )
-                .style(move |_theme| MODAL_CONTAINER_STYLE)
-                .width(520)
-                .padding(15)
-                .into()
+                Self::info_container(title, body, button_row, WHITE_TEXT)
             }
             None => container(column![]).into(), // Render empty container
 
@@ -316,47 +271,18 @@ impl InfoDialog {
                 body,
                 help_link,
             }) => {
-                let text_style = text::Style {
-                    color: Some(Color::WHITE),
-                };
                 let mut button_row = Row::new();
                 let help_button = button(Text::new("Help"))
                     .on_press(Message::Modal(InfoDialogMessage::OpenLink(help_link)))
-                    .style(move |_theme, status| {
-                        if status == Hovered {
-                            HYPERLINK_BUTTON_HOVER_STYLE
-                        } else {
-                            HYPERLINK_BUTTON_STYLE
-                        }
-                    });
+                    .style(hyperlink_button);
                 button_row = button_row.push(help_button);
                 button_row = button_row.push(
                     button("Close")
                         .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                        .style(move |_theme, status| {
-                            if status == Hovered {
-                                MODAL_CANCEL_BUTTON_HOVER_STYLE
-                            } else {
-                                MODAL_CANCEL_BUTTON_STYLE
-                            }
-                        }),
+                        .style(cancel_button),
                 );
 
-                container(
-                    column![column![
-                        text(title.to_string())
-                            .size(20)
-                            .style(move |_theme| { text_style }),
-                        column![text(body.to_string()),].spacing(10),
-                        column![button_row].spacing(5),
-                    ]
-                    .spacing(10)]
-                    .spacing(20),
-                )
-                .style(move |_theme| MODAL_CONTAINER_STYLE)
-                .width(520)
-                .padding(15)
-                .into()
+                Self::info_container(title, body, button_row, WHITE_TEXT)
             }
         }
     }

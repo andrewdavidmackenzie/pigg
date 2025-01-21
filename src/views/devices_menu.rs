@@ -3,13 +3,12 @@ use crate::discovery::DiscoveredDevice;
 use crate::discovery::DiscoveryMethod::USBRaw;
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
-use crate::views::info_row::{MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE};
+use crate::views::info_row::menu_button;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareConnection::*;
 use crate::Message;
 use iced::alignment;
-use iced::widget::button::Status::Hovered;
 use iced::widget::{button, text};
 use iced::widget::{horizontal_space, row};
 use iced::{Length, Renderer, Theme};
@@ -50,13 +49,7 @@ fn device_items<'a>(
                     hardware_details.clone(),
                     connect_options,
                 )))
-                .style(|_, status| {
-                    if status == Hovered {
-                        MENU_BUTTON_HOVER_STYLE
-                    } else {
-                        MENU_BUTTON_STYLE
-                    }
-                }),
+                .style(menu_button),
         ));
 
         // Add buttons to connect to the device for each available connection type, except
@@ -68,23 +61,11 @@ fn device_items<'a>(
                     button(text(format!("Connect via {}", hardware_connection.name())))
                         .on_press(Message::ConnectRequest(hardware_connection.clone()))
                         .width(Length::Fill)
-                        .style(|_, status| {
-                            if status == Hovered {
-                                MENU_BUTTON_HOVER_STYLE
-                            } else {
-                                MENU_BUTTON_STYLE
-                            }
-                        })
+                        .style(menu_button)
                 } else {
                     button(text("Connected to Device"))
                         .width(Length::Fill)
-                        .style(|_, status| {
-                            if status == Hovered {
-                                MENU_BUTTON_HOVER_STYLE
-                            } else {
-                                MENU_BUTTON_STYLE
-                            }
-                        })
+                        .style(menu_button)
                 };
                 device_menu_items.push(Item::new(connect_button));
             }
@@ -102,13 +83,7 @@ fn device_items<'a>(
                             hardware_details.clone(),
                             ssid_spec.as_ref().and_then(|_wf| ssid_spec.clone()),
                         )))
-                        .style(|_, status| {
-                            if status == Hovered {
-                                MENU_BUTTON_HOVER_STYLE
-                            } else {
-                                MENU_BUTTON_STYLE
-                            }
-                        }),
+                        .style(menu_button),
                 ));
             }
 
@@ -117,13 +92,7 @@ fn device_items<'a>(
                     button("Reset Device Wi-Fi to Default")
                         .width(Length::Fill)
                         .on_press(Message::ResetSsid(hardware_details.serial.clone()))
-                        .style(|_, status| {
-                            if status == Hovered {
-                                MENU_BUTTON_HOVER_STYLE
-                            } else {
-                                MENU_BUTTON_STYLE
-                            }
-                        }),
+                        .style(menu_button),
                 ));
             }
         }
@@ -135,13 +104,7 @@ fn device_items<'a>(
             text(" >").align_y(alignment::Vertical::Center),
         ))
         .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-        .style(|_: &Theme, status| {
-            if status == Hovered {
-                MENU_BUTTON_HOVER_STYLE
-            } else {
-                MENU_BUTTON_STYLE
-            }
-        });
+        .style(menu_button);
 
         device_items.push(Item::with_menu(
             device_button,
@@ -162,13 +125,7 @@ pub fn view<'a>(
     Item::with_menu(
         button(text(format!("devices ({})", device_items.len())))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-            .style(|_, status| {
-                if status == Hovered {
-                    MENU_BUTTON_HOVER_STYLE
-                } else {
-                    MENU_BUTTON_STYLE
-                }
-            }),
+            .style(menu_button),
         Menu::new(device_items).width(320.0).offset(10.0),
     )
 }
