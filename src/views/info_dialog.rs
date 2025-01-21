@@ -37,6 +37,10 @@ pub enum ModalType {
     },
 }
 
+const WHITE_TEXT: text::Style = text::Style {
+    color: Some(Color::WHITE),
+};
+
 #[derive(Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum InfoDialogMessage {
@@ -167,6 +171,27 @@ impl InfoDialog {
         }
     }
 
+    fn info_container<'a>(
+        title: &'a str,
+        body: &'a str,
+        button_row: Row<'a, Message>,
+        text_style: text::Style,
+    ) -> Element<'a, Message> {
+        container(
+            column![column![
+                text(title).size(20).style(move |_theme| { text_style }),
+                column![text(body),].spacing(10),
+                column![button_row].spacing(5),
+            ]
+            .spacing(10)]
+            .spacing(20),
+        )
+        .style(move |_theme| MODAL_CONTAINER_STYLE)
+        .width(520)
+        .padding(15)
+        .into()
+    }
+
     pub fn view(&self) -> Element<Message> {
         match &self.modal_type {
             Some(ModalType::Warning {
@@ -195,30 +220,13 @@ impl InfoDialog {
                         .style(connect_button),
                 );
 
-                container(
-                    column![column![
-                        text(title.clone())
-                            .size(20)
-                            .style(move |_theme| { text_style }),
-                        column![text(body.clone()),].spacing(10),
-                        column![button_row].spacing(5),
-                    ]
-                    .spacing(10)]
-                    .spacing(20),
-                )
-                .style(move |_theme| MODAL_CONTAINER_STYLE)
-                .width(520)
-                .padding(15)
-                .into()
+                Self::info_container(title, body, button_row, text_style)
             }
             Some(ModalType::Info {
                 title,
                 body,
                 is_version,
             }) => {
-                let text_style = text::Style {
-                    color: Some(Color::WHITE),
-                };
                 let mut hyperlink_row = Row::new().width(Length::Fill);
                 let mut button_row = Row::new();
                 if *is_version {
@@ -254,21 +262,7 @@ impl InfoDialog {
                     }
                 }
 
-                container(
-                    column![column![
-                        text(title.clone())
-                            .size(20)
-                            .style(move |_theme| { text_style }),
-                        column![text(body.clone()),].spacing(10),
-                        column![button_row].spacing(5),
-                    ]
-                    .spacing(10)]
-                    .spacing(20),
-                )
-                .style(move |_theme| MODAL_CONTAINER_STYLE)
-                .width(520)
-                .padding(15)
-                .into()
+                Self::info_container(title, body, button_row, WHITE_TEXT)
             }
             None => container(column![]).into(), // Render empty container
 
@@ -277,9 +271,6 @@ impl InfoDialog {
                 body,
                 help_link,
             }) => {
-                let text_style = text::Style {
-                    color: Some(Color::WHITE),
-                };
                 let mut button_row = Row::new();
                 let help_button = button(Text::new("Help"))
                     .on_press(Message::Modal(InfoDialogMessage::OpenLink(help_link)))
@@ -291,21 +282,7 @@ impl InfoDialog {
                         .style(cancel_button),
                 );
 
-                container(
-                    column![column![
-                        text(title.to_string())
-                            .size(20)
-                            .style(move |_theme| { text_style }),
-                        column![text(body.to_string()),].spacing(10),
-                        column![button_row].spacing(5),
-                    ]
-                    .spacing(10)]
-                    .spacing(20),
-                )
-                .style(move |_theme| MODAL_CONTAINER_STYLE)
-                .width(520)
-                .padding(15)
-                .into()
+                Self::info_container(title, body, button_row, WHITE_TEXT)
             }
         }
     }
