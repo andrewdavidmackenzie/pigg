@@ -20,12 +20,10 @@ use crate::hw_definition::description::{
     HardwareDetails, SsidSpec, SSID_NAME_MAX_LENGTH, SSID_PASS_MAX_LENGTH, SSID_PASS_MIN_LENGTH,
 };
 use crate::views::dialog_styles::{
-    CONNECTION_ERROR_DISPLAY, INFO_TEXT_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
-    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
+    cancel_button, connect_button, CONNECTION_ERROR_DISPLAY, INFO_TEXT_STYLE,
     MODAL_CONTAINER_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
 use crate::views::ssid_dialog::SsidDialogMessage::{HidePasswordToggled, SecuritySelected};
-use iced::widget::button::Status::Hovered;
 use std::sync::LazyLock;
 
 static INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
@@ -299,21 +297,9 @@ impl SsidDialog {
     }
 
     fn send_row(&self) -> Row<'_, Message> {
-        let mut cancel_button = Button::new(Text::new("Cancel")).style(|_, status| {
-            if status == Hovered {
-                MODAL_CANCEL_BUTTON_HOVER_STYLE
-            } else {
-                MODAL_CANCEL_BUTTON_STYLE
-            }
-        });
+        let mut cancel_button = Button::new(Text::new("Cancel")).style(cancel_button);
 
-        let mut send_button = Button::new(Text::new("Send")).style(move |_theme, status| {
-            if status == Hovered {
-                MODAL_CONNECT_BUTTON_HOVER_STYLE
-            } else {
-                MODAL_CONNECT_BUTTON_STYLE
-            }
-        });
+        let mut send_button = Button::new(Text::new("Send")).style(connect_button);
 
         let mut row = Row::new().align_y(iced::Alignment::Center);
 

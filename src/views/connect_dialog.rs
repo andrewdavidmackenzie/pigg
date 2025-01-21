@@ -36,9 +36,8 @@ const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure piglet i
 const TCP_INFO_TEXT: &str = "To connect to a Pi/Pi Pico using TCP, ensure it is reachable over the network. Retrieve the device's IP address and the port number from it (see piglet or porky docs) and enter below.";
 
 use crate::views::dialog_styles::{
-    ACTIVE_TAB_BUTTON_STYLE, CONNECTION_ERROR_DISPLAY, INACTIVE_TAB_BUTTON_HOVER_STYLE,
-    INACTIVE_TAB_BUTTON_STYLE, INFO_TEXT_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
-    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
+    cancel_button, connect_button, ACTIVE_TAB_BUTTON_STYLE, CONNECTION_ERROR_DISPLAY,
+    INACTIVE_TAB_BUTTON_HOVER_STYLE, INACTIVE_TAB_BUTTON_STYLE, INFO_TEXT_STYLE,
     MODAL_CONTAINER_STYLE, TAB_BAR_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
 use iced::widget::button::Status::Hovered;
@@ -380,15 +379,7 @@ impl ConnectDialog {
                     .cycle_duration(Duration::from_secs_f32(2.0)),
             )
             .push(horizontal_space())
-            .push(
-                Button::new(Text::new("Connect")).style(move |_theme, status| {
-                    if status == Hovered {
-                        MODAL_CONNECT_BUTTON_HOVER_STYLE
-                    } else {
-                        MODAL_CONNECT_BUTTON_STYLE
-                    }
-                }),
-            )
+            .push(Button::new(Text::new("Connect")).style(connect_button))
             .align_y(iced::Alignment::Center)
     }
 
@@ -398,13 +389,7 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Cancel"))
                     .on_press(Message::ConnectDialog(HideConnectDialog))
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MODAL_CANCEL_BUTTON_HOVER_STYLE
-                        } else {
-                            MODAL_CANCEL_BUTTON_STYLE
-                        }
-                    }),
+                    .style(cancel_button),
             )
             .push(horizontal_space())
             .push(
@@ -413,13 +398,7 @@ impl ConnectDialog {
                         self.nodeid.clone(),
                         self.relay_url.clone(),
                     )))
-                    .style(move |_theme, status| {
-                        if status == Hovered {
-                            MODAL_CONNECT_BUTTON_HOVER_STYLE
-                        } else {
-                            MODAL_CONNECT_BUTTON_STYLE
-                        }
-                    }),
+                    .style(connect_button),
             )
             .align_y(iced::Alignment::Center)
     }
@@ -430,13 +409,7 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Cancel"))
                     .on_press(Message::ConnectDialog(HideConnectDialog))
-                    .style(|_, status| {
-                        if status == Hovered {
-                            MODAL_CANCEL_BUTTON_HOVER_STYLE
-                        } else {
-                            MODAL_CANCEL_BUTTON_STYLE
-                        }
-                    }),
+                    .style(cancel_button),
             )
             .push(horizontal_space())
             .push(
@@ -445,13 +418,7 @@ impl ConnectDialog {
                         self.ip_address.clone(),
                         self.port_number.clone(),
                     )))
-                    .style(move |_theme, status| {
-                        if status == Hovered {
-                            MODAL_CONNECT_BUTTON_HOVER_STYLE
-                        } else {
-                            MODAL_CONNECT_BUTTON_STYLE
-                        }
-                    }),
+                    .style(connect_button),
             )
             .align_y(iced::Alignment::Center)
     }

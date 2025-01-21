@@ -2,14 +2,11 @@ use crate::file_helper::pick_and_load;
 use crate::hw_definition::description::HardwareDetails;
 use crate::views::about::REPOSITORY;
 use crate::views::dialog_styles::{
-    HYPERLINK_BUTTON_HOVER_STYLE, HYPERLINK_BUTTON_STYLE, MODAL_CANCEL_BUTTON_HOVER_STYLE,
-    MODAL_CANCEL_BUTTON_STYLE, MODAL_CONNECT_BUTTON_HOVER_STYLE, MODAL_CONNECT_BUTTON_STYLE,
-    MODAL_CONTAINER_STYLE,
+    cancel_button, connect_button, hyperlink_button, MODAL_CONTAINER_STYLE,
 };
 use crate::views::hardware_view::HardwareConnection;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::button::Status::Hovered;
 use iced::widget::{button, column, container, horizontal_space, text, Row, Space, Text};
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
@@ -189,25 +186,13 @@ impl InfoDialog {
                         .on_press(Message::Modal(InfoDialogMessage::ExitApp))
                 };
 
-                action_button = action_button.style(move |_theme, status| {
-                    if status == Hovered {
-                        MODAL_CANCEL_BUTTON_HOVER_STYLE
-                    } else {
-                        MODAL_CANCEL_BUTTON_STYLE
-                    }
-                });
+                action_button = action_button.style(cancel_button);
                 let mut button_row = Row::new().push(action_button);
                 button_row = button_row.push(Space::new(Length::Fill, 10));
                 button_row = button_row.push(
                     button("Return to app")
                         .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                        .style(move |_theme, status| {
-                            if status == Hovered {
-                                MODAL_CONNECT_BUTTON_HOVER_STYLE
-                            } else {
-                                MODAL_CONNECT_BUTTON_STYLE
-                            }
-                        }),
+                        .style(connect_button),
                 );
 
                 container(
@@ -242,38 +227,20 @@ impl InfoDialog {
                         .push(
                             button(Text::new("github"))
                                 .on_press(Message::Modal(InfoDialogMessage::OpenLink(REPOSITORY)))
-                                .style(move |_theme, status| {
-                                    if status == Hovered {
-                                        HYPERLINK_BUTTON_HOVER_STYLE
-                                    } else {
-                                        HYPERLINK_BUTTON_STYLE
-                                    }
-                                }),
+                                .style(hyperlink_button),
                         )
                         .align_y(Alignment::Center);
                     button_row = button_row.push(hyperlink_row);
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                            .style(move |_theme, status| {
-                                if status == Hovered {
-                                    MODAL_CANCEL_BUTTON_HOVER_STYLE
-                                } else {
-                                    MODAL_CANCEL_BUTTON_STYLE
-                                }
-                            }),
+                            .style(cancel_button),
                     );
                 } else {
                     button_row = button_row.push(
                         button("Close")
                             .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                            .style(move |_theme, status| {
-                                if status == Hovered {
-                                    MODAL_CANCEL_BUTTON_HOVER_STYLE
-                                } else {
-                                    MODAL_CANCEL_BUTTON_STYLE
-                                }
-                            }),
+                            .style(cancel_button),
                     );
                     for (name, hardware_connection) in &self.hardware_connections {
                         button_row = button_row
@@ -281,13 +248,7 @@ impl InfoDialog {
                             .push(
                                 button(text(format!("Connect via {}", name)))
                                     .on_press(Message::ConnectRequest(hardware_connection.clone()))
-                                    .style(move |_theme, status| {
-                                        if status == Hovered {
-                                            MODAL_CONNECT_BUTTON_HOVER_STYLE
-                                        } else {
-                                            MODAL_CONNECT_BUTTON_STYLE
-                                        }
-                                    }),
+                                    .style(connect_button),
                             )
                             .align_y(Alignment::Center);
                     }
@@ -322,24 +283,12 @@ impl InfoDialog {
                 let mut button_row = Row::new();
                 let help_button = button(Text::new("Help"))
                     .on_press(Message::Modal(InfoDialogMessage::OpenLink(help_link)))
-                    .style(move |_theme, status| {
-                        if status == Hovered {
-                            HYPERLINK_BUTTON_HOVER_STYLE
-                        } else {
-                            HYPERLINK_BUTTON_STYLE
-                        }
-                    });
+                    .style(hyperlink_button);
                 button_row = button_row.push(help_button);
                 button_row = button_row.push(
                     button("Close")
                         .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                        .style(move |_theme, status| {
-                            if status == Hovered {
-                                MODAL_CANCEL_BUTTON_HOVER_STYLE
-                            } else {
-                                MODAL_CANCEL_BUTTON_STYLE
-                            }
-                        }),
+                        .style(cancel_button),
                 );
 
                 container(

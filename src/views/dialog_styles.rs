@@ -1,8 +1,10 @@
 use iced::border::Radius;
+use iced::widget::button::Status::Hovered;
+use iced::widget::button::{Status, Style};
+use iced::widget::container;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use iced::widget::text;
-use iced::widget::{button, container};
-use iced::{Background, Border, Color, Shadow};
+use iced::{Background, Border, Color, Shadow, Theme};
 
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 const RADIUS_10: Radius = Radius {
@@ -37,28 +39,28 @@ pub(crate) const NO_BORDER: Border = Border {
     radius: RADIUS_2,
 };
 
-pub(crate) const MODAL_CANCEL_BUTTON_STYLE: button::Style = button::Style {
+const MODAL_CANCEL_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::from_rgba(0.8, 0.0, 0.0, 1.0))),
     text_color: Color::WHITE,
     border: NO_BORDER,
     shadow: NO_SHADOW,
 };
 
-pub(crate) const MODAL_CANCEL_BUTTON_HOVER_STYLE: button::Style = button::Style {
+const MODAL_CANCEL_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::from_rgba(0.9, 0.2, 0.2, 1.0))),
     text_color: Color::WHITE,
     border: WHITE_BORDER,
     shadow: NO_SHADOW,
 };
 
-pub(crate) const MODAL_CONNECT_BUTTON_STYLE: button::Style = button::Style {
+const MODAL_CONNECT_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::from_rgba(0.0, 1.0, 1.0, 1.0))),
     text_color: Color::BLACK,
     border: NO_BORDER,
     shadow: NO_SHADOW,
 };
 
-pub(crate) const MODAL_CONNECT_BUTTON_HOVER_STYLE: button::Style = button::Style {
+const MODAL_CONNECT_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::from_rgba(0.0, 0.8, 0.8, 1.0))),
     text_color: Color::BLACK,
     border: WHITE_BORDER,
@@ -72,7 +74,7 @@ pub(crate) const MODAL_CONTAINER_STYLE: container::Style = container::Style {
     shadow: NO_SHADOW,
 };
 
-pub(crate) const HYPERLINK_BUTTON_STYLE: button::Style = button::Style {
+const HYPERLINK_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::from_rgba(0.0, 0.3, 0.8, 1.0),
     border: Border {
@@ -83,7 +85,7 @@ pub(crate) const HYPERLINK_BUTTON_STYLE: button::Style = button::Style {
     shadow: NO_SHADOW,
 };
 
-pub(crate) const HYPERLINK_BUTTON_HOVER_STYLE: button::Style = button::Style {
+const HYPERLINK_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::from_rgba(0.1, 0.5, 0.75, 1.0),
     border: Border {
@@ -117,7 +119,7 @@ pub(crate) const CONNECTION_ERROR_DISPLAY: text::Style = text::Style {
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-pub(crate) const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
+pub(crate) const ACTIVE_TAB_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::BLACK)),
     text_color: Color::WHITE,
     border: NO_BORDER,
@@ -125,7 +127,7 @@ pub(crate) const ACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-pub(crate) const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
+pub(crate) const INACTIVE_TAB_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     // Gray text color to show it's inactive
     text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
@@ -134,7 +136,7 @@ pub(crate) const INACTIVE_TAB_BUTTON_STYLE: button::Style = button::Style {
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-pub(crate) const INACTIVE_TAB_BUTTON_HOVER_STYLE: button::Style = button::Style {
+pub(crate) const INACTIVE_TAB_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::WHITE,
     border: WHITE_BORDER,
@@ -148,3 +150,27 @@ pub(crate) const TAB_BAR_STYLE: container::Style = container::Style {
     border: NO_BORDER,
     shadow: NO_SHADOW,
 };
+
+pub fn connect_button(_: &Theme, status: Status) -> Style {
+    if status == Hovered {
+        MODAL_CONNECT_BUTTON_HOVER_STYLE
+    } else {
+        MODAL_CONNECT_BUTTON_STYLE
+    }
+}
+
+pub fn cancel_button(_: &Theme, status: Status) -> Style {
+    if status == Hovered {
+        MODAL_CANCEL_BUTTON_HOVER_STYLE
+    } else {
+        MODAL_CANCEL_BUTTON_STYLE
+    }
+}
+
+pub fn hyperlink_button(_: &Theme, status: Status) -> Style {
+    if status == Hovered {
+        HYPERLINK_BUTTON_HOVER_STYLE
+    } else {
+        HYPERLINK_BUTTON_STYLE
+    }
+}
