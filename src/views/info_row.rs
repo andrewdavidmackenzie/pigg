@@ -9,8 +9,10 @@ use crate::views::message_box::{InfoMessage, MessageRow, MessageRowMessage};
 use crate::views::{config_menu, connection_menu};
 use crate::Message;
 use iced::border::Radius;
-use iced::widget::{button, container, Row};
-use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task};
+use iced::widget::button::Status::Hovered;
+use iced::widget::button::{Status, Style};
+use iced::widget::{container, Row};
+use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task, Theme};
 use iced_aw::style::menu_bar;
 use iced_aw::MenuBar;
 use iced_futures::Subscription;
@@ -47,42 +49,42 @@ const MENU_SHADOW: Shadow = Shadow {
     blur_radius: 0.0,
 };
 
-pub(crate) const MENU_BAR_BUTTON_STYLE: button::Style = button::Style {
+const MENU_BAR_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: UNHOVERED_COLOR,
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
-pub(crate) const MENU_BAR_BUTTON_HOVER_STYLE: button::Style = button::Style {
+const MENU_BAR_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: HOVERED_COLOR,
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
-pub(crate) const MENU_BAR_BUTTON_HIGHLIGHT_STYLE: button::Style = button::Style {
+const MENU_BAR_BUTTON_HIGHLIGHT_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::from_rgba(1.0, 0.647, 0.0, 0.7),
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
-pub(crate) const MENU_BUTTON_STYLE: button::Style = button::Style {
+const MENU_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: UNHOVERED_COLOR,
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
-pub(crate) const MENU_BUTTON_HOVER_STYLE: button::Style = button::Style {
+const MENU_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: HOVERED_COLOR,
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
 
-pub(crate) const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
+const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
     bar_background: Background::Color(Color::TRANSPARENT),
     bar_border: MENU_BORDER,
     bar_shadow: MENU_SHADOW,
@@ -101,6 +103,30 @@ const INFO_BAR_STYLE: container::Style = container::Style {
     border: MENU_BORDER,
     shadow: MENU_SHADOW,
 };
+
+pub fn menu_button(_: &Theme, status: Status) -> Style {
+    if status == Hovered {
+        MENU_BUTTON_HOVER_STYLE
+    } else {
+        MENU_BUTTON_STYLE
+    }
+}
+
+pub fn menu_bar_button(_: &Theme, status: Status) -> Style {
+    if status == Hovered {
+        MENU_BAR_BUTTON_HOVER_STYLE
+    } else {
+        MENU_BAR_BUTTON_STYLE
+    }
+}
+
+pub fn menu_bar_highlight_button(_: &Theme, status: Status) -> Style {
+    if status == Hovered {
+        MENU_BAR_BUTTON_HOVER_STYLE
+    } else {
+        MENU_BAR_BUTTON_HIGHLIGHT_STYLE
+    }
+}
 
 pub struct InfoRow {
     message_row: MessageRow,

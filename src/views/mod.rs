@@ -1,11 +1,3 @@
-use crate::views::info_row::{
-    MENU_BAR_BUTTON_HIGHLIGHT_STYLE, MENU_BAR_BUTTON_HOVER_STYLE, MENU_BAR_BUTTON_STYLE,
-    MENU_BUTTON_HOVER_STYLE, MENU_BUTTON_STYLE,
-};
-use iced::widget::button::Status::Hovered;
-use iced::widget::button::{Status, Style};
-use iced::Theme;
-
 pub mod about;
 pub mod config_menu;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -24,27 +16,3 @@ pub mod pin_state;
 #[cfg(feature = "usb")]
 pub mod ssid_dialog;
 pub mod waveform;
-
-pub fn menu_button(_: &Theme, status: Status) -> Style {
-    if status == Hovered {
-        MENU_BUTTON_HOVER_STYLE
-    } else {
-        MENU_BUTTON_STYLE
-    }
-}
-
-pub fn menu_bar_button(_: &Theme, status: Status) -> Style {
-    if status == Hovered {
-        MENU_BAR_BUTTON_HOVER_STYLE
-    } else {
-        MENU_BAR_BUTTON_STYLE
-    }
-}
-
-pub fn menu_bar_highlight_button(_: &Theme, status: Status) -> Style {
-    if status == Hovered {
-        MENU_BAR_BUTTON_HOVER_STYLE
-    } else {
-        MENU_BAR_BUTTON_HIGHLIGHT_STYLE
-    }
-}

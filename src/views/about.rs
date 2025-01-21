@@ -1,4 +1,4 @@
-use crate::views::menu_bar_button;
+use crate::views::info_row::menu_bar_button;
 use crate::{InfoDialogMessage, Message};
 use iced::widget::button;
 use iced::{Renderer, Theme};

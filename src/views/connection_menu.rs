@@ -2,7 +2,7 @@
 use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::hardware_view::HardwareView;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
-use crate::views::{menu_bar_button, menu_button};
+use crate::views::info_row::{menu_bar_button, menu_button};
 use crate::HardwareConnection::*;
 use crate::Message;
 use iced::widget::{button, text};

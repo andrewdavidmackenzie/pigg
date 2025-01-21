@@ -4,8 +4,8 @@ use iced::{Length, Size};
 
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
+use crate::views::info_row::{menu_bar_button, menu_button};
 use crate::views::layout_menu::Layout::{BCMLayout, BoardLayout};
-use crate::views::{menu_bar_button, menu_button};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
