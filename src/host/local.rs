@@ -18,7 +18,7 @@ use std::time::Duration;
 #[derive(Clone)]
 /// Connection for interacting with "local" (on-board) GPIO Hardware
 pub struct LocalConnection {
-    hw: HW,
+    hw: &'static HW,
     gui_sender: Sender<SubscriptionEvent>,
 }
 
@@ -40,7 +40,7 @@ impl LocalConnection {
     }
     /// Send (apply) a [HardwareConfigMessage] to the local hardware
     pub async fn send_config_message(
-        &mut self,
+        &self,
         config_change: &HardwareConfigMessage,
     ) -> Result<(), Error> {
         match config_change {
@@ -92,7 +92,7 @@ impl LocalConnection {
     }
 
     /// Disconnect from the local hardware
-    pub async fn disconnect(&mut self) -> Result<(), Error> {
+    pub async fn disconnect(&self) -> Result<(), Error> {
         Ok(())
     }
 }

@@ -23,6 +23,7 @@ use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
 )))]
 use rand::Rng;
 
+use once_cell::sync::OnceCell;
 #[cfg(all(
     not(target_arch = "wasm32"),
     not(all(
@@ -55,23 +56,36 @@ enum Pin {
 ///
 /// The second for hosts (macOS, Linux, etc.) to show and develop GUI without real HW, and is
 /// provided mainly to aid GUI development and demoing it.
-#[derive(Default, Clone)]
 pub struct HW {
     #[cfg(all(
         target_os = "linux",
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
     ))]
-    configured_pins: Rc<std::collections::HashMap<BCMPinNumber, Pin>>,
+    configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
 }
 
-/// Create a new HW instance - should only be called once
-pub fn get() -> HW {
-    HW::default()
+/// Create a reference to the singleton HW instance
+pub fn get() -> &'static HW {
+    static SINGLETON : OnceCell<HW> = OnceCell::new();
+    #[allow(clippy::redundant_closure)]
+    SINGLETON.get_or_init(|| HW::new())
 }
+
 
 /// Common implementation code for pi and fake hardware
 impl HW {
+    pub fn new() -> Self {
+        HW {
+            #[cfg(all(
+                target_os = "linux",
+                any(target_arch = "aarch64", target_arch = "arm"),
+                target_env = "gnu"
+            ))]
+            configured_pins: std::collections::HashMap::new()
+        }
+    }
+
     /// Find the Pi hardware description
     pub fn description(&self) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
@@ -81,7 +95,7 @@ impl HW {
     }
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    pub async fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    pub async fn apply_config<C>(&self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
@@ -98,7 +112,7 @@ impl HW {
     #[allow(unused_variables)]
     #[allow(dead_code)] // Not used by piglet
     pub fn set_output_level(
-        &mut self,
+        &self,
         bcm_pin_number: BCMPinNumber,
         level: PinLevel,
     ) -> io::Result<()> {
@@ -284,7 +298,7 @@ impl HW {
         ))
     ))]
     pub async fn apply_pin_config<C>(
-        &mut self,
+        &self,
         bcm_pin_number: BCMPinNumber,
         pin_function: &Option<PinFunction>,
         mut callback: C,

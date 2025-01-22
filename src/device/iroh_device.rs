@@ -109,7 +109,7 @@ pub async fn iroh_message_loop(
     connection: Connection,
     hardware_config: &mut HardwareConfig,
     exec_path: &Path,
-    hardware: &mut HW,
+    hardware: &HW,
 ) -> anyhow::Result<()> {
     loop {
         let mut config_receiver = connection.accept_uni().await?;
@@ -138,7 +138,7 @@ pub async fn iroh_message_loop(
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
 async fn apply_config_change(
-    hardware: &mut HW,
+    hardware: &HW,
     config_change: HardwareConfigMessage,
     hardware_config: &mut HardwareConfig,
     connection: Connection,
