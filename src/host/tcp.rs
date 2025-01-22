@@ -18,13 +18,16 @@ pub struct TcpConnection {
 impl TcpConnection {
     /// Connect to a remote piglet and get the initial message with the [HardwareDescription],
     /// return that description plus the [TcpStream] to be used to communicate with it.
-    pub async fn connect(hardware_connection: &HardwareConnection) -> anyhow::Result<(HardwareDescription, HardwareConfig, Self)> {
+    pub async fn connect(
+        hardware_connection: &HardwareConnection,
+    ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Self)> {
         if let Tcp(ip, port) = hardware_connection {
             let mut stream = TcpStream::connect(format!("{ip}:{port}")).await?;
             // This array needs to be big enough for HardwareDescription
             let mut payload = vec![0u8; 1024];
             let length = stream.read(&mut payload).await?;
-            let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&payload[0..length])?;
+            let reply: (HardwareDescription, HardwareConfig) =
+                postcard::from_bytes(&payload[0..length])?;
             Ok((reply.0, reply.1, Self { stream }))
         } else {
             Err(anyhow!("Not a TCP Hardware Connection"))
@@ -32,8 +35,9 @@ impl TcpConnection {
     }
 
     /// Send config change received form the GUI to the remote hardware over `stream`[TcpStream]
-    pub async fn send_config_message(&mut self,
-                                     config_change_message: &HardwareConfigMessage,
+    pub async fn send_config_message(
+        &mut self,
+        config_change_message: &HardwareConfigMessage,
     ) -> anyhow::Result<()> {
         self.stream
             .write_all(&postcard::to_allocvec(&config_change_message)?)
@@ -41,9 +45,10 @@ impl TcpConnection {
         Ok(())
     }
 
-
     /// Wait until we receive a message from remote hardware over `stream`[TcpStream]
-    pub async fn wait_for_remote_message(&mut self) -> Result<HardwareConfigMessage, anyhow::Error> {
+    pub async fn wait_for_remote_message(
+        &mut self,
+    ) -> Result<HardwareConfigMessage, anyhow::Error> {
         let mut payload = vec![0u8; 1024];
         let length = self.stream.read(&mut payload).await?;
         ensure!(

@@ -73,7 +73,6 @@ const RESET_SSID: ControlOut = ControlOut {
     data: &[],
 };
 
-
 #[derive(Clone)]
 pub struct UsbConnection {
     interface: Interface,
@@ -89,7 +88,9 @@ impl UsbConnection {
             let interface = interface_from_serial(serial_number).await?;
             let connection = UsbConnection { interface };
             let hardware_description = get_hardware_description(&connection.interface).await?;
-            connection.send_config_message(&HardwareConfigMessage::GetConfig).await?;
+            connection
+                .send_config_message(&HardwareConfigMessage::GetConfig)
+                .await?;
             let hardware_config: HardwareConfig = connection.wait_for_remote_message().await?;
             Ok((hardware_description, hardware_config, connection))
         } else {
@@ -116,7 +117,6 @@ impl UsbConnection {
 
         send_control_out(&self.interface, hw_message).await
     }
-
 
     /// Wait until we receive a message from device over USB Interrupt In
     pub async fn wait_for_remote_message<'de, T>(&self) -> Result<T, Error>

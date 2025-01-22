@@ -23,7 +23,7 @@ pub struct IrohConnection {
 impl IrohConnection {
     /// Connect to an Iroh-Net node using the [NodeId] and an optional [RelayUrl]
     pub async fn connect(
-        hardware_connection: &HardwareConnection
+        hardware_connection: &HardwareConnection,
     ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Self)> {
         if let Iroh(nodeid, relay) = hardware_connection {
             let secret_key = SecretKey::generate();
@@ -67,7 +67,6 @@ impl IrohConnection {
         }
     }
 
-
     /// Send config change received form the GUI to the remote hardware
     pub async fn send_config_message(
         &self,
@@ -89,13 +88,12 @@ impl IrohConnection {
         let mut config_receiver = self.connection.accept_uni().await?;
         let message = config_receiver.read_to_end(4096).await?;
         ensure!(
-        !message.is_empty(),
-        io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
-    );
+            !message.is_empty(),
+            io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
+        );
 
         Ok(postcard::from_bytes(&message)?)
     }
-
 
     /// Inform the device that we are disconnecting from the Iroh connection
     pub async fn disconnect(&self) -> anyhow::Result<()> {

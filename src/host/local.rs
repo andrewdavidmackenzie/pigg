@@ -24,12 +24,19 @@ pub struct LocalConnection {
 
 impl LocalConnection {
     /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
-    pub async fn connect(_hardware_connection: &HardwareConnection, gui_sender: Sender<SubscriptionEvent>) -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
+    pub async fn connect(
+        _hardware_connection: &HardwareConnection,
+        gui_sender: Sender<SubscriptionEvent>,
+    ) -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
         let hw = hw::driver::get();
         let hw_description = hw.description()?;
         let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
-        Ok((hw_description, hw_config, LocalConnection { hw, gui_sender }))
+        Ok((
+            hw_description,
+            hw_config,
+            LocalConnection { hw, gui_sender },
+        ))
     }
     /// Send (apply) a [HardwareConfigMessage] to the local hardware
     pub async fn send_config_message(
@@ -40,10 +47,13 @@ impl LocalConnection {
             NewConfig(config) => {
                 info!("New config applied");
                 let gui_sender_clone = self.gui_sender.clone();
-                self
-                    .hw
+                self.hw
                     .apply_config(config, move |bcm_pin_number, level_change| {
-                        let _ = send_input_level(gui_sender_clone.clone(), bcm_pin_number, level_change);
+                        let _ = send_input_level(
+                            gui_sender_clone.clone(),
+                            bcm_pin_number,
+                            level_change,
+                        );
                     })
                     .await?;
 
@@ -52,10 +62,13 @@ impl LocalConnection {
             NewPinConfig(bcm, pin_function) => {
                 info!("New pin config for pin #{bcm}: {pin_function}");
                 let gui_sender_clone = self.gui_sender.clone();
-                self
-                    .hw
+                self.hw
                     .apply_pin_config(*bcm, pin_function, move |bcm_pin_number, level_change| {
-                        let _ = send_input_level(gui_sender_clone.clone(), bcm_pin_number, level_change);
+                        let _ = send_input_level(
+                            gui_sender_clone.clone(),
+                            bcm_pin_number,
+                            level_change,
+                        );
                     })
                     .await?;
 
@@ -63,9 +76,7 @@ impl LocalConnection {
             }
             IOLevelChanged(bcm, level_change) => {
                 trace!("Pin #{bcm} Output level change: {level_change:?}");
-                self
-                    .hw
-                    .set_output_level(*bcm, level_change.new_level)?;
+                self.hw.set_output_level(*bcm, level_change.new_level)?;
             }
             HardwareConfigMessage::GetConfig => {}
             HardwareConfigMessage::Disconnect => {}
@@ -86,7 +97,6 @@ impl LocalConnection {
     }
 }
 
-
 /// Send the current input state for one input - with timestamp matching future LevelChanges
 async fn send_current_input_state(
     connection: &LocalConnection,
@@ -106,7 +116,7 @@ async fn send_current_input_state(
                 initial_level,
                 now,
             )
-                .await;
+            .await;
         }
     }
 
@@ -125,7 +135,7 @@ async fn send_current_input_states(
             pin_function,
             connection.gui_sender.clone(),
         )
-            .await?;
+        .await?;
     }
 
     Ok(())

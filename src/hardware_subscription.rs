@@ -26,11 +26,11 @@ use crate::hw_definition::BCMPinNumber;
 use crate::views::hardware_view::HardwareConnection;
 #[cfg(feature = "iroh")]
 use crate::views::hardware_view::HardwareConnection::Iroh;
+use crate::views::hardware_view::HardwareConnection::Local;
 #[cfg(feature = "tcp")]
 use crate::views::hardware_view::HardwareConnection::Tcp;
 #[cfg(feature = "usb")]
 use crate::views::hardware_view::HardwareConnection::Usb;
-use crate::views::hardware_view::HardwareConnection::{Local, NoConnection};
 use futures::stream::Stream;
 use futures::SinkExt;
 use iced::futures::channel::mpsc;
@@ -45,7 +45,7 @@ use iced::{
 /// A message type sent from the UI to the subscriber
 pub enum SubscriberMessage {
     /// We wish to switch the connection to a new device
-    NewConnection(HardwareConnection),
+    NewConnection(Option<HardwareConnection>),
     /// A message type to change the configuration of the connected hardware
     Hardware(HardwareConfigMessage),
 }
@@ -92,10 +92,10 @@ async fn report_error(gui_sender: &mut Sender<SubscriptionEvent>, e: &str) {
 
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
-pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
+pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mut state = Disconnected;
-        let mut target = NoConnection;
+        let mut target = None;
 
         let (subscriber_sender, mut subscriber_receiver) = mpsc::channel::<SubscriberMessage>(100);
 
@@ -113,7 +113,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
             match &mut state {
                 Disconnected => {
                     match target.clone() {
-                        NoConnection => {
+                        None => {
                             println!("Disconnected");
                             // Wait for a message from the UI to request that we connect to a new target
                             if let Some(NewConnection(new_target)) =
@@ -123,7 +123,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                             }
                         }
 
-                        Local => {
+                        Some(Local) => {
                             match LocalConnection::connect(&Local, gui_sender_clone.clone()).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     if let Err(e) = gui_sender_clone
@@ -137,7 +137,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
-                                            .await;
+                                        .await;
                                     }
 
                                     // We are ready to receive messages from the GUI and send messages to it
@@ -148,14 +148,14 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                                         &mut gui_sender_clone,
                                         &format!("LocalHW error: {e}"),
                                     )
-                                        .await
+                                    .await
                                 }
                             }
                         }
 
                         #[cfg(feature = "usb")]
-                        Usb(_) => {
-                            match UsbConnection::connect(&target).await {
+                        Some(Usb(serial)) => {
+                            match UsbConnection::connect(&Usb(serial)).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(
@@ -168,7 +168,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
-                                            .await;
+                                        .await;
                                     }
 
                                     // We are ready to receive messages from the GUI and send messages to it
@@ -182,8 +182,8 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                         }
 
                         #[cfg(feature = "iroh")]
-                        Iroh(_, _) => {
-                            match IrohConnection::connect(&target).await {
+                        Some(Iroh(node, relay)) => {
+                            match IrohConnection::connect(&Iroh(node, relay)).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     // Send the sender back to the GUI
                                     if let Err(e) = gui_sender_clone
@@ -197,7 +197,7 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
-                                            .await;
+                                        .await;
                                     }
 
                                     // We are ready to receive messages from the GUI
@@ -211,8 +211,8 @@ pub fn subscribe() -> impl Stream<Item=SubscriptionEvent> {
                         }
 
                         #[cfg(feature = "tcp")]
-                        Tcp(_, _) => {
-                            match TcpConnection::connect(&target).await {
+                        Some(Tcp(ip, port)) => {
+                            match TcpConnection::connect(&Tcp(ip, port)).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     // Send the stream back to the GUI
                                     gui_sender_clone

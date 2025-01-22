@@ -25,7 +25,6 @@ use crate::discovery::DiscoveryMethod::Local;
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
 };
-use crate::views::hardware_view::HardwareConnection::NoConnection;
 #[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "usb")]
@@ -70,7 +69,7 @@ pub enum Message {
     WindowEvent(iced::Event),
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     ConnectDialog(ConnectDialogMessage),
-    ConnectRequest(HardwareConnection),
+    ConnectRequest(Option<HardwareConnection>),
     Connected,
     Disconnect,
     ConnectionError(String),
@@ -143,7 +142,7 @@ impl Piggui {
             .add_info_message(Info("Disconnected".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
-        self.hardware_view.new_connection(NoConnection);
+        self.hardware_view.new_connection(None);
     }
 
     fn new() -> (Self, Task<Message>) {
@@ -480,14 +479,14 @@ impl Piggui {
 
 /// Determine the hardware connection based on command line options
 #[allow(unused_variables)]
-fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
+fn get_hardware_connection(matches: &ArgMatches) -> Option<HardwareConnection> {
     #[allow(unused_mut)]
-    let mut target = HardwareConnection::default();
+    let mut target = Some(HardwareConnection::Local);
 
     #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid") {
         if let Ok(nodeid) = NodeId::from_str(node_str) {
-            target = HardwareConnection::Iroh(nodeid, None);
+            target = Some(HardwareConnection::Iroh(nodeid, None));
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }
@@ -496,13 +495,13 @@ fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
     #[cfg(feature = "tcp")]
     if let Some(ip_str) = matches.get_one::<String>("ip") {
         if let Ok(tcp_target) = parse_ip_string(ip_str) {
-            target = tcp_target;
+            target = Some(tcp_target);
         }
     }
 
     #[cfg(feature = "usb")]
     if let Some(usb_str) = matches.get_one::<String>("usb") {
-        target = HardwareConnection::Usb(usb_str.to_string());
+        target = Some(HardwareConnection::Usb(usb_str.to_string()));
     }
 
     target

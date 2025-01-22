@@ -125,7 +125,6 @@ pub enum HardwareViewMessage {
 /// A type of connection to a piece of hardware
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub enum HardwareConnection {
-    NoConnection,
     #[default]
     Local,
     #[cfg(feature = "usb")]
@@ -139,7 +138,6 @@ pub enum HardwareConnection {
 impl Display for HardwareConnection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            NoConnection => write!(f, "No Connection"),
             Local => write!(f, "Local Hardware"),
             #[cfg(feature = "usb")]
             Usb(_) => write!(f, "USB"),
@@ -155,7 +153,6 @@ impl HardwareConnection {
     /// Return a short name describing the connection type
     pub const fn name(&self) -> &'static str {
         match self {
-            NoConnection => "disconnected",
             #[cfg(not(target_arch = "wasm32"))]
             Local => "Local",
             #[cfg(feature = "usb")]
@@ -169,7 +166,7 @@ impl HardwareConnection {
 }
 
 pub struct HardwareView {
-    hardware_connection: HardwareConnection,
+    hardware_connection: Option<HardwareConnection>,
     hardware_config: HardwareConfig,
     subscriber_sender: Option<Sender<SubscriberMessage>>,
     pub hardware_description: Option<HardwareDescription>,
@@ -181,7 +178,7 @@ async fn empty() {}
 
 impl HardwareView {
     #[must_use]
-    pub fn new(hardware_connection: HardwareConnection) -> Self {
+    pub fn new(hardware_connection: Option<HardwareConnection>) -> Self {
         Self {
             hardware_connection,
             hardware_config: HardwareConfig::default(),
@@ -199,7 +196,7 @@ impl HardwareView {
 
     /// Get the current [HardwareConnection]
     #[must_use]
-    pub fn get_hardware_connection(&self) -> &HardwareConnection {
+    pub fn get_hardware_connection(&self) -> &Option<HardwareConnection> {
         &self.hardware_connection
     }
 
@@ -222,7 +219,7 @@ impl HardwareView {
     }
 
     /// Send a message to request the subscription to switch connections to a new one
-    pub fn new_connection(&mut self, new_connection: HardwareConnection) {
+    pub fn new_connection(&mut self, new_connection: Option<HardwareConnection>) {
         self.hardware_description = None;
         self.hardware_connection = new_connection;
         if let Some(ref mut subscription_sender) = &mut self.subscriber_sender {
@@ -364,6 +361,20 @@ impl HardwareView {
         Task::none()
     }
 
+    fn hw_view(
+        &self,
+        layout: Layout,
+        hardware_connection: &Option<HardwareConnection>,
+    ) -> Element<HardwareViewMessage> {
+        if hardware_connection.is_none() {
+            return Row::new().into();
+        }
+
+        if let Some(hw_description) = &self.hardware_description {
+            let pin_layout = match layout {
+                Layout::BoardLayout => self.board_pin_layout_view(&hw_description.pins),
+                Layout::BCMLayout => self.bcm_pin_layout_view(&hw_description.pins),
+            };
     /// Construct the view that represents the hardware view
     pub fn view(&self, layout: Layout) -> Element<Message> {
         let inner: Element<HardwareViewMessage> =
@@ -766,18 +777,19 @@ fn pin_button(pin_description: &PinDescription) -> Button<HardwareViewMessage> {
 
 #[cfg(test)]
 mod test {
+    use crate::hw_definition::config::InputPull::{PullDown, PullUp};
     use crate::views::hardware_view::HardwareConnection::NoConnection;
     use crate::views::hardware_view::HardwareView;
 
     #[test]
     fn no_hardware_description() {
-        let hw_view = HardwareView::new(NoConnection);
+        let hw_view = HardwareView::new(None);
         assert!(hw_view.hardware_description.is_none());
     }
 
     #[test]
     fn no_hardware_model() {
-        let hw_view = HardwareView::new(NoConnection);
+        let hw_view = HardwareView::new(None);
         assert_eq!(hw_view.hw_model(), None);
     }
 }

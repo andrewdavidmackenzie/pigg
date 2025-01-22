@@ -7,6 +7,7 @@ use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::hardware_view::{
     bcm_layout_size, compact_layout_size, HardwareConnection, BOARD_LAYOUT_SIZE,
 };
+use crate::views::hardware_view::HardwareConnection;
 use crate::views::info_row::{menu_bar_button, menu_button};
 use crate::views::layout_menu::Layout::{Board, Compact, Logical};
 use iced::{Renderer, Theme};
@@ -59,7 +60,7 @@ impl LayoutSelector {
     /// Create the view that shows menu to change layout
     pub fn view<'a>(
         &self,
-        hardware_connection: &'a HardwareConnection,
+        hardware_connection: &'a Option<HardwareConnection>,
     ) -> Item<'a, Message, Theme, Renderer> {
         let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
