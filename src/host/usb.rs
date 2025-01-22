@@ -17,7 +17,6 @@ use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
     SET_SSID_VALUE,
 };
-#[cfg(all(feature = "usb", feature = "discovery"))]
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::Usb;
 use anyhow::{anyhow, Error};
