@@ -105,7 +105,7 @@ async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) 
 
 #[cfg(feature = "usb")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via USB
-pub fn usb_discovery() -> impl Stream<Item=DiscoveryEvent> {
+pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mut previous_serial_numbers = vec![];
 
@@ -160,7 +160,7 @@ pub fn usb_discovery() -> impl Stream<Item=DiscoveryEvent> {
 
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
-pub fn mdns_discovery() -> impl Stream<Item=DiscoveryEvent> {
+pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(100, move |mut gui_sender| async move {
         let mdns = ServiceDaemon::new().expect("Failed to create daemon");
         match mdns.browse(TCP_MDNS_SERVICE_TYPE) {

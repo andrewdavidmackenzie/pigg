@@ -23,7 +23,7 @@ pub struct IrohConnection {
 impl IrohConnection {
     /// Connect to an Iroh-Net node using the [NodeId] and an optional [RelayUrl]
     pub async fn connect(
-        hardware_connection: &HardwareConnection
+        hardware_connection: &HardwareConnection,
     ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Self)> {
         if let Iroh(nodeid, relay) = hardware_connection {
             let secret_key = SecretKey::generate();
@@ -48,10 +48,13 @@ impl IrohConnection {
 
             // find my closest relay - maybe set this as a default in the UI but allow used to
             // override it in a text entry box. Leave black for user if fails to fetch it.
-            let relay_url = relay.clone().unwrap_or(endpoint.home_relay().ok_or(io::Error::new(
-                io::ErrorKind::Other,
-                "Could not get home relay",
-            ))?);
+            let relay_url =
+                relay
+                    .clone()
+                    .unwrap_or(endpoint.home_relay().ok_or(io::Error::new(
+                        io::ErrorKind::Other,
+                        "Could not get home relay",
+                    ))?);
 
             // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
             let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);
@@ -69,7 +72,6 @@ impl IrohConnection {
             Err(anyhow!("Not an Iroh connection target"))
         }
     }
-
 
     /// Send config change received form the GUI to the remote hardware
     pub async fn send_config_message(
@@ -92,13 +94,12 @@ impl IrohConnection {
         let mut config_receiver = self.connection.accept_uni().await?;
         let message = config_receiver.read_to_end(4096).await?;
         ensure!(
-        !message.is_empty(),
-        io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
-    );
+            !message.is_empty(),
+            io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
+        );
 
         Ok(postcard::from_bytes(&message)?)
     }
-
 
     /// Inform the device that we are disconnecting from the Iroh connection
     pub async fn disconnect(&self) -> anyhow::Result<()> {

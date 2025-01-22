@@ -255,7 +255,9 @@ impl InfoDialog {
                             .push(horizontal_space())
                             .push(
                                 button(text(format!("Connect via {}", name)))
-                                    .on_press(Message::ConnectRequest(hardware_connection.clone()))
+                                    .on_press(Message::ConnectRequest(Some(
+                                        hardware_connection.clone(),
+                                    )))
                                     .style(connect_button),
                             )
                             .align_y(Alignment::Center);
