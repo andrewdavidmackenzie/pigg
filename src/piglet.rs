@@ -111,7 +111,7 @@ async fn run_service(
 ) -> anyhow::Result<()> {
     setup_logging(matches);
 
-    let mut hw = hw::driver::get();
+    let hw = hw::driver::get();
     info!("\n{}", hw.description()?.details);
 
     // Get the boot config for the hardware
@@ -236,11 +236,11 @@ async fn run_service(
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
-                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
+                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, hw).await;
                 },
                 iroh_connection = fused_iroh => {
                     println!("Connected via Iroh");
-                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
+                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, hw).await;
                 }
                 complete => {}
             }
