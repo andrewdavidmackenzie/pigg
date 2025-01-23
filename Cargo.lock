@@ -3019,9 +3019,9 @@ dependencies = [
 
 [[package]]
 name = "iroh-net"
-version = "0.28.1"
+version = "0.28.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b40e1f1f9029e198c6d05bd232d3239814b0a66ac4668978729b709aeb6a44e2"
+checksum = "3840888c255de51bfa56d5a0c3ebe1fba63f9568ce97733b34548c4394313558"
 dependencies = [
  "anyhow",
  "backoff",
