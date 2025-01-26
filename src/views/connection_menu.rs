@@ -46,11 +46,11 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
     }
 
     match hardware_view.get_hardware_connection() {
-        NoConnection => {
+        None => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
         }
-        Local => {
+        Some(Local) => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
             menu_items.push(disconnect);
@@ -65,7 +65,10 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
 
     let model_string = format!(
         "{}: {}",
-        hardware_view.get_hardware_connection().name(),
+        hardware_view
+            .get_hardware_connection()
+            .as_ref()
+            .map_or("disconnected", |hc| hc.name()),
         hardware_view.hw_model().unwrap_or(""),
     );
     Item::with_menu(

@@ -6,7 +6,6 @@ use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::menu_button;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
-use crate::HardwareConnection::*;
 use crate::Message;
 use iced::alignment;
 use iced::widget::{button, text};
@@ -19,7 +18,7 @@ use std::collections::HashMap;
 #[cfg(feature = "discovery")]
 fn device_items<'a>(
     discovered_devices: &HashMap<String, DiscoveredDevice>,
-    current_connection: &HardwareConnection,
+    current_connection: &Option<HardwareConnection>,
 ) -> Vec<Item<'a, Message, Theme, Renderer>> {
     #[allow(unused_mut)]
     let mut device_items = vec![];
@@ -37,38 +36,30 @@ fn device_items<'a>(
     {
         // Menu items under each device menu
         let mut device_menu_items: Vec<Item<Message, Theme, Renderer>> = vec![];
-
-        // TODO avoid the current connected device altogether
-        // Avoid the current connection being a connect option in the details dialog
         let mut connect_options = hardware_connections.clone();
-        connect_options.remove(current_connection.name());
+        // Avoid the current connection being a connect option
+        if let Some(connection) = current_connection {
+            connect_options.remove(connection.name());
+        }
         device_menu_items.push(Item::new(
             button("Display Device Details...")
                 .width(Length::Fill)
                 .on_press(Message::Modal(HardwareDetailsModal(
                     hardware_details.clone(),
-                    connect_options,
+                    hardware_connections.clone(),
                 )))
                 .style(menu_button),
         ));
 
         // Add buttons to connect to the device for each available connection type, except
-        // for a [HardwareConnection] type currently used to connect to the device
-        for hardware_connection in hardware_connections.values() {
-            if !matches!(hardware_connection, NoConnection) {
-                // avoid re-offering the current connection method if connected
-                let connect_button = if current_connection != hardware_connection {
-                    button(text(format!("Connect via {}", hardware_connection.name())))
-                        .on_press(Message::ConnectRequest(hardware_connection.clone()))
-                        .width(Length::Fill)
-                        .style(menu_button)
-                } else {
-                    button(text("Connected to Device"))
-                        .width(Length::Fill)
-                        .style(menu_button)
-                };
-                device_menu_items.push(Item::new(connect_button));
-            }
+        // for the [HardwareConnection] type currently used to connect to the device
+        for hardware_connection in connect_options.values() {
+            let connect_button =
+                button(text(format!("Connect via {}", hardware_connection.name())))
+                    .on_press(Message::ConnectRequest(Some(hardware_connection.clone())))
+                    .width(Length::Fill)
+                    .style(menu_button);
+            device_menu_items.push(Item::new(connect_button));
         }
 
         // Section for menu items to allow config of Wi-Fi of a Pico W via USB
@@ -117,7 +108,7 @@ fn device_items<'a>(
 
 /// Create the discovered devices menu with items for each discovered device
 pub fn view<'a>(
-    hardware_connection: &HardwareConnection,
+    hardware_connection: &Option<HardwareConnection>,
     #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
     let device_items = device_items(discovered_devices, hardware_connection);

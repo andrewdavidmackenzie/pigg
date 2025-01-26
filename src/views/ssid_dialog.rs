@@ -15,7 +15,7 @@ use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
 use std::time::Duration;
 
-use crate::host_net::usb_host;
+use crate::host::usb;
 use crate::hw_definition::description::{
     HardwareDetails, SsidSpec, SSID_NAME_MAX_LENGTH, SSID_PASS_MAX_LENGTH, SSID_PASS_MIN_LENGTH,
 };
@@ -56,7 +56,7 @@ pub enum SsidDialogMessage {
 #[allow(unused_variables)]
 fn send_ssid(serial_number: String, ssid_spec: SsidSpec) -> Task<Message> {
     #[cfg(feature = "usb")]
-    return Task::perform(usb_host::send_ssid_spec(serial_number, ssid_spec), |res| {
+    return Task::perform(usb::send_ssid_spec(serial_number, ssid_spec), |res| {
         Message::SsidSpecSent(res.map_err(|e| format!("Could not send SSID Spec: {}", e)))
     });
     #[cfg(not(feature = "usb"))]

@@ -92,7 +92,7 @@ while let Some(bss) = scanner.next().await {
     }
 } */
 
-/// Initialize the cyw43 chip and start device_net
+/// Initialize the cyw43 chip and start device
 pub async fn start_net<'a>(
     spawner: Spawner,
     pin_23: embassy_rp::peripherals::PIN_23,

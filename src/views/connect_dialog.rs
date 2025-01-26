@@ -159,7 +159,7 @@ impl ConnectDialog {
 
                                 // Proceed to request connection when the port number is valid
                                 Task::perform(Self::empty(), move |_| {
-                                    Message::ConnectRequest(Tcp(ip, port))
+                                    Message::ConnectRequest(Some(Tcp(ip, port)))
                                 })
                             }
                             Err(e) => {
@@ -207,7 +207,7 @@ impl ConnectDialog {
                         };
 
                         Task::perform(Self::empty(), move |_| {
-                            Message::ConnectRequest(Iroh(nodeid, relay_url.clone()))
+                            Message::ConnectRequest(Some(Iroh(nodeid, relay_url.clone())))
                         })
                     }
                     Err(err) => {

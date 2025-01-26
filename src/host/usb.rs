@@ -17,8 +17,8 @@ use crate::hw_definition::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
     SET_SSID_VALUE,
 };
-#[cfg(all(feature = "usb", feature = "discovery"))]
 use crate::views::hardware_view::HardwareConnection;
+use crate::views::hardware_view::HardwareConnection::Usb;
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
@@ -71,6 +71,73 @@ const RESET_SSID: ControlOut = ControlOut {
     index: 0,
     data: &[],
 };
+
+#[derive(Clone)]
+pub struct UsbConnection {
+    interface: Interface,
+}
+
+impl UsbConnection {
+    /// Connect to a device by USB with the specified `serial_number` [SerialNumber]
+    /// Return the [HardwareDescription] and [HardwareConfig] along with the [Interface] to use
+    pub async fn connect(
+        hardware_connection: &HardwareConnection,
+    ) -> Result<(HardwareDescription, HardwareConfig, Self), Error> {
+        if let Usb(serial_number) = hardware_connection {
+            let interface = interface_from_serial(serial_number).await?;
+            let connection = UsbConnection { interface };
+            let hardware_description = get_hardware_description(&connection.interface).await?;
+            connection
+                .send_config_message(&HardwareConfigMessage::GetConfig)
+                .await?;
+            let hardware_config: HardwareConfig = connection.wait_for_remote_message().await?;
+            Ok((hardware_description, hardware_config, connection))
+        } else {
+            Err(anyhow!("Not a USB connection target".to_string()))
+        }
+    }
+
+    /// Send a [HardwareConfigMessage] to a connected porky device using [ControlOut]
+    pub async fn send_config_message(
+        &self,
+        hardware_config_message: &HardwareConfigMessage,
+    ) -> Result<(), Error> {
+        let mut buf = [0; 1024];
+        let data = postcard::to_slice(hardware_config_message, &mut buf)?;
+
+        let hw_message: ControlOut = ControlOut {
+            control_type: ControlType::Vendor,
+            recipient: Recipient::Interface,
+            request: PIGGUI_REQUEST,
+            value: HW_CONFIG_MESSAGE,
+            index: 0,
+            data,
+        };
+
+        send_control_out(&self.interface, hw_message).await
+    }
+
+    /// Wait until we receive a message from device over USB Interrupt In
+    pub async fn wait_for_remote_message<'de, T>(&self) -> Result<T, Error>
+    where
+        T: DeserializeOwned,
+    {
+        loop {
+            let buf = RequestBuffer::new(1024);
+            let bytes = self.interface.interrupt_in(0x81, buf).await;
+            if bytes.status.is_ok() {
+                let msg = postcard::from_bytes(&bytes.data)?;
+                return Ok(msg);
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+    }
+
+    /// Send special message to request device to disconnect
+    pub async fn disconnect(&self) -> Result<(), Error> {
+        self.send_config_message(&Disconnect).await
+    }
+}
 
 /// Generic request to get data from device over USB [ControlIn]
 async fn receive_control_in<T>(porky: &Interface, control_in: ControlIn) -> Result<T, Error>
@@ -149,66 +216,6 @@ pub async fn send_ssid_spec(serial_number: SerialNumber, ssid_spec: SsidSpec) ->
 pub async fn reset_ssid_spec(serial_number: SerialNumber) -> Result<(), Error> {
     let porky = interface_from_serial(&serial_number).await?;
     send_control_out(&porky, RESET_SSID).await
-}
-
-#[derive(Clone)]
-pub struct UsbConnection {
-    interface: Interface,
-}
-
-/// Wait until we receive a message from device over USB Interrupt In
-pub async fn wait_for_remote_message<'de, T>(porky: &UsbConnection) -> Result<T, Error>
-where
-    T: DeserializeOwned,
-{
-    loop {
-        let buf = RequestBuffer::new(1024);
-        let bytes = porky.interface.interrupt_in(0x81, buf).await;
-        if bytes.status.is_ok() {
-            let msg = postcard::from_bytes(&bytes.data)?;
-            return Ok(msg);
-        }
-        tokio::time::sleep(Duration::from_secs(1)).await;
-    }
-}
-
-/// Send a [HardwareConfigMessage] to a connected porky device using [ControlOut]
-pub async fn send_config_message(
-    porky: &UsbConnection,
-    hardware_config_message: &HardwareConfigMessage,
-) -> Result<(), Error> {
-    let mut buf = [0; 1024];
-    let data = postcard::to_slice(hardware_config_message, &mut buf)?;
-
-    let hw_message: ControlOut = ControlOut {
-        control_type: ControlType::Vendor,
-        recipient: Recipient::Interface,
-        request: PIGGUI_REQUEST,
-        value: HW_CONFIG_MESSAGE,
-        index: 0,
-        data,
-    };
-
-    send_control_out(&porky.interface, hw_message).await
-}
-
-/// Send special message to request device to disconnect
-pub async fn disconnect(porky: &UsbConnection) -> Result<(), Error> {
-    send_config_message(porky, &Disconnect).await
-    //    receive_control_in(&porky.interface, DISCONNECT).await
-}
-
-/// Connect to a device by USB with the specified `serial_number` [SerialNumber]
-/// Return the [HardwareDescription] and [HardwareConfig] along with the [Interface] to use
-pub async fn connect(
-    serial_number: &SerialNumber,
-) -> Result<(HardwareDescription, HardwareConfig, UsbConnection), Error> {
-    let interface = interface_from_serial(serial_number).await?;
-    let connection = UsbConnection { interface };
-    let hardware_description = get_hardware_description(&connection.interface).await?;
-    send_config_message(&connection, &HardwareConfigMessage::GetConfig).await?;
-    let hardware_config: HardwareConfig = wait_for_remote_message(&connection).await?;
-    Ok((hardware_description, hardware_config, connection))
 }
 
 /// Return a Vec of the [SerialNumber] of all compatible connected devices

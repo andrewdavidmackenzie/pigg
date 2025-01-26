@@ -27,14 +27,14 @@ use service_manager::{
 use sysinfo::{Process, System};
 
 #[cfg(feature = "iroh")]
-use crate::device_net::iroh_device;
+use crate::device::iroh_device;
 #[cfg(feature = "tcp")]
-use crate::device_net::tcp_device;
+use crate::device::tcp_device;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
-mod device_net;
+mod device;
 /// Module for interacting with the GPIO hardware
 mod hw;
 /// Module that defines the structs shared back and fore between GUI and piglet/porky
@@ -111,7 +111,7 @@ async fn run_service(
 ) -> anyhow::Result<()> {
     setup_logging(matches);
 
-    let mut hw = hw::driver::get();
+    let hw = hw::driver::get();
     info!("\n{}", hw.description()?.details);
 
     // Get the boot config for the hardware
@@ -236,11 +236,11 @@ async fn run_service(
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
-                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
+                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, hw).await;
                 },
                 iroh_connection = fused_iroh => {
                     println!("Connected via Iroh");
-                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
+                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, hw).await;
                 }
                 complete => {}
             }
