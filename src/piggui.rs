@@ -100,6 +100,8 @@ pub struct Piggui {
     ssid_dialog: SsidDialog,
 }
 
+const SCALE_FACTOR: f32 = 0.8;
+
 fn main() -> iced::Result {
     let settings = Settings {
         id: Some(PIGGUI_ID.into()),
@@ -109,13 +111,13 @@ fn main() -> iced::Result {
 
     iced::application(Piggui::title, Piggui::update, Piggui::view)
         .subscription(Piggui::subscription)
-        .window_size((500.0, 800.0))
         .exit_on_close_request(false)
         .resizable(true)
         .settings(settings)
-        .window_size(LayoutSelector::get_default_window_size())
+        .window_size(LayoutSelector::get_default_window_size(SCALE_FACTOR))
         .theme(|_| Theme::Dark)
-        .run_with(Piggui::new)
+        .scale_factor(|_| SCALE_FACTOR as f64)
+        .run_with(|| Piggui::new(SCALE_FACTOR))
 }
 
 #[cfg(feature = "usb")]
@@ -145,7 +147,7 @@ impl Piggui {
         self.hardware_view.new_connection(NoConnection);
     }
 
-    fn new() -> (Self, Task<Message>) {
+    fn new(scale_factor: f32) -> (Self, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
         let matches = get_matches();
         #[cfg(not(target_arch = "wasm32"))]
@@ -176,7 +178,7 @@ impl Piggui {
         (
             Self {
                 config_filename: config_filename.clone(),
-                layout_selector: LayoutSelector::new(),
+                layout_selector: LayoutSelector::new(scale_factor),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
