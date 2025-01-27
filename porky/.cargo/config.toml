@@ -17,6 +17,8 @@ runner = "picotool load -u -v -x -t elf"
 #runner = "elf2uf2-rs -d"
 
 #[build]
+# Since we are now switching target between building for Pico and Pico 2 - we cannot have a static target here.
+#it is specified on the command line to the compiler from the Makrfile
 #target = "thumbv6m-none-eabi" # Pico
 #target = "thumbv8m.main-none-eabihf" # Pico 2
 
