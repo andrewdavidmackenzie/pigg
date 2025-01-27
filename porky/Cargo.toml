@@ -16,6 +16,8 @@ required-features = ["usb"]
 
 [features]
 default = ["no_std"]
+pico1 = ["embassy-rp/rp2040"]
+pico2 = ["embassy-rp/rp235xa"]
 wifi = ["cyw43", "embassy-net", "tcp", "discovery"]
 no_std = []
 debug-probe = []
@@ -27,7 +29,7 @@ tcp = []
 # Embassy Dependencies (crates in https://github.com/embassy-rs/embassy)
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.7.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
-embassy-rp = { version = "0.3.0", default-features = false, features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-rp = { version = "0.3.0", default-features = false, features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 embassy-sync = { version = "0.6.0", default-features = false }
 embassy-futures = { version = "0.1.1", default-features = false }
 
