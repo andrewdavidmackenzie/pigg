@@ -126,6 +126,9 @@ pub fn view<'a>(
         button(text(format!("devices ({})", device_items.len())))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(menu_button),
-        Menu::new(device_items).width(320.0).offset(10.0),
+        Menu::new(device_items)
+            .width(380.0)
+            .max_width(400.0)
+            .offset(10.0),
     )
 }
