@@ -78,11 +78,11 @@ pub(crate) fn write_info_file(
 #[cfg(feature = "iroh")]
 #[cfg(test)]
 mod test {
+    use crate::{persistence, ListenerInfo};
+    use iroh::RelayUrl;
     use std::fs;
     use std::path::PathBuf;
     use std::str::FromStr;
-
-    use crate::{persistence, ListenerInfo};
     use tempfile::tempdir;
 
     #[cfg(feature = "iroh")]
@@ -90,10 +90,9 @@ mod test {
     fn write_info_file() {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.info");
-        let nodeid =
-            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-                .expect("Could not create nodeid");
-        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
+        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
 
         let info = ListenerInfo {
@@ -121,10 +120,9 @@ mod test {
     fn write_info_file_non_existent() {
         let output_dir = PathBuf::from("/foo");
         let test_file = output_dir.join("test.info");
-        let nodeid =
-            iroh_net::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-                .expect("Could not create nodeid");
-        let relay_url = iroh_net::relay::RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
+        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
             .expect("Could not create Relay URL");
         let info = ListenerInfo {
             iroh_info: crate::iroh_device::IrohDevice {

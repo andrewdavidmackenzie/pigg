@@ -37,7 +37,7 @@ use iced::Color;
 use iced::{Alignment, Center, Element, Length, Task};
 use iced_futures::Subscription;
 #[cfg(feature = "iroh")]
-use iroh_net::{relay::RelayUrl, NodeId};
+use iroh::{NodeId, RelayUrl};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};

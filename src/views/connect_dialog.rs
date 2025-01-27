@@ -24,8 +24,6 @@ use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
-#[cfg(feature = "iroh")]
-use iroh_net::{relay::RelayUrl, NodeId};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 use std::time::Duration;
@@ -42,6 +40,8 @@ use crate::views::dialog_styles::{
 };
 use iced::widget::button::Status::Hovered;
 use iced::widget::horizontal_space;
+#[cfg(feature = "iroh")]
+use iroh::{NodeId, RelayUrl};
 use std::sync::LazyLock;
 
 #[cfg(feature = "tcp")]
@@ -665,7 +665,7 @@ mod tests {
     #[test]
     fn test_connect_button_pressed_invalid_node_id() {
         let mut connect_dialog = ConnectDialog::new();
-        let invalid_node_id = "invalid_node_id".to_string();
+        let invalid_node_id = "".to_string();
 
         let _ = connect_dialog.update(ConnectButtonPressedIroh(invalid_node_id, "".to_string()));
         assert!(!connect_dialog.iroh_connection_error.is_empty());

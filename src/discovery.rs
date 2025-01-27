@@ -19,9 +19,7 @@ use futures::SinkExt;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
-use iroh_net::relay::RelayUrl;
-#[cfg(all(feature = "iroh", feature = "tcp"))]
-use iroh_net::NodeId;
+use iroh::{NodeId, RelayUrl};
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::collections::HashMap;

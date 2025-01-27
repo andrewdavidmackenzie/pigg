@@ -33,15 +33,14 @@ path = "src/piglet.rs"
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
-iroh = ["iroh-net"]
 tcp = ["portpicker", "local-ip-address"]
-discovery = ["iroh-net/discovery-local-network", "mdns-sd"]
+discovery = ["iroh/discovery-local-network", "mdns-sd"]
 no_std = []
 usb = ["nusb"]
 
 [dependencies]
 # Optional Dependencies
-iroh-net = { version = "0.28.2", default-features = false, optional = true }
+iroh = { version = "0.31", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.3", default-features = false, optional = true }
 nusb = { version = "0.1.12", default-features = false, optional = true }
