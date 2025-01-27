@@ -64,7 +64,7 @@ enum HWState {
     ConnectedUsb(UsbConnection),
     #[cfg(feature = "iroh")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedIroh(iroh_net::endpoint::Connection),
+    ConnectedIroh(iroh::endpoint::Connection),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedTcp(async_std::net::TcpStream),

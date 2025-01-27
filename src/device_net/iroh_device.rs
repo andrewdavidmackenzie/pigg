@@ -10,13 +10,9 @@ use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
 use crate::net::PIGLET_ALPN;
 use crate::persistence;
 use anyhow::{anyhow, bail, Context};
-use futures::StreamExt;
+use iroh::endpoint::Connection;
+use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
 #[cfg(feature = "discovery")]
-use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
-use iroh_net::endpoint::Connection;
-use iroh_net::key::SecretKey;
-use iroh_net::relay::{RelayMode, RelayUrl};
-use iroh_net::{Endpoint, NodeId};
 use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -38,9 +34,8 @@ impl Display for IrohDevice {
 }
 
 pub async fn get_device() -> anyhow::Result<IrohDevice> {
-    let secret_key = SecretKey::generate();
-    #[cfg(feature = "discovery")]
-    let id = secret_key.public();
+    let rng = rand::rngs::OsRng;
+    let secret_key = SecretKey::generate(rng);
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
     // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
@@ -61,10 +56,6 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
         // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
         .relay_mode(RelayMode::Default);
 
-    #[cfg(feature = "discovery")]
-    {
-        builder = builder.discovery(Box::new(LocalSwarmDiscovery::new(id)?));
-    }
     let endpoint = builder.bind().await?;
 
     let nodeid = endpoint.node_id();
@@ -72,7 +63,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
 
     let local_addrs = endpoint
         .direct_addresses()
-        .next()
+        .initialized()
         .await
         .context("no endpoints")?
         .into_iter()
@@ -81,9 +72,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
         .join(" ");
     info!("local Addresses: {local_addrs}");
 
-    let relay_url = endpoint
-            .home_relay()
-            .expect("should be connected to a relay server, try calling `endpoint.local_endpoints()` or `endpoint.connect()` first, to ensure the endpoint has actually attempted a connection before checking for the connected relay server");
+    let relay_url = endpoint.home_relay().initialized().await?;
     println!("Relay URL: {relay_url}"); // Don't remove - required by integration tests
 
     Ok(IrohDevice {
@@ -102,7 +91,7 @@ pub async fn accept_connection(
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
-        let node_id = iroh_net::endpoint::get_remote_node_id(&connection)?;
+        let node_id = iroh::endpoint::get_remote_node_id(&connection)?;
         debug!("New connection from nodeid: '{node_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;

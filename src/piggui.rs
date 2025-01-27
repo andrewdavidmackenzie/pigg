@@ -35,7 +35,7 @@ use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
 #[cfg(feature = "usb")]
 use host_net::usb_host;
 #[cfg(feature = "iroh")]
-use iroh_net::NodeId;
+use iroh::NodeId;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 

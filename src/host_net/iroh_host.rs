@@ -2,15 +2,12 @@ use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
 use crate::net::PIGLET_ALPN;
-use anyhow::ensure;
-use anyhow::Context;
-use iced::futures::StreamExt;
-use iroh_net::{
+use anyhow::{ensure, Context};
+use iroh::{
     endpoint::Connection,
-    key::SecretKey,
-    relay::{RelayMode, RelayUrl},
-    {Endpoint, NodeAddr, NodeId},
+    RelayMode, RelayUrl, SecretKey, {Endpoint, NodeAddr, NodeId},
 };
+use log::info;
 use std::io;
 
 /// Wait until we receive a message from remote hardware
@@ -48,7 +45,8 @@ pub async fn connect(
     nodeid: &NodeId,
     relay: Option<RelayUrl>,
 ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection)> {
-    let secret_key = SecretKey::generate();
+    let rng = rand::rngs::OsRng;
+    let secret_key = SecretKey::generate(rng);
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
     let endpoint = Endpoint::builder()
@@ -61,19 +59,20 @@ pub async fn connect(
         .bind()
         .await?;
 
-    for _local_endpoint in endpoint
+    let local_addrs = endpoint
         .direct_addresses()
-        .next()
+        .initialized()
         .await
         .context("no endpoints")?
-    {}
+        .into_iter()
+        .map(|endpoint| endpoint.addr.to_string())
+        .collect::<Vec<_>>()
+        .join(" ");
+    info!("local Addresses: {local_addrs}");
 
     // find my closest relay - maybe set this as a default in the UI but allow used to
     // override it in a text entry box. Leave black for user if fails to fetch it.
-    let relay_url = relay.unwrap_or(endpoint.home_relay().ok_or(io::Error::new(
-        io::ErrorKind::Other,
-        "Could not get home relay",
-    ))?);
+    let relay_url = relay.unwrap_or(endpoint.home_relay().initialized().await?);
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
     let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);
@@ -93,66 +92,3 @@ pub async fn connect(
 pub async fn disconnect(connection: &mut Connection) -> anyhow::Result<()> {
     send_config_message(connection, &Disconnect).await
 }
-
-/*
-
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveredDevice;
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
-#[cfg(feature = "discovery")]
-use crate::hw;
-#[cfg(feature = "discovery")]
-use crate::views::hardware_view::HardwareConnection;
-#[cfg(feature = "discovery")]
-use iroh_net::discovery::local_swarm_discovery::LocalSwarmDiscovery;
-#[cfg(feature = "discovery")]
-use std::collections::HashMap;
-use std::collections::HashSet;
-
-#[cfg(feature = "discovery")]
-/// Create an iroh-net [Endpoint] for use in discovery
-pub async fn iroh_endpoint() -> anyhow::Result<Endpoint> {
-    let key = SecretKey::generate();
-    let id = key.public();
-
-    Endpoint::builder()
-        .secret_key(key)
-        .discovery(Box::new(LocalSwarmDiscovery::new(id)?))
-        .bind()
-        .await
-}
-
-#[cfg(feature = "discovery")]
-/// Try and find devices visible over iroh net
-pub async fn find_piglets(endpoint: &Endpoint) -> HashMap<String, DiscoveredDevice> {
-    let mut map = HashMap::<String, DiscoveredDevice>::new();
-
-    // get an iterator of all the remote nodes this endpoint knows about
-    let remotes = endpoint.remote_info_iter();
-    for remote in remotes {
-        let trunc = remote
-            .node_id
-            .to_string()
-            .chars()
-            .take(16)
-            .collect::<String>();
-        let mut hardware_connections = HashSet::new();
-        hardware_connections.insert(HardwareConnection::Iroh(
-            remote.node_id,
-            remote.relay_url.map(|ri| ri.relay_url),
-        ));
-        map.insert(
-            trunc, // TODO substitute for real serial_number when Iroh discovery supports it
-            DiscoveredDevice {
-                discovery_method: IrohLocalSwarm,
-                hardware_details: hw::driver::get().description().unwrap().details, // TODO show the real hardware description when Iroh discovery supports it
-                ssid_spec: None,
-                hardware_connections,
-            },
-        );
-    }
-
-    map
-}
- */
