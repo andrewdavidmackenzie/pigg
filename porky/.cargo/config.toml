@@ -2,21 +2,25 @@
 # Choose a default "cargo run" tool (see README for more info)
 # - `probe-rs` provides flashing and defmt via a hardware debugger, and stack unwind on panic
 # - elf2uf2-rs loads firmware over USB when the rp2040 is in boot mode
-runner = ["probe-rs",
-    "run",
-    "--chip",
-    "RP2040",
-    "--protocol",
-    "swd",
-    "--log-format",
-    "{[{L}]%bold} {s}  {{c}",
-    "--restore-unwritten"
-]
+# runner = ["probe-rs",
+#    "run",
+#    "--chip",
+#    "RP2040",
+#    "--protocol",
+#    "swd",
+#    "--log-format",
+#    "{[{L}]%bold} {s}  {{c}",
+#    "--restore-unwritten"
+#]
+runner = "picotool load -u -v -x -t elf"
 #runner = "probe-rs run --chip RP2040"
 #runner = "elf2uf2-rs -d"
 
-[build]
-target = "thumbv6m-none-eabi"
+#[build]
+# Since we are now switching target between building for Pico and Pico 2 - we cannot have a static target here.
+#it is specified on the command line to the compiler from the Makrfile
+#target = "thumbv6m-none-eabi" # Pico
+#target = "thumbv8m.main-none-eabihf" # Pico 2
 
 [env]
 DEFMT_LOG = "info"

@@ -1,3 +1,4 @@
+#[cfg(feature = "pico1")]
 use core::str;
 use defmt::info;
 use ekv::flash::{self, PageID};
@@ -6,7 +7,9 @@ use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_storage::nor_flash::{NorFlash, ReadNorFlash};
+#[cfg(feature = "pico1")]
 use faster_hex::hex_encode;
+#[cfg(feature = "pico1")]
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -26,6 +29,7 @@ pub struct DbFlash<T: NorFlash + ReadNorFlash> {
     flash: T,
 }
 
+#[cfg(feature = "pico1")]
 /// Get the unique serial number from Flash
 pub fn serial_number(flash: &mut Flash<'_, FLASH, Blocking, FLASH_SIZE>) -> &'static str {
     // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string

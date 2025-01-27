@@ -26,7 +26,6 @@ use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::{Driver, Endpoint, In, Out};
-#[cfg(feature = "wifi")]
 use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
@@ -261,17 +260,18 @@ impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
      */
 }
 
+#[allow(unused_variables)]
 /// Start the USB stack and raw communications over it
 pub async fn start(
     spawner: Spawner,
     driver: Driver<'static, USB>,
     hardware_description: &'static HardwareDescription<'_>,
-    #[cfg(feature = "wifi")] tcp: Option<([u8; 4], u16)>,
-    #[cfg(feature = "wifi")] db: &'static Database<
+    tcp: Option<([u8; 4], u16)>,
+    db: &'static Database<
         DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
         NoopRawMutex,
     >,
-    #[cfg(feature = "wifi")] watchdog: Watchdog,
+    watchdog: Watchdog,
 ) -> UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>> {
     let mut builder = get_usb_builder(driver, hardware_description.details.serial);
 
