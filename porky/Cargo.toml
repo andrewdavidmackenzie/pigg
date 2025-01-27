@@ -6,13 +6,8 @@ edition = "2021"
 rust-version = "1.80"
 
 [[bin]]
-name = "porky_w"
-path = "src/porky_w.rs"
-
-[[bin]]
 name = "porky"
 path = "src/porky.rs"
-required-features = ["usb"]
 
 [features]
 default = ["no_std"]

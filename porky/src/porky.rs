@@ -1,24 +1,39 @@
 #![no_std]
 #![no_main]
 
-use embassy_executor::Spawner;
-use {defmt_rtt as _, panic_probe as _};
-
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
+use crate::hw_definition::config::HardwareConfig;
 use crate::hw_definition::config::HardwareConfigMessage;
 use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+#[cfg(feature = "wifi")]
+use crate::hw_definition::description::{TCP_MDNS_SERVICE_NAME, TCP_MDNS_SERVICE_PROTOCOL};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
+#[cfg(feature = "wifi")]
+use crate::tcp::TCP_PORT;
 use core::str;
+#[cfg(feature = "wifi")]
+use cyw43::Control;
+#[cfg(feature = "wifi")]
+use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::error;
-#[cfg(feature = "pico2")]
+#[cfg(any(feature = "pico2", feature = "wifi"))]
 use defmt::info;
+use defmt_rtt as _;
 use ekv::Database;
+use embassy_executor::Spawner;
+#[cfg(all(feature = "usb", feature = "wifi"))]
+use embassy_futures::select::{select, Either};
 use embassy_rp::bind_interrupts;
 use embassy_rp::flash::{Blocking, Flash};
-use embassy_rp::peripherals::FLASH;
+#[cfg(feature = "wifi")]
+use embassy_rp::gpio::{Level, Output};
 #[cfg(feature = "usb")]
 use embassy_rp::peripherals::USB;
+use embassy_rp::peripherals::{FLASH, PIO0};
+use embassy_rp::pio::InterruptHandler as PioInterruptHandler;
+#[cfg(feature = "wifi")]
+use embassy_rp::pio::Pio;
 #[cfg(feature = "usb")]
 use embassy_rp::usb::Driver;
 #[cfg(feature = "usb")]
@@ -27,6 +42,7 @@ use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
 use heapless::Vec;
+use panic_probe as _;
 use static_cell::StaticCell;
 
 #[cfg(not(any(feature = "usb", feature = "wifi")))]
@@ -72,26 +88,36 @@ mod pin_descriptions;
 
 #[cfg(feature = "usb")]
 bind_interrupts!(struct Irqs {
+    PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
     USBCTRL_IRQ => USBInterruptHandler<USB>;
 });
 
-pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 16> =
+#[cfg(not(feature = "usb"))]
+bind_interrupts!(struct Irqs {
+    PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
+});
+
+pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
     Channel::new();
 
 /// Create a [HardwareDescription] for this device with the provided serial number
 fn hardware_description(serial: &str) -> HardwareDescription {
     let details = HardwareDetails {
-        #[cfg(feature = "pico1")]
+        #[cfg(all(feature = "pico1", not(feature = "wifi")))]
         model: "Pi Pico",
-        #[cfg(feature = "pico2")]
+        #[cfg(all(feature = "pico1", feature = "wifi"))]
+        model: "Pi Pico W",
+        #[cfg(all(feature = "pico2", not(feature = "wifi")))]
         model: "Pi Pico2",
+        #[cfg(all(feature = "pico2", feature = "wifi"))]
+        model: "Pi Pico2 W",
         #[cfg(feature = "pico1")]
         hardware: "RP2040",
         #[cfg(feature = "pico2")]
         hardware: "RP235XA",
         revision: "",
         serial,
-        wifi: false,
+        wifi: true,
         app_name: env!("CARGO_BIN_NAME"),
         app_version: env!("CARGO_PKG_VERSION"),
     };
@@ -103,6 +129,7 @@ fn hardware_description(serial: &str) -> HardwareDescription {
         },
     }
 }
+
 #[cfg(feature = "pico2")]
 /// Get the unique serial number from Chip OTP
 pub fn serial_number() -> &'static str {
@@ -118,6 +145,44 @@ pub fn serial_number() -> &'static str {
     let device_id_str = str::from_utf8(id).unwrap();
     info!("device_id: {}", device_id_str);
     device_id_str
+}
+
+#[cfg(feature = "usb")]
+#[allow(clippy::too_many_arguments)]
+async fn usb_only(
+    spawner: Spawner,
+    driver: Driver<'static, USB>,
+    mut gpio: Gpio,
+    hw_desc: &'static HardwareDescription<'_>,
+    mut hardware_config: HardwareConfig,
+    db: &'static Database<
+        DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
+        NoopRawMutex,
+    >,
+    watchdog: Watchdog,
+    #[cfg(feature = "wifi")] mut control: Control<'_>,
+) {
+    let mut usb_connection = usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
+
+    loop {
+        if usb::wait_connection(&mut usb_connection, &hardware_config)
+            .await
+            .is_err()
+        {
+            error!("Could not establish USB connection");
+        } else {
+            let _ = usb::message_loop(
+                &mut gpio,
+                &mut usb_connection,
+                &mut hardware_config,
+                &spawner,
+                #[cfg(feature = "wifi")]
+                &mut control,
+                db,
+            )
+            .await;
+        }
+    }
 }
 
 #[embassy_executor::main]
@@ -213,27 +278,155 @@ async fn main(spawner: Spawner) {
 
     // apply the loaded config to the hardware immediately
     gpio.apply_config_change(
+        #[cfg(feature = "wifi")]
+        &mut control,
         &spawner,
         &HardwareConfigMessage::NewConfig(hardware_config.clone()),
         &mut hardware_config,
     )
     .await;
 
-    let mut usb_connection = usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
+    #[cfg(all(not(feature = "wifi"), feature = "usb"))]
+    usb_only(
+        spawner,
+        driver,
+        gpio,
+        hw_desc,
+        hardware_config,
+        db,
+        watchdog,
+    )
+    .await;
 
-    loop {
-        if usb::wait_connection(&mut usb_connection, &hardware_config)
-            .await
-            .is_err()
-        {
-            error!("Could not establish USB connection");
-        } else {
-            let _ = usb::message_loop(
-                &mut gpio,
-                &mut usb_connection,
-                &mut hardware_config,
-                &spawner,
+    // If we have a valid SsidSpec, then try and join that network using it
+    #[cfg(feature = "wifi")]
+    match persistence::get_ssid_spec(db, static_buf).await {
+        Some(ssid) => match wifi::join(&mut control, wifi_stack, &ssid).await {
+            Ok(ip) => {
+                info!("Assigned IP: {}", ip);
+
+                if spawner
+                    .spawn(mdns::mdns_responder(
+                        wifi_stack,
+                        ip,
+                        TCP_PORT,
+                        serial_number,
+                        hw_desc.details.model,
+                        TCP_MDNS_SERVICE_NAME,
+                        TCP_MDNS_SERVICE_PROTOCOL,
+                    ))
+                    .is_err()
+                {
+                    error!("Could not spawn mDNS responder task");
+                }
+
+                #[cfg(feature = "usb")]
+                let mut usb_connection = usb::start(
+                    spawner,
+                    driver,
+                    hw_desc,
+                    #[cfg(feature = "wifi")]
+                    Some((ip.octets(), TCP_PORT)),
+                    #[cfg(feature = "wifi")]
+                    db,
+                    #[cfg(feature = "wifi")]
+                    watchdog,
+                )
+                .await;
+
+                #[cfg(feature = "wifi")]
+                let mut wifi_tx_buffer = [0; 4096];
+                #[cfg(feature = "wifi")]
+                let mut wifi_rx_buffer = [0; 4096];
+
+                #[cfg(all(feature = "usb", feature = "wifi"))]
+                loop {
+                    match select(
+                        tcp::wait_connection(wifi_stack, &mut wifi_tx_buffer, &mut wifi_rx_buffer),
+                        usb::wait_connection(&mut usb_connection, &hardware_config),
+                    )
+                    .await
+                    {
+                        Either::First(socket_select) => match socket_select {
+                            Ok(socket) => {
+                                tcp::message_loop(
+                                    &mut gpio,
+                                    socket,
+                                    hw_desc,
+                                    &mut hardware_config,
+                                    &spawner,
+                                    &mut control,
+                                    db,
+                                )
+                                .await
+                            }
+                            Err(_) => error!("TCP accept error"),
+                        },
+                        Either::Second(_) => {
+                            let _ = usb::message_loop(
+                                &mut gpio,
+                                &mut usb_connection,
+                                &mut hardware_config,
+                                &spawner,
+                                &mut control,
+                                db,
+                            )
+                            .await;
+                        }
+                    }
+                }
+
+                #[cfg(all(not(feature = "usb"), feature = "wifi"))]
+                loop {
+                    match tcp::wait_connection(wifi_stack, &mut wifi_tx_buffer, &mut wifi_rx_buffer)
+                        .await
+                    {
+                        Ok(socket) => {
+                            tcp::message_loop(
+                                &mut gpio,
+                                socket,
+                                hw_desc,
+                                &mut hardware_config,
+                                &spawner,
+                                &mut control,
+                                db,
+                            )
+                            .await
+                        }
+                        Err(_) => error!("TCP accept error"),
+                    }
+                }
+            }
+            Err(e) => {
+                #[cfg(feature = "usb")]
+                error!("Could not join Wi-Fi network: {}, so starting USB only", e);
+                #[cfg(feature = "usb")]
+                usb_only(
+                    spawner,
+                    driver,
+                    gpio,
+                    hw_desc,
+                    hardware_config,
+                    db,
+                    watchdog,
+                    control,
+                )
+                .await;
+            }
+        },
+        None => {
+            #[cfg(feature = "usb")]
+            info!("No valid SsidSpec was found, cannot start Wi-Fi, so starting USB only");
+            #[cfg(feature = "usb")]
+            usb_only(
+                spawner,
+                driver,
+                gpio,
+                hw_desc,
+                hardware_config,
                 db,
+                watchdog,
+                control,
             )
             .await;
         }
