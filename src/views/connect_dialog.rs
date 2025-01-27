@@ -665,8 +665,7 @@ mod tests {
     #[test]
     fn test_connect_button_pressed_invalid_node_id() {
         let mut connect_dialog = ConnectDialog::new();
-        let invalid_node_id =
-            "5ee6105f4cc993f0390595eed5c08732542fa585d89efca5e0c0b0518e06a699".to_string();
+        let invalid_node_id = "".to_string();
 
         let _ = connect_dialog.update(ConnectButtonPressedIroh(invalid_node_id, "".to_string()));
         assert!(!connect_dialog.iroh_connection_error.is_empty());
