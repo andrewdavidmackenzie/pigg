@@ -76,9 +76,7 @@ impl HW {
     pub fn description(&self) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
             details: Self::get_details()?,
-            pins: PinDescriptionSet {
-                pins: GPIO_PIN_DESCRIPTIONS.to_vec(),
-            },
+            pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
         })
     }
 
@@ -459,12 +457,10 @@ mod test {
             pin7.clone(),
             pin7.clone(),
         ];
-        let pin_set = PinDescriptionSet {
-            pins: pins.to_vec(),
-        };
+        let pin_set = PinDescriptionSet::new(&pins);
         assert_eq!(
             pin_set
-                .pins
+                .pins()
                 .first()
                 .expect("Could not get pin")
                 .bcm
@@ -473,7 +469,7 @@ mod test {
         );
         assert_eq!(
             pin_set
-                .pins
+                .pins()
                 .get(1)
                 .expect("Could not get pin")
                 .bcm

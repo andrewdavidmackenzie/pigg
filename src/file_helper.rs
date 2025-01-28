@@ -41,13 +41,13 @@ async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
     if let Some(handle) = rfd::AsyncFileDialog::new()
         .add_filter("Pigg Config", &["pigg"])
         .set_title("Choose file")
-        .set_directory(env::current_dir().unwrap())
+        .set_directory(env::current_dir()?)
         .save_file()
         .await
     {
         let path: std::path::PathBuf = handle.path().to_owned();
         let path_str = path.display().to_string();
-        gpio_config.save(&path_str).unwrap();
+        gpio_config.save(&path_str)?;
         Ok(true)
     } else {
         Ok(false)
@@ -56,15 +56,18 @@ async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
 
 /// Utility function that saves the [HardwareConfig] to a file using `Task::perform` and uses
 /// the result to return correct [Message]
-pub fn save(gpio_config: HardwareConfig) -> Task<Message> {
-    Task::perform(save_via_picker(gpio_config), |result| match result {
-        Ok(true) => Message::ConfigSaved,
-        Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
-        Err(e) => Message::InfoRow(ShowStatusMessage(Error(
-            "Error saving file".into(),
-            format!("Error saving file. {e}"),
-        ))),
-    })
+pub fn save(gpio_config: &HardwareConfig) -> Task<Message> {
+    Task::perform(
+        save_via_picker(gpio_config.clone()),
+        |result| match result {
+            Ok(true) => Message::ConfigSaved,
+            Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
+            Err(e) => Message::InfoRow(ShowStatusMessage(Error(
+                "Error saving file".into(),
+                format!("Error saving file. {e}"),
+            ))),
+        },
+    )
 }
 
 /// Utility function that loads config from a file using `Task::perform` of the load picker

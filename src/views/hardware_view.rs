@@ -127,8 +127,8 @@ impl HardwareView {
 
     /// Get the current [HardwareConfig]
     #[must_use]
-    pub fn get_config(&self) -> HardwareConfig {
-        self.hardware_config.clone()
+    pub fn get_config(&self) -> &HardwareConfig {
+        &self.hardware_config
     }
 
     /// Get the current [HardwareConnection]
@@ -297,8 +297,9 @@ impl HardwareView {
 
         if let Some(hw_description) = &self.hardware_description {
             let pin_layout = match layout {
-                Layout::BoardLayout => self.board_pin_layout_view(&hw_description.pins),
-                Layout::BCMLayout => self.bcm_pin_layout_view(&hw_description.pins),
+                Layout::Board => self.board_pin_layout_view(&hw_description.pins),
+                Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
+                Layout::Reduced => self.reduced_layout_view(&hw_description.pins),
             };
 
             return scrollable(pin_layout)
@@ -361,6 +362,40 @@ impl HardwareView {
                 );
 
                 column = column.push(pin_row);
+            }
+        }
+
+        column
+            .spacing(SPACE_BETWEEN_PIN_ROWS)
+            .align_x(Alignment::Start)
+            .into()
+    }
+
+    /// Reduced size view that only lays out configured pins
+    pub fn reduced_layout_view<'a>(
+        &'a self,
+        pin_set: &'a PinDescriptionSet,
+    ) -> Element<'a, HardwareViewMessage> {
+        let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
+
+        for pin_description in pin_set.bcm_pins_sorted() {
+            if let Some(bcm_pin_number) = &pin_description.bcm {
+                if self
+                    .hardware_config
+                    .pin_functions
+                    .contains_key(bcm_pin_number)
+                {
+                    let pin_row = create_pin_view_side(
+                        pin_description,
+                        self.hardware_config
+                            .pin_functions
+                            .get(&pin_description.bcm.unwrap()),
+                        Right,
+                        self.pin_states.get(bcm_pin_number),
+                    );
+
+                    column = column.push(pin_row);
+                }
             }
         }
 

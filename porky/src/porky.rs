@@ -41,7 +41,6 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
-use heapless::Vec;
 use panic_probe as _;
 use static_cell::StaticCell;
 
@@ -124,9 +123,7 @@ fn hardware_description(serial: &str) -> HardwareDescription {
 
     HardwareDescription {
         details,
-        pins: PinDescriptionSet {
-            pins: Vec::from_slice(&PIN_DESCRIPTIONS).unwrap(),
-        },
+        pins: PinDescriptionSet::new(&PIN_DESCRIPTIONS),
     }
 }
 

@@ -122,10 +122,10 @@ pub struct WiFiDetails {
 
 #[cfg(not(feature = "no_std"))]
 /// [PinDescription] describes a pins in the connected hardware.
-/// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
+/// Vec indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize, Debug, Clone, Deserialize)]
 pub struct PinDescriptionSet {
-    pub(crate) pins: Vec<PinDescription>,
+    pins: Vec<PinDescription>,
 }
 
 #[cfg(feature = "no_std")]
@@ -134,6 +134,32 @@ pub struct PinDescriptionSet {
 #[derive(Serialize)]
 pub struct PinDescriptionSet<'a> {
     pub pins: Vec<PinDescription<'a>, 40>,
+}
+
+#[cfg(feature = "no_std")]
+impl<'a> PinDescriptionSet<'a> {
+    /// Create a new [PinDescriptionSet] from a slice of pins
+    pub fn new(pin_slice: &'a [PinDescription]) -> Self {
+        Self {
+            pins: Vec::from_slice(pin_slice).unwrap(),
+        }
+    }
+}
+
+#[cfg(not(feature = "no_std"))]
+impl PinDescriptionSet {
+    /// Return a slice of PinDescriptions
+    #[allow(dead_code)] // for piglet
+    pub fn pins(&self) -> &[PinDescription] {
+        &self.pins
+    }
+
+    /// Create a new [PinDescriptionSet] from a slice of pins
+    pub fn new(pin_slice: &[PinDescription]) -> Self {
+        Self {
+            pins: pin_slice.to_vec(),
+        }
+    }
 }
 
 #[cfg(not(feature = "no_std"))]
