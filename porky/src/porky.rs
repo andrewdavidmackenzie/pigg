@@ -117,7 +117,7 @@ fn hardware_description(serial: &str) -> HardwareDescription {
         hardware: "RP235XA",
         revision: "",
         serial,
-        wifi: true,
+        wifi: cfg!(feature = "wifi"),
         app_name: env!("CARGO_BIN_NAME"),
         app_version: env!("CARGO_PKG_VERSION"),
     };
