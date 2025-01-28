@@ -74,24 +74,24 @@ pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
     }
 }
 
+#[cfg(not(any(feature = "pico1", feature = "pico2")))]
+compile_error!("You must use either feature \"pico1\" or \"pico2\" to build 'porky'");
+
 fn main() -> io::Result<()> {
     // Put `memory.x` in our output directory and ensure it's on the linker search path.
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    File::create(out.join("memory.x"))
-        .unwrap()
-        .write_all(include_bytes!("memory.x"))
-        .unwrap();
+    let mut file = File::create(out.join("memory.x"))?;
+    #[cfg(feature = "pico1")]
+    file.write_all(include_bytes!("memory1.x"))?;
+    #[cfg(feature = "pico2")]
+    file.write_all(include_bytes!("memory2.x")).unwrap();
     println!("cargo:rustc-link-search={}", out.display());
 
-    // By default, Cargo will re-run a build script whenever
-    // any file in the project changes. By specifying `memory.x`
-    // here, we ensure the build script is only re-run when
-    // `memory.x` is changed.
-    println!("cargo:rerun-if-changed=memory.x");
     println!("cargo:rerun-if-changed={}", SSID_FILE_NAME);
 
     println!("cargo:rustc-link-arg-bins=--nmagic");
     println!("cargo:rustc-link-arg-bins=-Tlink.x");
+    #[cfg(feature = "pico1")]
     println!("cargo:rustc-link-arg-bins=-Tlink-rp.x");
     println!("cargo:rustc-link-arg-bins=-Tdefmt.x");
 
