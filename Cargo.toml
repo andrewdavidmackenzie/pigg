@@ -34,7 +34,7 @@ path = "src/piglet.rs"
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
 tcp = ["portpicker", "local-ip-address"]
-discovery = ["mdns-sd"]
+discovery = ["iroh/discovery-local-network", "mdns-sd"]
 no_std = []
 usb = ["nusb"]
 
