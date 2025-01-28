@@ -1,12 +1,12 @@
-use crate::Message;
+use crate::{Message, WINDOW_TITLE_AREA_HEIGHT};
 use iced::widget::Button;
 use iced::{Length, Size};
 
 use crate::hw_definition::config::HardwareConfig;
-use crate::views::hardware_styles::SPACE_BETWEEN_PIN_ROWS;
+use crate::views::hardware_styles::{PIN_ROW_HEIGHT, SPACE_BETWEEN_PIN_ROWS};
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::info_row::{menu_bar_button, menu_button};
+use crate::views::info_row::{menu_bar_button, menu_button, INFO_ROW_HEIGHT};
 use crate::views::layout_menu::Layout::{Board, Logical, Reduced};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
@@ -34,8 +34,10 @@ const BCM_LAYOUT_SIZE: Size = Size {
 fn reduced_layout_size(hardware_config: &HardwareConfig) -> Size {
     Size {
         width: 720.0,
-        height: 28.0 + 28.0 /* InfoRow Height */
-            + (hardware_config.pin_functions.len() as f32 * (28.0 + SPACE_BETWEEN_PIN_ROWS)),
+        height: WINDOW_TITLE_AREA_HEIGHT
+            + INFO_ROW_HEIGHT
+            + (hardware_config.pin_functions.len() as f32
+                * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS)),
     }
 }
 

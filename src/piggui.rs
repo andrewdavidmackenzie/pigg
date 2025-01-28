@@ -53,6 +53,8 @@ mod widgets;
 
 const PIGGUI_ID: &str = "piggui";
 
+pub(crate) const WINDOW_TITLE_AREA_HEIGHT: f32 = 28.0;
+
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 #[allow(clippy::large_enum_variant)]
