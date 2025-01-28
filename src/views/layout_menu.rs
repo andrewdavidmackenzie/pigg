@@ -1,11 +1,13 @@
-use crate::Message;
+use crate::{Message, WINDOW_TITLE_AREA_HEIGHT};
 use iced::widget::Button;
 use iced::{Length, Size};
 
+use crate::hw_definition::config::HardwareConfig;
+use crate::views::hardware_styles::{PIN_ROW_HEIGHT, SPACE_BETWEEN_PIN_ROWS};
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::info_row::{menu_bar_button, menu_button};
-use crate::views::layout_menu::Layout::{BCMLayout, BoardLayout};
+use crate::views::info_row::{menu_bar_button, menu_button, INFO_ROW_HEIGHT};
+use crate::views::layout_menu::Layout::{Board, Logical, Reduced};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
@@ -13,8 +15,9 @@ use iced_aw::menu::{Item, Menu};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Layout {
     #[default]
-    BoardLayout,
-    BCMLayout,
+    Board,
+    Logical,
+    Reduced,
 }
 
 const BOARD_LAYOUT_SIZE: Size = Size {
@@ -24,8 +27,19 @@ const BOARD_LAYOUT_SIZE: Size = Size {
 
 const BCM_LAYOUT_SIZE: Size = Size {
     width: 720.0,
-    height: 916.0,
+    height: 910.0,
 };
+
+// calculate the height required based on the number of configured pins
+fn reduced_layout_size(hardware_config: &HardwareConfig) -> Size {
+    Size {
+        width: 720.0,
+        height: WINDOW_TITLE_AREA_HEIGHT
+            + INFO_ROW_HEIGHT
+            + (hardware_config.pin_functions.len() as f32
+                * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS)),
+    }
+}
 
 #[derive(Clone, PartialEq, Default)]
 pub struct LayoutSelector {
@@ -44,11 +58,12 @@ impl LayoutSelector {
     }
 
     /// Set the new layout as being selected and return the window size required
-    pub fn update(&mut self, new_layout: Layout) -> Size {
+    pub fn update(&mut self, new_layout: Layout, hardware_config: &HardwareConfig) -> Size {
         self.selected_layout = new_layout;
         match self.selected_layout {
-            BoardLayout => BOARD_LAYOUT_SIZE,
-            BCMLayout => BCM_LAYOUT_SIZE,
+            Board => BOARD_LAYOUT_SIZE,
+            Logical => BCM_LAYOUT_SIZE,
+            Layout::Reduced => reduced_layout_size(hardware_config),
         }
     }
 
@@ -64,36 +79,39 @@ impl LayoutSelector {
     ) -> Item<'a, Message, Theme, Renderer> {
         let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
+        let mut show_bcp_layout = Button::new("BCP Pin Layout")
+            .width(Length::Fill)
+            .style(menu_button);
+        if hardware_connection != &NoConnection && self.selected_layout != Logical {
+            show_bcp_layout = show_bcp_layout.on_press(Message::LayoutChanged(Logical));
+        }
+        menu_items.push(Item::new(show_bcp_layout));
+
+        let mut show_physical_layout = Button::new("Board Pin Layout")
+            .width(Length::Fill)
+            .style(menu_button);
+        if hardware_connection != &NoConnection && self.selected_layout != Board {
+            show_physical_layout = show_physical_layout.on_press(Message::LayoutChanged(Board));
+        }
+        menu_items.push(Item::new(show_physical_layout));
+
+        let mut show_reduced_layout = Button::new("Reduced Layout")
+            .width(Length::Fill)
+            .style(menu_button);
+
+        if hardware_connection != &NoConnection && self.selected_layout != Reduced {
+            show_reduced_layout = show_reduced_layout.on_press(Message::LayoutChanged(Reduced));
+        }
+
+        menu_items.push(Item::new(show_reduced_layout));
+
         let button = match self.selected_layout {
-            BoardLayout => {
-                let mut show_bcp_layout = Button::new("BCP Pin Layout")
-                    .width(Length::Fill)
-                    .style(menu_button);
-
-                if hardware_connection != &NoConnection {
-                    show_bcp_layout = show_bcp_layout.on_press(Message::LayoutChanged(BCMLayout));
-                }
-                menu_items.push(Item::new(show_bcp_layout));
-                Button::new("layout: board")
-            }
-            BCMLayout => {
-                let mut show_physical_layout = Button::new("Board Pin Layout")
-                    .width(Length::Fill)
-                    .style(menu_button);
-
-                if hardware_connection != &NoConnection {
-                    show_physical_layout =
-                        show_physical_layout.on_press(Message::LayoutChanged(BoardLayout));
-                }
-
-                menu_items.push(Item::new(show_physical_layout));
-                Button::new("layout: bcp")
-            }
-        };
-
-        let button = button
-            .style(menu_bar_button)
-            .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;
+            Board => Button::new("layout: board"),
+            Logical => Button::new("layout: bcp"),
+            Layout::Reduced => Button::new("layout: reduced"),
+        }
+        .style(menu_bar_button)
+        .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;
 
         Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
     }

@@ -53,6 +53,8 @@ mod widgets;
 
 const PIGGUI_ID: &str = "piggui";
 
+pub(crate) const WINDOW_TITLE_AREA_HEIGHT: f32 = 28.0;
+
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
 #[allow(clippy::large_enum_variant)]
@@ -212,11 +214,13 @@ impl Piggui {
                 }
             }
 
-            LayoutChanged(layout) => {
-                let layout = self.layout_selector.update(layout);
+            LayoutChanged(new_layout) => {
+                let layout_size = self
+                    .layout_selector
+                    .update(new_layout, self.hardware_view.get_config());
                 return window::get_latest().then(move |latest| {
                     if let Some(id) = latest {
-                        window::resize(id, layout)
+                        window::resize(id, layout_size)
                     } else {
                         Task::none()
                     }

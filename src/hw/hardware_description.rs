@@ -1,7 +1,6 @@
+use crate::hw_definition::description::{HardwareDetails, PinDescription, PinDescriptionSet};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-
-use crate::hw_definition::description::{HardwareDetails, PinDescription, PinDescriptionSet};
 
 impl Display for HardwareDetails {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -21,18 +20,12 @@ impl Display for HardwareDetails {
 
 /// `PinDescriptionSet` describes a set of Pins on a device, using `PinDescription`s
 impl PinDescriptionSet {
-    /// Return a slice of PinDescriptions
-    #[allow(dead_code)] // for piglet
-    pub fn pins(&self) -> &[PinDescription] {
-        &self.pins
-    }
-
     /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
     /// ascending order of [BCMPinNumber]
     #[allow(dead_code)] // for piglet build
     pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
         let mut pins = self
-            .pins
+            .pins()
             .iter()
             .filter(|pin| pin.bcm.is_some())
             .collect::<Vec<&PinDescription>>();

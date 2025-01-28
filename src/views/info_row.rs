@@ -19,6 +19,8 @@ use iced_futures::Subscription;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
+pub(crate) const INFO_ROW_HEIGHT: f32 = 28.0;
+
 const MENU_BACKGROUND_COLOR: Color = Color::from_rgba(0.15, 0.15, 0.15, 1.0);
 
 const MENU_RADIUS: Radius = Radius {
