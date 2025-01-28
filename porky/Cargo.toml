@@ -75,4 +75,5 @@ strip = "debuginfo"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-always_include_features = ["no_std", "wifi"]
+always_include_features = ["no_std", "usb", "pico1"]
+denylist = ["debug-probe", "pico2", "tcp"]

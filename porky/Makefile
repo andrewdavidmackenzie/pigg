@@ -3,6 +3,10 @@ all: build build-w build2 build-w2
 clean:
 	cargo clean
 
+.PHONY: features
+features:
+	cargo build-all-features --target thumbv6m-none-eabi
+
 clippy:
 	cargo clippy --target thumbv6m-none-eabi --features "usb, wifi, pico1"
 	cargo clippy --target thumbv6m-none-eabi --features "usb, pico1"

@@ -78,7 +78,7 @@ pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
 compile_error!("You must use either feature \"pico1\" or \"pico2\" to build 'porky'");
 
 fn main() -> io::Result<()> {
-    #[cfg(feature = "pico1")]
+    #[cfg(not(feature = "pico2"))]
     const MEMORY_X: &str = "memory1.x";
     #[cfg(feature = "pico2")]
     const MEMORY_X: &str = "memory2.x";
