@@ -6,11 +6,12 @@ use iced::{Background, Border, Color, Shadow};
 use iced_aw::style::colors::WHITE;
 
 // WIDTHS
-pub(crate) const PIN_BUTTON_WIDTH: f32 = 28.0;
-const PIN_BUTTON_RADIUS: f32 = PIN_BUTTON_WIDTH / 2.0;
+pub(crate) const PIN_BUTTON_DIAMETER: f32 = 28.0;
+const PIN_BUTTON_RADIUS: f32 = PIN_BUTTON_DIAMETER / 2.0;
 pub(crate) const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
 pub(crate) const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
-pub(crate) const PIN_ARROW_WIDTH: f32 = PIN_ARROW_LINE_WIDTH + PIN_ARROW_CIRCLE_RADIUS * 2.0;
+pub(crate) const PIN_ROW_WIDTH: f32 =
+    PIN_ARROW_LINE_WIDTH + (PIN_ARROW_CIRCLE_RADIUS * 2.0) + PIN_BUTTON_DIAMETER;
 pub(crate) const PIN_NAME_WIDTH: f32 = 80.0;
 pub(crate) const PIN_OPTION_WIDTH: f32 = 135.0; // Pi needs 135px
 pub(crate) const TOGGLER_SIZE: f32 = 28.0;
@@ -48,8 +49,14 @@ const PIN_RADIUS: Radius = Radius {
 };
 
 const PIN_BORDER: Border = Border {
-    color: Color::TRANSPARENT,
-    width: 0.0,
+    color: Color::WHITE,
+    width: 1.0,
+    radius: PIN_RADIUS,
+};
+
+const PIN_BORDER_HIGHLIGHT: Border = Border {
+    color: Color::WHITE,
+    width: 2.0,
     radius: PIN_RADIUS,
 };
 

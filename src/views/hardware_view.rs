@@ -11,7 +11,7 @@ use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
 use crate::views::hardware_styles::{
     get_pin_style, CLICKER_WIDTH, LED_WIDTH, PIN_ARROW_CIRCLE_RADIUS, PIN_ARROW_LINE_WIDTH,
-    PIN_ARROW_WIDTH, PIN_BUTTON_WIDTH, PIN_NAME_WIDTH, PIN_OPTION_WIDTH, PIN_WIDGET_ROW_WIDTH,
+    PIN_BUTTON_DIAMETER, PIN_NAME_WIDTH, PIN_OPTION_WIDTH, PIN_ROW_WIDTH, PIN_WIDGET_ROW_WIDTH,
     PULLUP_WIDTH, SPACE_BETWEEN_PIN_COLUMNS, TOGGLER_HOVER_STYLE, TOGGLER_SIZE, TOGGLER_STYLE,
     TOGGLER_WIDTH, TOOLTIP_STYLE, WIDGET_ROW_SPACING,
 };
@@ -51,6 +51,7 @@ use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub const HARDWARE_VIEW_PADDING: f32 = 10.0;
+const PIN_DOCK_SPACING: f32 = 2.0;
 
 pub(crate) const BOARD_LAYOUT_SIZE: Size = Size {
     width: 1400.0,
@@ -59,23 +60,25 @@ pub(crate) const BOARD_LAYOUT_SIZE: Size = Size {
 
 const SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
-const PIN_ROW_HEIGHT: f32 = 28.0;
+const MAX_CONFIGURABLE_PINS: usize = 26;
 
 // calculate the height required based on the number of configured pins
-pub(crate) fn compact_layout_size(num_pins: usize) -> Size {
+pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
     let mut height = HARDWARE_VIEW_PADDING
-        + (num_pins as f32 * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS))
+        + (num_configured_pins as f32 * (PIN_BUTTON_DIAMETER + SPACE_BETWEEN_PIN_ROWS))
         + HARDWARE_VIEW_PADDING
         + INFO_ROW_HEIGHT
         + 1.0;
 
     // Dock is not shown if pins unconfigured
-    if num_pins != 26 {
-        height += SPACE_BETWEEN_PIN_ROWS + PIN_ROW_HEIGHT
+    if num_configured_pins != MAX_CONFIGURABLE_PINS {
+        height += SPACE_BETWEEN_PIN_ROWS + PIN_BUTTON_DIAMETER
     }
 
     Size {
-        width: 720.0,
+        width: HARDWARE_VIEW_PADDING
+            + (MAX_CONFIGURABLE_PINS as f32 * (PIN_BUTTON_DIAMETER + PIN_DOCK_SPACING))
+            + HARDWARE_VIEW_PADDING,
         height,
     }
 }
@@ -84,7 +87,7 @@ pub(crate) fn bcm_layout_size(num_pins: usize) -> Size {
     Size {
         width: 720.0,
         height: HARDWARE_VIEW_PADDING
-            + (num_pins as f32 * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS))
+            + (num_pins as f32 * (PIN_BUTTON_DIAMETER + SPACE_BETWEEN_PIN_ROWS))
             + HARDWARE_VIEW_PADDING
             + INFO_ROW_HEIGHT
             + 1.0,
@@ -222,12 +225,17 @@ impl HardwareView {
             .pin_functions
             .get(&bcm_pin_number)
             .unwrap_or(&PinFunction::None);
-        if &new_function != previous_function {
-            self.hardware_config
-                .pin_functions
-                .insert(bcm_pin_number, new_function);
 
-            self.pin_states.insert(bcm_pin_number, PinState::new());
+        if &new_function != previous_function {
+            if new_function == PinFunction::None {
+                self.hardware_config.pin_functions.remove(&bcm_pin_number);
+                self.pin_states.remove(&bcm_pin_number);
+            } else {
+                self.hardware_config
+                    .pin_functions
+                    .insert(bcm_pin_number, new_function);
+                self.pin_states.insert(bcm_pin_number, PinState::new());
+            }
 
             // Report config changes to the hardware listener
             // Since config loading and hardware listener setup can occur out of order
@@ -423,16 +431,14 @@ impl HardwareView {
                     .contains_key(bcm_pin_number)
                 {
                     // Pin is not configured, add it to the doc, just as a pin
-                    unused_pins.push(pin_button(
-                        pin_description.bpn,
-                        pin_description.name.as_ref(),
-                    ));
+                    unused_pins.push(pin_button_menu(pin_description));
                 }
             }
         }
 
         if !unused_pins.is_empty() {
-            let pin_dock: MenuBar<HardwareViewMessage, Theme, Renderer> = MenuBar::new(unused_pins);
+            let pin_dock: MenuBar<HardwareViewMessage, Theme, Renderer> =
+                MenuBar::new(unused_pins).spacing(PIN_DOCK_SPACING);
             column = column.push(pin_dock);
         }
 
@@ -664,28 +670,33 @@ fn filter_options(
     config_options
 }
 
-/// Create a button representing the pin with its physical (bpn) number, color and a menu
-fn pin_button(
-    bpn: BoardPinNumber,
-    pin_name: &str,
+/// Create a button representing the pin with its physical (bpn) number, color and maybe a menu
+fn pin_button_menu(
+    pin_description: &PinDescription,
 ) -> Item<'_, HardwareViewMessage, Theme, Renderer> {
-    let button = button(
-        container(Text::new(bpn.to_string()))
+    let button = pin_button(pin_description);
+
+    let mut menu_items: Vec<Item<'_, HardwareViewMessage, _, _>> = vec![];
+    if let Some(_bcm) = pin_description.bcm {
+        let bla = Button::new("Bl bla").width(Length::Fill).style(menu_button);
+        menu_items.push(Item::new(bla));
+    }
+
+    Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
+}
+
+/// Create a button representing the pin with its physical (bpn) number, color
+fn pin_button(pin_description: &PinDescription) -> Element<HardwareViewMessage> {
+    button(
+        container(Text::new(pin_description.bpn))
             .align_x(Center)
             .align_y(Center),
     )
     .padding(0.0)
-    .width(Length::Fixed(PIN_BUTTON_WIDTH))
-    .height(Length::Fixed(PIN_BUTTON_WIDTH))
-    .style(move |_, _| get_pin_style(pin_name));
-
-    let mut menu_items: Vec<Item<'_, HardwareViewMessage, _, _>> = vec![];
-
-    let bla = Button::new("Bl bla").width(Length::Fill).style(menu_button);
-
-    menu_items.push(Item::new(bla));
-
-    Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
+    .width(Length::Fixed(PIN_BUTTON_DIAMETER))
+    .height(Length::Fixed(PIN_BUTTON_DIAMETER))
+    .style(move |_, _| get_pin_style(pin_description.name.as_ref()))
+    .into()
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
@@ -714,39 +725,39 @@ fn create_pin_view_side<'a>(
             let pick_list = pick_list(config_options, selected, move |pin_function| {
                 PinFunctionSelected(bcm_pin_number, pin_function)
             })
-            .width(Length::Fixed(PIN_OPTION_WIDTH))
+            .width(PIN_OPTION_WIDTH)
             .placeholder("Select function");
 
             pick_list.into()
         } else {
-            Row::new().width(Length::Fixed(PIN_OPTION_WIDTH)).into()
+            Row::new().width(PIN_OPTION_WIDTH).into()
         }
     } else {
-        Row::new().width(Length::Fixed(PIN_OPTION_WIDTH)).into()
+        Row::new().width(PIN_OPTION_WIDTH).into()
     };
 
-    // Create the Pin name
     let pin_name = Column::new()
         .push(Text::new(pin_description.name.to_string()))
         .width(Length::Fixed(PIN_NAME_WIDTH));
 
-    let mut pin_arrow = Row::new()
-        .align_y(Center)
-        .width(Length::Fixed(PIN_ARROW_WIDTH));
+    let mut pin_row = Row::new().align_y(Center).width(PIN_ROW_WIDTH);
+
+    // If the pin is configurable, create a menu on it, if not just the button
+    let pin_button: Element<HardwareViewMessage> = if pin_description.bcm.is_some() {
+        MenuBar::new(vec![pin_button_menu(pin_description)]).into()
+    } else {
+        pin_button(pin_description)
+    };
 
     if direction == Left {
-        pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
-        pin_arrow = pin_arrow.push(line(PIN_ARROW_LINE_WIDTH));
+        pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
+        pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
+        pin_row = pin_row.push(pin_button);
     } else {
-        pin_arrow = pin_arrow.push(line(PIN_ARROW_LINE_WIDTH));
-        pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
+        pin_row = pin_row.push(pin_button);
+        pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
+        pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
     }
-
-    let pin_button: Element<HardwareViewMessage> = MenuBar::new(vec![pin_button(
-        pin_description.bpn,
-        pin_description.name.as_ref(),
-    )])
-    .into();
 
     // Create the row of widgets that represent the pin, inverted order if left or right
     let row = if direction == Left {
@@ -754,13 +765,11 @@ fn create_pin_view_side<'a>(
             pin_widget,
             pin_option,
             pin_name.align_x(Alignment::End),
-            pin_arrow,
-            pin_button
+            pin_row,
         ]
     } else {
         row![
-            pin_button,
-            pin_arrow,
+            pin_row,
             pin_name.align_x(Alignment::Start),
             pin_option,
             pin_widget
