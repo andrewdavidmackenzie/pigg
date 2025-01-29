@@ -298,7 +298,7 @@ impl HardwareView {
                 let pin_layout = match layout {
                     Layout::Board => self.board_pin_layout_view(&hw_description.pins),
                     Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
-                    Layout::Compact => self.reduced_layout_view(&hw_description.pins),
+                    Layout::Compact => self.compact_layout_view(&hw_description.pins),
                 };
 
                 scrollable(pin_layout)
@@ -364,8 +364,8 @@ impl HardwareView {
             .into()
     }
 
-    /// Reduced size view that only lays out configured pins
-    pub fn reduced_layout_view<'a>(
+    /// Compact view that only lays out configured pins
+    pub fn compact_layout_view<'a>(
         &'a self,
         pin_set: &'a PinDescriptionSet,
     ) -> Element<'a, HardwareViewMessage> {
