@@ -45,6 +45,9 @@ use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+/// The reduced layout has a dock for unconfigured pins at the top
+pub const PIN_DOCK_HEIGHT: f32 = 28.0;
+
 /// [HardwareViewMessage] covers all messages that are handled by hardware_view
 #[derive(Debug, Clone)]
 pub enum HardwareViewMessage {
@@ -286,44 +289,32 @@ impl HardwareView {
         Task::none()
     }
 
-    fn hw_view(
-        &self,
-        layout: Layout,
-        hardware_connection: &HardwareConnection,
-    ) -> Element<HardwareViewMessage> {
-        if hardware_connection == &NoConnection {
-            return Row::new().into();
-        }
+    /// Construct the view that represents the hardware view
+    pub fn view(&self, layout: Layout) -> Element<Message> {
+        let inner: Element<HardwareViewMessage> =
+            if let Some(hw_description) = &self.hardware_description {
+                let pin_layout = match layout {
+                    Layout::Board => self.board_pin_layout_view(&hw_description.pins),
+                    Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
+                    Layout::Reduced => self.reduced_layout_view(&hw_description.pins),
+                };
 
-        if let Some(hw_description) = &self.hardware_description {
-            let pin_layout = match layout {
-                Layout::Board => self.board_pin_layout_view(&hw_description.pins),
-                Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
-                Layout::Reduced => self.reduced_layout_view(&hw_description.pins),
+                scrollable(pin_layout)
+                    .direction({
+                        let scrollbar = Scrollbar::new().width(10);
+                        scrollable::Direction::Both {
+                            horizontal: scrollbar,
+                            vertical: scrollbar,
+                        }
+                    })
+                    .into()
+            } else {
+                // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
+                Row::new().into()
             };
 
-            return scrollable(pin_layout)
-                .direction({
-                    let scrollbar = Scrollbar::new().width(10);
-                    scrollable::Direction::Both {
-                        horizontal: scrollbar,
-                        vertical: scrollbar,
-                    }
-                })
-                .into();
-        }
-
-        // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
-        Row::new().into()
-    }
-
-    /// Construct the view that represents the main row of the app
-    pub fn view(&self, layout: Layout) -> Element<Message> {
         let hw_column = Column::new()
-            .push(
-                self.hw_view(layout, &self.hardware_connection)
-                    .map(Message::Hardware),
-            )
+            .push(inner.map(Message::Hardware))
             .align_x(Center)
             .height(Length::Fill)
             .width(Length::Fill);
