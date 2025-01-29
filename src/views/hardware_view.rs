@@ -702,14 +702,9 @@ fn create_pin_view_side<'a>(
         Row::new().width(Length::Fixed(PIN_WIDGET_ROW_WIDTH)).into()
     };
 
-    // Create the drop-down selector of pin function
-    let mut pin_option = Column::new()
-        .width(Length::Fixed(PIN_OPTION_WIDTH))
-        .align_x(Center);
-
-    if let Some(bcm_pin_number) = pin_description.bcm {
-        let mut pin_options_row = Row::new().align_y(Center);
-
+    // Create the drop-down selector of pin function, or a spacer
+    let pin_option: Element<HardwareViewMessage> = if let Some(bcm_pin_number) = pin_description.bcm
+    {
         // Filter options to remove currently selected one
         let config_options = filter_options(&pin_description.options, pin_function.cloned());
 
@@ -722,22 +717,18 @@ fn create_pin_view_side<'a>(
             .width(Length::Fixed(PIN_OPTION_WIDTH))
             .placeholder("Select function");
 
-            pin_options_row = pin_options_row.push(pick_list);
+            pick_list.into()
+        } else {
+            Row::new().width(Length::Fixed(PIN_OPTION_WIDTH)).into()
         }
-
-        pin_option = pin_option.push(pin_options_row);
-    }
-
-    let mut pin_name_column = Column::new()
-        .width(Length::Fixed(PIN_NAME_WIDTH))
-        .align_x(Center);
+    } else {
+        Row::new().width(Length::Fixed(PIN_OPTION_WIDTH)).into()
+    };
 
     // Create the Pin name
-    let pin_name = Row::new()
+    let pin_name = Column::new()
         .push(Text::new(pin_description.name.to_string()))
-        .align_y(Center);
-
-    pin_name_column = pin_name_column.push(pin_name).width(PIN_NAME_WIDTH);
+        .width(Length::Fixed(PIN_NAME_WIDTH));
 
     let mut pin_arrow = Row::new()
         .align_y(Center)
@@ -762,7 +753,7 @@ fn create_pin_view_side<'a>(
         row![
             pin_widget,
             pin_option,
-            pin_name_column.align_x(Alignment::End),
+            pin_name.align_x(Alignment::End),
             pin_arrow,
             pin_button
         ]
@@ -770,7 +761,7 @@ fn create_pin_view_side<'a>(
         row![
             pin_button,
             pin_arrow,
-            pin_name_column.align_x(Alignment::Start),
+            pin_name.align_x(Alignment::Start),
             pin_option,
             pin_widget
         ]
