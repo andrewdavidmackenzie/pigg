@@ -1,12 +1,13 @@
-use crate::{Message, WINDOW_TITLE_AREA_HEIGHT};
+use crate::Message;
 use iced::widget::Button;
 use iced::{Length, Size};
 
 use crate::hw_definition::config::HardwareConfig;
-use crate::views::hardware_styles::{PIN_ROW_HEIGHT, SPACE_BETWEEN_PIN_ROWS};
 use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::hardware_view::{HardwareConnection, PIN_DOCK_HEIGHT};
-use crate::views::info_row::{menu_bar_button, menu_button, INFO_ROW_HEIGHT};
+use crate::views::hardware_view::{
+    bcm_layout_size, compact_layout_size, HardwareConnection, BOARD_LAYOUT_SIZE,
+};
+use crate::views::info_row::{menu_bar_button, menu_button};
 use crate::views::layout_menu::Layout::{Board, Compact, Logical};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
@@ -18,28 +19,6 @@ pub enum Layout {
     Board,
     Logical,
     Compact,
-}
-
-const BOARD_LAYOUT_SIZE: Size = Size {
-    width: 1400.0,
-    height: 720.0,
-};
-
-const BCM_LAYOUT_SIZE: Size = Size {
-    width: 720.0,
-    height: 910.0,
-};
-
-// calculate the height required based on the number of configured pins
-fn compact_layout_size(hardware_config: &HardwareConfig) -> Size {
-    Size {
-        width: 720.0,
-        height: WINDOW_TITLE_AREA_HEIGHT
-            + PIN_DOCK_HEIGHT
-            + (hardware_config.pin_functions.len() as f32
-                * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS))
-            + INFO_ROW_HEIGHT,
-    }
 }
 
 #[derive(Clone, PartialEq, Default)]
@@ -63,8 +42,8 @@ impl LayoutSelector {
         self.selected_layout = new_layout;
         match self.selected_layout {
             Board => BOARD_LAYOUT_SIZE,
-            Logical => BCM_LAYOUT_SIZE,
-            Compact => compact_layout_size(hardware_config),
+            Logical => bcm_layout_size(26),
+            Compact => compact_layout_size(hardware_config.pin_functions.len()),
         }
     }
 

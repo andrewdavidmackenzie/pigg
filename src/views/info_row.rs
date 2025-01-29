@@ -177,7 +177,7 @@ impl InfoRow {
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)
-                .padding(Padding::new(0.0)),
+                .padding(0),
         )
         .style(|_theme| INFO_BAR_STYLE)
         .into()

@@ -15,7 +15,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{window, Element, Length, Padding, Pixels, Settings, Subscription, Task, Theme};
+use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme};
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 
@@ -52,8 +52,6 @@ mod views;
 mod widgets;
 
 const PIGGUI_ID: &str = "piggui";
-
-pub(crate) const WINDOW_TITLE_AREA_HEIGHT: f32 = 28.0;
 
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
@@ -365,7 +363,6 @@ impl Piggui {
         let content = container(main_col)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(Padding::new(0.0))
             .align_x(iced::alignment::Horizontal::Center)
             .center_x(Length::Fill)
             .center_y(Length::Fill);

@@ -40,10 +40,6 @@ pub(crate) const SPACE_BETWEEN_PIN_COLUMNS: f32 = 10.0;
 // pub const BOARD_PIN_LAYOUT_WIDTH: f32 =
 //     PIN_VIEW_SIDE_WIDTH + PIN_VIEW_SIDE_WIDTH + BOARD_LAYOUT_WIDTH_BETWEEN_PIN_ROWS;
 
-pub(crate) const SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
-
-pub(crate) const PIN_ROW_HEIGHT: f32 = 28.0;
-
 const PIN_RADIUS: Radius = Radius {
     top_left: PIN_BUTTON_RADIUS,
     top_right: PIN_BUTTON_RADIUS,
