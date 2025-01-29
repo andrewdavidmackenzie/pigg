@@ -33,7 +33,7 @@ use iced::widget::scrollable::Scrollbar;
 use iced::widget::toggler::Status::Hovered;
 use iced::widget::tooltip::Position;
 use iced::widget::{
-    button, horizontal_space, pick_list, row, scrollable, toggler, Button, Column, Row, Text,
+    button, horizontal_space, pick_list, row, scrollable, text, toggler, Button, Column, Row, Text,
 };
 use iced::widget::{container, Tooltip};
 use iced::{Alignment, Center, Element, Length, Size, Task};
@@ -671,17 +671,19 @@ fn filter_options(
 }
 
 /// Create a button representing the pin with its physical (bpn) number, color and maybe a menu
-fn pin_button_menu(
-    pin_description: &PinDescription,
-) -> Item<'_, HardwareViewMessage, Theme, Renderer> {
+fn pin_button_menu(pin_description: &PinDescription) -> Item<HardwareViewMessage, Theme, Renderer> {
     let button = pin_button(pin_description);
 
-    let mut menu_items: Vec<Item<'_, HardwareViewMessage, _, _>> = vec![];
-    if let Some(_bcm) = pin_description.bcm {
-        let bla = Button::new("Bl bla").width(Length::Fill).style(menu_button);
-        menu_items.push(Item::new(bla));
+    let mut menu_items: Vec<Item<HardwareViewMessage, _, _>> = vec![];
+    if let Some(bcm_pin_number) = pin_description.bcm {
+        for option in pin_description.options.iter() {
+            let menu_button = Button::new(text!("{option}"))
+                .width(Length::Fill)
+                .style(menu_button)
+                .on_press(PinFunctionSelected(bcm_pin_number, *option));
+            menu_items.push(Item::new(menu_button));
+        }
     }
-
     Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
 }
 
