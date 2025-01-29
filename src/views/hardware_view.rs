@@ -695,11 +695,7 @@ fn create_pin_view_side<'a>(
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
     }
 
-    let mut pin_button_column = Column::new().align_x(Center);
-    pin_button_column = pin_button_column.push(pin_button(
-        pin_description.bpn,
-        pin_description.name.as_ref(),
-    ));
+    let pin_button = pin_button(pin_description.bpn, pin_description.name.as_ref());
     // Create the row of widgets that represent the pin, inverted order if left or right
     let row = if direction == Left {
         Row::new()
@@ -707,10 +703,10 @@ fn create_pin_view_side<'a>(
             .push(pin_option)
             .push(pin_name_column.align_x(Alignment::End))
             .push(pin_arrow)
-            .push(pin_button_column)
+            .push(pin_button)
     } else {
         Row::new()
-            .push(pin_button_column)
+            .push(pin_button)
             .push(pin_arrow)
             .push(pin_name_column.align_x(Alignment::Start))
             .push(pin_option)
