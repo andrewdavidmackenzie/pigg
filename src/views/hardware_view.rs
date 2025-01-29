@@ -31,7 +31,9 @@ use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::toggler::Status::Hovered;
 use iced::widget::tooltip::Position;
-use iced::widget::{button, horizontal_space, pick_list, scrollable, toggler, Column, Row, Text};
+use iced::widget::{
+    button, horizontal_space, pick_list, scrollable, toggler, Button, Column, Row, Text,
+};
 use iced::widget::{container, Tooltip};
 use iced::Color;
 use iced::{Alignment, Center, Element, Length, Task};
@@ -46,7 +48,7 @@ use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The reduced layout has a dock for unconfigured pins at the top
-pub const PIN_DOCK_HEIGHT: f32 = 28.0;
+pub const PIN_DOCK_HEIGHT: f32 = 30.0;
 
 /// [HardwareViewMessage] covers all messages that are handled by hardware_view
 #[derive(Debug, Clone)]
@@ -296,7 +298,7 @@ impl HardwareView {
                 let pin_layout = match layout {
                     Layout::Board => self.board_pin_layout_view(&hw_description.pins),
                     Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
-                    Layout::Reduced => self.reduced_layout_view(&hw_description.pins),
+                    Layout::Compact => self.reduced_layout_view(&hw_description.pins),
                 };
 
                 scrollable(pin_layout)
@@ -369,6 +371,26 @@ impl HardwareView {
     ) -> Element<'a, HardwareViewMessage> {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
+        // add a row at the top that is a "dock" for unconfigured pins
+        let mut pin_dock = Row::new().height(PIN_DOCK_HEIGHT);
+        for pin_description in pin_set.pins() {
+            if let Some(bcm_pin_number) = &pin_description.bcm {
+                if !self
+                    .hardware_config
+                    .pin_functions
+                    .contains_key(bcm_pin_number)
+                {
+                    // Pin is not configured, add it to the doc, just as a pin
+                    pin_dock = pin_dock.push(pin_button(
+                        pin_description.bpn,
+                        pin_description.name.as_ref(),
+                    ));
+                }
+            }
+        }
+        column = column.push(pin_dock);
+
+        // Add a row for each configured pin
         for pin_description in pin_set.bcm_pins_sorted() {
             if let Some(bcm_pin_number) = &pin_description.bcm {
                 if self
@@ -376,6 +398,7 @@ impl HardwareView {
                     .pin_functions
                     .contains_key(bcm_pin_number)
                 {
+                    // Pin is configured, lay it out with full widgets in a row
                     let pin_row = create_pin_view_side(
                         pin_description,
                         self.hardware_config
@@ -595,6 +618,20 @@ fn filter_options(
     config_options
 }
 
+/// Create the pin with number and as a button
+fn pin_button(bpn: BoardPinNumber, pin_name: &str) -> Button<'_, HardwareViewMessage> {
+    button(
+        container(Text::new(bpn.to_string()))
+            .align_x(Center)
+            .align_y(Center),
+    )
+    .padding(0.0)
+    .width(Length::Fixed(PIN_BUTTON_WIDTH))
+    .height(Length::Fixed(PIN_BUTTON_WIDTH))
+    .style(move |_, _| get_pin_style(pin_name))
+    .on_press(Activate(bpn))
+}
+
 /// Create a row of widgets that represent a pin, either from left to right or right to left
 fn create_pin_view_side<'a>(
     pin_description: &'a PinDescription,
@@ -659,19 +696,10 @@ fn create_pin_view_side<'a>(
     }
 
     let mut pin_button_column = Column::new().align_x(Center);
-    // Create the pin itself, with number and as a button
-    let pin_button = button(
-        container(Text::new(pin_description.bpn.to_string()))
-            .align_x(Center)
-            .align_y(Center),
-    )
-    .padding(0.0)
-    .width(Length::Fixed(PIN_BUTTON_WIDTH))
-    .height(Length::Fixed(PIN_BUTTON_WIDTH))
-    .style(move |_, _| get_pin_style(pin_description))
-    .on_press(Activate(pin_description.bpn));
-
-    pin_button_column = pin_button_column.push(pin_button);
+    pin_button_column = pin_button_column.push(pin_button(
+        pin_description.bpn,
+        pin_description.name.as_ref(),
+    ));
     // Create the row of widgets that represent the pin, inverted order if left or right
     let row = if direction == Left {
         Row::new()

@@ -1,4 +1,3 @@
-use crate::hw_definition::description::PinDescription;
 use crate::views::dialog_styles::NO_SHADOW;
 use crate::views::pin_state::CHART_WIDTH;
 use iced::border::Radius;
@@ -182,8 +181,8 @@ pub(crate) const TOOLTIP_STYLE: container::Style = container::Style {
     shadow: NO_SHADOW,
 };
 
-pub(crate) fn get_pin_style(pin_description: &PinDescription) -> button::Style {
-    match pin_description.name.as_ref() {
+pub(crate) fn get_pin_style(pin_name: &str) -> button::Style {
+    match pin_name {
         "3V3" => V3_BUTTON_STYLE,
         "5V" => V5_BUTTON_STYLE,
         "Ground" => GND_BUTTON_STYLE,

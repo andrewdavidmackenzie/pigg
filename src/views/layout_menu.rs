@@ -7,7 +7,7 @@ use crate::views::hardware_styles::{PIN_ROW_HEIGHT, SPACE_BETWEEN_PIN_ROWS};
 use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::hardware_view::{HardwareConnection, PIN_DOCK_HEIGHT};
 use crate::views::info_row::{menu_bar_button, menu_button, INFO_ROW_HEIGHT};
-use crate::views::layout_menu::Layout::{Board, Logical, Reduced};
+use crate::views::layout_menu::Layout::{Board, Compact, Logical};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
@@ -17,7 +17,7 @@ pub enum Layout {
     #[default]
     Board,
     Logical,
-    Reduced,
+    Compact,
 }
 
 const BOARD_LAYOUT_SIZE: Size = Size {
@@ -31,7 +31,7 @@ const BCM_LAYOUT_SIZE: Size = Size {
 };
 
 // calculate the height required based on the number of configured pins
-fn reduced_layout_size(hardware_config: &HardwareConfig) -> Size {
+fn compact_layout_size(hardware_config: &HardwareConfig) -> Size {
     Size {
         width: 720.0,
         height: WINDOW_TITLE_AREA_HEIGHT
@@ -64,7 +64,7 @@ impl LayoutSelector {
         match self.selected_layout {
             Board => BOARD_LAYOUT_SIZE,
             Logical => BCM_LAYOUT_SIZE,
-            Layout::Reduced => reduced_layout_size(hardware_config),
+            Compact => compact_layout_size(hardware_config),
         }
     }
 
@@ -96,12 +96,12 @@ impl LayoutSelector {
         }
         menu_items.push(Item::new(show_physical_layout));
 
-        let mut show_reduced_layout = Button::new("Reduced Layout")
+        let mut show_reduced_layout = Button::new("Compact Layout")
             .width(Length::Fill)
             .style(menu_button);
 
-        if hardware_connection != &NoConnection && self.selected_layout != Reduced {
-            show_reduced_layout = show_reduced_layout.on_press(Message::LayoutChanged(Reduced));
+        if hardware_connection != &NoConnection && self.selected_layout != Compact {
+            show_reduced_layout = show_reduced_layout.on_press(Message::LayoutChanged(Compact));
         }
 
         menu_items.push(Item::new(show_reduced_layout));
@@ -109,7 +109,7 @@ impl LayoutSelector {
         let button = match self.selected_layout {
             Board => Button::new("layout: board"),
             Logical => Button::new("layout: bcp"),
-            Layout::Reduced => Button::new("layout: reduced"),
+            Compact => Button::new("layout: compact"),
         }
         .style(menu_bar_button)
         .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;
