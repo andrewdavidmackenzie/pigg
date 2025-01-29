@@ -65,11 +65,11 @@ const PIN_ROW_HEIGHT: f32 = 28.0;
 pub(crate) fn compact_layout_size(num_pins: usize) -> Size {
     let mut height = HARDWARE_VIEW_PADDING
         + (num_pins as f32 * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS))
-        + INFO_ROW_HEIGHT
         + HARDWARE_VIEW_PADDING
+        + INFO_ROW_HEIGHT
         + 1.0;
 
-    // Dock is not shown if no pins left unused
+    // Dock is not shown if pins unconfigured
     if num_pins != 26 {
         height += SPACE_BETWEEN_PIN_ROWS + PIN_ROW_HEIGHT
     }
@@ -85,8 +85,8 @@ pub(crate) fn bcm_layout_size(num_pins: usize) -> Size {
         width: 720.0,
         height: HARDWARE_VIEW_PADDING
             + (num_pins as f32 * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS))
-            + INFO_ROW_HEIGHT
             + HARDWARE_VIEW_PADDING
+            + INFO_ROW_HEIGHT
             + 1.0,
     }
 }
@@ -751,8 +751,11 @@ fn create_pin_view_side<'a>(
         pin_arrow = pin_arrow.push(circle(PIN_ARROW_CIRCLE_RADIUS));
     }
 
-    //let pin_button: Element<HardwareViewMessage> =
-    //  pin_button(pin_description.bpn, pin_description.name.as_ref());
+    let pin_button: Element<HardwareViewMessage> = MenuBar::new(vec![pin_button(
+        pin_description.bpn,
+        pin_description.name.as_ref(),
+    )])
+    .into();
 
     // Create the row of widgets that represent the pin, inverted order if left or right
     let row = if direction == Left {
@@ -761,11 +764,11 @@ fn create_pin_view_side<'a>(
             pin_option,
             pin_name_column.align_x(Alignment::End),
             pin_arrow,
-            //pin_button
+            pin_button
         ]
     } else {
         row![
-            //pin_button,
+            pin_button,
             pin_arrow,
             pin_name_column.align_x(Alignment::Start),
             pin_option,
