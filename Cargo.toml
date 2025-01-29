@@ -51,7 +51,7 @@ chrono = { version = "0.4", default-features = false, features = ["now", "serde"
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
 
 # for config serialization to/from file
-serde_json = { version = "1.0.137", default-features = false, features = ["std"] }
+serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
 # for alloc/no_alloc over the wire serialization/deserialization
 postcard = { version = "1.1.1", features = ["alloc"] }
 
