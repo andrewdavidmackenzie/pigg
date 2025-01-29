@@ -1,6 +1,7 @@
 use crate::views::dialog_styles::NO_SHADOW;
 use crate::views::pin_state::CHART_WIDTH;
 use iced::border::Radius;
+use iced::widget::button::Status;
 use iced::widget::{button, container, toggler};
 use iced::{Background, Border, Color, Shadow};
 use iced_aw::style::colors::WHITE;
@@ -24,14 +25,6 @@ pub(crate) const WIDGET_ROW_SPACING: f32 = 5.0;
 pub(crate) const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
 
-// const PIN_VIEW_SIDE_WIDTH: f32 = PIN_BUTTON_WIDTH
-//     + WIDGET_ROW_SPACING
-//     + PIN_ARROW_WIDTH
-//     + WIDGET_ROW_SPACING
-//     + PIN_NAME_WIDTH
-//     + WIDGET_ROW_SPACING
-//     + PIN_OPTION_WIDTH;
-
 pub(crate) const SPACE_BETWEEN_PIN_COLUMNS: f32 = 10.0;
 
 // Export these two, so they can be used to calculate overall window size
@@ -54,7 +47,7 @@ const PIN_BORDER: Border = Border {
     radius: PIN_RADIUS,
 };
 
-const PIN_BORDER_HIGHLIGHT: Border = Border {
+const PIN_BORDER_HOVER: Border = Border {
     color: Color::WHITE,
     width: 2.0,
     radius: PIN_RADIUS,
@@ -139,8 +132,13 @@ const DEFAULT_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.647, 0.0, 1.0))),
     text_color: Color::WHITE,
     border: PIN_BORDER,
-    // hovered_bg_color: Color::WHITE,
-    // hovered_text_color: Color::new(1.0, 0.647, 0.0, 1.0),
+    shadow: PIN_SHADOW,
+};
+
+const DEFAULT_BUTTON_HOVER_STYLE: button::Style = button::Style {
+    background: Some(Background::Color(Color::from_rgba(1.0, 0.647, 0.0, 1.0))),
+    text_color: Color::WHITE,
+    border: PIN_BORDER_HOVER,
     shadow: PIN_SHADOW,
 };
 
@@ -184,7 +182,7 @@ pub(crate) const TOOLTIP_STYLE: container::Style = container::Style {
     shadow: NO_SHADOW,
 };
 
-pub(crate) fn get_pin_style(pin_name: &str) -> button::Style {
+pub(crate) fn get_pin_style(status: Status, pin_name: &str) -> button::Style {
     match pin_name {
         "3V3" => V3_BUTTON_STYLE,
         "5V" => V5_BUTTON_STYLE,
@@ -193,6 +191,12 @@ pub(crate) fn get_pin_style(pin_name: &str) -> button::Style {
         "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => GPIO7_BUTTON_STYLE,
         "GPIO14" | "GPIO15" => GPIO14_BUTTON_STYLE,
         "ID_SD" | "ID_SC" => ID_BUTTON_STYLE,
-        _ => DEFAULT_BUTTON_STYLE,
+        _ => {
+            if status == Status::Hovered {
+                DEFAULT_BUTTON_HOVER_STYLE
+            } else {
+                DEFAULT_BUTTON_STYLE
+            }
+        }
     }
 }

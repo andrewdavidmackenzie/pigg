@@ -683,6 +683,11 @@ fn pin_button_menu(pin_description: &PinDescription) -> Item<HardwareViewMessage
                 .on_press(PinFunctionSelected(bcm_pin_number, *option));
             menu_items.push(Item::new(menu_button));
         }
+        let none = Button::new("None")
+            .width(Length::Fill)
+            .style(menu_button)
+            .on_press(PinFunctionSelected(bcm_pin_number, PinFunction::None));
+        menu_items.push(Item::new(none));
     }
     Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
 }
@@ -697,7 +702,7 @@ fn pin_button(pin_description: &PinDescription) -> Element<HardwareViewMessage> 
     .padding(0.0)
     .width(Length::Fixed(PIN_BUTTON_DIAMETER))
     .height(Length::Fixed(PIN_BUTTON_DIAMETER))
-    .style(move |_, _| get_pin_style(pin_description.name.as_ref()))
+    .style(move |_, status| get_pin_style(status, pin_description.name.as_ref()))
     .into()
 }
 
