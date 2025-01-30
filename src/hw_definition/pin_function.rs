@@ -22,8 +22,6 @@ use serde::{Deserialize, Serialize};
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum PinFunction {
-    None,
-
     /// GPIO functions
     Input(Option<InputPull>),
     Output(Option<PinLevel>),

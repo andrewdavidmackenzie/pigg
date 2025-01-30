@@ -87,7 +87,7 @@ impl HW {
     {
         // Config only has pins that are configured
         for (bcm_pin_number, pin_function) in &config.pin_functions {
-            self.apply_pin_config(*bcm_pin_number, pin_function, callback.clone())
+            self.apply_pin_config(*bcm_pin_number, &Some(*pin_function), callback.clone())
                 .await?;
         }
 
@@ -210,7 +210,7 @@ impl HW {
     pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        pin_function: &PinFunction,
+        pin_function: &Option<PinFunction>,
         mut callback: C,
     ) -> io::Result<()>
     where
@@ -222,9 +222,9 @@ impl HW {
         self.configured_pins.remove(&bcm_pin_number);
 
         match pin_function {
-            PinFunction::None => {}
+            None => { /* TODO deconfigure pin? */ }
 
-            PinFunction::Input(pull) => {
+            Some(PinFunction::Input(pull)) => {
                 let pin = Gpio::new()
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
                     .get(bcm_pin_number)
@@ -255,7 +255,7 @@ impl HW {
                     .insert(bcm_pin_number, Pin::Input(input));
             }
 
-            PinFunction::Output(value) => {
+            Some(PinFunction::Output(value)) => {
                 let pin = Gpio::new()
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
                     .get(bcm_pin_number)
@@ -284,7 +284,7 @@ impl HW {
     pub async fn apply_pin_config<C>(
         &mut self,
         bcm_pin_number: BCMPinNumber,
-        pin_function: &PinFunction,
+        pin_function: &Option<PinFunction>,
         mut callback: C,
     ) -> io::Result<()>
     where
@@ -292,7 +292,7 @@ impl HW {
     {
         use rand::Rng;
 
-        if let PinFunction::Input(_) = pin_function {
+        if let Some(PinFunction::Input(_)) = pin_function {
             std::thread::spawn(move || {
                 let mut rng = rand::thread_rng();
                 loop {

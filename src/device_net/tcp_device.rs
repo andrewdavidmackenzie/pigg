@@ -119,7 +119,7 @@ async fn apply_config_change(
             *hardware_config = config;
         }
         NewPinConfig(bcm, pin_function) => {
-            info!("New pin config for pin #{bcm}: {pin_function}");
+            info!("New pin config for pin #{bcm}: {pin_function:?}");
             let wc = tcp_stream.clone();
             hardware
                 .apply_pin_config(bcm, &pin_function, move |bcm, level_change| {
@@ -127,9 +127,13 @@ async fn apply_config_change(
                 })
                 .await?;
 
-            send_current_input_state(&bcm, &pin_function, wc, hardware).await?;
-            // add/replace the new pin config to the hardware config
-            hardware_config.pin_functions.insert(bcm, pin_function);
+            if let Some(function) = pin_function {
+                send_current_input_state(&bcm, &function, wc, hardware).await?;
+                // add/replace the new pin config to the hardware config
+                hardware_config.pin_functions.insert(bcm, function);
+            } else {
+                hardware_config.pin_functions.remove(&bcm);
+            }
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");

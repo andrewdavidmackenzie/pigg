@@ -5,7 +5,6 @@ use iced::widget::button::Status;
 use iced::widget::{button, container, toggler};
 use iced::{Background, Border, Color, Shadow};
 use iced_aw::style::colors::WHITE;
-
 // WIDTHS
 pub(crate) const PIN_BUTTON_DIAMETER: f32 = 28.0;
 const PIN_BUTTON_RADIUS: f32 = PIN_BUTTON_DIAMETER / 2.0;
@@ -18,7 +17,7 @@ pub(crate) const TOGGLER_SIZE: f32 = 28.0;
 pub(crate) const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
 pub(crate) const CLICKER_WIDTH: f32 = 13.0;
 // We want the pullup on an Input to be the same width as the clicker + toggler on an Output
-pub(crate) const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH;
+pub(crate) const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH - 3.0;
 pub(crate) const LED_WIDTH: f32 = 14.0;
 pub(crate) const WIDGET_ROW_SPACING: f32 = 5.0;
 pub(crate) const PIN_WIDGET_ROW_WIDTH: f32 =
@@ -107,16 +106,16 @@ pub(crate) const TOOLTIP_STYLE: container::Style = container::Style {
 /// Return a style used to draw a pin, based on it's name and if it has options or not and
 /// the Hover status.
 pub(crate) fn get_pin_style(status: Status, pin_name: &str, options: bool) -> button::Style {
-    let color = match pin_name {
-        "3V3" => Color::from_rgba(1.0, 0.92, 0.016, 1.0), // Yellow
-        "5V" => Color::from_rgba(1.0, 0.0, 0.0, 1.0),     // Red,
-        "Ground" => Color::BLACK,
-        "GPIO2" | "GPIO3" => Color::from_rgba(0.678, 0.847, 0.902, 1.0), // Light Blue
+    let (pin_color, text_color) = match pin_name {
+        "3V3" => (Color::from_rgba(1.0, 0.92, 0.016, 1.0), Color::BLACK), // Yellow
+        "5V" => (Color::from_rgba(1.0, 0.0, 0.0, 1.0), Color::BLACK),     // Red,
+        "Ground" => (Color::BLACK, Color::WHITE),
+        "GPIO2" | "GPIO3" => (Color::from_rgba(0.678, 0.847, 0.902, 1.0), Color::BLACK), // Light Blue
         "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => {
-            Color::from_rgba(0.933, 0.510, 0.933, 1.0)
+            (Color::from_rgba(0.933, 0.510, 0.933, 1.0), Color::WHITE)
         } // Pink
-        "GPIO14" | "GPIO15" => Color::from_rgba(0.0, 0.502, 0.0, 1.0),   // Green
-        _ => Color::from_rgba(1.0, 0.647, 0.0, 1.0),                     // Orange
+        "GPIO14" | "GPIO15" => (Color::from_rgba(0.0, 0.502, 0.0, 1.0), Color::WHITE),   // Green
+        _ => (Color::from_rgba(1.0, 0.647, 0.0, 1.0), Color::WHITE),                     // Orange
     };
 
     let border = if !options {
@@ -128,8 +127,8 @@ pub(crate) fn get_pin_style(status: Status, pin_name: &str, options: bool) -> bu
     };
 
     button::Style {
-        background: Some(Background::Color(color)),
-        text_color: Color::WHITE,
+        background: Some(Background::Color(pin_color)),
+        text_color,
         border,
         shadow: PIN_SHADOW,
     }
