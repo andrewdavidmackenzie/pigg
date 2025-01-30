@@ -222,7 +222,9 @@ impl HW {
         self.configured_pins.remove(&bcm_pin_number);
 
         match pin_function {
-            None => { /* TODO deconfigure pin? */ }
+            None => {
+                self.configured_pins.remove(&bcm_pin_number);
+            }
 
             Some(PinFunction::Input(pull)) => {
                 let pin = Gpio::new()
