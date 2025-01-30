@@ -634,44 +634,6 @@ fn get_pin_widget<'a>(
         .into()
 }
 
-/// Filter the selected_option out of the list of other selectable options for the PickList
-/// The options returned should be generic as to the sub-options. i.e. pullup/pulldown/none for an
-/// [Input] or true/false for an [Output], as those sub-selections are taken care of by other
-/// widgets
-fn filter_options(
-    options: &[PinFunction],
-    selected_function: Option<PinFunction>,
-) -> Vec<PinFunction> {
-    let mut config_options: Vec<_> = options
-        .iter()
-        .filter(|&&option| match selected_function {
-            Some(Input(_)) => {
-                matches!(option, Output(_) | PinFunction::None)
-            }
-            Some(Output(_)) => {
-                matches!(option, Input(_) | PinFunction::None)
-            }
-            Some(selected) => selected != option,
-            None => option != PinFunction::None,
-        })
-        .map(|option| match option {
-            Input(_) => Input(None),
-            Output(_) => Output(None),
-            PinFunction::None => PinFunction::None,
-        })
-        .collect();
-
-    // Always ensure there is a [PinFunction::None] option present
-    if !config_options.contains(&PinFunction::None)
-        && selected_function.is_some()
-        && selected_function != Some(PinFunction::None)
-    {
-        config_options.push(PinFunction::None);
-    }
-
-    config_options
-}
-
 /// Create a button representing the pin with its physical (bpn) number, color and maybe a menu
 fn pin_button_menu(pin_description: &PinDescription) -> Item<HardwareViewMessage, Theme, Renderer> {
     let button = pin_button(pin_description);
@@ -753,7 +715,6 @@ fn create_pin_view_side<'a>(
 
 #[cfg(test)]
 mod test {
-    use crate::hw_definition::config::InputPull::{PullDown, PullUp};
     use crate::views::hardware_view::HardwareConnection::NoConnection;
     use crate::views::hardware_view::HardwareView;
 
@@ -767,55 +728,5 @@ mod test {
     fn no_hardware_model() {
         let hw_view = HardwareView::new(NoConnection);
         assert_eq!(hw_view.hw_model(), None);
-    }
-
-    #[test]
-    fn test_filter_options() {
-        use super::*;
-
-        let options = vec![Input(None), Output(None), PinFunction::None];
-
-        // Test case: No function selected
-        let result = filter_options(&options, None);
-        assert_eq!(result, vec![Input(None), Output(None)]);
-
-        // Test case: Input selected
-        let result = filter_options(&options, Some(Input(None)));
-        assert_eq!(result, vec![Output(None), PinFunction::None]);
-
-        // Test case: Input selected
-        let result = filter_options(&options, Some(Input(Some(PullUp))));
-        assert_eq!(result, vec![Output(None), PinFunction::None]);
-
-        // Test case: Input selected
-        let result = filter_options(&options, Some(Input(Some(PullDown))));
-        assert_eq!(result, vec![Output(None), PinFunction::None]);
-
-        // Test case: Output selected
-        let result = filter_options(&options, Some(Output(None)));
-        assert_eq!(result, vec![Input(None), PinFunction::None]);
-
-        // Test case: Output with value selected
-        let result = filter_options(&options, Some(Output(Some(true))));
-        assert_eq!(result, vec![Input(None), PinFunction::None]);
-
-        // Test case: Output with value selected
-        let result = filter_options(&options, Some(Output(Some(false))));
-        assert_eq!(result, vec![Input(None), PinFunction::None]);
-
-        // Test case: None selected
-        let result = filter_options(&options, Some(PinFunction::None));
-        assert_eq!(result, vec![Input(None), Output(None)]);
-    }
-
-    // Test the filter option when the inputs are not generic, but have sub-selections
-    #[test]
-    fn test_other_filter_options() {
-        use super::*;
-
-        let options = vec![Input(Some(PullDown)), Output(None)];
-
-        let result = filter_options(&options, Some(Output(Some(true))));
-        assert_eq!(result, vec![Input(None), PinFunction::None]);
     }
 }
