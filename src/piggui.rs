@@ -63,6 +63,7 @@ pub enum Message {
     Save,
     Load,
     LayoutChanged(Layout),
+    WindowSizeChangeRequest,
     Hardware(HardwareViewMessage),
     Modal(InfoDialogMessage),
     InfoRow(MessageRowMessage),
@@ -198,6 +199,18 @@ impl Piggui {
             .unwrap_or(String::from("piggui"))
     }
 
+    fn window_size_change_request(&self) -> Task<Message> {
+        let hardware_config = self.hardware_view.get_config();
+        let layout_size = self.layout_selector.window_size_requested(hardware_config);
+        window::get_latest().then(move |latest| {
+            if let Some(id) = latest {
+                window::resize(id, layout_size)
+            } else {
+                Task::none()
+            }
+        })
+    }
+
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             WindowEvent(event) => {
@@ -213,16 +226,12 @@ impl Piggui {
             }
 
             LayoutChanged(new_layout) => {
-                let layout_size = self
-                    .layout_selector
-                    .update(new_layout, self.hardware_view.get_config());
-                return window::get_latest().then(move |latest| {
-                    if let Some(id) = latest {
-                        window::resize(id, layout_size)
-                    } else {
-                        Task::none()
-                    }
-                });
+                self.layout_selector.update(new_layout);
+                return self.window_size_change_request();
+            }
+
+            WindowSizeChangeRequest => {
+                return self.window_size_change_request();
             }
 
             Save => {

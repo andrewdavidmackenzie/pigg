@@ -13,8 +13,7 @@ pub(crate) const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
 pub(crate) const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
 pub(crate) const PIN_ROW_WIDTH: f32 =
     PIN_ARROW_LINE_WIDTH + (PIN_ARROW_CIRCLE_RADIUS * 2.0) + PIN_BUTTON_DIAMETER;
-pub(crate) const PIN_NAME_WIDTH: f32 = 80.0;
-pub(crate) const PIN_OPTION_WIDTH: f32 = 135.0; // Pi needs 135px
+pub(crate) const PIN_NAME_WIDTH: f32 = 80.0; // for some longer pin names
 pub(crate) const TOGGLER_SIZE: f32 = 28.0;
 pub(crate) const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
 pub(crate) const CLICKER_WIDTH: f32 = 13.0;
@@ -47,6 +46,12 @@ const PIN_BORDER: Border = Border {
     radius: PIN_RADIUS,
 };
 
+const PIN_NO_BORDER: Border = Border {
+    color: Color::TRANSPARENT,
+    width: 1.0,
+    radius: PIN_RADIUS,
+};
+
 const PIN_BORDER_HOVER: Border = Border {
     color: Color::WHITE,
     width: 2.0,
@@ -62,27 +67,21 @@ const PIN_SHADOW: Shadow = Shadow {
 const V3_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.92, 0.016, 1.0))),
     text_color: Color::BLACK,
-    border: PIN_BORDER,
-    // hovered_bg_color: Color::new(1.0, 1.0, 0.0, 1.0),
-    // hovered_text_color: Color::BLACK,
+    border: PIN_NO_BORDER,
     shadow: PIN_SHADOW,
 };
 
 const V5_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(1.0, 0.0, 0.0, 1.0))),
     text_color: Color::BLACK,
-    border: PIN_BORDER,
-    // hovered_bg_color: Color::new(1.0, 0.0, 0.0, 1.0),
-    // hovered_text_color: Color::BLACK,
+    border: PIN_NO_BORDER,
     shadow: PIN_SHADOW,
 };
 
 const GND_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::BLACK)),
     text_color: Color::WHITE,
-    border: PIN_BORDER,
-    // hovered_bg_color: Color::WHITE,
-    // hovered_text_color: Color::BLACK,
+    border: PIN_NO_BORDER,
     shadow: PIN_SHADOW,
 };
 
@@ -92,8 +91,6 @@ const GPIO_BUTTON_STYLE: button::Style = button::Style {
     ))),
     text_color: Color::WHITE,
     border: PIN_BORDER,
-    // hovered_bg_color: Color::WHITE,
-    // hovered_text_color: Color::new(0.678, 0.847, 0.902, 1.0),
     shadow: PIN_SHADOW,
 };
 
@@ -103,8 +100,6 @@ const GPIO7_BUTTON_STYLE: button::Style = button::Style {
     ))),
     text_color: Color::WHITE,
     border: PIN_BORDER,
-    // hovered_bg_color: Color::WHITE,
-    // hovered_text_color: Color::new(0.933, 0.510, 0.933, 1.0),
     shadow: PIN_SHADOW,
 };
 
@@ -112,8 +107,6 @@ const GPIO14_BUTTON_STYLE: button::Style = button::Style {
     background: Some(Background::Color(Color::from_rgba(0.0, 0.502, 0.0, 1.0))),
     text_color: Color::WHITE,
     border: PIN_BORDER,
-    // hovered_bg_color: Color::WHITE,
-    // hovered_text_color: Color::new(0.0, 0.502, 0.0, 1.0),
     shadow: PIN_SHADOW,
 };
 
@@ -123,8 +116,6 @@ const ID_BUTTON_STYLE: button::Style = button::Style {
     ))),
     text_color: Color::WHITE,
     border: PIN_BORDER,
-    // hovered_bg_color: Color::WHITE,
-    // hovered_text_color: Color::new(0.502, 0.502, 0.502, 1.0),
     shadow: PIN_SHADOW,
 };
 

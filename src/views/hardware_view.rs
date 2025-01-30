@@ -11,9 +11,9 @@ use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
 use crate::views::hardware_styles::{
     get_pin_style, CLICKER_WIDTH, LED_WIDTH, PIN_ARROW_CIRCLE_RADIUS, PIN_ARROW_LINE_WIDTH,
-    PIN_BUTTON_DIAMETER, PIN_NAME_WIDTH, PIN_OPTION_WIDTH, PIN_ROW_WIDTH, PIN_WIDGET_ROW_WIDTH,
-    PULLUP_WIDTH, SPACE_BETWEEN_PIN_COLUMNS, TOGGLER_HOVER_STYLE, TOGGLER_SIZE, TOGGLER_STYLE,
-    TOGGLER_WIDTH, TOOLTIP_STYLE, WIDGET_ROW_SPACING,
+    PIN_BUTTON_DIAMETER, PIN_NAME_WIDTH, PIN_ROW_WIDTH, PIN_WIDGET_ROW_WIDTH, PULLUP_WIDTH,
+    SPACE_BETWEEN_PIN_COLUMNS, TOGGLER_HOVER_STYLE, TOGGLER_SIZE, TOGGLER_STYLE, TOGGLER_WIDTH,
+    TOOLTIP_STYLE, WIDGET_ROW_SPACING,
 };
 use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
@@ -26,7 +26,6 @@ use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::Message;
-use iced::advanced::text::editor::Direction;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
@@ -36,6 +35,7 @@ use iced::widget::{
     button, horizontal_space, pick_list, row, scrollable, text, toggler, Button, Column, Row, Text,
 };
 use iced::widget::{container, Tooltip};
+use iced::Alignment::{End, Start};
 use iced::{Alignment, Center, Element, Length, Size, Task};
 use iced::{Color, Renderer, Theme};
 use iced_aw::menu::Item;
@@ -54,7 +54,7 @@ pub const HARDWARE_VIEW_PADDING: f32 = 10.0;
 const PIN_DOCK_SPACING: f32 = 2.0;
 
 pub(crate) const BOARD_LAYOUT_SIZE: Size = Size {
-    width: 1400.0,
+    width: 1105.0,
     height: 720.0,
 };
 
@@ -75,9 +75,11 @@ pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
         height += SPACE_BETWEEN_PIN_ROWS + PIN_BUTTON_DIAMETER
     }
 
+    let num_unconfigured_pins = 26 - num_configured_pins;
+
     Size {
         width: HARDWARE_VIEW_PADDING
-            + (MAX_CONFIGURABLE_PINS as f32 * (PIN_BUTTON_DIAMETER + PIN_DOCK_SPACING))
+            + (num_unconfigured_pins as f32 * (PIN_BUTTON_DIAMETER + PIN_DOCK_SPACING))
             + HARDWARE_VIEW_PADDING,
         height,
     }
@@ -85,7 +87,7 @@ pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
 
 pub(crate) fn bcm_layout_size(num_pins: usize) -> Size {
     Size {
-        width: 720.0,
+        width: 580.0,
         height: HARDWARE_VIEW_PADDING
             + (num_pins as f32 * (PIN_BUTTON_DIAMETER + SPACE_BETWEEN_PIN_ROWS))
             + HARDWARE_VIEW_PADDING
@@ -399,7 +401,7 @@ impl HardwareView {
                     self.hardware_config
                         .pin_functions
                         .get(&pin_description.bcm.unwrap()),
-                    Right,
+                    Start,
                     self.pin_states.get(bcm_pin_number),
                 );
 
@@ -407,10 +409,7 @@ impl HardwareView {
             }
         }
 
-        column
-            .spacing(SPACE_BETWEEN_PIN_ROWS)
-            .align_x(Alignment::Start)
-            .into()
+        column.spacing(SPACE_BETWEEN_PIN_ROWS).align_x(Start).into()
     }
 
     /// Compact view that only lays out configured pins
@@ -456,7 +455,7 @@ impl HardwareView {
                         self.hardware_config
                             .pin_functions
                             .get(&pin_description.bcm.unwrap()),
-                        Right,
+                        Start,
                         self.pin_states.get(bcm_pin_number),
                     );
 
@@ -465,10 +464,7 @@ impl HardwareView {
             }
         }
 
-        column
-            .spacing(SPACE_BETWEEN_PIN_ROWS)
-            .align_x(Alignment::Start)
-            .into()
+        column.spacing(SPACE_BETWEEN_PIN_ROWS).align_x(Start).into()
     }
 
     /// View that draws the pins laid out as they are on the physical Pi board
@@ -485,7 +481,7 @@ impl HardwareView {
                 pair[0]
                     .bcm
                     .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
-                Left,
+                End,
                 pair[0].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
             );
 
@@ -494,7 +490,7 @@ impl HardwareView {
                 pair[1]
                     .bcm
                     .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
-                Right,
+                Start,
                 pair[1].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
             );
 
@@ -544,12 +540,12 @@ fn get_pin_widget<'a>(
     bcm_pin_number: Option<BCMPinNumber>,
     pin_function: Option<&'a PinFunction>,
     pin_state: &'a PinState,
-    direction: Direction,
+    alignment: Alignment,
 ) -> Element<'a, HardwareViewMessage> {
     let row: Row<HardwareViewMessage> = match pin_function {
         Some(Input(pull)) => {
             let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
-            if direction == Left {
+            if alignment == End {
                 Row::new()
                     .push(pin_state.view(Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
@@ -607,7 +603,7 @@ fn get_pin_widget<'a>(
 
             // For some unknown reason the Pullup picker is wider on the right side than the left
             // to we add some space here to make this match on both side. A nasty hack!
-            if direction == Left {
+            if alignment == End {
                 Row::new()
                     .push(pin_state.view(Left))
                     .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
@@ -710,41 +706,18 @@ fn pin_button(pin_description: &PinDescription) -> Element<HardwareViewMessage> 
 fn create_pin_view_side<'a>(
     pin_description: &'a PinDescription,
     pin_function: Option<&'a PinFunction>,
-    direction: Direction,
+    alignment: Alignment,
     pin_state: Option<&'a PinState>,
 ) -> Row<'a, HardwareViewMessage> {
     let pin_widget = if let Some(state) = pin_state {
         // Create a widget that is either used to visualize an input or control an output
-        get_pin_widget(pin_description.bcm, pin_function, state, direction)
+        get_pin_widget(pin_description.bcm, pin_function, state, alignment)
     } else {
         Row::new().width(Length::Fixed(PIN_WIDGET_ROW_WIDTH)).into()
     };
 
-    // Create the drop-down selector of pin function, or a spacer
-    let pin_option: Element<HardwareViewMessage> = if let Some(bcm_pin_number) = pin_description.bcm
-    {
-        // Filter options to remove currently selected one
-        let config_options = filter_options(&pin_description.options, pin_function.cloned());
-
-        if !config_options.is_empty() {
-            let selected = pin_function.filter(|&pin_function| pin_function != &PinFunction::None);
-
-            let pick_list = pick_list(config_options, selected, move |pin_function| {
-                PinFunctionSelected(bcm_pin_number, pin_function)
-            })
-            .width(PIN_OPTION_WIDTH)
-            .placeholder("Select function");
-
-            pick_list.into()
-        } else {
-            Row::new().width(PIN_OPTION_WIDTH).into()
-        }
-    } else {
-        Row::new().width(PIN_OPTION_WIDTH).into()
-    };
-
     let pin_name = Column::new()
-        .push(Text::new(pin_description.name.to_string()))
+        .push(Text::new(&pin_description.name))
         .width(Length::Fixed(PIN_NAME_WIDTH));
 
     let mut pin_row = Row::new().align_y(Center).width(PIN_ROW_WIDTH);
@@ -756,31 +729,17 @@ fn create_pin_view_side<'a>(
         pin_button(pin_description)
     };
 
-    if direction == Left {
-        pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
-        pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
-        pin_row = pin_row.push(pin_button);
-    } else {
-        pin_row = pin_row.push(pin_button);
-        pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
-        pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
-    }
-
     // Create the row of widgets that represent the pin, inverted order if left or right
-    let row = if direction == Left {
-        row![
-            pin_widget,
-            pin_option,
-            pin_name.align_x(Alignment::End),
-            pin_row,
-        ]
+    let row = if alignment == End {
+        pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
+        pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
+        pin_row = pin_row.push(pin_button);
+        row![pin_widget, pin_name.align_x(alignment), pin_row,]
     } else {
-        row![
-            pin_row,
-            pin_name.align_x(Alignment::Start),
-            pin_option,
-            pin_widget
-        ]
+        pin_row = pin_row.push(pin_button);
+        pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
+        pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
+        row![pin_row, pin_name.align_x(alignment), pin_widget]
     };
 
     row.align_y(Center).spacing(WIDGET_ROW_SPACING)

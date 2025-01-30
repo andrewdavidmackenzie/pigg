@@ -38,8 +38,12 @@ impl LayoutSelector {
     }
 
     /// Set the new layout as being selected and return the window size required
-    pub fn update(&mut self, new_layout: Layout, hardware_config: &HardwareConfig) -> Size {
+    pub fn update(&mut self, new_layout: Layout) {
         self.selected_layout = new_layout;
+    }
+
+    /// Return what is the window size request for the currently selected layout
+    pub fn window_size_requested(&self, hardware_config: &HardwareConfig) -> Size {
         match self.selected_layout {
             Board => BOARD_LAYOUT_SIZE,
             Logical => bcm_layout_size(26),
