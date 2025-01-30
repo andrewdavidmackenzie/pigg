@@ -54,7 +54,7 @@ const PIN_NO_BORDER: Border = Border {
 
 const PIN_BORDER_HOVER: Border = Border {
     color: Color::WHITE,
-    width: 2.0,
+    width: 3.0,
     radius: PIN_RADIUS,
 };
 
@@ -62,75 +62,6 @@ const PIN_SHADOW: Shadow = Shadow {
     color: Color::TRANSPARENT,
     offset: iced::Vector { x: 0.0, y: 0.0 },
     blur_radius: 0.0,
-};
-
-const V3_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(1.0, 0.92, 0.016, 1.0))),
-    text_color: Color::BLACK,
-    border: PIN_NO_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const V5_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(1.0, 0.0, 0.0, 1.0))),
-    text_color: Color::BLACK,
-    border: PIN_NO_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const GND_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::BLACK)),
-    text_color: Color::WHITE,
-    border: PIN_NO_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const GPIO_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(
-        0.678, 0.847, 0.902, 1.0,
-    ))),
-    text_color: Color::WHITE,
-    border: PIN_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const GPIO7_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(
-        0.933, 0.510, 0.933, 1.0,
-    ))),
-    text_color: Color::WHITE,
-    border: PIN_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const GPIO14_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(0.0, 0.502, 0.0, 1.0))),
-    text_color: Color::WHITE,
-    border: PIN_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const ID_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(
-        0.502, 0.502, 0.502, 1.0,
-    ))),
-    text_color: Color::WHITE,
-    border: PIN_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const DEFAULT_BUTTON_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(1.0, 0.647, 0.0, 1.0))),
-    text_color: Color::WHITE,
-    border: PIN_BORDER,
-    shadow: PIN_SHADOW,
-};
-
-const DEFAULT_BUTTON_HOVER_STYLE: button::Style = button::Style {
-    background: Some(Background::Color(Color::from_rgba(1.0, 0.647, 0.0, 1.0))),
-    text_color: Color::WHITE,
-    border: PIN_BORDER_HOVER,
-    shadow: PIN_SHADOW,
 };
 
 const DARK_GREEN: Color = Color::from_rgba(0.0, 0.3, 0.0, 1.0);
@@ -173,21 +104,33 @@ pub(crate) const TOOLTIP_STYLE: container::Style = container::Style {
     shadow: NO_SHADOW,
 };
 
-pub(crate) fn get_pin_style(status: Status, pin_name: &str) -> button::Style {
-    match pin_name {
-        "3V3" => V3_BUTTON_STYLE,
-        "5V" => V5_BUTTON_STYLE,
-        "Ground" => GND_BUTTON_STYLE,
-        "GPIO2" | "GPIO3" => GPIO_BUTTON_STYLE,
-        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => GPIO7_BUTTON_STYLE,
-        "GPIO14" | "GPIO15" => GPIO14_BUTTON_STYLE,
-        "ID_SD" | "ID_SC" => ID_BUTTON_STYLE,
-        _ => {
-            if status == Status::Hovered {
-                DEFAULT_BUTTON_HOVER_STYLE
-            } else {
-                DEFAULT_BUTTON_STYLE
-            }
-        }
+/// Return a style used to draw a pin, based on it's name and if it has options or not and
+/// the Hover status.
+pub(crate) fn get_pin_style(status: Status, pin_name: &str, options: bool) -> button::Style {
+    let color = match pin_name {
+        "3V3" => Color::from_rgba(1.0, 0.92, 0.016, 1.0), // Yellow
+        "5V" => Color::from_rgba(1.0, 0.0, 0.0, 1.0),     // Red,
+        "Ground" => Color::BLACK,
+        "GPIO2" | "GPIO3" => Color::from_rgba(0.678, 0.847, 0.902, 1.0), // Light Blue
+        "GPIO7" | "GPIO8" | "GPIO9" | "GPIO10" | "GPIO11" => {
+            Color::from_rgba(0.933, 0.510, 0.933, 1.0)
+        } // Pink
+        "GPIO14" | "GPIO15" => Color::from_rgba(0.0, 0.502, 0.0, 1.0),   // Green
+        _ => Color::from_rgba(1.0, 0.647, 0.0, 1.0),                     // Orange
+    };
+
+    let border = if !options {
+        PIN_NO_BORDER
+    } else if status == Status::Hovered {
+        PIN_BORDER_HOVER
+    } else {
+        PIN_BORDER
+    };
+
+    button::Style {
+        background: Some(Background::Color(color)),
+        text_color: Color::WHITE,
+        border,
+        shadow: PIN_SHADOW,
     }
 }

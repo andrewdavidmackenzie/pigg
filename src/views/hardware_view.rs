@@ -105,6 +105,7 @@ pub enum HardwareViewMessage {
     SubscriptionMessage(SubscriptionEvent),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
+    MenuBarButtonClicked, // needed for highlighting to work
 }
 
 /// A type of connection to a piece of hardware
@@ -343,6 +344,7 @@ impl HardwareView {
             }
 
             Activate(pin_number) => println!("Pin {pin_number} clicked"),
+            HardwareViewMessage::MenuBarButtonClicked => { /* For highlighting */ }
         }
 
         Task::none()
@@ -636,7 +638,7 @@ fn get_pin_widget<'a>(
 
 /// Create a button representing the pin with its physical (bpn) number, color and maybe a menu
 fn pin_button_menu(pin_description: &PinDescription) -> Item<HardwareViewMessage, Theme, Renderer> {
-    let button = pin_button(pin_description);
+    let button = pin_button(pin_description).on_press(HardwareViewMessage::MenuBarButtonClicked); // Needed for highlighting;;
 
     let mut menu_items: Vec<Item<HardwareViewMessage, _, _>> = vec![];
     if let Some(bcm_pin_number) = pin_description.bcm {
@@ -657,7 +659,7 @@ fn pin_button_menu(pin_description: &PinDescription) -> Item<HardwareViewMessage
 }
 
 /// Create a button representing the pin with its physical (bpn) number, color
-fn pin_button(pin_description: &PinDescription) -> Element<HardwareViewMessage> {
+fn pin_button(pin_description: &PinDescription) -> Button<HardwareViewMessage> {
     button(
         container(Text::new(pin_description.bpn))
             .align_x(Center)
@@ -666,8 +668,13 @@ fn pin_button(pin_description: &PinDescription) -> Element<HardwareViewMessage> 
     .padding(0.0)
     .width(Length::Fixed(PIN_BUTTON_DIAMETER))
     .height(Length::Fixed(PIN_BUTTON_DIAMETER))
-    .style(move |_, status| get_pin_style(status, pin_description.name.as_ref()))
-    .into()
+    .style(move |_, status| {
+        get_pin_style(
+            status,
+            pin_description.name.as_ref(),
+            !pin_description.options.is_empty(),
+        )
+    })
 }
 
 /// Create a row of widgets that represent a pin, either from left to right or right to left
@@ -692,9 +699,11 @@ fn create_pin_view_side<'a>(
 
     // If the pin is configurable, create a menu on it, if not just the button
     let pin_button: Element<HardwareViewMessage> = if pin_description.bcm.is_some() {
-        MenuBar::new(vec![pin_button_menu(pin_description)]).into()
+        MenuBar::new(vec![pin_button_menu(pin_description)])
+            .style(|_, _| crate::views::info_row::MENU_BAR_STYLE)
+            .into()
     } else {
-        pin_button(pin_description)
+        pin_button(pin_description).into()
     };
 
     // Create the row of widgets that represent the pin, inverted order if left or right

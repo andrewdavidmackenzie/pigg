@@ -86,7 +86,7 @@ const MENU_BUTTON_HOVER_STYLE: Style = Style {
     shadow: MENU_SHADOW,
 };
 
-const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
+pub const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
     bar_background: Background::Color(Color::TRANSPARENT),
     bar_border: MENU_BORDER,
     bar_shadow: MENU_SHADOW,
