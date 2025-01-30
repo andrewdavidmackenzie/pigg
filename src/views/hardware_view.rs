@@ -221,7 +221,11 @@ impl HardwareView {
     /// - updates the pin_selected_function array for the UI
     /// - saves it in the gpio_config, so when we save later it's there
     /// - sends the update to the hardware to have it applied
-    fn new_pin_function(&mut self, bcm_pin_number: BCMPinNumber, new_function: PinFunction) {
+    fn new_pin_function(
+        &mut self,
+        bcm_pin_number: BCMPinNumber,
+        new_function: PinFunction,
+    ) -> Task<Message> {
         let previous_function = self
             .hardware_config
             .pin_functions
@@ -248,7 +252,10 @@ impl HardwareView {
                     new_function,
                 )));
             }
+            return Task::perform(empty(), |_| Message::ConfigChangesMade);
         }
+
+        Task::none()
     }
 
     /// Go through all the pins in the [HardwareConfig], make sure a pin state exists for the pin
@@ -288,8 +295,7 @@ impl HardwareView {
             }
 
             PinFunctionSelected(bcm_pin_number, pin_function) => {
-                self.new_pin_function(bcm_pin_number, pin_function);
-                return Task::perform(empty(), |_| Message::ConfigChangesMade);
+                return self.new_pin_function(bcm_pin_number, pin_function);
             }
 
             NewConfig(config) => {
