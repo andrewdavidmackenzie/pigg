@@ -10,18 +10,15 @@ use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
 use crate::views::hardware_styles::{
-    get_pin_style, CLICKER_WIDTH, LED_WIDTH, PIN_ARROW_CIRCLE_RADIUS, PIN_ARROW_LINE_WIDTH,
-    PIN_BUTTON_DIAMETER, PIN_NAME_WIDTH, PIN_ROW_WIDTH, PIN_WIDGET_ROW_WIDTH, PULLUP_WIDTH,
-    SPACE_BETWEEN_PIN_COLUMNS, TOGGLER_HOVER_STYLE, TOGGLER_SIZE, TOGGLER_STYLE, TOGGLER_WIDTH,
-    TOOLTIP_STYLE, WIDGET_ROW_SPACING,
+    get_pin_style, toggler_style, SPACE_BETWEEN_PIN_COLUMNS, TOOLTIP_STYLE,
 };
 use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
-    Activate, ChangeOutputLevel, NewConfig, PinFunctionSelected, SubscriptionMessage, UpdateCharts,
+    Activate, ChangeOutputLevel, NewConfig, PinFunctionChanged, SubscriptionMessage, UpdateCharts,
 };
 use crate::views::info_row::{menu_button, INFO_ROW_HEIGHT};
 use crate::views::layout_menu::Layout;
-use crate::views::pin_state::{PinState, CHART_UPDATES_PER_SECOND};
+use crate::views::pin_state::{PinState, CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
@@ -29,7 +26,6 @@ use crate::Message;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
-use iced::widget::toggler::Status::Hovered;
 use iced::widget::tooltip::Position;
 use iced::widget::{
     button, horizontal_space, pick_list, row, scrollable, text, toggler, Button, Column, Row, Text,
@@ -50,7 +46,7 @@ use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub const HARDWARE_VIEW_PADDING: f32 = 10.0;
+const HARDWARE_VIEW_PADDING: f32 = 10.0;
 const PIN_DOCK_SPACING: f32 = 2.0;
 
 pub(crate) const BOARD_LAYOUT_SIZE: Size = Size {
@@ -61,6 +57,24 @@ pub(crate) const BOARD_LAYOUT_SIZE: Size = Size {
 const SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
 const MAX_CONFIGURABLE_PINS: usize = 26;
+
+// WIDTHS
+const PIN_BUTTON_DIAMETER: f32 = 28.0;
+pub(crate) const PIN_BUTTON_RADIUS: f32 = PIN_BUTTON_DIAMETER / 2.0;
+const PIN_ARROW_LINE_WIDTH: f32 = 20.0;
+const PIN_ARROW_CIRCLE_RADIUS: f32 = 5.0;
+const PIN_ROW_WIDTH: f32 =
+    PIN_ARROW_LINE_WIDTH + (PIN_ARROW_CIRCLE_RADIUS * 2.0) + PIN_BUTTON_DIAMETER;
+const PIN_NAME_WIDTH: f32 = 80.0; // for some longer pin names
+const TOGGLER_SIZE: f32 = 28.0;
+const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
+const CLICKER_WIDTH: f32 = 13.0;
+// We want the pullup on an Input to be the same width as the clicker + toggler on an Output
+const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH - 3.0;
+const LED_WIDTH: f32 = 14.0;
+const WIDGET_ROW_SPACING: f32 = 5.0;
+const PIN_WIDGET_ROW_WIDTH: f32 =
+    PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
 
 // calculate the height required based on the number of configured pins
 pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
@@ -100,7 +114,7 @@ pub(crate) fn bcm_layout_size(num_pins: usize) -> Size {
 #[derive(Debug, Clone)]
 pub enum HardwareViewMessage {
     Activate(BoardPinNumber),
-    PinFunctionSelected(BCMPinNumber, Option<PinFunction>),
+    PinFunctionChanged(BCMPinNumber, Option<PinFunction>, bool),
     NewConfig(HardwareConfig),
     SubscriptionMessage(SubscriptionEvent),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
@@ -226,10 +240,11 @@ impl HardwareView {
         &mut self,
         bcm_pin_number: BCMPinNumber,
         new_function: Option<PinFunction>,
+        resize_window: bool,
     ) -> Task<Message> {
         let previous_function = self.hardware_config.pin_functions.get(&bcm_pin_number);
 
-        if new_function != previous_function.cloned() {
+        if new_function.as_ref() != previous_function {
             match new_function {
                 None => {
                     self.hardware_config.pin_functions.remove(&bcm_pin_number);
@@ -252,7 +267,7 @@ impl HardwareView {
                     new_function,
                 )));
             }
-            return Task::perform(empty(), |_| Message::ConfigChangesMade);
+            return Task::perform(empty(), move |_| Message::ConfigChangesMade(resize_window));
         }
 
         Task::none()
@@ -294,8 +309,8 @@ impl HardwareView {
                 }
             }
 
-            PinFunctionSelected(bcm_pin_number, pin_function) => {
-                return self.new_pin_function(bcm_pin_number, pin_function);
+            PinFunctionChanged(bcm_pin_number, pin_function, resize_window) => {
+                return self.new_pin_function(bcm_pin_number, pin_function, resize_window);
             }
 
             NewConfig(config) => {
@@ -410,6 +425,7 @@ impl HardwareView {
                         .get(&pin_description.bcm.unwrap()),
                     Start,
                     self.pin_states.get(bcm_pin_number),
+                    false,
                 );
 
                 column = column.push(pin_row);
@@ -440,6 +456,7 @@ impl HardwareView {
                     unused_pins.push(pin_button_menu(
                         pin_description,
                         self.hardware_config.pin_functions.get(bcm_pin_number),
+                        true,
                     ));
                 }
             }
@@ -467,6 +484,7 @@ impl HardwareView {
                             .get(&pin_description.bcm.unwrap()),
                         Start,
                         self.pin_states.get(bcm_pin_number),
+                        true,
                     );
 
                     column = column.push(pin_row);
@@ -493,6 +511,7 @@ impl HardwareView {
                     .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
                 End,
                 pair[0].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
+                false,
             );
 
             let right_row = self.create_pin_view_side(
@@ -502,6 +521,7 @@ impl HardwareView {
                     .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
                 Start,
                 pair[1].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
+                false,
             );
 
             let row = Row::new()
@@ -526,6 +546,7 @@ impl HardwareView {
         pin_function: Option<&'a PinFunction>,
         alignment: Alignment,
         pin_state: Option<&'a PinState>,
+        resize_window_on_change: bool,
     ) -> Row<'a, HardwareViewMessage> {
         let pin_widget = if let Some(state) = pin_state {
             // Create a widget that is either used to visualize an input or control an output
@@ -545,6 +566,7 @@ impl HardwareView {
             MenuBar::new(vec![pin_button_menu(
                 pin_description,
                 self.hardware_config.pin_functions.get(&bcm),
+                resize_window_on_change,
             )])
             .style(|_, _| crate::views::info_row::MENU_BAR_STYLE)
             .into()
@@ -582,7 +604,7 @@ fn pullup_picklist(
     }
 
     let pick_list = pick_list(sub_options, *pull, move |selected_pull| {
-        PinFunctionSelected(bcm_pin_number, Some(Input(Some(selected_pull))))
+        PinFunctionChanged(bcm_pin_number, Some(Input(Some(selected_pull))), false)
     })
     .width(PULLUP_WIDTH)
     .placeholder("Select Pullup");
@@ -629,10 +651,7 @@ fn get_pin_widget<'a>(
             })
             .width(TOGGLER_WIDTH)
             .size(TOGGLER_SIZE)
-            .style(move |_theme, status| match status {
-                Hovered { .. } => TOGGLER_HOVER_STYLE,
-                _ => TOGGLER_STYLE,
-            });
+            .style(toggler_style);
 
             let output_clicker =
                 clicker::<HardwareViewMessage>(CLICKER_WIDTH, Color::BLACK, Color::WHITE)
@@ -691,6 +710,7 @@ fn get_pin_widget<'a>(
 fn pin_button_menu<'a>(
     pin_description: &'a PinDescription,
     current_option: Option<&PinFunction>,
+    resize_window_on_change: bool,
 ) -> Item<'a, HardwareViewMessage, Theme, Renderer> {
     let button = pin_button(pin_description).on_press(HardwareViewMessage::MenuBarButtonClicked); // Needed for highlighting;;
 
@@ -701,7 +721,11 @@ fn pin_button_menu<'a>(
                 let menu_button = Button::new(text!("{}", option))
                     .width(Length::Fill)
                     .style(menu_button)
-                    .on_press(PinFunctionSelected(bcm_pin_number, Some(*option)));
+                    .on_press(PinFunctionChanged(
+                        bcm_pin_number,
+                        Some(*option),
+                        resize_window_on_change,
+                    ));
                 menu_items.push(Item::new(menu_button));
             }
         }
@@ -710,7 +734,11 @@ fn pin_button_menu<'a>(
             let unused = Button::new("Unused")
                 .width(Length::Fill)
                 .style(menu_button)
-                .on_press(PinFunctionSelected(bcm_pin_number, None));
+                .on_press(PinFunctionChanged(
+                    bcm_pin_number,
+                    None,
+                    resize_window_on_change,
+                ));
             menu_items.push(Item::new(unused));
         }
     }

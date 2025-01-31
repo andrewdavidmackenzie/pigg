@@ -59,7 +59,7 @@ const PIGGUI_ID: &str = "piggui";
 pub enum Message {
     ConfigLoaded(String, HardwareConfig),
     ConfigSaved,
-    ConfigChangesMade,
+    ConfigChangesMade(bool),
     Save,
     Load,
     LayoutChanged(Layout),
@@ -271,8 +271,11 @@ impl Piggui {
                 return self.hardware_view.update(msg);
             }
 
-            ConfigChangesMade => {
+            ConfigChangesMade(resize_window) => {
                 self.unsaved_changes = true;
+                if resize_window {
+                    return self.window_size_change_request();
+                }
             }
 
             ConfigLoaded(filename, config) => {
