@@ -18,7 +18,6 @@ mod test {
     #[test]
     fn display_pin_function() {
         let functions = vec![
-            PinFunction::None,
             PinFunction::Output(None),
             PinFunction::Output(Some(true)),
             PinFunction::Output(Some(false)),

@@ -111,7 +111,7 @@ pub async fn send_config_message(
             send_current_input_states(gui_sender_clone, config, connection).await?;
         }
         NewPinConfig(bcm, pin_function) => {
-            info!("New pin config for pin #{bcm}: {pin_function}");
+            info!("New pin config for pin #{bcm}: {pin_function:?}");
             let gc = gui_sender.clone();
             connection
                 .hw
@@ -120,7 +120,9 @@ pub async fn send_config_message(
                 })
                 .await?;
 
-            send_current_input_state(bcm, pin_function, gc, connection).await?;
+            if let Some(function) = pin_function {
+                send_current_input_state(bcm, function, gc, connection).await?;
+            }
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Pin #{bcm} Output level change: {level_change:?}");

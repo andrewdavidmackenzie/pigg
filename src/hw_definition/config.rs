@@ -34,7 +34,7 @@ pub enum HardwareConfigMessage {
     /// start listening for level changes on each of the input pins it contains
     NewConfig(HardwareConfig),
     /// A pin has had its config changed
-    NewPinConfig(BCMPinNumber, PinFunction),
+    NewPinConfig(BCMPinNumber, Option<PinFunction>),
     /// The level of a pin has changed
     IOLevelChanged(BCMPinNumber, LevelChange),
     /// A request for device to send back the hardware config

@@ -181,7 +181,7 @@ impl Gpio {
         #[cfg(feature = "wifi")] control: &mut Control<'_>,
         spawner: &Spawner,
         bcm_pin_number: BCMPinNumber,
-        new_pin_function: &PinFunction,
+        new_pin_function: &Option<PinFunction>,
     ) {
         let flex_pin = {
             match self.pins.remove(&bcm_pin_number) {
@@ -207,7 +207,7 @@ impl Gpio {
         };
 
         match new_pin_function {
-            PinFunction::None => {
+            None => {
                 // if we recovered a pin above - then leave it as
                 if let Some(flex) = flex_pin {
                     let _ = self.pins.insert(bcm_pin_number, GPIOPin::Available(flex));
@@ -215,7 +215,7 @@ impl Gpio {
                 debug!("Pin #{} - Set as Available", bcm_pin_number);
             }
 
-            Input(pull) => {
+            Some(Input(pull)) => {
                 match flex_pin {
                     Some(mut flex) => {
                         flex.set_as_input();
@@ -252,7 +252,7 @@ impl Gpio {
                 }
             }
 
-            Output(pin_level) => {
+            Some(Output(pin_level)) => {
                 match flex_pin {
                     Some(mut flex) => {
                         if let Some(l) = pin_level {
@@ -297,7 +297,7 @@ impl Gpio {
                 control,
                 spawner,
                 *bcm_pin_number,
-                pin_function,
+                &Some(*pin_function),
             )
             .await;
         }
@@ -339,8 +339,12 @@ impl Gpio {
                     pin_function,
                 )
                 .await;
-                // Update the hardware config to reflect the change
-                let _ = hardware_config.pin_functions.insert(*bcm, *pin_function);
+                if let Some(function) = pin_function {
+                    // Update the hardware config to reflect the change
+                    let _ = hardware_config.pin_functions.insert(*bcm, *function);
+                } else {
+                    let _ = hardware_config.pin_functions.remove(bcm);
+                }
             }
             IOLevelChanged(bcm, level_change) => {
                 self.set_output_level(

@@ -1,13 +1,14 @@
-use crate::{Message, WINDOW_TITLE_AREA_HEIGHT};
+use crate::Message;
 use iced::widget::Button;
 use iced::{Length, Size};
 
 use crate::hw_definition::config::HardwareConfig;
-use crate::views::hardware_styles::{PIN_ROW_HEIGHT, SPACE_BETWEEN_PIN_ROWS};
-use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::info_row::{menu_bar_button, menu_button, INFO_ROW_HEIGHT};
-use crate::views::layout_menu::Layout::{Board, Logical, Reduced};
+use crate::views::hardware_view::{
+    bcm_layout_size, compact_layout_size, HardwareConnection, BOARD_LAYOUT_SIZE,
+};
+use crate::views::info_row::{menu_bar_button, menu_button};
+use crate::views::layout_menu::Layout::{Board, Compact, Logical};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
@@ -17,28 +18,7 @@ pub enum Layout {
     #[default]
     Board,
     Logical,
-    Reduced,
-}
-
-const BOARD_LAYOUT_SIZE: Size = Size {
-    width: 1400.0,
-    height: 720.0,
-};
-
-const BCM_LAYOUT_SIZE: Size = Size {
-    width: 720.0,
-    height: 910.0,
-};
-
-// calculate the height required based on the number of configured pins
-fn reduced_layout_size(hardware_config: &HardwareConfig) -> Size {
-    Size {
-        width: 720.0,
-        height: WINDOW_TITLE_AREA_HEIGHT
-            + INFO_ROW_HEIGHT
-            + (hardware_config.pin_functions.len() as f32
-                * (PIN_ROW_HEIGHT + SPACE_BETWEEN_PIN_ROWS)),
-    }
+    Compact,
 }
 
 #[derive(Clone, PartialEq, Default)]
@@ -58,12 +38,16 @@ impl LayoutSelector {
     }
 
     /// Set the new layout as being selected and return the window size required
-    pub fn update(&mut self, new_layout: Layout, hardware_config: &HardwareConfig) -> Size {
+    pub fn update(&mut self, new_layout: Layout) {
         self.selected_layout = new_layout;
+    }
+
+    /// Return what is the window size request for the currently selected layout
+    pub fn window_size_requested(&self, hardware_config: &HardwareConfig) -> Size {
         match self.selected_layout {
             Board => BOARD_LAYOUT_SIZE,
-            Logical => BCM_LAYOUT_SIZE,
-            Layout::Reduced => reduced_layout_size(hardware_config),
+            Logical => bcm_layout_size(26),
+            Compact => compact_layout_size(hardware_config.pin_functions.len()),
         }
     }
 
@@ -95,12 +79,12 @@ impl LayoutSelector {
         }
         menu_items.push(Item::new(show_physical_layout));
 
-        let mut show_reduced_layout = Button::new("Reduced Layout")
+        let mut show_reduced_layout = Button::new("Compact Layout")
             .width(Length::Fill)
             .style(menu_button);
 
-        if hardware_connection != &NoConnection && self.selected_layout != Reduced {
-            show_reduced_layout = show_reduced_layout.on_press(Message::LayoutChanged(Reduced));
+        if hardware_connection != &NoConnection && self.selected_layout != Compact {
+            show_reduced_layout = show_reduced_layout.on_press(Message::LayoutChanged(Compact));
         }
 
         menu_items.push(Item::new(show_reduced_layout));
@@ -108,7 +92,7 @@ impl LayoutSelector {
         let button = match self.selected_layout {
             Board => Button::new("layout: board"),
             Logical => Button::new("layout: bcp"),
-            Layout::Reduced => Button::new("layout: reduced"),
+            Compact => Button::new("layout: compact"),
         }
         .style(menu_bar_button)
         .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;

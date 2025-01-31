@@ -86,7 +86,7 @@ const MENU_BUTTON_HOVER_STYLE: Style = Style {
     shadow: MENU_SHADOW,
 };
 
-const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
+pub const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
     bar_background: Background::Color(Color::TRANSPARENT),
     bar_border: MENU_BORDER,
     bar_shadow: MENU_SHADOW,
@@ -177,7 +177,7 @@ impl InfoRow {
                 .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)
-                .padding(Padding::new(0.0)),
+                .padding(0),
         )
         .style(|_theme| INFO_BAR_STYLE)
         .into()
