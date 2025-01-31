@@ -21,6 +21,7 @@ use std::collections::HashMap;
 
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::Local;
+use crate::hw::driver::HW;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
     ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
@@ -155,7 +156,7 @@ impl Piggui {
         #[cfg(feature = "discovery")]
         let mut discovered_devices = HashMap::new();
         #[cfg(feature = "discovery")]
-        let local_hardware = hw::driver::get();
+        let local_hardware = HW::get();
         #[cfg(feature = "discovery")]
         let serial = local_hardware.description().unwrap().details.serial;
         #[cfg(feature = "discovery")]

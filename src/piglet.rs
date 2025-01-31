@@ -30,6 +30,7 @@ use sysinfo::{Process, System};
 use crate::device::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device::tcp_device;
+use crate::hw::driver::HW;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 
@@ -111,7 +112,7 @@ async fn run_service(
 ) -> anyhow::Result<()> {
     setup_logging(matches);
 
-    let hw = hw::driver::get();
+    let mut hw = HW::get();
     info!("\n{}", hw.description()?.details);
 
     // Get the boot config for the hardware
@@ -236,11 +237,11 @@ async fn run_service(
             futures::select! {
                 tcp_stream = fused_tcp => {
                     println!("Connected via Tcp");
-                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, hw).await;
+                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
                 },
                 iroh_connection = fused_iroh => {
                     println!("Connected via Iroh");
-                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, hw).await;
+                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
                 }
                 complete => {}
             }

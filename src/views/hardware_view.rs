@@ -361,20 +361,6 @@ impl HardwareView {
         Task::none()
     }
 
-    fn hw_view(
-        &self,
-        layout: Layout,
-        hardware_connection: &Option<HardwareConnection>,
-    ) -> Element<HardwareViewMessage> {
-        if hardware_connection.is_none() {
-            return Row::new().into();
-        }
-
-        if let Some(hw_description) = &self.hardware_description {
-            let pin_layout = match layout {
-                Layout::BoardLayout => self.board_pin_layout_view(&hw_description.pins),
-                Layout::BCMLayout => self.bcm_pin_layout_view(&hw_description.pins),
-            };
     /// Construct the view that represents the hardware view
     pub fn view(&self, layout: Layout) -> Element<Message> {
         let inner: Element<HardwareViewMessage> =
@@ -777,8 +763,6 @@ fn pin_button(pin_description: &PinDescription) -> Button<HardwareViewMessage> {
 
 #[cfg(test)]
 mod test {
-    use crate::hw_definition::config::InputPull::{PullDown, PullUp};
-    use crate::views::hardware_view::HardwareConnection::NoConnection;
     use crate::views::hardware_view::HardwareView;
 
     #[test]

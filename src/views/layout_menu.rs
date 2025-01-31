@@ -3,11 +3,9 @@ use iced::widget::Button;
 use iced::{Length, Size};
 
 use crate::hw_definition::config::HardwareConfig;
-use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::hardware_view::{
     bcm_layout_size, compact_layout_size, HardwareConnection, BOARD_LAYOUT_SIZE,
 };
-use crate::views::hardware_view::HardwareConnection;
 use crate::views::info_row::{menu_bar_button, menu_button};
 use crate::views::layout_menu::Layout::{Board, Compact, Logical};
 use iced::{Renderer, Theme};
@@ -67,7 +65,7 @@ impl LayoutSelector {
         let mut show_bcp_layout = Button::new("BCP Pin Layout")
             .width(Length::Fill)
             .style(menu_button);
-        if hardware_connection != &NoConnection && self.selected_layout != Logical {
+        if hardware_connection.is_some() && self.selected_layout != Logical {
             show_bcp_layout = show_bcp_layout.on_press(Message::LayoutChanged(Logical));
         }
         menu_items.push(Item::new(show_bcp_layout));
@@ -75,7 +73,7 @@ impl LayoutSelector {
         let mut show_physical_layout = Button::new("Board Pin Layout")
             .width(Length::Fill)
             .style(menu_button);
-        if hardware_connection != &NoConnection && self.selected_layout != Board {
+        if hardware_connection.is_some() && self.selected_layout != Board {
             show_physical_layout = show_physical_layout.on_press(Message::LayoutChanged(Board));
         }
         menu_items.push(Item::new(show_physical_layout));
@@ -84,7 +82,7 @@ impl LayoutSelector {
             .width(Length::Fill)
             .style(menu_button);
 
-        if hardware_connection != &NoConnection && self.selected_layout != Compact {
+        if hardware_connection.is_some() && self.selected_layout != Compact {
             show_reduced_layout = show_reduced_layout.on_press(Message::LayoutChanged(Compact));
         }
 

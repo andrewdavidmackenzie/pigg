@@ -4,15 +4,10 @@ use crate::hw_definition::description::HardwareDescription;
 use crate::net::PIGLET_ALPN;
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::Iroh;
-use anyhow::Context;
-use anyhow::{anyhow, ensure};
-use iced::futures::StreamExt;
-use iroh_net::{
-    endpoint::Connection,
-    key::SecretKey,
-    relay::RelayMode,
-    {Endpoint, NodeAddr},
-};
+use anyhow::{anyhow, ensure, Context};
+use iroh::endpoint::Connection;
+use iroh::{Endpoint, NodeAddr, RelayMode, SecretKey};
+use log::debug;
 use std::io;
 
 #[derive(Clone)]
@@ -26,7 +21,8 @@ impl IrohConnection {
         hardware_connection: &HardwareConnection,
     ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Self)> {
         if let Iroh(nodeid, relay) = hardware_connection {
-            let secret_key = SecretKey::generate();
+            let rng = rand::rngs::OsRng;
+            let secret_key = SecretKey::generate(rng);
 
             // Build a `Endpoint`, which uses PublicKeys as node identifiers
             let endpoint = Endpoint::builder()
@@ -39,16 +35,22 @@ impl IrohConnection {
                 .bind()
                 .await?;
 
-            for _local_endpoint in endpoint
+            let local_addrs = endpoint
                 .direct_addresses()
-                .next()
+                .initialized()
                 .await
                 .context("no endpoints")?
-            {}
+                .into_iter()
+                .map(|endpoint| endpoint.addr.to_string())
+                .collect::<Vec<_>>()
+                .join(" ");
+            debug!("local Addresses: {local_addrs}");
 
             // find my closest relay - maybe set this as a default in the UI but allow used to
             // override it in a text entry box. Leave black for user if fails to fetch it.
-            let relay_url = relay.unwrap_or(endpoint.home_relay().initialized().await?);
+            let relay_url = relay
+                .clone()
+                .unwrap_or(endpoint.home_relay().initialized().await?);
 
             // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
             let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);

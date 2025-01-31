@@ -1,5 +1,4 @@
 use std::io;
-
 use std::time::Duration;
 
 use crate::hw_definition::config::{HardwareConfig, LevelChange};
@@ -23,7 +22,6 @@ use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
 )))]
 use rand::Rng;
 
-use once_cell::sync::OnceCell;
 #[cfg(all(
     not(target_arch = "wasm32"),
     not(all(
@@ -44,6 +42,7 @@ enum Pin {
     Output(OutputPin),
 }
 
+#[derive(Clone)]
 /// There are two implementations of the `HW` struct.
 ///
 /// The first for Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
@@ -62,19 +61,17 @@ pub struct HW {
         any(target_arch = "aarch64", target_arch = "arm"),
         target_env = "gnu"
     ))]
-    configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
+    configured_pins:
+        std::sync::Arc<std::sync::RwLock<std::collections::HashMap<BCMPinNumber, Pin>>>,
 }
-
-/// Create a reference to the singleton HW instance
-pub fn get() -> &'static HW {
-    static SINGLETON : OnceCell<HW> = OnceCell::new();
-    #[allow(clippy::redundant_closure)]
-    SINGLETON.get_or_init(|| HW::new())
-}
-
 
 /// Common implementation code for pi and fake hardware
 impl HW {
+    /// Create a reference to the singleton HW instance
+    pub fn get() -> HW {
+        HW::new()
+    }
+
     pub fn new() -> Self {
         HW {
             #[cfg(all(
@@ -82,11 +79,13 @@ impl HW {
                 any(target_arch = "aarch64", target_arch = "arm"),
                 target_env = "gnu"
             ))]
-            configured_pins: std::collections::HashMap::new()
+            configured_pins: std::sync::Arc::new(std::sync::RwLock::new(
+                std::collections::HashMap::new(),
+            )),
         }
     }
 
-    /// Find the Pi hardware description
+    /// Return the Pi hardware description
     pub fn description(&self) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
             details: Self::get_details()?,
@@ -95,7 +94,7 @@ impl HW {
     }
 
     /// This takes the GPIOConfig struct and configures all the pins in it
-    pub async fn apply_config<C>(&self, config: &HardwareConfig, callback: C) -> io::Result<()>
+    pub async fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
@@ -121,7 +120,12 @@ impl HW {
             any(target_arch = "aarch64", target_arch = "arm"),
             target_env = "gnu"
         ))]
-        match self.configured_pins.get_mut(&bcm_pin_number) {
+        match self
+            .configured_pins
+            .write()
+            .unwrap()
+            .get_mut(&bcm_pin_number)
+        {
             Some(Pin::Output(output_pin)) => match level {
                 true => output_pin.write(Level::High),
                 false => output_pin.write(Level::Low),
@@ -233,11 +237,17 @@ impl HW {
         use crate::hw_definition::config::InputPull;
 
         // If it was already configured, remove it
-        self.configured_pins.remove(&bcm_pin_number);
+        self.configured_pins
+            .write()
+            .unwrap()
+            .remove(&bcm_pin_number);
 
         match pin_function {
             None => {
-                self.configured_pins.remove(&bcm_pin_number);
+                self.configured_pins
+                    .write()
+                    .unwrap()
+                    .remove(&bcm_pin_number);
             }
 
             Some(PinFunction::Input(pull)) => {
@@ -268,6 +278,8 @@ impl HW {
                     )
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
                 self.configured_pins
+                    .write()
+                    .unwrap()
                     .insert(bcm_pin_number, Pin::Input(input));
             }
 
@@ -282,6 +294,8 @@ impl HW {
                     None => pin.into_output(),
                 };
                 self.configured_pins
+                    .write()
+                    .unwrap()
                     .insert(bcm_pin_number, Pin::Output(output_pin));
             }
         }
@@ -332,7 +346,7 @@ impl HW {
             any(target_arch = "aarch64", target_arch = "arm"),
             target_env = "gnu"
         ))]
-        match self.configured_pins.get(&bcm_pin_number) {
+        match self.configured_pins.read().unwrap().get(&bcm_pin_number) {
             Some(Pin::Input(input_pin)) => Ok(input_pin.read() == Level::High),
             _ => Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -350,13 +364,14 @@ impl HW {
 
 #[cfg(test)]
 mod test {
+    use crate::hw::driver::HW;
     use crate::hw_definition::description::{PinDescription, PinDescriptionSet};
     use crate::hw_definition::pin_function::PinFunction;
     use std::borrow::Cow;
 
     #[test]
     fn get_hardware() {
-        let hw = super::get();
+        let hw = HW::get();
         let description = hw
             .description()
             .expect("Could not read Hardware description");
@@ -367,7 +382,7 @@ mod test {
 
     #[test]
     fn hw_can_be_got() {
-        let hw = super::get();
+        let hw = HW::get();
         assert!(hw.description().is_ok());
         println!(
             "{:?}",
@@ -378,7 +393,7 @@ mod test {
 
     #[test]
     fn forty_board_pins() {
-        let hw = super::get();
+        let hw = HW::get();
         let pin_set = hw
             .description()
             .expect("Could not get Hardware Description")
@@ -389,7 +404,7 @@ mod test {
     #[test]
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
-        let hw = super::get();
+        let hw = HW::get();
         let pin_set = hw
             .description()
             .expect("Could not get Hardware Description")
