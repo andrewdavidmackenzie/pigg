@@ -209,7 +209,7 @@ pub struct Style {
     pub border_hover_width: f32,
 }
 
-/// The theme catalog of a [`Toggler`].
+/// The theme catalog of a [`Led`].
 pub trait Catalog: Sized {
     /// The item class of the [`Catalog`].
     type Class<'a>;
@@ -221,7 +221,7 @@ pub trait Catalog: Sized {
     fn style(&self, class: &Self::Class<'_>, status: Status) -> Style;
 }
 
-/// A styling function for a [`Toggler`].
+/// A styling function for a [`Led`].
 ///
 /// This is just a boxed closure: `Fn(&Theme, Status) -> Style`.
 pub type StyleFn<'a, Theme> = Box<dyn Fn(&Theme, Status) -> Style + 'a>;
