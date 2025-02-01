@@ -3,7 +3,7 @@ use crate::views::hardware_view::PIN_BUTTON_RADIUS;
 use iced::border::Radius;
 use iced::widget::button::Status;
 use iced::widget::toggler::Status::Hovered;
-use iced::widget::{button, container, toggler};
+use iced::widget::{button, container, pick_list, toggler};
 use iced::{Background, Border, Color, Shadow, Theme};
 use iced_aw::style::colors::WHITE;
 
@@ -35,14 +35,34 @@ const PIN_BORDER_HOVER: Border = Border {
 pub fn toggler_style(_theme: &Theme, status: toggler::Status) -> toggler::Style {
     toggler::Style {
         background: Color::from_rgba(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
-        background_border_width: 2.0,
+        background_border_width: 3.0,
         background_border_color: match status {
             Hovered { .. } => WHITE,
             _ => Color::from_rgba(0.0, 0.2, 0.0, 1.0),
         },
         foreground: Color::from_rgba(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground
-        foreground_border_width: 1.0,
+        foreground_border_width: 3.0,
         foreground_border_color: Color::from_rgba(0.9, 0.9, 0.9, 1.0), // Light gray foreground border
+    }
+}
+
+pub fn picklist_style(theme: &Theme, status: pick_list::Status) -> pick_list::Style {
+    pick_list::Style {
+        border: Border {
+            color: if status == pick_list::Status::Hovered {
+                Color::WHITE
+            } else {
+                Color::TRANSPARENT
+            },
+            width: 3.0,
+            radius: Radius {
+                top_left: 0.0,
+                top_right: 0.0,
+                bottom_right: 0.0,
+                bottom_left: 0.0,
+            },
+        },
+        ..pick_list::default(theme, status)
     }
 }
 

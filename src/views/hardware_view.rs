@@ -9,7 +9,7 @@ use crate::hw_definition::description::{HardwareDescription, PinDescription, Pin
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
-use crate::views::hardware_styles::{get_pin_style, toggler_style, TOOLTIP_STYLE};
+use crate::views::hardware_styles::{get_pin_style, picklist_style, toggler_style, TOOLTIP_STYLE};
 use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, NewConfig, PinFunctionChanged, SubscriptionMessage, UpdateCharts,
@@ -61,10 +61,7 @@ const PIN_ROW_WIDTH: f32 =
     PIN_ARROW_LINE_WIDTH + (PIN_ARROW_CIRCLE_RADIUS * 2.0) + PIN_BUTTON_DIAMETER;
 const PIN_NAME_WIDTH: f32 = 80.0; // for some longer pin names
 const TOGGLER_SIZE: f32 = 28.0;
-const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
-const CLICKER_WIDTH: f32 = 13.0;
-// We want the pullup on an Input to be the same width as the clicker + toggler on an Output
-const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH - 3.0;
+const PULLUP_WIDTH: f32 = 95.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_RADIUS + WIDGET_ROW_SPACING + CHART_WIDTH;
@@ -615,9 +612,8 @@ fn pullup_picklist(
         PinFunctionChanged(bcm_pin_number, Some(Input(Some(selected_pull))), false)
     })
     .width(PULLUP_WIDTH)
-    .placeholder("Select Pullup");
-
-    // select a slightly small font on RPi, to make it fit within pick_list
+    .placeholder("Select Pullup")
+    .style(picklist_style);
 
     pick_list.into()
 }
@@ -658,7 +654,6 @@ fn get_pin_widget<'a>(
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
                 ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
             })
-            .width(TOGGLER_WIDTH)
             .size(TOGGLER_SIZE)
             .style(toggler_style);
 
@@ -693,7 +688,7 @@ fn get_pin_widget<'a>(
             } else {
                 Row::new()
                     .push(toggle_tooltip)
-                    .push(horizontal_space().width(4.0)) // HACK!
+                    .push(horizontal_space().width(25.0)) // HACK!
                     .push(led_tooltip)
                     .push(pin_state.view(Right))
             }
