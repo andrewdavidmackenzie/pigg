@@ -9,9 +9,7 @@ use crate::hw_definition::description::{HardwareDescription, PinDescription, Pin
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
-use crate::views::hardware_styles::{
-    get_pin_style, toggler_style, SPACE_BETWEEN_PIN_COLUMNS, TOOLTIP_STYLE,
-};
+use crate::views::hardware_styles::{get_pin_style, toggler_style, TOOLTIP_STYLE};
 use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, NewConfig, PinFunctionChanged, SubscriptionMessage, UpdateCharts,
@@ -49,10 +47,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 const HARDWARE_VIEW_PADDING: f32 = 10.0;
 const PIN_DOCK_SPACING: f32 = 2.0;
 
-pub(crate) const BOARD_LAYOUT_SIZE: Size = Size {
-    width: 1105.0,
-    height: 720.0,
-};
+const SPACE_BETWEEN_PIN_COLUMNS: f32 = 10.0;
 
 const SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
@@ -75,6 +70,13 @@ const LED_WIDTH: f32 = 14.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
+
+pub(crate) const fn board_layout_size(_number_of_pins: usize) -> Size {
+    Size {
+        width: 1105.0,
+        height: 720.0,
+    }
+}
 
 // calculate the height required based on the number of configured pins
 pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
@@ -172,7 +174,7 @@ pub struct HardwareView {
     hardware_connection: HardwareConnection,
     hardware_config: HardwareConfig,
     subscriber_sender: Option<Sender<SubscriberMessage>>,
-    pub hardware_description: Option<HardwareDescription>,
+    hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
     pin_states: HashMap<BCMPinNumber, PinState>,
 }
@@ -195,6 +197,12 @@ impl HardwareView {
     #[must_use]
     pub fn get_config(&self) -> &HardwareConfig {
         &self.hardware_config
+    }
+
+    /// Get the current [HardwareDescription]
+    #[must_use]
+    pub fn get_description(&self) -> &Option<HardwareDescription> {
+        &self.hardware_description
     }
 
     /// Get the current [HardwareConnection]

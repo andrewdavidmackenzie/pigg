@@ -32,7 +32,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
             .style(menu_button),
     );
 
-    if let Some(hardware_description) = hardware_view.hardware_description.as_ref() {
+    if let Some(hardware_description) = hardware_view.get_description() {
         let show_details = Item::new(
             button("Display Device Details...")
                 .on_press(Message::Modal(HardwareDetailsModal(

@@ -7,8 +7,6 @@ use iced::widget::{button, container, toggler};
 use iced::{Background, Border, Color, Shadow, Theme};
 use iced_aw::style::colors::WHITE;
 
-pub(crate) const SPACE_BETWEEN_PIN_COLUMNS: f32 = 10.0;
-
 const PIN_RADIUS: Radius = Radius {
     top_left: PIN_BUTTON_RADIUS,
     top_right: PIN_BUTTON_RADIUS,
@@ -48,21 +46,19 @@ pub fn toggler_style(_theme: &Theme, status: toggler::Status) -> toggler::Style 
     }
 }
 
-const TOOLTIP_BORDER: Border = Border {
-    color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
-    width: 1.0,
-    radius: Radius {
-        top_left: 4.0,
-        top_right: 4.0,
-        bottom_right: 4.0,
-        bottom_left: 4.0,
-    },
-};
-
 pub(crate) const TOOLTIP_STYLE: container::Style = container::Style {
     text_color: Some(Color::WHITE),
     background: Some(Background::Color(Color::from_rgba(0.3, 0.3, 0.3, 1.0))),
-    border: TOOLTIP_BORDER,
+    border: Border {
+        color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
+        width: 1.0,
+        radius: Radius {
+            top_left: 4.0,
+            top_right: 4.0,
+            bottom_right: 4.0,
+            bottom_left: 4.0,
+        },
+    },
     shadow: NO_SHADOW,
 };
 
