@@ -3,9 +3,10 @@ use iced::widget::Button;
 use iced::{Length, Size};
 
 use crate::hw_definition::config::HardwareConfig;
+use crate::hw_definition::description::HardwareDescription;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::hardware_view::{
-    bcm_layout_size, compact_layout_size, HardwareConnection, BOARD_LAYOUT_SIZE,
+    bcm_layout_size, board_layout_size, compact_layout_size, HardwareConnection,
 };
 use crate::views::info_row::{menu_bar_button, menu_button};
 use crate::views::layout_menu::Layout::{Board, Compact, Logical};
@@ -34,7 +35,7 @@ impl LayoutSelector {
     }
 
     pub const fn get_default_window_size() -> Size {
-        BOARD_LAYOUT_SIZE
+        board_layout_size(40)
     }
 
     /// Set the new layout as being selected and return the window size required
@@ -43,10 +44,24 @@ impl LayoutSelector {
     }
 
     /// Return what is the window size request for the currently selected layout
-    pub fn window_size_requested(&self, hardware_config: &HardwareConfig) -> Size {
+    pub fn window_size_requested(
+        &self,
+        hardware_description: &Option<HardwareDescription>,
+        hardware_config: &HardwareConfig,
+    ) -> Size {
         match self.selected_layout {
-            Board => BOARD_LAYOUT_SIZE,
-            Logical => bcm_layout_size(26),
+            Board => board_layout_size(
+                hardware_description
+                    .as_ref()
+                    .map(|hw| hw.pins.pins().len())
+                    .unwrap_or(40),
+            ),
+            Logical => bcm_layout_size({
+                hardware_description
+                    .as_ref()
+                    .map(|hw| hw.pins.pins().iter().filter(|p| p.bcm.is_some()).count())
+                    .unwrap_or(26)
+            }),
             Compact => compact_layout_size(hardware_config.pin_functions.len()),
         }
     }

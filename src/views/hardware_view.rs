@@ -9,9 +9,7 @@ use crate::hw_definition::description::{HardwareDescription, PinDescription, Pin
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
-use crate::views::hardware_styles::{
-    get_pin_style, toggler_style, SPACE_BETWEEN_PIN_COLUMNS, TOOLTIP_STYLE,
-};
+use crate::views::hardware_styles::{get_pin_style, picklist_style, toggler_style, TOOLTIP_STYLE};
 use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, NewConfig, PinFunctionChanged, SubscriptionMessage, UpdateCharts,
@@ -19,7 +17,6 @@ use crate::views::hardware_view::HardwareViewMessage::{
 use crate::views::info_row::{menu_button, INFO_ROW_HEIGHT};
 use crate::views::layout_menu::Layout;
 use crate::views::pin_state::{PinState, CHART_UPDATES_PER_SECOND, CHART_WIDTH};
-use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::Message;
@@ -33,7 +30,7 @@ use iced::widget::{
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
 use iced::{Alignment, Center, Element, Length, Size, Task};
-use iced::{Color, Renderer, Theme};
+use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
 use iced_futures::Subscription;
@@ -49,10 +46,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 const HARDWARE_VIEW_PADDING: f32 = 10.0;
 const PIN_DOCK_SPACING: f32 = 2.0;
 
-pub(crate) const BOARD_LAYOUT_SIZE: Size = Size {
-    width: 1105.0,
-    height: 720.0,
-};
+const SPACE_BETWEEN_PIN_COLUMNS: f32 = 10.0;
 
 const SPACE_BETWEEN_PIN_ROWS: f32 = 5.0;
 
@@ -67,14 +61,19 @@ const PIN_ROW_WIDTH: f32 =
     PIN_ARROW_LINE_WIDTH + (PIN_ARROW_CIRCLE_RADIUS * 2.0) + PIN_BUTTON_DIAMETER;
 const PIN_NAME_WIDTH: f32 = 80.0; // for some longer pin names
 const TOGGLER_SIZE: f32 = 28.0;
-const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
-const CLICKER_WIDTH: f32 = 13.0;
-// We want the pullup on an Input to be the same width as the clicker + toggler on an Output
-const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH - 3.0;
-const LED_WIDTH: f32 = 14.0;
+const PULLUP_WIDTH: f32 = 95.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
-    PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_WIDTH + WIDGET_ROW_SPACING + CHART_WIDTH;
+    PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_RADIUS + WIDGET_ROW_SPACING + CHART_WIDTH;
+
+const LED_RADIUS: f32 = 14.0;
+
+pub(crate) const fn board_layout_size(_number_of_pins: usize) -> Size {
+    Size {
+        width: 1105.0,
+        height: 720.0,
+    }
+}
 
 // calculate the height required based on the number of configured pins
 pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
@@ -172,7 +171,7 @@ pub struct HardwareView {
     hardware_connection: HardwareConnection,
     hardware_config: HardwareConfig,
     subscriber_sender: Option<Sender<SubscriberMessage>>,
-    pub hardware_description: Option<HardwareDescription>,
+    hardware_description: Option<HardwareDescription>,
     /// Either desired state of an output, or detected state of input.
     pin_states: HashMap<BCMPinNumber, PinState>,
 }
@@ -195,6 +194,12 @@ impl HardwareView {
     #[must_use]
     pub fn get_config(&self) -> &HardwareConfig {
         &self.hardware_config
+    }
+
+    /// Get the current [HardwareDescription]
+    #[must_use]
+    pub fn get_description(&self) -> &Option<HardwareDescription> {
+        &self.hardware_description
     }
 
     /// Get the current [HardwareConnection]
@@ -607,9 +612,8 @@ fn pullup_picklist(
         PinFunctionChanged(bcm_pin_number, Some(Input(Some(selected_pull))), false)
     })
     .width(PULLUP_WIDTH)
-    .placeholder("Select Pullup");
-
-    // select a slightly small font on RPi, to make it fit within pick_list
+    .placeholder("Select Pullup")
+    .style(picklist_style);
 
     pick_list.into()
 }
@@ -626,15 +630,16 @@ fn get_pin_widget<'a>(
     let row: Row<HardwareViewMessage> = match pin_function {
         Some(Input(pull)) => {
             let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
+            let led = led(LED_RADIUS, pin_state.get_level());
             if alignment == End {
                 Row::new()
                     .push(pin_state.view(Left))
-                    .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
+                    .push(led)
                     .push(pullup_pick)
             } else {
                 Row::new()
                     .push(pullup_pick)
-                    .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
+                    .push(led)
                     .push(pin_state.view(Right))
             }
         }
@@ -649,50 +654,42 @@ fn get_pin_widget<'a>(
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
                 ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
             })
-            .width(TOGGLER_WIDTH)
             .size(TOGGLER_SIZE)
             .style(toggler_style);
-
-            let output_clicker =
-                clicker::<HardwareViewMessage>(CLICKER_WIDTH, Color::BLACK, Color::WHITE)
-                    .on_press({
-                        let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
-                    })
-                    .on_release({
-                        let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
-                    });
 
             let toggle_tooltip =
                 Tooltip::new(output_toggler, "Click to toggle level", Position::Top)
                     .gap(4.0)
                     .style(|_| TOOLTIP_STYLE);
 
-            let clicker_tooltip = Tooltip::new(
-                output_clicker,
-                "Click and hold to invert level",
-                Position::Top,
-            )
-            .gap(4.0)
-            .style(|_| TOOLTIP_STYLE);
+            let led = led::<HardwareViewMessage>(LED_RADIUS, pin_state.get_level())
+                .on_press({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
+                })
+                .on_release({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
+                });
+
+            let led_tooltip = Tooltip::new(led, "Click to toggle level", Position::Top)
+                .gap(4.0)
+                .style(|_| TOOLTIP_STYLE);
 
             // For some unknown reason the Pullup picker is wider on the right side than the left
             // to we add some space here to make this match on both side. A nasty hack!
             if alignment == End {
                 Row::new()
                     .push(pin_state.view(Left))
-                    .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
-                    .push(clicker_tooltip)
+                    .push(led_tooltip)
                     .push(toggle_tooltip)
             } else {
                 Row::new()
                     .push(toggle_tooltip)
-                    .push(clicker_tooltip)
-                    .push(horizontal_space().width(4.0)) // HACK!
-                    .push(led(LED_WIDTH, LED_WIDTH, pin_state.get_level()))
+                    .push(horizontal_space().width(25.0)) // HACK!
+                    .push(led_tooltip)
                     .push(pin_state.view(Right))
             }
         }

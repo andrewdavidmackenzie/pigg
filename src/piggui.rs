@@ -200,8 +200,10 @@ impl Piggui {
     }
 
     fn window_size_change_request(&self) -> Task<Message> {
-        let hardware_config = self.hardware_view.get_config();
-        let layout_size = self.layout_selector.window_size_requested(hardware_config);
+        let layout_size = self.layout_selector.window_size_requested(
+            self.hardware_view.get_description(),
+            self.hardware_view.get_config(),
+        );
         window::get_latest().then(move |latest| {
             if let Some(id) = latest {
                 window::resize(id, layout_size)
