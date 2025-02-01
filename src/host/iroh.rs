@@ -1,3 +1,4 @@
+use crate::hardware_subscription::HWConnection;
 use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 use crate::hw_definition::description::HardwareDescription;
@@ -68,9 +69,11 @@ impl IrohConnection {
             Err(anyhow!("Not an Iroh connection target"))
         }
     }
+}
 
+impl HWConnection for IrohConnection {
     /// Send config change received form the GUI to the remote hardware
-    pub async fn send_config_message(
+    async fn send_config_message(
         &self,
         config_change_message: &HardwareConfigMessage,
     ) -> anyhow::Result<()> {
@@ -86,7 +89,7 @@ impl IrohConnection {
     }
 
     /// Wait until we receive a message from remote hardware
-    pub async fn wait_for_remote_message(&self) -> Result<HardwareConfigMessage, anyhow::Error> {
+    async fn wait_for_remote_message(&self) -> Result<HardwareConfigMessage, anyhow::Error> {
         let mut config_receiver = self.connection.accept_uni().await?;
         let message = config_receiver.read_to_end(4096).await?;
         ensure!(
@@ -98,7 +101,7 @@ impl IrohConnection {
     }
 
     /// Inform the device that we are disconnecting from the Iroh connection
-    pub async fn disconnect(&self) -> anyhow::Result<()> {
+    async fn disconnect(&self) -> anyhow::Result<()> {
         self.send_config_message(&Disconnect).await
     }
 }

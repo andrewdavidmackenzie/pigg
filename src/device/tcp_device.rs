@@ -76,7 +76,7 @@ pub async fn tcp_message_loop(
     mut stream: TcpStream,
     hardware_config: &mut HardwareConfig,
     exec_path: &Path,
-    hardware: &HW,
+    hardware: &mut HW,
 ) -> anyhow::Result<()> {
     let mut payload = vec![0u8; 1024];
     info!("Waiting for message");
@@ -99,7 +99,7 @@ pub async fn tcp_message_loop(
 /// but wasn't working - so this uses a sync callback again to fix that, and an async version of
 /// send_input_level() for use directly from the async context
 async fn apply_config_change(
-    hardware: &HW,
+    hardware: &mut HW,
     config_change: HardwareConfigMessage,
     hardware_config: &mut HardwareConfig,
     tcp_stream: TcpStream,
