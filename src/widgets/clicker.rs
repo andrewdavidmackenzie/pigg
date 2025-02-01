@@ -54,12 +54,20 @@ where
     Message: Clone,
     Renderer: renderer::Renderer,
 {
-    fn tag(&self) -> widget::tree::Tag {
-        widget::tree::Tag::of::<State>()
+    fn size(&self) -> Size<Length> {
+        Size {
+            width: Length::Shrink,
+            height: Length::Shrink,
+        }
     }
 
-    fn state(&self) -> widget::tree::State {
-        widget::tree::State::new(State::default())
+    fn layout(
+        &self,
+        _tree: &mut widget::Tree,
+        _renderer: &Renderer,
+        _limits: &layout::Limits,
+    ) -> layout::Node {
+        layout::Node::new(Size::new(self.radius * 2.0, self.radius * 2.0))
     }
 
     fn draw(
@@ -79,8 +87,7 @@ where
                 bounds: layout.bounds(),
                 border: iced::border::Border {
                     radius: self.radius.into(),
-                    width: 3.0,
-                    color: Color::from_rgb8(0, 255, 0),
+                    ..Default::default()
                 },
                 ..renderer::Quad::default()
             },
@@ -90,6 +97,14 @@ where
                 self.on_release_color
             },
         );
+    }
+
+    fn tag(&self) -> widget::tree::Tag {
+        widget::tree::Tag::of::<State>()
+    }
+
+    fn state(&self) -> widget::tree::State {
+        widget::tree::State::new(State::default())
     }
 
     fn on_event(
@@ -133,22 +148,6 @@ where
         }
 
         event::Status::Ignored
-    }
-
-    fn size(&self) -> Size<Length> {
-        Size {
-            width: Length::Shrink,
-            height: Length::Shrink,
-        }
-    }
-
-    fn layout(
-        &self,
-        _tree: &mut widget::Tree,
-        _renderer: &Renderer,
-        _limits: &layout::Limits,
-    ) -> layout::Node {
-        layout::Node::new(Size::new(self.radius * 2.0, self.radius * 2.0))
     }
 
     fn mouse_interaction(
