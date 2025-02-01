@@ -17,7 +17,6 @@ use crate::views::hardware_view::HardwareViewMessage::{
 use crate::views::info_row::{menu_button, INFO_ROW_HEIGHT};
 use crate::views::layout_menu::Layout;
 use crate::views::pin_state::{PinState, CHART_UPDATES_PER_SECOND, CHART_WIDTH};
-use crate::widgets::clicker::clicker;
 use crate::widgets::led::led;
 use crate::widgets::{circle::circle, line::line};
 use crate::Message;
@@ -31,7 +30,7 @@ use iced::widget::{
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
 use iced::{Alignment, Center, Element, Length, Size, Task};
-use iced::{Color, Renderer, Theme};
+use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
 use iced_futures::Subscription;
@@ -66,13 +65,11 @@ const TOGGLER_WIDTH: f32 = 95.0; // Just used to calculate Pullup width
 const CLICKER_WIDTH: f32 = 13.0;
 // We want the pullup on an Input to be the same width as the clicker + toggler on an Output
 const PULLUP_WIDTH: f32 = TOGGLER_WIDTH + CLICKER_WIDTH - 3.0;
-const LED_RADIUS: f32 = 14.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
     PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_RADIUS + WIDGET_ROW_SPACING + CHART_WIDTH;
 
-const LED_ON_COLOR: Color = Color::from_rgba(0.0, 0.7, 0.0, 1.0);
-const LED_OFF_COLOR: Color = Color::from_rgba(0.0, 0.3, 0.0, 1.0);
+const LED_RADIUS: f32 = 14.0;
 
 pub(crate) const fn board_layout_size(_number_of_pins: usize) -> Size {
     Size {
@@ -637,12 +634,7 @@ fn get_pin_widget<'a>(
     let row: Row<HardwareViewMessage> = match pin_function {
         Some(Input(pull)) => {
             let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
-            let led = led(
-                LED_RADIUS,
-                LED_ON_COLOR,
-                LED_OFF_COLOR,
-                pin_state.get_level(),
-            );
+            let led = led(LED_RADIUS, pin_state.get_level());
             if alignment == End {
                 Row::new()
                     .push(pin_state.view(Left))
@@ -670,52 +662,26 @@ fn get_pin_widget<'a>(
             .size(TOGGLER_SIZE)
             .style(toggler_style);
 
-            let output_clicker =
-                clicker::<HardwareViewMessage>(CLICKER_WIDTH, Color::BLACK, Color::WHITE)
-                    .on_press({
-                        let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
-                    })
-                    .on_release({
-                        let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                        ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
-                    });
-
             let toggle_tooltip =
                 Tooltip::new(output_toggler, "Click to toggle level", Position::Top)
                     .gap(4.0)
                     .style(|_| TOOLTIP_STYLE);
 
-            let led = led::<HardwareViewMessage>(
-                LED_RADIUS,
-                LED_ON_COLOR,
-                LED_OFF_COLOR,
-                pin_state.get_level(),
-            )
-            .on_press({
-                let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
-            })
-            .on_release({
-                let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
-            });
+            let led = led::<HardwareViewMessage>(LED_RADIUS, pin_state.get_level())
+                .on_press({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
+                })
+                .on_release({
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
+                });
 
             let led_tooltip = Tooltip::new(led, "Click to toggle level", Position::Top)
                 .gap(4.0)
                 .style(|_| TOOLTIP_STYLE);
-
-            let clicker_tooltip = Tooltip::new(
-                output_clicker,
-                "Click and hold to invert level",
-                Position::Top,
-            )
-            .gap(4.0)
-            .style(|_| TOOLTIP_STYLE);
 
             // For some unknown reason the Pullup picker is wider on the right side than the left
             // to we add some space here to make this match on both side. A nasty hack!
@@ -723,12 +689,10 @@ fn get_pin_widget<'a>(
                 Row::new()
                     .push(pin_state.view(Left))
                     .push(led_tooltip)
-                    .push(clicker_tooltip)
                     .push(toggle_tooltip)
             } else {
                 Row::new()
                     .push(toggle_tooltip)
-                    .push(clicker_tooltip)
                     .push(horizontal_space().width(4.0)) // HACK!
                     .push(led_tooltip)
                     .push(pin_state.view(Right))

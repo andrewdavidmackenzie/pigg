@@ -1,35 +1,34 @@
+use crate::hw_definition::PinLevel;
+use crate::widgets::led::Status::{Active, Disabled, Hovered};
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
-use iced::advanced::widget::{self, Tree, Widget};
-use iced::{advanced::Clipboard, advanced::Shell, touch};
+use iced::advanced::widget::{Tree, Widget};
+use iced::{advanced::Clipboard, advanced::Shell, touch, Theme};
 use iced::{event, mouse, Event};
 use iced::{Color, Element, Length, Rectangle, Size};
 
-use crate::hw_definition::PinLevel;
-
-pub struct Led<Message> {
+pub struct Led<'a, Message, Theme = crate::Theme>
+where
+    Theme: Catalog,
+{
     radius: f32,
     on_press: Option<Message>,
     on_release: Option<Message>,
-    on_color: Color,
-    off_color: Color,
     level: Option<PinLevel>,
+    class: Theme::Class<'a>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
-struct State {
-    is_pressed: bool,
-}
-
-impl<Message> Led<Message> {
-    pub fn new(height: f32, on_color: Color, off_color: Color, level: Option<PinLevel>) -> Self {
+impl<'a, Message, Theme> Led<'a, Message, Theme>
+where
+    Theme: Catalog,
+{
+    pub fn new(height: f32, level: Option<PinLevel>) -> Self {
         Self {
             radius: height,
             on_press: None,
             on_release: None,
-            on_color,
-            off_color,
             level,
+            class: Theme::default(),
         }
     }
 
@@ -42,21 +41,27 @@ impl<Message> Led<Message> {
         self.on_release = Some(on_release);
         self
     }
+
+    /// Sets the style of the [`Led`].
+    #[must_use]
+    pub fn style(mut self, style: impl Fn(&Theme, Status) -> Style + 'a) -> Self
+    where
+        Theme::Class<'a>: From<StyleFn<'a, Theme>>,
+    {
+        self.class = (Box::new(style) as StyleFn<'a, Theme>).into();
+        self
+    }
 }
 
-pub fn led<Message>(
-    height: f32,
-    on_color: Color,
-    off_color: Color,
-    level: Option<PinLevel>,
-) -> Led<Message> {
-    Led::new(height, on_color, off_color, level)
+pub fn led<'a, Message>(height: f32, level: Option<PinLevel>) -> Led<'a, Message> {
+    Led::new(height, level)
 }
 
 #[allow(missing_debug_implementations)]
-impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Led<Message>
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Led<'_, Message, Theme>
 where
     Message: Clone,
+    Theme: Catalog,
     Renderer: renderer::Renderer,
 {
     fn size(&self) -> Size<Length> {
@@ -68,7 +73,7 @@ where
 
     fn layout(
         &self,
-        _tree: &mut widget::Tree,
+        _tree: &mut Tree,
         _renderer: &Renderer,
         _limits: &layout::Limits,
     ) -> layout::Node {
@@ -77,53 +82,51 @@ where
 
     fn draw(
         &self,
-        tree: &Tree,
+        _tree: &Tree,
         renderer: &mut Renderer,
-        _theme: &Theme,
+        theme: &Theme,
         _style: &renderer::Style,
         layout: Layout<'_>,
-        _cursor: mouse::Cursor,
+        cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
-        let state = tree.state.downcast_ref::<State>();
+        let status = if self.on_press.is_none() {
+            Disabled
+        } else if cursor.is_over(layout.bounds()) {
+            Hovered
+        } else {
+            Active
+        };
+
+        let style = theme.style(&self.class, status);
 
         let color = match self.level {
             None => Color::BLACK,
-            Some(false) => self.off_color,
-            Some(true) => self.on_color,
+            Some(false) => style.off_color,
+            Some(true) => style.on_color,
         };
-
-        /*
-        let color = if state.is_pressed {
-            Color::new(0.0, 0.3, 0.0, 1.0)
-        } else {
-            Color::new(0.0, 0.3, 0.0, 1.0)
-        };
-         */
 
         renderer.fill_quad(
             renderer::Quad {
                 bounds: layout.bounds(),
                 border: iced::border::Border {
                     radius: self.radius.into(),
-                    ..Default::default()
+                    width: style.border_hover_width,
+                    color: if status == Hovered {
+                        style.border_hover_color
+                    } else {
+                        Color::TRANSPARENT
+                    },
                 },
                 ..renderer::Quad::default()
             },
             color,
         );
     }
-    fn tag(&self) -> widget::tree::Tag {
-        widget::tree::Tag::of::<State>()
-    }
-
-    fn state(&self) -> widget::tree::State {
-        widget::tree::State::new(State::default())
-    }
 
     fn on_event(
         &mut self,
-        tree: &mut Tree,
+        _tree: &mut Tree,
         event: Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -132,14 +135,11 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) -> event::Status {
-        let state = tree.state.downcast_mut::<State>();
-
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
                 if let Some(on_press) = self.on_press.clone() {
                     if cursor.is_over(layout.bounds()) {
-                        state.is_pressed = true;
                         shell.publish(on_press);
                         return event::Status::Captured;
                     }
@@ -149,15 +149,12 @@ where
             | Event::Touch(touch::Event::FingerLifted { .. }) => {
                 if let Some(on_release) = self.on_release.clone() {
                     if cursor.is_over(layout.bounds()) {
-                        state.is_pressed = false;
                         shell.publish(on_release);
                         return event::Status::Captured;
                     }
                 }
             }
-            Event::Touch(touch::Event::FingerLost { .. }) => {
-                state.is_pressed = false;
-            }
+            Event::Touch(touch::Event::FingerLost { .. }) => {}
             _ => {}
         }
 
@@ -180,12 +177,73 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Led<Message>> for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<Led<'a, Message, Theme>>
+    for Element<'a, Message, Theme, Renderer>
 where
     Message: Clone + 'a,
+    Theme: Catalog + 'a,
     Renderer: renderer::Renderer,
 {
-    fn from(led: Led<Message>) -> Self {
+    fn from(led: Led<'a, Message, Theme>) -> Self {
         Self::new(led)
+    }
+}
+
+/// The possible status of a [`Led`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Status {
+    /// The [`Led`] can be interacted with.
+    Active,
+    /// The [`Led`] is being hovered.
+    Hovered,
+    /// The [`Led`] is disabled.
+    Disabled,
+}
+
+/// The appearance of an [`Led`].
+#[derive(Debug, Clone, Copy)]
+pub struct Style {
+    pub off_color: Color,
+    pub on_color: Color,
+    pub border_hover_color: Color,
+    pub border_hover_width: f32,
+}
+
+/// The theme catalog of a [`Toggler`].
+pub trait Catalog: Sized {
+    /// The item class of the [`Catalog`].
+    type Class<'a>;
+
+    /// The default class produced by the [`Catalog`].
+    fn default<'a>() -> Self::Class<'a>;
+
+    /// The [`Style`] of a class with the given status.
+    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style;
+}
+
+/// A styling function for a [`Toggler`].
+///
+/// This is just a boxed closure: `Fn(&Theme, Status) -> Style`.
+pub type StyleFn<'a, Theme> = Box<dyn Fn(&Theme, Status) -> Style + 'a>;
+
+impl Catalog for Theme {
+    type Class<'a> = StyleFn<'a, Self>;
+
+    fn default<'a>() -> Self::Class<'a> {
+        Box::new(default)
+    }
+
+    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style {
+        class(self, status)
+    }
+}
+
+/// The default style of a [`Led`].
+pub fn default(_theme: &Theme, _status: Status) -> Style {
+    Style {
+        off_color: Color::from_rgba(0.0, 0.3, 0.0, 1.0),
+        on_color: Color::from_rgba(0.0, 0.7, 0.0, 1.0),
+        border_hover_color: Color::WHITE,
+        border_hover_width: 3.0,
     }
 }
