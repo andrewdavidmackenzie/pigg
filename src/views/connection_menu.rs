@@ -2,7 +2,7 @@
 use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::hardware_view::HardwareView;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
-use crate::views::info_row::{menu_bar_button, menu_button};
+use crate::views::info_row::{menu_bar_button, menu_button_style};
 use crate::HardwareConnection::*;
 use crate::Message;
 use iced::widget::{button, text};
@@ -19,7 +19,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
         button("Disconnect")
             .width(Length::Fill)
             .on_press(Message::Disconnect)
-            .style(menu_button),
+            .style(menu_button_style),
     );
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -29,7 +29,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
             .on_press(Message::ConnectDialog(
                 ConnectDialogMessage::ShowConnectDialog,
             ))
-            .style(menu_button),
+            .style(menu_button_style),
     );
 
     if let Some(hardware_description) = hardware_view.get_description() {
@@ -40,7 +40,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
                     HashMap::default(),
                 )))
                 .width(Length::Fill)
-                .style(menu_button),
+                .style(menu_button_style),
         );
         menu_items.push(show_details);
     }
@@ -72,6 +72,6 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
         button(text(model_string))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(menu_bar_button),
-        Menu::new(menu_items).width(215.0).offset(10.0),
+        Menu::new(menu_items).width(215.0),
     )
 }

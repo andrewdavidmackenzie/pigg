@@ -1,7 +1,7 @@
 use crate::hardware_subscription;
 use crate::hardware_subscription::SubscriberMessage::Hardware;
 use crate::hardware_subscription::{SubscriberMessage, SubscriptionEvent};
-use crate::hw_definition::config::InputPull;
+use crate::hw_definition::config::InputPull::{PullDown, PullUp};
 use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "usb")]
 use crate::hw_definition::description::SerialNumber;
@@ -9,12 +9,12 @@ use crate::hw_definition::description::{HardwareDescription, PinDescription, Pin
 use crate::hw_definition::pin_function::PinFunction;
 use crate::hw_definition::pin_function::PinFunction::{Input, Output};
 use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
-use crate::views::hardware_styles::{get_pin_style, picklist_style, toggler_style, TOOLTIP_STYLE};
+use crate::views::hardware_styles::{get_pin_style, toggler_style, TOOLTIP_STYLE};
 use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, NewConfig, PinFunctionChanged, SubscriptionMessage, UpdateCharts,
 };
-use crate::views::info_row::{menu_button, INFO_ROW_HEIGHT};
+use crate::views::info_row::{menu_button_style, INFO_ROW_HEIGHT};
 use crate::views::layout_menu::Layout;
 use crate::views::pin_state::{PinState, CHART_UPDATES_PER_SECOND, CHART_WIDTH};
 use crate::widgets::led::led;
@@ -25,11 +25,11 @@ use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::tooltip::Position;
 use iced::widget::{
-    button, horizontal_space, pick_list, row, scrollable, text, toggler, Button, Column, Row, Text,
+    button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text,
 };
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
-use iced::{Alignment, Center, Element, Length, Size, Task};
+use iced::{alignment, Alignment, Center, Element, Fill, Length, Size, Task};
 use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
@@ -61,16 +61,16 @@ const PIN_ROW_WIDTH: f32 =
     PIN_ARROW_LINE_WIDTH + (PIN_ARROW_CIRCLE_RADIUS * 2.0) + PIN_BUTTON_DIAMETER;
 const PIN_NAME_WIDTH: f32 = 80.0; // for some longer pin names
 const TOGGLER_SIZE: f32 = 28.0;
-const PULLUP_WIDTH: f32 = 95.0;
+const TOGGLER_WIDTH: f32 = 65.0;
 const WIDGET_ROW_SPACING: f32 = 5.0;
 const PIN_WIDGET_ROW_WIDTH: f32 =
-    PULLUP_WIDTH + WIDGET_ROW_SPACING + LED_RADIUS + WIDGET_ROW_SPACING + CHART_WIDTH;
+    (LED_RADIUS * 2.0) + WIDGET_ROW_SPACING + CHART_WIDTH + WIDGET_ROW_SPACING + TOGGLER_WIDTH;
 
 const LED_RADIUS: f32 = 14.0;
 
 pub(crate) const fn board_layout_size(_number_of_pins: usize) -> Size {
     Size {
-        width: 1105.0,
+        width: 1060.0,
         height: 720.0,
     }
 }
@@ -100,7 +100,7 @@ pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
 
 pub(crate) fn bcm_layout_size(num_pins: usize) -> Size {
     Size {
-        width: 580.0,
+        width: 540.0,
         height: HARDWARE_VIEW_PADDING
             + (num_pins as f32 * (PIN_BUTTON_DIAMETER + SPACE_BETWEEN_PIN_ROWS))
             + HARDWARE_VIEW_PADDING
@@ -396,8 +396,8 @@ impl HardwareView {
         let hw_column = Column::new()
             .push(inner.map(Message::Hardware))
             .align_x(Center)
-            .height(Length::Fill)
-            .width(Length::Fill);
+            .height(Fill)
+            .width(Fill);
 
         container(hw_column).padding(HARDWARE_VIEW_PADDING).into()
     }
@@ -557,12 +557,12 @@ impl HardwareView {
             // Create a widget that is either used to visualize an input or control an output
             get_pin_widget(pin_description.bcm, pin_function, state, alignment)
         } else {
-            Row::new().width(PIN_WIDGET_ROW_WIDTH).into()
+            horizontal_space().width(PIN_WIDGET_ROW_WIDTH).into()
         };
 
-        let pin_name = Column::new()
-            .push(Text::new(&pin_description.name))
-            .width(PIN_NAME_WIDTH);
+        let pin_name = Text::new(&pin_description.name)
+            .width(PIN_NAME_WIDTH)
+            .align_x(alignment);
 
         let mut pin_row = Row::new().align_y(Center).width(PIN_ROW_WIDTH);
 
@@ -584,38 +584,16 @@ impl HardwareView {
             pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
             pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
             pin_row = pin_row.push(pin_button);
-            row![pin_widget, pin_name.align_x(alignment), pin_row,]
+            row![pin_widget, pin_name, pin_row,]
         } else {
             pin_row = pin_row.push(pin_button);
             pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
             pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
-            row![pin_row, pin_name.align_x(alignment), pin_widget]
+            row![pin_row, pin_name, pin_widget]
         };
 
         row.align_y(Center).spacing(WIDGET_ROW_SPACING)
     }
-}
-
-/// Prepare a pick_list widget with the Input's pullup options
-fn pullup_picklist(
-    pull: &Option<InputPull>,
-    bcm_pin_number: BCMPinNumber,
-) -> Element<'static, HardwareViewMessage> {
-    let mut sub_options = vec![InputPull::PullUp, InputPull::PullDown, InputPull::None];
-
-    // Filter out the currently selected pull option
-    if let Some(selected_pull) = pull {
-        sub_options.retain(|&option| option != *selected_pull);
-    }
-
-    let pick_list = pick_list(sub_options, *pull, move |selected_pull| {
-        PinFunctionChanged(bcm_pin_number, Some(Input(Some(selected_pull))), false)
-    })
-    .width(PULLUP_WIDTH)
-    .placeholder("Select Pullup")
-    .style(picklist_style);
-
-    pick_list.into()
 }
 
 /// Create the widget that either shows an input pin's state,
@@ -628,17 +606,16 @@ fn get_pin_widget<'a>(
     alignment: Alignment,
 ) -> Element<'a, HardwareViewMessage> {
     let row: Row<HardwareViewMessage> = match pin_function {
-        Some(Input(pull)) => {
-            let pullup_pick = pullup_picklist(pull, bcm_pin_number.unwrap());
+        Some(Input(_)) => {
             let led = led(LED_RADIUS, pin_state.get_level());
             if alignment == End {
                 Row::new()
                     .push(pin_state.view(Left))
                     .push(led)
-                    .push(pullup_pick)
+                    .push(horizontal_space().width(TOGGLER_WIDTH))
             } else {
                 Row::new()
-                    .push(pullup_pick)
+                    .push(horizontal_space().width(TOGGLER_WIDTH))
                     .push(led)
                     .push(pin_state.view(Right))
             }
@@ -674,12 +651,10 @@ fn get_pin_widget<'a>(
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
                 });
 
-            let led_tooltip = Tooltip::new(led, "Click to toggle level", Position::Top)
+            let led_tooltip = Tooltip::new(led, "Hold down to invert level", Position::Top)
                 .gap(4.0)
                 .style(|_| TOOLTIP_STYLE);
 
-            // For some unknown reason the Pullup picker is wider on the right side than the left
-            // to we add some space here to make this match on both side. A nasty hack!
             if alignment == End {
                 Row::new()
                     .push(pin_state.view(Left))
@@ -688,7 +663,6 @@ fn get_pin_widget<'a>(
             } else {
                 Row::new()
                     .push(toggle_tooltip)
-                    .push(horizontal_space().width(25.0)) // HACK!
                     .push(led_tooltip)
                     .push(pin_state.view(Right))
             }
@@ -709,43 +683,86 @@ fn pin_button_menu<'a>(
     current_option: Option<&PinFunction>,
     resize_window_on_change: bool,
 ) -> Item<'a, HardwareViewMessage, Theme, Renderer> {
-    let button = pin_button(pin_description).on_press(HardwareViewMessage::MenuBarButtonClicked); // Needed for highlighting;;
-
-    let mut menu_items: Vec<Item<HardwareViewMessage, _, _>> = vec![];
+    let mut pin_menu_items: Vec<Item<HardwareViewMessage, _, _>> = vec![];
     if let Some(bcm_pin_number) = pin_description.bcm {
         for option in pin_description.options.iter() {
-            if Some(option) != current_option {
-                let menu_button = Button::new(text!("{}", option))
-                    .width(Length::Fill)
-                    .style(menu_button)
-                    .on_press(PinFunctionChanged(
-                        bcm_pin_number,
-                        Some(*option),
-                        resize_window_on_change,
+            match option {
+                Input(_) => {
+                    let mut pullup_items = vec![];
+                    for (name, pullup) in [
+                        ("Pullup", Some(PullUp)),
+                        ("Pulldown", Some(PullDown)),
+                        ("None", None),
+                    ] {
+                        let mut pullup_button = button(name).width(Fill).style(menu_button_style);
+                        if let Some(&Input(pull)) = current_option {
+                            if pullup != pull {
+                                pullup_button = pullup_button.on_press(PinFunctionChanged(
+                                    bcm_pin_number,
+                                    Some(Input(pullup)),
+                                    resize_window_on_change,
+                                ));
+                            }
+                        } else {
+                            pullup_button = pullup_button.on_press(PinFunctionChanged(
+                                bcm_pin_number,
+                                Some(Input(pullup)),
+                                resize_window_on_change,
+                            ));
+                        }
+                        pullup_items.push(Item::new(pullup_button));
+                    }
+                    let input_button = button(row!(
+                        text("Input"),
+                        horizontal_space(),
+                        text(" >").align_y(alignment::Vertical::Center),
+                    ))
+                    .width(100.0)
+                    .on_press(HardwareViewMessage::MenuBarButtonClicked) // Needed for highlighting
+                    .style(menu_button_style);
+                    pin_menu_items.push(Item::with_menu(
+                        input_button,
+                        Menu::new(pullup_items).width(80.0),
                     ));
-                menu_items.push(Item::new(menu_button));
+                }
+
+                Output(_) => {
+                    let mut output_button = button("Output").width(Fill).style(menu_button_style);
+                    if !matches!(current_option, Some(&Output(..))) {
+                        output_button = output_button.on_press(PinFunctionChanged(
+                            bcm_pin_number,
+                            Some(Output(None)),
+                            resize_window_on_change,
+                        ));
+                    }
+                    pin_menu_items.push(Item::new(output_button));
+                }
             }
         }
 
+        let mut unused = button("Unused")
+            .width(Length::Fill)
+            .style(menu_button_style);
         if current_option.is_some() {
-            let unused = Button::new("Unused")
-                .width(Length::Fill)
-                .style(menu_button)
-                .on_press(PinFunctionChanged(
-                    bcm_pin_number,
-                    None,
-                    resize_window_on_change,
-                ));
-            menu_items.push(Item::new(unused));
+            unused = unused.on_press(PinFunctionChanged(
+                bcm_pin_number,
+                None,
+                resize_window_on_change,
+            ));
         }
+        pin_menu_items.push(Item::new(unused));
     }
-    Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
+
+    Item::with_menu(
+        pin_button(pin_description).on_press(HardwareViewMessage::MenuBarButtonClicked), // Needed for highlighting
+        Menu::new(pin_menu_items).width(80.0),
+    )
 }
 
 /// Create a button representing the pin with its physical (bpn) number, color
 fn pin_button(pin_description: &PinDescription) -> Button<HardwareViewMessage> {
     button(
-        container(Text::new(pin_description.bpn))
+        container(text(pin_description.bpn))
             .align_x(Center)
             .align_y(Center),
     )

@@ -3,7 +3,7 @@ use crate::discovery::DiscoveredDevice;
 use crate::discovery::DiscoveryMethod::USBRaw;
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
-use crate::views::info_row::menu_button;
+use crate::views::info_row::menu_button_style;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::HardwareConnection::*;
@@ -17,7 +17,7 @@ use std::collections::HashMap;
 
 /// Create a submenu item for the known devices
 #[cfg(feature = "discovery")]
-fn device_items<'a>(
+fn device_menu_items<'a>(
     discovered_devices: &HashMap<String, DiscoveredDevice>,
     current_connection: &HardwareConnection,
 ) -> Vec<Item<'a, Message, Theme, Renderer>> {
@@ -49,24 +49,23 @@ fn device_items<'a>(
                     hardware_details.clone(),
                     connect_options,
                 )))
-                .style(menu_button),
+                .style(menu_button_style),
         ));
 
         // Add buttons to connect to the device for each available connection type, except
         // for a [HardwareConnection] type currently used to connect to the device
         for hardware_connection in hardware_connections.values() {
             if !matches!(hardware_connection, NoConnection) {
-                // avoid re-offering the current connection method if connected
-                let connect_button = if current_connection != hardware_connection {
+                let mut connect_button =
                     button(text(format!("Connect via {}", hardware_connection.name())))
-                        .on_press(Message::ConnectRequest(hardware_connection.clone()))
                         .width(Length::Fill)
-                        .style(menu_button)
-                } else {
-                    button(text("Connected to Device"))
-                        .width(Length::Fill)
-                        .style(menu_button)
-                };
+                        .style(menu_button_style);
+
+                // avoid re-offering the current connection method if connected
+                if current_connection != hardware_connection {
+                    connect_button = connect_button
+                        .on_press(Message::ConnectRequest(hardware_connection.clone()));
+                }
                 device_menu_items.push(Item::new(connect_button));
             }
         }
@@ -83,7 +82,7 @@ fn device_items<'a>(
                             hardware_details.clone(),
                             ssid_spec.as_ref().and_then(|_wf| ssid_spec.clone()),
                         )))
-                        .style(menu_button),
+                        .style(menu_button_style),
                 ));
             }
 
@@ -92,7 +91,7 @@ fn device_items<'a>(
                     button("Reset Device Wi-Fi to Default")
                         .width(Length::Fill)
                         .on_press(Message::ResetSsid(hardware_details.serial.clone()))
-                        .style(menu_button),
+                        .style(menu_button_style),
                 ));
             }
         }
@@ -104,11 +103,11 @@ fn device_items<'a>(
             text(" >").align_y(alignment::Vertical::Center),
         ))
         .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-        .style(menu_button);
+        .style(menu_button_style);
 
         device_items.push(Item::with_menu(
             device_button,
-            Menu::new(device_menu_items).width(280.0).offset(10.0),
+            Menu::new(device_menu_items).width(200.0),
         ));
     }
 
@@ -120,15 +119,12 @@ pub fn view<'a>(
     hardware_connection: &HardwareConnection,
     #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
-    let device_items = device_items(discovered_devices, hardware_connection);
+    let device_menu_items = device_menu_items(discovered_devices, hardware_connection);
 
     Item::with_menu(
-        button(text(format!("devices ({})", device_items.len())))
+        button(text(format!("devices ({})", device_menu_items.len())))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-            .style(menu_button),
-        Menu::new(device_items)
-            .width(380.0)
-            .max_width(400.0)
-            .offset(10.0),
+            .style(menu_button_style),
+        Menu::new(device_menu_items).width(380.0).max_width(400.0),
     )
 }
