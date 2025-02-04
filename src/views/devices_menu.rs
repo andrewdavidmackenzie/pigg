@@ -56,17 +56,16 @@ fn device_menu_items<'a>(
         // for a [HardwareConnection] type currently used to connect to the device
         for hardware_connection in hardware_connections.values() {
             if !matches!(hardware_connection, NoConnection) {
-                // avoid re-offering the current connection method if connected
-                let connect_button = if current_connection != hardware_connection {
+                let mut connect_button =
                     button(text(format!("Connect via {}", hardware_connection.name())))
-                        .on_press(Message::ConnectRequest(hardware_connection.clone()))
                         .width(Length::Fill)
-                        .style(menu_button_style)
-                } else {
-                    button(text("Connected to Device"))
-                        .width(Length::Fill)
-                        .style(menu_button_style)
-                };
+                        .style(menu_button_style);
+
+                // avoid re-offering the current connection method if connected
+                if current_connection != hardware_connection {
+                    connect_button = connect_button
+                        .on_press(Message::ConnectRequest(hardware_connection.clone()));
+                }
                 device_menu_items.push(Item::new(connect_button));
             }
         }
@@ -108,7 +107,7 @@ fn device_menu_items<'a>(
 
         device_items.push(Item::with_menu(
             device_button,
-            Menu::new(device_menu_items).width(280.0).offset(10.0),
+            Menu::new(device_menu_items).width(200.0),
         ));
     }
 
@@ -126,9 +125,6 @@ pub fn view<'a>(
         button(text(format!("devices ({})", device_menu_items.len())))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(menu_button_style),
-        Menu::new(device_menu_items)
-            .width(380.0)
-            .max_width(400.0)
-            .offset(10.0),
+        Menu::new(device_menu_items).width(380.0).max_width(400.0),
     )
 }

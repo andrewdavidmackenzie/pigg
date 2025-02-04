@@ -42,5 +42,5 @@ pub fn view<'a>(
     button = button.on_press(Message::MenuBarButtonClicked); // Needed for highlighting
 
     // Increased width to 145 as Linux needs a little more width
-    Item::with_menu(button, Menu::new(menu_items).width(180.0).offset(10.0))
+    Item::with_menu(button, Menu::new(menu_items).width(180.0))
 }

@@ -112,6 +112,6 @@ impl LayoutSelector {
         .style(menu_bar_button)
         .on_press(Message::MenuBarButtonClicked); // Needed for highlighting;
 
-        Item::with_menu(button, Menu::new(menu_items).width(135.0).offset(10.0))
+        Item::with_menu(button, Menu::new(menu_items).width(135.0))
     }
 }

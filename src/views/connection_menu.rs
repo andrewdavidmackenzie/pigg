@@ -72,6 +72,6 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
         button(text(model_string))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(menu_bar_button),
-        Menu::new(menu_items).width(215.0).offset(10.0),
+        Menu::new(menu_items).width(215.0),
     )
 }

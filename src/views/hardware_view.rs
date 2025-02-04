@@ -29,7 +29,7 @@ use iced::widget::{
 };
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
-use iced::{Alignment, Center, Element, Fill, Length, Size, Task};
+use iced::{alignment, Alignment, Center, Element, Fill, Length, Size, Task};
 use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
@@ -712,10 +712,14 @@ fn pin_button_menu<'a>(
                         }
                         pullup_items.push(Item::new(pullup_button));
                     }
-                    let input_button = button("Input")
-                        .width(Fill)
-                        .on_press(HardwareViewMessage::MenuBarButtonClicked) // Needed for highlighting
-                        .style(menu_button_style);
+                    let input_button = button(row!(
+                        text("Input"),
+                        horizontal_space(),
+                        text(" >").align_y(alignment::Vertical::Center),
+                    ))
+                    .width(100.0)
+                    .on_press(HardwareViewMessage::MenuBarButtonClicked) // Needed for highlighting
+                    .style(menu_button_style);
                     pin_menu_items.push(Item::with_menu(
                         input_button,
                         Menu::new(pullup_items).width(80.0),
@@ -751,7 +755,7 @@ fn pin_button_menu<'a>(
 
     Item::with_menu(
         pin_button(pin_description).on_press(HardwareViewMessage::MenuBarButtonClicked), // Needed for highlighting
-        Menu::new(pin_menu_items).width(70.0),
+        Menu::new(pin_menu_items).width(80.0),
     )
 }
 

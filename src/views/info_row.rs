@@ -38,8 +38,19 @@ const BLACK_SHADOW: Shadow = Shadow {
 
 const HOVERED_COLOR: Color = Color::WHITE;
 const UNHOVERED_COLOR: Color = Color::from_rgba(0.7, 0.7, 0.7, 1.0);
+const MENU_BAR_BORDER: Border = Border {
+    color: Color::TRANSPARENT,
+    width: 0.0,
+    radius: MENU_RADIUS,
+};
 
 const MENU_BORDER: Border = Border {
+    color: Color::WHITE,
+    width: 1.0,
+    radius: MENU_RADIUS,
+};
+
+const MENU_BUTTON_BORDER: Border = Border {
     color: Color::TRANSPARENT,
     width: 0.0,
     radius: MENU_RADIUS,
@@ -54,47 +65,47 @@ const MENU_SHADOW: Shadow = Shadow {
 const MENU_BAR_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: UNHOVERED_COLOR,
-    border: MENU_BORDER,
+    border: MENU_BUTTON_BORDER,
     shadow: MENU_SHADOW,
 };
 
 const MENU_BAR_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: HOVERED_COLOR,
-    border: MENU_BORDER,
+    border: MENU_BAR_BORDER,
     shadow: MENU_SHADOW,
 };
 
 const MENU_BAR_BUTTON_HIGHLIGHT_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: Color::from_rgba(1.0, 0.647, 0.0, 0.7),
-    border: MENU_BORDER,
+    border: MENU_BAR_BORDER,
     shadow: MENU_SHADOW,
 };
 
 const MENU_BUTTON_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: UNHOVERED_COLOR,
-    border: MENU_BORDER,
+    border: MENU_BUTTON_BORDER,
     shadow: MENU_SHADOW,
 };
 
 const MENU_BUTTON_HOVER_STYLE: Style = Style {
     background: Some(Background::Color(Color::TRANSPARENT)),
     text_color: HOVERED_COLOR,
-    border: MENU_BORDER,
+    border: MENU_BUTTON_BORDER,
     shadow: MENU_SHADOW,
 };
 
 pub const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
     bar_background: Background::Color(Color::TRANSPARENT),
-    bar_border: MENU_BORDER,
+    bar_border: MENU_BAR_BORDER,
     bar_shadow: MENU_SHADOW,
-    bar_background_expand: Padding::new(2.0),
+    bar_background_expand: Padding::new(0.0),
     menu_background: Background::Color(MENU_BACKGROUND_COLOR),
     menu_border: MENU_BORDER,
     menu_shadow: BLACK_SHADOW,
-    menu_background_expand: Padding::new(5.0),
+    menu_background_expand: Padding::new(0.0),
     path: Background::Color(Color::TRANSPARENT),
     path_border: MENU_BORDER,
 };
@@ -102,7 +113,7 @@ pub const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
 const INFO_BAR_STYLE: container::Style = container::Style {
     text_color: Some(Color::WHITE),
     background: Some(Background::Color(MENU_BACKGROUND_COLOR)),
-    border: MENU_BORDER,
+    border: MENU_BAR_BORDER,
     shadow: MENU_SHADOW,
 };
 
