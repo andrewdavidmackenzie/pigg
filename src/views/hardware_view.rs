@@ -562,7 +562,8 @@ impl HardwareView {
 
         let pin_name = Column::new()
             .push(Text::new(&pin_description.name))
-            .width(PIN_NAME_WIDTH);
+            .width(PIN_NAME_WIDTH)
+            .align_x(alignment);
 
         let mut pin_row = Row::new().align_y(Center).width(PIN_ROW_WIDTH);
 
@@ -584,12 +585,12 @@ impl HardwareView {
             pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
             pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
             pin_row = pin_row.push(pin_button);
-            row![pin_widget, pin_name.align_x(alignment), pin_row,]
+            row![pin_widget, pin_name, pin_row,]
         } else {
             pin_row = pin_row.push(pin_button);
             pin_row = pin_row.push(line(PIN_ARROW_LINE_WIDTH));
             pin_row = pin_row.push(circle(PIN_ARROW_CIRCLE_RADIUS));
-            row![pin_row, pin_name.align_x(alignment), pin_widget]
+            row![pin_row, pin_name, pin_widget]
         };
 
         row.align_y(Center).spacing(WIDGET_ROW_SPACING)
