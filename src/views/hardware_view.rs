@@ -23,14 +23,13 @@ use crate::Message;
 use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
-use iced::widget::text::Style;
 use iced::widget::tooltip::Position;
 use iced::widget::{
     button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text,
 };
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
-use iced::{Alignment, Center, Color, Element, Fill, Length, Size, Task};
+use iced::{Alignment, Center, Element, Fill, Length, Size, Task};
 use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
@@ -690,23 +689,30 @@ fn pin_button_menu<'a>(
             match option {
                 Input(_) => {
                     let mut pullup_items = vec![];
-                    for (name, pulldown) in [
+                    for (name, pullup) in [
                         ("Pullup", Some(PullUp)),
                         ("Pulldown", Some(PullDown)),
                         ("None", None),
                     ] {
-                        pullup_items.push(Item::new(
-                            button(text(name))
-                                .width(Fill)
-                                .style(menu_button_style)
-                                .on_press(PinFunctionChanged(
+                        let mut pullup_button = button(name).width(Fill).style(menu_button_style);
+                        if let Some(&Input(pull)) = current_option {
+                            if pullup != pull {
+                                pullup_button = pullup_button.on_press(PinFunctionChanged(
                                     bcm_pin_number,
-                                    Some(Input(pulldown)),
+                                    Some(Input(pullup)),
                                     resize_window_on_change,
-                                )),
-                        ));
+                                ));
+                            }
+                        } else {
+                            pullup_button = pullup_button.on_press(PinFunctionChanged(
+                                bcm_pin_number,
+                                Some(Input(pullup)),
+                                resize_window_on_change,
+                            ));
+                        }
+                        pullup_items.push(Item::new(pullup_button));
                     }
-                    let input_button = button(text("Input"))
+                    let input_button = button("Input")
                         .width(Fill)
                         .on_press(HardwareViewMessage::MenuBarButtonClicked) // Needed for highlighting
                         .style(menu_button_style);
@@ -717,34 +723,30 @@ fn pin_button_menu<'a>(
                 }
 
                 Output(_) => {
+                    let mut output_button = button("Output").width(Fill).style(menu_button_style);
                     if !matches!(current_option, Some(&Output(..))) {
-                        let output_button = button(text("Output").style(|_| Style {
-                            color: Some(Color::from_rgba(1.0, 0.0, 0.0, 1.0)),
-                        }))
-                        .width(Fill)
-                        .style(menu_button_style)
-                        .on_press(PinFunctionChanged(
+                        output_button = output_button.on_press(PinFunctionChanged(
                             bcm_pin_number,
                             Some(Output(None)),
                             resize_window_on_change,
                         ));
-                        pin_menu_items.push(Item::new(output_button));
                     }
+                    pin_menu_items.push(Item::new(output_button));
                 }
             }
         }
 
+        let mut unused = button("Unused")
+            .width(Length::Fill)
+            .style(menu_button_style);
         if current_option.is_some() {
-            let unused = Button::new("Unused")
-                .width(Length::Fill)
-                .style(menu_button_style)
-                .on_press(PinFunctionChanged(
-                    bcm_pin_number,
-                    None,
-                    resize_window_on_change,
-                ));
-            pin_menu_items.push(Item::new(unused));
+            unused = unused.on_press(PinFunctionChanged(
+                bcm_pin_number,
+                None,
+                resize_window_on_change,
+            ));
         }
+        pin_menu_items.push(Item::new(unused));
     }
 
     Item::with_menu(
