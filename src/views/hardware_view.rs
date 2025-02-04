@@ -557,11 +557,10 @@ impl HardwareView {
             // Create a widget that is either used to visualize an input or control an output
             get_pin_widget(pin_description.bcm, pin_function, state, alignment)
         } else {
-            Row::new().width(PIN_WIDGET_ROW_WIDTH).into()
+            horizontal_space().width(PIN_WIDGET_ROW_WIDTH).into()
         };
 
-        let pin_name = Column::new()
-            .push(Text::new(&pin_description.name))
+        let pin_name = Text::new(&pin_description.name)
             .width(PIN_NAME_WIDTH)
             .align_x(alignment);
 
