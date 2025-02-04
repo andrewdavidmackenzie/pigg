@@ -106,7 +106,7 @@ const INFO_BAR_STYLE: container::Style = container::Style {
     shadow: MENU_SHADOW,
 };
 
-pub fn menu_button(_: &Theme, status: Status) -> Style {
+pub fn menu_button_style(_: &Theme, status: Status) -> Style {
     if status == Hovered {
         MENU_BUTTON_HOVER_STYLE
     } else {

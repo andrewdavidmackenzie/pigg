@@ -3,7 +3,7 @@ use iced::widget::Button;
 
 use crate::views::hardware_view::HardwareConnection;
 use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::info_row::{menu_bar_button, menu_bar_highlight_button, menu_button};
+use crate::views::info_row::{menu_bar_button, menu_bar_highlight_button, menu_button_style};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 
@@ -16,7 +16,7 @@ pub fn view<'a>(
 
     let mut load_from = Button::new("Load config from...")
         .width(180)
-        .style(menu_button);
+        .style(menu_button_style);
 
     if hardware_connection != &NoConnection {
         load_from = load_from.on_press(Message::Load);
@@ -26,7 +26,7 @@ pub fn view<'a>(
     if unsaved_changes {
         let mut save_as = Button::new("Save config as...")
             .width(180)
-            .style(menu_button);
+            .style(menu_button_style);
 
         if hardware_connection != &NoConnection {
             save_as = save_as.on_press(Message::Save);
