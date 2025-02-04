@@ -651,7 +651,7 @@ fn get_pin_widget<'a>(
                     ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
                 });
 
-            let led_tooltip = Tooltip::new(led, "Click to toggle level", Position::Top)
+            let led_tooltip = Tooltip::new(led, "Hold down to invert level", Position::Top)
                 .gap(4.0)
                 .style(|_| TOOLTIP_STYLE);
 
