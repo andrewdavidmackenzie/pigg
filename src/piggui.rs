@@ -301,6 +301,7 @@ impl Piggui {
                     .add_info_message(Info("Connected".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
                 println!("Connected to hardware");
+                return self.window_size_change_request();
             }
 
             ConnectionError(details) => {
