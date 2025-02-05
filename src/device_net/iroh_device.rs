@@ -91,7 +91,7 @@ pub async fn accept_connection(
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
-        let node_id = iroh::endpoint::get_remote_node_id(&connection)?;
+        let node_id = iroh::endpoint::Connection::remote_node_id(&connection)?;
         debug!("New connection from nodeid: '{node_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;

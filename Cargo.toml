@@ -40,7 +40,7 @@ usb = ["nusb"]
 
 [dependencies]
 # Optional Dependencies
-iroh = { version = "0.31", default-features = false, optional = true }
+iroh = { version = "0.32", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.3", default-features = false, optional = true }
 nusb = { version = "0.1.12", default-features = false, optional = true }
