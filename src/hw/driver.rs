@@ -43,6 +43,17 @@ enum Pin {
     Output(OutputPin),
 }
 
+#[cfg(not(all(
+    target_os = "linux",
+    any(target_arch = "aarch64", target_arch = "arm"),
+    target_env = "gnu"
+)))]
+enum Pin {
+    Input(std::sync::mpsc::Sender<u32>),
+    #[allow(dead_code)]
+    Output,
+}
+
 /// There are two implementations of the `HW` struct.
 ///
 /// The first for Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
@@ -57,11 +68,6 @@ enum Pin {
 /// provided mainly to aid GUI development and demoing it.
 #[derive(Default)]
 pub struct HW {
-    #[cfg(all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ))]
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
 }
 
@@ -102,16 +108,24 @@ impl HW {
         bcm_pin_number: BCMPinNumber,
         level: PinLevel,
     ) -> io::Result<()> {
-        #[cfg(all(
-            target_os = "linux",
-            any(target_arch = "aarch64", target_arch = "arm"),
-            target_env = "gnu"
-        ))]
         match self.configured_pins.get_mut(&bcm_pin_number) {
+            #[cfg(all(
+                target_os = "linux",
+                any(target_arch = "aarch64", target_arch = "arm"),
+                target_env = "gnu"
+            ))]
             Some(Pin::Output(output_pin)) => match level {
                 true => output_pin.write(Level::High),
                 false => output_pin.write(Level::Low),
             },
+            #[cfg(not(all(
+                target_os = "linux",
+                any(target_arch = "aarch64", target_arch = "arm"),
+                target_env = "gnu"
+            )))]
+            Some(Pin::Output) => {
+                // Nothing to do
+            }
             _ => {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
@@ -294,18 +308,37 @@ impl HW {
     {
         use rand::Rng;
 
-        if let Some(PinFunction::Input(_)) = pin_function {
-            std::thread::spawn(move || {
-                let mut rng = rand::thread_rng();
-                loop {
-                    let level: bool = rng.gen();
-                    #[allow(clippy::unwrap_used)]
-                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                    callback(bcm_pin_number, LevelChange::new(level, now));
-                    std::thread::sleep(Duration::from_millis(666));
-                }
-            });
+        // If it was already configured, notify it to exit and remove it
+        if let Some(Pin::Input(sender)) = self.configured_pins.get_mut(&bcm_pin_number) {
+            let _ = sender.send(0);
+            self.configured_pins.remove(&bcm_pin_number);
         }
+
+        match pin_function {
+            Some(PinFunction::Input(_)) => {
+                let (sender, receiver) = std::sync::mpsc::channel();
+                std::thread::spawn(move || {
+                    let mut rng = rand::thread_rng();
+                    loop {
+                        let level: bool = rng.gen();
+                        #[allow(clippy::unwrap_used)]
+                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+                        callback(bcm_pin_number, LevelChange::new(level, now));
+                        // If we get a message, exit the thread
+                        if receiver.recv_timeout(Duration::from_millis(666)).is_ok() {
+                            return;
+                        }
+                    }
+                });
+                self.configured_pins
+                    .insert(bcm_pin_number, Pin::Input(sender));
+            }
+            Some(PinFunction::Output(_)) => {
+                self.configured_pins.insert(bcm_pin_number, Pin::Output);
+            }
+            _ => {}
+        }
+
         Ok(())
     }
 
