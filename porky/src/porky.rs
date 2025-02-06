@@ -69,7 +69,7 @@ mod gpio;
 mod gpio_input_monitor;
 
 /// Definition of hardware structs passed back and fore between porky and the GUI
-#[path = "../../src/hw_definition/mod.rs"]
+#[path = "../../piggui/src/hw_definition/mod.rs"]
 mod hw_definition;
 
 /// Functions for interacting with the Flash ROM

@@ -25,7 +25,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-arm build-porky test
+all: clippy build build-arm test
 
 .PHONY: clean
 clean:
@@ -33,54 +33,34 @@ clean:
 
 .PHONY: clippy
 clippy:
-	cd piggui && cargo clippy --tests --no-deps
-	cd piglet && cargo clippy --tests --no-deps
+	cargo clippy --tests --no-deps
 
-# Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
-# To build both binaries on a Pi directly, we will need to modify this
 .PHONY: build
 build:
-	cd piggui && cargo build
-	cd piglet && cargo build
+	cargo build
+
+.PHONY: build-release
+build-release:
+	cargo build --release
 
 .PHONY: run
 run:
-	cd piggui && cargo run
+	cargo run
 
 .PHONY: run-release
 run-release:
-	cd piggui && cargo run --release
-
-.PHONY: run-piglet
-run-piglet:
-	cd piglet && cargo run --bin piglet
-
-.PHONY: run-release-piglet
-run-release-piglet:
-	cd piglet && cargo run --bin piglet --release
-
-# This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
-.PHONY: build-release
-build-release:
-	cd piggui && cargo build --release
-	cd piglet && cargo build --release
-
-.PHONY: build-porky
-build-porky:
-	cd porky && $(MAKE)
+	cargo run --release
 
 # This will only test GUI tests in piggui on the local host, whatever that is
 # We'd need to think how to run tests on RºPi, on piggui with GUI and GPIO functionality,
 # and piglet with GPIO functionality
 .PHONY: test
 test:
-	cd piggui && cargo test
-	cd piglet && cargo test
+	cargo test
 
 .PHONY: features
 features:
-	cd piggui && cargo build-all-features
-	cd piglet && cargo build-all-features
+	cargo build-all-features
 
 #### arm builds
 .PHONY: build-arm
@@ -94,18 +74,15 @@ armv7: clippy-armv7 build-armv7
 
 .PHONY: clippy-armv7
 clippy-armv7:
-	cd piggui && cargo clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
-	cd piglet && cargo clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
+	cargo clippy --tests --no-deps --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: build-armv7
 build-armv7:
-	cd piggui && cargo build --target=armv7-unknown-linux-gnueabihf
-	cd piglet && cargo build --target=armv7-unknown-linux-gnueabihf
+	cargo build --target=armv7-unknown-linux-gnueabihf
 
 .PHONY: build-armv7-musl
 build-armv7-musl:
-	cd piggui && cargo build --target=armv7-unknown-linux-musleabihf
-	cd piglet && cargo build --target=armv7-unknown-linux-musleabihf
+	cargo build --target=armv7-unknown-linux-musleabihf
 
 .PHONY: release-build-armv7
 release-build-armv7:
@@ -119,12 +96,11 @@ test-armv7:
 .PHONY: copy-armv7
 copy-armv7:
 	scp target/armv7-unknown-linux-gnueabihf/debug/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-armv7
 copy-release-armv7:
 	scp target/armv7-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+
 
 #### aarch64 targets
 .PHONY: aarch64
@@ -132,34 +108,28 @@ aarch64: clippy-aarch64 build-aarch64
 
 .PHONY: clippy-aarch64
 clippy-aarch64:
-	cd piggui && cargo clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
-	cd piglet && cargo clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
+	cargo clippy --tests --no-deps --target=aarch64-unknown-linux-gnu
 
 .PHONY: build-aarch64
 build-aarch64:
-	cd piggui && cargo build --target=aarch64-unknown-linux-gnu
-	cd piglet && cargo build --target=aarch64-unknown-linux-gnu
+	cargo build --target=aarch64-unknown-linux-gnu
 
 .PHONY: release-build-aarch64
 release-build-aarch64:
-	cd piggui && cargo build --release --target=aarch64-unknown-linux-gnu
-	cd piglet && cargo build --release --target=aarch64-unknown-linux-gnu
+	cargo build --release --target=aarch64-unknown-linux-gnu
 
 # NOTE: The tests will be built for aarch64 architecture, so tests can only be run on that architecture
 .PHONY: test-aarch64
 test-aarch64:
-	cd piggui && cargo test --target=aarch64-unknown-linux-gnu
-	cd piglet && cargo test --target=aarch64-unknown-linux-gnu
+	cargo test --target=aarch64-unknown-linux-gnu
 
 .PHONY: copy-aarch64
 copy-aarch64:
 	scp target/aarch64-unknown-linux-gnu/debug/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-aarch64
 copy-release-aarch64:
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: ssh
 ssh:
@@ -168,13 +138,8 @@ ssh:
 .PHONY: web-build
 web-build:
 	rustup target add wasm32-unknown-unknown
-	cd piggui && cargo build --target wasm32-unknown-unknown --no-default-features
+	cargo build --target wasm32-unknown-unknown --no-default-features
 
 .PHONY: web-run
 web-run: web-build
-	cd piggui && trunk serve
-
-.PHONY: usb
-usb:
-	@echo "Echo your root password at the prompt to copy udev rules for piggui to the system folder for them"
-	sudo cp 70.pigg.rules  /etc/udev/rules.d/
+	trunk serve

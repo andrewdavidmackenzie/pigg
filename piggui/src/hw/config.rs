@@ -133,10 +133,11 @@ mod test {
     #[test]
     fn load_test_file() {
         let root = std::env::var("CARGO_MANIFEST_DIR").expect("Could not get manifest dir");
-        let mut path = PathBuf::from(root);
-        path = path.join("configs/andrews_board.pigg");
-        let config = HardwareConfig::load(path.to_str().expect("Could not get Path as str"))
-            .expect("Could not load GPIOConfig from path");
+        let path = PathBuf::from(root).join("../configs/andrews_board.pigg");
+        let path = path.to_str().expect("Could not create path to config file");
+        let config = HardwareConfig::load(path)
+            .unwrap_or_else(|_| panic!("Could not load GPIOConfig from¨{path}"));
+
         assert_eq!(config.pin_functions.len(), 2);
         // GPIO17 configured as an Output - set to true (high) level
         assert_eq!(

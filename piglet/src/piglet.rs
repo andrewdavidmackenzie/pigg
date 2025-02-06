@@ -35,11 +35,20 @@ use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
 mod device_net;
+
+#[path = "../../piggui/src/hw/mod.rs"]
 /// Module for interacting with the GPIO hardware
 mod hw;
+
+#[path = "../../piggui/src/hw_definition/mod.rs"]
 /// Module that defines the structs shared back and fore between GUI and piglet/porky
 mod hw_definition;
+
+#[path = "../../piggui/src/net.rs"]
+/// Common definitions shared between host and device networking
 mod net;
+
+#[path = "../../piggui/src/persistence.rs"]
 /// Module for persisting configs across runs
 mod persistence;
 
