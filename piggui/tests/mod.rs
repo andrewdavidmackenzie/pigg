@@ -1,5 +1,8 @@
-use super::{kill, run, wait_for_stdout};
 use serial_test::serial;
+use support::{kill, run, wait_for_stdout};
+
+#[path = "../../tests/support.rs"]
+mod support;
 
 #[test]
 #[serial]

@@ -7,12 +7,6 @@
     target_arch = "wasm32"
 )))]
 
-/// A set of support functions for tests
-///
-mod integration;
-mod piggui;
-mod piglet;
-
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::net::IpAddr;
@@ -77,6 +71,7 @@ pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
     wait_for(token, &mut reader)
 }
 
+#[allow(dead_code)]
 pub fn ip_port(output: &str) -> (IpAddr, u16) {
     let ip = output
         .split("ip:")
