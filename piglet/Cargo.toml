@@ -1,19 +1,16 @@
 [package]
 name = "piglet"
-version = "0.6.0"
-edition = "2021"
 description = "A CLI agent for interacting with local Raspberry Pi GPIO Hardware from piggui GUI"
-authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>", "Sundaram Krishnan <krishnsundaram@gmail.com>"]
-license = "Apache-2.0"
-documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
-repository = "https://github.com/andrewdavidmackenzie/pigg/"
-homepage = "https://github.com/andrewdavidmackenzie/pigg/"
-readme = "../README.md"
-exclude = [".cargo", ".git", ".github", ".idea", ".gitignore", "Makefile"]
-rust-version = "1.80"
-
-[workspace]
-exclude = [".."]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
 
 [package.metadata.wix]
 upgrade-guid = "7DCB054F-6CE0-4914-876E-AEA0C2E91328"
@@ -72,17 +69,6 @@ clap = { version = "4.5.28", default-features = false, features = ["std", "help"
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
 rppal = "0.22.1"
 libc = "0.2.169"
-
-[profile.release]
-opt-level = "s"
-lto = "fat"
-panic = "abort"
-strip = "debuginfo"
-codegen-units = 1
-
-# The profile that 'cargo dist' will build with
-[profile.dist]
-inherits = "release"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

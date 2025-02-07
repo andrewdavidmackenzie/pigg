@@ -1,0 +1,29 @@
+[workspace]
+members = ["pigdef", "piggui", "piglet", "pignet", "pigpio"]
+default-members = ["pigdef", "piggui", "piglet", "pignet", "pigpio"]
+resolver = "2"
+
+[workspace.package]
+version = "0.6.0"
+edition = "2021"
+description = "A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware, plus app and binaries for those targets"
+authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>", "Sundaram Krishnan <krishnsundaram@gmail.com>"]
+license = "Apache-2.0"
+documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
+repository = "https://github.com/andrewdavidmackenzie/pigg/"
+homepage = "https://github.com/andrewdavidmackenzie/pigg/"
+readme = "README.md"
+exclude = [".cargo", ".git", ".github", ".idea", "assets/", "configs/", "tests/", ".gitignore", "codecov.yml",
+    "Makefile", "dist-workspace.toml", "FUNDING.json"]
+rust-version = "1.80"
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+panic = "abort"
+strip = "debuginfo"
+codegen-units = 1
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"

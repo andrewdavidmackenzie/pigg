@@ -1,7 +1,16 @@
 [package]
 name = "pigdef"
-version = "0.6.0"
-edition = "2021"
+description = "Core struct and const definitions for multiple crates in the pigg project"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
@@ -15,5 +24,3 @@ iroh = []
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
 # for config serialization to/from file
 serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
-# for alloc/no_alloc over the wire serialization/deserialization
-postcard = { version = "1.1.1", features = ["alloc"] }

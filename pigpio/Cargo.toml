@@ -1,17 +1,22 @@
 [package]
 name = "pigpio"
-version = "0.6.0"
-edition = "2021"
+description = "A crate with GPIO code for use in other pigg project crates"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 pigdef = { version = "0.6", path = "../pigdef" }
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
-# for config serialization to/from file
-serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
-# Use 'tiny-skia' renderer in iced
-iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
 rppal = "0.22.1"
 libc = "0.2.169"

@@ -1,21 +1,16 @@
 [package]
 name = "piggui"
-version = "0.6.0"
-edition = "2021"
 description = "A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware"
-default-run = "piggui"
-authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>", "Sundaram Krishnan <krishnsundaram@gmail.com>"]
-license = "Apache-2.0"
-documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
-repository = "https://github.com/andrewdavidmackenzie/pigg/"
-homepage = "https://github.com/andrewdavidmackenzie/pigg/"
-readme = "../README.md"
-exclude = [".cargo", ".git", ".github", ".idea", "assets/", "configs/", "tests/", "wix/", ".gitignore", "codecov.yml",
-    "Makefile"]
-rust-version = "1.80"
-
-[workspace]
-exclude = [".."]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
 
 [package.metadata.wix]
 upgrade-guid = "7DCB054F-6CE0-4914-876E-AEA0C2E91328"
@@ -38,28 +33,16 @@ usb = []
 pigdef = { version = "0.6", path = "../pigdef" }
 pignet = { version = "0.6", path = "../pignet" }
 pigpio = { version = "0.6", path = "../pigpio" }
-
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
-mdns-sd = { version = "0.13.2", default-features = false, optional = true }
-
-# for config serialization to/from file
-serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
-# for alloc/no_alloc over the wire serialization/deserialization
 postcard = { version = "1.1.1", features = ["alloc"] }
-
 env_logger = { version = "0.11.6", default-features = false }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
 tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
-
-iroh = { version = "0.32", default-features = false, optional = true }
-
-# used in piglet only
+# for config serialization to/from file
+serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
 log = { version = "0.4.25", default-features = false }
-
-# used by piggui in GUI only
-# TODO
 #iced_aw = { git = "https://github.com/iced-rs/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
 iced_aw = { git = "https://github.com/andrewdavidmackenzie/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
 iced_futures = { version = "0.13", default-features = false }
@@ -72,6 +55,10 @@ once_cell = { version = "1.20.2", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
+
+# Optional dependencies
+iroh = { version = "0.32", default-features = false, optional = true }
+mdns-sd = { version = "0.13.2", default-features = false, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
@@ -93,17 +80,6 @@ libc = "0.2.169"
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(not(any( all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
-
-[profile.release]
-opt-level = "s"
-lto = "fat"
-panic = "abort"
-strip = "debuginfo"
-codegen-units = 1
-
-# The profile that 'cargo dist' will build with
-[profile.dist]
-inherits = "release"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

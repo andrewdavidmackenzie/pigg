@@ -1,7 +1,16 @@
 [package]
 name = "pignet"
-version = "0.6.0"
-edition = "2021"
+description = "Netwok crate for use by other crates in the pigg project"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
