@@ -1,0 +1,19 @@
+[package]
+name = "pigdef"
+version = "0.6.0"
+edition = "2021"
+
+[features]
+default = ["iroh", "tcp", "usb", "discovery"]
+tcp = []
+discovery = []
+no_std = []
+usb = []
+iroh = []
+
+[dependencies]
+serde = { version = "1.0.217", default-features = false, features = ["derive"] }
+# for config serialization to/from file
+serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
+# for alloc/no_alloc over the wire serialization/deserialization
+postcard = { version = "1.1.1", features = ["alloc"] }
