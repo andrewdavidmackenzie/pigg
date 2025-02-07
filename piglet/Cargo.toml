@@ -39,7 +39,6 @@ portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.3", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, optional = true }
 
-chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
 async-std = "1.13"
 

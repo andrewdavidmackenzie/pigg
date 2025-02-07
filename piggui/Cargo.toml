@@ -36,7 +36,6 @@ pigpio = { version = "0.6", path = "../pigpio" }
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
 postcard = { version = "1.1.1", features = ["alloc"] }
-env_logger = { version = "0.11.6", default-features = false }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
 tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
@@ -65,8 +64,6 @@ tempfile = "3"
 serial_test = "3.1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sysinfo = { version = "0.33.1", default-features = false, features = ["system"] }
-service-manager = { version = "0.7.1", default-features = false }
 rfd = "0.15.2"
 clap = { version = "4.5.28", default-features = false, features = ["std", "help", "error-context"] }
 

@@ -14,20 +14,15 @@ rust-version.workspace = true
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
-tcp = ["portpicker", "local-ip-address"]
-discovery = ["iroh/discovery-local-network", "mdns-sd"]
+tcp = []
+discovery = ["iroh/discovery-local-network"]
 no_std = []
 usb = ["nusb"]
 
 [dependencies]
 pigdef = { version = "0.6", path = "../pigdef" }
-pigpio = { version = "0.6", path = "../pigpio" }
-
 iroh = { version = "0.32", default-features = false, optional = true }
-portpicker = { version = "0.1.1", default-features = false, optional = true }
 nusb = { version = "0.1.12", default-features = false, optional = true }
-mdns-sd = { version = "0.13.2", default-features = false, optional = true }
-local-ip-address = { version = "0.6.3", default-features = false, optional = true }
 postcard = { version = "1.1.1", features = ["alloc"] }
 anyhow = "1.0.95"
 log = "0.4.25"
