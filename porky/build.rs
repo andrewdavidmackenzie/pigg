@@ -45,7 +45,7 @@ fn generate_ssid(filename: &str, ssid: Option<SsidSpec>) -> io::Result<()> {
         b"\
 #[allow(unused_imports)]\n
 use heapless::String;\n
-use crate::hw_definition::description::SsidSpec;\n\
+use crate::description::SsidSpec;\n\
 #[allow(unused_imports)]\n
 use core::str::FromStr;\n",
     )?;

@@ -1,4 +1,3 @@
-use crate::hw_definition::PinLevel;
 use crate::widgets::led::Status::{Active, Disabled, Hovered};
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
@@ -6,6 +5,7 @@ use iced::advanced::widget::{Tree, Widget};
 use iced::{advanced::Clipboard, advanced::Shell, touch, Theme};
 use iced::{event, mouse, Event};
 use iced::{Color, Element, Length, Rectangle, Size};
+use pigdef::description::PinLevel;
 
 pub struct Led<'a, Message, Theme = crate::Theme>
 where

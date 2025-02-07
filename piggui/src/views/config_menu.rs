@@ -1,11 +1,11 @@
 use crate::Message;
 use iced::widget::Button;
 
-use crate::views::hardware_view::HardwareConnection;
-use crate::views::hardware_view::HardwareConnection::NoConnection;
 use crate::views::info_row::{menu_bar_button, menu_bar_highlight_button, menu_button_style};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
+use pignet::HardwareConnection;
+use pignet::HardwareConnection::NoConnection;
 
 /// Create the view that represents the status of unsaved changes in the info row
 pub fn view<'a>(

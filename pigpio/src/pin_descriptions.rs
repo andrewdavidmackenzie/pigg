@@ -1,6 +1,6 @@
-use crate::hw_definition::config::InputPull;
-use crate::hw_definition::description::PinDescription;
-use crate::hw_definition::pin_function::PinFunction;
+use pigdef::config::InputPull;
+use pigdef::description::PinDescription;
+use pigdef::pin_function::PinFunction;
 use std::borrow::Cow;
 
 /// This module codifies the descriptions if the Raspberry Pi GPIO hardware

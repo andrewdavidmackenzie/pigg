@@ -33,6 +33,9 @@ no_std = []
 usb = []
 
 [dependencies]
+pigdef = { version = "0.6", path = "../pigdef" }
+pigpio = { version = "0.6", path = "../pigpio" }
+
 # Optional Dependencies
 iroh = { version = "0.32", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
@@ -54,7 +57,6 @@ anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
 tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
 
-# used in piglet only
 log = { version = "0.4.25", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]

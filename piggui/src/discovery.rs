@@ -1,15 +1,3 @@
-#[cfg(feature = "iroh")]
-use crate::discovery::DiscoveryMethod::IrohLocalSwarm;
-#[cfg(feature = "tcp")]
-use crate::discovery::DiscoveryMethod::Mdns;
-#[cfg(feature = "usb")]
-use crate::discovery::DiscoveryMethod::USBRaw;
-#[cfg(feature = "usb")]
-use crate::host_net::usb_host;
-#[cfg(feature = "tcp")]
-use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
-use crate::hw_definition::description::{HardwareDetails, SerialNumber, SsidSpec};
-use crate::views::hardware_view::HardwareConnection;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use async_std::prelude::Stream;
 #[cfg(feature = "usb")]
@@ -20,68 +8,27 @@ use futures::SinkExt;
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh::{NodeId, RelayUrl};
-#[cfg(feature = "tcp")]
+#[cfg(all(feature = "tcp", feature = "discovery"))]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
+use pigdef::description::HardwareDetails;
+#[cfg(feature = "tcp")]
+use pigdef::description::TCP_MDNS_SERVICE_TYPE;
+use pignet::discovery::DiscoveredDevice;
+use pignet::discovery::DiscoveryEvent;
+#[cfg(feature = "tcp")]
+use pignet::discovery::DiscoveryMethod::Mdns;
+#[cfg(feature = "usb")]
+use pignet::discovery::DiscoveryMethod::USBRaw;
+#[cfg(feature = "usb")]
+use pignet::usb_host;
+use pignet::HardwareConnection;
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
-#[cfg(all(feature = "iroh", feature = "tcp"))]
+#[cfg(feature = "tcp")]
 use std::str::FromStr;
 #[cfg(feature = "usb")]
 use std::time::Duration;
-
-/// What method was used to discover a device? Currently, we support Iroh and USB
-#[derive(Debug, Clone)]
-pub enum DiscoveryMethod {
-    Local,
-    #[cfg(feature = "usb")]
-    USBRaw,
-    #[cfg(feature = "iroh")]
-    IrohLocalSwarm,
-    #[cfg(feature = "tcp")]
-    Mdns,
-    #[cfg(not(any(feature = "usb", feature = "iroh", feature = "tcp")))]
-    NoDiscovery,
-}
-
-impl Display for DiscoveryMethod {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DiscoveryMethod::Local => f.write_str("Local"),
-            #[cfg(feature = "usb")]
-            USBRaw => f.write_str("USB"),
-            #[cfg(feature = "iroh")]
-            IrohLocalSwarm => f.write_str("Iroh"),
-            #[cfg(feature = "tcp")]
-            Mdns => f.write_str("mDNS"),
-            #[cfg(not(any(feature = "usb", feature = "iroh", feature = "tcp")))]
-            DiscoveryMethod::NoDiscovery => f.write_str(""),
-        }
-    }
-}
-
-/// [DiscoveredDevice] includes the [DiscoveryMethod], its [HardwareDetails]
-/// and [Option<WiFiDetails>] as well as a [HardwareConnection] that can be used to connect to it
-#[derive(Debug, Clone)]
-pub struct DiscoveredDevice {
-    pub discovery_method: DiscoveryMethod,
-    pub hardware_details: HardwareDetails,
-    pub ssid_spec: Option<SsidSpec>,
-    pub hardware_connections: HashMap<String, HardwareConnection>,
-}
-
-#[allow(clippy::large_enum_variant)]
-/// An event for the GUI related to the discovery or loss of a [DiscoveredDevice]
-#[derive(Debug, Clone)]
-pub enum DiscoveryEvent {
-    DeviceFound(SerialNumber, DiscoveredDevice),
-    DeviceLost(SerialNumber, DiscoveryMethod),
-    DeviceError(SerialNumber),
-    #[cfg(target_os = "linux")]
-    USBPermissionsError(String),
-    Error(String),
-}
 
 #[cfg(feature = "usb")]
 /// Report an error to the GUI, if it cannot be sent print to STDERR

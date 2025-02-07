@@ -1,10 +1,10 @@
-use crate::hw_definition::config::HardwareConfig;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::ListenerInfo;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use anyhow::Context;
 use clap::ArgMatches;
 use log::{info, trace};
+use pigdef::config::HardwareConfig;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::fs::File;
 #[cfg(any(feature = "iroh", feature = "tcp"))]

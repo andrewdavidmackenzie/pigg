@@ -2,26 +2,26 @@
 use crate::discovery::DiscoveredDevice;
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::USBRaw;
-use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
-#[cfg(feature = "discovery")]
-use crate::hw_definition::description::HardwareDetails;
-#[cfg(feature = "discovery")]
-use crate::hw_definition::description::WiFiDetails;
-use crate::hw_definition::description::{HardwareDescription, SerialNumber, SsidSpec};
-#[cfg(feature = "discovery")]
-use crate::hw_definition::usb_values::GET_HARDWARE_DETAILS_VALUE;
-#[cfg(feature = "discovery")]
-use crate::hw_definition::usb_values::GET_WIFI_VALUE;
-use crate::hw_definition::usb_values::{
-    GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
-    SET_SSID_VALUE,
-};
 #[cfg(all(feature = "usb", feature = "discovery"))]
-use crate::views::hardware_view::HardwareConnection;
+use crate::HardwareConnection;
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
 use nusb::Interface;
+use pigdef::config::HardwareConfigMessage::Disconnect;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
+#[cfg(feature = "discovery")]
+use pigdef::description::HardwareDetails;
+#[cfg(feature = "discovery")]
+use pigdef::description::WiFiDetails;
+use pigdef::description::{HardwareDescription, SerialNumber, SsidSpec};
+#[cfg(feature = "discovery")]
+use pigdef::usb_values::GET_HARDWARE_DETAILS_VALUE;
+#[cfg(feature = "discovery")]
+use pigdef::usb_values::GET_WIFI_VALUE;
+use pigdef::usb_values::{
+    GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
+    SET_SSID_VALUE,
+};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 #[cfg(all(feature = "usb", feature = "discovery"))]

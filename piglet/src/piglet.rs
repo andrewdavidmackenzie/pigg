@@ -26,27 +26,17 @@ use service_manager::{
 };
 use sysinfo::{Process, System};
 
+use pigpio::get;
+
 #[cfg(feature = "iroh")]
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
-use crate::hw_definition::description::TCP_MDNS_SERVICE_TYPE;
+use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
 mod device_net;
-
-#[path = "../../piggui/src/hw/mod.rs"]
-/// Module for interacting with the GPIO hardware
-mod hw;
-
-#[path = "../../piggui/src/hw_definition/mod.rs"]
-/// Module that defines the structs shared back and fore between GUI and piglet/porky
-mod hw_definition;
-
-#[path = "../../piggui/src/net.rs"]
-/// Common definitions shared between host and device networking
-mod net;
 
 #[path = "../../piggui/src/persistence.rs"]
 /// Module for persisting configs across runs
@@ -120,8 +110,8 @@ async fn run_service(
 ) -> anyhow::Result<()> {
     setup_logging(matches);
 
-    let mut hw = hw::driver::get();
-    info!("\n{}", hw.description()?.details);
+    let mut hw = get();
+    info!("\n{}", hw.description(env!("CARGO_PKG_NAME"))?.details);
 
     // Get the boot config for the hardware
     #[allow(unused_mut)]
@@ -147,7 +137,7 @@ async fn run_service(
     persistence::write_info_file(info_path, &listener_info)?;
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
-    let desc = hw.description()?;
+    let desc = hw.description(env!("CARGO_PKG_NAME"))?;
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     println!("Serial Number: {}", desc.details.serial);
 

@@ -1,16 +1,7 @@
 use crate::hardware_subscription;
 use crate::hardware_subscription::SubscriberMessage::Hardware;
 use crate::hardware_subscription::{SubscriberMessage, SubscriptionEvent};
-use crate::hw_definition::config::InputPull::{PullDown, PullUp};
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
-#[cfg(feature = "usb")]
-use crate::hw_definition::description::SerialNumber;
-use crate::hw_definition::description::{HardwareDescription, PinDescription, PinDescriptionSet};
-use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::pin_function::PinFunction::{Input, Output};
-use crate::hw_definition::{config::LevelChange, BCMPinNumber, BoardPinNumber, PinLevel};
 use crate::views::hardware_styles::{get_pin_style, toggler_style, TOOLTIP_STYLE};
-use crate::views::hardware_view::HardwareConnection::*;
 use crate::views::hardware_view::HardwareViewMessage::{
     Activate, ChangeOutputLevel, NewConfig, PinFunctionChanged, SubscriptionMessage, UpdateCharts,
 };
@@ -34,14 +25,17 @@ use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
 use iced_futures::Subscription;
-#[cfg(feature = "iroh")]
-use iroh::{NodeId, RelayUrl};
-use std::cmp::PartialEq;
+use pigdef::config::InputPull::{PullDown, PullUp};
+use pigdef::config::LevelChange;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
+use pigdef::description::{BCMPinNumber, BoardPinNumber, PinLevel};
+use pigdef::description::{HardwareDescription, PinDescription, PinDescriptionSet};
+use pigdef::pin_function::PinFunction;
+use pigdef::pin_function::PinFunction::{Input, Output};
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
-#[cfg(feature = "tcp")]
-use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use pignet::HardwareConnection;
 
 const HARDWARE_VIEW_PADDING: f32 = 10.0;
 const PIN_DOCK_SPACING: f32 = 2.0;
@@ -119,52 +113,6 @@ pub enum HardwareViewMessage {
     ChangeOutputLevel(BCMPinNumber, LevelChange),
     UpdateCharts,
     MenuBarButtonClicked, // needed for highlighting to work
-}
-
-/// A type of connection to a piece of hardware
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
-pub enum HardwareConnection {
-    NoConnection,
-    #[default]
-    Local,
-    #[cfg(feature = "usb")]
-    Usb(SerialNumber),
-    #[cfg(feature = "iroh")]
-    Iroh(NodeId, Option<RelayUrl>),
-    #[cfg(feature = "tcp")]
-    Tcp(IpAddr, u16),
-}
-
-impl Display for HardwareConnection {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            NoConnection => write!(f, "No Connection"),
-            Local => write!(f, "Local Hardware"),
-            #[cfg(feature = "usb")]
-            Usb(_) => write!(f, "USB"),
-            #[cfg(feature = "iroh")]
-            Iroh(nodeid, _relay_url) => write!(f, "Iroh Network: {nodeid}"),
-            #[cfg(feature = "tcp")]
-            Tcp(ip, port) => write!(f, "TCP IP:Port: {ip}:{port}"),
-        }
-    }
-}
-
-impl HardwareConnection {
-    /// Return a short name describing the connection type
-    pub const fn name(&self) -> &'static str {
-        match self {
-            NoConnection => "disconnected",
-            #[cfg(not(target_arch = "wasm32"))]
-            Local => "Local",
-            #[cfg(feature = "usb")]
-            Usb(_) => "USB",
-            #[cfg(feature = "iroh")]
-            Iroh(_, _) => "Iroh",
-            #[cfg(feature = "tcp")]
-            Tcp(_, _) => "TCP",
-        }
-    }
 }
 
 pub struct HardwareView {

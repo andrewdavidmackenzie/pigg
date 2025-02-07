@@ -1,13 +1,13 @@
-use crate::hw_definition::description::HardwareDescription;
 use anyhow::ensure;
 use async_std::io::ReadExt;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
+use pigdef::description::HardwareDescription;
 use std::io;
 use std::net::IpAddr;
 
-use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
+use pigdef::config::HardwareConfigMessage::Disconnect;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 
 /// Wait until we receive a message from remote hardware over `stream`[TcpStream]
 pub async fn wait_for_remote_message(

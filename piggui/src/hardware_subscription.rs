@@ -1,8 +1,8 @@
 use futures::channel::mpsc::Sender;
 
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
-use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
+use pigdef::config::HardwareConfigMessage::IOLevelChanged;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 
 #[cfg(feature = "iroh")]
 use crate::hardware_subscription::HWState::ConnectedIroh;
@@ -14,36 +14,34 @@ use crate::hardware_subscription::HWState::{ConnectedLocal, Disconnected};
 use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use crate::hardware_subscription::SubscriptionEvent::InputChange;
-#[cfg(feature = "iroh")]
-use crate::host_net::iroh_host;
-use crate::host_net::local_host;
-use crate::host_net::local_host::LocalConnection;
-#[cfg(feature = "tcp")]
-use crate::host_net::tcp_host;
-#[cfg(feature = "usb")]
-use crate::host_net::usb_host;
-#[cfg(feature = "usb")]
-use crate::host_net::usb_host::UsbConnection;
-use crate::hw_definition::description::HardwareDescription;
-use crate::hw_definition::BCMPinNumber;
-use crate::views::hardware_view::HardwareConnection;
-#[cfg(feature = "iroh")]
-use crate::views::hardware_view::HardwareConnection::Iroh;
-#[cfg(feature = "tcp")]
-use crate::views::hardware_view::HardwareConnection::Tcp;
-#[cfg(feature = "usb")]
-use crate::views::hardware_view::HardwareConnection::Usb;
-use crate::views::hardware_view::HardwareConnection::{Local, NoConnection};
+use crate::local_host;
+use crate::local_host::LocalConnection;
 use futures::stream::Stream;
+use futures::FutureExt;
 use futures::SinkExt;
 use iced::futures::channel::mpsc;
 use iced::futures::StreamExt;
 use iced::stream;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
-use iced::{
-    futures,
-    futures::{pin_mut, FutureExt},
-};
+use iced::{futures, futures::pin_mut};
+use pigdef::description::BCMPinNumber;
+use pigdef::description::HardwareDescription;
+#[cfg(feature = "iroh")]
+use pignet::iroh_host;
+#[cfg(feature = "tcp")]
+use pignet::tcp_host;
+#[cfg(feature = "usb")]
+use pignet::usb_host;
+#[cfg(feature = "usb")]
+use pignet::usb_host::UsbConnection;
+use pignet::HardwareConnection;
+#[cfg(feature = "iroh")]
+use pignet::HardwareConnection::Iroh;
+#[cfg(feature = "tcp")]
+use pignet::HardwareConnection::Tcp;
+#[cfg(feature = "usb")]
+use pignet::HardwareConnection::Usb;
+use pignet::HardwareConnection::{Local, NoConnection};
 
 /// A message type sent from the UI to the subscriber
 pub enum SubscriberMessage {
@@ -51,6 +49,21 @@ pub enum SubscriberMessage {
     NewConnection(HardwareConnection),
     /// A message type to change the configuration of the connected hardware
     Hardware(HardwareConfigMessage),
+}
+
+/// This enum is for async events in the hardware that will be sent to the GUI
+#[allow(clippy::large_enum_variant)]
+#[derive(Clone, Debug)]
+pub enum SubscriptionEvent {
+    /// A message from the subscription to indicate it is ready to receive messages
+    Ready(Sender<SubscriberMessage>),
+    /// This event indicates that the listener is ready. It conveys a sender to the GUI
+    /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
+    Connected(HardwareDescription, HardwareConfig),
+    /// This event indicates that the logic level of an input has just changed
+    InputChange(BCMPinNumber, LevelChange),
+    /// There was an error in the connection to the hardware
+    ConnectionError(String),
 }
 
 /// This enum describes the states of the subscription
@@ -68,21 +81,6 @@ enum HWState {
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedTcp(async_std::net::TcpStream),
-}
-
-/// This enum is for async events in the hardware that will be sent to the GUI
-#[allow(clippy::large_enum_variant)]
-#[derive(Clone, Debug)]
-pub enum SubscriptionEvent {
-    /// A message from the subscription to indicate it is ready to receive messages
-    Ready(Sender<SubscriberMessage>),
-    /// This event indicates that the listener is ready. It conveys a sender to the GUI
-    /// that it should use to send ConfigEvents to the listener, such as an Input pin added.
-    Connected(HardwareDescription, HardwareConfig),
-    /// This event indicates that the logic level of an input has just changed
-    InputChange(BCMPinNumber, LevelChange),
-    /// There was an error in the connection to the hardware
-    ConnectionError(String),
 }
 
 /// Report an error to the GUI, if it cannot be sent print to STDERR
@@ -127,7 +125,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                         }
 
                         Local => {
-                            match local_host::connect().await {
+                            match local_host::connect(env!("CARGO_PKG_NAME")).await {
                                 Ok((hardware_description, hardware_config, local_hardware)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(

@@ -2,12 +2,12 @@ use std::io;
 
 use std::time::Duration;
 
-use crate::hw_definition::config::{HardwareConfig, LevelChange};
-use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::{BCMPinNumber, PinLevel};
+use pigdef::config::{HardwareConfig, LevelChange};
+use pigdef::description::{BCMPinNumber, PinLevel};
+use pigdef::pin_function::PinFunction;
 
-use crate::hw::pin_descriptions::*;
-use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+use crate::pin_descriptions::*;
+use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 
 #[cfg(all(
     target_os = "linux",
@@ -71,17 +71,12 @@ pub struct HW {
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
 }
 
-/// Create a new HW instance - should only be called once
-pub fn get() -> HW {
-    HW::default()
-}
-
 /// Common implementation code for pi and fake hardware
 impl HW {
     /// Find the Pi hardware description
-    pub fn description(&self) -> io::Result<HardwareDescription> {
+    pub fn description(&self, app_name: &str) -> io::Result<HardwareDescription> {
         Ok(HardwareDescription {
-            details: Self::get_details()?,
+            details: Self::get_details(app_name)?,
             pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
         })
     }
@@ -138,7 +133,7 @@ impl HW {
 
     /// Return the [HardwareDetails] struct that describes a number of details about the general
     /// hardware, not GPIO specifics or pin outs or such.
-    fn get_details() -> io::Result<HardwareDetails> {
+    fn get_details(app_name: &str) -> io::Result<HardwareDetails> {
         #[allow(unused_mut)]
         let mut details = HardwareDetails {
             hardware: "fake".to_string(),
@@ -146,7 +141,7 @@ impl HW {
             serial: "unknown".to_string(),
             model: "Fake RPi".to_string(),
             wifi: true,
-            app_name: env!("CARGO_BIN_NAME").to_string(),
+            app_name: app_name.to_string(),
             app_version: env!("CARGO_PKG_VERSION").to_string(),
         };
 
@@ -230,7 +225,7 @@ impl HW {
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        use crate::hw_definition::config::InputPull;
+        use pigdef::config::InputPull;
 
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);

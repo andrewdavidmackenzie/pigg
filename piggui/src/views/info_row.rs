@@ -1,5 +1,3 @@
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveredDevice;
 use crate::views::about::about_button;
 #[cfg(feature = "discovery")]
 use crate::views::devices_menu;
@@ -16,6 +14,8 @@ use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task, Th
 use iced_aw::style::menu_bar;
 use iced_aw::MenuBar;
 use iced_futures::Subscription;
+#[cfg(feature = "discovery")]
+use pignet::discovery::DiscoveredDevice;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 

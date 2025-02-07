@@ -1,6 +1,6 @@
-use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
-use crate::hw_definition::config::LevelChange;
-use crate::hw_definition::BCMPinNumber;
+use crate::config::HardwareConfigMessage::IOLevelChanged;
+use crate::config::LevelChange;
+use crate::description::BCMPinNumber;
 use crate::HARDWARE_EVENT_CHANNEL;
 use defmt::debug;
 use embassy_futures::select::{select, Either};

@@ -3,11 +3,11 @@ use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::hardware_view::HardwareView;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::{menu_bar_button, menu_button_style};
-use crate::HardwareConnection::*;
 use crate::Message;
 use iced::widget::{button, text};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
+use pignet::HardwareConnection::*;
 use std::collections::HashMap;
 
 /// Create the view that represents the clickable button that shows what hardware is connected

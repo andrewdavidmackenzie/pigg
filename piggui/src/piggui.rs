@@ -1,53 +1,51 @@
-#[cfg(feature = "discovery")]
-use crate::discovery::{DiscoveredDevice, DiscoveryEvent};
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
-use crate::hw_definition::config::HardwareConfig;
-use crate::views::hardware_view::{HardwareConnection, HardwareView, HardwareViewMessage};
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use crate::views::connect_dialog::{
+    ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
+};
+use crate::views::hardware_view::{HardwareView, HardwareViewMessage};
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
 use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
 #[cfg(feature = "usb")]
+use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
+#[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialog;
+#[cfg(feature = "usb")]
+use crate::views::ssid_dialog::SsidDialogMessage;
+#[cfg(feature = "usb")]
+use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
 use crate::widgets::modal::modal;
 use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme};
-#[cfg(feature = "discovery")]
-use std::collections::HashMap;
-
-#[cfg(feature = "discovery")]
-use crate::discovery::DiscoveryMethod::Local;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-use crate::views::connect_dialog::{
-    ConnectDialog, ConnectDialogMessage, ConnectDialogMessage::HideConnectDialog,
-};
-use crate::views::hardware_view::HardwareConnection::NoConnection;
-#[cfg(feature = "usb")]
-use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
-#[cfg(feature = "usb")]
-use crate::views::ssid_dialog::SsidDialogMessage;
-#[cfg(feature = "usb")]
-use crate::views::ssid_dialog::SsidDialogMessage::HideSsidDialog;
-#[cfg(feature = "usb")]
-use host_net::usb_host;
 #[cfg(feature = "iroh")]
 use iroh::NodeId;
+use pigdef::config::HardwareConfig;
+#[cfg(feature = "discovery")]
+use pignet::discovery::DiscoveryMethod::Local;
+#[cfg(feature = "discovery")]
+use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
+#[cfg(feature = "usb")]
+use pignet::usb_host;
+use pignet::HardwareConnection;
+use pignet::HardwareConnection::NoConnection;
+use pigpio::get;
+#[cfg(feature = "discovery")]
+use std::collections::HashMap;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
-
 #[cfg(feature = "discovery")]
 mod discovery;
+
 #[cfg(not(target_arch = "wasm32"))]
 mod file_helper;
 mod hardware_subscription;
-mod host_net;
-mod hw;
-mod hw_definition;
-mod net;
+mod local_host;
 mod views;
 mod widgets;
 
@@ -156,9 +154,13 @@ impl Piggui {
         #[cfg(feature = "discovery")]
         let mut discovered_devices = HashMap::new();
         #[cfg(feature = "discovery")]
-        let local_hardware = hw::driver::get();
+        let local_hardware = get();
         #[cfg(feature = "discovery")]
-        let serial = local_hardware.description().unwrap().details.serial;
+        let serial = local_hardware
+            .description(env!("CARGO_PKG_NAME"))
+            .unwrap()
+            .details
+            .serial;
         #[cfg(feature = "discovery")]
         let mut hardware_connections = HashMap::new();
         #[cfg(feature = "discovery")]
@@ -168,7 +170,10 @@ impl Piggui {
             serial,
             DiscoveredDevice {
                 discovery_method: Local,
-                hardware_details: local_hardware.description().unwrap().details,
+                hardware_details: local_hardware
+                    .description(env!("CARGO_PKG_NAME"))
+                    .unwrap()
+                    .details,
                 ssid_spec: None,
                 hardware_connections,
             },

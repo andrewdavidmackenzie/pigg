@@ -1,7 +1,7 @@
+use crate::config::{HardwareConfig, HardwareConfigMessage};
+use crate::description::HardwareDescription;
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
-use crate::hw_definition::description::HardwareDescription;
 use crate::{flash, persistence, HARDWARE_EVENT_CHANNEL};
 use cyw43::Control;
 use defmt::info;

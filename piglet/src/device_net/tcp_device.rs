@@ -1,14 +1,10 @@
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage::{
-    IOLevelChanged, NewConfig, NewPinConfig,
-};
-use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
-use crate::hw_definition::description::HardwareDescription;
-use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::{BCMPinNumber, PinLevel};
+use pigdef::config::HardwareConfig;
+use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use pigdef::config::{HardwareConfigMessage, LevelChange};
+use pigdef::description::HardwareDescription;
+use pigdef::description::{BCMPinNumber, PinLevel};
+use pigdef::pin_function::PinFunction;
 
-use crate::hw::driver::HW;
-use crate::hw_definition::pin_function::PinFunction::Output;
 use crate::persistence;
 use anyhow::{anyhow, bail, Context};
 use async_std::net::TcpListener;
@@ -16,6 +12,8 @@ use async_std::net::TcpStream;
 use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{debug, info, trace};
+use pigdef::pin_function::PinFunction::Output;
+use pigpio::driver::HW;
 use portpicker::pick_unused_port;
 use std::fmt;
 use std::fmt::{Display, Formatter};

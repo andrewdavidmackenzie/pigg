@@ -1,5 +1,5 @@
-use crate::hw_definition::config::InputPull;
-use crate::hw_definition::PinLevel;
+use crate::config::InputPull;
+use crate::description::PinLevel;
 use serde::{Deserialize, Serialize};
 
 /// For SPI interfaces see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
@@ -81,4 +81,35 @@ pub enum PinFunction {
     /// PCM CLock
     PCM_CLK,
      */
+}
+
+#[cfg(not(feature = "no_std"))]
+impl std::fmt::Display for PinFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Remove anything after the first opening bracket of debug representation
+        let full = format!("{:?}", self);
+        write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
+    }
+}
+
+#[cfg(all(test, not(feature = "no_std")))]
+mod test {
+    use crate::hw_definition::config::InputPull::{PullDown, PullUp};
+    use crate::hw_definition::pin_function::PinFunction;
+
+    #[test]
+    fn display_pin_function() {
+        let functions = vec![
+            PinFunction::Output(None),
+            PinFunction::Output(Some(true)),
+            PinFunction::Output(Some(false)),
+            PinFunction::Input(None),
+            PinFunction::Input(Some(PullUp)),
+            PinFunction::Input(Some(PullDown)),
+        ];
+
+        for function in functions {
+            println!("{}", function);
+        }
+    }
 }

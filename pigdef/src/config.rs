@@ -1,11 +1,31 @@
-use crate::hw_definition::config::{HardwareConfig, InputPull, LevelChange};
-use std::fmt::{Display, Formatter};
-use std::fs::File;
+use crate::description::{BCMPinNumber, PinLevel};
+use crate::pin_function::PinFunction;
+#[cfg(feature = "no_std")]
+use heapless::FnvIndexMap;
+use serde::{Deserialize, Serialize};
+#[cfg(not(feature = "no_std"))]
+use std::collections::HashMap;
+#[cfg(not(feature = "no_std"))]
 use std::io::{BufReader, Write};
-use std::{fmt, io};
+#[cfg(not(feature = "no_std"))]
+use std::time::Duration;
 
-impl Display for HardwareConfig {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+/// [HardwareConfig] captures the current configuration of programmable GPIO pins
+#[cfg_attr(
+    not(feature = "no_std"),
+    derive(Debug, Clone, Serialize, Deserialize, Default)
+)]
+#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize, Default))]
+pub struct HardwareConfig {
+    #[cfg(not(feature = "no_std"))]
+    pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
+    #[cfg(feature = "no_std")]
+    pub pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 32>,
+}
+
+#[cfg(not(feature = "no_std"))]
+impl std::fmt::Display for HardwareConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.pin_functions.is_empty() {
             writeln!(f, "No Pins are Configured")
         } else {
@@ -18,10 +38,11 @@ impl Display for HardwareConfig {
     }
 }
 
+#[cfg(not(feature = "no_std"))]
 impl HardwareConfig {
     /// Load a new GPIOConfig from the file named `filename`
-    pub fn load(filename: &str) -> io::Result<HardwareConfig> {
-        let file = File::open(filename)?;
+    pub fn load(filename: &str) -> std::io::Result<HardwareConfig> {
+        let file = std::fs::File::open(filename)?;
         let reader = BufReader::new(file);
         let config = serde_json::from_reader(reader)?;
         Ok(config)
@@ -29,16 +50,83 @@ impl HardwareConfig {
 
     /// Save this GPIOConfig to the file named `filename`
     #[allow(dead_code)] // for piglet
-    pub fn save(&self, filename: &str) -> io::Result<String> {
-        let mut file = File::create(filename)?;
+    pub fn save(&self, filename: &str) -> std::io::Result<String> {
+        let mut file = std::fs::File::create(filename)?;
         let contents = serde_json::to_string(self)?;
         file.write_all(contents.as_bytes())?;
         Ok(format!("File saved successfully to {}", filename))
     }
 }
 
-impl Display for LevelChange {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+/// This enum is for hardware config changes initiated in the GUI by the user,
+/// and sent to the subscription for it to apply to the hardware
+///    * NewConfig
+///    * NewPinConfig
+///    * OutputLevelChanged
+#[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Serialize, Deserialize))]
+#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize))]
+#[allow(clippy::large_enum_variant)]
+pub enum HardwareConfigMessage {
+    /// A complete new hardware config has been loaded and applied to the hardware, so we should
+    /// start listening for level changes on each of the input pins it contains
+    NewConfig(HardwareConfig),
+    /// A pin has had its config changed
+    NewPinConfig(BCMPinNumber, Option<PinFunction>),
+    /// The level of a pin has changed
+    IOLevelChanged(BCMPinNumber, LevelChange),
+    /// A request for device to send back the hardware config
+    GetConfig,
+    /// A message sent from the GUI to the device to ask it to disconnect, as GUI will disconnect
+    Disconnect,
+}
+
+#[cfg(feature = "no_std")]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Duration {
+    pub secs: u64,
+    pub nanos: u32,
+}
+
+#[cfg(feature = "no_std")]
+impl From<embassy_time::Duration> for Duration {
+    fn from(duration: embassy_time::Duration) -> Self {
+        Duration {
+            secs: duration.as_secs(),
+            nanos: ((duration.as_micros() % 1_000_000) * 1000) as u32,
+        }
+    }
+}
+
+#[cfg(feature = "no_std")]
+impl From<Duration> for embassy_time::Duration {
+    fn from(duration: Duration) -> Self {
+        embassy_time::Duration::from_nanos((duration.secs * 1_000_000_000) + duration.nanos as u64)
+    }
+}
+
+/// LevelChange describes the change in level of an input or Output and when it occurred
+/// - `new_level` : [PinLevel]
+/// - `timestamp` : [Duration]
+#[cfg_attr(not(feature = "no_std"), derive(Debug))]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct LevelChange {
+    pub new_level: PinLevel,
+    pub timestamp: Duration,
+}
+
+impl LevelChange {
+    /// Create a new LevelChange event
+    pub fn new(new_level: PinLevel, timestamp: Duration) -> Self {
+        Self {
+            new_level,
+            timestamp,
+        }
+    }
+}
+
+#[cfg(not(feature = "no_std"))]
+impl std::fmt::Display for LevelChange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(
             f,
             "Level: {}, Timestamp: {:?}",
@@ -47,8 +135,17 @@ impl Display for LevelChange {
     }
 }
 
-impl Display for InputPull {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+/// An input can be configured to have an optional pull-up or pull-down or neither
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+pub enum InputPull {
+    PullUp,
+    PullDown,
+    None,
+}
+
+#[cfg(not(feature = "no_std"))]
+impl std::fmt::Display for InputPull {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             InputPull::PullUp => write!(f, "Pull Up"),
             InputPull::PullDown => write!(f, "Pull Down"),
@@ -57,7 +154,7 @@ impl Display for InputPull {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "no_std")))]
 mod test {
     use crate::hw_definition::config::HardwareConfig;
     use crate::hw_definition::config::InputPull::PullUp;

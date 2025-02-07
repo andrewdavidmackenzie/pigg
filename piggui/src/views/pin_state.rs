@@ -5,9 +5,10 @@ use iced::advanced::text::editor::Direction;
 use iced::Element;
 use plotters::prelude::{RGBAColor, ShapeStyle};
 
-use crate::hw_definition::{config::LevelChange, PinLevel};
 use crate::views::hardware_view::HardwareViewMessage;
 use crate::views::waveform::{ChartType, Sample, Waveform};
+use pigdef::config::LevelChange;
+use pigdef::description::PinLevel;
 
 pub const CHART_UPDATES_PER_SECOND: u64 = 4;
 pub const CHART_WIDTH: f32 = 256.0;
@@ -84,8 +85,8 @@ impl PinState {
 
 #[cfg(test)]
 mod test {
-    use crate::hw_definition::config::LevelChange;
     use crate::views::pin_state::PinState;
+    use pigdef::config::LevelChange;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]

@@ -1,13 +1,13 @@
-use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
-use crate::hw_definition::description::HardwareDescription;
-use crate::net::PIGLET_ALPN;
 use anyhow::{ensure, Context};
 use iroh::{
     endpoint::Connection,
     RelayMode, RelayUrl, SecretKey, {Endpoint, NodeAddr, NodeId},
 };
 use log::info;
+use pigdef::config::HardwareConfigMessage::Disconnect;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
+use pigdef::description::HardwareDescription;
+use pigdef::net_values::PIGLET_ALPN;
 use std::io;
 
 /// Wait until we receive a message from remote hardware

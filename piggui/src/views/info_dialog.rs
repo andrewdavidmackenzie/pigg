@@ -1,16 +1,16 @@
 use crate::file_helper::pick_and_load;
-use crate::hw_definition::description::HardwareDetails;
 use crate::views::about::REPOSITORY;
 use crate::views::dialog_styles::{
     cancel_button, connect_button, hyperlink_button, MODAL_CONTAINER_STYLE,
 };
-use crate::views::hardware_view::HardwareConnection;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{button, column, container, horizontal_space, text, Row, Space, Text};
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
+use pigdef::description::HardwareDetails;
+use pignet::HardwareConnection;
 use std::collections::HashMap;
 
 pub struct InfoDialog {

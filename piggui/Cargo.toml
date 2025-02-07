@@ -1,5 +1,5 @@
 [package]
-name = "pigg"
+name = "piggui"
 version = "0.6.0"
 edition = "2021"
 description = "A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware"
@@ -27,39 +27,33 @@ eula = false
 name = "piggui"
 path = "src/piggui.rs"
 
-[[bin]]
-name = "piglet"
-path = "../piglet/src/piglet.rs"
-
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
-tcp = ["portpicker", "local-ip-address"]
-discovery = ["iroh/discovery-local-network", "mdns-sd"]
+tcp = []
+discovery = ["mdns-sd"]
 no_std = []
-usb = ["nusb"]
+usb = []
 
 [dependencies]
-# Optional Dependencies
-iroh = { version = "0.32", default-features = false, optional = true }
-portpicker = { version = "0.1.1", default-features = false, optional = true }
-local-ip-address = { version = "0.6.3", default-features = false, optional = true }
-nusb = { version = "0.1.12", default-features = false, optional = true }
-mdns-sd = { version = "0.13.2", default-features = false, optional = true }
+pigdef = { version = "0.6", path = "../pigdef" }
+pignet = { version = "0.6", path = "../pignet" }
+pigpio = { version = "0.6", path = "../pigpio" }
 
-# use in piggui and piglet
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
+mdns-sd = { version = "0.13.2", default-features = false, optional = true }
 
 # for config serialization to/from file
 serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
 # for alloc/no_alloc over the wire serialization/deserialization
 postcard = { version = "1.1.1", features = ["alloc"] }
 
-rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 env_logger = { version = "0.11.6", default-features = false }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
 tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
+
+iroh = { version = "0.32", default-features = false, optional = true }
 
 # used in piglet only
 log = { version = "0.4.25", default-features = false }

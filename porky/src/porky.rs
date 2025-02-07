@@ -1,13 +1,12 @@
 #![no_std]
 #![no_main]
 
+use crate::config::{HardwareConfig, HardwareConfigMessage};
+use crate::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+#[cfg(feature = "wifi")]
+use crate::description::{TCP_MDNS_SERVICE_NAME, TCP_MDNS_SERVICE_PROTOCOL};
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
-#[cfg(feature = "wifi")]
-use crate::hw_definition::description::{TCP_MDNS_SERVICE_NAME, TCP_MDNS_SERVICE_PROTOCOL};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 #[cfg(feature = "wifi")]
 use crate::tcp::TCP_PORT;
@@ -69,8 +68,14 @@ mod gpio;
 mod gpio_input_monitor;
 
 /// Definition of hardware structs passed back and fore between porky and the GUI
-#[path = "../../piggui/src/hw_definition/mod.rs"]
-mod hw_definition;
+#[path = "../../pigdef/src/config.rs"]
+mod config;
+#[path = "../../pigdef/src/description.rs"]
+mod description;
+#[path = "../../pigdef/src/pin_function.rs"]
+mod pin_function;
+#[path = "../../pigdef/src/usb_values.rs"]
+mod usb_values;
 
 /// Functions for interacting with the Flash ROM
 mod flash;

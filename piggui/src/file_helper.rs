@@ -1,9 +1,9 @@
-use crate::hw_definition::config::HardwareConfig;
 use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 use crate::Message;
 use crate::Message::{ConfigLoaded, InfoRow};
 use iced::Task;
+use pigdef::config::HardwareConfig;
 use std::{env, io};
 
 /// Asynchronously load a .piggui config file from file named `filename` (no picker)

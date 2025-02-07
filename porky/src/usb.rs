@@ -1,18 +1,18 @@
+use crate::config::HardwareConfigMessage::Disconnect;
+use crate::config::{HardwareConfig, HardwareConfigMessage};
+use crate::description::HardwareDescription;
+#[cfg(feature = "wifi")]
+use crate::description::{SsidSpec, WiFiDetails};
 use crate::flash;
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
-use crate::hw_definition::config::HardwareConfigMessage::Disconnect;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
-use crate::hw_definition::description::HardwareDescription;
-#[cfg(feature = "wifi")]
-use crate::hw_definition::description::{SsidSpec, WiFiDetails};
-use crate::hw_definition::usb_values::{
+use crate::persistence;
+use crate::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST,
     USB_PACKET_SIZE,
 };
 #[cfg(feature = "wifi")]
-use crate::hw_definition::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
-use crate::persistence;
+use crate::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
 use crate::HARDWARE_EVENT_CHANNEL;
 use core::str;
 #[cfg(feature = "wifi")]

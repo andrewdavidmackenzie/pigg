@@ -1,14 +1,12 @@
+use crate::config::HardwareConfig;
+use crate::config::HardwareConfigMessage;
+use crate::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use crate::config::InputPull;
+use crate::description::{BCMPinNumber, PinLevel};
 use crate::gpio::GPIOPin::Available;
 use crate::gpio_input_monitor::monitor_input;
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::config::HardwareConfigMessage::{
-    IOLevelChanged, NewConfig, NewPinConfig,
-};
-use crate::hw_definition::config::InputPull;
-use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::pin_function::PinFunction::{Input, Output};
-use crate::hw_definition::{BCMPinNumber, PinLevel};
+use crate::pin_function::PinFunction;
+use crate::pin_function::PinFunction::{Input, Output};
 #[cfg(feature = "wifi")]
 use cyw43::Control;
 use defmt::{debug, error, info};

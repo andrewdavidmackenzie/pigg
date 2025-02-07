@@ -1,15 +1,15 @@
-use crate::flash;
-use crate::flash::DbFlash;
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::config::HardwareConfigMessage::{
+use crate::config::HardwareConfig;
+use crate::config::HardwareConfigMessage;
+use crate::config::HardwareConfigMessage::{
     Disconnect, GetConfig, IOLevelChanged, NewConfig, NewPinConfig,
 };
+use crate::description::BCMPinNumber;
 #[cfg(feature = "wifi")]
-use crate::hw_definition::description::SsidSpec;
-use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::pin_function::PinFunction::Output;
-use crate::hw_definition::BCMPinNumber;
+use crate::description::SsidSpec;
+use crate::flash;
+use crate::flash::DbFlash;
+use crate::pin_function::PinFunction;
+use crate::pin_function::PinFunction::Output;
 #[cfg(feature = "wifi")]
 use crate::ssid;
 #[cfg(feature = "wifi")]

@@ -1,18 +1,18 @@
-use crate::discovery::DiscoveredDevice;
-#[cfg(feature = "usb")]
-use crate::discovery::DiscoveryMethod::USBRaw;
-use crate::views::hardware_view::HardwareConnection;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::menu_button_style;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
-use crate::HardwareConnection::*;
 use crate::Message;
 use iced::alignment;
 use iced::widget::{button, text};
 use iced::widget::{horizontal_space, row};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
+use pignet::discovery::DiscoveredDevice;
+#[cfg(feature = "usb")]
+use pignet::discovery::DiscoveryMethod::USBRaw;
+use pignet::HardwareConnection;
+use pignet::HardwareConnection::*;
 use std::collections::HashMap;
 
 /// Create a submenu item for the known devices

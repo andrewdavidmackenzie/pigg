@@ -1,4 +1,4 @@
-use crate::hw_definition::description::SsidSpec;
+use crate::description::SsidSpec;
 use core::net::Ipv4Addr;
 use cyw43::Control;
 use cyw43::{JoinAuth, JoinOptions};

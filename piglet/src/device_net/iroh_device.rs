@@ -1,19 +1,18 @@
-use crate::hw::driver::HW;
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage::{
-    IOLevelChanged, NewConfig, NewPinConfig,
-};
-use crate::hw_definition::config::{HardwareConfigMessage, LevelChange};
-use crate::hw_definition::description::HardwareDescription;
-use crate::hw_definition::pin_function::PinFunction::Output;
-use crate::hw_definition::{pin_function::PinFunction, BCMPinNumber, PinLevel};
-use crate::net::PIGLET_ALPN;
 use crate::persistence;
 use anyhow::{anyhow, bail, Context};
 use iroh::endpoint::Connection;
 use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
 #[cfg(feature = "discovery")]
 use log::{debug, info, trace};
+use pigdef::config::HardwareConfig;
+use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use pigdef::config::{HardwareConfigMessage, LevelChange};
+use pigdef::description::HardwareDescription;
+use pigdef::description::{BCMPinNumber, PinLevel};
+use pigdef::net_values::PIGLET_ALPN;
+use pigdef::pin_function::PinFunction;
+use pigdef::pin_function::PinFunction::Output;
+use pigpio::driver::HW;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;

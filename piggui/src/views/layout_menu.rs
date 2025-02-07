@@ -2,16 +2,16 @@ use crate::Message;
 use iced::widget::Button;
 use iced::{Length, Size};
 
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::description::HardwareDescription;
-use crate::views::hardware_view::HardwareConnection::NoConnection;
-use crate::views::hardware_view::{
-    bcm_layout_size, board_layout_size, compact_layout_size, HardwareConnection,
-};
+use pignet::HardwareConnection;
+
+use crate::views::hardware_view::{bcm_layout_size, board_layout_size, compact_layout_size};
 use crate::views::info_row::{menu_bar_button, menu_button_style};
 use crate::views::layout_menu::Layout::{Board, Compact, Logical};
 use iced::{Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
+use pigdef::config::HardwareConfig;
+use pigdef::description::HardwareDescription;
+use pignet::HardwareConnection::NoConnection;
 
 /// These are the possible layouts to chose from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

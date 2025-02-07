@@ -259,8 +259,9 @@ mod test {
     use chrono::{DateTime, Utc};
     use plotters::prelude::{RGBAColor, ShapeStyle};
 
-    use crate::hw_definition::{config::LevelChange, PinLevel};
     use crate::views::waveform::{ChartType, Sample, Waveform};
+    use pigdef::config::LevelChange;
+    use pigdef::description::PinLevel;
 
     const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
         color: RGBAColor(255, 255, 255, 1.0),

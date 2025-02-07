@@ -15,15 +15,14 @@ use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
 use std::time::Duration;
 
-use crate::host_net::usb_host;
-use crate::hw_definition::description::{
-    HardwareDetails, SsidSpec, SSID_NAME_MAX_LENGTH, SSID_PASS_MAX_LENGTH, SSID_PASS_MIN_LENGTH,
-};
 use crate::views::dialog_styles::{
     cancel_button, connect_button, CONNECTION_ERROR_DISPLAY, INFO_TEXT_STYLE,
     MODAL_CONTAINER_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
 use crate::views::ssid_dialog::SsidDialogMessage::{HidePasswordToggled, SecuritySelected};
+use pigdef::description::HardwareDetails;
+use pigdef::description::SsidSpec;
+use pignet::usb_host;
 use std::sync::LazyLock;
 
 static INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
@@ -61,44 +60,6 @@ fn send_ssid(serial_number: String, ssid_spec: SsidSpec) -> Task<Message> {
     });
     #[cfg(not(feature = "usb"))]
     Task::none()
-}
-
-impl SsidSpec {
-    /// Try and create a new [SsidSpec] using name, password and security fields, validating
-    /// the combination. Return an `Ok` with the [SsisSpec] or an `Err` with an error string
-    /// describing the cause of it being invalid.
-    fn try_new(name: String, pass: String, security: String) -> Result<SsidSpec, String> {
-        if name.trim().is_empty() {
-            return Err("Please Enter SSID name".into());
-        }
-
-        if name.trim().len() > SSID_NAME_MAX_LENGTH {
-            return Err("SSID name is too long".into());
-        }
-
-        match security.as_str() {
-            "wpa" | "wpa2" | "wpa3" => {
-                if pass.trim().is_empty() {
-                    return Err("Please Enter SSID password".into());
-                }
-
-                if pass.trim().len() < SSID_PASS_MIN_LENGTH {
-                    return Err("SSID password is too short".into());
-                }
-
-                if pass.trim().len() > SSID_PASS_MAX_LENGTH {
-                    return Err("SSID password is too long".into());
-                }
-            }
-            _ => {}
-        }
-
-        Ok(SsidSpec {
-            ssid_name: name,
-            ssid_pass: pass,
-            ssid_security: security,
-        })
-    }
 }
 
 impl SsidDialog {

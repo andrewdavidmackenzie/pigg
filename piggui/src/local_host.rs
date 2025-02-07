@@ -1,17 +1,15 @@
 use crate::hardware_subscription::SubscriptionEvent;
 use crate::hardware_subscription::SubscriptionEvent::InputChange;
-use crate::hw;
-use crate::hw::driver::HW;
-use crate::hw_definition::config::HardwareConfigMessage::{
-    IOLevelChanged, NewConfig, NewPinConfig,
-};
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
-use crate::hw_definition::description::HardwareDescription;
-use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::{BCMPinNumber, PinLevel};
 use anyhow::Error;
 use iced::futures::channel::mpsc::Sender;
 use log::{info, trace};
+use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
+use pigdef::description::HardwareDescription;
+use pigdef::description::{BCMPinNumber, PinLevel};
+use pigdef::pin_function::PinFunction;
+use pigpio::driver::HW;
+use pigpio::get;
 use std::time::Duration;
 
 pub struct LocalConnection {
@@ -137,9 +135,11 @@ pub async fn send_config_message(
 }
 
 /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
-pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
-    let hw = hw::driver::get();
-    let hw_description = hw.description()?;
+pub async fn connect(
+    app_name: &str,
+) -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
+    let hw = get();
+    let hw_description = hw.description(app_name)?;
     let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
     Ok((hw_description, hw_config, LocalConnection { hw }))

@@ -1,12 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::hw_definition::{BCMPinNumber, BoardPinNumber};
 #[cfg(not(feature = "no_std"))]
 use std::borrow::Cow;
 #[cfg(not(feature = "no_std"))]
 use std::string::String;
 
-use crate::hw_definition::pin_function::PinFunction;
+use crate::pin_function::PinFunction;
 #[cfg(feature = "no_std")]
 use heapless::String;
 #[cfg(feature = "no_std")]
@@ -32,6 +31,15 @@ pub const TCP_MDNS_SERVICE_PROTOCOL: &str = "_tcp";
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 pub const TCP_MDNS_SERVICE_TYPE: &str = "_pigg._tcp.local.";
 
+/// [BCMPinNumber] is used to refer to a GPIO pin by the Broadcom Chip Number
+pub type BCMPinNumber = u8;
+
+/// [BoardPinNumber] is used to refer to a GPIO pin by the numbering of the GPIO header on the Pi
+pub type BoardPinNumber = u8;
+
+/// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
+pub type PinLevel = bool;
+
 #[cfg(not(feature = "no_std"))]
 /// A 16 character String represents a serial number for a device
 pub type SerialNumber = String;
@@ -43,6 +51,23 @@ pub type SerialNumber = String;
 pub struct HardwareDescription {
     pub details: HardwareDetails,
     pub pins: PinDescriptionSet,
+}
+
+#[cfg(not(feature = "no_std"))]
+/// `PinDescriptionSet` describes a set of Pins on a device, using `PinDescription`s
+impl PinDescriptionSet {
+    /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
+    /// ascending order of [BCMPinNumber]
+    #[allow(dead_code)] // for piglet build
+    pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
+        let mut pins = self
+            .pins()
+            .iter()
+            .filter(|pin| pin.bcm.is_some())
+            .collect::<Vec<&PinDescription>>();
+        pins.sort_by_key(|pin| pin.bcm.expect("Could not get BCM pin number"));
+        pins
+    }
 }
 
 #[cfg(feature = "no_std")]
@@ -73,6 +98,22 @@ pub struct HardwareDetails {
     pub app_version: String,
 }
 
+#[cfg(not(feature = "no_std"))]
+impl std::fmt::Display for HardwareDetails {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Application: {}", self.app_name)?;
+        writeln!(f, "App Version: {}", self.app_version)?;
+        writeln!(f, "Hardware: {}", self.hardware)?;
+        writeln!(f, "Revision: {}", self.revision)?;
+        writeln!(f, "Serial: {}", self.serial)?;
+        writeln!(f, "Model: {}", self.model)?;
+        if self.wifi {
+            write!(f, "Wi-Fi Supported: Yes")
+        } else {
+            write!(f, "Wi-Fi Supported: No")
+        }
+    }
+}
 #[cfg(feature = "no_std")]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Serialize)]
@@ -102,6 +143,45 @@ pub struct SsidSpec {
     pub ssid_name: String<SSID_NAME_MAX_LENGTH>,
     pub ssid_pass: String<SSID_PASS_MAX_LENGTH>,
     pub ssid_security: String<4>,
+}
+
+#[cfg(not(feature = "no_std"))]
+impl SsidSpec {
+    /// Try and create a new [SsidSpec] using name, password and security fields, validating
+    /// the combination. Return an `Ok` with the [SsisSpec] or an `Err` with an error string
+    /// describing the cause of it being invalid.
+    pub fn try_new(name: String, pass: String, security: String) -> Result<SsidSpec, String> {
+        if name.trim().is_empty() {
+            return Err("Please Enter SSID name".into());
+        }
+
+        if name.trim().len() > SSID_NAME_MAX_LENGTH {
+            return Err("SSID name is too long".into());
+        }
+
+        match security.as_str() {
+            "wpa" | "wpa2" | "wpa3" => {
+                if pass.trim().is_empty() {
+                    return Err("Please Enter SSID password".into());
+                }
+
+                if pass.trim().len() < SSID_PASS_MIN_LENGTH {
+                    return Err("SSID password is too short".into());
+                }
+
+                if pass.trim().len() > SSID_PASS_MAX_LENGTH {
+                    return Err("SSID password is too long".into());
+                }
+            }
+            _ => {}
+        }
+
+        Ok(SsidSpec {
+            ssid_name: name,
+            ssid_pass: pass,
+            ssid_security: security,
+        })
+    }
 }
 
 #[cfg(not(feature = "no_std"))]
@@ -175,6 +255,16 @@ pub struct PinDescription {
     pub bcm: Option<BCMPinNumber>,
     pub name: Cow<'static, str>,
     pub options: Cow<'static, [PinFunction]>,
+}
+
+#[cfg(not(feature = "no_std"))]
+impl std::fmt::Display for PinDescription {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Board Pin #: {}", self.bpn)?;
+        writeln!(f, "\tBCM Pin #: {:?}", self.bcm)?;
+        writeln!(f, "\tName Pin #: {}", self.name)?;
+        writeln!(f, "\tFunctions #: {:?}", self.options)
+    }
 }
 
 #[cfg(feature = "no_std")]
