@@ -1,5 +1,7 @@
-use super::super::{ip_port, kill, run, wait_for_stdout};
 use serial_test::serial;
+use support::{ip_port, kill, run, wait_for_stdout};
+
+mod support;
 
 #[test]
 #[serial]

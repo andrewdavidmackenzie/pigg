@@ -156,10 +156,10 @@ impl std::fmt::Display for InputPull {
 
 #[cfg(all(test, not(feature = "no_std")))]
 mod test {
-    use crate::hw_definition::config::HardwareConfig;
-    use crate::hw_definition::config::InputPull::PullUp;
-    use crate::hw_definition::config::LevelChange;
-    use crate::hw_definition::pin_function::PinFunction;
+    use crate::config::HardwareConfig;
+    use crate::config::InputPull::PullUp;
+    use crate::config::LevelChange;
+    use crate::pin_function::PinFunction;
     use std::collections::HashMap;
     use std::fs;
     use std::fs::File;

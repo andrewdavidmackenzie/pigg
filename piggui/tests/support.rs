@@ -16,6 +16,9 @@ use std::str::FromStr;
 
 pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let workspace_dir = crate_dir
+        .parent()
+        .expect("Could not get workspace directory");
     let mut command = Command::new(env!("CARGO"));
 
     let mut args = vec![
@@ -38,7 +41,7 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
     // spawn the 'piglet' process
     command
         .args(args)
-        .current_dir(crate_dir)
+        .current_dir(workspace_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())

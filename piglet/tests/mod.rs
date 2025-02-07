@@ -1,12 +1,7 @@
 use serial_test::serial;
 use support::{kill, run, wait_for_stdout};
 
-#[cfg(feature = "iroh")]
-mod iroh;
-#[cfg(feature = "tcp")]
-mod tcp;
-
-#[path = "../../tests/support.rs"]
+#[path = "../../piggui/tests/support.rs"]
 mod support;
 
 #[test]

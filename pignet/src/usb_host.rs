@@ -277,8 +277,8 @@ pub async fn get_details(
 #[cfg(feature = "usb")]
 #[cfg(test)]
 mod test {
-    use crate::hw_definition::config::HardwareConfigMessage;
-    use crate::hw_definition::usb_values::USB_PACKET_SIZE;
+    use pigdef::config::HardwareConfigMessage;
+    use pigdef::usb_values::USB_PACKET_SIZE;
 
     #[test]
     fn check_buf_size() {

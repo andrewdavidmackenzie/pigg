@@ -94,8 +94,8 @@ impl std::fmt::Display for PinFunction {
 
 #[cfg(all(test, not(feature = "no_std")))]
 mod test {
-    use crate::hw_definition::config::InputPull::{PullDown, PullUp};
-    use crate::hw_definition::pin_function::PinFunction;
+    use crate::config::InputPull::{PullDown, PullUp};
+    use crate::pin_function::PinFunction;
 
     #[test]
     fn display_pin_function() {

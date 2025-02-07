@@ -1,5 +1,7 @@
-use super::super::{kill, run, wait_for_stdout};
 use serial_test::serial;
+use support::{kill, run, wait_for_stdout};
+
+mod support;
 
 #[cfg(feature = "iroh")]
 #[test]

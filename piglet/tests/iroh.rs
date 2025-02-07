@@ -1,7 +1,7 @@
+use crate::support::{kill, run, wait_for_stdout};
 use serial_test::serial;
-use support::{kill, run, wait_for_stdout};
 
-#[path = "../../tests/support.rs"]
+#[path = "../../piggui/tests/support.rs"]
 mod support;
 
 #[test]

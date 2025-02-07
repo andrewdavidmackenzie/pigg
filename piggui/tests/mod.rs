@@ -1,13 +1,12 @@
 use serial_test::serial;
 use support::{kill, run, wait_for_stdout};
 
-#[path = "../../tests/support.rs"]
 mod support;
 
 #[test]
 #[serial]
 fn version_number() {
-    let mut child = run("piggui", vec!["--version".into()], None);
+    let mut child = support::run("piggui", vec!["--version".into()], None);
     let line = wait_for_stdout(&mut child, "piggui").expect("Failed to get expected output");
     kill(child);
     let version = line.split(' ').nth(1).unwrap().trim();

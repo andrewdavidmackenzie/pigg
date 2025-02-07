@@ -364,15 +364,15 @@ impl HW {
 
 #[cfg(test)]
 mod test {
-    use crate::hw_definition::description::{PinDescription, PinDescriptionSet};
-    use crate::hw_definition::pin_function::PinFunction;
+    use pigdef::description::{PinDescription, PinDescriptionSet};
+    use pigdef::pin_function::PinFunction;
     use std::borrow::Cow;
 
     #[test]
     fn get_hardware() {
-        let hw = super::get();
+        let hw = crate::get();
         let description = hw
-            .description()
+            .description("Test")
             .expect("Could not read Hardware description");
         let pins = description.pins.pins();
         assert_eq!(pins.len(), 40);
@@ -381,20 +381,20 @@ mod test {
 
     #[test]
     fn hw_can_be_got() {
-        let hw = super::get();
-        assert!(hw.description().is_ok());
+        let hw = crate::get();
+        assert!(hw.description("Test").is_ok());
         println!(
             "{:?}",
-            hw.description()
+            hw.description("Test")
                 .expect("Could not get Hardware Description")
         );
     }
 
     #[test]
     fn forty_board_pins() {
-        let hw = super::get();
+        let hw = crate::get();
         let pin_set = hw
-            .description()
+            .description("Test")
             .expect("Could not get Hardware Description")
             .pins;
         assert_eq!(pin_set.pins().len(), 40);
@@ -403,9 +403,9 @@ mod test {
     #[test]
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
-        let hw = super::get();
+        let hw = crate::get();
         let pin_set = hw
-            .description()
+            .description("Test")
             .expect("Could not get Hardware Description")
             .pins;
         let sorted_bcm_pins = pin_set.bcm_pins_sorted();
