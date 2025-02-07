@@ -5,6 +5,9 @@ readme = "README.md"
 edition = "2021"
 rust-version = "1.80"
 
+[workspace]
+exclude = [".."]
+
 [[bin]]
 name = "porky"
 path = "src/porky.rs"
