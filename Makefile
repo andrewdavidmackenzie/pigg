@@ -76,7 +76,6 @@ features:
 
 #### arm builds
 .PHONY: build-arm
-# Don't build build-armv7-musl locally on macOS
 build-arm: build-armv7 build-aarch64
 
 #### armv7 targets
