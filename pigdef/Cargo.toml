@@ -13,7 +13,7 @@ exclude.workspace = true
 rust-version.workspace = true
 
 [features]
-default = ["iroh", "tcp", "usb", "discovery"]
+default = []
 tcp = []
 discovery = []
 no_std = []

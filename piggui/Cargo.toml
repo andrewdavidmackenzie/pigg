@@ -24,11 +24,11 @@ path = "src/piggui.rs"
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
-iroh = ["dep:iroh", "pignet/iroh"]
-tcp = ["pignet/tcp"]
-discovery = ["mdns-sd", "pignet/discovery"]
+iroh = ["dep:iroh", "pigdef/iroh", "pignet/iroh"]
+tcp = ["pigdef/tcp", "pignet/tcp"]
+discovery = ["mdns-sd", "pigdef/discovery", "pignet/discovery"]
 no_std = []
-usb = ["pignet/usb"]
+usb = ["pigdef/usb", "pignet/usb"]
 
 [dependencies]
 pigdef = { path = "../pigdef" }
@@ -36,16 +36,10 @@ pignet = { path = "../pignet" }
 pigpio = { path = "../pigpio" }
 
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
-serde = { version = "1.0.217", default-features = false, features = ["derive"] }
-postcard = { version = "1.1.1", features = ["alloc"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
 tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
-# for config serialization to/from file
-serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
 log = { version = "0.4.25", default-features = false }
-#iced_aw = { git = "https://github.com/iced-rs/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
-iced_aw = { git = "https://github.com/andrewdavidmackenzie/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
 iced_futures = { version = "0.13", default-features = false }
 plotters-iced = { version = "0.11", default-features = false }
 plotters = { version = "0.3", default-features = false, features = [
@@ -57,6 +51,13 @@ lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
 
+#iced_aw = { git = "https://github.com/iced-rs/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
+iced_aw = { git = "https://github.com/andrewdavidmackenzie/iced_aw.git", version = "0.11", default-features = false, features = ["menu"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = "0.15.2"
+clap = { version = "4.5.28", default-features = false, features = ["std", "help", "error-context"] }
+
 # Optional dependencies
 iroh = { version = "0.32", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, optional = true }
@@ -65,16 +66,10 @@ mdns-sd = { version = "0.13.2", default-features = false, optional = true }
 tempfile = "3"
 serial_test = "3.1.1"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rfd = "0.15.2"
-clap = { version = "4.5.28", default-features = false, features = ["std", "help", "error-context"] }
-
 # Raspberry Pi specific dependencies
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
 # Use 'tiny-skia' renderer in iced
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
-rppal = "0.22.1"
-libc = "0.2.169"
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(not(any( all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]

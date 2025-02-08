@@ -15,7 +15,7 @@ rust-version.workspace = true
 [dependencies]
 pigdef = { path = "../pigdef" }
 
-serde = { version = "1.0.217", default-features = false, features = ["derive"] }
+[target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm")))'.dependencies]
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]

@@ -24,53 +24,41 @@ path = "src/piglet.rs"
 
 [features]
 default = ["iroh", "tcp", "discovery"]
-tcp = ["dep:portpicker", "dep:local-ip-address"]
-discovery = ["dep:mdns-sd"]
-iroh = ["dep:iroh"]
+tcp = ["pigdef/tcp", "dep:portpicker", "dep:local-ip-address"]
+discovery = ["pigdef/discovery", "dep:mdns-sd"]
+iroh = ["pigdef/iroh", "dep:iroh", "dep:rand"]
 no_std = []
-usb = []
+usb = ["pigdef/usb"]
 
 [dependencies]
 pigdef = { path = "../pigdef" }
 pigpio = { path = "../pigpio" }
+
+# for alloc/no_alloc over the wire serialization/deserialization
+postcard = { version = "1.1.1", features = ["alloc"] }
+async-std = "1.13"
+env_logger = { version = "0.11.6", default-features = false }
+anyhow = { version = "1", default-features = false, features = ["std"] }
+futures = { version = "0.3.31", default-features = false }
+tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
+log = { version = "0.4.25", default-features = false }
+sysinfo = { version = "0.33.1", default-features = false, features = ["system"] }
+service-manager = { version = "0.7.1", default-features = false }
+clap = { version = "4.5.28", default-features = false, features = ["std", "help", "error-context"] }
 
 # Optional Dependencies
 iroh = { version = "0.32", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.3", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, optional = true }
-
-serde = { version = "1.0.217", default-features = false, features = ["derive"] }
-async-std = "1.13"
-
-# for config serialization to/from file
-serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
-# for alloc/no_alloc over the wire serialization/deserialization
-postcard = { version = "1.1.1", features = ["alloc"] }
-
-rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
-env_logger = { version = "0.11.6", default-features = false }
-anyhow = { version = "1", default-features = false, features = ["std"] }
-futures = { version = "0.3.31", default-features = false }
-tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
-
-log = { version = "0.4.25", default-features = false }
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 serial_test = "3.1.1"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-sysinfo = { version = "0.33.1", default-features = false, features = ["system"] }
-service-manager = { version = "0.7.1", default-features = false }
-clap = { version = "4.5.28", default-features = false, features = ["std", "help", "error-context"] }
-
-# Raspberry Pi specific dependencies
-[target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
-rppal = "0.22.1"
-libc = "0.2.169"
-
 [dev-dependencies]
+# For tests
 pignet = { version = "0.6", path = "../pignet" }
 
 [package.metadata.cargo-all-features]

@@ -3,7 +3,6 @@ use iroh::{
     endpoint::Connection,
     RelayMode, RelayUrl, SecretKey, {Endpoint, NodeAddr, NodeId},
 };
-use log::info;
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::HardwareDescription;
@@ -59,7 +58,7 @@ pub async fn connect(
         .bind()
         .await?;
 
-    let local_addrs = endpoint
+    let _local_addrs = endpoint
         .direct_addresses()
         .initialized()
         .await
@@ -68,7 +67,6 @@ pub async fn connect(
         .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
-    info!("local Addresses: {local_addrs}");
 
     // find my closest relay - maybe set this as a default in the UI but allow used to
     // override it in a text entry box. Leave black for user if fails to fetch it.

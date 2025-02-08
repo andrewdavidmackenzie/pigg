@@ -14,21 +14,21 @@ rust-version.workspace = true
 
 [features]
 default = []
-iroh = ["dep:iroh"]
-tcp = []
-discovery = ["iroh/discovery-local-network"]
+iroh = ["pigdef/iroh", "dep:iroh", "dep:rand"]
+tcp = ["pigdef/tcp"]
+discovery = ["pigdef/discovery", "iroh/discovery-local-network"]
 no_std = []
-usb = ["nusb"]
+usb = ["pigdef/usb", "dep:nusb", "dep:tokio", "dep:serde"]
 
 [dependencies]
 pigdef = { path = "../pigdef" }
 
-iroh = { version = "0.32", default-features = false, optional = true }
-nusb = { version = "0.1.12", default-features = false, optional = true }
 postcard = { version = "1.1.1", features = ["alloc"] }
 anyhow = "1.0.95"
-log = "0.4.25"
 async-std = "1.13.0"
-rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
-serde = { version = "1.0.217", default-features = false, features = ["derive"] }
-tokio = "1.43.0"
+
+tokio = { version = "1.43.0", default-features = false, optional = true }
+iroh = { version = "0.32", default-features = false, optional = true }
+nusb = { version = "0.1.12", default-features = false, optional = true }
+serde = { version = "1.0.217", default-features = false, features = ["derive"], optional = true }
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"], optional = true }
