@@ -1,6 +1,9 @@
+#[cfg(feature = "iroh")]
 use iroh::{NodeId, RelayUrl};
+#[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
 use std::fmt::{Display, Formatter};
+#[cfg(feature = "tcp")]
 use std::net::IpAddr;
 
 #[cfg(feature = "discovery")]

@@ -27,3 +27,7 @@ serde_json = { version = "1.0.138", default-features = false, features = ["std"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
+
+[package.metadata.cargo-all-features]
+skip_optional_dependencies = true
+denylist = ["no_std"]

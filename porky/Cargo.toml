@@ -16,14 +16,16 @@ path = "src/porky.rs"
 default = ["no_std"]
 pico1 = ["embassy-rp/rp2040"]
 pico2 = ["embassy-rp/rp235xa"]
-wifi = ["cyw43", "embassy-net", "tcp", "discovery"]
+wifi = ["dep:cyw43", "dep:embassy-net", "tcp", "discovery"]
 no_std = []
 debug-probe = []
-usb = ["embassy-usb"]
-discovery = ["edge-mdns", "edge-nal-embassy", "edge-nal"]
+usb = ["dep:embassy-usb"]
+discovery = ["dep:edge-mdns", "dep:edge-nal-embassy", "dep:edge-nal"]
 tcp = []
 
 [dependencies]
+
+
 # Embassy Dependencies (crates in https://github.com/embassy-rs/embassy)
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.7.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }

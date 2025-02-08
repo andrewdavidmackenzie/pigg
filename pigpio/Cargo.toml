@@ -13,7 +13,8 @@ exclude.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-pigdef = { version = "0.6", path = "../pigdef" }
+pigdef = { path = "../pigdef" }
+
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 

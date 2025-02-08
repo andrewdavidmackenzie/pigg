@@ -24,15 +24,17 @@ path = "src/piggui.rs"
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
-tcp = []
-discovery = ["mdns-sd"]
+iroh = ["dep:iroh", "pignet/iroh"]
+tcp = ["pignet/tcp"]
+discovery = ["mdns-sd", "pignet/discovery"]
 no_std = []
-usb = []
+usb = ["pignet/usb"]
 
 [dependencies]
-pigdef = { version = "0.6", path = "../pigdef" }
-pignet = { version = "0.6", path = "../pignet" }
-pigpio = { version = "0.6", path = "../pigpio" }
+pigdef = { path = "../pigdef" }
+pignet = { path = "../pignet" }
+pigpio = { path = "../pigpio" }
+
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
 postcard = { version = "1.1.1", features = ["alloc"] }

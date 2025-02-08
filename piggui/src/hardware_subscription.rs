@@ -17,6 +17,7 @@ use crate::hardware_subscription::SubscriptionEvent::InputChange;
 use crate::local_host;
 use crate::local_host::LocalConnection;
 use futures::stream::Stream;
+#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use futures::FutureExt;
 use futures::SinkExt;
 use iced::futures::channel::mpsc;
@@ -94,6 +95,7 @@ async fn report_error(gui_sender: &mut Sender<SubscriptionEvent>, e: &str) {
 /// `subscribe` implements an async sender of events from inputs, reading from the hardware and
 /// forwarding to the GUI
 pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
+    #[allow(unused_mut)]
     stream::channel(100, move |mut gui_sender| async move {
         let mut state = Disconnected;
         let mut target = NoConnection;

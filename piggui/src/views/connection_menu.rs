@@ -59,7 +59,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
         _ => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
-            menu_items.push(disconnect);
+            menu_items.push(disconnect); // Can disconnect from local also
         }
     }
 

@@ -10,10 +10,13 @@ use iced_futures::stream;
 use iroh::{NodeId, RelayUrl};
 #[cfg(all(feature = "tcp", feature = "discovery"))]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
+#[cfg(feature = "tcp")]
 use pigdef::description::HardwareDetails;
 #[cfg(feature = "tcp")]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
+#[cfg(feature = "tcp")]
 use pignet::discovery::DiscoveredDevice;
+#[cfg(feature = "tcp")]
 use pignet::discovery::DiscoveryEvent;
 #[cfg(feature = "tcp")]
 use pignet::discovery::DiscoveryMethod::Mdns;
@@ -21,7 +24,9 @@ use pignet::discovery::DiscoveryMethod::Mdns;
 use pignet::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "usb")]
 use pignet::usb_host;
+#[cfg(feature = "tcp")]
 use pignet::HardwareConnection;
+#[cfg(feature = "tcp")]
 use std::collections::HashMap;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;

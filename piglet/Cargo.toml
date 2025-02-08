@@ -24,14 +24,15 @@ path = "src/piglet.rs"
 
 [features]
 default = ["iroh", "tcp", "discovery"]
-tcp = ["portpicker", "local-ip-address"]
-discovery = ["mdns-sd"]
+tcp = ["dep:portpicker", "dep:local-ip-address"]
+discovery = ["dep:mdns-sd"]
+iroh = ["dep:iroh"]
 no_std = []
 usb = []
 
 [dependencies]
-pigdef = { version = "0.6", path = "../pigdef" }
-pigpio = { version = "0.6", path = "../pigpio" }
+pigdef = { path = "../pigdef" }
+pigpio = { path = "../pigpio" }
 
 # Optional Dependencies
 iroh = { version = "0.32", default-features = false, optional = true }
