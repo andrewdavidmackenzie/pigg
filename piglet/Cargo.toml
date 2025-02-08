@@ -69,6 +69,9 @@ clap = { version = "4.5.28", default-features = false, features = ["std", "help"
 rppal = "0.22.1"
 libc = "0.2.169"
 
+[dev-dependencies]
+pignet = { version = "0.6", path = "../pignet" }
+
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
 denylist = ["no_std"]

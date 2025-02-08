@@ -102,7 +102,7 @@ pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, Error> {
 }
 
 /// Generic request to send data to device over USB [ControlOut]
-async fn send_control_out<'a>(porky: &Interface, control_out: ControlOut<'a>) -> Result<(), Error> {
+async fn send_control_out(porky: &Interface, control_out: ControlOut<'_>) -> Result<(), Error> {
     Ok(porky.control_out(control_out).await.status?)
 }
 
@@ -157,7 +157,7 @@ pub struct UsbConnection {
 }
 
 /// Wait until we receive a message from device over USB Interrupt In
-pub async fn wait_for_remote_message<'de, T>(porky: &UsbConnection) -> Result<T, Error>
+pub async fn wait_for_remote_message<T>(porky: &UsbConnection) -> Result<T, Error>
 where
     T: DeserializeOwned,
 {

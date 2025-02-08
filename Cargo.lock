@@ -4406,6 +4406,7 @@ dependencies = [
  "log",
  "mdns-sd",
  "pigdef",
+ "pignet",
  "pigpio",
  "portpicker",
  "postcard",
