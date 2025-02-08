@@ -2410,11 +2410,11 @@ dependencies = [
 
 [[package]]
 name = "iced_aw"
-version = "0.11.0"
-source = "git+https://github.com/andrewdavidmackenzie/iced_aw.git#bd6b1495706b7e4247d612aa8e8be7e11cf14f3f"
+version = "0.12.0"
+source = "git+https://github.com/iced-rs/iced_aw.git#edbfa076bdbbf57e9959f3527c3fad5e1754dd8c"
 dependencies = [
  "cfg-if",
- "getrandom 0.2.15",
+ "getrandom 0.3.1",
  "iced",
  "iced_fonts",
  "web-time",
