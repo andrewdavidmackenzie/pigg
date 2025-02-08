@@ -9,6 +9,7 @@ use std::io::BufReader;
 use std::io::Write;
 use std::path::Path;
 
+// TODO make this function async
 /// Load a new GPIOConfig from the file named `filename`
 pub fn load_cfg(filename: &str) -> io::Result<HardwareConfig> {
     let file = std::fs::File::open(filename)?;
@@ -17,9 +18,10 @@ pub fn load_cfg(filename: &str) -> io::Result<HardwareConfig> {
     Ok(config)
 }
 
+// TODO make this function async
 /// Save this GPIOConfig to the file named `filename`
 #[allow(dead_code)] // for piglet
-pub fn save_cfg(hardware_config: &HardwareConfig, filename: &str) -> std::io::Result<String> {
+pub fn save_cfg(hardware_config: &HardwareConfig, filename: &str) -> io::Result<String> {
     let mut file = std::fs::File::create(filename)?;
     let contents = serde_json::to_string(hardware_config)?;
     file.write_all(contents.as_bytes())?;
