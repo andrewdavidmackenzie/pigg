@@ -50,8 +50,10 @@ once_cell = { version = "1.20.2", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
-
 iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
+
+# for config serialization to/from file
+serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.15.2"

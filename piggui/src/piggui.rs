@@ -44,9 +44,11 @@ use std::str::FromStr;
 mod discovery;
 
 #[cfg(not(target_arch = "wasm32"))]
-mod file_helper;
+pub mod file_helper;
 mod hardware_subscription;
 mod local_host;
+#[cfg(not(target_arch = "wasm32"))]
+mod persistence;
 mod views;
 mod widgets;
 

@@ -1,7 +1,7 @@
 use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
-use crate::Message;
 use crate::Message::{ConfigLoaded, InfoRow};
+use crate::{persistence, Message};
 use iced::Task;
 use pigdef::config::HardwareConfig;
 use std::{env, io};
@@ -9,7 +9,7 @@ use std::{env, io};
 /// Asynchronously load a .piggui config file from file named `filename` (no picker)
 /// In the result, return the filename and the loaded [HardwareConfig]
 async fn load(filename: String) -> io::Result<(String, HardwareConfig)> {
-    let config = HardwareConfig::load(&filename)?;
+    let config = persistence::load_cfg(&filename)?;
     Ok((filename, config))
 }
 
@@ -47,7 +47,7 @@ async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
     {
         let path: std::path::PathBuf = handle.path().to_owned();
         let path_str = path.display().to_string();
-        gpio_config.save(&path_str)?;
+        persistence::save_cfg(&gpio_config, &path_str)?;
         Ok(true)
     } else {
         Ok(false)

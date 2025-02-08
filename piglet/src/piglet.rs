@@ -1,17 +1,6 @@
 #![deny(clippy::unwrap_used)]
 #![cfg(not(target_arch = "wasm32"))]
 
-use std::{
-    env,
-    env::current_exe,
-    fs, io,
-    path::{Path, PathBuf},
-    process,
-    process::exit,
-    str::FromStr,
-    time::Duration,
-};
-
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
 use env_logger::{Builder, Target};
@@ -24,6 +13,17 @@ use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
     ServiceUninstallCtx,
 };
+use std::fs::File;
+use std::{
+    env,
+    env::current_exe,
+    fs, io,
+    path::{Path, PathBuf},
+    process,
+    process::exit,
+    str::FromStr,
+    time::Duration,
+};
 use sysinfo::{Process, System};
 
 use pigpio::get;
@@ -34,6 +34,8 @@ use crate::device_net::iroh_device;
 use crate::device_net::tcp_device;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use std::io::Write;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
 mod device_net;
@@ -43,6 +45,18 @@ mod device_net;
 mod persistence;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
+
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+/// Write a [ListenerInfo] file that captures information that can be used to connect to piglet
+pub(crate) fn write_info_file(
+    info_path: &Path,
+    listener_info: &ListenerInfo,
+) -> anyhow::Result<()> {
+    let mut output = File::create(info_path)?;
+    write!(output, "{}", listener_info)?;
+    info!("Info file written at: {info_path:?}");
+    Ok(())
+}
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
@@ -134,7 +148,7 @@ async fn run_service(
 
     // write the info about the node to the info_path file for use in piggui
     #[cfg(any(feature = "iroh", feature = "tcp"))]
-    persistence::write_info_file(info_path, &listener_info)?;
+    write_info_file(info_path, &listener_info)?;
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     let desc = hw.description(env!("CARGO_PKG_NAME"))?;
@@ -464,6 +478,73 @@ fn register_mdns(
     );
 
     Ok((service_info, service_daemon))
+}
+
+#[cfg(test)]
+mod test {
+    use crate::ListenerInfo;
+    use iroh::RelayUrl;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::str::FromStr;
+    use tempfile::tempdir;
+
+    #[cfg(feature = "iroh")]
+    #[test]
+    fn write_info_file() {
+        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let test_file = output_dir.join("test.info");
+        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
+        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+            .expect("Could not create Relay URL");
+
+        let info = ListenerInfo {
+            iroh_info: crate::iroh_device::IrohDevice {
+                nodeid,
+                relay_url,
+                endpoint: None,
+            },
+            #[cfg(feature = "tcp")]
+            tcp_info: crate::tcp_device::TcpDevice {
+                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
+                port: 9001,
+                listener: None,
+            },
+        };
+
+        super::write_info_file(&test_file, &info).expect("Writing info file failed");
+        assert!(test_file.exists(), "File was not created as expected");
+        let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
+        assert!(piglet_info.contains(&nodeid.to_string()))
+    }
+
+    #[cfg(feature = "iroh")]
+    #[test]
+    fn write_info_file_non_existent() {
+        let output_dir = PathBuf::from("/foo");
+        let test_file = output_dir.join("test.info");
+        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
+        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
+            .expect("Could not create Relay URL");
+        let info = ListenerInfo {
+            iroh_info: crate::iroh_device::IrohDevice {
+                nodeid,
+                relay_url,
+                endpoint: None,
+            },
+            #[cfg(feature = "tcp")]
+            tcp_info: crate::tcp_device::TcpDevice {
+                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
+                port: 9001,
+                listener: None,
+            },
+        };
+
+        assert!(super::write_info_file(&test_file, &info).is_err());
+        assert!(!test_file.exists(), "File was created!");
+    }
 }
 
 /*

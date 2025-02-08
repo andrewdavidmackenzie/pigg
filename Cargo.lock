@@ -4354,7 +4354,6 @@ name = "pigdef"
 version = "0.6.0"
 dependencies = [
  "serde",
- "serde_json",
  "tempfile",
 ]
 
@@ -4381,6 +4380,7 @@ dependencies = [
  "plotters",
  "plotters-iced",
  "rfd",
+ "serde_json",
  "serial_test",
  "tempfile",
  "tokio",
@@ -4406,6 +4406,7 @@ dependencies = [
  "portpicker",
  "postcard",
  "rand",
+ "serde_json",
  "serial_test",
  "service-manager",
  "sysinfo",
