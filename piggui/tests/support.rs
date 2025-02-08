@@ -63,6 +63,7 @@ fn wait_for<R: BufRead>(token: &str, reader: &mut R) -> Option<String> {
         if line.contains(token) {
             return Some(line);
         }
+        line.clear();
     }
 
     None

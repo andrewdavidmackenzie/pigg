@@ -490,12 +490,12 @@ impl Piggui {
 #[allow(unused_variables)]
 fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
     #[allow(unused_mut)]
-    let mut target = HardwareConnection::default();
+    let mut connection = HardwareConnection::default();
 
     #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid") {
         if let Ok(nodeid) = NodeId::from_str(node_str) {
-            target = HardwareConnection::Iroh(nodeid, None);
+            connection = HardwareConnection::Iroh(nodeid, None);
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
         }
@@ -504,16 +504,16 @@ fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
     #[cfg(feature = "tcp")]
     if let Some(ip_str) = matches.get_one::<String>("ip") {
         if let Ok(tcp_target) = parse_ip_string(ip_str) {
-            target = tcp_target;
+            connection = tcp_target;
         }
     }
 
     #[cfg(feature = "usb")]
     if let Some(usb_str) = matches.get_one::<String>("usb") {
-        target = HardwareConnection::Usb(usb_str.to_string());
+        connection = HardwareConnection::Usb(usb_str.to_string());
     }
 
-    target
+    connection
 }
 
 #[cfg(feature = "tcp")]
