@@ -1,7 +1,5 @@
 use crate::description::{BCMPinNumber, PinLevel};
 use crate::pin_function::PinFunction;
-use core::clone::Clone;
-use core::cmp::PartialEq;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
@@ -18,8 +16,6 @@ use core::fmt::Debug;
 use core::marker::Copy;
 #[cfg(not(feature = "std"))]
 use core::option::Option;
-#[cfg(not(feature = "std"))]
-use core::prelude::rust_2024::derive;
 #[cfg(not(feature = "std"))]
 use core::prelude::rust_2024::derive;
 #[cfg(not(feature = "std"))]

@@ -5,7 +5,6 @@ use log::{info, trace};
 use pigdef::config::HardwareConfig;
 use std::io;
 use std::io::BufReader;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
 use std::path::Path;
 

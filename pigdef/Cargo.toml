@@ -19,7 +19,7 @@ discovery = []
 no_std = ["dep:heapless", "dep:embassy-time"]
 usb = []
 iroh = []
-std = []
+std = ["serde/std"]
 
 [dependencies]
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }

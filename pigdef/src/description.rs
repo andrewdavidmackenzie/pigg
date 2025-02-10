@@ -1,20 +1,21 @@
+use crate::pin_function::PinFunction;
+use serde::{Deserialize, Serialize};
+
 #[cfg(not(feature = "std"))]
 use core::clone::Clone;
 #[cfg(not(feature = "std"))]
 use core::option::Option;
 #[cfg(not(feature = "std"))]
 use core::prelude::rust_2024::derive;
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "std")]
-use std::borrow::Cow;
-#[cfg(feature = "std")]
-use std::string::String;
-
-use crate::pin_function::PinFunction;
 #[cfg(not(feature = "std"))]
 use heapless::String;
 #[cfg(not(feature = "std"))]
 use heapless::Vec;
+
+#[cfg(feature = "std")]
+use std::borrow::Cow;
+#[cfg(feature = "std")]
+use std::string::String;
 #[cfg(feature = "std")]
 use std::vec::Vec;
 

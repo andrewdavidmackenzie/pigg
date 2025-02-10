@@ -1,5 +1,7 @@
 use crate::config::InputPull;
 use crate::description::PinLevel;
+use serde::{Deserialize, Serialize};
+
 #[cfg(not(feature = "std"))]
 use core::clone::Clone;
 #[cfg(not(feature = "std"))]
@@ -12,8 +14,6 @@ use core::marker::Copy;
 use core::option::Option;
 #[cfg(not(feature = "std"))]
 use core::prelude::rust_2024::derive;
-
-use serde::{Deserialize, Serialize};
 
 /// For SPI interfaces see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
 ///
