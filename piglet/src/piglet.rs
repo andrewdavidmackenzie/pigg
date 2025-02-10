@@ -13,6 +13,7 @@ use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
     ServiceUninstallCtx,
 };
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::fs::File;
 use std::{
     env,

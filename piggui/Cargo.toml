@@ -26,7 +26,7 @@ path = "src/piggui.rs"
 default = ["iroh", "tcp", "usb", "discovery"]
 iroh = ["pigdef/iroh", "pignet/iroh", "dep:iroh"]
 tcp = ["pigdef/tcp", "pignet/tcp"]
-discovery = ["dep:mdns-sd", "pigdef/discovery", "pignet/discovery"]
+discovery = ["pigdef/discovery", "pignet/discovery", "dep:mdns-sd"]
 no_std = []
 usb = ["pigdef/usb", "pignet/usb"]
 
@@ -61,7 +61,7 @@ clap = { version = "4.5.28", default-features = false, features = ["std", "help"
 
 # Optional dependencies
 iroh = { version = "0.32", default-features = false, optional = true }
-mdns-sd = { version = "0.13.2", default-features = false, optional = true }
+mdns-sd = { version = "0.13.2", default-features = false, features = ["async"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"

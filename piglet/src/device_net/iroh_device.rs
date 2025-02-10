@@ -2,7 +2,6 @@ use crate::persistence;
 use anyhow::{anyhow, bail, Context};
 use iroh::endpoint::Connection;
 use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
-#[cfg(feature = "discovery")]
 use log::{debug, info, trace};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};

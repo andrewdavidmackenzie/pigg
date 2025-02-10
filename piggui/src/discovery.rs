@@ -16,7 +16,7 @@ use pigdef::description::HardwareDetails;
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 #[cfg(feature = "tcp")]
 use pignet::discovery::DiscoveredDevice;
-#[cfg(feature = "tcp")]
+#[cfg(any(feature = "tcp", feature = "usb"))]
 use pignet::discovery::DiscoveryEvent;
 #[cfg(feature = "tcp")]
 use pignet::discovery::DiscoveryMethod::Mdns;
@@ -108,6 +108,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     })
 }
 
+// TODO Could separate out the TCP part and mDNS discover devices for Iroh connections only also
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
 pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {

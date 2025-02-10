@@ -40,7 +40,7 @@ async-std = "1.13"
 env_logger = { version = "0.11.6", default-features = false }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
-tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
+tokio = { version = "1.43", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
 log = { version = "0.4.25", default-features = false }
 sysinfo = { version = "0.33.1", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
