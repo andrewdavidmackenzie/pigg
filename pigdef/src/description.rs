@@ -1,16 +1,21 @@
+#[cfg(not(feature = "std"))]
+use core::clone::Clone;
+#[cfg(not(feature = "std"))]
+use core::option::Option;
+#[cfg(not(feature = "std"))]
+use core::prelude::rust_2024::derive;
 use serde::{Deserialize, Serialize};
-
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 use std::borrow::Cow;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 use std::string::String;
 
 use crate::pin_function::PinFunction;
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 use heapless::String;
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 use heapless::Vec;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 use std::vec::Vec;
 
 #[allow(dead_code)] // Not used by piglet
@@ -40,20 +45,19 @@ pub type BoardPinNumber = u8;
 /// [PinLevel] describes whether a Pin's logical level is High(true) or Low(false)
 pub type PinLevel = bool;
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 /// A 16 character String represents a serial number for a device
 pub type SerialNumber = String;
 
 /// [HardwareDescription] contains details about the board we are running on and the GPIO pins
-#[cfg(not(feature = "no_std"))]
-#[derive(Serialize)]
-#[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Deserialize))]
+#[cfg(feature = "std")]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct HardwareDescription {
     pub details: HardwareDetails,
     pub pins: PinDescriptionSet,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 /// `PinDescriptionSet` describes a set of Pins on a device, using `PinDescription`s
 impl PinDescriptionSet {
     /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
@@ -70,15 +74,15 @@ impl PinDescriptionSet {
     }
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 #[derive(Serialize)]
-#[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Deserialize))]
+#[cfg_attr(feature = "std", derive(Debug, Clone, Deserialize))]
 pub struct HardwareDescription<'a> {
     pub details: HardwareDetails<'a>,
     pub pins: PinDescriptionSet<'a>,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HardwareDetails {
@@ -98,7 +102,7 @@ pub struct HardwareDetails {
     pub app_version: String,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl std::fmt::Display for HardwareDetails {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Application: {}", self.app_name)?;
@@ -114,7 +118,7 @@ impl std::fmt::Display for HardwareDetails {
         }
     }
 }
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
 #[derive(Serialize)]
 pub struct HardwareDetails<'a> {
@@ -127,7 +131,7 @@ pub struct HardwareDetails<'a> {
     pub app_version: &'a str,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 /// [SsidSpec] contains details on how the device connects to Wi-Fi
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SsidSpec {
@@ -136,7 +140,7 @@ pub struct SsidSpec {
     pub ssid_security: String,
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 /// [WiFiDetails] contains details on how the device connects to Wi-Fi
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SsidSpec {
@@ -145,7 +149,7 @@ pub struct SsidSpec {
     pub ssid_security: String<4>,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl SsidSpec {
     /// Try and create a new [SsidSpec] using name, password and security fields, validating
     /// the combination. Return an `Ok` with the [SsisSpec] or an `Err` with an error string
@@ -184,7 +188,7 @@ impl SsidSpec {
     }
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 /// [WiFiDetails] contains details on Wi-Fi connection and connections details
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WiFiDetails {
@@ -192,7 +196,7 @@ pub struct WiFiDetails {
     pub tcp: Option<([u8; 4], u16)>, // ("ip", port)
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 /// [WiFiDetails] contains details on WiFi connection and connections details
 #[derive(Serialize)]
 pub struct WiFiDetails {
@@ -200,7 +204,7 @@ pub struct WiFiDetails {
     pub tcp: Option<([u8; 4], u16)>, // ("ip", port)
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 /// [PinDescription] describes a pins in the connected hardware.
 /// Vec indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize, Debug, Clone, Deserialize)]
@@ -208,7 +212,7 @@ pub struct PinDescriptionSet {
     pins: Vec<PinDescription>,
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 /// [PinDescription] describes a pins in the connected hardware.
 /// Array indexed from 0 so, index = board_pin_number -1, as pin numbering start at 1
 #[derive(Serialize)]
@@ -216,7 +220,7 @@ pub struct PinDescriptionSet<'a> {
     pub pins: Vec<PinDescription<'a>, 40>,
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 impl<'a> PinDescriptionSet<'a> {
     /// Create a new [PinDescriptionSet] from a slice of pins
     pub fn new(pin_slice: &'a [PinDescription]) -> Self {
@@ -226,7 +230,7 @@ impl<'a> PinDescriptionSet<'a> {
     }
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl PinDescriptionSet {
     /// Return a slice of PinDescriptions
     #[allow(dead_code)] // for piglet
@@ -242,7 +246,7 @@ impl PinDescriptionSet {
     }
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 /// [PinDescription] is used to describe each pin and possible uses it can be put to
 /// * [board_pin_number] refer to the pins by the number of the pin printed on the board
 /// * [bcm_pin_number] refer to the pins by the "Broadcom SOC channel" number. Programmable pins
@@ -257,7 +261,7 @@ pub struct PinDescription {
     pub options: Cow<'static, [PinFunction]>,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl std::fmt::Display for PinDescription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Board Pin #: {}", self.bpn)?;
@@ -267,7 +271,7 @@ impl std::fmt::Display for PinDescription {
     }
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 #[derive(Clone, Serialize)]
 pub struct PinDescription<'a> {
     pub bpn: BoardPinNumber,

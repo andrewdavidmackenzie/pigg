@@ -1,27 +1,34 @@
 use crate::description::{BCMPinNumber, PinLevel};
 use crate::pin_function::PinFunction;
-#[cfg(feature = "no_std")]
+use core::clone::Clone;
+use core::cmp::PartialEq;
+#[cfg(not(feature = "std"))]
+use core::convert::From;
+use core::default::Default;
+use core::fmt::Debug;
+use core::marker::Copy;
+use core::option::Option;
+#[cfg(not(feature = "std"))]
+use core::prelude::rust_2024::derive;
+#[cfg(not(feature = "std"))]
 use heapless::FnvIndexMap;
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 use std::collections::HashMap;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 use std::time::Duration;
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
-#[cfg_attr(
-    not(feature = "no_std"),
-    derive(Debug, Clone, Serialize, Deserialize, Default)
-)]
-#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize, Default))]
+#[cfg_attr(feature = "std", derive(Debug, Clone, Serialize, Deserialize, Default))]
+#[cfg_attr(not(feature = "std"), derive(Clone, Serialize, Deserialize, Default))]
 pub struct HardwareConfig {
-    #[cfg(not(feature = "no_std"))]
+    #[cfg(feature = "std")]
     pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
-    #[cfg(feature = "no_std")]
+    #[cfg(not(feature = "std"))]
     pub pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 32>,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl std::fmt::Display for HardwareConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.pin_functions.is_empty() {
@@ -41,8 +48,8 @@ impl std::fmt::Display for HardwareConfig {
 ///    * NewConfig
 ///    * NewPinConfig
 ///    * OutputLevelChanged
-#[cfg_attr(not(feature = "no_std"), derive(Debug, Clone, Serialize, Deserialize))]
-#[cfg_attr(feature = "no_std", derive(Clone, Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Debug, Clone, Serialize, Deserialize))]
+#[cfg_attr(not(feature = "std"), derive(Clone, Serialize, Deserialize))]
 #[allow(clippy::large_enum_variant)]
 pub enum HardwareConfigMessage {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
@@ -58,14 +65,14 @@ pub enum HardwareConfigMessage {
     Disconnect,
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Duration {
     pub secs: u64,
     pub nanos: u32,
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 impl From<embassy_time::Duration> for Duration {
     fn from(duration: embassy_time::Duration) -> Self {
         Duration {
@@ -75,7 +82,7 @@ impl From<embassy_time::Duration> for Duration {
     }
 }
 
-#[cfg(feature = "no_std")]
+#[cfg(not(feature = "std"))]
 impl From<Duration> for embassy_time::Duration {
     fn from(duration: Duration) -> Self {
         embassy_time::Duration::from_nanos((duration.secs * 1_000_000_000) + duration.nanos as u64)
@@ -85,7 +92,7 @@ impl From<Duration> for embassy_time::Duration {
 /// LevelChange describes the change in level of an input or Output and when it occurred
 /// - `new_level` : [PinLevel]
 /// - `timestamp` : [Duration]
-#[cfg_attr(not(feature = "no_std"), derive(Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LevelChange {
     pub new_level: PinLevel,
@@ -102,7 +109,7 @@ impl LevelChange {
     }
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl std::fmt::Display for LevelChange {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(
@@ -121,7 +128,7 @@ pub enum InputPull {
     None,
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl std::fmt::Display for InputPull {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -132,7 +139,7 @@ impl std::fmt::Display for InputPull {
     }
 }
 
-#[cfg(all(test, not(feature = "no_std")))]
+#[cfg(all(test, feature = "std"))]
 mod test {
     use crate::config::HardwareConfig;
     use crate::config::LevelChange;

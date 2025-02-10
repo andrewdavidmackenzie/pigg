@@ -1,6 +1,6 @@
-use crate::config::InputPull;
-use crate::description::PinDescription;
-use crate::pin_function::PinFunction;
+use pigdef::config::InputPull;
+use pigdef::description::PinDescription;
+use pigdef::pin_function::PinFunction;
 
 #[cfg(feature = "debug-probe")]
 const PIN_1: PinDescription = PinDescription {

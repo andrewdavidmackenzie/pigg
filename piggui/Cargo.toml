@@ -73,7 +73,7 @@ serial_test = "3.1.1"
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
-[target.'cfg(not(any( all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
+[target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
 
 [package.metadata.cargo-all-features]

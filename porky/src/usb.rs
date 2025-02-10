@@ -1,18 +1,7 @@
-use crate::config::HardwareConfigMessage::Disconnect;
-use crate::config::{HardwareConfig, HardwareConfigMessage};
-use crate::description::HardwareDescription;
-#[cfg(feature = "wifi")]
-use crate::description::{SsidSpec, WiFiDetails};
 use crate::flash;
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
 use crate::persistence;
-use crate::usb_values::{
-    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST,
-    USB_PACKET_SIZE,
-};
-#[cfg(feature = "wifi")]
-use crate::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
 use crate::HARDWARE_EVENT_CHANNEL;
 use core::str;
 #[cfg(feature = "wifi")]
@@ -37,6 +26,17 @@ use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
 use embassy_usb::{msos, Handler, UsbDevice};
 use embassy_usb::{Builder, Config};
+use pigdef::config::HardwareConfigMessage::Disconnect;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
+use pigdef::description::HardwareDescription;
+#[cfg(feature = "wifi")]
+use pigdef::description::{SsidSpec, WiFiDetails};
+use pigdef::usb_values::{
+    GET_HARDWARE_DESCRIPTION_VALUE, GET_HARDWARE_DETAILS_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST,
+    USB_PACKET_SIZE,
+};
+#[cfg(feature = "wifi")]
+use pigdef::usb_values::{GET_WIFI_VALUE, RESET_SSID_VALUE, SET_SSID_VALUE};
 use serde::Serialize;
 use static_cell::StaticCell;
 

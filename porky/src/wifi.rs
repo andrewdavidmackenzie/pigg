@@ -1,4 +1,3 @@
-use crate::description::SsidSpec;
 use core::net::Ipv4Addr;
 use cyw43::Control;
 use cyw43::{JoinAuth, JoinOptions};
@@ -11,6 +10,7 @@ use embassy_rp::gpio::Level;
 use embassy_rp::gpio::Output;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
 use embassy_time::Timer;
+use pigdef::description::SsidSpec;
 use rand::RngCore;
 use static_cell::StaticCell;
 

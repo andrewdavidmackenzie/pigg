@@ -1,12 +1,5 @@
-use crate::config::HardwareConfig;
-use crate::config::HardwareConfigMessage;
-use crate::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
-use crate::config::InputPull;
-use crate::description::{BCMPinNumber, PinLevel};
 use crate::gpio::GPIOPin::Available;
 use crate::gpio_input_monitor::monitor_input;
-use crate::pin_function::PinFunction;
-use crate::pin_function::PinFunction::{Input, Output};
 #[cfg(feature = "wifi")]
 use cyw43::Control;
 use defmt::{debug, error, info};
@@ -23,6 +16,13 @@ use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::channel::{Receiver, Sender};
 use heapless::FnvIndexMap;
+use pigdef::config::HardwareConfig;
+use pigdef::config::HardwareConfigMessage;
+use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
+use pigdef::config::InputPull;
+use pigdef::description::{BCMPinNumber, PinLevel};
+use pigdef::pin_function::PinFunction;
+use pigdef::pin_function::PinFunction::{Input, Output};
 use static_cell::StaticCell;
 
 /// The configured/not-configured state of the GPIO Pins on the Pi Pico, and how to access them

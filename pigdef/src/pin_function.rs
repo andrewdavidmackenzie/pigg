@@ -1,5 +1,18 @@
 use crate::config::InputPull;
 use crate::description::PinLevel;
+#[cfg(not(feature = "std"))]
+use core::clone::Clone;
+#[cfg(not(feature = "std"))]
+use core::cmp::PartialEq;
+#[cfg(not(feature = "std"))]
+use core::fmt::Debug;
+#[cfg(not(feature = "std"))]
+use core::marker::Copy;
+#[cfg(not(feature = "std"))]
+use core::option::Option;
+#[cfg(not(feature = "std"))]
+use core::prelude::rust_2024::derive;
+
 use serde::{Deserialize, Serialize};
 
 /// For SPI interfaces see [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#serial-peripheral-interface-spi)
@@ -83,7 +96,7 @@ pub enum PinFunction {
      */
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl std::fmt::Display for PinFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Remove anything after the first opening bracket of debug representation
@@ -92,7 +105,7 @@ impl std::fmt::Display for PinFunction {
     }
 }
 
-#[cfg(all(test, not(feature = "no_std")))]
+#[cfg(all(test, feature = "std"))]
 mod test {
     use crate::config::InputPull::{PullDown, PullUp};
     use crate::pin_function::PinFunction;
