@@ -9,9 +9,10 @@ use self::ConnectDialogMessage::{
 use self::ConnectDialogMessage::{
     ConnectionError, HideConnectDialog, ModalKeyEvent, ShowConnectDialog,
 };
+#[cfg(feature = "iroh")]
+use pignet::HardwareConnection::Iroh;
 #[cfg(feature = "tcp")]
 use pignet::HardwareConnection::Tcp;
-use pignet::HardwareConnection::*;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
 

@@ -16,7 +16,7 @@ rust-version.workspace = true
 default = []
 iroh = ["pigdef/iroh", "dep:iroh", "dep:rand"]
 tcp = ["pigdef/tcp"]
-discovery = ["pigdef/discovery", "iroh/discovery-local-network"]
+discovery = ["pigdef/discovery"]
 no_std = []
 usb = ["pigdef/usb", "dep:nusb", "dep:tokio", "dep:serde"]
 

@@ -40,9 +40,9 @@ use pigpio::get;
 use std::collections::HashMap;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
+
 #[cfg(feature = "discovery")]
 mod discovery;
-
 #[cfg(not(target_arch = "wasm32"))]
 pub mod file_helper;
 mod hardware_subscription;

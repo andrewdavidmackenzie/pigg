@@ -24,9 +24,9 @@ path = "src/piggui.rs"
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
-iroh = ["dep:iroh", "pigdef/iroh", "pignet/iroh"]
+iroh = ["pigdef/iroh", "pignet/iroh", "dep:iroh"]
 tcp = ["pigdef/tcp", "pignet/tcp"]
-discovery = ["mdns-sd", "pigdef/discovery", "pignet/discovery"]
+discovery = ["dep:mdns-sd", "pigdef/discovery", "pignet/discovery"]
 no_std = []
 usb = ["pigdef/usb", "pignet/usb"]
 

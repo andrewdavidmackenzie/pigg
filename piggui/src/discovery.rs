@@ -1,14 +1,14 @@
-#[cfg(any(feature = "usb", feature = "tcp"))]
-use async_std::prelude::Stream;
 #[cfg(feature = "usb")]
 use futures::channel::mpsc::Sender;
+#[cfg(any(feature = "usb", feature = "tcp"))]
+use futures::stream::Stream;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use futures::SinkExt;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh::{NodeId, RelayUrl};
-#[cfg(all(feature = "tcp", feature = "discovery"))]
+#[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 #[cfg(feature = "tcp")]
 use pigdef::description::HardwareDetails;
@@ -30,7 +30,7 @@ use pignet::HardwareConnection;
 use std::collections::HashMap;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
-#[cfg(feature = "tcp")]
+#[cfg(all(feature = "tcp", feature = "iroh"))]
 use std::str::FromStr;
 #[cfg(feature = "usb")]
 use std::time::Duration;
