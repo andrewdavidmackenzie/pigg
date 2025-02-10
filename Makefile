@@ -8,9 +8,7 @@
 # default target: "make" ran on macos or linux host should build these binaries:
 # target/debug/piggui - GUI version without GPIO, to enable UI development on a host
 # target/aarch64-unknown-linux-gnu/release/piggui - GUI version for Pi with GPIO, can be run natively from RPi command line
-# target/aarch64-unknown-linux-gnu/release/piglet - Headless version for Pi with GPIO, can be run natively from RPi command line
 # target/armv7-unknown-linux-gnueabihf/release/piggui - GUI version for armv7 based architecture with GPIO, can be run natively
-# target/armv7-unknown-linux-gnueabihf/release/piglet - Headless version for armv7 based architecture with GPIO, can be run natively
 
 # MacOS pre-requisites for cross-compiling to armv7
 # brew install arm-linux-gnueabihf-binutils
@@ -37,19 +35,17 @@ clean:
 clippy:
 	cargo clippy --tests --no-deps
 
-# Enable the "iced" feature so we only build the "piggui" binary on the current host (macos, linux or raspberry pi)
-# To build both binaries on a Pi directly, we will need to modify this
 .PHONY: build
 build:
 	cargo build
 
 .PHONY: run
 run:
-	cargo run
+	cargo run --bin piggui
 
 .PHONY: run-release
 run-release:
-	cargo run --release
+	cargo run --bin piggui --release
 
 .PHONY: run-piglet
 run-piglet:
@@ -59,7 +55,6 @@ run-piglet:
 run-release-piglet:
 	cargo run --bin piglet --release
 
-# This will build all binaries on the current host, be it macos, linux or raspberry pi - with release profile
 .PHONY: build-release
 build-release:
 	cargo build --release
@@ -81,7 +76,6 @@ features:
 
 #### arm builds
 .PHONY: build-arm
-# Don't build build-armv7-musl locally on macOS
 build-arm: build-armv7 build-aarch64
 
 #### armv7 targets
@@ -119,7 +113,6 @@ copy-armv7:
 copy-release-armv7:
 	scp target/armv7-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
-
 
 #### aarch64 targets
 .PHONY: aarch64
@@ -159,11 +152,11 @@ ssh:
 .PHONY: web-build
 web-build:
 	rustup target add wasm32-unknown-unknown
-	cargo build --target wasm32-unknown-unknown --no-default-features
+	cargo build --bin piggui --target wasm32-unknown-unknown --no-default-features
 
 .PHONY: web-run
 web-run: web-build
-	trunk serve
+	cd piggui && trunk serve
 
 .PHONY: usb
 usb:

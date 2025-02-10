@@ -1,0 +1,34 @@
+[package]
+name = "pignet"
+description = "Netwok crate for use by other crates in the pigg project"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+iroh = ["pigdef/iroh", "dep:iroh", "dep:rand"]
+tcp = ["pigdef/tcp"]
+discovery = ["pigdef/discovery"]
+no_std = []
+usb = ["pigdef/usb", "dep:nusb", "dep:tokio", "dep:serde"]
+
+[dependencies]
+pigdef = { path = "../pigdef" }
+
+postcard = { version = "1.1.1", features = ["alloc"] }
+anyhow = "1.0.95"
+async-std = "1.13.0"
+
+tokio = { version = "1.43.0", default-features = false, features = ["time"], optional = true }
+iroh = { version = "0.32", default-features = false, optional = true }
+nusb = { version = "0.1.12", default-features = false, optional = true }
+serde = { version = "1.0.217", default-features = false, features = ["derive"], optional = true }
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"], optional = true }

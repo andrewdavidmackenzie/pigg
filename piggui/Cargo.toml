@@ -1,0 +1,85 @@
+[package]
+name = "piggui"
+description = "A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
+
+[package.metadata.wix]
+upgrade-guid = "7DCB054F-6CE0-4914-876E-AEA0C2E91328"
+path-guid = "17155407-8DA8-45BD-8C67-91FE4C7E99AA"
+license = false
+eula = false
+
+[[bin]]
+name = "piggui"
+path = "src/piggui.rs"
+
+[features]
+default = ["iroh", "tcp", "usb", "discovery"]
+iroh = ["pigdef/iroh", "pignet/iroh", "dep:iroh"]
+tcp = ["pigdef/tcp", "pignet/tcp"]
+discovery = ["pigdef/discovery", "pignet/discovery", "dep:mdns-sd"]
+no_std = []
+usb = ["pigdef/usb", "pignet/usb"]
+
+[dependencies]
+pigdef = { path = "../pigdef" }
+pignet = { path = "../pignet" }
+pigpio = { path = "../pigpio" }
+
+chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
+anyhow = { version = "1", default-features = false, features = ["std"] }
+futures = { version = "0.3.31", default-features = false }
+tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
+log = { version = "0.4.25", default-features = false }
+iced_futures = { version = "0.13", default-features = false }
+plotters-iced = { version = "0.11", default-features = false }
+plotters = { version = "0.3", default-features = false, features = [
+    "chrono",
+    "line_series",
+] }
+once_cell = { version = "1.20.2", default-features = false }
+lyon_algorithms = { version = "1.0", default-features = false }
+async-std = "1.13"
+webbrowser = { version = "1.0", default-features = false }
+iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
+
+# for config serialization to/from file
+serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = "0.15.2"
+clap = { version = "4.5.28", default-features = false, features = ["std", "help", "error-context"] }
+
+# Optional dependencies
+iroh = { version = "0.32", default-features = false, optional = true }
+mdns-sd = { version = "0.13.2", default-features = false, features = ["async"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tempfile = "3"
+serial_test = "3.1.1"
+
+# Raspberry Pi specific dependencies
+[target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
+# Use 'tiny-skia' renderer in iced
+iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
+
+# Non-Raspberry Pi - use 'wgpu' renderer in iced
+[target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
+iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
+
+[package.metadata.cargo-all-features]
+skip_optional_dependencies = true
+denylist = ["no_std"]
+
+[package.metadata.docs.rs]
+features = ["iroh", "tcp"]
+rustdoc-args = ["--cfg", "docsrs"]

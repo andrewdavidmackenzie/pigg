@@ -1,6 +1,3 @@
-use crate::hw_definition::config::HardwareConfigMessage::IOLevelChanged;
-use crate::hw_definition::config::LevelChange;
-use crate::hw_definition::BCMPinNumber;
 use crate::HARDWARE_EVENT_CHANNEL;
 use defmt::debug;
 use embassy_futures::select::{select, Either};
@@ -8,6 +5,9 @@ use embassy_rp::gpio::{Flex, Level};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::{Receiver, Sender};
 use embassy_time::Instant;
+use pigdef::config::HardwareConfigMessage::IOLevelChanged;
+use pigdef::config::LevelChange;
+use pigdef::description::BCMPinNumber;
 
 /// Wait until a level change on an input occurs and then send it via TCP to GUI
 #[embassy_executor::task(pool_size = 32)]

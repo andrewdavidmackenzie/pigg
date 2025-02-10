@@ -43,10 +43,8 @@ fn generate_ssid(filename: &str, ssid: Option<SsidSpec>) -> io::Result<()> {
 
     file.write_all(
         b"\
-#[allow(unused_imports)]\n
 use heapless::String;\n
-use crate::hw_definition::description::SsidSpec;\n\
-#[allow(unused_imports)]\n
+use pigdef::description::SsidSpec;\n\
 use core::str::FromStr;\n",
     )?;
 

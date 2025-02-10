@@ -1,5 +1,5 @@
 [toolchain]
-channel = "stable"
+channel = "nightly" # until 1.85.0 stable is released
 components = ["clippy"]
 targets = ["thumbv6m-none-eabi"]
 profile = "minimal"

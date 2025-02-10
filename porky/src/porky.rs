@@ -3,11 +3,6 @@
 
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
-#[cfg(feature = "wifi")]
-use crate::hw_definition::description::{TCP_MDNS_SERVICE_NAME, TCP_MDNS_SERVICE_PROTOCOL};
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 #[cfg(feature = "wifi")]
 use crate::tcp::TCP_PORT;
@@ -42,6 +37,10 @@ use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
 use panic_probe as _;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
+use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+#[cfg(all(feature = "discovery", feature = "tcp"))]
+use pigdef::description::{TCP_MDNS_SERVICE_NAME, TCP_MDNS_SERVICE_PROTOCOL};
 use static_cell::StaticCell;
 
 #[cfg(not(any(feature = "usb", feature = "wifi")))]
@@ -67,10 +66,6 @@ mod tcp;
 /// GPIO control related functions
 mod gpio;
 mod gpio_input_monitor;
-
-/// Definition of hardware structs passed back and fore between porky and the GUI
-#[path = "../../src/hw_definition/mod.rs"]
-mod hw_definition;
 
 /// Functions for interacting with the Flash ROM
 mod flash;

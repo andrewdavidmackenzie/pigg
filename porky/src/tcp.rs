@@ -1,7 +1,5 @@
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
-use crate::hw_definition::config::{HardwareConfig, HardwareConfigMessage};
-use crate::hw_definition::description::HardwareDescription;
 use crate::{flash, persistence, HARDWARE_EVENT_CHANNEL};
 use cyw43::Control;
 use defmt::info;
@@ -15,6 +13,8 @@ use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::Write;
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
+use pigdef::description::HardwareDescription;
 
 pub const TCP_PORT: u16 = 1234;
 

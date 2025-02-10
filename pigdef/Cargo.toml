@@ -1,0 +1,37 @@
+[package]
+name = "pigdef"
+description = "Core struct and const definitions for multiple crates in the pigg project"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["std"]
+tcp = []
+discovery = []
+no_std = ["dep:heapless", "dep:embassy-time"]
+usb = []
+iroh = []
+std = ["serde/std"]
+
+[dependencies]
+serde = { version = "1.0.217", default-features = false, features = ["derive"] }
+
+# Optional Dependencies for "no_std" case
+heapless = { version = "0.8.0", default-features = false, features = ["serde"], optional = true }
+embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tempfile = "3"
+
+[package.metadata.cargo-all-features]
+skip_optional_dependencies = true
+always_include_features = ["std"]
+denylist = ["no_std"]

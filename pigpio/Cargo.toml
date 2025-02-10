@@ -1,0 +1,23 @@
+[package]
+name = "pigpio"
+description = "A crate with GPIO code for use in other pigg project crates"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+exclude.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+pigdef = { path = "../pigdef" }
+
+[target.'cfg(not(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu")))'.dependencies]
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
+
+[target.'cfg(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu"))'.dependencies]
+rppal = "0.22.1"
+libc = "0.2.169"

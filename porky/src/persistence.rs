@@ -1,15 +1,5 @@
 use crate::flash;
 use crate::flash::DbFlash;
-use crate::hw_definition::config::HardwareConfig;
-use crate::hw_definition::config::HardwareConfigMessage;
-use crate::hw_definition::config::HardwareConfigMessage::{
-    Disconnect, GetConfig, IOLevelChanged, NewConfig, NewPinConfig,
-};
-#[cfg(feature = "wifi")]
-use crate::hw_definition::description::SsidSpec;
-use crate::hw_definition::pin_function::PinFunction;
-use crate::hw_definition::pin_function::PinFunction::Output;
-use crate::hw_definition::BCMPinNumber;
 #[cfg(feature = "wifi")]
 use crate::ssid;
 #[cfg(feature = "wifi")]
@@ -22,6 +12,16 @@ use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use heapless::FnvIndexMap;
+use pigdef::config::HardwareConfig;
+use pigdef::config::HardwareConfigMessage;
+use pigdef::config::HardwareConfigMessage::{
+    Disconnect, GetConfig, IOLevelChanged, NewConfig, NewPinConfig,
+};
+use pigdef::description::BCMPinNumber;
+#[cfg(feature = "wifi")]
+use pigdef::description::SsidSpec;
+use pigdef::pin_function::PinFunction;
+use pigdef::pin_function::PinFunction::Output;
 
 #[cfg(feature = "wifi")]
 /// [SSID_SPEC_KEY] is the key to a possible entry in the Flash DB for SsidSpec override

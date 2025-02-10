@@ -5,22 +5,26 @@ readme = "README.md"
 edition = "2021"
 rust-version = "1.80"
 
+[workspace]
+exclude = [".."]
+
 [[bin]]
 name = "porky"
 path = "src/porky.rs"
 
 [features]
-default = ["no_std"]
+default = []
 pico1 = ["embassy-rp/rp2040"]
 pico2 = ["embassy-rp/rp235xa"]
-wifi = ["cyw43", "embassy-net", "tcp", "discovery"]
-no_std = []
+wifi = ["dep:cyw43", "tcp", "discovery"]
 debug-probe = []
-usb = ["embassy-usb"]
-discovery = ["edge-mdns", "edge-nal-embassy", "edge-nal"]
-tcp = []
+usb = ["pigdef/usb", "dep:embassy-usb"]
+discovery = ["pigdef/discovery", "dep:edge-mdns", "dep:edge-nal-embassy", "dep:edge-nal"]
+tcp = ["pigdef/tcp", "dep:embassy-net"]
 
 [dependencies]
+pigdef = { path = "../pigdef", default-features = false, features = ["no_std"] }
+
 # Embassy Dependencies (crates in https://github.com/embassy-rs/embassy)
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.7.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
@@ -53,7 +57,7 @@ rand = { version = "0.8.5", default-features = false }
 # To convert device_id into hex for use as a string
 faster-hex = { version = "0.10.0", default-features = false }
 
-serde = { version = "1.0.208", default-features = false, features = ["derive"] } # no_std
+serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
@@ -75,5 +79,5 @@ strip = "debuginfo"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-always_include_features = ["no_std", "usb", "pico1"]
+always_include_features = ["usb", "pico1"]
 denylist = ["debug-probe", "pico2", "tcp"]
