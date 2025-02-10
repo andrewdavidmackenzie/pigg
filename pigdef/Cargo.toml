@@ -24,7 +24,7 @@ std = []
 [dependencies]
 serde = { version = "1.0.217", default-features = false, features = ["derive"] }
 
-# Optional Dependencies
+# Optional Dependencies for "no_std" case
 heapless = { version = "0.8.0", default-features = false, features = ["serde"], optional = true }
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"], optional = true }
 
@@ -33,4 +33,5 @@ tempfile = "3"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
+always_include_features = ["std"]
 denylist = ["no_std"]

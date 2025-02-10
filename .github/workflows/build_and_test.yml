@@ -178,8 +178,8 @@ jobs:
       - name: Clean up coverage
         if: runner.os != 'Windows'
         run: |
-          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore-errors inconsistent --ignore "/*" -o lcov.info
-          lcov --ignore-errors unused --ignore-errors unsupported --ignore-errors empty,empty --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
+          grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
+          lcov --ignore-errors unused --ignore-errors unsupported --ignore-errors inconsistent --ignore-errors empty,empty --remove lcov.info -o lcov.info --erase-functions "(?=^.*fmt).+"
 
       - name: UploadCoverage
         if: runner.os != 'Windows'

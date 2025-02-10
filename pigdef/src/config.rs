@@ -2,25 +2,37 @@ use crate::description::{BCMPinNumber, PinLevel};
 use crate::pin_function::PinFunction;
 use core::clone::Clone;
 use core::cmp::PartialEq;
+use serde::{Deserialize, Serialize};
+
+#[cfg(not(feature = "std"))]
+use core::clone::Clone;
+#[cfg(not(feature = "std"))]
+use core::cmp::PartialEq;
 #[cfg(not(feature = "std"))]
 use core::convert::From;
+#[cfg(not(feature = "std"))]
 use core::default::Default;
+#[cfg(not(feature = "std"))]
 use core::fmt::Debug;
+#[cfg(not(feature = "std"))]
 use core::marker::Copy;
+#[cfg(not(feature = "std"))]
 use core::option::Option;
 #[cfg(not(feature = "std"))]
 use core::prelude::rust_2024::derive;
 #[cfg(not(feature = "std"))]
+use core::prelude::rust_2024::derive;
+#[cfg(not(feature = "std"))]
 use heapless::FnvIndexMap;
-use serde::{Deserialize, Serialize};
+
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 #[cfg(feature = "std")]
 use std::time::Duration;
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
-#[cfg_attr(feature = "std", derive(Debug, Clone, Serialize, Deserialize, Default))]
-#[cfg_attr(not(feature = "std"), derive(Clone, Serialize, Deserialize, Default))]
+#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, Serialize, Deserialize, Default)]
 pub struct HardwareConfig {
     #[cfg(feature = "std")]
     pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
@@ -48,8 +60,8 @@ impl std::fmt::Display for HardwareConfig {
 ///    * NewConfig
 ///    * NewPinConfig
 ///    * OutputLevelChanged
-#[cfg_attr(feature = "std", derive(Debug, Clone, Serialize, Deserialize))]
-#[cfg_attr(not(feature = "std"), derive(Clone, Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, Serialize, Deserialize)]
 #[allow(clippy::large_enum_variant)]
 pub enum HardwareConfigMessage {
     /// A complete new hardware config has been loaded and applied to the hardware, so we should
