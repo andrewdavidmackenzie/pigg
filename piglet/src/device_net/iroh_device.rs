@@ -6,8 +6,8 @@ use log::{debug, info, trace};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
 use pigdef::config::{HardwareConfigMessage, LevelChange};
+use pigdef::description::BCMPinNumber;
 use pigdef::description::HardwareDescription;
-use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::net_values::PIGLET_ALPN;
 use pigdef::pin_function::PinFunction;
 use pigdef::pin_function::PinFunction::Output;
@@ -15,7 +15,6 @@ use pigpio::driver::HW;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
-use std::time::Duration;
 
 pub struct IrohDevice {
     pub nodeid: NodeId,
@@ -89,7 +88,7 @@ pub async fn accept_connection(
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
-        let node_id = iroh::endpoint::Connection::remote_node_id(&connection)?;
+        let node_id = Connection::remote_node_id(&connection)?;
         debug!("New connection from nodeid: '{node_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
@@ -147,11 +146,11 @@ async fn apply_config_change(
             let cc = connection.clone();
             hardware
                 .apply_config(&config, move |bcm, level_change| {
-                    let _ = send_input_level(connection.clone(), bcm, level_change);
+                    let _ = send_input_level_sync(connection.clone(), bcm, level_change);
                 })
                 .await?;
 
-            send_current_input_states(cc, &config, hardware).await?;
+            send_current_input_levels(cc, &config, hardware).await?;
             // replace the entire config with the new one
             *hardware_config = config;
         }
@@ -160,12 +159,12 @@ async fn apply_config_change(
             let cc = connection.clone();
             hardware
                 .apply_pin_config(bcm, &pin_function, move |bcm, level| {
-                    let _ = send_input_level(connection.clone(), bcm, level);
+                    let _ = send_input_level_sync(connection.clone(), bcm, level);
                 })
                 .await?;
 
             if let Some(function) = pin_function {
-                send_current_input_state(&bcm, &function, cc, hardware).await?;
+                send_current_input_level(&bcm, &function, cc, hardware).await?;
                 // add/replace the new pin config to the hardware config
                 hardware_config.pin_functions.insert(bcm, function);
             } else {
@@ -181,7 +180,8 @@ async fn apply_config_change(
                 .insert(bcm, Output(Some(level_change.new_level)));
         }
         HardwareConfigMessage::GetConfig => {
-            send_hardware_config(connection, hardware_config).await?
+            let message = postcard::to_allocvec(hardware_config)?;
+            send(connection, &message).await?
         }
         HardwareConfigMessage::Disconnect => return Err(anyhow!("Disconnect message received")),
     }
@@ -189,22 +189,23 @@ async fn apply_config_change(
     Ok(())
 }
 
-/// Send the current input state for all inputs configured in the config
-async fn send_current_input_states(
+/// Send the current input level for all configured inputs
+async fn send_current_input_levels(
     connection: Connection,
     config: &HardwareConfig,
     hardware: &HW,
 ) -> anyhow::Result<()> {
     for (bcm_pin_number, pin_function) in &config.pin_functions {
-        send_current_input_state(bcm_pin_number, pin_function, connection.clone(), hardware)
+        send_current_input_level(bcm_pin_number, pin_function, connection.clone(), hardware)
             .await?;
     }
 
     Ok(())
 }
 
-/// Send the current input state for one input - with timestamp matching future LevelChanges
-async fn send_current_input_state(
+/// Send the current input level for one input - with timestamp that will match with future
+/// LevelChange timestamps (time since boot)
+async fn send_current_input_level(
     bcm_pin_number: &BCMPinNumber,
     pin_function: &PinFunction,
     connection: Connection,
@@ -214,43 +215,21 @@ async fn send_current_input_state(
 
     // Send initial levels
     if let PinFunction::Input(_pullup) = pin_function {
-        // Update UI with initial state
         if let Ok(initial_level) = hardware.get_input_level(*bcm_pin_number) {
-            let _ = send_input_level_async(connection.clone(), *bcm_pin_number, initial_level, now)
-                .await;
+            let level_change = LevelChange::new(initial_level, now);
+            trace!("Pin #{bcm_pin_number} Input level change: {level_change:?}");
+            let hardware_event = IOLevelChanged(*bcm_pin_number, level_change);
+            let message = postcard::to_allocvec(&hardware_event)?;
+            send(connection.clone(), &message).await?;
         }
     }
 
     Ok(())
 }
 
-/// Send [HardwareConfig] over the [Connection]
-async fn send_hardware_config(
-    connection: Connection,
-    hardware_config: &HardwareConfig,
-) -> anyhow::Result<()> {
-    let message = postcard::to_allocvec(hardware_config)?;
-    send(connection, &message).await
-}
-
 /// Send a detected input level change back to the GUI using `connection` [Connection],
 /// timestamping with the current time in Utc
-async fn send_input_level_async(
-    connection: Connection,
-    bcm: BCMPinNumber,
-    level: PinLevel,
-    timestamp: Duration,
-) -> anyhow::Result<()> {
-    let level_change = LevelChange::new(level, timestamp);
-    trace!("Pin #{bcm} Input level change: {level_change:?}");
-    let hardware_event = IOLevelChanged(bcm, level_change);
-    let message = postcard::to_allocvec(&hardware_event)?;
-    send(connection, &message).await
-}
-
-/// Send a detected input level change back to the GUI using `connection` [Connection],
-/// timestamping with the current time in Utc
-fn send_input_level(
+fn send_input_level_sync(
     connection: Connection,
     bcm: BCMPinNumber,
     level_change: LevelChange,
