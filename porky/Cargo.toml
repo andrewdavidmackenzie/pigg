@@ -23,7 +23,7 @@ discovery = ["pigdef/discovery", "dep:edge-mdns", "dep:edge-nal-embassy", "dep:e
 tcp = ["pigdef/tcp", "dep:embassy-net"]
 
 [dependencies]
-pigdef = { path = "../pigdef", default-features = false, features = ["no_std"] }
+pigdef = { path = "../pigdef" }
 
 # Embassy Dependencies (crates in https://github.com/embassy-rs/embassy)
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }

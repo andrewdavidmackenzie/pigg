@@ -27,11 +27,10 @@ default = ["iroh", "tcp", "discovery"]
 tcp = ["pigdef/tcp", "dep:portpicker", "dep:local-ip-address"]
 discovery = ["pigdef/discovery", "dep:mdns-sd"]
 iroh = ["pigdef/iroh", "dep:iroh", "dep:rand"]
-no_std = []
 usb = ["pigdef/usb"]
 
 [dependencies]
-pigdef = { path = "../pigdef" }
+pigdef = { path = "../pigdef", default-features = false, features = ["std"] }
 pigpio = { path = "../pigpio" }
 
 # for alloc/no_alloc over the wire serialization/deserialization
@@ -65,7 +64,6 @@ pignet = { version = "0.6", path = "../pignet" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
-denylist = ["no_std"]
 
 [package.metadata.docs.rs]
 features = ["iroh", "tcp"]

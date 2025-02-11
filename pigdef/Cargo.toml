@@ -13,10 +13,9 @@ exclude.workspace = true
 rust-version.workspace = true
 
 [features]
-default = ["std"]
+default = ["dep:heapless", "dep:embassy-time"]
 tcp = []
 discovery = []
-no_std = ["dep:heapless", "dep:embassy-time"]
 usb = []
 iroh = []
 std = ["serde/std"]
@@ -34,4 +33,3 @@ tempfile = "3"
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
 always_include_features = ["std"]
-denylist = ["no_std"]
