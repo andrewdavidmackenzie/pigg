@@ -8,3 +8,4 @@ target/
 
 .vscode
 .idea
+*.profraw
