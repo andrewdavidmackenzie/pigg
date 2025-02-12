@@ -1,4 +1,4 @@
-use crate::support::{kill, kill_all, run, wait_for_stdout};
+use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 use iroh::NodeId;
 use pignet::iroh_host;
 use serial_test::serial;
@@ -26,6 +26,7 @@ fn fail(child: Child, message: &str) {
 #[serial]
 async fn can_connect() {
     kill_all("piglet");
+    build("piglet");
     let mut child = run("piglet", vec![], None);
     match wait_for_stdout(&mut child, "nodeid:") {
         Some(nodeid_line) => match nodeid_line.split_once(":") {

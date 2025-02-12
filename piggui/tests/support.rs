@@ -50,6 +50,38 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
         .expect("Failed to spawn command")
 }
 
+#[allow(dead_code)] // for piggui
+pub fn build(binary: &str) {
+    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let workspace_dir = crate_dir
+        .parent()
+        .expect("Could not get workspace directory");
+    let mut command = Command::new(env!("CARGO"));
+
+    let args = vec![
+        "build".to_string(),
+        "--bin".to_string(),
+        binary.to_string(),
+        "--".into(),
+    ];
+
+    println!("Running Command: cargo {}", args.join(" "));
+
+    // Build the binary and wait until it ends
+    command
+        .args(args)
+        .current_dir(workspace_dir)
+        //        .env("@RUSTFLAGS", "-Cinstrument-coverage")
+        //        .env("LLVM_PROFILE_FILE", "pigg-%p-%m.profraw")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .spawn()
+        .unwrap()
+        .wait_with_output()
+        .unwrap();
+}
+
 pub fn kill(mut child: Child) {
     child.kill().expect("Failed to kill child process");
 
@@ -57,6 +89,7 @@ pub fn kill(mut child: Child) {
     child.wait().expect("Failed to wait until child exited");
 }
 
+#[allow(dead_code)] // for piggui
 /// Kill all instances of a process based on it's name
 pub fn kill_all(process_name: &str) {
     let s = System::new_all();
