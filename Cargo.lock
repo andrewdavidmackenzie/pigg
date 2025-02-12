@@ -4487,6 +4487,7 @@ dependencies = [
  "rfd",
  "serde_json",
  "serial_test",
+ "sysinfo",
  "tempfile",
  "tokio",
  "webbrowser",
