@@ -8,3 +8,5 @@ target/
 
 .vscode
 .idea
+*.profraw
+coverage.info
