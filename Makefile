@@ -162,3 +162,20 @@ web-run: web-build
 usb:
 	@echo "Echo your root password at the prompt to copy udev rules for piggui to the system folder for them"
 	sudo cp 70.pigg.rules  /etc/udev/rules.d/
+
+.PHONY: clean-start
+clean-start:
+	@find . -name "*.profraw"  | xargs rm -rf {}
+
+.PHONY: coverage
+coverage: clean-start
+	@echo "coverage<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+	@RUSTFLAGS="-C instrument-coverage" LLVM_PROFILE_FILE="pigg-%p-%m.profraw" cargo build
+	cargo test
+	@echo "Gathering coverage information"
+	@grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o coverage.info
+	@lcov --remove coverage.info 'target/debug/build/**' 'target/release/build/**' '/usr*' '**/errors.rs' '**/build.rs' '*tests/*' --ignore-errors unused -o coverage.info
+	#@find . -name "*.profraw" | xargs rm -f
+	@echo "Generating coverage report"
+	@genhtml -o target/coverage --quiet coverage.info
+	@echo "View coverage report using 'open target/coverage/index.html'"
