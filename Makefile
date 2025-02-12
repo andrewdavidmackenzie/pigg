@@ -174,7 +174,7 @@ coverage: clean-start
 	cargo test
 	@echo "Gathering coverage information"
 	@grcov . --binary-path target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o coverage.info
-	@lcov --remove coverage.info 'target/debug/build/**' 'target/release/build/**' '/usr*' '**/errors.rs' '**/build.rs' '*tests/*' --ignore-errors unused --ignore-errors unsupported --ignore-errors inconsistent --ignore-errors empty,empty -o coverage.info  --erase-functions "(?=^.*fmt).+"
+	@lcov --remove coverage.info 'target/debug/build/**' 'target/release/build/**' '**/errors.rs' '**/build.rs' '*tests/*' --ignore-errors unused,unused --ignore-errors unsupported --ignore-errors inconsistent --ignore-errors empty,empty -o coverage.info  --erase-functions "(?=^.*fmt).+"
 	@find . -name "*.profraw" | xargs rm -f
 	@echo "Generating coverage report"
 	@genhtml -o target/coverage --quiet coverage.info
