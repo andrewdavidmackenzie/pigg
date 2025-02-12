@@ -13,6 +13,7 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::str::FromStr;
+use sysinfo::System;
 
 pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -54,6 +55,15 @@ pub fn kill(mut child: Child) {
 
     // wait for the process to be removed
     child.wait().expect("Failed to wait until child exited");
+}
+
+/// Kill all instances of a process based on it's name
+pub fn kill_all(process_name: &str) {
+    let s = System::new_all();
+    for process in s.processes_by_exact_name(process_name.as_ref()) {
+        process.kill();
+        process.wait();
+    }
 }
 
 fn wait_for<R: BufRead>(token: &str, reader: &mut R) -> Option<String> {
