@@ -75,6 +75,10 @@ iced = { version = "0.13.1", default-features = false, features = ["tokio", "tin
 [target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
 
+[dev-dependencies] # For tests
+pignet = { path = "../pignet", features = ["iroh", "tcp", "discovery", "usb"] }
+sysinfo = { version = "0.33" }
+
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
 
