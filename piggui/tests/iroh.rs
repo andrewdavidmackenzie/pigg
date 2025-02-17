@@ -23,6 +23,6 @@ fn connect_via_iroh() {
 
     wait_for_stdout(&mut piggui, "Connected to hardware").expect("Did not get connected message");
 
-    kill(piggui);
-    kill(piglet);
+    kill(&mut piggui);
+    kill(&mut piglet);
 }

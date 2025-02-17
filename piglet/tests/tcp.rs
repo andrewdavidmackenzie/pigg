@@ -12,11 +12,11 @@ mod support;
 fn ip_is_output() {
     let mut child = run("piglet", vec![], None);
     let line = wait_for_stdout(&mut child, "ip:").expect("Could not get ip");
-    kill(child);
+    kill(&mut child);
     let (_, _) = ip_port(&line);
 }
 
-fn fail(child: Child, message: &str) {
+fn fail(child: &mut Child, message: &str) {
     // Kill process before possibly failing test and leaving process around
     kill(child);
     panic!("{}", message);
@@ -37,22 +37,22 @@ async fn can_connect() {
                             Ok(port) => match tcp_host::connect(ip, port).await {
                                 Ok((hw_desc, _hw_config, _connection)) => {
                                     if !hw_desc.details.model.contains("Fake") {
-                                        fail(child, "Didn't connect to fake hardware piglet")
+                                        fail(&mut child, "Didn't connect to fake hardware piglet")
                                     } else {
-                                        kill(child)
+                                        kill(&mut child)
                                     }
                                 }
-                                _ => fail(child, "Could not connect to piglet"),
+                                _ => fail(&mut child, "Could not connect to piglet"),
                             },
-                            Err(e) => fail(child, &e.to_string()),
+                            Err(e) => fail(&mut child, &e.to_string()),
                         },
-                        Err(e) => fail(child, &e.to_string()),
+                        Err(e) => fail(&mut child, &e.to_string()),
                     },
-                    None => fail(child, "Could not get ip and port"),
+                    None => fail(&mut child, "Could not get ip and port"),
                 }
             }
-            _ => fail(child, "Could not parse out nodeid from nodeid line"),
+            _ => fail(&mut child, "Could not parse out nodeid from nodeid line"),
         },
-        None => fail(child, "Could not get nodeid output line"),
+        None => fail(&mut child, "Could not get nodeid output line"),
     }
 }

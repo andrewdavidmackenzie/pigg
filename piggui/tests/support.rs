@@ -82,7 +82,7 @@ pub fn build(binary: &str) {
         .unwrap();
 }
 
-pub fn kill(mut child: Child) {
+pub fn kill(child: &mut Child) {
     child.kill().expect("Failed to kill child process");
 
     // wait for the process to be removed
