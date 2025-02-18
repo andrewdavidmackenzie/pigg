@@ -1,5 +1,5 @@
 use serial_test::serial;
-use support::{kill, run, wait_for_stdout};
+use support::{build, kill, kill_all, run, wait_for_stdout};
 
 #[path = "../../piggui/tests/support.rs"]
 mod support;
@@ -7,6 +7,8 @@ mod support;
 #[test]
 #[serial]
 fn version_number() {
+    kill_all("piglet");
+    build("piglet");
     let mut child = run("piglet", vec!["--version".into()], None);
     let line = wait_for_stdout(&mut child, "piglet").expect("Failed to get expected output");
     kill(&mut child);
@@ -17,6 +19,8 @@ fn version_number() {
 #[test]
 #[serial]
 fn test_verbosity_levels() {
+    kill_all("piglet");
+    build("piglet");
     let levels = ["info", "debug", "trace"];
     for &level in &levels {
         let mut child = run("piglet", vec!["--verbosity".into(), level.into()], None);
@@ -35,6 +39,8 @@ fn test_verbosity_levels() {
 #[test]
 #[serial]
 fn help() {
+    kill_all("piglet");
+    build("piglet");
     let mut child = run("piglet", vec!["--help".into()], None);
     wait_for_stdout(
         &mut child,

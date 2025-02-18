@@ -1,6 +1,8 @@
-use crate::support::{ip_port, kill, run, wait_for_stdout};
+use crate::support::{build, ip_port, kill, kill_all, run, wait_for_stdout};
+use async_std::net::TcpStream;
 use pignet::tcp_host;
 use serial_test::serial;
+use std::future::Future;
 use std::process::Child;
 use std::str::FromStr;
 
@@ -10,6 +12,8 @@ mod support;
 #[test]
 #[serial]
 fn ip_is_output() {
+    kill_all("piglet");
+    build("piglet");
     let mut child = run("piglet", vec![], None);
     let line = wait_for_stdout(&mut child, "ip:").expect("Could not get ip");
     kill(&mut child);
@@ -22,37 +26,46 @@ fn fail(child: &mut Child, message: &str) {
     panic!("{}", message);
 }
 
-#[tokio::test]
-#[serial]
-async fn can_connect() {
-    let mut child = run("piglet", vec![], None);
-    match wait_for_stdout(&mut child, "ip:") {
+async fn connect<F, Fut>(child: &mut Child, test: F)
+where
+    F: FnOnce(TcpStream) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    match wait_for_stdout(child, "ip:") {
         Some(ip_line) => match ip_line.split_once(":") {
             Some((_, address_str)) => {
                 let address_str = address_str.trim();
-                println!("ip: '{address_str}'");
                 match address_str.split_once(":") {
                     Some((ip_str, port_str)) => match std::net::IpAddr::from_str(ip_str) {
                         Ok(ip) => match u16::from_str(port_str) {
                             Ok(port) => match tcp_host::connect(ip, port).await {
-                                Ok((hw_desc, _hw_config, _connection)) => {
+                                Ok((hw_desc, _hw_config, tcp_stream)) => {
                                     if !hw_desc.details.model.contains("Fake") {
-                                        fail(&mut child, "Didn't connect to fake hardware piglet")
+                                        fail(child, "Didn't connect to fake hardware piglet")
                                     } else {
-                                        kill(&mut child)
+                                        test(tcp_stream).await;
                                     }
                                 }
-                                _ => fail(&mut child, "Could not connect to piglet"),
+                                _ => fail(child, "Could not connect to piglet"),
                             },
-                            Err(e) => fail(&mut child, &e.to_string()),
+                            _ => fail(child, "Could not parse port"),
                         },
-                        Err(e) => fail(&mut child, &e.to_string()),
+                        Err(e) => fail(child, &e.to_string()),
                     },
-                    None => fail(&mut child, "Could not get ip and port"),
+                    _ => fail(child, "Could not split ip and port"),
                 }
             }
-            _ => fail(&mut child, "Could not parse out nodeid from nodeid line"),
+            _ => fail(child, "Could not parse out ip from ip line"),
         },
-        None => fail(&mut child, "Could not get nodeid output line"),
+        None => fail(child, "Could not get ip output line"),
     }
+}
+
+#[tokio::test]
+#[serial]
+async fn can_connect_tcp() {
+    kill_all("piglet");
+    build("piglet");
+    let mut child = run("piglet", vec![], None);
+    connect(&mut child, |_c| async {}).await;
 }

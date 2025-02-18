@@ -15,6 +15,8 @@ mod support;
 #[test]
 #[serial]
 fn node_id_is_output() {
+    kill_all("piglet");
+    build("piglet");
     let mut child = run("piglet", vec![], None);
     wait_for_stdout(&mut child, "nodeid:").expect("Could not get nodeid");
     kill(&mut child);
@@ -54,7 +56,7 @@ where
 
 #[tokio::test]
 #[serial]
-async fn can_connect() {
+async fn can_connect_iroh() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
@@ -65,7 +67,7 @@ async fn can_connect() {
 #[ignore]
 #[tokio::test]
 #[serial]
-async fn reconnect() {
+async fn reconnect_iroh() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
