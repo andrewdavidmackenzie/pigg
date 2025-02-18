@@ -34,24 +34,29 @@ where
     match wait_for_stdout(child, "ip:") {
         Some(ip_line) => match ip_line.split_once(":") {
             Some((_, address_str)) => {
-                let address_str = address_str.trim();
+                println!("address_str: {address_str}");
                 match address_str.split_once(":") {
-                    Some((ip_str, port_str)) => match std::net::IpAddr::from_str(ip_str) {
-                        Ok(ip) => match u16::from_str(port_str) {
-                            Ok(port) => match tcp_host::connect(ip, port).await {
-                                Ok((hw_desc, _hw_config, tcp_stream)) => {
-                                    if !hw_desc.details.model.contains("Fake") {
-                                        fail(child, "Didn't connect to fake hardware piglet")
-                                    } else {
-                                        test(tcp_stream).await;
+                    Some((mut ip_str, mut port_str)) => {
+                        ip_str = ip_str.trim();
+                        port_str = port_str.trim();
+                        println!("IP: '{ip_str}' Port: '{port_str}'");
+                        match std::net::IpAddr::from_str(ip_str) {
+                            Ok(ip) => match u16::from_str(port_str) {
+                                Ok(port) => match tcp_host::connect(ip, port).await {
+                                    Ok((hw_desc, _hw_config, tcp_stream)) => {
+                                        if !hw_desc.details.model.contains("Fake") {
+                                            fail(child, "Didn't connect to fake hardware piglet")
+                                        } else {
+                                            test(tcp_stream).await;
+                                        }
                                     }
-                                }
-                                _ => fail(child, "Could not connect to piglet"),
+                                    _ => fail(child, "Could not connect to piglet"),
+                                },
+                                _ => fail(child, "Could not parse port"),
                             },
-                            _ => fail(child, "Could not parse port"),
-                        },
-                        Err(e) => fail(child, &e.to_string()),
-                    },
+                            _ => fail(child, "Could not parse port number"),
+                        }
+                    }
                     _ => fail(child, "Could not split ip and port"),
                 }
             }
@@ -68,4 +73,5 @@ async fn can_connect_tcp() {
     build("piglet");
     let mut child = run("piglet", vec![], None);
     connect(&mut child, |_c| async {}).await;
+    kill(&mut child)
 }
