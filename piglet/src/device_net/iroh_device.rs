@@ -124,8 +124,7 @@ pub async fn iroh_message_loop(
             hardware_config,
             connection.clone(),
         )
-        .await
-        .with_context(|| "Failed to apply config change to hardware")?;
+        .await?;
         let _ = persistence::store_config(hardware_config, exec_path).await;
     }
 }
