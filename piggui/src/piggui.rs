@@ -22,7 +22,7 @@ use crate::Message::*;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
-use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme};
+use iced::{window, Element, Length, Pixels, Renderer, Settings, Subscription, Task, Theme};
 #[cfg(feature = "iroh")]
 use iroh::NodeId;
 use pigdef::config::HardwareConfig;
@@ -372,7 +372,7 @@ impl Piggui {
        |  +---------------------------------------------------------------------------------+ |
        +--------------------------------------------------------------------------------------+
     */
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<Message, Theme, Renderer> {
         let main_col = Column::new()
             .push(self.hardware_view.view(self.layout_selector.get()))
             .push(self.info_row.view(
@@ -579,4 +579,17 @@ fn get_matches() -> ArgMatches {
     );
 
     app.get_matches()
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{Message, Piggui};
+    use iced::{Renderer, Theme};
+    use iced_test::{simulator, Simulator};
+
+    #[test]
+    fn test_ui() {
+        let (mut piggui, _) = Piggui::new();
+        let mut _ui: Simulator<Message, Theme, Renderer> = simulator(piggui.view().into());
+    }
 }
