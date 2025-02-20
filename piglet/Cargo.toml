@@ -45,7 +45,7 @@ sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 service-manager = { version = "0.7.1", default-features = false }
 clap = { version = "4.5.30", default-features = false, features = ["std", "help", "error-context"] }
 # for config serialization to/from file
-serde_json = { version = "1.0.138", default-features = false, features = ["std"] }
+serde_json = { version = "1.0.139", default-features = false, features = ["std"] }
 
 # Optional Dependencies
 iroh = { version = "0.32", default-features = false, optional = true }
