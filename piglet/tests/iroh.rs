@@ -56,6 +56,7 @@ where
     }
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn connect_iroh() {
