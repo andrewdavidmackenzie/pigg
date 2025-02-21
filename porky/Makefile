@@ -3,8 +3,13 @@ all: build build-w build2 build-w2
 clean:
 	cargo clean
 
+# Install required rust targets
+targets:
+	rustup target add thumbv8m.main-none-eabihf
+
 .PHONY: features
 features:
+	cargo build-all-features --target thumbv6m-none-eabi
 	cargo build-all-features --target thumbv6m-none-eabi
 
 clippy:
