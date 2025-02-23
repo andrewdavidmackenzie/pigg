@@ -1,19 +1,20 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
 # Choose a default "cargo run" tool (see README for more info)
 # - `probe-rs` provides flashing and defmt via a hardware debugger, and stack unwind on panic
+# - `picotool`- used while the pico2 was lacking probe-rs support
 # - elf2uf2-rs loads firmware over USB when the rp2040 is in boot mode
-# runner = ["probe-rs",
-#    "run",
-#    "--chip",
-#    "RP2040",
-#    "--protocol",
-#    "swd",
-#    "--log-format",
-#    "{[{L}]%bold} {s}  {{c}",
-#    "--restore-unwritten"
-#]
-runner = "picotool load -u -v -x -t elf"
-#runner = "probe-rs run --chip RP2040"
+runner = ["probe-rs",
+    "run",
+    "--chip",
+    "RP2040",
+    # "RP235x",
+    "--protocol",
+    "swd",
+    "--log-format",
+    "{[{L}]%bold} {s}  {{c}",
+    "--restore-unwritten"
+]
+#runner = "picotool load -u -v -x -t elf"
 #runner = "elf2uf2-rs -d"
 
 #[build]

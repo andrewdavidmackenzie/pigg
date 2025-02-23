@@ -18,8 +18,10 @@ pub mod usb_host;
 /// A type of connection to a piece of hardware
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub enum HardwareConnection {
+    #[cfg_attr(target_arch = "wasm32", default)]
     NoConnection,
-    #[default]
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
     #[cfg(feature = "usb")]
     Usb(SerialNumber),
@@ -50,6 +52,7 @@ impl Display for HardwareConnection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NoConnection => write!(f, "No Connection"),
+            #[cfg(not(target_arch = "wasm32"))]
             Self::Local => write!(f, "Local Hardware"),
             #[cfg(feature = "usb")]
             Self::Usb(_) => write!(f, "USB"),

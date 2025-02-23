@@ -3,6 +3,7 @@ use support::{ip_port, kill, run, wait_for_stdout};
 
 mod support;
 
+#[cfg(feature = "tcp")]
 #[test]
 #[serial]
 fn connect_via_ip() {

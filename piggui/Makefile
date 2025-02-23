@@ -62,6 +62,9 @@ test:
 features:
 	cargo build-all-features
 
+targets:
+	rustup target add wasm32-unknown-unknown
+
 #### arm builds
 .PHONY: build-arm
 # Don't build build-armv7-musl locally on macOS
@@ -137,7 +140,6 @@ ssh:
 
 .PHONY: web-build
 web-build:
-	rustup target add wasm32-unknown-unknown
 	cargo build --target wasm32-unknown-unknown --no-default-features
 
 .PHONY: web-run
