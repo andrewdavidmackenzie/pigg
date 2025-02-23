@@ -34,7 +34,7 @@ use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 use pignet::usb_host;
 use pignet::HardwareConnection;
 use pignet::HardwareConnection::NoConnection;
-#[cfg(feature = "discovery")]
+#[cfg(all(feature = "discovery", not(target_arch = "wasm32")))]
 use pigpio::get;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;

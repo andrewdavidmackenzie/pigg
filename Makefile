@@ -149,15 +149,6 @@ copy-release-aarch64:
 ssh:
 	ssh $(PI_USER)@$(PI_TARGET)
 
-.PHONY: web-build
-web-build:
-	rustup target add wasm32-unknown-unknown
-	cargo build --bin piggui --target wasm32-unknown-unknown --no-default-features
-
-.PHONY: web-run
-web-run: web-build
-	cd piggui && trunk serve
-
 .PHONY: usb
 usb:
 	@echo "Echo your root password at the prompt to copy udev rules for piggui to the system folder for them"
