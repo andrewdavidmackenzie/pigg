@@ -1,4 +1,4 @@
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
 use anyhow::Context;
 #[cfg(not(target_arch = "wasm32"))]
 use clap::ArgMatches;
@@ -72,7 +72,7 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> Hardwa
 }
 
 #[allow(dead_code)] // Not used in piglet
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
 /// Save the config to a file that will be picked up on restart
 pub(crate) async fn store_config(
     hardware_config: &HardwareConfig,

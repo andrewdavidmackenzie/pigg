@@ -13,7 +13,12 @@ use crate::hardware_subscription::HWState::ConnectedTcp;
 #[cfg(feature = "usb")]
 use crate::hardware_subscription::HWState::ConnectedUsb;
 use crate::hardware_subscription::HWState::Disconnected;
-#[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
+#[cfg(any(
+    feature = "iroh",
+    feature = "tcp",
+    feature = "usb",
+    not(target_arch = "wasm32")
+))]
 use crate::hardware_subscription::SubscriberMessage::Hardware;
 use crate::hardware_subscription::SubscriberMessage::NewConnection;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
@@ -122,7 +127,12 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
         }
 
         loop {
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(any(
+                feature = "iroh",
+                feature = "tcp",
+                feature = "usb",
+                not(target_arch = "wasm32")
+            ))]
             let mut gui_sender_clone = gui_sender.clone();
 
             match &mut state {
