@@ -53,6 +53,7 @@ async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
 iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.139", default-features = false, features = ["std"] }
+wasm-bindgen = "0.2.100"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.15.2"
@@ -87,3 +88,9 @@ skip_optional_dependencies = true
 [package.metadata.docs.rs]
 features = ["iroh", "tcp"]
 rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.trunk.build]
+target = "index.html"
+dist = "dist"
+no_default_features = false
+

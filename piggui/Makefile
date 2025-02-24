@@ -141,8 +141,13 @@ ssh:
 # TODO confirm - this may need the brew install of llvm to get a clang that compiles to wasm32 OK
 .PHONY: web-build
 web-build:
-	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo build --bin piggui --target wasm32-unknown-unknown --no-default-features --features "iroh"
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo build --bin piggui --target wasm32-unknown-unknown --no-default-features
+	wasm-bindgen ../target/wasm32-unknown-unknown/debug/piggui.wasm --out-dir ../target/web --web
+
+.PHONY: trunk-build
+trunk-build:
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk build
 
 .PHONY: web-run
-web-run: web-build
-	trunk serve
+web-run: trunk-build
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk serve
