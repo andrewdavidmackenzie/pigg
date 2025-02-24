@@ -6,15 +6,19 @@ use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 
 #[cfg(feature = "iroh")]
 use crate::hardware_subscription::HWState::ConnectedIroh;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::hardware_subscription::HWState::ConnectedLocal;
 #[cfg(feature = "tcp")]
 use crate::hardware_subscription::HWState::ConnectedTcp;
 #[cfg(feature = "usb")]
 use crate::hardware_subscription::HWState::ConnectedUsb;
-use crate::hardware_subscription::HWState::{ConnectedLocal, Disconnected};
+use crate::hardware_subscription::HWState::Disconnected;
 use crate::hardware_subscription::SubscriberMessage::{Hardware, NewConnection};
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use crate::hardware_subscription::SubscriptionEvent::InputChange;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::local_host;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::local_host::LocalConnection;
 use futures::stream::Stream;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
@@ -25,6 +29,8 @@ use iced::futures::StreamExt;
 use iced::stream;
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use iced::{futures, futures::pin_mut};
+#[cfg(feature = "iroh")]
+use iroh::endpoint::Connection;
 use pigdef::description::BCMPinNumber;
 use pigdef::description::HardwareDescription;
 #[cfg(feature = "iroh")]
@@ -38,11 +44,13 @@ use pignet::usb_host::UsbConnection;
 use pignet::HardwareConnection;
 #[cfg(feature = "iroh")]
 use pignet::HardwareConnection::Iroh;
+#[cfg(not(target_arch = "wasm32"))]
+use pignet::HardwareConnection::Local;
+use pignet::HardwareConnection::NoConnection;
 #[cfg(feature = "tcp")]
 use pignet::HardwareConnection::Tcp;
 #[cfg(feature = "usb")]
 use pignet::HardwareConnection::Usb;
-use pignet::HardwareConnection::{Local, NoConnection};
 
 /// A message type sent from the UI to the subscriber
 pub enum SubscriberMessage {
@@ -71,14 +79,15 @@ pub enum SubscriptionEvent {
 enum HWState {
     /// Just starting up, we have not yet set up a channel between GUI and Listener
     Disconnected,
+    #[cfg(not(target_arch = "wasm32"))]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedLocal(LocalConnection),
-    #[cfg(feature = "usb")]
+    #[cfg(all(feature = "usb"))]
     /// The subscription is connected to a device over USB, will listen for events and send to GUI
     ConnectedUsb(UsbConnection),
     #[cfg(feature = "iroh")]
     /// The subscription is ready and will listen for config events on the channel contained
-    ConnectedIroh(iroh::endpoint::Connection),
+    ConnectedIroh(Connection),
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedTcp(async_std::net::TcpStream),
@@ -126,6 +135,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                             }
                         }
 
+                        #[cfg(not(target_arch = "wasm32"))]
                         Local => {
                             match local_host::connect(env!("CARGO_PKG_NAME")).await {
                                 Ok((hardware_description, hardware_config, local_hardware)) => {
@@ -156,7 +166,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                             }
                         }
 
-                        #[cfg(feature = "usb")]
+                        #[cfg(all(feature = "usb", not(target_arch = "wasm32")))]
                         Usb(serial) => {
                             match usb_host::connect(&serial).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
@@ -238,6 +248,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                     }
                 }
 
+                #[cfg(not(target_arch = "wasm32"))]
                 ConnectedLocal(connection) => {
                     if let Some(config_change) = subscriber_receiver.next().await {
                         match &config_change {

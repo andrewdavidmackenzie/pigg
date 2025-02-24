@@ -33,6 +33,9 @@ usb = ["pigdef/usb", "pignet/usb"]
 pigdef = { path = "../pigdef", default-features = false, features = ["std"] }
 pignet = { path = "../pignet" }
 
+# Patch getrandom for wasm32 support
+getrandom = { version = "0.3.1", features = ["wasm_js"] }
+
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
@@ -61,10 +64,6 @@ pigpio = { path = "../pigpio" }
 iroh = { git = "https://github.com/n0-computer/iroh.git", branch = "matheus23/iroh-browser", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, features = ["async"], optional = true }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-tempfile = "3"
-serial_test = "3.1.1"
-
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
 # Use 'tiny-skia' renderer in iced
@@ -74,9 +73,13 @@ iced = { version = "0.13.1", default-features = false, features = ["tokio", "tin
 [target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
 iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tempfile = "3"
+serial_test = "3.1.1"
+sysinfo = { version = "0.33" }
+
 [dev-dependencies] # For tests
 pignet = { path = "../pignet" }
-sysinfo = { version = "0.33" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

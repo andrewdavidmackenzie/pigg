@@ -50,6 +50,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
         }
+        #[cfg(not(target_arch = "wasm32"))]
         Local => {
             #[cfg(any(feature = "iroh", feature = "tcp"))]
             menu_items.push(connect);
