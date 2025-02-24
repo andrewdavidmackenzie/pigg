@@ -8,6 +8,7 @@ use pigdef::config::HardwareConfig;
 use std::io;
 use std::io::BufReader;
 use std::io::Write;
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::Path;
 
 // TODO make this function async
