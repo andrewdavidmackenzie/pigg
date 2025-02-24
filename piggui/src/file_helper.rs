@@ -4,7 +4,9 @@ use crate::Message::{ConfigLoaded, InfoRow};
 use crate::{persistence, Message};
 use iced::Task;
 use pigdef::config::HardwareConfig;
-use std::{env, io};
+#[cfg(not(target_arch = "wasm32"))]
+use std::env;
+use std::io;
 
 /// Asynchronously load a .piggui config file from file named `filename` (no picker)
 /// In the result, return the filename and the loaded [HardwareConfig]
@@ -18,6 +20,7 @@ async fn load(filename: String) -> io::Result<(String, HardwareConfig)> {
 /// If the user selects a file, and it is fails to load, it will return `Err(e)`
 /// If the user cancels the selection it will return `Ok(None)`
 async fn load_via_picker() -> io::Result<Option<(String, HardwareConfig)>> {
+    #[cfg(not(target_arch = "wasm32"))]
     if let Some(handle) = rfd::AsyncFileDialog::new()
         .add_filter("Pigg Config", &["pigg"])
         .set_title("Choose config file to load")
@@ -31,13 +34,17 @@ async fn load_via_picker() -> io::Result<Option<(String, HardwareConfig)>> {
     } else {
         Ok(None)
     }
+    #[cfg(target_arch = "wasm32")]
+    Ok(None)
 }
 
 /// Asynchronously show the user a picker and then save the [HardwareConfig] to the .piggui file
 /// If the user selects a file, and it is saves successfully, it will return `Ok(true)`
 /// If the user selects a file, and it is fails to load, it will return `Err(e)`
 /// If the user cancels the selection it will return `Ok(false)`
+#[allow(unused_variables)]
 async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
+    #[cfg(not(target_arch = "wasm32"))]
     if let Some(handle) = rfd::AsyncFileDialog::new()
         .add_filter("Pigg Config", &["pigg"])
         .set_title("Choose file")
@@ -52,6 +59,8 @@ async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
     } else {
         Ok(false)
     }
+    #[cfg(target_arch = "wasm32")]
+    Ok(false)
 }
 
 /// Utility function that saves the [HardwareConfig] to a file using `Task::perform` and uses

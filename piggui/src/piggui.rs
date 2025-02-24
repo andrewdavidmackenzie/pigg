@@ -38,16 +38,15 @@ use pignet::HardwareConnection::NoConnection;
 use pigpio::get;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
 use std::str::FromStr;
 
 #[cfg(feature = "discovery")]
 mod discovery;
-#[cfg(not(target_arch = "wasm32"))]
 pub mod file_helper;
 mod hardware_subscription;
-mod local_host;
 #[cfg(not(target_arch = "wasm32"))]
+mod local_host;
 mod persistence;
 mod views;
 mod widgets;
@@ -189,7 +188,10 @@ impl Piggui {
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
+                #[cfg(not(target_arch = "wasm32"))]
                 hardware_view: HardwareView::new(get_hardware_connection(&matches)),
+                #[cfg(target_arch = "wasm32")]
+                hardware_view: HardwareView::new(HardwareConnection::default()),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 #[cfg(feature = "discovery")]
@@ -489,6 +491,7 @@ impl Piggui {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Determine the hardware connection based on command line options
 #[allow(unused_variables)]
 fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {

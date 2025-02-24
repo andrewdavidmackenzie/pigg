@@ -138,9 +138,10 @@ copy-release-aarch64:
 ssh:
 	ssh $(PI_USER)@$(PI_TARGET)
 
+# TODO confirm - this may need the brew install of llvm to get a clang that compiles to wasm32 OK
 .PHONY: web-build
 web-build:
-	cargo build --target wasm32-unknown-unknown --no-default-features
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo build --bin piggui --target wasm32-unknown-unknown --no-default-features --features "iroh"
 
 .PHONY: web-run
 web-run: web-build
