@@ -89,7 +89,7 @@ enum HWState {
     #[cfg(not(target_arch = "wasm32"))]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedLocal(LocalConnection),
-    #[cfg(all(feature = "usb"))]
+    #[cfg(feature = "usb")]
     /// The subscription is connected to a device over USB, will listen for events and send to GUI
     ConnectedUsb(UsbConnection),
     #[cfg(feature = "iroh")]
