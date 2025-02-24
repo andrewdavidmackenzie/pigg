@@ -15,7 +15,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
     // Conditionally render menu items based on hardware features
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    #[cfg(any(feature = "iroh", feature = "tcp", not(target_arch = "wasm32")))]
     let disconnect: Item<'a, Message, _, _> = Item::<Message, Theme, Renderer>::new(
         button("Disconnect")
             .width(Length::Fill)
