@@ -2,4 +2,4 @@
 dist = "dist"
 target = "index.html"
 no_default_features = true
-#features = "iroh"
+features = "iroh"

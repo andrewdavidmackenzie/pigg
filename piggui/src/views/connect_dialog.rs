@@ -24,7 +24,7 @@ use iced::keyboard::key;
 use iced::widget::{self, column, container, text, text_input, Button, Row, Text};
 use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
-#[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 use std::time::Duration;
 

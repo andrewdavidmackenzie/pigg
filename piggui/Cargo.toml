@@ -33,9 +33,6 @@ usb = ["pigdef/usb", "pignet/usb"]
 pigdef = { path = "../pigdef", default-features = false, features = ["std"] }
 pignet = { path = "../pignet" }
 
-# Patch getrandom for wasm32 support
-getrandom = { version = "0.3.1", features = ["wasm_js"] }
-
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
@@ -54,7 +51,6 @@ webbrowser = { version = "1.0", default-features = false }
 iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.139", default-features = false, features = ["std"] }
 
-# Optional dependencies
 iroh = { version = "0.33.0", default-features = false, optional = true }
 #iroh = { git = "https://github.com/n0-computer/iroh.git", branch = "matheus23/iroh-browser", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, features = ["async"], optional = true }
@@ -66,7 +62,7 @@ pigpio = { path = "../pigpio" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
-
+getrandom = { version = "0.3.1", features = ["wasm_js"] }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]

@@ -23,7 +23,7 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme};
-#[cfg(feature = "iroh")]
+#[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
 use iroh::NodeId;
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "discovery")]

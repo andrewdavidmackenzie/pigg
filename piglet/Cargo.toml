@@ -46,13 +46,14 @@ service-manager = { version = "0.7.1", default-features = false }
 clap = { version = "4.5.31", default-features = false, features = ["std", "help", "error-context"] }
 serde_json = { version = "1.0.139", default-features = false, features = ["std"] }
 
-# Optional Dependencies
 iroh = { version = "0.33.0", default-features = false, optional = true }
 #iroh = { git = "https://github.com/n0-computer/iroh.git", branch = "matheus23/iroh-browser", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.3", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, optional = true }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
