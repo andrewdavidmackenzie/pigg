@@ -118,6 +118,12 @@ jobs:
   web-build:
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: add wasm32-unknown-unknown target
+        run: rustup target add wasm32-unknown-unknown
+
       - name: wasm32 trunk build
         run: cd piggui && make trunk-build
 
