@@ -4436,7 +4436,6 @@ dependencies = [
  "sysinfo",
  "tempfile",
  "tokio",
- "wasm-bindgen",
  "webbrowser",
 ]
 
