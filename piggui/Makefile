@@ -25,7 +25,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-arm test
+all: clippy build build-arm trunk-build test
 
 .PHONY: clean
 clean:
@@ -137,12 +137,6 @@ copy-release-aarch64:
 .PHONY: ssh
 ssh:
 	ssh $(PI_USER)@$(PI_TARGET)
-
-# TODO confirm - this may need the brew install of llvm to get a clang that compiles to wasm32 OK
-.PHONY: web-build
-web-build:
-	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' cargo build --bin piggui --target wasm32-unknown-unknown --no-default-features
-	wasm-bindgen ../target/wasm32-unknown-unknown/debug/piggui.wasm --out-dir ../target/web --web
 
 .PHONY: trunk-build
 trunk-build:

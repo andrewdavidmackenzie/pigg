@@ -25,7 +25,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-arm build-porky test
+all: clippy build build-arm build-porky build-web test
 
 .PHONY: clean
 clean:
@@ -170,3 +170,6 @@ coverage: clean-start
 	@echo "Generating coverage report"
 	@genhtml -o target/coverage --quiet coverage.info
 	@echo "View coverage report using 'open target/coverage/index.html'"
+
+build-web:
+	@cd piggui && make trunk-build
