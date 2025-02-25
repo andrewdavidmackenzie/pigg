@@ -4466,6 +4466,7 @@ dependencies = [
  "portpicker",
  "postcard",
  "rand 0.8.5",
+ "serde_json",
  "serial_test",
  "service-manager",
  "sysinfo",
