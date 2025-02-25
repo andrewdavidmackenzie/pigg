@@ -60,6 +60,9 @@ rfd = "0.15.2"
 clap = { version = "4.5.31", default-features = false, features = ["std", "help", "error-context"] }
 pigpio = { path = "../pigpio" }
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.7"
+
 # Optional dependencies
 #iroh = { version = "0.32.1", default-features = false, optional = true }
 iroh = { git = "https://github.com/n0-computer/iroh.git", branch = "matheus23/iroh-browser", default-features = false, optional = true }
