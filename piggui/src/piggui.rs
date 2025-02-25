@@ -102,6 +102,9 @@ pub struct Piggui {
 }
 
 fn main() -> iced::Result {
+    #[cfg(target_arch = "")]
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
     let settings = Settings {
         id: Some(PIGGUI_ID.into()),
         default_text_size: Pixels(14.0),
