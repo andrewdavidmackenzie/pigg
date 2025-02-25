@@ -1,11 +1,14 @@
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
 use anyhow::Context;
+#[cfg(not(target_arch = "wasm32"))]
 use clap::ArgMatches;
+#[cfg(not(target_arch = "wasm32"))]
 use log::{info, trace};
 use pigdef::config::HardwareConfig;
 use std::io;
 use std::io::BufReader;
 use std::io::Write;
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::Path;
 
 // TODO make this function async
@@ -27,7 +30,8 @@ pub fn save_cfg(hardware_config: &HardwareConfig, filename: &str) -> io::Result<
     Ok(format!("File saved successfully to {}", filename))
 }
 
-#[allow(dead_code)] // Not used in piglet
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)] // Not used in piggui
 /// Get the initial [HardwareConfig] determined following:
 /// - A config file specified on the command line, or
 /// - A config file saved from a previous run
@@ -68,7 +72,7 @@ pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> Hardwa
 }
 
 #[allow(dead_code)] // Not used in piglet
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
 /// Save the config to a file that will be picked up on restart
 pub(crate) async fn store_config(
     hardware_config: &HardwareConfig,

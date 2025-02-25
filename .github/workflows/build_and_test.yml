@@ -115,6 +115,24 @@ jobs:
       - name: Build for aarch64
         run: cargo build --target=aarch64-unknown-linux-gnu
 
+  web-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: add wasm32-unknown-unknown target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install cargo binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install trunk
+        run: cargo binstall trunk
+
+      - name: wasm32 trunk build
+        run: cd piggui && make trunk-build
+
   porky-release-build:
     runs-on: ubuntu-latest
     steps:

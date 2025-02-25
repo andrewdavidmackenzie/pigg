@@ -28,8 +28,8 @@ pigdef = { path = "../pigdef" }
 # Embassy Dependencies (crates in https://github.com/embassy-rs/embassy)
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.7.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
-embassy-rp = { version = "0.3.0", default-features = false, features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
-embassy-sync = { version = "0.6.0", default-features = false }
+embassy-rp = { version = "0.3.1", default-features = false, features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-sync = { version = "0.6.2", default-features = false }
 embassy-futures = { version = "0.1.1", default-features = false }
 
 # Needed even when no wifi - I don't know why yet. Reported to Embassy
@@ -49,8 +49,8 @@ embedded-storage = { version = "0.3", default-features = false }
 panic-probe = { version = "0.3", default-features = false, features = ["print-defmt"] }
 defmt = { version = "0.3", default-features = false }
 defmt-rtt = { version = "0.4", default-features = false }
-cortex-m = { version = "0.7.6", features = ["inline-asm"] }
-cortex-m-rt = { version = "0.7.0", default-features = false }
+cortex-m = { version = "0.7.7", features = ["inline-asm"] }
+cortex-m-rt = { version = "0.7.5", default-features = false }
 
 embedded-io-async = { version = "0.6.1", features = ["defmt-03"] }
 rand = { version = "0.8.5", default-features = false }

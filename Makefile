@@ -25,7 +25,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-arm build-porky test
+all: clippy build build-arm build-porky build-web test
 
 .PHONY: clean
 clean:
@@ -149,15 +149,6 @@ copy-release-aarch64:
 ssh:
 	ssh $(PI_USER)@$(PI_TARGET)
 
-.PHONY: web-build
-web-build:
-	rustup target add wasm32-unknown-unknown
-	cargo build --bin piggui --target wasm32-unknown-unknown --no-default-features
-
-.PHONY: web-run
-web-run: web-build
-	cd piggui && trunk serve
-
 .PHONY: usb
 usb:
 	@echo "Echo your root password at the prompt to copy udev rules for piggui to the system folder for them"
@@ -179,3 +170,6 @@ coverage: clean-start
 	@echo "Generating coverage report"
 	@genhtml -o target/coverage --quiet coverage.info
 	@echo "View coverage report using 'open target/coverage/index.html'"
+
+build-web:
+	@cd piggui && make trunk-build

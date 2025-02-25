@@ -25,7 +25,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-arm test
+all: clippy build build-arm trunk-build test
 
 .PHONY: clean
 clean:
@@ -61,6 +61,9 @@ test:
 .PHONY: features
 features:
 	cargo build-all-features
+
+targets:
+	rustup target add wasm32-unknown-unknown
 
 #### arm builds
 .PHONY: build-arm
@@ -135,11 +138,10 @@ copy-release-aarch64:
 ssh:
 	ssh $(PI_USER)@$(PI_TARGET)
 
-.PHONY: web-build
-web-build:
-	rustup target add wasm32-unknown-unknown
-	cargo build --target wasm32-unknown-unknown --no-default-features
+.PHONY: trunk-build
+trunk-build:
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk build
 
 .PHONY: web-run
-web-run: web-build
-	trunk serve
+web-run: trunk-build
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk serve
