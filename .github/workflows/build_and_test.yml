@@ -115,6 +115,12 @@ jobs:
       - name: Build for aarch64
         run: cargo build --target=aarch64-unknown-linux-gnu
 
+  web-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: wasm32 trunk build
+        run: cd piggui && make trunk-build
+
   porky-release-build:
     runs-on: ubuntu-latest
     steps:
