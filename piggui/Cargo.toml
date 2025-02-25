@@ -59,7 +59,7 @@ rfd = "0.15.2"
 clap = { version = "4.5.31", default-features = false, features = ["std", "help", "error-context"] }
 
 # Optional dependencies
-iroh = { version = "0.32", default-features = false, optional = true }
+iroh = { version = "0.33", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, features = ["async"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
