@@ -22,6 +22,7 @@ all: clippy build build-arm test
 .PHONY: clean
 clean:
 	@cargo clean
+	@trunk clean
 
 .PHONY: clippy
 clippy:

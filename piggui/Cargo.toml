@@ -64,8 +64,8 @@ pigpio = { path = "../pigpio" }
 console_error_panic_hook = "0.1.7"
 
 # Optional dependencies
-#iroh = { version = "0.32.1", default-features = false, optional = true }
-iroh = { git = "https://github.com/n0-computer/iroh.git", branch = "matheus23/iroh-browser", default-features = false, optional = true }
+iroh = { version = "0.33.0", default-features = false, optional = true }
+#iroh = { git = "https://github.com/n0-computer/iroh.git", branch = "matheus23/iroh-browser", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, features = ["async"], optional = true }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
