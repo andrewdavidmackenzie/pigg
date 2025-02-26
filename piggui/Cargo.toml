@@ -52,7 +52,6 @@ iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.139", default-features = false, features = ["std"] }
 
 iroh = { version = "0.33.0", default-features = false, optional = true }
-#iroh = { git = "https://github.com/n0-computer/iroh.git", branch = "matheus23/iroh-browser", default-features = false, optional = true }
 mdns-sd = { version = "0.13.2", default-features = false, features = ["async"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
