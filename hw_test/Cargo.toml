@@ -1,0 +1,21 @@
+[package]
+name = "hw_test"
+version = "0.6.0"
+edition = "2021"
+rust-version = "1.80"
+
+[features]
+default = ["usb", "tcp", "discovery"]
+usb = ["pigdef/usb", "pignet/usb"]
+tcp = ["pigdef/tcp", "pignet/tcp"]
+discovery = ["pigdef/discovery", "pignet/discovery"]
+
+[dev-dependencies]
+pigdef = { path = "../pigdef" }
+pignet = { path = "../pignet" }
+tokio = { version = "1.43", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
+async-std = "1.13.0"
+serial_test = "3.1.1"
+
+[package.metadata.cargo-all-features]
+skip_optional_dependencies = true
