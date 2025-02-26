@@ -33,6 +33,7 @@ clean:
 
 .PHONY: macos-setup
 macos-setup: setup
+	brew install llvm #and then we need to make sure it's used instead of default macos clang!
 
 .PHONY: setup
 setup:
