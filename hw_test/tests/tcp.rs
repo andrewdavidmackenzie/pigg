@@ -11,13 +11,12 @@ use std::time::Duration;
 const IP: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
 const PORT: u16 = 1234;
 
-
 // Get config and get tcp ip and port and iroh
 
 async fn connect_tcp<F, Fut>(ip: IpAddr, port: u16, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
-    Fut: Future<Output=()>,
+    Fut: Future<Output = ()>,
 {
     match tcp_host::connect(ip, port).await {
         Ok((hw_desc, hw_config, tcp_stream)) => {
@@ -47,7 +46,7 @@ async fn disconnect_tcp() {
             .await
             .expect("Could not send Disconnect");
     })
-        .await;
+    .await;
 }
 
 #[ignore]
@@ -59,7 +58,7 @@ async fn get_config_tcp() {
             .await
             .expect("Could not GetConfig");
     })
-        .await;
+    .await;
 }
 
 #[ignore]
@@ -71,7 +70,7 @@ async fn reconnect_tcp() {
             .await
             .expect("Could not send Disconnect");
     })
-        .await;
+    .await;
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
