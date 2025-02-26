@@ -66,7 +66,6 @@ async fn connect_iroh() {
     kill(&mut child)
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_iroh() {

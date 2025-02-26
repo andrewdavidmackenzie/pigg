@@ -77,6 +77,21 @@ async fn can_connect_tcp() {
     kill(&mut child)
 }
 
+#[tokio::test]
+#[serial]
+async fn disconnect_tcp() {
+    kill_all("piglet");
+    build("piglet");
+    let mut child = run("piglet", vec![], None);
+    connect(&mut child, |_, _, stream| async move {
+        tcp_host::send_config_message(stream, &Disconnect)
+            .await
+            .expect("Could not send Disconnect");
+    })
+    .await;
+    kill(&mut child)
+}
+
 #[ignore]
 #[tokio::test]
 #[serial]
