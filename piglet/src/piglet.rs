@@ -403,6 +403,7 @@ fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), 
         working_directory: Some(exec_dir),
         environment: None, // Optional list of environment variables to supply the service process.
         autostart: true,
+        disable_restart_on_failure: false,
     })?;
 
     // Start our service using the underlying service management platform
