@@ -67,7 +67,6 @@ where
     }
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn can_connect_tcp() {
