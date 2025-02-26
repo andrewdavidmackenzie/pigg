@@ -34,6 +34,8 @@ clean:
 .PHONY: macos-setup
 macos-setup: setup
 	brew install llvm #and then we need to make sure it's used instead of default macos clang!
+	echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+	export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
 
 .PHONY: setup
 setup:
