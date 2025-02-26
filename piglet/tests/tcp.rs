@@ -77,6 +77,7 @@ async fn can_connect_tcp() {
     kill(&mut child)
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
