@@ -31,6 +31,15 @@ all: clippy build build-arm trunk-build test
 clean:
 	@cargo clean
 
+.PHONY: macos-setup
+macos-setup: setup
+
+.PHONY: setup
+setup:
+	rustup target add wasm32-unknown-unknown
+	rustup target add aarch64-unknown-linux-gnu
+	cargo binstall trunk
+
 .PHONY: clippy
 clippy:
 	cargo clippy --tests --no-deps
@@ -61,9 +70,6 @@ test:
 .PHONY: features
 features:
 	cargo build-all-features
-
-targets:
-	rustup target add wasm32-unknown-unknown
 
 #### arm builds
 .PHONY: build-arm
