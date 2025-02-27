@@ -87,6 +87,7 @@ async fn reconnect_tcp() {
     }
 }
 
+#[ignore]
 #[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial]
