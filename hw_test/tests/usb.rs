@@ -1,12 +1,38 @@
 #![cfg(feature = "usb")]
 
+use anyhow::anyhow;
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
 use pignet::usb_host;
+use pignet::HardwareConnection::Tcp;
 use serial_test::serial;
+use std::net::IpAddr;
 use std::time::Duration;
 
 const SERIAL: &str = "e66138528350be2b";
+
+/// Get the IP and Port for a TCP connection to a USB connected porky
+pub async fn get_ip_and_port_by_usb() -> anyhow::Result<(IpAddr, u16)> {
+    let serials = usb_host::get_serials()
+        .await
+        .expect("No usb porky attached");
+    if !serials.is_empty() {
+        let uut = serials.first().expect("Could not get first serial number");
+        let details = usb_host::get_details(&serials)
+            .await
+            .expect("Could not get details");
+
+        let uut_device_details = details.get(uut).expect("Could not get details ");
+
+        if let Some(Tcp(ip, port)) = uut_device_details.hardware_connections.get(uut) {
+            Ok((*ip, *port))
+        } else {
+            Err(anyhow!("Could not get hardware connection"))
+        }
+    } else {
+        Err(anyhow!("Could not find usb attached porky"))
+    }
+}
 
 #[tokio::test]
 #[serial]

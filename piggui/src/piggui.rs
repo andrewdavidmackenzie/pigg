@@ -26,6 +26,7 @@ use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme}
 #[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
 use iroh::NodeId;
 use pigdef::config::HardwareConfig;
+use pigdef::description::SerialNumber;
 #[cfg(feature = "discovery")]
 use pignet::discovery::DiscoveryMethod::Local;
 #[cfg(feature = "discovery")]
@@ -157,7 +158,7 @@ impl Piggui {
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
         #[cfg(feature = "discovery")]
-        let mut discovered_devices = HashMap::new();
+        let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
         #[cfg(feature = "discovery")]
         let local_hardware = get();
         #[cfg(feature = "discovery")]

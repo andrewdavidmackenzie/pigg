@@ -16,6 +16,7 @@ pignet = { path = "../pignet" }
 tokio = { version = "1.43", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
 async-std = "1.13.0"
 serial_test = "3.1.1"
+anyhow = "1.0.96"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

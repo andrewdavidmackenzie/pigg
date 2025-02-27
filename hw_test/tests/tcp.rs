@@ -5,13 +5,12 @@ use pigdef::description::HardwareDescription;
 use pignet::tcp_host;
 use serial_test::serial;
 use std::future::Future;
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::IpAddr;
 use std::time::Duration;
 
-const IP: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-const PORT: u16 = 1234;
+mod usb;
 
-// Get config and get tcp ip and port and iroh
+use usb::get_ip_and_port_by_usb;
 
 async fn connect_tcp<F, Fut>(ip: IpAddr, port: u16, test: F)
 where
@@ -30,52 +29,56 @@ where
     }
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn can_connect_tcp() {
-    connect_tcp(IP, PORT, |_d, _c, _co| async {}).await;
+    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+        connect_tcp(ip, port, |_d, _c, _co| async {}).await;
+    }
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
-    connect_tcp(IP, PORT, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
-            .await
-            .expect("Could not send Disconnect");
-    })
-    .await;
+    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+        connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
+            tcp_host::send_config_message(tcp_stream, &Disconnect)
+                .await
+                .expect("Could not send Disconnect");
+        })
+        .await;
+    }
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn get_config_tcp() {
-    connect_tcp(IP, PORT, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &GetConfig)
-            .await
-            .expect("Could not GetConfig");
-    })
-    .await;
+    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+        connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
+            tcp_host::send_config_message(tcp_stream, &GetConfig)
+                .await
+                .expect("Could not GetConfig");
+        })
+        .await;
+    }
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
-    connect_tcp(IP, PORT, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
-            .await
-            .expect("Could not send Disconnect");
-    })
-    .await;
+    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+        connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
+            tcp_host::send_config_message(tcp_stream, &Disconnect)
+                .await
+                .expect("Could not send Disconnect");
+        })
+        .await;
 
-    tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
 
-    // Test we can re-connect after sending a disconnect request
-    connect_tcp(IP, PORT, |_d, _c, _tcp_stream| async {}).await;
+        // Test we can re-connect after sending a disconnect request
+        connect_tcp(ip, port, |_d, _c, _tcp_stream| async {}).await;
+    }
 }
 
 // discover using mdns - library
