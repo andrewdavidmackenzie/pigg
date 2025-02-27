@@ -2367,6 +2367,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
+name = "hw_test"
+version = "0.6.0"
+dependencies = [
+ "anyhow",
+ "async-std",
+ "iroh",
+ "mdns-sd",
+ "pigdef",
+ "pignet",
+ "serial_test",
+ "tokio",
+]
+
+[[package]]
 name = "hyper"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

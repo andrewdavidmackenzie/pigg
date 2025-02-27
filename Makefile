@@ -10,17 +10,6 @@
 # target/aarch64-unknown-linux-gnu/release/piggui - GUI version for Pi with GPIO, can be run natively from RPi command line
 # target/armv7-unknown-linux-gnueabihf/release/piggui - GUI version for armv7 based architecture with GPIO, can be run natively
 
-# MacOS pre-requisites for cross-compiling to armv7
-# brew install arm-linux-gnueabihf-binutils
-# rustup target add armv7-unknown-linux-musleabihf
-#
-# See: https://github.com/messense/homebrew-macos-cross-toolchains
-#
-# brew tap messense/macos-cross-toolchains
-# brew install aarch64-unknown-linux-gnu
-# brew install arm-unknown-linux-gnueabihf
-# brew install arm-unknown-linux-musleabihf
-
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
@@ -30,6 +19,16 @@ all: clippy build build-arm build-porky build-web test
 .PHONY: clean
 clean:
 	@cargo clean
+
+.PHONY: macos-setup
+macos-setup: setup
+	@cd piggui && make macos-setup
+	@cd piglet && make macos-setup
+
+.PHONY: setup
+setup:
+	@cd piggui && make setup
+	@cd piglet && make setup
 
 .PHONY: clippy
 clippy:
@@ -69,6 +68,11 @@ build-porky:
 .PHONY: test
 test:
 	cargo test
+
+
+.PHONY: hw_tests
+hw_tests:
+	cargo test --package hw_tests
 
 .PHONY: features
 features:

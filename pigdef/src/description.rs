@@ -85,6 +85,7 @@ pub struct HardwareDescription<'a> {
 
 #[cfg(feature = "std")]
 /// [HardwareDetails] captures a number of specific details about the Hardware we are connected to
+#[cfg_attr(debug_assertions, derive(PartialEq))]
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct HardwareDetails {
     /// A Human friendly Hardware Model description

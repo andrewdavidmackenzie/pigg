@@ -4,6 +4,7 @@
 
 # MacOS pre-requisites for cross-compiling to armv7
 # brew install arm-linux-gnueabihf-binutils
+# rustup target add armv7-unknown-linux-gnueabihf
 # rustup target add armv7-unknown-linux-musleabihf
 #
 # See: https://github.com/messense/homebrew-macos-cross-toolchains
@@ -23,6 +24,19 @@ all: clippy build build-arm test
 clean:
 	@cargo clean
 	@trunk clean
+
+.PHONY: macos-setup
+macos-setup: setup
+	brew tap messense/macos-cross-toolchains
+	brew install aarch64-unknown-linux-gnu
+	brew install arm-unknown-linux-gnueabihf
+	brew install arm-unknown-linux-musleabihf
+
+.PHONY: setup
+setup:
+	rustup target add armv7-unknown-linux-gnueabihf
+	rustup target add armv7-unknown-linux-musleabihf
+	rustup target add aarch64-unknown-linux-gnu
 
 .PHONY: clippy
 clippy:

@@ -28,6 +28,7 @@ use std::time::Duration;
 
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
 #[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(debug_assertions, derive(PartialEq))]
 #[derive(Clone, Serialize, Deserialize, Default)]
 pub struct HardwareConfig {
     #[cfg(feature = "std")]
