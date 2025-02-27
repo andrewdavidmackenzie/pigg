@@ -2372,6 +2372,8 @@ version = "0.6.0"
 dependencies = [
  "anyhow",
  "async-std",
+ "iroh",
+ "mdns-sd",
  "pigdef",
  "pignet",
  "serial_test",

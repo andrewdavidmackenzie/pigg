@@ -1,3 +1,5 @@
+#![cfg(feature = "tcp")]
+
 use async_std::net::TcpStream;
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig};
@@ -9,8 +11,12 @@ use std::net::IpAddr;
 use std::time::Duration;
 
 mod usb;
-
+#[cfg(feature = "usb")]
 use usb::get_ip_and_port_by_usb;
+
+mod mdns;
+#[cfg(feature = "discovery")]
+use mdns::get_ip_and_port_by_mdns;
 
 async fn connect_tcp<F, Fut>(ip: IpAddr, port: u16, test: F)
 where
@@ -81,7 +87,14 @@ async fn reconnect_tcp() {
     }
 }
 
-// discover using mdns - library
+#[cfg(feature = "discovery")]
+#[tokio::test]
+#[serial]
+async fn discover_and_connect_tcp() {
+    if let Ok((ip, port)) = get_ip_and_port_by_mdns().await {
+        connect_tcp(ip, port, |_d, _c, _co| async {}).await;
+    }
+}
 
 // piggui tests
 // connect using usb from piggui via CLI option

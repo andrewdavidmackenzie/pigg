@@ -11,6 +11,7 @@ use std::time::Duration;
 
 const SERIAL: &str = "e66138528350be2b";
 
+#[cfg(all(feature = "discovery", feature = "usb"))]
 /// Get the IP and Port for a TCP connection to a USB connected porky
 pub async fn get_ip_and_port_by_usb() -> anyhow::Result<(IpAddr, u16)> {
     let serials = usb_host::get_serials()
