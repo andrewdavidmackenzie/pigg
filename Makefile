@@ -71,7 +71,7 @@ test:
 
 .PHONY: hw_tests
 hw_tests:
-	cargo test --package hw_tests
+	cargo test --package hw_test
 
 .PHONY: features
 features:
