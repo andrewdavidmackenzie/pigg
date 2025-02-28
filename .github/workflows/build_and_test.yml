@@ -152,7 +152,8 @@ jobs:
         run: cd porky && RUSTFLAGS= make uf2
 
   hw_tests:
-    runs-on: pigg_hw_tests
+    #runs-on: pigg_hw_tests
+    runs-on: [ self-hosted, macOS, ARM64, pigg ]
     timeout-minutes: 15
     steps:
       - name: Checkout
