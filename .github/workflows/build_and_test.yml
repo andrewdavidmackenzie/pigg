@@ -151,6 +151,17 @@ jobs:
       - name: Build porky and porky_w and their UF2 files
         run: cd porky && RUSTFLAGS= make uf2
 
+  hw_tests:
+    runs-on: [ self-hosted, macOS, ARM64, pigg ]
+    timeout-minutes: 10 # test it times out
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run HW Tests
+        run: make hw_tests
+        continue-on-error: true
+
   clippy-build-and-test-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
