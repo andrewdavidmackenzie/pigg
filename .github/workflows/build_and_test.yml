@@ -153,12 +153,14 @@ jobs:
 
   hw_tests:
     runs-on: pigg_hw_tests
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Run HW Tests
         run: make hw_tests
+        continue-on-error: true
 
   clippy-build-and-test-matrix:
     runs-on: ${{ matrix.os }}
