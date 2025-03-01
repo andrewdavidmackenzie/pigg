@@ -16,7 +16,7 @@ path = "src/porky.rs"
 default = []
 pico1 = ["embassy-rp/rp2040"]
 pico2 = ["embassy-rp/rp235xa"]
-wifi = ["dep:cyw43", "tcp", "discovery"]
+wifi = ["dep:cyw43", "discovery", "tcp"]
 debug-probe = []
 usb = ["pigdef/usb", "dep:embassy-usb"]
 discovery = ["pigdef/discovery", "dep:edge-mdns", "dep:edge-nal-embassy", "dep:edge-nal"]
@@ -28,11 +28,11 @@ pigdef = { path = "../pigdef" }
 # Embassy Dependencies (crates in https://github.com/embassy-rs/embassy)
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"] }
 embassy-executor = { version = "0.7.0", default-features = false, features = ["task-arena-size-65536", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
-embassy-rp = { version = "0.3.1", default-features = false, features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-rp = { version = "0.3", default-features = false, features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 embassy-sync = { version = "0.6.2", default-features = false }
 embassy-futures = { version = "0.1.1", default-features = false }
 
-# Needed even when no wifi - I don't know why yet. Reported to Embassy
+# Needed even when no Wi-Fi - I don't know why yet. Reported to Embassy
 cyw43-pio = { version = "0.3.0", default-features = false, features = ["defmt"] }
 
 # Optional Embassy Dependencies
@@ -54,14 +54,13 @@ cortex-m-rt = { version = "0.7.5", default-features = false }
 
 embedded-io-async = { version = "0.6.1", features = ["defmt-03"] }
 rand = { version = "0.8.5", default-features = false }
-# To convert device_id into hex for use as a string
 faster-hex = { version = "0.10.0", default-features = false }
 
 serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
-edge-mdns = { version = "0.5.0", optional = true, features = ["io"] }
+edge-mdns = { version = "0.5.0", default-features = false, optional = true, features = ["io"]} #TODO check out "embassy"  https://github.com/ivmarkov/edge-net/issues/63
 edge-nal-embassy = { version = "0.5.0", default-features = false, optional = true }
 edge-nal = { version = "0.5.0", default-features = false, optional = true }
 
