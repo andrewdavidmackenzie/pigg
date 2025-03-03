@@ -60,7 +60,7 @@ serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
 heapless = { version = "0.8.0", default-features = false, features = ["serde"] }
 
-edge-mdns = { version = "0.5.0", default-features = false, optional = true, features = ["io"]} #TODO check out "embassy"  https://github.com/ivmarkov/edge-net/issues/63
+edge-mdns = { version = "0.5.0", default-features = false, optional = true, features = ["io"] } #TODO check out "embassy"  https://github.com/ivmarkov/edge-net/issues/63
 edge-nal-embassy = { version = "0.5.0", default-features = false, optional = true }
 edge-nal = { version = "0.5.0", default-features = false, optional = true }
 
