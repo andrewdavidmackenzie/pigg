@@ -261,6 +261,7 @@ async fn main(spawner: Spawner) {
         Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     > = StaticCell::new();
     let db = DATABASE.init(flash::db_init(flash).await);
+    // TODO log flash/db error here
 
     #[cfg(feature = "wifi")]
     static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();

@@ -1,6 +1,6 @@
 #[cfg(feature = "pico1")]
 use core::str;
-use defmt::info;
+use defmt::{error, info};
 use ekv::flash::{self, PageID};
 use ekv::{config, Database};
 use embassy_rp::flash::{Blocking, Flash};
@@ -93,18 +93,28 @@ pub fn get_flash<'a>(flash_pin: FLASH) -> Flash<'a, FLASH, Blocking, FLASH_SIZE>
 
 pub async fn db_init(
     flash: Flash<'static, FLASH, Blocking, FLASH_SIZE>,
-) -> Database<DbFlash<Flash<'static, FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex> {
+) -> Database<DbFlash<Flash<'static, FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex>{
+    #[cfg(feature = "pico2")] // pico2 needs a delay
+    embassy_time::Timer::after_millis(10).await;
+
+    #[cfg(feature = "pico1")]
+    const OFFSET: usize = 0x0;
+    #[cfg(not(feature = "pico1"))] // The start of flash address needs adjusting on pico 2
+    const OFFSET: usize = 0x1000_0000;
+
     let flash: DbFlash<Flash<_, _, FLASH_SIZE>> = DbFlash {
         flash,
-        start: unsafe { &__config_start as *const u32 as usize },
+        start: unsafe { &__config_start as *const u32 as usize - OFFSET},
     };
     let db = Database::<_, NoopRawMutex>::new(flash, ekv::Config::default());
 
     if db.mount().await.is_err() {
-        info!("Initializing Flash DB...");
-        db.format().await.unwrap();
+        info!("Formatting Flash DB...");
+        match db.format().await {
+            Ok(..) => info!("Flash Database is up"),
+            Err(_e) => error!("Error initializing Flash DB"),
+        }
     }
 
-    info!("Flash Database is up");
     db
 }
