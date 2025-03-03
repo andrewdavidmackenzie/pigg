@@ -2477,9 +2477,9 @@ dependencies = [
 
 [[package]]
 name = "iced_aw"
-version = "0.12.1"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fae131df50279203411a587343b72677750406bc0d5652867220b6f60bd72d64"
+checksum = "582c517a94ce3205da98e9c10b26bb71aa36b7d7d084441d826dc912711d1bac"
 dependencies = [
  "cfg-if",
  "getrandom 0.3.1",
