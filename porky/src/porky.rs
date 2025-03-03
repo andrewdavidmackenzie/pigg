@@ -20,6 +20,7 @@ use embassy_executor::Spawner;
 #[cfg(all(feature = "usb", feature = "wifi"))]
 use embassy_futures::select::{select, Either};
 use embassy_rp::bind_interrupts;
+use embassy_rp::block::ImageDef;
 use embassy_rp::flash::{Blocking, Flash};
 #[cfg(feature = "wifi")]
 use embassy_rp::gpio::{Level, Output};
@@ -79,6 +80,10 @@ mod mdns;
 
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
+
+#[link_section = ".start_block"]
+#[used]
+pub static IMAGE_DEF: ImageDef = ImageDef::secure_exe();
 
 #[cfg(feature = "usb")]
 bind_interrupts!(struct Irqs {
