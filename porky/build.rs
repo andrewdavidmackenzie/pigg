@@ -84,7 +84,7 @@ fn main() -> io::Result<()> {
     #[cfg(feature = "pico1")]
     file.write_all(include_bytes!("memory1.x"))?;
     #[cfg(feature = "pico2")]
-    file.write_all(include_bytes!("memory2.x")).unwrap();
+    file.write_all(include_bytes!("memory2.x"))?;
     println!("cargo:rustc-link-search={}", out.display());
 
     println!("cargo:rerun-if-changed={}", SSID_FILE_NAME);
