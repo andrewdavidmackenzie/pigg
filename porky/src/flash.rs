@@ -94,8 +94,6 @@ pub fn get_flash<'a>(flash_pin: FLASH) -> Flash<'a, FLASH, Blocking, FLASH_SIZE>
 pub async fn db_init(
     flash: Flash<'static, FLASH, Blocking, FLASH_SIZE>,
 ) -> Database<DbFlash<Flash<'static, FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex>{
-    #[cfg(feature = "pico2")] // pico2 needs a delay
-    embassy_time::Timer::after_millis(10).await;
 
     #[cfg(feature = "pico1")]
     const OFFSET: usize = 0x0;
