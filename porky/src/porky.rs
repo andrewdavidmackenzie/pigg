@@ -248,6 +248,8 @@ async fn main(spawner: Spawner) {
     // create hardware description
     #[allow(unused_mut)]
     let mut flash = flash::get_flash(peripherals.FLASH);
+    #[cfg(feature = "pico2")] // pico2 needs a delay
+    embassy_time::Timer::after_millis(10).await;
     #[cfg(feature = "pico1")]
     let serial_number = flash::serial_number(&mut flash);
     #[cfg(feature = "pico2")]
