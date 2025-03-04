@@ -28,8 +28,8 @@ use pigdef::pin_function::PinFunction::Output;
 const SSID_SPEC_KEY: &[u8] = b"ssid_spec";
 
 /// Load any pre-existing config from flash, if there is none then just return a default config
-pub async fn get_config<'p>(
-    db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+pub async fn get_config(
+    db: &Database<DbFlash<Flash<'_, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
 ) -> HardwareConfig {
     let mut pin_functions: FnvIndexMap<BCMPinNumber, PinFunction, 32> = FnvIndexMap::new();
     let mut buf: [u8; 1024] = [0; 1024];
@@ -56,8 +56,8 @@ pub async fn get_config<'p>(
     HardwareConfig { pin_functions }
 }
 
-pub async fn store_config_change<'p>(
-    db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+pub async fn store_config_change(
+    db: &Database<DbFlash<Flash<'_, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     hardware_config_message: &HardwareConfigMessage,
 ) -> Result<(), &'static str> {
     let mut buf: [u8; 1024] = [0; 1024];
@@ -130,8 +130,8 @@ pub async fn get_ssid_spec<'a>(
 #[allow(dead_code)] // Not used in porky
 #[cfg(feature = "wifi")]
 /// Write the [SsidSpec] to the flash database
-pub async fn store_ssid_spec<'p>(
-    db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+pub async fn store_ssid_spec(
+    db: &Database<DbFlash<Flash<'_, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     ssid_spec: SsidSpec,
 ) -> Result<(), &'static str> {
     let mut buf: [u8; 1024] = [0; 1024];
@@ -147,8 +147,8 @@ pub async fn store_ssid_spec<'p>(
 #[allow(dead_code)] // Not used in porky
 #[cfg(feature = "wifi")]
 /// Delete the [SsidSpec] from the flash database
-pub async fn delete_ssid_spec<'p>(
-    db: &Database<DbFlash<Flash<'p, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
+pub async fn delete_ssid_spec(
+    db: &Database<DbFlash<Flash<'_, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
 ) -> Result<(), &'static str> {
     let mut wtx = db.write_transaction().await;
     wtx.delete(SSID_SPEC_KEY)
