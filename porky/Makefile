@@ -46,7 +46,7 @@ install-uf2:
 	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 	cargo binstall elf2uf2-rs
 
-uf2s: uf2-w uf2-w2 uf2 uf22
+uf2s: uf2-w uf2-w2 uf2 uf2-2
 
 uf2-w: build-w
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico_w.uf2
@@ -57,5 +57,5 @@ uf2-w2: build-w2
 uf2: build
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico.uf2
 
-uf22: build2
+uf2-2: build2
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico2.uf2

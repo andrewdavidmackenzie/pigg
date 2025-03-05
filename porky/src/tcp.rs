@@ -84,7 +84,7 @@ pub async fn wait_connection<'a>(
     accept(tcp_socket).await
 }
 
-pub async fn message_loop<'a>(
+pub async fn message_loop(
     gpio: &mut Gpio,
     mut socket: TcpSocket<'_>,
     hw_desc: &HardwareDescription<'_>,

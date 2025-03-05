@@ -14,7 +14,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-arm build-porky build-web test
+all: clippy format-check build build-arm build-porky build-web test
 
 .PHONY: clean
 clean:
@@ -33,6 +33,10 @@ setup:
 .PHONY: clippy
 clippy:
 	cargo clippy --tests --no-deps
+
+.PHONY: format-check
+format-check:
+	cargo fmt --all -- --check
 
 .PHONY: build
 build:

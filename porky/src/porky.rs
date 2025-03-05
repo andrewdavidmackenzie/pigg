@@ -20,6 +20,8 @@ use embassy_executor::Spawner;
 #[cfg(all(feature = "usb", feature = "wifi"))]
 use embassy_futures::select::{select, Either};
 use embassy_rp::bind_interrupts;
+#[cfg(feature = "pico2")]
+use embassy_rp::block::ImageDef;
 use embassy_rp::flash::{Blocking, Flash};
 #[cfg(feature = "wifi")]
 use embassy_rp::gpio::{Level, Output};
@@ -79,6 +81,11 @@ mod mdns;
 
 /// The Pi Pico GPIO [PinDefinition]s that get passed to the GUI
 mod pin_descriptions;
+
+#[cfg(feature = "pico2")]
+#[link_section = ".start_block"]
+#[used]
+pub static IMAGE_DEF: ImageDef = ImageDef::secure_exe();
 
 #[cfg(feature = "usb")]
 bind_interrupts!(struct Irqs {
@@ -241,6 +248,8 @@ async fn main(spawner: Spawner) {
     // create hardware description
     #[allow(unused_mut)]
     let mut flash = flash::get_flash(peripherals.FLASH);
+    #[cfg(feature = "pico2")] // pico2 needs a delay
+    embassy_time::Timer::after_millis(10).await;
     #[cfg(feature = "pico1")]
     let serial_number = flash::serial_number(&mut flash);
     #[cfg(feature = "pico2")]
@@ -256,6 +265,7 @@ async fn main(spawner: Spawner) {
         Database<DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>, NoopRawMutex>,
     > = StaticCell::new();
     let db = DATABASE.init(flash::db_init(flash).await);
+    // TODO log flash/db error here
 
     #[cfg(feature = "wifi")]
     static STATIC_BUF: StaticCell<[u8; 200]> = StaticCell::new();

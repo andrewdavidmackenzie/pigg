@@ -350,7 +350,7 @@ pub async fn wait_connection(
 /// Enter a loop waiting for messages either via USB (from Piggui) or from the Hardware.
 /// - When receive a message over USB from Piggui, apply to the hardware, save in Flash
 /// - WHen receiving from hardware, send the message to Piggui over USB
-pub async fn message_loop<'a>(
+pub async fn message_loop(
     gpio: &mut Gpio,
     usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
     hw_config: &mut HardwareConfig,
