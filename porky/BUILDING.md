@@ -86,16 +86,24 @@ Wi-Fi network, and the output of its IP and the port it is listening for TCP con
 
 ## Creating a UF2 file
 
-Use `make uf2` Makefile target.
+The `porky/Makefile` has 5 targets for uf2 files:
 
-This uses [`elf2usb2-rs`](https://github.com/JoNil/elf2uf2-rs). This can be installed using:
+- `uf2-w`: Build UF2 file (`target/thumbv6m-none-eabi/release/porky_pico_w.uf2`) for Pico 1 W (Wi-Fi)
+- `uf2-w2`: Build UF2 file (`target/thumbv6m-none-eabi/release/porky_pico_w2.uf2`)for Pico 2 W (Wi-Fi)
+- `uf2`: Build UF2 file (`target/thumbv6m-none-eabi/release/porky_pico.uf2`) for Pico 1 (no Wi-Fi)
+- `uf2-2`: Build UF2 file (`target/thumbv6m-none-eabi/release/porky_pico2.uf2`) for Pico 2 (no Wi-Fi)
+- `uf2s`: Build all of the above
+
+This uses [`elf2usb2-rs`](https://github.com/JoNil/elf2uf2-rs). This can be installed using the `porky/Makefile` target
+`install-uf2` or
+manually:
 
 - `cargo binstall elf2uf2-rs` if you use `cargo binstall` to install a pre-compiled binary
 - `cargo install elf2uf2-rs` to build it from source and install it
 
-This will produce the file `target/thumbv6m-none-eabi/release/porky_pico_w.uf2`
+You can check the generated files using: `file`.
 
-You can check its type using: `file target/thumbv6m-none-eabi/release/porky_pico_w.uf2`:
+For example: `file target/thumbv6m-none-eabi/release/porky_pico_w.uf2`:
 
 ```
 target/thumbv6m-none-eabi/release/porky_pico_w.uf2: UF2 firmware image, family Raspberry Pi RP2040, address 0x10000000, 1608 total blocks
