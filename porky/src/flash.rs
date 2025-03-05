@@ -13,7 +13,13 @@ use faster_hex::hex_encode;
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
+#[cfg(not(any(feature = "pico1", feature = "pico2")))]
+compile_error!("You must choose either feature \"pico1\" or \"pico2\"");
+
+#[cfg(all(feature = "pico1", not(feature = "pico2")))]
 pub const FLASH_SIZE: usize = 2 * 1024 * 1024;
+#[cfg(all(feature = "pico2", not(feature = "pico1")))]
+pub const FLASH_SIZE: usize = 4 * 1024 * 1024;
 
 extern "C" {
     // Flash storage used for configuration
