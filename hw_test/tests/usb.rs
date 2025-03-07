@@ -1,6 +1,5 @@
 #![cfg(feature = "usb")]
 
-use anyhow::anyhow;
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
 use pignet::usb_host;
@@ -13,26 +12,22 @@ const SERIAL: &str = "e66138528350be2b";
 
 #[cfg(all(feature = "discovery", feature = "usb"))]
 /// Get the IP and Port for a TCP connection to a USB connected porky
-pub async fn get_ip_and_port_by_usb() -> anyhow::Result<(IpAddr, u16)> {
+pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(IpAddr, u16)>> {
+    let mut ip_devices: Vec<(IpAddr, u16)> = vec![];
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
-    if !serials.is_empty() {
-        let uut = serials.first().expect("Could not get first serial number");
-        let details = usb_host::get_details(&serials)
-            .await
-            .expect("Could not get details");
+    let details = usb_host::get_details(&serials)
+        .await
+        .expect("Could not get details");
 
-        let uut_device_details = details.get(uut).expect("Could not get details ");
-
-        if let Some(Tcp(ip, port)) = uut_device_details.hardware_connections.get(uut) {
-            Ok((*ip, *port))
-        } else {
-            Err(anyhow!("Could not get hardware connection"))
+    for (serial, device_detail) in details {
+        if let Some(Tcp(ip, port)) = device_detail.hardware_connections.get(&serial) {
+            ip_devices.push((*ip, *port));
         }
-    } else {
-        Err(anyhow!("Could not find usb attached porky"))
     }
+
+    Ok(ip_devices)
 }
 
 #[tokio::test]

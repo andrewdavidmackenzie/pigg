@@ -6,7 +6,7 @@ use crate::discovery::DiscoveryMethod::USBRaw;
 use crate::HardwareConnection;
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
-use nusb::{Device, Interface};
+use nusb::Interface;
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
