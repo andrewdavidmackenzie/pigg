@@ -52,11 +52,10 @@ async fn connect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
-    if !serials.is_empty() {
-        let (_hardware_description, _hardware_config, _usb_connection) =
-            usb_host::connect(serials.first().expect("Could not get first serial number"))
-                .await
-                .expect("Could not connect by USB");
+    for serial in serials {
+        let (_hardware_description, _hardware_config, _usb_connection) = usb_host::connect(&serial)
+            .await
+            .expect("Could not connect by USB");
     }
 }
 

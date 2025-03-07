@@ -6,7 +6,7 @@ use crate::discovery::DiscoveryMethod::USBRaw;
 use crate::HardwareConnection;
 use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
-use nusb::Interface;
+use nusb::{Device, Interface};
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
@@ -84,6 +84,17 @@ where
     Ok(postcard::from_bytes(&data[0..length])?)
 }
 
+async fn device_control_in<T>(porky: &Device, control_in: ControlIn) -> Result<T, Error>
+where
+    T: for<'a> Deserialize<'a>,
+{
+    let response = porky.control_in(control_in).await;
+    response.status?;
+    let data = response.data;
+    let length = data.len();
+    Ok(postcard::from_bytes(&data[0..length])?)
+}
+
 /// Request [HardwareDescription] from compatible device over USB [ControlIn]
 async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, Error> {
     receive_control_in(porky, GET_HARDWARE_DESCRIPTION).await
@@ -91,14 +102,14 @@ async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescripti
 
 #[cfg(feature = "discovery")]
 /// Request [HardwareDetails] from compatible porky device over USB [ControlIn]
-pub async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, Error> {
-    receive_control_in(porky, GET_HARDWARE_DETAILS).await
+pub async fn get_hardware_details(porky: &Device) -> Result<HardwareDetails, Error> {
+    device_control_in(porky, GET_HARDWARE_DETAILS).await
 }
 
 #[cfg(feature = "discovery")]
 /// Request [WiFiDetails] from compatible porky device over USB [ControlIn]
-pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, Error> {
-    receive_control_in(porky, GET_WIFI_DETAILS).await
+pub async fn get_wifi_details(porky: &Device) -> Result<WiFiDetails, Error> {
+    device_control_in(porky, GET_WIFI_DETAILS).await
 }
 
 /// Generic request to send data to device over USB [ControlOut]
@@ -238,15 +249,15 @@ pub async fn get_details(
             .ok_or(anyhow!("Could not get device serial_number"))?;
         if serial_numbers.contains(&serial_number.to_string()) {
             let device = device_info.open()?;
-            let interface = device.claim_interface(0)?;
-            interface.set_alt_setting(1)?;
-            let hardware_details = get_hardware_details(&interface).await?;
+            //            let interface = device.claim_interface(0)?;
+            //            interface.set_alt_setting(1)?;
+            let hardware_details = get_hardware_details(&device).await?;
+
             let wifi_details = if hardware_details.wifi {
-                get_wifi_details(&interface).await.ok()
+                get_wifi_details(&device).await.ok()
             } else {
                 None
             };
-
             let ssid_spec = wifi_details.as_ref().and_then(|wf| wf.ssid_spec.clone());
 
             let mut hardware_connections = HashMap::new();
