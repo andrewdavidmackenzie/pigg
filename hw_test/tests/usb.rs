@@ -65,9 +65,8 @@ async fn disconnect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
-    if !serials.is_empty() {
-        let uut = serials.first().expect("Could not get first serial number");
-        let (_hardware_description, _hardware_config, usb_connection) = usb_host::connect(uut)
+    for serial in serials {
+        let (_hardware_description, _hardware_config, usb_connection) = usb_host::connect(&serial)
             .await
             .expect("Could not connect by USB");
 
@@ -84,9 +83,8 @@ async fn get_config_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
-    if !serials.is_empty() {
-        let uut = serials.first().expect("Could not get first serial number");
-        let (_hardware_description, hardware_config, usb_connection) = usb_host::connect(uut)
+    for serial in serials {
+        let (_hardware_description, hardware_config, usb_connection) = usb_host::connect(&serial)
             .await
             .expect("Could not connect by USB");
 
@@ -109,12 +107,12 @@ async fn reconnect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
-    if !serials.is_empty() {
-        let uut = serials.first().expect("Could not get first serial number");
+    for serial in serials {
         {
-            let (_hardware_description, _hardware_config, usb_connection) = usb_host::connect(uut)
-                .await
-                .expect("Could not connect by USB");
+            let (_hardware_description, _hardware_config, usb_connection) =
+                usb_host::connect(&serial)
+                    .await
+                    .expect("Could not connect by USB");
 
             // now disconnect
             usb_host::disconnect(&usb_connection)
@@ -124,7 +122,7 @@ async fn reconnect_usb() {
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
         // now reconnect
-        let (_hardware_description, _hardware_config, _usb_connection) = usb_host::connect(uut)
+        let (_hardware_description, _hardware_config, _usb_connection) = usb_host::connect(&serial)
             .await
             .expect("Could not reconnect by USB");
     }
