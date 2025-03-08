@@ -38,7 +38,11 @@ where
 #[tokio::test]
 #[serial]
 async fn can_connect_tcp() {
-    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+    let ip_devices = get_ip_and_port_by_usb()
+        .await
+        .expect("Could detect TCP devices via USB");
+
+    for (ip, port) in ip_devices {
         connect_tcp(ip, port, |_d, _c, _co| async {}).await;
     }
 }
@@ -46,7 +50,11 @@ async fn can_connect_tcp() {
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
-    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+    let ip_devices = get_ip_and_port_by_usb()
+        .await
+        .expect("Could detect TCP devices via USB");
+
+    for (ip, port) in ip_devices {
         connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
             tcp_host::send_config_message(tcp_stream, &Disconnect)
                 .await
@@ -59,7 +67,11 @@ async fn disconnect_tcp() {
 #[tokio::test]
 #[serial]
 async fn get_config_tcp() {
-    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+    let ip_devices = get_ip_and_port_by_usb()
+        .await
+        .expect("Could detect TCP devices via USB");
+
+    for (ip, port) in ip_devices {
         connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
             tcp_host::send_config_message(tcp_stream, &GetConfig)
                 .await
@@ -72,7 +84,11 @@ async fn get_config_tcp() {
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
-    if let Ok((ip, port)) = get_ip_and_port_by_usb().await {
+    let ip_devices = get_ip_and_port_by_usb()
+        .await
+        .expect("Could detect TCP devices via USB");
+
+    for (ip, port) in ip_devices {
         connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
             tcp_host::send_config_message(tcp_stream, &Disconnect)
                 .await
