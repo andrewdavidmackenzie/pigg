@@ -36,7 +36,7 @@ pignet = { path = "../pignet" }
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
-tokio = { version = "1.43", default-features = false, features = ["time", "rt", "macros"] }
+tokio = { version = "1.44", default-features = false, features = ["time", "rt", "macros"] }
 log = { version = "0.4.26", default-features = false }
 iced_futures = { version = "0.13", default-features = false }
 plotters-iced = { version = "0.11", default-features = false }
