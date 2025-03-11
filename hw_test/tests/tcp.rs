@@ -112,8 +112,3 @@ async fn discover_and_connect_tcp() {
         connect_tcp(ip, port, |_d, _c, _co| async {}).await;
     }
 }
-
-// piggui tests
-// connect using usb from piggui via CLI option
-// connect using tcp from piggui via CLI option
-// connect using usb from piggui via CLI option
