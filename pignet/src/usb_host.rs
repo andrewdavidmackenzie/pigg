@@ -96,7 +96,7 @@ pub async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, 
         Ok(hwd) => Ok(hwd),
         Err(e) => {
             eprintln!("Receive in error: '{e}'");
-            return Err(e);
+            Err(e)
         }
     }
 }
@@ -108,7 +108,7 @@ pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, Error> {
         Ok(wifi) => Ok(wifi),
         Err(e) => {
             eprintln!("Receive in error: '{e}'");
-            return Err(e);
+            Err(e)
         }
     }
 }

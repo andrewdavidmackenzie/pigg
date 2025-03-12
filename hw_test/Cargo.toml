@@ -20,6 +20,7 @@ serial_test = "3.1.1"
 anyhow = "1.0.97"
 mdns-sd = { version = "0.13.3", default-features = false, features = ["async"] }
 iroh = { version = "0.33.0", default-features = false }
+sysinfo = { version = "0.33" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

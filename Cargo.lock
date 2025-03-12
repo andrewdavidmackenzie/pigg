@@ -2377,6 +2377,7 @@ dependencies = [
  "pigdef",
  "pignet",
  "serial_test",
+ "sysinfo",
  "tokio",
 ]
 

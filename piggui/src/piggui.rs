@@ -26,6 +26,7 @@ use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme}
 #[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
 use iroh::NodeId;
 use pigdef::config::HardwareConfig;
+#[cfg(any(feature = "discovery", feature = "usb"))]
 use pigdef::description::SerialNumber;
 #[cfg(feature = "discovery")]
 use pignet::discovery::DiscoveryMethod::Local;
@@ -125,7 +126,7 @@ fn main() -> iced::Result {
 
 #[cfg(feature = "usb")]
 #[allow(unused_variables)]
-fn reset_ssid(serial_number: String) -> Task<Message> {
+fn reset_ssid(serial_number: SerialNumber) -> Task<Message> {
     #[cfg(feature = "usb")]
     return Task::perform(usb_host::reset_ssid_spec(serial_number), |res| match res {
         Ok(_) => InfoRow(ShowStatusMessage(Info(
