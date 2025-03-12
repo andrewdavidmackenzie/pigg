@@ -10,13 +10,13 @@ use std::future::Future;
 use std::net::IpAddr;
 use std::time::Duration;
 
-mod usb;
+mod lib_to_porky_usb;
 #[cfg(feature = "usb")]
-use usb::get_ip_and_port_by_usb;
+use lib_to_porky_usb::get_ip_and_port_by_usb;
 
-mod mdns;
+mod mdns_support;
 #[cfg(feature = "discovery")]
-use mdns::get_ip_and_port_by_mdns;
+use mdns_support::get_ip_and_port_by_mdns;
 
 async fn connect_tcp<F, Fut>(ip: IpAddr, port: u16, test: F)
 where
@@ -25,13 +25,9 @@ where
 {
     match tcp_host::connect(ip, port).await {
         Ok((hw_desc, hw_config, tcp_stream)) => {
-            if !hw_desc.details.model.contains("Fake") {
-                panic!("Didn't connect to fake hardware piglet")
-            } else {
-                test(hw_desc, hw_config, tcp_stream).await;
-            }
+            test(hw_desc, hw_config, tcp_stream).await;
         }
-        _ => panic!("Could not connect to piglet"),
+        _ => panic!("Could not connect to device by TCP"),
     }
 }
 
@@ -43,7 +39,13 @@ async fn can_connect_tcp() {
         .expect("Could detect TCP devices via USB");
 
     for (ip, port) in ip_devices {
-        connect_tcp(ip, port, |_d, _c, _co| async {}).await;
+        connect_tcp(ip, port, |hw_desc, _c, _co| async move {
+            assert!(
+                hw_desc.details.model.contains("Fake"),
+                "Didn't connect to fake hardware piglet"
+            );
+        })
+        .await;
     }
 }
 
@@ -55,7 +57,12 @@ async fn disconnect_tcp() {
         .expect("Could detect TCP devices via USB");
 
     for (ip, port) in ip_devices {
-        connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
+        connect_tcp(ip, port, |hw_desc, _c, tcp_stream| async move {
+            assert!(
+                hw_desc.details.model.contains("Fake"),
+                "Didn't connect to fake hardware piglet"
+            );
+
             tcp_host::send_config_message(tcp_stream, &Disconnect)
                 .await
                 .expect("Could not send Disconnect");
@@ -72,7 +79,12 @@ async fn get_config_tcp() {
         .expect("Could detect TCP devices via USB");
 
     for (ip, port) in ip_devices {
-        connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
+        connect_tcp(ip, port, |hw_desc, _c, tcp_stream| async move {
+            assert!(
+                hw_desc.details.model.contains("Fake"),
+                "Didn't connect to fake hardware piglet"
+            );
+
             tcp_host::send_config_message(tcp_stream, &GetConfig)
                 .await
                 .expect("Could not GetConfig");
@@ -89,7 +101,12 @@ async fn reconnect_tcp() {
         .expect("Could detect TCP devices via USB");
 
     for (ip, port) in ip_devices {
-        connect_tcp(ip, port, |_d, _c, tcp_stream| async move {
+        connect_tcp(ip, port, |hw_desc, _c, tcp_stream| async move {
+            assert!(
+                hw_desc.details.model.contains("Fake"),
+                "Didn't connect to fake hardware piglet"
+            );
+
             tcp_host::send_config_message(tcp_stream, &Disconnect)
                 .await
                 .expect("Could not send Disconnect");
@@ -99,16 +116,29 @@ async fn reconnect_tcp() {
         tokio::time::sleep(Duration::from_secs(1)).await;
 
         // Test we can re-connect after sending a disconnect request
-        connect_tcp(ip, port, |_d, _c, _tcp_stream| async {}).await;
+        connect_tcp(ip, port, |hw_desc, _c, _tcp_stream| async move {
+            assert!(
+                hw_desc.details.model.contains("Fake"),
+                "Didn't connect to fake hardware piglet"
+            );
+        })
+        .await;
     }
 }
 
-#[ignore]
 #[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial]
-async fn discover_and_connect_tcp() {
-    if let Ok((ip, port)) = get_ip_and_port_by_mdns().await {
-        connect_tcp(ip, port, |_d, _c, _co| async {}).await;
-    }
+async fn mdns_discover_and_connect_tcp() {
+    let (ip, port) = get_ip_and_port_by_mdns()
+        .await
+        .expect("Could not find device to test by mDNS");
+    connect_tcp(ip, port, |hw_desc, _c, _co| async move {
+        assert!(
+            hw_desc.details.model.contains("Pico"),
+            "Didn't connect to porky as expected: {}",
+            hw_desc.details.model
+        );
+    })
+    .await;
 }
