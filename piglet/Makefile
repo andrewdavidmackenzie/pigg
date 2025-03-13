@@ -99,11 +99,11 @@ test-armv7:
 
 .PHONY: copy-armv7
 copy-armv7:
-	scp target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-armv7
 copy-release-armv7:
-	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
 
 #### aarch64 targets
