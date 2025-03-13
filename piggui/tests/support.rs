@@ -1,11 +1,4 @@
-#![cfg(not(any(
-    all(
-        target_os = "linux",
-        any(target_arch = "aarch64", target_arch = "arm"),
-        target_env = "gnu"
-    ),
-    target_arch = "wasm32"
-)))]
+#![cfg(not(target_arch = "wasm32"))]
 
 use std::io::prelude::*;
 use std::io::BufReader;
