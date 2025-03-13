@@ -130,15 +130,18 @@ async fn reconnect_tcp() {
 #[tokio::test]
 #[serial]
 async fn mdns_discover_and_connect_tcp() {
-    let (ip, port) = get_ip_and_port_by_mdns()
+    let devices = get_ip_and_port_by_mdns()
         .await
         .expect("Could not find device to test by mDNS");
-    connect_tcp(ip, port, |hw_desc, _c, _co| async move {
-        assert!(
-            hw_desc.details.model.contains("Pico"),
-            "Didn't connect to porky as expected: {}",
-            hw_desc.details.model
-        );
-    })
-    .await;
+
+    for (ip, port) in devices {
+        connect_tcp(ip, port, |hw_desc, _c, _co| async move {
+            assert!(
+                hw_desc.details.model.contains("Pico"),
+                "Didn't connect to porky as expected: {}",
+                hw_desc.details.model
+            );
+        })
+        .await;
+    }
 }
