@@ -129,11 +129,11 @@ test-aarch64:
 
 .PHONY: copy-aarch64
 copy-aarch64:
-	scp target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-aarch64
 copy-release-aarch64:
-	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: ssh
 ssh:
