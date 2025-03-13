@@ -49,11 +49,13 @@ async fn connect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+    let number = serials.len();
     for serial in serials {
         let (_hardware_description, _hardware_config, _usb_connection) = usb_host::connect(&serial)
             .await
             .expect("Could not connect by USB");
     }
+    println!("Tested {} USB connected devices: connect_usb", number);
 }
 
 #[tokio::test]

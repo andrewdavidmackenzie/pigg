@@ -11,6 +11,7 @@ use std::net::IpAddr;
 #[cfg(all(feature = "tcp", feature = "iroh"))]
 use std::str::FromStr;
 
+#[allow(dead_code)] // Only piglet device will offer Iroh properties
 #[cfg(feature = "tcp")]
 pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<Vec<(IpAddr, u16)>> {
     let mut discovered = vec![];
@@ -37,7 +38,7 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<Vec<(IpAddr, u16)>> {
 
 #[allow(dead_code)] // Only piglet device will offer Iroh properties
 #[cfg(feature = "iroh")]
-pub async fn get_iroh_by_mdns() -> anyhow::Result<Vec<(NodeId, Option<RelayUrl>)>> {
+pub async fn get_iroh_by_mdns() -> anyhow::Result<Vec<(IpAddr, u16, NodeId, Option<RelayUrl>)>> {
     let mut discovered = vec![];
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
@@ -48,10 +49,16 @@ pub async fn get_iroh_by_mdns() -> anyhow::Result<Vec<(NodeId, Option<RelayUrl>)
                 let device_properties = info.get_properties();
                 if let Some(nodeid_str) = device_properties.get_property_val_str("IrohNodeID") {
                     if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
+                        let ip = info
+                            .get_addresses_v4()
+                            .drain()
+                            .next()
+                            .expect("Failed to get IP");
+                        let port = info.get_port();
                         let relay_url = device_properties
                             .get_property_val_str("IrohRelayURL")
                             .map(|s| RelayUrl::from_str(s).unwrap());
-                        discovered.push((nodeid, relay_url));
+                        discovered.push((IpAddr::V4(*ip), port, nodeid as NodeId, relay_url));
                     }
                 }
             }

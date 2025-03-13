@@ -5,7 +5,7 @@ edition = "2021"
 rust-version = "1.80"
 
 [features]
-default = ["usb", "tcp", "discovery"]
+default = ["usb", "tcp", "discovery", "iroh"]
 usb = ["pigdef/usb", "pignet/usb"]
 tcp = ["pigdef/tcp", "pignet/tcp"]
 discovery = ["pigdef/discovery", "pignet/discovery"]
