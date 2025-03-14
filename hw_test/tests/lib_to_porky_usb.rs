@@ -13,7 +13,6 @@ const SERIAL: &str = "e66138528350be2b";
 /// These tests test connecting to USB connected porky devices by USB and TCP, using library
 /// methods to do so.
 ///
-#[cfg(all(feature = "discovery", feature = "usb"))]
 /// Get the IP and Port for a TCP connection to a USB connected porky
 pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(IpAddr, u16)>> {
     let mut ip_devices: Vec<(IpAddr, u16)> = vec![];
@@ -50,11 +49,13 @@ async fn connect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+    let number = serials.len();
     for serial in serials {
         let (_hardware_description, _hardware_config, _usb_connection) = usb_host::connect(&serial)
             .await
             .expect("Could not connect by USB");
     }
+    println!("Tested {} USB connected devices: connect_usb", number);
 }
 
 #[tokio::test]
