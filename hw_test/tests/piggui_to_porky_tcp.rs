@@ -7,17 +7,17 @@ use serial_test::serial;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
-#[path = "usb.rs"]
-mod usb;
+#[path = "lib_to_porky_usb.rs"]
+mod lib_to_porky_usb;
 
 #[tokio::test]
 #[serial]
 async fn connect_tcp() {
-    let ip_and_ports = usb::get_ip_and_port_by_usb()
+    let ip_and_ports = lib_to_porky_usb::get_ip_and_port_by_usb()
         .await
         .expect("Could not get IP and port of USB connected devices");
 
-    for (ip, port) in ip_and_ports {
+    for (_serial, ip, port) in ip_and_ports {
         let mut piggui = run(
             "piggui",
             vec!["--ip".to_string(), format!("{ip}:{port}")],

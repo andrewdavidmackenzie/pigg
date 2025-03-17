@@ -4,5 +4,11 @@ linker = "aarch64-linux-gnu-gcc"
 [target.armv7-unknown-linux-gnueabihf]
 linker = "arm-linux-gnueabihf-gcc"
 
+[target.arm-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+
 [target.armv7-unknown-linux-musleabihf]
+linker = "arm-linux-gnueabihf-gcc"
+
+[target.arm-unknown-linux-musleabihf]
 linker = "arm-linux-gnueabihf-gcc"

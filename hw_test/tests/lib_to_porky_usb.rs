@@ -2,21 +2,19 @@
 
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
+use pigdef::description::SerialNumber;
 use pignet::usb_host;
 use pignet::HardwareConnection::Tcp;
 use serial_test::serial;
 use std::net::IpAddr;
 use std::time::Duration;
 
-const SERIAL: &str = "e66138528350be2b";
-
 /// These tests test connecting to USB connected porky devices by USB and TCP, using library
 /// methods to do so.
 ///
-#[cfg(all(feature = "discovery", feature = "usb"))]
 /// Get the IP and Port for a TCP connection to a USB connected porky
-pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(IpAddr, u16)>> {
-    let mut ip_devices: Vec<(IpAddr, u16)> = vec![];
+pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(SerialNumber, IpAddr, u16)>> {
+    let mut ip_devices: Vec<(SerialNumber, IpAddr, u16)> = vec![];
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -25,8 +23,8 @@ pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(IpAddr, u16)>> {
         .expect("Could not get details");
 
     for (serial, device_detail) in details {
-        if let Some(Tcp(ip, port)) = device_detail.hardware_connections.get(&serial) {
-            ip_devices.push((*ip, *port));
+        if let Some(Tcp(ip, port)) = device_detail.hardware_connections.get("TCP") {
+            ip_devices.push((serial, *ip, *port));
         }
     }
 
@@ -35,26 +33,18 @@ pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(IpAddr, u16)>> {
 
 #[tokio::test]
 #[serial]
-async fn get_known_serial() {
-    let serials = usb_host::get_serials()
-        .await
-        .expect("No usb porky attached");
-    if !serials.is_empty() {
-        assert!(serials.contains(&SERIAL.to_string()));
-    }
-}
-
-#[tokio::test]
-#[serial]
 async fn connect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+    let number = serials.len();
+    assert!(number > 0, "Could not find USB connected devices");
     for serial in serials {
         let (_hardware_description, _hardware_config, _usb_connection) = usb_host::connect(&serial)
             .await
             .expect("Could not connect by USB");
     }
+    println!("Tested USB connect to {number} USB connected devices");
 }
 
 #[tokio::test]
@@ -63,6 +53,8 @@ async fn disconnect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+    let number = serials.len();
+    assert!(number > 0, "Could not find USB connected devices");
     for serial in serials {
         let (_hardware_description, _hardware_config, usb_connection) = usb_host::connect(&serial)
             .await
@@ -73,6 +65,7 @@ async fn disconnect_usb() {
             .await
             .expect("Could not send Disconnect");
     }
+    println!("Tested USB disconnect {number} USB connected devices");
 }
 
 #[tokio::test]
@@ -81,6 +74,8 @@ async fn get_config_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+    let number = serials.len();
+    assert!(number > 0, "Could not find USB connected devices");
     for serial in serials {
         let (_hardware_description, hardware_config, usb_connection) = usb_host::connect(&serial)
             .await
@@ -97,6 +92,7 @@ async fn get_config_usb() {
 
         assert_eq!(hw_config, hardware_config);
     }
+    println!("Tested GetConfig to {number} USB connected devices");
 }
 
 #[tokio::test]
@@ -105,6 +101,8 @@ async fn reconnect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+    let number = serials.len();
+    assert!(number > 0, "Could not find USB connected devices");
     for serial in serials {
         {
             let (_hardware_description, _hardware_config, usb_connection) =
@@ -124,6 +122,7 @@ async fn reconnect_usb() {
             .await
             .expect("Could not reconnect by USB");
     }
+    println!("Tested USB re-connect to {number} USB connected devices");
 }
 
 #[tokio::test]
@@ -132,21 +131,30 @@ async fn get_details_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+    let number = serials.len();
+    assert!(number > 0, "Could not find USB connected devices");
     if !serials.is_empty() {
-        let uut = serials.first().expect("Could not get first serial number");
-        let hw_description = {
-            let (hardware_description, _hardware_config, _usb_connection) = usb_host::connect(uut)
-                .await
-                .expect("Could not connect by USB");
-            hardware_description
-        };
-
         let details = usb_host::get_details(&serials)
             .await
             .expect("Could not get details");
 
-        let uut_device_details = details.get(uut).expect("Could not get details ");
+        for serial in serials {
+            let hw_description = {
+                let (hardware_description, _hardware_config, _usb_connection) =
+                    usb_host::connect(&serial)
+                        .await
+                        .expect("Could not connect by USB");
+                hardware_description
+            };
 
-        assert_eq!(uut_device_details.hardware_details, hw_description.details);
+            assert_eq!(
+                details
+                    .get(&serial)
+                    .expect("Could not get details ")
+                    .hardware_details,
+                hw_description.details
+            );
+        }
     }
+    println!("Tested GetDetails to {number} USB connected devices");
 }
