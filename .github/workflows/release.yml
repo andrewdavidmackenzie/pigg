@@ -125,11 +125,11 @@ jobs:
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           fi
-      - name: "Install armv7 and aarch64 Linkers"
+      - name: "Install arm, armv7 and aarch64 Linkers"
         if: "runner.os == 'Linux'"
         run: |
-          sudo apt install gcc-aarch64-linux-gnu
           sudo apt install gcc-arm-linux-gnueabihf
+          sudo apt install gcc-aarch64-linux-gnu
       - name: Install dist
         run: ${{ matrix.install_dist.run }}
       # Get the dist-manifest
