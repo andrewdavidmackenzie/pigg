@@ -17,7 +17,7 @@ async fn connect_tcp() {
         .await
         .expect("Could not get IP and port of USB connected devices");
 
-    for (ip, port) in ip_and_ports {
+    for (_serial, ip, port) in ip_and_ports {
         let mut piggui = run(
             "piggui",
             vec!["--ip".to_string(), format!("{ip}:{port}")],

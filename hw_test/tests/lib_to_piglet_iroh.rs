@@ -14,12 +14,12 @@ mod mdns_support;
 #[cfg(feature = "discovery")]
 use mdns_support::get_iroh_by_mdns;
 
-async fn connect_iroh<F, Fut>(nodeid: NodeId, relay_url: Option<RelayUrl>, test: F)
+async fn connect<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
     Fut: Future<Output = ()>,
 {
-    match iroh_host::connect(&nodeid, relay_url).await {
+    match iroh_host::connect(nodeid, relay_url.clone()).await {
         Ok((hw_desc, hw_config, connection)) => {
             test(hw_desc, hw_config, connection).await;
         }
@@ -27,57 +27,24 @@ where
     }
 }
 
+/// Use connect and disconnect test directly on Iroh, as the disconnect timeout is long and
+/// inconvenient for tests that follow this one if it only connected.
+#[ignore]
 #[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial]
-async fn mdns_discover_and_connect_tcp() {
+async fn connect_and_disconnect_iroh() {
     let devices = get_iroh_by_mdns()
         .await
         .expect("Could not find device to test by mDNS");
 
-    for (_ip, _port, node, relay) in devices {
-        connect_iroh(node, relay, |hw_desc, _c, _co| async move {
+    let number = devices.len();
+    assert!(number > 0, "Could not find USB connected device with Iroh");
+
+    for (_ip, _port, node, relay) in devices.values() {
+        connect(node, relay, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to porky as expected: {}",
-                hw_desc.details.model
-            );
-        })
-        .await;
-    }
-}
-
-#[ignore]
-#[tokio::test]
-#[serial]
-async fn can_connect_iroh() {
-    let devices = get_iroh_by_mdns()
-        .await
-        .expect("Could not find device to test by mDNS");
-
-    for (_ip, _port, node, relay) in devices {
-        connect_iroh(node, relay, |hw_desc, _c, _co| async move {
-            assert!(
-                hw_desc.details.model.contains("Fake"),
-                "Didn't connect to fake hardware piglet"
-            );
-        })
-        .await;
-    }
-}
-
-#[ignore]
-#[tokio::test]
-#[serial]
-async fn disconnect_iroh() {
-    let devices = get_iroh_by_mdns()
-        .await
-        .expect("Could not find device to test by mDNS");
-
-    for (_ip, _port, node, relay) in devices {
-        connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
-            assert!(
-                hw_desc.details.model.contains("Fake"),
                 "Didn't connect to fake hardware piglet"
             );
 
@@ -87,6 +54,10 @@ async fn disconnect_iroh() {
         })
         .await;
     }
+    println!(
+        "Tested Iroh connection and disconnection to {} mDNS discovered devices",
+        number
+    );
 }
 
 #[ignore]
@@ -97,19 +68,30 @@ async fn get_config_iroh() {
         .await
         .expect("Could not find device to test by mDNS");
 
-    for (_ip, _port, node, relay) in devices {
-        connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
+    let number = devices.len();
+    assert!(number > 0, "Could not find USB connected device with Iroh");
+
+    for (_ip, _port, node, relay) in devices.values() {
+        connect(node, relay, |hw_desc, _c, mut connection| async move {
             assert!(
-                hw_desc.details.model.contains("Fake"),
+                hw_desc.details.model.contains("Pi"),
                 "Didn't connect to fake hardware piglet"
             );
 
             iroh_host::send_config_message(&mut connection, &GetConfig)
                 .await
                 .expect("Could not GetConfig");
+
+            iroh_host::send_config_message(&mut connection, &Disconnect)
+                .await
+                .expect("Could not send Disconnect");
         })
         .await;
     }
+    println!(
+        "Tested Iroh GetConfig to {} mDNS discovered devices",
+        number
+    );
 }
 
 #[ignore]
@@ -120,32 +102,35 @@ async fn reconnect_iroh() {
         .await
         .expect("Could not find device to test by mDNS");
 
-    for (_ip, _port, node, relay) in devices {
-        connect_iroh(
-            node,
-            relay.clone(),
-            |hw_desc, _c, mut connection| async move {
-                assert!(
-                    hw_desc.details.model.contains("Fake"),
-                    "Didn't connect to fake hardware piglet"
-                );
+    let number = devices.len();
+    assert!(number > 0, "Could not find USB connected device with Iroh");
 
-                iroh_host::send_config_message(&mut connection, &Disconnect)
-                    .await
-                    .expect("Could not send Disconnect");
-            },
-        )
-        .await;
-
-        tokio::time::sleep(Duration::from_secs(1)).await;
-
-        // Test we can re-connect after sending a disconnect request
-        connect_iroh(node, relay, |hw_desc, _c, _co| async move {
+    for (_ip, _port, node, relay) in devices.values() {
+        connect(node, relay, |hw_desc, _c, mut connection| async move {
             assert!(
-                hw_desc.details.model.contains("Fake"),
+                hw_desc.details.model.contains("Pi"),
                 "Didn't connect to fake hardware piglet"
             );
+
+            iroh_host::send_config_message(&mut connection, &Disconnect)
+                .await
+                .expect("Could not send Disconnect");
+
+            tokio::time::sleep(Duration::from_secs(1)).await;
+
+            // Test we can re-connect after sending a disconnect request
+            connect(node, relay, |hw_desc, _c, _co| async move {
+                assert!(
+                    hw_desc.details.model.contains("Pi"),
+                    "Didn't connect to fake hardware piglet"
+                );
+            })
+            .await;
         })
         .await;
     }
+    println!(
+        "Tested Iroh re-connection to {} mDNS discovered devices",
+        number
+    );
 }

@@ -1,6 +1,6 @@
-# default target: "make" ran on macos or linux host should build these binaries:
-# target/aarch64-unknown-linux-gnu/release/piglet - Headless version for Pi with GPIO, can be run natively from RPi command line
-# target/armv7-unknown-linux-gnueabihf/release/piglet - Headless version for armv7 based architecture with GPIO, can be run natively
+# default target: "make" ran on macos or linux or windows and build for the host architecture
+# target/aarch64-unknown-linux-gnu/release/piglet - for Pi with GPIO, can be run natively from RPi command line
+# target/armv7-unknown-linux-gnueabihf/release/piglet - for armv7 based architecture with GPIO, can be run natively
 
 # MacOS pre-requisites for cross-compiling to armv7
 # brew install arm-linux-gnueabihf-binutils
@@ -13,6 +13,8 @@
 # brew install aarch64-unknown-linux-gnu
 # brew install arm-unknown-linux-gnueabihf
 # brew install arm-unknown-linux-musleabihf
+#
+# Pi Zero is an ARMv6 CPU and so need a different target from v7 and v8 or aarch64 targets
 
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
@@ -35,6 +37,7 @@ macos-setup: setup
 .PHONY: setup
 setup:
 	rustup target add armv7-unknown-linux-gnueabihf
+	rustup target add arm-unknown-linux-gnueabihf # For Pi Zero
 	rustup target add armv7-unknown-linux-musleabihf
 	rustup target add aarch64-unknown-linux-gnu
 
@@ -69,7 +72,7 @@ features:
 #### arm builds
 .PHONY: build-arm
 # Don't build build-armv7-musl locally on macOS
-build-arm: build-armv7 build-aarch64
+build-arm: build-armv7 build-aarch64 build-arm
 
 #### armv7 targets
 # Don't build build-armv7-musl locally on macOS
@@ -134,6 +137,42 @@ copy-aarch64:
 .PHONY: copy-release-aarch64
 copy-release-aarch64:
 	scp ../target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+
+
+#### arm targets - useful for Raspberry Pi Zero (not Zero 2)
+# Don't build build-arm-musl by default
+.PHONY: arm
+arm: clippy-arm build-arm
+
+.PHONY: clippy-arm
+clippy-arm:
+	cargo clippy --tests --no-deps --target=arm-unknown-linux-gnueabihf
+
+.PHONY: build-arm
+build-arm:
+	cargo build --target=arm-unknown-linux-gnueabihf
+
+.PHONY: build-arm-musl
+build-arm-musl:
+	cargo build --target=arm-unknown-linux-musleabihf
+
+.PHONY: release-build-arm
+release-build-arm:
+	cargo build --release --target=arm-unknown-linux-gnueabihf
+
+# NOTE: The tests will be built for arm architecture, so tests can only be run on that architecture
+.PHONY: test-arm
+test-arm:
+	cargo test --target=arm-unknown-linux-gnueabihf
+
+.PHONY: copy-arm
+copy-arm:
+	scp ../target/arm-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+
+.PHONY: copy-release-arm
+copy-release-arm:
+	scp ../target/arm-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+
 
 .PHONY: ssh
 ssh:

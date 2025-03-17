@@ -75,7 +75,7 @@ test:
 
 .PHONY: hw_tests
 hw_tests:
-	cargo test --package hw_test -- --show-output
+	cd hw_tests && $(MAKE)
 
 .PHONY: features
 features:

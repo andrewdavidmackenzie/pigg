@@ -139,7 +139,7 @@ impl HW {
             hardware: "fake".to_string(),
             revision: "unknown".to_string(),
             serial: "unknown".to_string(),
-            model: "Fake RPi".to_string(),
+            model: "Fake Pi".to_string(),
             wifi: true,
             app_name: app_name.to_string(),
             app_version: env!("CARGO_PKG_VERSION").to_string(),
