@@ -75,7 +75,7 @@ test:
 
 .PHONY: hw_tests
 hw_tests:
-	cd hw_tests && $(MAKE)
+	cd hw_test && $(MAKE)
 
 .PHONY: features
 features:
