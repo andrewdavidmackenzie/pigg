@@ -455,8 +455,7 @@ fn register_mdns(
 ) -> anyhow::Result<(ServiceInfo, ServiceDaemon)> {
     let service_daemon = ServiceDaemon::new().context("Could not create service daemon")?;
 
-    let hostname = "host1".to_string(); // TODO what to put here?
-    let service_hostname = format!("{}.local.", hostname);
+    let service_hostname = format!("{}.local.", serial_number);
 
     // Register a service.
     let service_info = ServiceInfo::new(
@@ -475,8 +474,8 @@ fn register_mdns(
         .context("Could not register mDNS daemon")?;
 
     println!(
-        "Registered piglet (instance #{}) with mDNS: {}",
-        serial_number, service_type
+        "Registered piglet (instance #{}, hostname: {}) with mDNS: {}",
+        serial_number, service_hostname, service_type
     );
 
     Ok((service_info, service_daemon))
