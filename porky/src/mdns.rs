@@ -55,7 +55,7 @@ pub async fn mdns_responder(
 
             // Host we are announcing from - not sure how important this is
             let host = Host {
-                hostname: "host1",
+                hostname: serial_number,
                 ipv4,
                 ipv6: Ipv6Addr::UNSPECIFIED,
                 ttl: Ttl::from_secs(60),
