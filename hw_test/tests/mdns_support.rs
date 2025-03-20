@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
-        .checked_add(Duration::from_secs(1))
+        .checked_add(Duration::from_secs(5))
         .expect("Could not set a deadline");
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
@@ -27,6 +27,8 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
         while Instant::now() < deadline {
             if let Ok(ServiceEvent::ServiceResolved(info)) = receiver.recv_async().await {
                 println!("Addresses: {:?}", info.get_addresses_v4());
+                println!("Hostname: {}", info.get_hostname());
+                println!("Fullname: {}", info.get_fullname());
                 let ip = info
                     .get_addresses_v4()
                     .drain()
@@ -36,7 +38,7 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
                 let serial = info
                     .get_property_val_str("Serial")
                     .expect("Could not get serial number");
-                println!("Discovered device: {serial} : ip = {ip}");
+                println!("Discovered device: {serial} : ip = {ip}\n");
                 discovered.insert(serial.to_string(), (IpAddr::V4(*ip), port));
             }
 
