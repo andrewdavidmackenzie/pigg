@@ -3,9 +3,10 @@ all: build build-w build2 build-w2
 clean:
 	cargo clean
 
-# Install required rust targets
-targets:
+setup:
 	rustup target add thumbv8m.main-none-eabihf
+	cargo binstall elf2uf2-rs
+
 
 .PHONY: features
 features:
