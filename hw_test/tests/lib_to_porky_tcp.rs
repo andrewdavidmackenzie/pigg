@@ -54,7 +54,6 @@ async fn can_connect_tcp() {
     println!("Tested TCP connection to {} USB discovered devices", number);
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -85,7 +84,6 @@ async fn disconnect_tcp() {
     );
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn get_config_tcp() {
@@ -113,7 +111,6 @@ async fn get_config_tcp() {
     println!("Tested TCP GetConfig to {} USB discovered devices", number);
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
