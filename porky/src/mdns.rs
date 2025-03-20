@@ -80,7 +80,7 @@ pub async fn mdns_responder(
 
             info!("Starting mDNS responder");
             let ha = HostAnswersMdnsHandler::new(ServiceAnswers::new(&host, &service));
-            if (mdns.run(ha).await).is_err() {
+            if mdns.run(ha).await.is_err() {
                 error!("Could not run mdns responder");
             }
 
