@@ -474,7 +474,7 @@ fn register_mdns(
         .context("Could not register mDNS daemon")?;
 
     println!(
-        "Registered piglet (instance #{}, hostname: {}) with mDNS: {}",
+        "Registered piglet with mDNS:\n\tInstance: {}\n\tHostname: {}\n\tService Type: {}",
         serial_number, service_hostname, service_type
     );
 
@@ -490,34 +490,37 @@ mod test {
     use std::str::FromStr;
     use tempfile::tempdir;
 
-    #[cfg(feature = "iroh")]
-    #[test]
-    fn write_info_file() {
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
-        let test_file = output_dir.join("test.info");
-        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
-            .expect("Could not create Relay URL");
-
-        let info = ListenerInfo {
+    fn listener_info(node_id_str: &str, relay_url_str: &str) -> ListenerInfo {
+        ListenerInfo {
             iroh_info: crate::iroh_device::IrohDevice {
-                nodeid,
-                relay_url,
+                nodeid: iroh::NodeId::from_str(node_id_str).expect("Could not create nodeid"),
+                relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
                 endpoint: None,
             },
+
             #[cfg(feature = "tcp")]
             tcp_info: crate::tcp_device::TcpDevice {
                 ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
                 port: 9001,
                 listener: None,
             },
-        };
+        }
+    }
 
-        super::write_info_file(&test_file, &info).expect("Writing info file failed");
+    #[cfg(feature = "iroh")]
+    #[test]
+    fn write_info_file() {
+        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let test_file = output_dir.join("test.info");
+        let node_id_str = "rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq";
+        super::write_info_file(
+            &test_file,
+            &listener_info(node_id_str, "https://euw1-1.relay.iroh.network./ "),
+        )
+        .expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
         let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
-        assert!(piglet_info.contains(&nodeid.to_string()))
+        assert!(piglet_info.contains(node_id_str))
     }
 
     #[cfg(feature = "iroh")]
@@ -525,39 +528,12 @@ mod test {
     fn write_info_file_non_existent() {
         let output_dir = PathBuf::from("/foo");
         let test_file = output_dir.join("test.info");
-        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        let relay_url = RelayUrl::from_str("https://euw1-1.relay.iroh.network./ ")
-            .expect("Could not create Relay URL");
-        let info = ListenerInfo {
-            iroh_info: crate::iroh_device::IrohDevice {
-                nodeid,
-                relay_url,
-                endpoint: None,
-            },
-            #[cfg(feature = "tcp")]
-            tcp_info: crate::tcp_device::TcpDevice {
-                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
-                port: 9001,
-                listener: None,
-            },
-        };
-
-        assert!(super::write_info_file(&test_file, &info).is_err());
+        let node_id_str = "rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq";
+        assert!(super::write_info_file(
+            &test_file,
+            &listener_info(node_id_str, "https://euw1-1.relay.iroh.network./ "),
+        )
+        .is_err());
         assert!(!test_file.exists(), "File was created!");
     }
 }
-
-/*
-#[cfg(feature = "discovery")]
-/// Unregister this device from mDNS prior to exit
-fn unregister_mdns(service_info: ServiceInfo, service_daemon: ServiceDaemon) -> anyhow::Result<()> {
-    let service_fullname = service_info.get_fullname().to_string();
-    let receiver = service_daemon.unregister(&service_fullname)?;
-    while let Ok(event) = receiver.recv() {
-        println!("unregister result: {:?}", &event);
-    }
-
-    Ok(())
-}
- */
