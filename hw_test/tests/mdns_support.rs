@@ -55,7 +55,7 @@ pub async fn get_iroh_by_mdns(
 ) -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16, NodeId, Option<RelayUrl>)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
-        .checked_add(Duration::from_secs(1))
+        .checked_add(Duration::from_secs(5))
         .expect("Could not set a deadline");
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
@@ -91,3 +91,17 @@ pub async fn get_iroh_by_mdns(
 
     Ok(discovered)
 }
+
+/*
+#[cfg(feature = "discovery")]
+/// Unregister this device from mDNS
+fn unregister_mdns(service_info: ServiceInfo, service_daemon: ServiceDaemon) -> anyhow::Result<()> {
+    let service_fullname = service_info.get_fullname().to_string();
+    let receiver = service_daemon.unregister(&service_fullname)?;
+    while let Ok(event) = receiver.recv() {
+        println!("unregister result: {:?}", &event);
+    }
+
+    Ok(())
+}
+ */
