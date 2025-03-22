@@ -21,7 +21,8 @@ pub const TCP_PORT: u16 = 1234;
 /// Wait for an incoming TCP connection
 async fn accept(mut wifi_socket: TcpSocket<'_>) -> Result<TcpSocket<'_>, AcceptError> {
     info!("Accepting TCP Connections on port: {}", TCP_PORT);
-    wifi_socket.accept(TCP_PORT).await
+    wifi_socket.accept(TCP_PORT).await?;
+    Ok(wifi_socket)
 }
 
 /// Send the [HardwareDescription] and [HardwareConfig] over the [TcpSocket]
