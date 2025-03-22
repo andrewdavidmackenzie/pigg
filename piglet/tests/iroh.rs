@@ -98,6 +98,10 @@ async fn get_config_iroh() {
         let _ = iroh_host::wait_for_remote_message(&mut connection)
             .await
             .expect("Could not get config");
+
+        iroh_host::send_config_message(&mut connection, &Disconnect)
+            .await
+            .expect("Could not send Disconnect");
     })
     .await;
     kill(&mut child)
@@ -115,6 +119,10 @@ async fn pin_config_iroh() {
             .expect("Could not send NewPinConfig");
 
         iroh_host::send_config_message(&mut connection, &GetConfig)
+            .await
+            .expect("Could not send Disconnect");
+
+        iroh_host::send_config_message(&mut connection, &Disconnect)
             .await
             .expect("Could not send Disconnect");
     })
