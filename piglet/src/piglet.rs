@@ -484,16 +484,16 @@ fn register_mdns(
 #[cfg(test)]
 mod test {
     use crate::ListenerInfo;
-    use iroh::RelayUrl;
+    use iroh::{NodeId, RelayUrl};
     use std::fs;
     use std::path::PathBuf;
     use std::str::FromStr;
     use tempfile::tempdir;
 
-    fn listener_info(node_id_str: &str, relay_url_str: &str) -> ListenerInfo {
+    fn listener_info(nodeid: &NodeId, relay_url_str: &str) -> ListenerInfo {
         ListenerInfo {
             iroh_info: crate::iroh_device::IrohDevice {
-                nodeid: iroh::NodeId::from_str(node_id_str).expect("Could not create nodeid"),
+                nodeid: nodeid.clone(),
                 relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
                 endpoint: None,
             },
@@ -512,15 +512,17 @@ mod test {
     fn write_info_file() {
         let output_dir = tempdir().expect("Could not create a tempdir").into_path();
         let test_file = output_dir.join("test.info");
-        let node_id_str = "rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq";
+        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
         super::write_info_file(
             &test_file,
-            &listener_info(node_id_str, "https://euw1-1.relay.iroh.network./ "),
+            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
         )
         .expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
         let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
-        assert!(piglet_info.contains(node_id_str))
+        println!("piglet_info: {piglet_info}");
+        assert!(piglet_info.contains(&nodeid.to_string()))
     }
 
     #[cfg(feature = "iroh")]
@@ -528,10 +530,11 @@ mod test {
     fn write_info_file_non_existent() {
         let output_dir = PathBuf::from("/foo");
         let test_file = output_dir.join("test.info");
-        let node_id_str = "rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq";
+        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+            .expect("Could not create nodeid");
         assert!(super::write_info_file(
             &test_file,
-            &listener_info(node_id_str, "https://euw1-1.relay.iroh.network./ "),
+            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
         )
         .is_err());
         assert!(!test_file.exists(), "File was created!");
