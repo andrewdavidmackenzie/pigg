@@ -26,20 +26,17 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
     if let Ok(receiver) = mdns.browse(TCP_MDNS_SERVICE_TYPE) {
         while Instant::now() < deadline {
             if let Ok(ServiceEvent::ServiceResolved(info)) = receiver.recv_async().await {
-                println!("Addresses: {:?}", info.get_addresses_v4());
+                println!("Addresses: {:?}", info.get_addresses());
                 println!("Hostname: {}", info.get_hostname());
                 println!("Fullname: {}", info.get_fullname());
-                let ip = info
-                    .get_addresses_v4()
-                    .drain()
-                    .next()
-                    .expect("Failed to get IP");
-                let port = info.get_port();
-                let serial = info
-                    .get_property_val_str("Serial")
-                    .expect("Could not get serial number");
-                println!("Discovered device: {serial} : ip = {ip}\n");
-                discovered.insert(serial.to_string(), (IpAddr::V4(*ip), port));
+                if let Some(ip) = info.get_addresses_v4().drain().next() {
+                    let port = info.get_port();
+                    let serial = info
+                        .get_property_val_str("Serial")
+                        .expect("Could not get serial number");
+                    println!("Discovered device: {serial} : ip = {ip}\n");
+                    discovered.insert(serial.to_string(), (IpAddr::V4(*ip), port));
+                }
             }
 
             tokio::time::sleep(Duration::from_millis(100)).await;
@@ -62,25 +59,25 @@ pub async fn get_iroh_by_mdns(
     if let Ok(receiver) = mdns.browse(TCP_MDNS_SERVICE_TYPE) {
         while Instant::now() < deadline {
             if let Ok(ServiceEvent::ServiceResolved(info)) = receiver.recv_async().await {
-                let ip = info
-                    .get_addresses_v4()
-                    .drain()
-                    .next()
-                    .expect("Failed to get IP");
-                let port = info.get_port();
-                let serial = info
-                    .get_property_val_str("Serial")
-                    .expect("Could not get serial number");
-                let device_properties = info.get_properties();
-                if let Some(nodeid_str) = device_properties.get_property_val_str("IrohNodeID") {
-                    if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
-                        let relay_url = device_properties
-                            .get_property_val_str("IrohRelayURL")
-                            .map(|s| RelayUrl::from_str(s).unwrap());
-                        discovered.insert(
-                            serial.to_string(),
-                            (IpAddr::V4(*ip), port, nodeid as NodeId, relay_url),
-                        );
+                println!("Addresses: {:?}", info.get_addresses());
+                println!("Hostname: {}", info.get_hostname());
+                println!("Fullname: {}", info.get_fullname());
+                if let Some(ip) = info.get_addresses_v4().drain().next() {
+                    let port = info.get_port();
+                    let serial = info
+                        .get_property_val_str("Serial")
+                        .expect("Could not get serial number");
+                    let device_properties = info.get_properties();
+                    if let Some(nodeid_str) = device_properties.get_property_val_str("IrohNodeID") {
+                        if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
+                            let relay_url = device_properties
+                                .get_property_val_str("IrohRelayURL")
+                                .map(|s| RelayUrl::from_str(s).unwrap());
+                            discovered.insert(
+                                serial.to_string(),
+                                (IpAddr::V4(*ip), port, nodeid as NodeId, relay_url),
+                            );
+                        }
                     }
                 }
             }

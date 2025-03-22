@@ -29,7 +29,6 @@ where
 
 /// Use connect and disconnect test directly on Iroh, as the disconnect timeout is long and
 /// inconvenient for tests that follow this one if it only connected.
-#[ignore]
 #[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial]
@@ -39,7 +38,7 @@ async fn connect_and_disconnect_iroh() {
         .expect("Could not find device to test by mDNS");
 
     let number = devices.len();
-    assert!(number > 0, "Could not find USB connected device with Iroh");
+    assert!(number > 0, "Could not find device with Iroh via mDNS");
 
     for (_ip, _port, node, relay) in devices.values() {
         connect(node, relay, |hw_desc, _c, mut connection| async move {
@@ -69,7 +68,7 @@ async fn get_config_iroh() {
         .expect("Could not find device to test by mDNS");
 
     let number = devices.len();
-    assert!(number > 0, "Could not find USB connected device with Iroh");
+    assert!(number > 0, "Could not find device with Iroh via mDNS");
 
     for (_ip, _port, node, relay) in devices.values() {
         connect(node, relay, |hw_desc, _c, mut connection| async move {
@@ -103,7 +102,7 @@ async fn reconnect_iroh() {
         .expect("Could not find device to test by mDNS");
 
     let number = devices.len();
-    assert!(number > 0, "Could not find USB connected device with Iroh");
+    assert!(number > 0, "Could not find device with Iroh via mDNS");
 
     for (_ip, _port, node, relay) in devices.values() {
         connect(node, relay, |hw_desc, _c, mut connection| async move {

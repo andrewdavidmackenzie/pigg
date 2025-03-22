@@ -181,7 +181,7 @@ async fn run_service(
             if let Ok(stream) =
                 tcp_device::accept_connection(&mut listener, &desc, hardware_config.clone()).await
             {
-                println!("Connected via TCP");
+                println!("Connection via TCP");
                 let _ =
                     tcp_device::tcp_message_loop(stream, &mut hardware_config, &exec_path, &mut hw)
                         .await;
@@ -196,7 +196,7 @@ async fn run_service(
             if let Ok(connection) =
                 iroh_device::accept_connection(&endpoint, &desc, hardware_config.clone()).await
             {
-                println!("Connected via Iroh");
+                println!("Connection via Iroh");
                 let _ = iroh_device::iroh_message_loop(
                     connection,
                     &mut hardware_config,
@@ -249,11 +249,11 @@ async fn run_service(
 
             futures::select! {
                 tcp_stream = fused_tcp => {
-                    println!("Connected via Tcp");
+                    println!("Connection via Tcp");
                     let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
                 },
                 iroh_connection = fused_iroh => {
-                    println!("Connected via Iroh");
+                    println!("Connection via Iroh");
                     let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
                 }
                 complete => {}
