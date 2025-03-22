@@ -190,11 +190,11 @@ async fn run_service(
     }
 
     #[cfg(all(feature = "iroh", not(feature = "tcp")))]
-    if let Some(endpoint) = listener_info.iroh_info.endpoint {
+    if let Some(iroh_endpoint) = listener_info.iroh_info.endpoint {
         loop {
             println!("Waiting for Iroh connection");
             if let Ok(connection) =
-                iroh_device::accept_connection(&endpoint, &desc, hardware_config.clone()).await
+                iroh_device::accept_connection(&iroh_endpoint, &desc, hardware_config.clone()).await
             {
                 println!("Connection via Iroh");
                 let _ = iroh_device::iroh_message_loop(
@@ -204,6 +204,8 @@ async fn run_service(
                     &mut hw,
                 )
                 .await;
+
+                let _ = iroh_endpoint.close().await;
             }
         }
     }
@@ -255,6 +257,7 @@ async fn run_service(
                 iroh_connection = fused_iroh => {
                     println!("Connection via Iroh");
                     let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
+                    let _ = iroh_endpoint.close().await;
                 }
                 complete => {}
             }
