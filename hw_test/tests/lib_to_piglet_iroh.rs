@@ -59,7 +59,6 @@ async fn connect_and_disconnect_iroh() {
     );
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn get_config_iroh() {
@@ -93,7 +92,6 @@ async fn get_config_iroh() {
     );
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_iroh() {
