@@ -493,7 +493,7 @@ mod test {
     fn listener_info(nodeid: &NodeId, relay_url_str: &str) -> ListenerInfo {
         ListenerInfo {
             iroh_info: crate::iroh_device::IrohDevice {
-                nodeid: nodeid.clone(),
+                nodeid: *nodeid,
                 relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
                 endpoint: None,
             },
