@@ -1,4 +1,8 @@
-all: test
+all: clippy test
+
+.PHONY: clippy
+clippy:
+	cargo clippy --tests
 
 .PHONY: test
 test:

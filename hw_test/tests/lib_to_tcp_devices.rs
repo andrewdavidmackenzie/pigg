@@ -10,9 +10,9 @@ use std::future::Future;
 use std::net::IpAddr;
 use std::time::Duration;
 
-mod lib_to_porky_usb;
+mod lib_to_usb_devices;
 #[cfg(feature = "usb")]
-use lib_to_porky_usb::get_ip_and_port_by_usb;
+use lib_to_usb_devices::get_ip_and_port_by_usb;
 
 mod mdns_support;
 #[cfg(feature = "discovery")]
@@ -33,7 +33,7 @@ where
 
 #[tokio::test]
 #[serial]
-async fn can_connect_tcp() {
+async fn usb_discover_and_connect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
         .expect("Could detect TCP devices via USB");
@@ -54,10 +54,9 @@ async fn can_connect_tcp() {
     println!("Tested TCP connection to {} USB discovered devices", number);
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
-async fn disconnect_tcp() {
+async fn usb_discover_and_disconnect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
         .expect("Could detect TCP devices via USB");
@@ -85,10 +84,9 @@ async fn disconnect_tcp() {
     );
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
-async fn get_config_tcp() {
+async fn usb_discover_and_get_config_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
         .expect("Could detect TCP devices via USB");
@@ -113,10 +111,9 @@ async fn get_config_tcp() {
     println!("Tested TCP GetConfig to {} USB discovered devices", number);
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
-async fn reconnect_tcp() {
+async fn usb_discover_and_reconnect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
         .expect("Could detect TCP devices via USB");

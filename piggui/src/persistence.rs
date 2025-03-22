@@ -36,7 +36,7 @@ pub fn save_cfg(hardware_config: &HardwareConfig, filename: &str) -> io::Result<
 /// - A config file specified on the command line, or
 /// - A config file saved from a previous run
 /// - The default (empty) config
-pub(crate) async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
+pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
     // A config file specified on the command line overrides any config file from previous run
     let config_file = matches.get_one::<String>("config");
 
