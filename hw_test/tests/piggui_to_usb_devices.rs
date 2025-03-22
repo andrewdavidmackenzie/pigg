@@ -10,10 +10,14 @@ use serial_test::serial;
 
 #[tokio::test]
 #[serial]
-async fn connect_usb() {
+async fn usb_discover_and_connect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
+
+    let number = serials.len();
+    assert!(number > 0, "Could not find by USB to connect to by USB");
+
     for serial in serials {
         let mut piggui = run("piggui", vec!["--usb".to_string(), serial], None);
 
@@ -22,6 +26,11 @@ async fn connect_usb() {
 
         kill(&mut piggui);
     }
+
+    println!(
+        "Tested piggui USB connection to {} USB discovered devices",
+        number
+    );
 }
 
 //reconnect usb (kill and restart)

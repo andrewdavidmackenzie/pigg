@@ -1,0 +1,47 @@
+use crate::support::{kill, run, wait_for_stdout};
+use serial_test::serial;
+
+/// These tests test connecting to USB connected porky devices by USB and TCP, from the piggui
+/// binary using CLIP options
+///
+#[path = "../../piggui/tests/support.rs"]
+mod support;
+
+mod mdns_support;
+#[cfg(feature = "discovery")]
+use mdns_support::get_iroh_by_mdns;
+
+/// Problem with using this test is that it doesn't disconnect from iroh and so after
+/// killing piggui, until the timeout expires, nothing else can connect to it by Iroh and it
+/// causes other test sto fail
+#[ignore]
+#[tokio::test]
+#[serial]
+async fn mdns_discover_and_connect_iroh() {
+    let devices = get_iroh_by_mdns()
+        .await
+        .expect("Could not find device to test by mDNS");
+
+    let number = devices.len();
+    assert!(number > 0, "Could not find device with Iroh via mDNS");
+
+    for (_ip, _port, node, _relay) in devices.values() {
+        let mut piggui = run(
+            "piggui",
+            vec!["--nodeid".to_string(), node.to_string()],
+            None,
+        );
+
+        wait_for_stdout(&mut piggui, "Connected to hardware")
+            .expect("Did not get connected message");
+
+        kill(&mut piggui);
+    }
+
+    println!(
+        "Tested piggui Iroh connection to {} mDNS discovered devices",
+        number
+    );
+}
+
+//reconnect tcp (kill and restart)
