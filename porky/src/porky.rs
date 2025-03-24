@@ -105,13 +105,13 @@ pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMes
 fn hardware_description(serial: &str) -> HardwareDescription {
     let details = HardwareDetails {
         #[cfg(all(feature = "pico1", not(feature = "wifi")))]
-        model: "Pi Pico",
+        model: "Raspberry Pi Pico",
         #[cfg(all(feature = "pico1", feature = "wifi"))]
-        model: "Pi Pico W",
+        model: "Raspberry Pi Pico W",
         #[cfg(all(feature = "pico2", not(feature = "wifi")))]
-        model: "Pi Pico2",
+        model: "Raspberry Pi Pico2",
         #[cfg(all(feature = "pico2", feature = "wifi"))]
-        model: "Pi Pico2 W",
+        model: "Raspberry Pi Pico2 W",
         #[cfg(feature = "pico1")]
         hardware: "RP2040",
         #[cfg(feature = "pico2")]
