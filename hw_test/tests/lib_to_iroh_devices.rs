@@ -123,6 +123,12 @@ async fn mdns_discover_reconnect_iroh() {
                 );
             })
             .await;
+
+            iroh_host::send_config_message(&mut connection, &Disconnect)
+                .await
+                .expect("Could not send Disconnect");
+
+            tokio::time::sleep(Duration::from_secs(1)).await;
         })
         .await;
     }
