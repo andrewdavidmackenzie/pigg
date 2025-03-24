@@ -112,26 +112,27 @@ async fn mdns_discover_reconnect_iroh() {
             iroh_host::send_config_message(&mut connection, &Disconnect)
                 .await
                 .expect("Could not send Disconnect");
+        })
+        .await;
 
-            tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
 
-            // Test we can re-connect after sending a disconnect request
-            connect_iroh(node, relay, |hw_desc, _c, _co| async move {
-                assert!(
-                    hw_desc.details.model.contains("Pi"),
-                    "Didn't connect to fake hardware piglet"
-                );
-            })
-            .await;
+        // Test we can re-connect after sending a disconnect request
+        connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
+            assert!(
+                hw_desc.details.model.contains("Pi"),
+                "Didn't connect to fake hardware piglet"
+            );
 
             iroh_host::send_config_message(&mut connection, &Disconnect)
                 .await
                 .expect("Could not send Disconnect");
-
-            tokio::time::sleep(Duration::from_secs(1)).await;
         })
         .await;
+
+        tokio::time::sleep(Duration::from_secs(1)).await;
     }
+
     println!(
         "Tested Iroh re-connection to {} mDNS discovered devices",
         number
