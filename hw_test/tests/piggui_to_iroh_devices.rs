@@ -1,5 +1,6 @@
 use crate::support::{kill, run, wait_for_stdout};
 use serial_test::serial;
+use std::time::Duration;
 
 /// These tests test connecting to USB connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
@@ -12,9 +13,8 @@ mod mdns_support;
 use mdns_support::get_iroh_by_mdns;
 
 /// Problem with using this test is that it doesn't disconnect from iroh and so after
-/// killing piggui, until the timeout expires, nothing else can connect to it by Iroh and it
+/// killing piggui, until the timeout expires, nothing else can connect to it by Iroh, and it
 /// causes other test sto fail
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn mdns_discover_and_connect_iroh() {
@@ -36,6 +36,10 @@ async fn mdns_discover_and_connect_iroh() {
             .expect("Did not get connected message");
 
         kill(&mut piggui);
+
+        // Wait the iroh timeout period so the server disconnects and other tests can connect
+        // again via Iroh
+        tokio::time::sleep(Duration::from_secs(30)).await;
     }
 
     println!(
