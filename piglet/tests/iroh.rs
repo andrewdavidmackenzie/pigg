@@ -22,7 +22,6 @@ async fn node_id_is_output() {
     let mut child = run("piglet", vec![], None);
     wait_for_stdout(&mut child, "nodeid:").expect("Could not get nodeid");
     kill(&mut child);
-    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 fn fail(child: &mut Child, message: &str) -> ! {
@@ -36,7 +35,7 @@ where
     F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
     Fut: Future<Output = ()>,
 {
-    match iroh_host::connect(&nodeid, None).await {
+    match iroh_host::connect(nodeid, None).await {
         Ok((hw_desc, hw_config, connection)) => {
             if !hw_desc.details.model.contains("Fake") {
                 fail(child, "Didn't connect to fake hardware piglet")
@@ -83,7 +82,6 @@ async fn disconnect_iroh() {
     })
     .await;
     kill(&mut child);
-    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 #[ignore]
@@ -110,7 +108,6 @@ async fn get_config_iroh() {
     })
     .await;
     kill(&mut child);
-    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 #[ignore]
@@ -134,7 +131,7 @@ async fn pin_config_iroh() {
             .expect("Could not send Disconnect");
     })
     .await;
-    kill(&mut child)
+    kill(&mut child);
 }
 
 #[tokio::test]
@@ -161,5 +158,5 @@ async fn reconnect_iroh() {
     })
     .await;
 
-    kill(&mut child)
+    kill(&mut child);
 }
