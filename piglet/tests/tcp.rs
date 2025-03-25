@@ -6,6 +6,7 @@ use pigdef::description::HardwareDescription;
 use pignet::tcp_host;
 use serial_test::serial;
 use std::future::Future;
+use std::net::IpAddr;
 use std::process::Child;
 use std::str::FromStr;
 use std::time::Duration;
@@ -24,17 +25,30 @@ async fn ip_is_output() {
     let (_, _) = ip_port(&line);
 }
 
-fn fail(child: &mut Child, message: &str) {
+fn fail(child: &mut Child, message: &str) -> ! {
     // Kill process before possibly failing test and leaving process around
     kill(child);
     panic!("{}", message);
 }
 
-async fn connect<F, Fut>(child: &mut Child, test: F)
+async fn connect_and_test<F, Fut>(child: &mut Child, ip: IpAddr, port: u16, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
     Fut: Future<Output = ()>,
 {
+    match tcp_host::connect(ip, port).await {
+        Ok((hw_desc, hw_config, tcp_stream)) => {
+            if !hw_desc.details.model.contains("Fake") {
+                fail(child, "Didn't connect to fake hardware piglet")
+            } else {
+                test(hw_desc, hw_config, tcp_stream).await;
+            }
+        }
+        _ => fail(child, "Could not connect to piglet"),
+    }
+}
+
+async fn parse(child: &mut Child) -> (IpAddr, u16) {
     match wait_for_stdout(child, "ip:") {
         Some(ip_line) => match ip_line.split_once(":") {
             Some((_, address_str)) => match address_str.split_once(":") {
@@ -44,16 +58,7 @@ where
                     println!("IP: '{ip_str}' Port: '{port_str}'");
                     match std::net::IpAddr::from_str(ip_str) {
                         Ok(ip) => match u16::from_str(port_str) {
-                            Ok(port) => match tcp_host::connect(ip, port).await {
-                                Ok((hw_desc, hw_config, tcp_stream)) => {
-                                    if !hw_desc.details.model.contains("Fake") {
-                                        fail(child, "Didn't connect to fake hardware piglet")
-                                    } else {
-                                        test(hw_desc, hw_config, tcp_stream).await;
-                                    }
-                                }
-                                _ => fail(child, "Could not connect to piglet"),
-                            },
+                            Ok(port) => (ip, port),
                             _ => fail(child, "Could not parse port"),
                         },
                         _ => fail(child, "Could not parse port number"),
@@ -65,6 +70,15 @@ where
         },
         None => fail(child, "Could not get ip output line"),
     }
+}
+
+async fn connect<F, Fut>(child: &mut Child, test: F)
+where
+    F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    let (ip, port) = parse(child).await;
+    connect_and_test(child, ip, port, test).await;
 }
 
 #[tokio::test]
@@ -107,31 +121,38 @@ async fn get_config_tcp() {
     kill(&mut child)
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
-    connect(&mut child, |_d, _c, tcp_stream| async move {
+    println!("Connecting to child");
+    let (ip, port) = parse(&mut child).await;
+    connect_and_test(&mut child, ip, port, |_d, _c, tcp_stream| async move {
+        println!("connected to child");
         tcp_host::send_config_message(tcp_stream, &Disconnect)
             .await
             .expect("Could not send Disconnect");
+        println!("sent disconnect to child");
     })
     .await;
-
     tokio::time::sleep(Duration::from_secs(1)).await;
+    println!("slept");
 
+    println!("Connecting to child");
     // Test we can re-connect after sending a disconnect request
-    connect(&mut child, |_d, _c, tcp_stream| async move {
+    connect_and_test(&mut child, ip, port, |_d, _c, tcp_stream| async move {
+        println!("connected to child");
         tcp_host::send_config_message(tcp_stream, &Disconnect)
             .await
             .expect("Could not send Disconnect");
+        println!("sent disconnect to child");
     })
     .await;
-
     tokio::time::sleep(Duration::from_secs(1)).await;
+    println!("slept");
 
-    kill(&mut child)
+    kill(&mut child);
+    println!("killed child");
 }
