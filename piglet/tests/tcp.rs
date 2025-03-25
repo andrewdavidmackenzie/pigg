@@ -13,9 +13,9 @@ use std::time::Duration;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
-#[test]
+#[tokio::test]
 #[serial]
-fn ip_is_output() {
+async fn ip_is_output() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
@@ -77,7 +77,6 @@ async fn can_connect_tcp() {
     kill(&mut child)
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -93,7 +92,6 @@ async fn disconnect_tcp() {
     kill(&mut child)
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn get_config_tcp() {
@@ -126,7 +124,14 @@ async fn reconnect_tcp() {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Test we can re-connect after sending a disconnect request
-    connect(&mut child, |_d, _c, _tcp_stream| async {}).await;
+    connect(&mut child, |_d, _c, tcp_stream| async move {
+        tcp_host::send_config_message(tcp_stream, &Disconnect)
+            .await
+            .expect("Could not send Disconnect");
+    })
+    .await;
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     kill(&mut child)
 }

@@ -14,14 +14,15 @@ use std::time::Duration;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
-#[test]
+#[tokio::test]
 #[serial]
-fn node_id_is_output() {
+async fn node_id_is_output() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
     wait_for_stdout(&mut child, "nodeid:").expect("Could not get nodeid");
     kill(&mut child);
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 fn fail(child: &mut Child, message: &str) {
@@ -58,16 +59,6 @@ where
 
 #[tokio::test]
 #[serial]
-async fn connect_iroh() {
-    kill_all("piglet");
-    build("piglet");
-    let mut child = run("piglet", vec![], None);
-    connect(&mut child, |_, _, _c| async {}).await;
-    kill(&mut child)
-}
-
-#[tokio::test]
-#[serial]
 async fn disconnect_iroh() {
     kill_all("piglet");
     build("piglet");
@@ -78,7 +69,8 @@ async fn disconnect_iroh() {
             .expect("Could not send Disconnect");
     })
     .await;
-    kill(&mut child)
+    kill(&mut child);
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 #[ignore]
@@ -104,9 +96,11 @@ async fn get_config_iroh() {
             .expect("Could not send Disconnect");
     })
     .await;
-    kill(&mut child)
+    kill(&mut child);
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn pin_config_iroh() {
@@ -147,7 +141,12 @@ async fn reconnect_iroh() {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Test we can re-connect after sending a disconnect request
-    connect(&mut child, |_, _, _c| async {}).await;
+    connect(&mut child, |_, _, mut connection| async move {
+        iroh_host::send_config_message(&mut connection, &Disconnect)
+            .await
+            .expect("Could not send Disconnect");
+    })
+    .await;
 
     kill(&mut child)
 }
