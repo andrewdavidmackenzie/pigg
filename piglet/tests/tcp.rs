@@ -156,3 +156,5 @@ async fn reconnect_tcp() {
     kill(&mut child);
     println!("killed child");
 }
+
+// TODO add some tests that change the config, kill it, restart get the config and that it was persisted
