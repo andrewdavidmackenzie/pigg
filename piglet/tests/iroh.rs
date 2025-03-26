@@ -93,15 +93,18 @@ async fn get_config_iroh() {
     let mut child = run("piglet", vec![], None);
     connect(&mut child, |_, _, mut connection| async move {
         // Request the device to send back the config
+        println!("Sending config");
         iroh_host::send_config_message(&mut connection, &GetConfig)
             .await
             .expect("Could not send GetConfig");
 
         // Get the config message returned
+        println!("Waiting for remote message");
         let _ = iroh_host::wait_for_remote_message(&mut connection)
             .await
             .expect("Could not get config");
 
+        println!("Sending disconnect");
         iroh_host::send_config_message(&mut connection, &Disconnect)
             .await
             .expect("Could not send Disconnect");
@@ -113,7 +116,7 @@ async fn get_config_iroh() {
 #[ignore]
 #[tokio::test]
 #[serial]
-async fn pin_config_iroh() {
+async fn config_change_returned_iroh() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
@@ -125,6 +128,8 @@ async fn pin_config_iroh() {
         iroh_host::send_config_message(&mut connection, &GetConfig)
             .await
             .expect("Could not send Disconnect");
+
+        // TODO check the config changed!
 
         iroh_host::send_config_message(&mut connection, &Disconnect)
             .await
