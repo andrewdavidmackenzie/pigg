@@ -1,8 +1,8 @@
 use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 use iroh::endpoint::Connection;
 use iroh::NodeId;
-use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewPinConfig};
+use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::HardwareDescription;
 use pignet::iroh_host;
 use serial_test::serial;
@@ -84,36 +84,35 @@ async fn disconnect_iroh() {
     kill(&mut child);
 }
 
-#[ignore]
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[serial]
 async fn get_config_iroh() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
+
     connect(&mut child, |_, _, mut connection| async move {
+        let mut sender = connection.clone();
+
         // Request the device to send back the config
-        println!("Sending config");
-        iroh_host::send_config_message(&mut connection, &GetConfig)
+        iroh_host::send_config_message(&mut sender, &GetConfig)
             .await
             .expect("Could not send GetConfig");
 
-        // Get the config message returned
-        println!("Waiting for remote message");
-        let _ = iroh_host::wait_for_remote_message(&mut connection)
-            .await
-            .expect("Could not get config");
+        let _hardware_config: HardwareConfigMessage =
+            iroh_host::wait_for_remote_message(&mut connection)
+                .await
+                .expect("Could not get config");
 
-        println!("Sending disconnect");
         iroh_host::send_config_message(&mut connection, &Disconnect)
             .await
             .expect("Could not send Disconnect");
     })
     .await;
+
     kill(&mut child);
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn config_change_returned_iroh() {
@@ -130,6 +129,10 @@ async fn config_change_returned_iroh() {
             .expect("Could not send Disconnect");
 
         // TODO check the config changed!
+        let _hardware_config: HardwareConfigMessage =
+            iroh_host::wait_for_remote_message(&mut connection)
+                .await
+                .expect("Could not get config");
 
         iroh_host::send_config_message(&mut connection, &Disconnect)
             .await
