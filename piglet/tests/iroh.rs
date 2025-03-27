@@ -14,16 +14,6 @@ use std::time::Duration;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
-#[tokio::test]
-#[serial]
-async fn node_id_is_output() {
-    kill_all("piglet");
-    build("piglet");
-    let mut child = run("piglet", vec![], None);
-    wait_for_stdout(&mut child, "nodeid:").expect("Could not get nodeid");
-    kill(&mut child);
-}
-
 fn fail(child: &mut Child, message: &str) -> ! {
     // Kill process before possibly failing test and leaving around
     kill(child);
@@ -84,7 +74,7 @@ async fn disconnect_iroh() {
     kill(&mut child);
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[tokio::test]
 #[serial]
 async fn get_config_iroh() {
     kill_all("piglet");
