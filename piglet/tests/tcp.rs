@@ -44,7 +44,7 @@ where
                 test(hw_desc, hw_config, tcp_stream).await;
             }
         }
-        _ => fail(child, "Could not connect to piglet"),
+        Err(e) => fail(child, "Could not connect to piglet: '{e}'"),
     }
 }
 
