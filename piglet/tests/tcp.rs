@@ -149,6 +149,7 @@ async fn reconnect_tcp() {
             .expect("Could not send Disconnect");
     })
     .await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     kill(&mut child);
 }
