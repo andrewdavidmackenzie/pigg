@@ -1,4 +1,4 @@
-use crate::support::{build, ip_port, kill, kill_all, run, wait_for_stdout};
+use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 use async_std::net::TcpStream;
 use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::{HardwareConfig, InputPull};
