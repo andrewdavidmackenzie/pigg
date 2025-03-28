@@ -1,8 +1,9 @@
 use crate::support::{build, ip_port, kill, kill_all, run, wait_for_stdout};
 use async_std::net::TcpStream;
-use pigdef::config::HardwareConfig;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig};
+use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig};
+use pigdef::config::{HardwareConfig, InputPull};
 use pigdef::description::HardwareDescription;
+use pigdef::pin_function::PinFunction::Input;
 use pignet::tcp_host;
 use serial_test::serial;
 use std::future::Future;
@@ -108,16 +109,35 @@ async fn disconnect_tcp() {
 
 #[tokio::test]
 #[serial]
-async fn get_config_tcp() {
+async fn config_change_returned_tcp() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
-    connect(&mut child, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &GetConfig)
+
+    connect(&mut child, |_, _, tcp_stream| async move {
+        // Request the device to send back the config
+        tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
             .await
-            .expect("Could not GetConfig");
+            .expect("Could not send GetConfig");
+
+        let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
+            .await
+            .expect("Could not get response to GetConfig");
+
+        if let NewConfig(hardware_config) = hw_message {
+            assert_eq!(
+                hardware_config.pin_functions.get(&1),
+                Some(&Input(Some(InputPull::PullUp))),
+                "Configured pin doesn't match config sent"
+            );
+        }
+
+        tcp_host::send_config_message(tcp_stream, &Disconnect)
+            .await
+            .expect("Could not send Disconnect");
     })
     .await;
+
     kill(&mut child)
 }
 
@@ -127,34 +147,24 @@ async fn reconnect_tcp() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
-    println!("Connecting to child");
     let (ip, port) = parse(&mut child).await;
     connect_and_test(&mut child, ip, port, |_d, _c, tcp_stream| async move {
-        println!("connected to child");
         tcp_host::send_config_message(tcp_stream, &Disconnect)
             .await
             .expect("Could not send Disconnect");
-        println!("sent disconnect to child");
     })
     .await;
     tokio::time::sleep(Duration::from_secs(1)).await;
-    println!("slept");
 
-    println!("Connecting to child");
     // Test we can re-connect after sending a disconnect request
     connect_and_test(&mut child, ip, port, |_d, _c, tcp_stream| async move {
-        println!("connected to child");
         tcp_host::send_config_message(tcp_stream, &Disconnect)
             .await
             .expect("Could not send Disconnect");
-        println!("sent disconnect to child");
     })
     .await;
-    tokio::time::sleep(Duration::from_secs(1)).await;
-    println!("slept");
 
     kill(&mut child);
-    println!("killed child");
 }
 
 // TODO add some tests that change the config, kill it, restart get the config and that it was persisted

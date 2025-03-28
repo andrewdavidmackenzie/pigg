@@ -1,9 +1,10 @@
 use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 use iroh::endpoint::Connection;
 use iroh::NodeId;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewPinConfig};
-use pigdef::config::{HardwareConfig, HardwareConfigMessage};
+use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig, NewPinConfig};
+use pigdef::config::{HardwareConfig, InputPull};
 use pigdef::description::HardwareDescription;
+use pigdef::pin_function::PinFunction::Input;
 use pignet::iroh_host;
 use serial_test::serial;
 use std::future::Future;
@@ -76,53 +77,33 @@ async fn disconnect_iroh() {
 
 #[tokio::test]
 #[serial]
-async fn get_config_iroh() {
-    kill_all("piglet");
-    build("piglet");
-    let mut child = run("piglet", vec![], None);
-
-    connect(&mut child, |_, _, mut connection| async move {
-        let mut sender = connection.clone();
-
-        // Request the device to send back the config
-        iroh_host::send_config_message(&mut sender, &GetConfig)
-            .await
-            .expect("Could not send GetConfig");
-
-        let _hardware_config: HardwareConfigMessage =
-            iroh_host::wait_for_remote_message(&mut connection)
-                .await
-                .expect("Could not get config");
-
-        iroh_host::send_config_message(&mut connection, &Disconnect)
-            .await
-            .expect("Could not send Disconnect");
-    })
-    .await;
-
-    kill(&mut child);
-}
-
-#[tokio::test]
-#[serial]
 async fn config_change_returned_iroh() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec![], None);
     connect(&mut child, |_, _, mut connection| async move {
-        iroh_host::send_config_message(&mut connection, &NewPinConfig(1, None))
-            .await
-            .expect("Could not send NewPinConfig");
+        iroh_host::send_config_message(
+            &mut connection,
+            &NewPinConfig(1, Some(Input(Some(InputPull::PullUp)))),
+        )
+        .await
+        .expect("Could not send NewPinConfig");
 
         iroh_host::send_config_message(&mut connection, &GetConfig)
             .await
             .expect("Could not send Disconnect");
 
-        // TODO check the config changed!
-        let _hardware_config: HardwareConfigMessage =
-            iroh_host::wait_for_remote_message(&mut connection)
-                .await
-                .expect("Could not get config");
+        let hw_message = iroh_host::wait_for_remote_message(&mut connection)
+            .await
+            .expect("Could not get response to GetConfig");
+
+        if let NewConfig(hardware_config) = hw_message {
+            assert_eq!(
+                hardware_config.pin_functions.get(&1),
+                Some(&Input(Some(InputPull::PullUp))),
+                "Configured pin doesn't match config sent"
+            );
+        }
 
         iroh_host::send_config_message(&mut connection, &Disconnect)
             .await
