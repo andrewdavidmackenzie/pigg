@@ -42,6 +42,8 @@ pub fn build(binary: &str) {
 
 #[allow(dead_code)]
 pub fn kill(child: &mut Child) {
+    println!("Killing child process with Pid: {}", child.id());
+
     child.kill().expect("Failed to kill child process");
 
     // wait for the process to be removed
@@ -104,14 +106,17 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
     println!("Running Command: cargo {}", args.join(" "));
 
     // spawn the 'piglet' process
-    command
+    let child = command
         .args(args)
         .current_dir(workspace_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()
-        .expect("Failed to spawn command")
+        .expect("Failed to spawn command");
+
+    println!("Started '{}' with PID = {}", binary, child.id());
+    child
 }
 
 #[allow(dead_code)]

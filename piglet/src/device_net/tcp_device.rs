@@ -189,7 +189,7 @@ async fn send_hardware_config(
     writer: TcpStream,
     hardware_config: &HardwareConfig,
 ) -> anyhow::Result<()> {
-    let message = postcard::to_allocvec(hardware_config)?;
+    let message = postcard::to_allocvec(&NewConfig(hardware_config.clone()))?;
     send(writer, &message).await
 }
 

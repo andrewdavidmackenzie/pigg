@@ -383,11 +383,6 @@ mod test {
     fn hw_can_be_got() {
         let hw = crate::get();
         assert!(hw.description("Test").is_ok());
-        println!(
-            "{:?}",
-            hw.description("Test")
-                .expect("Could not get Hardware Description")
-        );
     }
 
     #[test]

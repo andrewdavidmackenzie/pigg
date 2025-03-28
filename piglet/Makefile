@@ -63,7 +63,7 @@ run-release:
 
 .PHONY: test
 test:
-	cargo test
+	cargo test -- --show-output
 
 .PHONY: features
 features:

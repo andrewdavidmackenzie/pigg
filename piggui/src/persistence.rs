@@ -74,7 +74,7 @@ pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfi
 #[allow(dead_code)] // Not used in piglet
 #[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
 /// Save the config to a file that will be picked up on restart
-pub(crate) async fn store_config(
+pub async fn store_config(
     hardware_config: &HardwareConfig,
     exec_path: &Path,
 ) -> anyhow::Result<()> {

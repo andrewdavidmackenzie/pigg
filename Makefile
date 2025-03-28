@@ -66,12 +66,9 @@ build-release:
 build-porky:
 	cd porky && $(MAKE)
 
-# This will only test GUI tests in piggui on the local host, whatever that is
-# We'd need to think how to run tests on RºPi, on piggui with GUI and GPIO functionality,
-# and piglet with GPIO functionality
 .PHONY: test
 test:
-	cargo test
+	cargo test -- --show-output
 
 .PHONY: hw_tests
 hw_tests:

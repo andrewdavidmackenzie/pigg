@@ -179,7 +179,7 @@ async fn apply_config_change(
                 .insert(bcm, Output(Some(level_change.new_level)));
         }
         HardwareConfigMessage::GetConfig => {
-            let message = postcard::to_allocvec(hardware_config)?;
+            let message = postcard::to_allocvec(&NewConfig(hardware_config.clone()))?;
             send(connection, &message).await?
         }
         HardwareConfigMessage::Disconnect => return Err(anyhow!("Disconnect message received")),

@@ -166,7 +166,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-15, ubuntu-24.04, windows-latest ]
+        os: [ ubuntu-24.04, windows-latest, macos-15 ]
 
     steps:
       - name: Checkout
@@ -179,7 +179,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: InstallCoverageTools
+      - name: Install grcov
         if: runner.os != 'Windows'
         run: cargo install grcov
 
@@ -196,11 +196,10 @@ jobs:
       - name: Clippy build and test - Linux
         if: runner.os == 'Linux'
         run: |
-          make clippy build
           sudo apt-get update
           sudo apt-get install weston
           weston -Bheadless -Sweston &
-          make test
+          make clippy build test
         env:
           WAYLAND_DISPLAY: weston
 

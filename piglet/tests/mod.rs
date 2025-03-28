@@ -4,9 +4,9 @@ use support::{build, kill, kill_all, run, wait_for_stdout};
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
-#[test]
+#[tokio::test]
 #[serial]
-fn version_number() {
+async fn version_number() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec!["--version".into()], None);
@@ -16,9 +16,9 @@ fn version_number() {
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn test_verbosity_levels() {
+async fn test_verbosity_levels() {
     kill_all("piglet");
     build("piglet");
     let levels = ["info", "debug", "trace"];
@@ -36,9 +36,9 @@ fn test_verbosity_levels() {
     }
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn help() {
+async fn help() {
     kill_all("piglet");
     build("piglet");
     let mut child = run("piglet", vec!["--help".into()], None);
