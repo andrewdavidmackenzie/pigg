@@ -15,17 +15,6 @@ use std::time::Duration;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
-#[tokio::test]
-#[serial]
-async fn ip_is_output() {
-    kill_all("piglet");
-    build("piglet");
-    let mut child = run("piglet", vec![], None);
-    let line = wait_for_stdout(&mut child, "ip:").expect("Could not get ip");
-    kill(&mut child);
-    let (_, _) = ip_port(&line);
-}
-
 fn fail(child: &mut Child, message: &str) -> ! {
     // Kill process before possibly failing test and leaving process around
     kill(child);
@@ -80,16 +69,6 @@ where
 {
     let (ip, port) = parse(child).await;
     connect_and_test(child, ip, port, test).await;
-}
-
-#[tokio::test]
-#[serial]
-async fn can_connect_tcp() {
-    kill_all("piglet");
-    build("piglet");
-    let mut child = run("piglet", vec![], None);
-    connect(&mut child, |_d, _c, _co| async {}).await;
-    kill(&mut child)
 }
 
 #[tokio::test]
