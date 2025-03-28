@@ -68,7 +68,7 @@ build-porky:
 
 .PHONY: test
 test:
-	cargo test
+	cargo test -- --show-output
 
 .PHONY: hw_tests
 hw_tests:
