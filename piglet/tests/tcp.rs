@@ -1,6 +1,6 @@
 use crate::support::{build, ip_port, kill, kill_all, run, wait_for_stdout};
 use async_std::net::TcpStream;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig};
+use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::{HardwareConfig, InputPull};
 use pigdef::description::HardwareDescription;
 use pigdef::pin_function::PinFunction::Input;
@@ -115,6 +115,13 @@ async fn config_change_returned_tcp() {
     let mut child = run("piglet", vec![], None);
 
     connect(&mut child, |_, _, tcp_stream| async move {
+        tcp_host::send_config_message(
+            tcp_stream.clone(),
+            &NewPinConfig(1, Some(Input(Some(InputPull::PullUp)))),
+        )
+        .await
+        .expect("Could not send NewPinConfig");
+
         // Request the device to send back the config
         tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
             .await
