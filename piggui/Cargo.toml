@@ -44,7 +44,7 @@ plotters = { version = "0.3", default-features = false, features = [
     "chrono",
     "line_series",
 ] }
-once_cell = { version = "1.21.1", default-features = false }
+once_cell = { version = "1.21.2", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
