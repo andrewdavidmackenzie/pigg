@@ -72,7 +72,7 @@ where
     connect_and_test(child, ip, port, test).await;
 }
 
-#[cfg_attr(target_os = "macos"), ignore]
+#[cfg(target_os = "macos"), ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -88,7 +88,7 @@ async fn disconnect_tcp() {
     kill(&mut child)
 }
 
-#[cfg_attr(target_os = "macos"), ignore]
+#[cfg(target_os = "macos"), ignore]
 #[tokio::test]
 #[serial]
 async fn config_change_returned_tcp() {
@@ -130,7 +130,7 @@ async fn config_change_returned_tcp() {
     kill(&mut child)
 }
 
-#[cfg_attr(target_os = "macos"), ignore]
+#[cfg(target_os = "macos"), ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
