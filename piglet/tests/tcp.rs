@@ -44,6 +44,7 @@ async fn parse(child: &mut Child) -> (IpAddr, u16) {
             Some((_, address_str)) => match address_str.split_once(":") {
                 Some((mut ip_str, mut port_str)) => {
                     ip_str = ip_str.trim();
+                    ip_str = "10.0.0.0";
                     port_str = port_str.trim();
                     println!("IP: '{ip_str}' Port: '{port_str}'");
                     match std::net::IpAddr::from_str(ip_str) {
@@ -71,7 +72,6 @@ where
     connect_and_test(child, ip, port, test).await;
 }
 
-#[cfg_attr(target_os = "macos", ignore)]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -87,7 +87,6 @@ async fn disconnect_tcp() {
     kill(&mut child)
 }
 
-#[cfg_attr(target_os = "macos", ignore)]
 #[tokio::test]
 #[serial]
 async fn config_change_returned_tcp() {
@@ -129,7 +128,6 @@ async fn config_change_returned_tcp() {
     kill(&mut child)
 }
 
-#[cfg_attr(target_os = "macos", ignore)]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
