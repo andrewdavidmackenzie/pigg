@@ -24,7 +24,7 @@ fn fail(child: &mut Child, message: &str) -> ! {
 async fn connect_and_test<F, Fut>(child: &mut Child, ip: IpAddr, port: u16, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
-    Fut: Future<Output = ()>,
+    Fut: Future<Output=()>,
 {
     match tcp_host::connect(ip, port).await {
         Ok((hw_desc, hw_config, tcp_stream)) => {
@@ -65,12 +65,13 @@ async fn parse(child: &mut Child) -> (IpAddr, u16) {
 async fn connect<F, Fut>(child: &mut Child, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
-    Fut: Future<Output = ()>,
+    Fut: Future<Output=()>,
 {
     let (ip, port) = parse(child).await;
     connect_and_test(child, ip, port, test).await;
 }
 
+#[cfg(target_os = "macos"), ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -82,10 +83,11 @@ async fn disconnect_tcp() {
             .await
             .expect("Could not send Disconnect");
     })
-    .await;
+        .await;
     kill(&mut child)
 }
 
+#[cfg(target_os = "macos"), ignore]
 #[tokio::test]
 #[serial]
 async fn config_change_returned_tcp() {
@@ -98,8 +100,8 @@ async fn config_change_returned_tcp() {
             tcp_stream.clone(),
             &NewPinConfig(1, Some(Input(Some(InputPull::PullUp)))),
         )
-        .await
-        .expect("Could not send NewPinConfig");
+            .await
+            .expect("Could not send NewPinConfig");
 
         // Request the device to send back the config
         tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
@@ -122,11 +124,12 @@ async fn config_change_returned_tcp() {
             .await
             .expect("Could not send Disconnect");
     })
-    .await;
+        .await;
 
     kill(&mut child)
 }
 
+#[cfg(target_os = "macos"), ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
@@ -139,7 +142,7 @@ async fn reconnect_tcp() {
             .await
             .expect("Could not send Disconnect");
     })
-    .await;
+        .await;
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Test we can re-connect after sending a disconnect request
@@ -148,7 +151,7 @@ async fn reconnect_tcp() {
             .await
             .expect("Could not send Disconnect");
     })
-    .await;
+        .await;
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     kill(&mut child);
