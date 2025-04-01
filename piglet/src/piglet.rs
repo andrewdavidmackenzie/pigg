@@ -412,7 +412,7 @@ fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), 
     })?;
 
     println!(
-        "'service '{}' ('{}') installed and started",
+        "service '{}' ('{}') installed and started",
         service_name,
         exec_path.display()
     );
