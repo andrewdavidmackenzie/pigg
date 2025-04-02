@@ -7,7 +7,6 @@ setup:
 	rustup target add thumbv8m.main-none-eabihf
 	cargo binstall elf2uf2-rs
 
-
 .PHONY: features
 features:
 	cargo build-all-features --target thumbv6m-none-eabi
