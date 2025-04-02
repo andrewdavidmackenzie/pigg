@@ -29,6 +29,7 @@ macos-setup: setup
 setup:
 	@cd piggui && make setup
 	@cd piglet && make setup
+	@cd porky && make setup
 
 .PHONY: clippy
 clippy:
