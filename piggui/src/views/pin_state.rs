@@ -22,7 +22,7 @@ const CHART_DURATION: Duration =
 const CHART_LINE_STYLE: ShapeStyle = ShapeStyle {
     color: RGBAColor(255, 255, 255, 1.0),
     filled: true,
-    stroke_width: 1,
+    stroke_width: 2,
 };
 
 /// PinState captures the logical level of a pin, including a history of previous states
