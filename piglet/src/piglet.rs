@@ -412,9 +412,15 @@ fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), 
     })?;
 
     println!(
-        "'service '{}' ('{}') installed and started",
+        "service '{}' ('{}') installed and started",
         service_name,
         exec_path.display()
+    );
+
+    #[cfg(target_os = "linux")]
+    println!(
+        "You can view service logs using 'sudo journalctl -u {}'",
+        service_name
     );
 
     Ok(())

@@ -36,18 +36,31 @@ impl Display for TcpDevice {
 }
 
 pub async fn get_device() -> anyhow::Result<TcpDevice> {
-    let ip = local_ip()?;
-    let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
-    println!("ip: {ip}:{port}");
-    let address = format!("{}:{}", ip, port);
-    info!("Waiting for TCP connection @ {address}");
-    let listener = TcpListener::bind(&address).await?;
+    let mut retry_count = 0;
 
-    Ok(TcpDevice {
-        ip,
-        port,
-        listener: Some(listener),
-    })
+    // On some devices this is started as a service before networking is up and this fails,
+    // so retry with a few seconds delay between each
+    while retry_count < 4 {
+        println!("Trying to get IP address:");
+        if let Ok(ip) = local_ip() {
+            println!("Got IP address:");
+            let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
+            println!("ip: {ip}:{port}");
+            let address = format!("{}:{}", ip, port);
+            info!("Waiting for TCP connection @ {address}");
+            let listener = TcpListener::bind(&address).await?;
+
+            return Ok(TcpDevice {
+                ip,
+                port,
+                listener: Some(listener),
+            });
+        }
+        tokio::time::sleep(Duration::from_secs(10)).await;
+        retry_count += 1;
+    }
+
+    Err(anyhow!("Could not get IP address"))
 }
 
 /// accept incoming connections, returns a TcpStream
