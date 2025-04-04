@@ -3,7 +3,6 @@ use support::{kill, run, wait_for_stdout};
 
 mod support;
 
-#[ignore]
 #[cfg(feature = "iroh")]
 #[test]
 #[serial]
