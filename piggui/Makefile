@@ -24,6 +24,19 @@
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
+OSFLAG 				:=
+ifeq ($(OS),Windows_NT)
+	OSFLAG:=windows
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		OSFLAG:=linux
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OSFLAG:=macos
+	endif
+endif
+
 .PHONY: all
 all: clippy build build-arm trunk-build test
 
@@ -31,14 +44,25 @@ all: clippy build build-arm trunk-build test
 clean:
 	@cargo clean
 
+# install non-clang llvm and then we need to make sure it's used instead of default macos clang!
 .PHONY: macos-setup
-macos-setup: setup
-	brew install llvm #and then we need to make sure it's used instead of default macos clang!
-	echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
-	export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+macos-setup:
+	@echo "Installing non-clang llvm"
+	@brew install llvm
+	@echo 'export PATH="/opt/homebrew/opt/llvm/bin:$$PATH"' >> ~/.zshrc
+	@export PATH="/opt/homebrew/opt/llvm/bin:$$PATH"
+
+.PHONY: binstall
+binstall:
+	@echo "installing cargo binstall"
+	@cargo install cargo-binstall
 
 .PHONY: setup
-setup:
+setup: binstall
+ifeq ($(OSFLAG),macos)
+	@echo "Running macos specific setup"
+	$(MAKE) macos-setup
+endif
 	rustup target add wasm32-unknown-unknown
 	rustup target add aarch64-unknown-linux-gnu
 	cargo binstall trunk
