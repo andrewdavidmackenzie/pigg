@@ -13,6 +13,19 @@
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
+OSFLAG 				:=
+ifeq ($(OS),Windows_NT)
+	OSFLAG:=windows
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		OSFLAG:=linux
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OSFLAG:=macos
+	endif
+endif
+
 .PHONY: all
 all: clippy format-check build build-arm build-porky build-web test
 
@@ -21,12 +34,16 @@ clean:
 	@cargo clean
 
 .PHONY: macos-setup
-macos-setup: setup
+macos-setup:
 	@cd piggui && make macos-setup
 	@cd piglet && make macos-setup
 
 .PHONY: setup
 setup:
+ifeq ($(OSFLAG),macos)
+	@echo "Running macos specific setup"
+	$(MAKE) macos-setup
+endif
 	@cd piggui && make setup
 	@cd piglet && make setup
 	@cd porky && make setup
