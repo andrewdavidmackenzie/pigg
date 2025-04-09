@@ -27,7 +27,7 @@ anyhow = "1.0.97"
 async-std = "1.13.1"
 
 tokio = { version = "1.44.2", default-features = false, features = ["time"], optional = true }
-iroh = { version = "0.34.0", default-features = false, optional = true }
+iroh = { version = "0.34.1", default-features = false, optional = true }
 nusb = { version = "0.1.13", default-features = false, optional = true }
 serde = { version = "1.0.219", default-features = false, features = ["derive"], optional = true }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"], optional = true }
