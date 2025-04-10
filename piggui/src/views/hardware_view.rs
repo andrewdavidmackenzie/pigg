@@ -237,11 +237,12 @@ impl HardwareView {
             // For output pins, if there is an initial state set then set that in pin state
             // so the toggler will be drawn correctly on first draw
             if let Output(Some(level)) = pin_function {
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                self.pin_states
-                    .entry(*bcm_pin_number)
-                    .or_insert(PinState::new())
-                    .set_level(LevelChange::new(*level, now));
+                if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
+                    self.pin_states
+                        .entry(*bcm_pin_number)
+                        .or_insert(PinState::new())
+                        .set_level(LevelChange::new(*level, now));
+                }
             }
         }
     }
