@@ -3,7 +3,8 @@ use crate::hardware_subscription::SubscriberMessage::Hardware;
 use crate::hardware_subscription::{SubscriberMessage, SubscriptionEvent};
 use crate::views::hardware_styles::{get_pin_style, toggler_style, TOOLTIP_STYLE};
 use crate::views::hardware_view::HardwareViewMessage::{
-    Activate, ChangeOutputLevel, NewConfig, PinFunctionChanged, SubscriptionMessage, UpdateCharts,
+    Activate, ChangeOutputLevel, MenuBarButtonClicked, NewConfig, PinFunctionChanged,
+    SubscriptionMessage, UpdateCharts,
 };
 use crate::views::info_row::{menu_button_style, INFO_ROW_HEIGHT};
 use crate::views::layout_menu::Layout;
@@ -372,17 +373,17 @@ impl HardwareView {
 
         for pin_description in pin_set.bcm_pins_sorted() {
             if let Some(bcm_pin_number) = &pin_description.bcm {
-                let pin_row = self.create_pin_view_side(
-                    pin_description,
-                    self.hardware_config
-                        .pin_functions
-                        .get(&pin_description.bcm.unwrap()),
-                    Start,
-                    self.pin_states.get(bcm_pin_number),
-                    false,
-                );
+                if let Some(bcm) = pin_description.bcm {
+                    let pin_row = self.create_pin_view_side(
+                        pin_description,
+                        self.hardware_config.pin_functions.get(&bcm),
+                        Start,
+                        self.pin_states.get(bcm_pin_number),
+                        false,
+                    );
 
-                column = column.push(pin_row);
+                    column = column.push(pin_row);
+                }
             }
         }
 
@@ -430,18 +431,18 @@ impl HardwareView {
                     .pin_functions
                     .contains_key(bcm_pin_number)
                 {
-                    // Pin is configured, lay it out with full widgets in a row
-                    let pin_row = self.create_pin_view_side(
-                        pin_description,
-                        self.hardware_config
-                            .pin_functions
-                            .get(&pin_description.bcm.unwrap()),
-                        Start,
-                        self.pin_states.get(bcm_pin_number),
-                        true,
-                    );
+                    if let Some(bcm) = pin_description.bcm {
+                        // Pin is configured, lay it out with full widgets in a row
+                        let pin_row = self.create_pin_view_side(
+                            pin_description,
+                            self.hardware_config.pin_functions.get(&bcm),
+                            Start,
+                            self.pin_states.get(bcm_pin_number),
+                            true,
+                        );
 
-                    column = column.push(pin_row);
+                        column = column.push(pin_row);
+                    }
                 }
             }
         }
@@ -577,8 +578,15 @@ fn get_pin_widget<'a>(
                     .unwrap_or(level.unwrap_or(false as PinLevel)),
             )
             .on_toggle(move |b| {
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(b, now))
+                if let Some(bcm) = bcm_pin_number {
+                    if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
+                        ChangeOutputLevel(bcm, LevelChange::new(b, now))
+                    } else {
+                        MenuBarButtonClicked // Fake message in case of error
+                    }
+                } else {
+                    MenuBarButtonClicked // Fake message in case of error
+                }
             })
             .size(TOGGLER_SIZE)
             .style(toggler_style);
@@ -590,14 +598,30 @@ fn get_pin_widget<'a>(
 
             let led = led::<HardwareViewMessage>(LED_RADIUS, pin_state.get_level())
                 .on_press({
-                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
+                    if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
+                        if let Some(bcm) = bcm_pin_number {
+                            let level: PinLevel =
+                                pin_state.get_level().unwrap_or(false as PinLevel);
+                            ChangeOutputLevel(bcm, LevelChange::new(!level, now))
+                        } else {
+                            MenuBarButtonClicked // Fake for error case
+                        }
+                    } else {
+                        MenuBarButtonClicked // Fake for error case
+                    }
                 })
                 .on_release({
-                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
-                    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                    ChangeOutputLevel(bcm_pin_number.unwrap(), LevelChange::new(!level, now))
+                    if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
+                        if let Some(bcm) = bcm_pin_number {
+                            let level: PinLevel =
+                                pin_state.get_level().unwrap_or(false as PinLevel);
+                            ChangeOutputLevel(bcm, LevelChange::new(!level, now))
+                        } else {
+                            MenuBarButtonClicked // Fake for error case
+                        }
+                    } else {
+                        MenuBarButtonClicked // Fake for error case
+                    }
                 });
 
             let led_tooltip = Tooltip::new(led, "Hold down to invert level", Position::Top)
