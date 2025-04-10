@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
