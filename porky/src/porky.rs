@@ -13,7 +13,7 @@ use cyw43::Control;
 #[cfg(feature = "wifi")]
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::error;
-#[cfg(any(feature = "pico2", feature = "wifi"))]
+#[cfg(any(feature = "pico2", feature = "wifi", feature = "usb"))]
 use defmt::info;
 use defmt_rtt as _;
 use ekv::Database;
@@ -132,19 +132,20 @@ fn hardware_description(serial: &str) -> HardwareDescription {
 
 #[cfg(feature = "pico2")]
 /// Get the unique serial number from Chip OTP
-pub fn serial_number() -> &'static str {
-    let device_id = embassy_rp::otp::get_chipid().unwrap();
+pub fn serial_number() -> Result<&'static str, &'static str> {
+    let device_id = embassy_rp::otp::get_chipid().map_err(|_| "Could not get chipid")?;
     let device_id_bytes = device_id.to_ne_bytes();
 
     // convert the device_id to a 16 char hex "string"
     let mut device_id_hex: [u8; 16] = [0; 16];
-    faster_hex::hex_encode(&device_id_bytes, &mut device_id_hex).unwrap();
+    faster_hex::hex_encode(&device_id_bytes, &mut device_id_hex)
+        .map_err(|_| "Could not convert chipid to HEX")?;
 
     static ID: StaticCell<[u8; 16]> = StaticCell::new();
     let id = ID.init(device_id_hex);
-    let device_id_str = str::from_utf8(id).unwrap();
+    let device_id_str = str::from_utf8(id).map_err(|_| "Could not create str for chipid")?;
     info!("device_id: {}", device_id_str);
-    device_id_str
+    Ok(device_id_str)
 }
 
 #[cfg(feature = "usb")]
@@ -213,9 +214,6 @@ async fn main(spawner: Spawner) {
         peripherals.DMA_CH0,
     );
 
-    #[cfg(not(feature = "wifi"))]
-    let wifi_up = false;
-
     #[cfg(feature = "wifi")]
     // PIN_23 - OP wireless power on signal
     let (mut control, network_stack, wifi_up) =
@@ -256,9 +254,9 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "pico2")] // pico2 needs a delay
     embassy_time::Timer::after_millis(10).await;
     #[cfg(feature = "pico1")]
-    let serial_number = flash::serial_number(&mut flash);
+    let serial_number = flash::serial_number(&mut flash).unwrap_or("0000000000");
     #[cfg(feature = "pico2")]
-    let serial_number = serial_number();
+    let serial_number = serial_number().unwrap_or("0000000000");
     static HARDWARE_DESCRIPTION: StaticCell<HardwareDescription> = StaticCell::new();
     let hw_desc = HARDWARE_DESCRIPTION.init(hardware_description(serial_number));
 
@@ -348,7 +346,7 @@ async fn main(spawner: Spawner) {
                     {
                         Either::First(socket_select) => match socket_select {
                             Ok(socket) => {
-                                tcp::message_loop(
+                                if let Err(e) = tcp::message_loop(
                                     &mut gpio,
                                     socket,
                                     hw_desc,
@@ -358,6 +356,9 @@ async fn main(spawner: Spawner) {
                                     db,
                                 )
                                 .await
+                                {
+                                    error!("Could tcp::message_loop error: {}", e);
+                                }
                             }
                             Err(_) => error!("TCP accept error"),
                         },
@@ -385,7 +386,7 @@ async fn main(spawner: Spawner) {
                     .await
                     {
                         Ok(socket) => {
-                            tcp::message_loop(
+                            if let Err(e) = tcp::message_loop(
                                 &mut gpio,
                                 socket,
                                 hw_desc,
@@ -395,6 +396,9 @@ async fn main(spawner: Spawner) {
                                 db,
                             )
                             .await
+                            {
+                                error!("Could tcp::message_loop error: {}", e);
+                            }
                         }
                         Err(_) => error!("TCP accept error"),
                     }
@@ -407,6 +411,7 @@ async fn main(spawner: Spawner) {
     info!(
         "Wi-Fi disabled, no valid SsidSpec was found, or cannot start Wi-Fi, so starting USB only"
     );
+    #[cfg(feature = "usb")]
     usb_only(
         spawner,
         driver,

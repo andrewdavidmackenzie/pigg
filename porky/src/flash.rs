@@ -37,20 +37,25 @@ pub struct DbFlash<T: NorFlash + ReadNorFlash> {
 
 #[cfg(feature = "pico1")]
 /// Get the unique serial number from Flash
-pub fn serial_number(flash: &mut Flash<'_, FLASH, Blocking, FLASH_SIZE>) -> &'static str {
+pub fn serial_number(
+    flash: &mut Flash<'_, FLASH, Blocking, FLASH_SIZE>,
+) -> Result<&'static str, &'static str> {
     // Get a unique device id - in this case an eight-byte ID from flash rendered as hex string
     let mut device_id = [0; 8];
-    flash.blocking_unique_id(&mut device_id).unwrap();
+    flash
+        .blocking_unique_id(&mut device_id)
+        .map_err(|_| "Could not get unique ID from flash")?;
 
     // convert the device_id to a hex "string"
     let mut device_id_hex: [u8; 16] = [0; 16];
-    hex_encode(&device_id, &mut device_id_hex).unwrap();
+    hex_encode(&device_id, &mut device_id_hex).map_err(|_| "Could not convert unique ID to HEX")?;
 
     static ID: StaticCell<[u8; 16]> = StaticCell::new();
     let id = ID.init(device_id_hex);
-    let device_id_str = str::from_utf8(id).unwrap();
+    let device_id_str =
+        str::from_utf8(id).map_err(|_| "Could not create String of HEX unique ID")?;
     info!("device_id: {}", device_id_str);
-    device_id_str
+    Ok(device_id_str)
 }
 
 impl<T: NorFlash + ReadNorFlash> flash::Flash for DbFlash<T> {
@@ -99,8 +104,7 @@ pub fn get_flash<'a>(flash_pin: FLASH) -> Flash<'a, FLASH, Blocking, FLASH_SIZE>
 
 pub async fn db_init(
     flash: Flash<'static, FLASH, Blocking, FLASH_SIZE>,
-) -> Database<DbFlash<Flash<'static, FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex>{
-
+) -> Database<DbFlash<Flash<'static, FLASH, Blocking, FLASH_SIZE>>, NoopRawMutex> {
     #[cfg(feature = "pico1")]
     const OFFSET: usize = 0x0;
     #[cfg(not(feature = "pico1"))] // The start of flash address needs adjusting on pico 2
@@ -108,7 +112,7 @@ pub async fn db_init(
 
     let flash: DbFlash<Flash<_, _, FLASH_SIZE>> = DbFlash {
         flash,
-        start: unsafe { &__config_start as *const u32 as usize - OFFSET},
+        start: unsafe { &__config_start as *const u32 as usize - OFFSET },
     };
     let db = Database::<_, NoopRawMutex>::new(flash, ekv::Config::default());
 
