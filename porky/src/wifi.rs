@@ -2,7 +2,7 @@ use core::net::Ipv4Addr;
 use cyw43::Control;
 use cyw43::{JoinAuth, JoinOptions};
 use cyw43_pio::PioSpi;
-use defmt::{error, info, unwrap, warn};
+use defmt::{error, info, warn};
 use embassy_executor::Spawner;
 use embassy_net::{Config, Runner, Stack, StackResources};
 use embassy_rp::clocks::RoscRng;
@@ -92,12 +92,16 @@ while let Some(bss) = scanner.next().await {
     }
 } */
 
-/// Initialize the cyw43 chip and start device_net
+/// Initialize the cyw43 chip, start network and Wi-Fi tasks
+/// Return:
+///     - control
+///     - network stack
+///     - boolean indicating if Wi-Fi is working as expected
 pub async fn start_net<'a>(
     spawner: Spawner,
     pin_23: embassy_rp::peripherals::PIN_23,
     spi: PioSpi<'static, PIO0, 0, DMA_CH0>,
-) -> (Control<'a>, Stack<'static>) {
+) -> (Control<'a>, Stack<'static>, bool) {
     let fw = include_bytes!("../assets/43439A0.bin");
     let clm = include_bytes!("../assets/43439A0_clm.bin");
     let pwr = Output::new(pin_23, Level::Low);
@@ -105,7 +109,7 @@ pub async fn start_net<'a>(
     static STATE: StaticCell<cyw43::State> = StaticCell::new();
     let state = STATE.init(cyw43::State::new());
     let (net_device, mut control, runner) = cyw43::new(state, pwr, spi, fw).await;
-    spawner.spawn(wifi_task(runner)).unwrap();
+    let wifi_result = spawner.spawn(wifi_task(runner));
 
     control.init(clm).await;
     control
@@ -127,8 +131,7 @@ pub async fn start_net<'a>(
 
     // Init network stack
     let (stack, runner) = embassy_net::new(net_device, config, resources, seed);
+    let net_result = spawner.spawn(net_task(runner));
 
-    unwrap!(spawner.spawn(net_task(runner)));
-
-    (control, stack)
+    (control, stack, wifi_result.is_ok() && net_result.is_ok())
 }

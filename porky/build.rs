@@ -60,6 +60,7 @@ pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
         Some(spec) => file.write_all(
             format!(
                 "\n\
+#[allow(clippy::unwrap_used)]
 pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
     Some(SsidSpec {{ \n\
         ssid_name: String::from_str(\"{}\").unwrap(), \n\

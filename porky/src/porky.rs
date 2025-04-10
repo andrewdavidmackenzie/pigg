@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![deny(clippy::unwrap_used)]
 
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
@@ -212,9 +213,13 @@ async fn main(spawner: Spawner) {
         peripherals.DMA_CH0,
     );
 
+    #[cfg(not(feature = "wifi"))]
+    let wifi_up = false;
+
     #[cfg(feature = "wifi")]
     // PIN_23 - OP wireless power on signal
-    let (mut control, wifi_stack) = wifi::start_net(spawner, peripherals.PIN_23, spi).await;
+    let (mut control, network_stack, wifi_up) =
+        wifi::start_net(spawner, peripherals.PIN_23, spi).await;
 
     let mut gpio = Gpio::new(
         peripherals.PIN_0,
@@ -288,28 +293,16 @@ async fn main(spawner: Spawner) {
     )
     .await;
 
-    #[cfg(all(not(feature = "wifi"), feature = "usb"))]
-    usb_only(
-        spawner,
-        driver,
-        gpio,
-        hw_desc,
-        hardware_config,
-        db,
-        watchdog,
-    )
-    .await;
-
     // If we have a valid SsidSpec, then try and join that network using it
     #[cfg(feature = "wifi")]
-    match persistence::get_ssid_spec(db, static_buf).await {
-        Some(ssid) => match wifi::join(&mut control, wifi_stack, &ssid).await {
-            Ok(ip) => {
+    if wifi_up {
+        if let Some(ssid) = persistence::get_ssid_spec(db, static_buf).await {
+            if let Ok(ip) = wifi::join(&mut control, network_stack, &ssid).await {
                 info!("Assigned IP: {}", ip);
 
                 if spawner
                     .spawn(mdns::mdns_responder(
-                        wifi_stack,
+                        network_stack,
                         ip,
                         TCP_PORT,
                         serial_number,
@@ -344,7 +337,11 @@ async fn main(spawner: Spawner) {
                 #[cfg(all(feature = "usb", feature = "wifi"))]
                 loop {
                     match select(
-                        tcp::wait_connection(wifi_stack, &mut wifi_tx_buffer, &mut wifi_rx_buffer),
+                        tcp::wait_connection(
+                            network_stack,
+                            &mut wifi_tx_buffer,
+                            &mut wifi_rx_buffer,
+                        ),
                         usb::wait_connection(&mut usb_connection, &hardware_config),
                     )
                     .await
@@ -380,8 +377,12 @@ async fn main(spawner: Spawner) {
 
                 #[cfg(all(not(feature = "usb"), feature = "wifi"))]
                 loop {
-                    match tcp::wait_connection(wifi_stack, &mut wifi_tx_buffer, &mut wifi_rx_buffer)
-                        .await
+                    match tcp::wait_connection(
+                        network_stack,
+                        &mut wifi_tx_buffer,
+                        &mut wifi_rx_buffer,
+                    )
+                    .await
                     {
                         Ok(socket) => {
                             tcp::message_loop(
@@ -399,38 +400,23 @@ async fn main(spawner: Spawner) {
                     }
                 }
             }
-            Err(e) => {
-                #[cfg(feature = "usb")]
-                error!("Could not join Wi-Fi network: {}, so starting USB only", e);
-                #[cfg(feature = "usb")]
-                usb_only(
-                    spawner,
-                    driver,
-                    gpio,
-                    hw_desc,
-                    hardware_config,
-                    db,
-                    watchdog,
-                    control,
-                )
-                .await;
-            }
-        },
-        None => {
-            #[cfg(feature = "usb")]
-            info!("No valid SsidSpec was found, cannot start Wi-Fi, so starting USB only");
-            #[cfg(feature = "usb")]
-            usb_only(
-                spawner,
-                driver,
-                gpio,
-                hw_desc,
-                hardware_config,
-                db,
-                watchdog,
-                control,
-            )
-            .await;
         }
     }
+
+    #[cfg(feature = "usb")]
+    info!(
+        "Wi-Fi disabled, no valid SsidSpec was found, or cannot start Wi-Fi, so starting USB only"
+    );
+    usb_only(
+        spawner,
+        driver,
+        gpio,
+        hw_desc,
+        hardware_config,
+        db,
+        watchdog,
+        #[cfg(feature = "wifi")]
+        control,
+    )
+    .await;
 }
