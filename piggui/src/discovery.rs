@@ -1,3 +1,4 @@
+#[cfg(feature = "tcp")]
 use anyhow::anyhow;
 #[cfg(feature = "usb")]
 use futures::channel::mpsc::Sender;
@@ -9,6 +10,7 @@ use futures::SinkExt;
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh::{NodeId, RelayUrl};
+#[cfg(feature = "tcp")]
 use mdns_sd::ServiceInfo;
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
@@ -110,6 +112,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     })
 }
 
+#[cfg(feature = "tcp")]
 fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevice> {
     let device_properties = info.get_properties();
     let serial_number = device_properties
