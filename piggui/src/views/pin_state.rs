@@ -32,17 +32,19 @@ pub struct PinState {
     pub(crate) chart: Waveform<PinLevel>,
 }
 
-impl From<LevelChange> for Sample<PinLevel> {
-    fn from(level_change: LevelChange) -> Self {
+impl TryFrom<LevelChange> for Sample<PinLevel> {
+    type Error = &'static str;
+
+    fn try_from(level_change: LevelChange) -> Result<Self, Self::Error> {
         let time = DateTime::from_timestamp(
             level_change.timestamp.as_secs() as i64,
             level_change.timestamp.subsec_nanos(),
         )
-        .unwrap();
-        Self {
+        .ok_or("Could not create timestamp")?;
+        Ok(Self {
             time,
             value: level_change.new_level,
-        }
+        })
     }
 }
 
@@ -76,10 +78,11 @@ impl PinState {
         self.current_level = Some(level_change.new_level);
 
         let dt = self.chart.date_time(level_change.timestamp);
-        let mut sample: Sample<PinLevel> = level_change.into();
-        sample.time = dt;
-
-        self.chart.push_data(sample)
+        let result: Result<Sample<PinLevel>, _> = level_change.try_into();
+        if let Ok(mut sample) = result {
+            sample.time = dt;
+            self.chart.push_data(sample)
+        }
     }
 }
 

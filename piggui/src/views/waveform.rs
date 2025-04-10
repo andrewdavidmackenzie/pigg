@@ -287,7 +287,8 @@ mod test {
                 timestamp: high_sent_time,
                 new_level: true,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let low_sent_time = now.sub(Duration::from_secs(1));
@@ -296,7 +297,8 @@ mod test {
                 timestamp: low_sent_time,
                 new_level: false,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let data = chart.get_data();
@@ -333,7 +335,8 @@ mod test {
                 timestamp: low_sent_time,
                 new_level: false,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let high_sent_time = now.sub(Duration::from_secs(1));
@@ -342,7 +345,8 @@ mod test {
                 timestamp: high_sent_time,
                 new_level: true,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let data = chart.get_data();
@@ -379,7 +383,8 @@ mod test {
                 timestamp: sent_time,
                 new_level: false,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         // Check the raw data still contains it
@@ -460,7 +465,8 @@ mod test {
             new_level: false,
             timestamp: low_sent_time,
         }
-        .into();
+        .try_into()
+        .expect("Could not convert level change to sample");
         chart.push_data(low_sample.clone());
         assert_eq!(chart.samples.len(), 1);
 
@@ -470,7 +476,8 @@ mod test {
             timestamp: high_sent_time,
             new_level: true,
         }
-        .into();
+        .try_into()
+        .expect("Could not convert level change to sample");
         chart.push_data(high_sample.clone());
 
         // Check the raw data has both
@@ -523,7 +530,9 @@ mod test {
             timestamp: now,
         };
 
-        let sample: Sample<PinLevel> = level_change.into();
+        let sample: Sample<PinLevel> = level_change
+            .try_into()
+            .expect("Could not convert level change to sample");
 
         let display = format!("{sample}");
         assert!(display.contains("UTC"));
@@ -573,15 +582,21 @@ mod test {
         let old_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(20)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(old_sample);
 
         // create a new high sample that is in the window
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(2)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 2);
@@ -618,15 +633,19 @@ mod test {
         let old_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(20)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+        chart.push_data(old_sample);
 
         // create a new low sample that is in the window
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(2)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 2);
@@ -663,20 +682,28 @@ mod test {
         let old_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(9)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+        chart.push_data(old_sample);
 
         // create a pulse, up and down
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(5)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(4)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 3);
@@ -715,20 +742,29 @@ mod test {
         let old_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(9)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(old_sample);
 
         // create a pulse, down then back up
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(5)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(4)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 3);
