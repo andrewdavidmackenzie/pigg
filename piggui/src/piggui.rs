@@ -165,7 +165,6 @@ impl Piggui {
         #[cfg(feature = "discovery")]
         let serial = local_hardware
             .description(env!("CARGO_PKG_NAME"))
-            .unwrap()
             .details
             .serial;
         #[cfg(feature = "discovery")]
@@ -177,10 +176,7 @@ impl Piggui {
             serial,
             DiscoveredDevice {
                 discovery_method: Local,
-                hardware_details: local_hardware
-                    .description(env!("CARGO_PKG_NAME"))
-                    .unwrap()
-                    .details,
+                hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
                 ssid_spec: None,
                 hardware_connections,
             },

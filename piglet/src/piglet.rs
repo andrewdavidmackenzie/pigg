@@ -126,7 +126,7 @@ async fn run_service(
     setup_logging(matches);
 
     let mut hw = get();
-    info!("\n{}", hw.description(env!("CARGO_PKG_NAME"))?.details);
+    info!("\n{}", hw.description(env!("CARGO_PKG_NAME")).details);
 
     // Get the boot config for the hardware
     #[allow(unused_mut)]
@@ -152,7 +152,7 @@ async fn run_service(
     write_info_file(info_path, &listener_info)?;
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
-    let desc = hw.description(env!("CARGO_PKG_NAME"))?;
+    let desc = hw.description(env!("CARGO_PKG_NAME"));
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     println!("Serial Number: {}", desc.details.serial);
 

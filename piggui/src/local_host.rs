@@ -139,10 +139,9 @@ pub async fn connect(
     app_name: &str,
 ) -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
     let hw = get();
-    let hw_description = hw.description(app_name)?;
     let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
-    Ok((hw_description, hw_config, LocalConnection { hw }))
+    Ok((hw.description(app_name), hw_config, LocalConnection { hw }))
 }
 
 /// Disconnect from the local hardware

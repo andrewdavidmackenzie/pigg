@@ -24,7 +24,7 @@ async fn load_via_picker() -> io::Result<Option<(String, HardwareConfig)>> {
     if let Some(handle) = rfd::AsyncFileDialog::new()
         .add_filter("Pigg Config", &["pigg"])
         .set_title("Choose config file to load")
-        .set_directory(env::current_dir().unwrap())
+        .set_directory(env::current_dir()?)
         .pick_file()
         .await
     {
