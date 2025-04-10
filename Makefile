@@ -44,6 +44,7 @@ ifeq ($(OSFLAG),macos)
 	@echo "Running macos specific setup"
 	$(MAKE) macos-setup
 endif
+	@cargo install cargo-all-features
 	@cd piggui && make setup
 	@cd piglet && make setup
 	@cd porky && make setup
