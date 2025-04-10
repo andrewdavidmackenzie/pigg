@@ -77,11 +77,12 @@ impl PinState {
     pub fn set_level(&mut self, level_change: LevelChange) {
         self.current_level = Some(level_change.new_level);
 
-        let dt = self.chart.date_time(level_change.timestamp);
-        let result: Result<Sample<PinLevel>, _> = level_change.try_into();
-        if let Ok(mut sample) = result {
-            sample.time = dt;
-            self.chart.push_data(sample)
+        if let Ok(dt) = self.chart.date_time(level_change.timestamp) {
+            let result: Result<Sample<PinLevel>, _> = level_change.try_into();
+            if let Ok(mut sample) = result {
+                sample.time = dt;
+                self.chart.push_data(sample)
+            }
         }
     }
 }
@@ -95,7 +96,9 @@ mod test {
     #[test]
     fn level_stores_last() {
         let mut state = PinState::new();
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get System time");
         state.set_level(LevelChange::new(false, now));
         state.set_level(LevelChange::new(true, now));
         state.set_level(LevelChange::new(false, now));

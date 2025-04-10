@@ -113,22 +113,23 @@ where
     /// and the DateTime Now. Use Now as the DateTime of this first sample.
     /// If it is a subsequent samples, then add the offset to the origin timestamp to bring the
     /// sample into the present time, but preserving the relative time between the two samples.
-    pub fn date_time(&mut self, duration: Duration) -> DateTime<Utc> {
+    pub fn date_time(&mut self, duration: Duration) -> Result<DateTime<Utc>, &'static str> {
         match self.offset {
             None => {
                 let dt = Utc::now();
-                self.offset = Some(dt - Self::duration_to_dt(duration));
-                dt
+                self.offset = Some(dt - Self::duration_to_dt(duration)?);
+                Ok(dt)
             }
-            Some(offset) => Self::duration_to_dt(duration) + offset,
+            Some(offset) => Ok(Self::duration_to_dt(duration)? + offset),
         }
     }
 
     /// Convert a Duration timestamp into a DateTime<Utc> (0 will be start of epoch in 1970)
     /// Timestamps that are Durations, usually time since system start/reboot, will be converted
     /// to a DateTime<Utc> that is start of epoc + time since start/reboot
-    fn duration_to_dt(d: Duration) -> DateTime<Utc> {
-        DateTime::from_timestamp(d.as_secs() as i64, d.subsec_nanos()).unwrap()
+    fn duration_to_dt(d: Duration) -> Result<DateTime<Utc>, &'static str> {
+        DateTime::from_timestamp(d.as_secs() as i64, d.subsec_nanos())
+            .ok_or("Could not create DateTime from duration")
     }
 
     /// Trim samples outside the timespan of the chart, except the most recent one
