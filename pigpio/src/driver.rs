@@ -74,11 +74,11 @@ pub struct HW {
 /// Common implementation code for pi and fake hardware
 impl HW {
     /// Find the Pi hardware description
-    pub fn description(&self, app_name: &str) -> io::Result<HardwareDescription> {
-        Ok(HardwareDescription {
-            details: Self::get_details(app_name)?,
+    pub fn description(&self, app_name: &str) -> HardwareDescription {
+        HardwareDescription {
+            details: Self::get_details(app_name),
             pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
-        })
+        }
     }
 
     /// This takes the GPIOConfig struct and configures all the pins in it
@@ -133,7 +133,7 @@ impl HW {
 
     /// Return the [HardwareDetails] struct that describes a number of details about the general
     /// hardware, not GPIO specifics or pin outs or such.
-    fn get_details(app_name: &str) -> io::Result<HardwareDetails> {
+    fn get_details(app_name: &str) -> HardwareDetails {
         #[allow(unused_mut)]
         let mut details = HardwareDetails {
             hardware: "fake".to_string(),
@@ -150,16 +150,18 @@ impl HW {
             any(target_arch = "aarch64", target_arch = "arm"),
             target_env = "gnu"
         ))]
-        for line in std::fs::read_to_string("/proc/cpuinfo")?.lines() {
-            match line
-                .split_once(':')
-                .map(|(key, value)| (key.trim(), value.trim()))
-            {
-                Some(("Hardware", hw)) => details.hardware = hw.to_string(),
-                Some(("Revision", revision)) => details.revision = revision.to_string(),
-                Some(("Serial", serial)) => details.serial = serial.to_string(),
-                Some(("Model", model)) => details.model = model.to_string(),
-                _ => {}
+        if let Ok(cpu_info) = std::fs::read_to_string("/proc/cpuinfo") {
+            for line in cpu_info.lines() {
+                match line
+                    .split_once(':')
+                    .map(|(key, value)| (key.trim(), value.trim()))
+                {
+                    Some(("Hardware", hw)) => details.hardware = hw.to_string(),
+                    Some(("Revision", revision)) => details.revision = revision.to_string(),
+                    Some(("Serial", serial)) => details.serial = serial.to_string(),
+                    Some(("Model", model)) => details.model = model.to_string(),
+                    _ => {}
+                }
             }
         }
 
@@ -175,7 +177,7 @@ impl HW {
             details.serial = format!("{:01$x}", random_serial, 18);
         }
 
-        Ok(details)
+        details
     }
 
     #[cfg(all(
@@ -371,9 +373,7 @@ mod test {
     #[test]
     fn get_hardware() {
         let hw = crate::get();
-        let description = hw
-            .description("Test")
-            .expect("Could not read Hardware description");
+        let description = hw.description("Test");
         let pins = description.pins.pins();
         assert_eq!(pins.len(), 40);
         assert_eq!(pins[0].name, "3V3")
@@ -382,16 +382,13 @@ mod test {
     #[test]
     fn hw_can_be_got() {
         let hw = crate::get();
-        assert!(hw.description("Test").is_ok());
+        println!("HW Description: {:?}", hw.description("Test"));
     }
 
     #[test]
     fn forty_board_pins() {
         let hw = crate::get();
-        let pin_set = hw
-            .description("Test")
-            .expect("Could not get Hardware Description")
-            .pins;
+        let pin_set = hw.description("Test").pins;
         assert_eq!(pin_set.pins().len(), 40);
     }
 
@@ -399,10 +396,7 @@ mod test {
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = crate::get();
-        let pin_set = hw
-            .description("Test")
-            .expect("Could not get Hardware Description")
-            .pins;
+        let pin_set = hw.description("Test").pins;
         let sorted_bcm_pins = pin_set.bcm_pins_sorted();
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
         let mut previous = 1; // we start at GPIO2

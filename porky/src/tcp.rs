@@ -30,26 +30,44 @@ async fn send_hardware_description_and_config(
     socket: &mut TcpSocket<'_>,
     hw_desc: &HardwareDescription<'_>,
     hw_config: &HardwareConfig,
-) {
+) -> Result<(), &'static str> {
     let mut hw_buf = [0; 2048];
-    let slice = postcard::to_slice(&(hw_desc, hw_config), &mut hw_buf).unwrap();
+    let slice = postcard::to_slice(&(hw_desc, hw_config), &mut hw_buf)
+        .map_err(|_| "Could not serialize hw config and desc")?;
     info!("Sending hardware description (length: {})", slice.len());
-    socket.write_all(slice).await.unwrap()
+    socket
+        .write_all(slice)
+        .await
+        .map_err(|_| "Could not send hardware description and config")
 }
 
 /// Send the [HardwareConfig] over the [TcpSocket]
-async fn send_hardware_config(socket: &mut TcpSocket<'_>, hw_config: &HardwareConfig) {
+async fn send_hardware_config(
+    socket: &mut TcpSocket<'_>,
+    hw_config: &HardwareConfig,
+) -> Result<(), &'static str> {
     let mut hw_buf = [0; 1024];
-    let slice = postcard::to_slice(hw_config, &mut hw_buf).unwrap();
+    let slice =
+        postcard::to_slice(hw_config, &mut hw_buf).map_err(|_| "Could not serialize hw config")?;
     info!("Sending hardware config (length: {})", slice.len());
-    socket.write_all(slice).await.unwrap()
+    socket
+        .write_all(slice)
+        .await
+        .map_err(|_| "Could not send hardware config")
 }
 
 /// Send a [HardwareConfigMessage] over TCP to the GUI
-async fn send_message(socket: &mut TcpSocket<'_>, hardware_config_message: HardwareConfigMessage) {
+async fn send_message(
+    socket: &mut TcpSocket<'_>,
+    hardware_config_message: HardwareConfigMessage,
+) -> Result<(), &'static str> {
     let mut buf = [0; 1024];
-    let gui_message = postcard::to_slice(&hardware_config_message, &mut buf).unwrap();
-    socket.write_all(gui_message).await.unwrap();
+    let gui_message = postcard::to_slice(&hardware_config_message, &mut buf)
+        .map_err(|_| "Could not serialize message")?;
+    socket
+        .write_all(gui_message)
+        .await
+        .map_err(|_| "Could not send message")
 }
 
 /// Wait until a config message in received on the [TcpSocket] then deserialize it and return it
@@ -90,8 +108,8 @@ pub async fn message_loop(
         DbFlash<Flash<'static, FLASH, Blocking, { flash::FLASH_SIZE }>>,
         NoopRawMutex,
     >,
-) {
-    send_hardware_description_and_config(&mut socket, hw_desc, hw_config).await;
+) -> Result<(), &'static str> {
+    send_hardware_description_and_config(&mut socket, hw_desc, hw_config).await?;
 
     info!("Entering TCP message loop");
     loop {
@@ -108,18 +126,19 @@ pub async fn message_loop(
                         .await;
                     let _ = persistence::store_config_change(db, &hardware_config_message).await;
                     if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
-                        send_hardware_config(&mut socket, hw_config).await;
+                        send_hardware_config(&mut socket, hw_config).await?;
                     }
                     if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
                         info!("TCP, Disconnect, exiting TCP Message loop");
-                        return;
+                        return Ok(());
                     }
                 }
             },
             Either::Second(hardware_config_message) => {
-                send_message(&mut socket, hardware_config_message.clone()).await;
+                send_message(&mut socket, hardware_config_message.clone()).await?;
             }
         }
     }
     info!("Exiting Message Loop");
+    Ok(())
 }

@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::{
@@ -165,7 +167,6 @@ impl Piggui {
         #[cfg(feature = "discovery")]
         let serial = local_hardware
             .description(env!("CARGO_PKG_NAME"))
-            .unwrap()
             .details
             .serial;
         #[cfg(feature = "discovery")]
@@ -177,10 +178,7 @@ impl Piggui {
             serial,
             DiscoveredDevice {
                 discovery_method: Local,
-                hardware_details: local_hardware
-                    .description(env!("CARGO_PKG_NAME"))
-                    .unwrap()
-                    .details,
+                hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
                 ssid_spec: None,
                 hardware_connections,
             },

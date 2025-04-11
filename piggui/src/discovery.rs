@@ -1,3 +1,5 @@
+#[cfg(feature = "tcp")]
+use anyhow::anyhow;
 #[cfg(feature = "usb")]
 use futures::channel::mpsc::Sender;
 #[cfg(any(feature = "usb", feature = "tcp"))]
@@ -8,6 +10,8 @@ use futures::SinkExt;
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh::{NodeId, RelayUrl};
+#[cfg(feature = "tcp")]
+use mdns_sd::ServiceInfo;
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 #[cfg(feature = "tcp")]
@@ -108,6 +112,61 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
     })
 }
 
+#[cfg(feature = "tcp")]
+fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevice> {
+    let device_properties = info.get_properties();
+    let serial_number = device_properties
+        .get_property_val_str("Serial")
+        .ok_or(anyhow!("Could not get SerialNumber property"))?;
+    let model = device_properties
+        .get_property_val_str("Model")
+        .ok_or(anyhow!("Could not get Model property"))?;
+    let app_name = device_properties
+        .get_property_val_str("AppName")
+        .ok_or(anyhow!("Could not get AppName property"))?;
+    let app_version = device_properties
+        .get_property_val_str("AppVersion")
+        .ok_or(anyhow!("Could not get AppVersion property"))?;
+    let ip = info
+        .get_addresses_v4()
+        .drain()
+        .next()
+        .ok_or(anyhow!("Could not get IP address"))?;
+    let port = info.get_port();
+    let mut hardware_connections = HashMap::new();
+    hardware_connections.insert(
+        "TCP".to_string(),
+        HardwareConnection::Tcp(IpAddr::V4(*ip), port),
+    );
+
+    #[cfg(feature = "iroh")]
+    if let Some(nodeid_str) = device_properties.get_property_val_str("IrohNodeID") {
+        if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
+            if let Some(relay_url_str) = device_properties.get_property_val_str("IrohRelayURL") {
+                hardware_connections.insert(
+                    "Iroh".to_string(),
+                    HardwareConnection::Iroh(nodeid, Some(RelayUrl::from_str(relay_url_str)?)),
+                );
+            }
+        }
+    }
+
+    Ok(DiscoveredDevice {
+        discovery_method: Mdns,
+        hardware_details: HardwareDetails {
+            model: model.to_string(),
+            hardware: "".to_string(),
+            revision: "".to_string(),
+            serial: serial_number.to_string(),
+            wifi: true,
+            app_name: app_name.to_string(),
+            app_version: app_version.to_string(),
+        },
+        ssid_spec: None,
+        hardware_connections,
+    })
+}
+
 // TODO Could separate out the TCP part and mDNS discover devices for Iroh connections only also
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
@@ -119,56 +178,10 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                 while let Ok(event) = receiver.recv_async().await {
                     match event {
                         ServiceEvent::ServiceResolved(info) => {
-                            let device_properties = info.get_properties();
-                            let serial_number =
-                                device_properties.get_property_val_str("Serial").unwrap();
-                            let model = device_properties.get_property_val_str("Model").unwrap();
-                            let app_name =
-                                device_properties.get_property_val_str("AppName").unwrap();
-                            let app_version = device_properties
-                                .get_property_val_str("AppVersion")
-                                .unwrap();
-                            if let Some(ip) = info.get_addresses_v4().drain().next() {
-                                let port = info.get_port();
-                                let mut hardware_connections = HashMap::new();
-                                hardware_connections.insert(
-                                    "TCP".to_string(),
-                                    HardwareConnection::Tcp(IpAddr::V4(*ip), port),
-                                );
-
-                                #[cfg(feature = "iroh")]
-                                if let Some(nodeid_str) =
-                                    device_properties.get_property_val_str("IrohNodeID")
-                                {
-                                    if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
-                                        let relay_url = device_properties
-                                            .get_property_val_str("IrohRelayURL")
-                                            .map(|s| RelayUrl::from_str(s).unwrap());
-                                        hardware_connections.insert(
-                                            "Iroh".to_string(),
-                                            HardwareConnection::Iroh(nodeid, relay_url),
-                                        );
-                                    }
-                                }
-
-                                let discovered_device = DiscoveredDevice {
-                                    discovery_method: Mdns,
-                                    hardware_details: HardwareDetails {
-                                        model: model.to_string(),
-                                        hardware: "".to_string(),
-                                        revision: "".to_string(),
-                                        serial: serial_number.to_string(),
-                                        wifi: true,
-                                        app_name: app_name.to_string(),
-                                        app_version: app_version.to_string(),
-                                    },
-                                    ssid_spec: None,
-                                    hardware_connections,
-                                };
-
+                            if let Ok(discovered_device) = device_from_service_info(&info) {
                                 gui_sender
                                     .send(DiscoveryEvent::DeviceFound(
-                                        serial_number.to_owned(),
+                                        discovered_device.hardware_details.serial.clone(),
                                         discovered_device.clone(),
                                     ))
                                     .await

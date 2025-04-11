@@ -113,22 +113,23 @@ where
     /// and the DateTime Now. Use Now as the DateTime of this first sample.
     /// If it is a subsequent samples, then add the offset to the origin timestamp to bring the
     /// sample into the present time, but preserving the relative time between the two samples.
-    pub fn date_time(&mut self, duration: Duration) -> DateTime<Utc> {
+    pub fn date_time(&mut self, duration: Duration) -> Result<DateTime<Utc>, &'static str> {
         match self.offset {
             None => {
                 let dt = Utc::now();
-                self.offset = Some(dt - Self::duration_to_dt(duration));
-                dt
+                self.offset = Some(dt - Self::duration_to_dt(duration)?);
+                Ok(dt)
             }
-            Some(offset) => Self::duration_to_dt(duration) + offset,
+            Some(offset) => Ok(Self::duration_to_dt(duration)? + offset),
         }
     }
 
     /// Convert a Duration timestamp into a DateTime<Utc> (0 will be start of epoch in 1970)
     /// Timestamps that are Durations, usually time since system start/reboot, will be converted
     /// to a DateTime<Utc> that is start of epoc + time since start/reboot
-    fn duration_to_dt(d: Duration) -> DateTime<Utc> {
-        DateTime::from_timestamp(d.as_secs() as i64, d.subsec_nanos()).unwrap()
+    fn duration_to_dt(d: Duration) -> Result<DateTime<Utc>, &'static str> {
+        DateTime::from_timestamp(d.as_secs() as i64, d.subsec_nanos())
+            .ok_or("Could not create DateTime from duration")
     }
 
     /// Trim samples outside the timespan of the chart, except the most recent one
@@ -279,7 +280,9 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         let high_sent_time = now.sub(Duration::from_secs(2));
         chart.push_data(
@@ -287,7 +290,8 @@ mod test {
                 timestamp: high_sent_time,
                 new_level: true,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let low_sent_time = now.sub(Duration::from_secs(1));
@@ -296,23 +300,33 @@ mod test {
                 timestamp: low_sent_time,
                 new_level: false,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let data = chart.get_data();
         assert_eq!(data.len(), 4);
 
         // Next most recent (and first) value should be the "low" inserted at query time
-        assert_eq!(data.first().unwrap().1, 0);
+        assert_eq!(data.first().expect("Could not get first sample").1, 0);
 
         // Next most recent value should be "low" value sent
-        assert_eq!(data.get(1).unwrap(), &(datetime(low_sent_time), 0));
+        assert_eq!(
+            data.get(1).expect("Could not get sample 1"),
+            &(datetime(low_sent_time), 0)
+        );
 
         // Next most recent value should be the "high" inserted when "low" was sent
-        assert_eq!(data.get(2).unwrap(), &(datetime(low_sent_time), 1));
+        assert_eq!(
+            data.get(2).expect("Could not get sample 2"),
+            &(datetime(low_sent_time), 1)
+        );
 
         // Next most recent value should be the "high" sent initially
-        assert_eq!(data.get(3).unwrap(), &(datetime(high_sent_time), 1));
+        assert_eq!(
+            data.get(3).expect("Could not get sample 3"),
+            &(datetime(high_sent_time), 1)
+        );
     }
 
     #[test]
@@ -325,7 +339,9 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         let low_sent_time = now.sub(Duration::from_secs(2));
         chart.push_data(
@@ -333,7 +349,8 @@ mod test {
                 timestamp: low_sent_time,
                 new_level: false,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let high_sent_time = now.sub(Duration::from_secs(1));
@@ -342,23 +359,33 @@ mod test {
                 timestamp: high_sent_time,
                 new_level: true,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         let data = chart.get_data();
         assert_eq!(data.len(), 4);
 
         // Next most recent (and first) value should be the "high" inserted at query time
-        assert_eq!(data.first().unwrap().1, 1);
+        assert_eq!(data.first().expect("Could not get sample 0").1, 1);
 
         // Next most recent value should be "high" value sent
-        assert_eq!(data.get(1).unwrap(), &(datetime(high_sent_time), 1));
+        assert_eq!(
+            data.get(1).expect("Could not get sample 1"),
+            &(datetime(high_sent_time), 1)
+        );
 
         // Next most recent value should be the "low" inserted when "high" was sent
-        assert_eq!(data.get(2).unwrap(), &(datetime(high_sent_time), 0));
+        assert_eq!(
+            data.get(2).expect("Could not get sample 2"),
+            &(datetime(high_sent_time), 0)
+        );
 
         // Next most recent value should be the "low" sent initially
-        assert_eq!(data.get(3).unwrap(), &(datetime(low_sent_time), 0));
+        assert_eq!(
+            data.get(3).expect("Could not get sample 3"),
+            &(datetime(low_sent_time), 0)
+        );
     }
 
     #[test]
@@ -372,14 +399,17 @@ mod test {
         );
 
         // create a sample older than the window
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
         let sent_time = now.sub(Duration::from_secs(20));
         chart.push_data(
             LevelChange {
                 timestamp: sent_time,
                 new_level: false,
             }
-            .into(),
+            .try_into()
+            .expect("Could not convert level change to sample"),
         );
 
         // Check the raw data still contains it
@@ -392,10 +422,13 @@ mod test {
         assert_eq!(data.len(), 2);
 
         // Next most recent (and first) value should be a "low" inserted at query time
-        assert_eq!(data.first().unwrap().1, 0);
+        assert_eq!(data.first().expect("Could not get sample 0").1, 0);
 
         // Next most recent value should be "low" value sent
-        assert_eq!(data.get(1).unwrap(), &(datetime(sent_time), 0));
+        assert_eq!(
+            data.get(1).expect("Could not get sample 1"),
+            &(datetime(sent_time), 0)
+        );
     }
 
     #[test]
@@ -431,14 +464,18 @@ mod test {
         assert_eq!(data.len(), 2);
 
         // Next most recent (and first) value should be a "low" inserted at query time
-        assert_eq!(data.first().unwrap().1, 0);
+        assert_eq!(data.first().expect("Could not get sample 0").1, 0);
 
         // Next most recent value should be "low" value sent
-        assert_eq!(data.get(1).unwrap(), &(next_oldest, 0));
+        assert_eq!(
+            data.get(1).expect("Could not get sample 1"),
+            &(next_oldest, 0)
+        );
     }
 
     fn datetime(timestamp: Duration) -> DateTime<Utc> {
-        DateTime::from_timestamp(timestamp.as_secs() as i64, timestamp.subsec_nanos()).unwrap()
+        DateTime::from_timestamp(timestamp.as_secs() as i64, timestamp.subsec_nanos())
+            .expect("Could not convert timestamp")
     }
 
     #[test]
@@ -452,7 +489,9 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         // create a sample from 20s ago. It should pruned as it's older than the chart window
         let low_sent_time = now.sub(Duration::from_secs(20));
@@ -460,7 +499,8 @@ mod test {
             new_level: false,
             timestamp: low_sent_time,
         }
-        .into();
+        .try_into()
+        .expect("Could not convert level change to sample");
         chart.push_data(low_sample.clone());
         assert_eq!(chart.samples.len(), 1);
 
@@ -470,13 +510,20 @@ mod test {
             timestamp: high_sent_time,
             new_level: true,
         }
-        .into();
+        .try_into()
+        .expect("Could not convert level change to sample");
         chart.push_data(high_sample.clone());
 
         // Check the raw data has both
         assert_eq!(chart.samples.len(), 2);
-        assert_eq!(chart.samples.front().unwrap(), &high_sample);
-        assert_eq!(chart.samples.get(1).unwrap(), &low_sample);
+        assert_eq!(
+            chart.samples.front().expect("Could not get next sample"),
+            &high_sample
+        );
+        assert_eq!(
+            chart.samples.get(1).expect("Could not get sample 1"),
+            &low_sample
+        );
 
         // Get the chart data
         let data = chart.get_data();
@@ -489,16 +536,25 @@ mod test {
         assert_eq!(data.len(), 4);
 
         // Next most recent (and first) value should be a "low" inserted at query time
-        assert_eq!(data.first().unwrap().1, 1);
+        assert_eq!(data.first().expect("Could not get sample 0").1, 1);
 
         // Next most recent value should be "high" value sent
-        assert_eq!(data.get(1).unwrap(), &(datetime(high_sent_time), 1));
+        assert_eq!(
+            data.get(1).expect("Could not get sample 1"),
+            &(datetime(high_sent_time), 1)
+        );
 
         // Next most recent value should be "low" added with same time as "high" sent
-        assert_eq!(data.get(2).unwrap(), &(datetime(high_sent_time), 0));
+        assert_eq!(
+            data.get(2).expect("Could not get sample 2"),
+            &(datetime(high_sent_time), 0)
+        );
 
         // Next most recent value should be "low" that is outside window but kept
-        assert_eq!(data.get(3).unwrap(), &(datetime(low_sent_time), 0));
+        assert_eq!(
+            data.get(3).expect("Could not get sample 3"),
+            &(datetime(low_sent_time), 0)
+        );
     }
 
     #[test]
@@ -516,14 +572,18 @@ mod test {
 
     #[test]
     fn display_sample() {
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         let level_change = LevelChange {
             new_level: false,
             timestamp: now,
         };
 
-        let sample: Sample<PinLevel> = level_change.into();
+        let sample: Sample<PinLevel> = level_change
+            .try_into()
+            .expect("Could not convert level change to sample");
 
         let display = format!("{sample}");
         assert!(display.contains("UTC"));
@@ -567,21 +627,29 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         // Create an old low sample that is out of the display window
         let old_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(20)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(old_sample);
 
         // create a new high sample that is in the window
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(2)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 2);
@@ -591,10 +659,10 @@ mod test {
 
         // graph should need 4 points to represent the edge
         assert_eq!(data.len(), 4);
-        assert_eq!(data.first().unwrap().1, 1); // added at query time
-        assert_eq!(data.get(1).unwrap().1, 1); // top of rising edge
-        assert_eq!(data.get(2).unwrap().1, 0); // bottom of rising edge
-        assert_eq!(data.get(3).unwrap().1, 0); // old low sample
+        assert_eq!(data.first().expect("Could not get sample 0").1, 1); // added at query time
+        assert_eq!(data.get(1).expect("Could not get sample 1").1, 1); // top of rising edge
+        assert_eq!(data.get(2).expect("Could not get sample 2").1, 0); // bottom of rising edge
+        assert_eq!(data.get(3).expect("Could not get sample 3").1, 0); // old low sample
     }
 
     #[test]
@@ -612,21 +680,27 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         // Create an old high sample that is out of the display window
         let old_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(20)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+        chart.push_data(old_sample);
 
         // create a new low sample that is in the window
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(2)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 2);
@@ -636,10 +710,10 @@ mod test {
 
         // graph should need 4 points to represent the edge
         assert_eq!(data.len(), 4);
-        assert_eq!(data.first().unwrap().1, 0); // added at query time
-        assert_eq!(data.get(1).unwrap().1, 0); // bottom of rising edge
-        assert_eq!(data.get(2).unwrap().1, 1); // top of rising edge
-        assert_eq!(data.get(3).unwrap().1, 1); // old high sample
+        assert_eq!(data.first().expect("Could not get sample 0").1, 0); // added at query time
+        assert_eq!(data.get(1).expect("Could not get sample 1").1, 0); // bottom of rising edge
+        assert_eq!(data.get(2).expect("Could not get sample 2").1, 1); // top of rising edge
+        assert_eq!(data.get(3).expect("Could not get sample 3").1, 1); // old high sample
     }
 
     #[test]
@@ -657,26 +731,36 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         // Create a low sample that is in the display window
         let old_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(9)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+        chart.push_data(old_sample);
 
         // create a pulse, up and down
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(5)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(4)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 3);
@@ -686,12 +770,12 @@ mod test {
 
         // graph should need 4 points to represent the edge
         assert_eq!(data.len(), 6);
-        assert_eq!(data.first().unwrap().1, 0);
-        assert_eq!(data.get(1).unwrap().1, 0); // bottom left of pulse
-        assert_eq!(data.get(2).unwrap().1, 1); // top left of pulse
-        assert_eq!(data.get(3).unwrap().1, 1); // top right of pulse
-        assert_eq!(data.get(4).unwrap().1, 0); // bottom right of pulse
-        assert_eq!(data.get(5).unwrap().1, 0); // old low sample
+        assert_eq!(data.first().expect("Could not get sample 0").1, 0);
+        assert_eq!(data.get(1).expect("Could not get sample 1").1, 0); // bottom left of pulse
+        assert_eq!(data.get(2).expect("Could not get sample 2").1, 1); // top left of pulse
+        assert_eq!(data.get(3).expect("Could not get sample 3").1, 1); // top right of pulse
+        assert_eq!(data.get(4).expect("Could not get sample 4").1, 0); // bottom right of pulse
+        assert_eq!(data.get(5).expect("Could not get sample 5").1, 0); // old low sample
     }
 
     #[test]
@@ -709,26 +793,37 @@ mod test {
             Duration::from_secs(10),
         );
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Could not get now time");
 
         // Create a high sample that is in the display window
         let old_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(9)),
-        };
-        chart.push_data(old_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(old_sample);
 
         // create a pulse, down then back up
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(5)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(4)),
-        };
-        chart.push_data(new_sample.into());
+        }
+        .try_into()
+        .expect("Could not convert level change to sample");
+
+        chart.push_data(new_sample);
 
         // Check the raw data has all
         assert_eq!(chart.samples.len(), 3);
@@ -738,11 +833,11 @@ mod test {
 
         // graph should need 4 points to represent the edge
         assert_eq!(data.len(), 6);
-        assert_eq!(data.first().unwrap().1, 1); // added at query time
-        assert_eq!(data.get(1).unwrap().1, 1); // top left of pulse
-        assert_eq!(data.get(2).unwrap().1, 0); // bottom left of pulse
-        assert_eq!(data.get(3).unwrap().1, 0); // bottom right of pulse
-        assert_eq!(data.get(4).unwrap().1, 1); // rop right of pulse
-        assert_eq!(data.get(5).unwrap().1, 1); // old low sample
+        assert_eq!(data.first().expect("Could not get sample 0").1, 1); // added at query time
+        assert_eq!(data.get(1).expect("Could not get sample 1").1, 1); // top left of pulse
+        assert_eq!(data.get(2).expect("Could not get sample 2").1, 0); // bottom left of pulse
+        assert_eq!(data.get(3).expect("Could not get sample 3").1, 0); // bottom right of pulse
+        assert_eq!(data.get(4).expect("Could not get sample 4").1, 1); // rop right of pulse
+        assert_eq!(data.get(5).expect("Could not get sample 5").1, 1); // old low sample
     }
 }

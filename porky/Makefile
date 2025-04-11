@@ -1,4 +1,4 @@
-all: build build-w build2 build-w2
+all: clippy build build-w build2 build-w2
 
 clean:
 	cargo clean
