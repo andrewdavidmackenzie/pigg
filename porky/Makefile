@@ -12,6 +12,10 @@ features:
 	cargo build-all-features --target thumbv6m-none-eabi
 	cargo build-all-features --target thumbv6m-none-eabi
 
+no-panic:
+	RUSTFLAGS="--emit asm" cargo build --release --target thumbv6m-none-eabi --features "usb, pico1"
+	rg "rust_begin_unwind" target/thumbv6m-none-eabi
+
 clippy:
 	cargo clippy --target thumbv6m-none-eabi --features "usb, wifi, pico1"
 	cargo clippy --target thumbv6m-none-eabi --features "usb, pico1"
