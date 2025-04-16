@@ -1,12 +1,13 @@
 #![no_std]
 #![no_main]
-#![deny(clippy::unwrap_used)]
+//#![deny(clippy::unwrap_used)]
 
 use crate::flash::DbFlash;
 use crate::gpio::Gpio;
 use crate::pin_descriptions::PIN_DESCRIPTIONS;
 #[cfg(feature = "wifi")]
 use crate::tcp::TCP_PORT;
+use core::panic::PanicInfo;
 use core::str;
 #[cfg(feature = "wifi")]
 use cyw43::Control;
@@ -39,7 +40,6 @@ use embassy_rp::usb::InterruptHandler as USBInterruptHandler;
 use embassy_rp::watchdog::Watchdog;
 use embassy_sync::blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex};
 use embassy_sync::channel::Channel;
-use panic_probe as _;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 #[cfg(all(feature = "discovery", feature = "tcp"))]
@@ -98,6 +98,25 @@ bind_interrupts!(struct Irqs {
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => PioInterruptHandler<PIO0>;
 });
+
+/// Declare a panic_handler that references a non-existent symbol. If a panic handler is required
+/// (meaning that the could _could_ panic) then this will fail the build at link time.
+#[panic_handler]
+fn panic(_: &PanicInfo) -> ! {
+    extern "C" {
+        #[cfg_attr(
+            target_family = "unix",
+            link_name = "\n\n\x1b[s\x1b[1000D\x1b[0;31m\x1b[1merror\x1b[0m\x1b[1m: the static assertion that no panics are present has failed\x1b[0m\x1b[u\n\n"
+        )]
+        #[cfg_attr(
+            not(target_family = "unix"),
+            link_name = "\n\nerror: the static assertion that no panics are present has failed\n\n"
+        )]
+        fn never_panic() -> !;
+    }
+
+    unsafe { never_panic() }
+}
 
 pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMessage, 1> =
     Channel::new();

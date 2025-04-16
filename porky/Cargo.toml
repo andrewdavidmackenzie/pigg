@@ -43,14 +43,13 @@ embassy-usb = { version = "0.4.0", default-features = false, optional = true }
 # Other dependencies (repos in https://github.com/embassy-rs)
 ekv = { version = "1.0.0", default-features = false }
 static_cell = { version = "2", default-features = false }
-portable-atomic = { version = "1.5", default-features = false, features = ["critical-section"] }
+portable-atomic = { version = "1.5", default-features = false, features = ["critical-section"] } # It is used!
 embedded-storage = { version = "0.3", default-features = false }
 
-panic-probe = { version = "0.3", default-features = false, features = ["print-defmt"] }
 defmt = { version = "0.3", default-features = false }
 defmt-rtt = { version = "0.4", default-features = false }
-cortex-m = { version = "0.7.7", features = ["inline-asm"] }
-cortex-m-rt = { version = "0.7.5", default-features = false }
+cortex-m = { version = "0.7.7", features = ["inline-asm"] } # It is used!
+cortex-m-rt = { version = "0.7.5", default-features = false } # It is used!
 
 embedded-io-async = { version = "0.6.1", features = ["defmt-03"] }
 rand = { version = "0.8.5", default-features = false }

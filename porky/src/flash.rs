@@ -11,7 +11,6 @@ use embedded_storage::nor_flash::{NorFlash, ReadNorFlash};
 use faster_hex::hex_encode;
 #[cfg(feature = "pico1")]
 use static_cell::StaticCell;
-use {defmt_rtt as _, panic_probe as _};
 
 #[cfg(not(any(feature = "pico1", feature = "pico2")))]
 compile_error!("You must choose either feature \"pico1\" or \"pico2\"");
