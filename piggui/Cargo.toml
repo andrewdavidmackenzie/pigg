@@ -56,7 +56,7 @@ mdns-sd = { version = "0.13.6", default-features = false, features = ["async"], 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.15.3"
-clap = { version = "4.5.35", default-features = false, features = ["std", "help", "error-context"] }
+clap = { version = "4.5.36", default-features = false, features = ["std", "help", "error-context"] }
 pigpio = { path = "../pigpio" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
