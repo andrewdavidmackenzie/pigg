@@ -73,7 +73,6 @@ toml = { version = "0.8.8" }
 [profile.release]
 opt-level = "s"
 lto = "fat"
-panic = "abort"
 strip = "debuginfo"
 
 [package.metadata.cargo-all-features]
