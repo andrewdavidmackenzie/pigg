@@ -349,13 +349,7 @@ impl HardwareView {
             .height(Fill)
             .into();
 
-        let hw_column = Column::new()
-            .push(scrollable.map(Message::Hardware))
-            .align_x(Center)
-            .height(Fill)
-            .width(Fill);
-
-        container(hw_column).padding(HARDWARE_VIEW_PADDING).into()
+        container(scrollable.map(Message::Hardware)).padding(HARDWARE_VIEW_PADDING).into()
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
