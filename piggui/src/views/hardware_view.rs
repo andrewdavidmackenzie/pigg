@@ -16,9 +16,7 @@ use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::tooltip::Position;
-use iced::widget::{
-    button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text,
-};
+use iced::widget::{button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text};
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
 use iced::{alignment, Alignment, Center, Element, Fill, Length, Size, Task};
@@ -319,32 +317,38 @@ impl HardwareView {
         Task::none()
     }
 
-    /// Construct the view that represents the hardware view
+
+    /// Construct the hardware view
     pub fn view(&self, layout: Layout) -> Element<Message> {
         let inner: Element<HardwareViewMessage> =
             if let Some(hw_description) = &self.hardware_description {
-                let pin_layout = match layout {
+                match layout {
                     Layout::Board => self.board_pin_layout_view(&hw_description.pins),
                     Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
                     Layout::Compact => self.compact_layout_view(&hw_description.pins),
-                };
-
-                scrollable(pin_layout)
-                    .direction({
-                        let scrollbar = Scrollbar::new().width(10);
-                        scrollable::Direction::Both {
-                            horizontal: scrollbar,
-                            vertical: scrollbar,
-                        }
-                    })
-                    .into()
+                }
             } else {
-                // The no hardware view will go here and maybe some widget to search for and connect to remote HW?
-                Row::new().into()
+                // Draw an empty view when there is no connection to hardware
+                Column::new().spacing(10)
+                    .push(text("You are not currently connected to any device with GPIO hardware to display"))
+                    .push(text("You can use the 'device' menu at the bottom of the window to connect to detected devices"))
+                    .push(text("If you know the TCP or Iroh connection data, you can use the 'disconnected' menu\n\
+                    and the 'Connect to remote Pi' submenu"))
+                    .into()
             };
 
+        let scrollable: Element<HardwareViewMessage> = scrollable(inner)
+            .direction({
+                let scrollbar = Scrollbar::new().width(10);
+                scrollable::Direction::Both {
+                    horizontal: scrollbar,
+                    vertical: scrollbar,
+                }
+            })
+            .into();
+
         let hw_column = Column::new()
-            .push(inner.map(Message::Hardware))
+            .push(scrollable.map(Message::Hardware))
             .align_x(Center)
             .height(Fill)
             .width(Fill);
