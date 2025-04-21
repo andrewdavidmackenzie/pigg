@@ -345,6 +345,8 @@ impl HardwareView {
                     vertical: scrollbar,
                 }
             })
+            .width(Fill)
+            .height(Fill)
             .into();
 
         let hw_column = Column::new()
