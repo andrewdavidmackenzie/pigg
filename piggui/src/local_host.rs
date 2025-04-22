@@ -90,7 +90,7 @@ fn send_input_level(
 }
 
 /// Send (apply) a [HardwareConfigMessage] to the local hardware
-pub async fn send_config_message(
+pub async fn apply_config_message(
     connection: &mut LocalConnection,
     config_change: &HardwareConfigMessage,
     gui_sender: Sender<SubscriptionEvent>,

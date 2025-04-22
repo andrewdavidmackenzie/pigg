@@ -274,7 +274,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                 state = Disconnected;
                             }
                             Hardware(config_change) => {
-                                if let Err(e) = local_host::send_config_message(
+                                if let Err(e) = local_host::apply_config_message(
                                     connection,
                                     config_change,
                                     gui_sender_clone.clone(),
