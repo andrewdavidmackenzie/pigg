@@ -1,5 +1,7 @@
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
-use crate::views::info_row::menu_button_style;
+use crate::views::info_row::{menu_bar_button, menu_button_style};
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::Message;
@@ -111,6 +113,16 @@ fn device_menu_items<'a>(
         ));
     }
 
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    device_items.push(Item::new(
+        button("Connect to remote Pi ...")
+            .width(Length::Fill)
+            .on_press(Message::ConnectDialog(
+                ConnectDialogMessage::ShowConnectDialog,
+            ))
+            .style(menu_button_style),
+    ));
+
     device_items
 }
 
@@ -124,7 +136,7 @@ pub fn view<'a>(
     Item::with_menu(
         button(text(format!("devices ({})", device_menu_items.len())))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-            .style(menu_button_style),
+            .style(menu_bar_button),
         Menu::new(device_menu_items).width(380.0).max_width(400.0),
     )
 }
