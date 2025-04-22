@@ -16,10 +16,12 @@ use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::tooltip::Position;
-use iced::widget::{button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text};
+use iced::widget::{
+    button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text,
+};
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
-use iced::{alignment, Alignment, Center, Element, Fill, Length, Size, Task};
+use iced::{alignment, Alignment, Center, Element, Fill, Length, Shrink, Size, Task};
 use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
@@ -317,25 +319,27 @@ impl HardwareView {
         Task::none()
     }
 
-
     /// Construct the hardware view
     pub fn view(&self, layout: Layout) -> Element<Message> {
-        let inner: Element<HardwareViewMessage> =
-            if let Some(hw_description) = &self.hardware_description {
-                match layout {
-                    Layout::Board => self.board_pin_layout_view(&hw_description.pins),
-                    Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
-                    Layout::Compact => self.compact_layout_view(&hw_description.pins),
-                }
-            } else {
-                // Draw an empty view when there is no connection to hardware
-                Column::new().spacing(10)
+        let inner: Element<HardwareViewMessage> = if let Some(hw_description) =
+            &self.hardware_description
+        {
+            match layout {
+                Layout::Board => self.board_pin_layout_view(&hw_description.pins),
+                Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
+                Layout::Compact => self.compact_layout_view(&hw_description.pins),
+            }
+        } else {
+            // Draw an empty view when there is no connection to hardware
+            Column::new().spacing(10)
+                    .align_x(Center)
+                    .width(Shrink)
                     .push(text("You are not currently connected to any device with GPIO hardware to display"))
                     .push(text("You can use the 'device' menu at the bottom of the window to connect to detected devices"))
                     .push(text("If you know the TCP or Iroh connection data, you can use the 'disconnected' menu\n\
                     and the 'Connect to remote Pi' submenu"))
                     .into()
-            };
+        };
 
         let scrollable: Element<HardwareViewMessage> = scrollable(inner)
             .direction({
@@ -349,7 +353,9 @@ impl HardwareView {
             .height(Fill)
             .into();
 
-        container(scrollable.map(Message::Hardware)).padding(HARDWARE_VIEW_PADDING).into()
+        container(scrollable.map(Message::Hardware))
+            .padding(HARDWARE_VIEW_PADDING)
+            .into()
     }
 
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
