@@ -31,15 +31,11 @@ use pigdef::config::HardwareConfig;
 #[cfg(any(feature = "discovery", feature = "usb"))]
 use pigdef::description::SerialNumber;
 #[cfg(feature = "discovery")]
-use pignet::discovery::DiscoveryMethod::Local;
-#[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
 use pignet::usb_host;
 use pignet::HardwareConnection;
 use pignet::HardwareConnection::NoConnection;
-#[cfg(all(feature = "discovery", not(target_arch = "wasm32")))]
-use pigpio::get;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
@@ -160,29 +156,6 @@ impl Piggui {
         let config_filename = matches.get_one::<String>("config").map(|s| s.to_string());
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
-        #[cfg(feature = "discovery")]
-        let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-        #[cfg(feature = "discovery")]
-        let local_hardware = get();
-        #[cfg(feature = "discovery")]
-        let serial = local_hardware
-            .description(env!("CARGO_PKG_NAME"))
-            .details
-            .serial;
-        #[cfg(feature = "discovery")]
-        let mut hardware_connections = HashMap::new();
-        #[cfg(feature = "discovery")]
-        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
-        #[cfg(feature = "discovery")]
-        discovered_devices.insert(
-            serial,
-            DiscoveredDevice {
-                discovery_method: Local,
-                hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
-                ssid_spec: None,
-                hardware_connections,
-            },
-        );
 
         (
             Self {
@@ -198,7 +171,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 #[cfg(feature = "discovery")]
-                discovered_devices,
+                discovered_devices: discovery::local_discovery(),
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
