@@ -21,7 +21,7 @@ use iced::widget::{
 };
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
-use iced::{alignment, Alignment, Center, Element, Fill, Length, Shrink, Size, Task};
+use iced::{alignment, Alignment, Center, Element, Fill, Length, Size, Task};
 use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 use iced_aw::{Menu, MenuBar};
@@ -313,7 +313,7 @@ impl HardwareView {
             }
 
             Activate(pin_number) => println!("Pin {pin_number} clicked"),
-            HardwareViewMessage::MenuBarButtonClicked => { /* For highlighting */ }
+            MenuBarButtonClicked => { /* For highlighting */ }
         }
 
         Task::none()
@@ -321,39 +321,30 @@ impl HardwareView {
 
     /// Construct the hardware view
     pub fn view(&self, layout: Layout) -> Element<Message> {
-        let inner: Element<HardwareViewMessage> = if let Some(hw_description) =
-            &self.hardware_description
-        {
-            match layout {
-                Layout::Board => self.board_pin_layout_view(&hw_description.pins),
-                Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
-                Layout::Compact => self.compact_layout_view(&hw_description.pins),
-            }
-        } else {
-            // Draw an empty view when there is no connection to hardware
-            Column::new().spacing(10)
-                    .align_x(Center)
-                    .width(Shrink)
-                    .push(text("You are not currently connected to any device with GPIO hardware to display"))
-                    .push(text("You can use the 'device' menu at the bottom of the window to connect to detected devices"))
-                    .push(text("If you know the TCP or Iroh connection data, you can use the 'disconnected' menu\n\
-                    and the 'Connect to remote Pi' submenu"))
+        let inner: Element<HardwareViewMessage> =
+            if let Some(hw_description) = &self.hardware_description {
+                let pin_layout = match layout {
+                    Layout::Board => self.board_pin_layout_view(&hw_description.pins),
+                    Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
+                    Layout::Compact => self.compact_layout_view(&hw_description.pins),
+                };
+
+                scrollable(pin_layout)
+                    .direction({
+                        let scrollbar = Scrollbar::new().width(HARDWARE_VIEW_PADDING);
+                        scrollable::Direction::Both {
+                            horizontal: scrollbar,
+                            vertical: scrollbar,
+                        }
+                    })
+                    .width(Fill)
+                    .height(Fill)
                     .into()
-        };
+            } else {
+                Self::empty_layout_view()
+            };
 
-        let scrollable: Element<HardwareViewMessage> = scrollable(inner)
-            .direction({
-                let scrollbar = Scrollbar::new().width(10);
-                scrollable::Direction::Both {
-                    horizontal: scrollbar,
-                    vertical: scrollbar,
-                }
-            })
-            .width(Fill)
-            .height(Fill)
-            .into();
-
-        container(scrollable.map(Message::Hardware))
+        container(inner.map(Message::Hardware))
             .padding(HARDWARE_VIEW_PADDING)
             .into()
     }
@@ -368,6 +359,25 @@ impl HardwareView {
         ];
 
         Subscription::batch(subscriptions)
+    }
+
+    /// Draw an empty view when there is no connection to hardware
+    pub fn empty_layout_view<'a>() -> Element<'a, HardwareViewMessage> {
+        let col = Column::new()
+            .width(Fill)
+            .push(text("Disconnected").size(20))
+            .push(text("You are not currently connected to any device with GPIO hardware to display"))
+            .push(text("You can use the 'device' menu at the bottom of the window to connect to detected devices"))
+            .push(text("If you know the TCP or Iroh connection data, you can use the 'disconnected:' menu and the 'Connect to remote Pi ...' option"))
+            .spacing(SPACE_BETWEEN_PIN_ROWS)
+            .align_x(Center);
+
+        Row::new()
+            .width(Fill)
+            .height(Fill)
+            .push(col)
+            .align_y(Center)
+            .into()
     }
 
     /// View that lays out the pins in a single column ordered by BCM pin number
@@ -602,33 +612,21 @@ fn get_pin_widget<'a>(
                     .gap(4.0)
                     .style(|_| TOOLTIP_STYLE);
 
+            let toggle_level_message = if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH)
+            {
+                if let Some(bcm) = bcm_pin_number {
+                    let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
+                    ChangeOutputLevel(bcm, LevelChange::new(!level, now))
+                } else {
+                    MenuBarButtonClicked // Fake for error case
+                }
+            } else {
+                MenuBarButtonClicked // Fake for error case
+            };
+
             let led = led::<HardwareViewMessage>(LED_RADIUS, pin_state.get_level())
-                .on_press({
-                    if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
-                        if let Some(bcm) = bcm_pin_number {
-                            let level: PinLevel =
-                                pin_state.get_level().unwrap_or(false as PinLevel);
-                            ChangeOutputLevel(bcm, LevelChange::new(!level, now))
-                        } else {
-                            MenuBarButtonClicked // Fake for error case
-                        }
-                    } else {
-                        MenuBarButtonClicked // Fake for error case
-                    }
-                })
-                .on_release({
-                    if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
-                        if let Some(bcm) = bcm_pin_number {
-                            let level: PinLevel =
-                                pin_state.get_level().unwrap_or(false as PinLevel);
-                            ChangeOutputLevel(bcm, LevelChange::new(!level, now))
-                        } else {
-                            MenuBarButtonClicked // Fake for error case
-                        }
-                    } else {
-                        MenuBarButtonClicked // Fake for error case
-                    }
-                });
+                .on_press(toggle_level_message.clone())
+                .on_release(toggle_level_message);
 
             let led_tooltip = Tooltip::new(led, "Hold down to invert level", Position::Top)
                 .gap(4.0)
@@ -697,7 +695,7 @@ fn pin_button_menu<'a>(
                         text(" >").align_y(alignment::Vertical::Center),
                     ))
                     .width(100.0)
-                    .on_press(HardwareViewMessage::MenuBarButtonClicked) // Needed for highlighting
+                    .on_press(MenuBarButtonClicked) // Needed for highlighting
                     .style(menu_button_style);
                     pin_menu_items.push(Item::with_menu(
                         input_button,
@@ -719,9 +717,7 @@ fn pin_button_menu<'a>(
             }
         }
 
-        let mut unused = button("Unused")
-            .width(Length::Fill)
-            .style(menu_button_style);
+        let mut unused = button("Unused").width(Fill).style(menu_button_style);
         if current_option.is_some() {
             unused = unused.on_press(PinFunctionChanged(
                 bcm_pin_number,
@@ -733,7 +729,7 @@ fn pin_button_menu<'a>(
     }
 
     Item::with_menu(
-        pin_button(pin_description).on_press(HardwareViewMessage::MenuBarButtonClicked), // Needed for highlighting
+        pin_button(pin_description).on_press(MenuBarButtonClicked), // Needed for highlighting
         Menu::new(pin_menu_items).width(80.0),
     )
 }
