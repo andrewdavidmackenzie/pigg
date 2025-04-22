@@ -1,3 +1,4 @@
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::{menu_bar_button, menu_button_style};
