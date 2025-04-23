@@ -72,10 +72,10 @@ impl HW {
     /// hardware, not GPIO specifics or pin outs or such.
     fn get_details(app_name: &str) -> HardwareDetails {
         let mut details = HardwareDetails {
-            hardware: "fake".to_string(),
+            hardware: "fake gpio".to_string(),
             revision: "unknown".to_string(),
             serial: "unknown".to_string(),
-            model: "Fake Pi".to_string(),
+            model: "Fake local GPIO".to_string(),
             wifi: true,
             app_name: app_name.to_string(),
             app_version: env!("CARGO_PKG_VERSION").to_string(),
