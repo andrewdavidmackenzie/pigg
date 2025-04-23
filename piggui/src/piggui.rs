@@ -35,7 +35,10 @@ use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
 use pignet::usb_host;
 use pignet::HardwareConnection;
-use pignet::HardwareConnection::{Local, NoConnection};
+#[cfg(not(target_arch = "wasm32"))]
+use pignet::HardwareConnection::Local;
+use pignet::HardwareConnection::NoConnection;
+#[cfg(not(target_arch = "wasm32"))]
 use pigpio::get_hardware;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
@@ -158,7 +161,10 @@ impl Piggui {
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
 
+        #[cfg(not(target_arch = "wasm32"))]
         let local_hardware_opt = get_hardware();
+
+        #[cfg(not(target_arch = "wasm32"))]
         let default_connection = match &local_hardware_opt {
             None => NoConnection,
             Some(_hw) => Local,
@@ -487,6 +493,7 @@ fn choose_hardware_connection(
     matches: &ArgMatches,
     default_connection: HardwareConnection,
 ) -> HardwareConnection {
+    #[allow(unused_mut)]
     let mut connection = default_connection;
 
     #[cfg(feature = "iroh")]
