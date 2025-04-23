@@ -22,7 +22,7 @@ use std::collections::HashMap;
 fn device_menu_items<'a>(
     discovered_devices: &HashMap<String, DiscoveredDevice>,
     current_connection: &HardwareConnection,
-) -> Vec<Item<'a, Message, Theme, Renderer>> {
+) -> (Vec<Item<'a, Message, Theme, Renderer>>, usize) {
     #[allow(unused_mut)]
     let mut device_items = vec![];
 
@@ -113,6 +113,8 @@ fn device_menu_items<'a>(
         ));
     }
 
+    let device_count = device_items.len();
+
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     device_items.push(Item::new(
         button("Connect to remote Pi ...")
@@ -123,7 +125,7 @@ fn device_menu_items<'a>(
             .style(menu_button_style),
     ));
 
-    device_items
+    (device_items, device_count)
 }
 
 /// Create the discovered devices menu with items for each discovered device
@@ -131,10 +133,11 @@ pub fn view<'a>(
     hardware_connection: &HardwareConnection,
     #[cfg(feature = "discovery")] discovered_devices: &HashMap<String, DiscoveredDevice>,
 ) -> Item<'a, Message, Theme, Renderer> {
-    let device_menu_items = device_menu_items(discovered_devices, hardware_connection);
+    let (device_menu_items, device_count) =
+        device_menu_items(discovered_devices, hardware_connection);
 
     Item::with_menu(
-        button(text(format!("devices ({})", device_menu_items.len())))
+        button(text(format!("devices ({})", device_count)))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(menu_bar_button),
         Menu::new(device_menu_items).width(380.0).max_width(400.0),
