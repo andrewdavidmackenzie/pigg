@@ -28,7 +28,7 @@ use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme}
 #[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
 use iroh::NodeId;
 use pigdef::config::HardwareConfig;
-#[cfg(any(feature = "discovery", feature = "usb"))]
+#[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
