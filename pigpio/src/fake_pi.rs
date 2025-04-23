@@ -18,8 +18,8 @@ enum Pin {
     Output(PinLevel),
 }
 
-/// Fake Pi implementation for hosts (macOS, Linux, etc.) to show and develop GUI without real HW,
-/// and is provided mainly to aid GUI development and demoing it.
+/// Fake Pi Hardware implementation for hosts (macOS, Linux, etc.) to show and develop GUI
+/// without real HW, and is provided mainly to aid GUI development and demoing it.
 #[derive(Default)]
 pub struct HW {
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,

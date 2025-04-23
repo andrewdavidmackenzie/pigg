@@ -2,11 +2,11 @@ use std::io;
 
 use std::time::Duration;
 
+use crate::pin_descriptions::*;
 use pigdef::config::{HardwareConfig, LevelChange};
 use pigdef::description::{BCMPinNumber, PinLevel};
-
-use crate::pin_descriptions::*;
 use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
+use pigdef::pin_function::PinFunction;
 
 use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
 
@@ -15,16 +15,14 @@ enum Pin {
     Output(OutputPin),
 }
 
-/// The first for Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
+/// This is the Hardware implementation for the Raspberry Pi using "rppal" crate
+/// It should support most Pi hardware from Model B
 /// If we are building on a platform (arm, linux, gnu) that is compatible with a Pi platform
 /// (e.g. "aarch64" for Pi4/400, "arm" (arm7) for Pi3B) then build a binary that includes the
 /// real `pi_hw` version and that would work wif deployed on a real Raspberry Pi. There may
 /// be other arm-based computers out there that support linux and are built using gnu for libc
 /// that do not have Raspberry Pi hardware. This would build for them, and then they will fail
 /// at run-time when trying to access drivers and hardware for GPIO.
-///
-/// The second for hosts (macOS, Linux, etc.) to show and develop GUI without real HW, and is
-/// provided mainly to aid GUI development and demoing it.
 #[derive(Default)]
 pub struct HW {
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
