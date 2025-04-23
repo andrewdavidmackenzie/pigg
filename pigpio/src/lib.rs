@@ -29,22 +29,8 @@ pub mod fake_pi;
 pub use fake_pi::HW;
 
 mod pin_descriptions;
+mod tests;
 
-#[cfg(not(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-)))]
-/// Create a new HW instance - should only be called once
-pub fn get_hardware() -> Option<HW> {
-    Some(HW::default())
-}
-
-#[cfg(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-))]
 /// Create a new HW instance - should only be called once
 pub fn get_hardware() -> Option<HW> {
     Some(HW::default())

@@ -8,32 +8,11 @@ use pigdef::description::{BCMPinNumber, PinLevel};
 use crate::pin_descriptions::*;
 use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 
-#[cfg(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-))]
 use rppal::gpio::{Gpio, InputPin, Level, OutputPin, Trigger};
 
-#[cfg(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-))]
 enum Pin {
     Input(InputPin),
     Output(OutputPin),
-}
-
-#[cfg(not(all(
-    target_os = "linux",
-    any(target_arch = "aarch64", target_arch = "arm"),
-    target_env = "gnu"
-)))]
-enum Pin {
-    Input(std::sync::mpsc::Sender<u32>),
-    #[allow(dead_code)]
-    Output,
 }
 
 /// The first for Raspberry Pi using "rppal" crate: Should support most Pi hardware from Model B
@@ -129,7 +108,6 @@ impl HW {
 
     /// Get the time since boot as a [Duration] that should be synced with timestamp of
     /// `rppal` generated events
-    #[allow(dead_code)] // not used by piggui currently
     pub fn get_time_since_boot(&self) -> Duration {
         let mut time = libc::timespec {
             tv_sec: 0,
