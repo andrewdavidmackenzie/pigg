@@ -30,7 +30,7 @@ use pignet::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "usb")]
 use pignet::usb_host;
 use pignet::HardwareConnection;
-use pigpio::get_hardware;
+use pigpio::HW;
 use std::collections::HashMap;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
@@ -168,9 +168,9 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
 }
 
 /// Discover the local hardware - if there is any
-pub fn local_discovery() -> HashMap<SerialNumber, DiscoveredDevice> {
+pub fn local_discovery(local_hardware_opt: &Option<HW>) -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-    if let Some(local_hardware) = get_hardware() {
+    if let Some(local_hardware) = local_hardware_opt {
         let serial = local_hardware
             .description(env!("CARGO_PKG_NAME"))
             .details

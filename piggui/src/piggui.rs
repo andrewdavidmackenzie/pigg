@@ -35,7 +35,8 @@ use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
 use pignet::usb_host;
 use pignet::HardwareConnection;
-use pignet::HardwareConnection::NoConnection;
+use pignet::HardwareConnection::{Local, NoConnection};
+use pigpio::get_hardware;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
@@ -157,6 +158,15 @@ impl Piggui {
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
 
+        let local_hardware_opt = get_hardware();
+        let default_connection = match &local_hardware_opt {
+            None => NoConnection,
+            Some(_hw) => Local,
+        };
+
+        #[cfg(feature = "discovery")]
+        let discovered_devices = discovery::local_discovery(&local_hardware_opt);
+
         (
             Self {
                 config_filename: config_filename.clone(),
@@ -165,13 +175,16 @@ impl Piggui {
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
                 #[cfg(not(target_arch = "wasm32"))]
-                hardware_view: HardwareView::new(get_hardware_connection(&matches)),
+                hardware_view: HardwareView::new(choose_hardware_connection(
+                    &matches,
+                    default_connection,
+                )),
                 #[cfg(target_arch = "wasm32")]
                 hardware_view: HardwareView::new(HardwareConnection::default()),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 #[cfg(feature = "discovery")]
-                discovered_devices: discovery::local_discovery(),
+                discovered_devices,
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
@@ -470,9 +483,11 @@ impl Piggui {
 #[cfg(not(target_arch = "wasm32"))]
 /// Determine the hardware connection based on command line options
 #[allow(unused_variables)]
-fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
-    #[allow(unused_mut)]
-    let mut connection = HardwareConnection::default();
+fn choose_hardware_connection(
+    matches: &ArgMatches,
+    default_connection: HardwareConnection,
+) -> HardwareConnection {
+    let mut connection = default_connection;
 
     #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid") {

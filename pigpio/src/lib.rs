@@ -33,5 +33,18 @@ mod tests;
 
 /// Create a new HW instance - should only be called once
 pub fn get_hardware() -> Option<HW> {
-    Some(HW::default())
+    // debug build - Pi or Non-Pi Hardware
+    #[cfg(debug_assertions)]
+    return Some(HW::default());
+
+    // release build - Not Pi hardware
+    #[cfg(all(
+        not(debug_assertions),
+        not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))
+    ))]
+    None
 }
