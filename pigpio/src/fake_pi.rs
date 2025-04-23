@@ -1,7 +1,7 @@
 use std::io;
 use std::time::Duration;
 
-use pigdef::config::{HardwareConfig, LevelChange};
+use pigdef::config::{HardwareConfig, InputPull, LevelChange};
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
 
@@ -13,7 +13,7 @@ use rand::Rng;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 enum Pin {
-    Input(std::sync::mpsc::Sender<u32>),
+    Input(PinLevel, std::sync::mpsc::Sender<PinLevel>),
     #[allow(dead_code)]
     Output(PinLevel),
 }
@@ -109,13 +109,16 @@ impl HW {
         use rand::Rng;
 
         // If it was already configured, notify it to exit and remove it
-        if let Some(Pin::Input(sender)) = self.configured_pins.get_mut(&bcm_pin_number) {
-            let _ = sender.send(0);
+        if let Some(Pin::Input(level, sender)) = self.configured_pins.get_mut(&bcm_pin_number) {
+            let _ = sender.send(*level);
             self.configured_pins.remove(&bcm_pin_number);
         }
 
         match pin_function {
-            Some(PinFunction::Input(_)) => {
+            None => {
+                self.configured_pins.remove(&bcm_pin_number);
+            }
+            Some(PinFunction::Input(pullup)) => {
                 let (sender, receiver) = std::sync::mpsc::channel();
                 std::thread::spawn(move || {
                     let mut rng = rand::thread_rng();
@@ -130,13 +133,24 @@ impl HW {
                         }
                     }
                 });
-                self.configured_pins
-                    .insert(bcm_pin_number, Pin::Input(sender));
+                match pullup {
+                    None | Some(InputPull::None) => self
+                        .configured_pins
+                        .insert(bcm_pin_number, Pin::Input(false, sender)),
+                    Some(InputPull::PullDown) => self
+                        .configured_pins
+                        .insert(bcm_pin_number, Pin::Input(false, sender)),
+                    Some(InputPull::PullUp) => self
+                        .configured_pins
+                        .insert(bcm_pin_number, Pin::Input(true, sender)),
+                };
             }
-            Some(PinFunction::Output(_)) => {
-                self.configured_pins.insert(bcm_pin_number, Output(false));
+            Some(PinFunction::Output(opt_level)) => {
+                match opt_level {
+                    None => self.configured_pins.insert(bcm_pin_number, Output(false)),
+                    Some(level) => self.configured_pins.insert(bcm_pin_number, Output(*level)),
+                };
             }
-            _ => {}
         }
 
         Ok(())
