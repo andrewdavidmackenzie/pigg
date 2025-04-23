@@ -1,7 +1,7 @@
 #![deny(clippy::unwrap_used)]
 #![cfg(not(target_arch = "wasm32"))]
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use clap::{Arg, ArgMatches};
 use env_logger::{Builder, Target};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
@@ -27,7 +27,7 @@ use std::{
 };
 use sysinfo::{Process, System};
 
-use pigpio::get;
+use pigpio::get_hardware;
 
 #[cfg(feature = "iroh")]
 use crate::device_net::iroh_device;
@@ -125,144 +125,155 @@ async fn run_service(
 ) -> anyhow::Result<()> {
     setup_logging(matches);
 
-    let mut hw = get();
-    info!("\n{}", hw.description(env!("CARGO_PKG_NAME")).details);
+    if let Some(mut hw) = get_hardware() {
+        info!("\n{}", hw.description(env!("CARGO_PKG_NAME")).details);
 
-    // Get the boot config for the hardware
-    #[allow(unused_mut)]
-    let mut hardware_config = persistence::get_config(matches, &exec_path).await;
+        // Get the boot config for the hardware
+        #[allow(unused_mut)]
+        let mut hardware_config = persistence::get_config(matches, &exec_path).await;
 
-    // Apply the initial config to the hardware, whatever it is
-    hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
-        info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
-    })
-    .await?;
-    trace!("Configuration applied to hardware");
+        // Apply the initial config to the hardware, whatever it is
+        hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
+            info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
+        })
+        .await?;
+        trace!("Configuration applied to hardware");
 
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
-    let listener_info = ListenerInfo {
-        #[cfg(feature = "iroh")]
-        iroh_info: iroh_device::get_device().await?,
-        #[cfg(feature = "tcp")]
-        tcp_info: tcp_device::get_device().await?,
-    };
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        let listener_info = ListenerInfo {
+            #[cfg(feature = "iroh")]
+            iroh_info: iroh_device::get_device().await?,
+            #[cfg(feature = "tcp")]
+            tcp_info: tcp_device::get_device().await?,
+        };
 
-    // write the info about the node to the info_path file for use in piggui
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
-    write_info_file(info_path, &listener_info)?;
+        // write the info about the node to the info_path file for use in piggui
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        write_info_file(info_path, &listener_info)?;
 
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
-    let desc = hw.description(env!("CARGO_PKG_NAME"));
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
-    println!("Serial Number: {}", desc.details.serial);
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        let desc = hw.description(env!("CARGO_PKG_NAME"));
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        println!("Serial Number: {}", desc.details.serial);
 
-    // Then listen for remote connections and "serve" them
-    #[cfg(all(feature = "tcp", not(feature = "iroh")))]
-    if let Some(mut listener) = listener_info.tcp_info.listener {
-        #[cfg(feature = "discovery")]
-        // The key string in TXT properties is case-insensitive.
-        let properties = [
-            ("Serial", &desc.details.serial as &str),
-            ("Model", &desc.details.model as &str),
-            ("AppName", env!("CARGO_BIN_NAME")),
-            ("AppVersion", env!("CARGO_PKG_VERSION")),
-        ];
+        // Then listen for remote connections and "serve" them
+        #[cfg(all(feature = "tcp", not(feature = "iroh")))]
+        if let Some(mut listener) = listener_info.tcp_info.listener {
+            #[cfg(feature = "discovery")]
+            // The key string in TXT properties is case-insensitive.
+            let properties = [
+                ("Serial", &desc.details.serial as &str),
+                ("Model", &desc.details.model as &str),
+                ("AppName", env!("CARGO_BIN_NAME")),
+                ("AppVersion", env!("CARGO_PKG_VERSION")),
+            ];
 
-        #[cfg(feature = "discovery")]
-        let (service_info, service_daemon) = register_mdns(
-            TCP_MDNS_SERVICE_TYPE,
-            listener_info.tcp_info.port,
-            &desc.details.serial,
-            &properties,
-        )?;
+            #[cfg(feature = "discovery")]
+            let (service_info, service_daemon) = register_mdns(
+                TCP_MDNS_SERVICE_TYPE,
+                listener_info.tcp_info.port,
+                &desc.details.serial,
+                &properties,
+            )?;
 
-        loop {
-            println!("Waiting for TCP connection");
-            if let Ok(stream) =
-                tcp_device::accept_connection(&mut listener, &desc, hardware_config.clone()).await
-            {
-                println!("Connection via TCP");
-                let _ =
-                    tcp_device::tcp_message_loop(stream, &mut hardware_config, &exec_path, &mut hw)
-                        .await;
-            }
-        }
-    }
-
-    #[cfg(all(feature = "iroh", not(feature = "tcp")))]
-    if let Some(endpoint) = listener_info.iroh_info.endpoint {
-        loop {
-            println!("Waiting for Iroh connection");
-            if let Ok(connection) =
-                iroh_device::accept_connection(&endpoint, &desc, hardware_config.clone()).await
-            {
-                println!("Connection via Iroh");
-                let _ = iroh_device::iroh_message_loop(
-                    connection,
-                    &mut hardware_config,
-                    &exec_path,
-                    &mut hw,
-                )
-                .await;
-            }
-        }
-    }
-
-    // loop forever selecting the next connection made and then process those messages
-    #[cfg(all(feature = "iroh", feature = "tcp"))]
-    if let (Some(mut tcp_listener), Some(iroh_endpoint)) = (
-        listener_info.tcp_info.listener,
-        listener_info.iroh_info.endpoint,
-    ) {
-        #[cfg(feature = "discovery")]
-        // The key string in TXT properties is case-insensitive.
-        let properties = [
-            ("Serial", &desc.details.serial as &str),
-            ("Model", &desc.details.model as &str),
-            ("AppName", env!("CARGO_BIN_NAME")),
-            ("AppVersion", env!("CARGO_PKG_VERSION")),
-            ("IrohNodeID", &listener_info.iroh_info.nodeid.to_string()),
-            (
-                "IrohRelayURL",
-                &listener_info.iroh_info.relay_url.to_string(),
-            ),
-        ];
-
-        #[cfg(feature = "discovery")]
-        let (service_info, service_daemon) = register_mdns(
-            TCP_MDNS_SERVICE_TYPE,
-            listener_info.tcp_info.port,
-            &desc.details.serial,
-            &properties,
-        )?;
-
-        loop {
-            println!("Waiting for Iroh or TCP connection");
-            let fused_tcp =
-                tcp_device::accept_connection(&mut tcp_listener, &desc, hardware_config.clone())
-                    .fuse();
-            let fused_iroh =
-                iroh_device::accept_connection(&iroh_endpoint, &desc, hardware_config.clone())
-                    .fuse();
-
-            futures::pin_mut!(fused_tcp, fused_iroh);
-
-            futures::select! {
-                tcp_stream = fused_tcp => {
-                    println!("Connection via Tcp");
-                    let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
-                },
-                iroh_connection = fused_iroh => {
-                    println!("Connection via Iroh");
-                    let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
+            loop {
+                println!("Waiting for TCP connection");
+                if let Ok(stream) =
+                    tcp_device::accept_connection(&mut listener, &desc, hardware_config.clone())
+                        .await
+                {
+                    println!("Connection via TCP");
+                    let _ = tcp_device::tcp_message_loop(
+                        stream,
+                        &mut hardware_config,
+                        &exec_path,
+                        &mut hw,
+                    )
+                    .await;
                 }
-                complete => {}
             }
-            println!("Disconnected");
         }
-    }
 
-    Ok(())
+        #[cfg(all(feature = "iroh", not(feature = "tcp")))]
+        if let Some(endpoint) = listener_info.iroh_info.endpoint {
+            loop {
+                println!("Waiting for Iroh connection");
+                if let Ok(connection) =
+                    iroh_device::accept_connection(&endpoint, &desc, hardware_config.clone()).await
+                {
+                    println!("Connection via Iroh");
+                    let _ = iroh_device::iroh_message_loop(
+                        connection,
+                        &mut hardware_config,
+                        &exec_path,
+                        &mut hw,
+                    )
+                    .await;
+                }
+            }
+        }
+
+        // loop forever selecting the next connection made and then process those messages
+        #[cfg(all(feature = "iroh", feature = "tcp"))]
+        if let (Some(mut tcp_listener), Some(iroh_endpoint)) = (
+            listener_info.tcp_info.listener,
+            listener_info.iroh_info.endpoint,
+        ) {
+            #[cfg(feature = "discovery")]
+            // The key string in TXT properties is case-insensitive.
+            let properties = [
+                ("Serial", &desc.details.serial as &str),
+                ("Model", &desc.details.model as &str),
+                ("AppName", env!("CARGO_BIN_NAME")),
+                ("AppVersion", env!("CARGO_PKG_VERSION")),
+                ("IrohNodeID", &listener_info.iroh_info.nodeid.to_string()),
+                (
+                    "IrohRelayURL",
+                    &listener_info.iroh_info.relay_url.to_string(),
+                ),
+            ];
+
+            #[cfg(feature = "discovery")]
+            let (service_info, service_daemon) = register_mdns(
+                TCP_MDNS_SERVICE_TYPE,
+                listener_info.tcp_info.port,
+                &desc.details.serial,
+                &properties,
+            )?;
+
+            loop {
+                println!("Waiting for Iroh or TCP connection");
+                let fused_tcp = tcp_device::accept_connection(
+                    &mut tcp_listener,
+                    &desc,
+                    hardware_config.clone(),
+                )
+                .fuse();
+                let fused_iroh =
+                    iroh_device::accept_connection(&iroh_endpoint, &desc, hardware_config.clone())
+                        .fuse();
+
+                futures::pin_mut!(fused_tcp, fused_iroh);
+
+                futures::select! {
+                    tcp_stream = fused_tcp => {
+                        println!("Connection via Tcp");
+                        let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
+                    },
+                    iroh_connection = fused_iroh => {
+                        println!("Connection via Iroh");
+                        let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
+                    }
+                    complete => {}
+                }
+                println!("Disconnected");
+            }
+        }
+
+        Ok(())
+    } else {
+        Err(anyhow!("Could not get hardware"))
+    }
 }
 
 /// Check that this is the only instance of piglet running, both user process or system process

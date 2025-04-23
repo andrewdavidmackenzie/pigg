@@ -18,10 +18,9 @@ pub mod usb_host;
 /// A type of connection to a piece of hardware
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub enum HardwareConnection {
-    #[cfg_attr(target_arch = "wasm32", default)]
+    #[default]
     NoConnection,
     #[cfg(not(target_arch = "wasm32"))]
-    #[cfg_attr(not(target_arch = "wasm32"), default)]
     Local,
     #[cfg(feature = "usb")]
     Usb(SerialNumber),

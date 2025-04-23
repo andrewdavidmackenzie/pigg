@@ -43,11 +43,7 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
     );
 
     if menu_items.is_empty() {
-        Item::new(
-            button(text(model_string))
-                .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
-                .style(menu_bar_button),
-        )
+        Item::new(button(text(model_string)).style(menu_bar_button))
     } else {
         Item::with_menu(
             button(text(model_string))

@@ -28,18 +28,18 @@ use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme}
 #[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
 use iroh::NodeId;
 use pigdef::config::HardwareConfig;
-#[cfg(any(feature = "discovery", feature = "usb"))]
+#[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
-#[cfg(feature = "discovery")]
-use pignet::discovery::DiscoveryMethod::Local;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
 use pignet::usb_host;
 use pignet::HardwareConnection;
+#[cfg(not(target_arch = "wasm32"))]
+use pignet::HardwareConnection::Local;
 use pignet::HardwareConnection::NoConnection;
-#[cfg(all(feature = "discovery", not(target_arch = "wasm32")))]
-use pigpio::get;
+#[cfg(not(target_arch = "wasm32"))]
+use pigpio::get_hardware;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
@@ -160,29 +160,18 @@ impl Piggui {
         let config_filename = matches.get_one::<String>("config").map(|s| s.to_string());
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let local_hardware_opt = get_hardware();
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let default_connection = match &local_hardware_opt {
+            None => NoConnection,
+            Some(_hw) => Local,
+        };
+
         #[cfg(feature = "discovery")]
-        let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-        #[cfg(feature = "discovery")]
-        let local_hardware = get();
-        #[cfg(feature = "discovery")]
-        let serial = local_hardware
-            .description(env!("CARGO_PKG_NAME"))
-            .details
-            .serial;
-        #[cfg(feature = "discovery")]
-        let mut hardware_connections = HashMap::new();
-        #[cfg(feature = "discovery")]
-        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
-        #[cfg(feature = "discovery")]
-        discovered_devices.insert(
-            serial,
-            DiscoveredDevice {
-                discovery_method: Local,
-                hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
-                ssid_spec: None,
-                hardware_connections,
-            },
-        );
+        let discovered_devices = discovery::local_discovery(&local_hardware_opt);
 
         (
             Self {
@@ -192,7 +181,10 @@ impl Piggui {
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
                 #[cfg(not(target_arch = "wasm32"))]
-                hardware_view: HardwareView::new(get_hardware_connection(&matches)),
+                hardware_view: HardwareView::new(choose_hardware_connection(
+                    &matches,
+                    default_connection,
+                )),
                 #[cfg(target_arch = "wasm32")]
                 hardware_view: HardwareView::new(HardwareConnection::default()),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -486,9 +478,9 @@ impl Piggui {
             DiscoveryEvent::USBPermissionsError(_) => {
                 // SHow the dialog explaining the error
                 let _ = self.modal_handler.update(InfoDialogMessage::ErrorWithHelp("USB Permissions Error",
-                                                                                   "Your user lacks the required permissions on USB device folders and files to write \
+                           "Your user lacks the required permissions on USB device folders and files to write \
                 to USB. Please consult the help at the link below on how to fix it",
-                                                                                   "https://github.com/andrewdavidmackenzie/pigg/blob/master/HELP.md#permission-denied-os-error-13-linux-only"));
+                           "https://github.com/andrewdavidmackenzie/pigg/blob/master/HELP.md#permission-denied-os-error-13-linux-only"));
             }
         }
     }
@@ -497,9 +489,12 @@ impl Piggui {
 #[cfg(not(target_arch = "wasm32"))]
 /// Determine the hardware connection based on command line options
 #[allow(unused_variables)]
-fn get_hardware_connection(matches: &ArgMatches) -> HardwareConnection {
+fn choose_hardware_connection(
+    matches: &ArgMatches,
+    default_connection: HardwareConnection,
+) -> HardwareConnection {
     #[allow(unused_mut)]
-    let mut connection = HardwareConnection::default();
+    let mut connection = default_connection;
 
     #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid") {
