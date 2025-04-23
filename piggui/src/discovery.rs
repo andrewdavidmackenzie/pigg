@@ -32,7 +32,7 @@ use pignet::discovery::DiscoveryMethod::USBRaw;
 use pignet::usb_host;
 #[cfg(feature = "tcp")]
 use pignet::HardwareConnection;
-use pigpio::get;
+use pigpio::get_hardware;
 #[cfg(feature = "tcp")]
 use std::collections::HashMap;
 #[cfg(feature = "tcp")]
@@ -173,22 +173,23 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
 /// Discover the local hardware - if there is any
 pub fn local_discovery() -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-    let local_hardware = get();
-    let serial = local_hardware
-        .description(env!("CARGO_PKG_NAME"))
-        .details
-        .serial;
-    let mut hardware_connections = HashMap::new();
-    hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
-    discovered_devices.insert(
-        serial,
-        DiscoveredDevice {
-            discovery_method: Local,
-            hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
-            ssid_spec: None,
-            hardware_connections,
-        },
-    );
+    if let Some(local_hardware) = get_hardware() {
+        let serial = local_hardware
+            .description(env!("CARGO_PKG_NAME"))
+            .details
+            .serial;
+        let mut hardware_connections = HashMap::new();
+        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
+        discovered_devices.insert(
+            serial,
+            DiscoveredDevice {
+                discovery_method: Local,
+                hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
+                ssid_spec: None,
+                hardware_connections,
+            },
+        );
+    }
 
     discovered_devices
 }
