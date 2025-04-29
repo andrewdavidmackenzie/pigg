@@ -16,21 +16,21 @@ use mdns_sd::ServiceInfo;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 #[cfg(feature = "tcp")]
 use pigdef::description::HardwareDetails;
+use pigdef::description::SerialNumber;
 #[cfg(feature = "tcp")]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-#[cfg(feature = "tcp")]
 use pignet::discovery::DiscoveredDevice;
 #[cfg(any(feature = "tcp", feature = "usb"))]
 use pignet::discovery::DiscoveryEvent;
+use pignet::discovery::DiscoveryMethod::Local;
 #[cfg(feature = "tcp")]
 use pignet::discovery::DiscoveryMethod::Mdns;
 #[cfg(feature = "usb")]
 use pignet::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "usb")]
 use pignet::usb_host;
-#[cfg(feature = "tcp")]
 use pignet::HardwareConnection;
-#[cfg(feature = "tcp")]
+use pigpio::HW;
 use std::collections::HashMap;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;
@@ -165,6 +165,30 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
         ssid_spec: None,
         hardware_connections,
     })
+}
+
+/// Discover the local hardware - if there is any
+pub fn local_discovery(local_hardware_opt: &Option<HW>) -> HashMap<SerialNumber, DiscoveredDevice> {
+    let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
+    if let Some(local_hardware) = local_hardware_opt {
+        let serial = local_hardware
+            .description(env!("CARGO_PKG_NAME"))
+            .details
+            .serial;
+        let mut hardware_connections = HashMap::new();
+        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
+        discovered_devices.insert(
+            serial,
+            DiscoveredDevice {
+                discovery_method: Local,
+                hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
+                ssid_spec: None,
+                hardware_connections,
+            },
+        );
+    }
+
+    discovered_devices
 }
 
 // TODO Could separate out the TCP part and mDNS discover devices for Iroh connections only also

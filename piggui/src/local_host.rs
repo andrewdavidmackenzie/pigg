@@ -1,6 +1,6 @@
 use crate::hardware_subscription::SubscriptionEvent;
 use crate::hardware_subscription::SubscriptionEvent::InputChange;
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use iced::futures::channel::mpsc::Sender;
 use log::{info, trace};
 use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
@@ -8,8 +8,8 @@ use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use pigdef::description::HardwareDescription;
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
-use pigpio::driver::HW;
-use pigpio::get;
+use pigpio::get_hardware;
+use pigpio::HW;
 use std::time::Duration;
 
 pub struct LocalConnection {
@@ -138,7 +138,7 @@ pub async fn apply_config_message(
 pub async fn connect(
     app_name: &str,
 ) -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
-    let hw = get();
+    let hw = get_hardware().ok_or(anyhow!("Could not connect to local hardware"))?;
     let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
     Ok((hw.description(app_name), hw_config, LocalConnection { hw }))
