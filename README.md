@@ -39,6 +39,8 @@ The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
   </tr>
 </table>
 
+[Website](https://mackenzie-serres.net/pigg/) (just README.md content for now...)
+
 ## What's new in Release 0.6.0 - USB, Pi Pico and Discovery
 
 Full feature support for Pi Pico W and Pi Pico, USB discovery, SSID configuration, GPIO control and mDNS discovery.
