@@ -24,7 +24,7 @@ std = ["serde/std"]
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
 
 # Optional Dependencies for "no_std" case
-heapless = { version = "0.8.0", default-features = false, features = ["serde"], optional = true }
+heapless = { version = "0.9.0", default-features = false, features = ["serde"], optional = true }
 embassy-time = { version = "0.4.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
