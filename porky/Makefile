@@ -6,6 +6,7 @@ clean:
 setup:
 	rustup target add thumbv8m.main-none-eabihf
 	cargo binstall elf2uf2-rs
+	curl --proto '=https' --tlsv1.2 -LsSf https://github.com/probe-rs/probe-rs/releases/latest/download/probe-rs-tools-installer.sh | sh
 
 .PHONY: features
 features:
