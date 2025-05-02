@@ -166,7 +166,7 @@ async fn usb_only(
     let mut usb_connection = usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
 
     loop {
-        if usb::wait_connection(&mut usb_connection, &hardware_config)
+        if usb::accept_connection(&mut usb_connection, &hardware_config)
             .await
             .is_err()
         {
@@ -335,12 +335,14 @@ async fn main(spawner: Spawner) {
                 #[cfg(all(feature = "usb", feature = "wifi"))]
                 loop {
                     match select(
-                        tcp::wait_connection(
+                        tcp::accept_connection(
                             network_stack,
                             &mut wifi_tx_buffer,
                             &mut wifi_rx_buffer,
+                            hw_desc,
+                            &hardware_config,
                         ),
-                        usb::wait_connection(&mut usb_connection, &hardware_config),
+                        usb::accept_connection(&mut usb_connection, &hardware_config),
                     )
                     .await
                     {
@@ -349,7 +351,6 @@ async fn main(spawner: Spawner) {
                                 if let Err(e) = tcp::message_loop(
                                     &mut gpio,
                                     socket,
-                                    hw_desc,
                                     &mut hardware_config,
                                     &spawner,
                                     &mut control,
@@ -378,7 +379,7 @@ async fn main(spawner: Spawner) {
 
                 #[cfg(all(not(feature = "usb"), feature = "wifi"))]
                 loop {
-                    match tcp::wait_connection(
+                    match tcp::accept_connection(
                         network_stack,
                         &mut wifi_tx_buffer,
                         &mut wifi_rx_buffer,
