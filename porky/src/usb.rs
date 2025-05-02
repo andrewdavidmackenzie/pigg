@@ -333,16 +333,21 @@ pub async fn start(
 
 /// Wait for a connection from the GUI host over USB, initiated by it asking for the config
 /// using a `GetConfig` request
-pub async fn wait_connection(
-    usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
-    hardware_config: &HardwareConfig,
-) -> Result<(), &'static str> {
+pub async fn wait_connection() -> Result<(), &'static str> {
     info!("Waiting for USB Connect");
     while !matches!(
         USB_MESSAGE_CHANNEL.receiver().receive().await,
-        HardwareConfigMessage::GetConfig
+        HardwareConfigMessage::GetConfig // TODO to a Connection message?
     ) {}
+    Ok(())
+}
 
+/// Accept the connection request by sending back the [HardwareDescription] and [HardwareConfig]
+pub async fn accept_connection(
+    usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
+    _hw_desc: &HardwareDescription<'_>,
+    hardware_config: &HardwareConfig,
+) -> Result<(), &'static str> {
     info!("Sending HardwareConfig in response to GetConfig");
     usb_connection.send(hardware_config).await
 }
@@ -353,7 +358,7 @@ pub async fn wait_connection(
 pub async fn message_loop(
     gpio: &mut Gpio,
     usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
-    hw_config: &mut HardwareConfig,
+    hardware_config: &mut HardwareConfig,
     spawner: &Spawner,
     #[cfg(feature = "wifi")] control: &mut Control<'_>,
     db: &'static Database<
@@ -362,7 +367,6 @@ pub async fn message_loop(
     >,
 ) -> Result<(), &'static str> {
     info!("Entering USB message loop");
-
     // Clear out any level change messages sent before the GUI app connected
     HARDWARE_EVENT_CHANNEL.clear();
 
@@ -383,12 +387,12 @@ pub async fn message_loop(
                     control,
                     spawner,
                     &hardware_config_message,
-                    hw_config,
+                    hardware_config,
                 )
                 .await;
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
                 if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
-                    usb_connection.send(&hw_config).await?;
+                    usb_connection.send(&hardware_config).await?;
                 }
             }
             Either::Second(hardware_event) => {

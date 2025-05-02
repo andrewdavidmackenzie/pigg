@@ -97,11 +97,19 @@ pub async fn wait_connection<'a>(
     accept(tcp_socket).await
 }
 
+/// Accept the connection request by sending back the [HardwareDescription] and [HardwareConfig]
+pub async fn accept_connection(
+    socket: &mut TcpSocket<'_>,
+    hw_desc: &HardwareDescription<'_>,
+    hardware_config: &HardwareConfig,
+) -> Result<(), &'static str> {
+    send_hardware_description_and_config(socket, hw_desc, hardware_config).await
+}
+
 pub async fn message_loop(
     gpio: &mut Gpio,
     mut socket: TcpSocket<'_>,
-    hw_desc: &HardwareDescription<'_>,
-    hw_config: &mut HardwareConfig,
+    hardware_config: &mut HardwareConfig,
     spawner: &Spawner,
     control: &mut Control<'_>,
     db: &'static Database<
@@ -109,8 +117,6 @@ pub async fn message_loop(
         NoopRawMutex,
     >,
 ) -> Result<(), &'static str> {
-    send_hardware_description_and_config(&mut socket, hw_desc, hw_config).await?;
-
     info!("Entering TCP message loop");
     loop {
         match select(
@@ -122,11 +128,16 @@ pub async fn message_loop(
             Either::First(config_message) => match config_message {
                 None => break,
                 Some(hardware_config_message) => {
-                    gpio.apply_config_change(control, spawner, &hardware_config_message, hw_config)
-                        .await;
+                    gpio.apply_config_change(
+                        control,
+                        spawner,
+                        &hardware_config_message,
+                        hardware_config,
+                    )
+                    .await;
                     let _ = persistence::store_config_change(db, &hardware_config_message).await;
                     if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
-                        send_hardware_config(&mut socket, hw_config).await?;
+                        send_hardware_config(&mut socket, hardware_config).await?;
                     }
                     if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
                         info!("TCP, Disconnect, exiting TCP Message loop");

@@ -165,11 +165,10 @@ async fn usb_only(
 ) {
     let mut usb_connection = usb::start(spawner, driver, hw_desc, None, db, watchdog).await;
 
+    let _ = usb::accept_connection(&mut usb_connection, hw_desc, &hardware_config).await;
+
     loop {
-        if usb::wait_connection(&mut usb_connection, &hardware_config)
-            .await
-            .is_err()
-        {
+        if usb::wait_connection().await.is_err() {
             error!("Could not establish USB connection");
         } else {
             let _ = usb::message_loop(
@@ -340,16 +339,19 @@ async fn main(spawner: Spawner) {
                             &mut wifi_tx_buffer,
                             &mut wifi_rx_buffer,
                         ),
-                        usb::wait_connection(&mut usb_connection, &hardware_config),
+                        usb::wait_connection(),
                     )
                     .await
                     {
                         Either::First(socket_select) => match socket_select {
-                            Ok(socket) => {
+                            Ok(mut socket) => {
+                                let _ =
+                                    tcp::accept_connection(&mut socket, hw_desc, &hardware_config)
+                                        .await;
+
                                 if let Err(e) = tcp::message_loop(
                                     &mut gpio,
                                     socket,
-                                    hw_desc,
                                     &mut hardware_config,
                                     &spawner,
                                     &mut control,
@@ -360,9 +362,16 @@ async fn main(spawner: Spawner) {
                                     error!("Could tcp::message_loop error: {}", e);
                                 }
                             }
-                            Err(_) => error!("TCP accept error"),
+                            Err(_) => error!("TCP connection error"),
                         },
                         Either::Second(_) => {
+                            let _ = usb::accept_connection(
+                                &mut usb_connection,
+                                hw_desc,
+                                &hardware_config,
+                            )
+                            .await;
+
                             let _ = usb::message_loop(
                                 &mut gpio,
                                 &mut usb_connection,
