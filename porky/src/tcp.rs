@@ -110,7 +110,7 @@ pub async fn message_loop(
                 None => break,
                 Some(hardware_config_message) => {
                     if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
-                        info!("TCP, Disconnect, exiting TCP Message loop");
+                        info!("TCP Disconnect, exiting TCP Message loop");
                         return Ok(());
                     }
                     gpio.apply_config_change(control, spawner, &hardware_config_message, hw_config)
