@@ -9,7 +9,9 @@ use pigdef::config::HardwareConfigMessage::IOLevelChanged;
 use pigdef::config::LevelChange;
 use pigdef::description::BCMPinNumber;
 
-/// Wait until a level change on an input occurs and then send it via TCP to GUI
+/// Wait until a level change on an input occurs and then send it to GUI
+/// or until the configuration is changed and the pin is no longer being monitored as an input
+/// pin, in that case send the pin back so that it can be used for something else or left unused
 #[embassy_executor::task(pool_size = 32)]
 pub async fn monitor_input(
     bcm_pin_number: BCMPinNumber,
