@@ -7,7 +7,7 @@ use ekv::Database;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
-use embassy_net::tcp::{AcceptError, TcpSocket};
+use embassy_net::tcp::TcpSocket;
 use embassy_net::Stack;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
@@ -18,13 +18,6 @@ use pigdef::description::HardwareDescription;
 use serde::Serialize;
 
 pub const TCP_PORT: u16 = 1234;
-
-/// Wait for an incoming TCP connection
-async fn accept(mut wifi_socket: TcpSocket<'_>) -> Result<TcpSocket<'_>, AcceptError> {
-    info!("Accepting TCP Connections on port: {}", TCP_PORT);
-    wifi_socket.accept(TCP_PORT).await?;
-    Ok(wifi_socket)
-}
 
 /// Send the [HardwareDescription] and [HardwareConfig] over the [TcpSocket]
 async fn send_hardware_description_and_config(
@@ -77,10 +70,14 @@ pub async fn accept_connection<'a>(
     // TODO check these are needed
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(wifi_stack, &client_state);
-    let tcp_socket = TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer);
-    let mut socket = accept(tcp_socket).await.map_err(|_| "TCP Accept error")?;
-    send_hardware_description_and_config(&mut socket, hw_desc, hw_config).await?;
-    Ok(socket)
+    let mut tcp_socket = TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer);
+    info!("Accepting TCP Connections on port: {}", TCP_PORT);
+    tcp_socket
+        .accept(TCP_PORT)
+        .await
+        .map_err(|_| "TCP Accept error")?;
+    send_hardware_description_and_config(&mut tcp_socket, hw_desc, hw_config).await?;
+    Ok(tcp_socket)
 }
 
 /// Enter a loop waiting for messages either via TCP (from Piggui) or from the Hardware.
