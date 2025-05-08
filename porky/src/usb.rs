@@ -26,7 +26,7 @@ use embassy_usb::msos::windows_version;
 use embassy_usb::types::InterfaceNumber;
 use embassy_usb::{msos, Handler, UsbDevice};
 use embassy_usb::{Builder, Config};
-use pigdef::config::HardwareConfigMessage::Disconnect;
+use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig};
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::HardwareDescription;
 #[cfg(feature = "wifi")]
@@ -239,25 +239,12 @@ pub struct UsbConnection<D: EndpointIn, E: EndpointOut> {
 impl<D: EndpointIn, E: EndpointOut> UsbConnection<D, E> {
     /// Serialize input using postcard and send it to the host via the [EndpointIn]
     pub async fn send(&mut self, msg: impl Serialize) -> Result<(), &'static str> {
-        let msg = postcard::to_slice(&msg, self.buf).map_err(|_| "Serialization error")?;
-        self.ep_in.write(msg).await.map_err(|_| "USB Write error")
+        let gui_msg = postcard::to_slice(&msg, self.buf).map_err(|_| "Serialization error")?;
+        self.ep_in
+            .write(gui_msg)
+            .await
+            .map_err(|_| "USB Write error")
     }
-
-    /*
-    /// Receive a [HardwareConfigMessage] from the host over the usb [EndpointOut]
-    pub async fn receive(&mut self) -> HardwareConfigMessage {
-        let delay = Duration::from_secs(1);
-        loop {
-            let size = self._ep_out.read(self.buf).await.unwrap(); // TODO
-            if size != 0 {
-                info!("USB Receive: {} bytes", size);
-                postcard::from_bytes(&self.buf[..size]).unwrap()
-            } else {
-                Timer::after(delay).await;
-            }
-        }
-    }
-     */
 }
 
 #[allow(unused_variables)]
@@ -331,9 +318,9 @@ pub async fn start(
     }
 }
 
-/// Wait for a connection from the GUI host over USB, initiated by it asking for the config
+/// Accept a connection from the GUI host over USB, initiated by it asking for the config
 /// using a `GetConfig` request
-pub async fn wait_connection(
+pub async fn accept_connection(
     usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
     hardware_config: &HardwareConfig,
 ) -> Result<(), &'static str> {
@@ -348,8 +335,9 @@ pub async fn wait_connection(
 }
 
 /// Enter a loop waiting for messages either via USB (from Piggui) or from the Hardware.
-/// - When receive a message over USB from Piggui, apply to the hardware, save in Flash
-/// - WHen receiving from hardware, send the message to Piggui over USB
+/// - When receive a message over USB from Piggui, apply it to the hardware, save in Flash
+/// - When receive a message from hardware, send the message to Piggui over USB
+/// - Exit when receive the Disconnect message
 pub async fn message_loop(
     gpio: &mut Gpio,
     usb_connection: &mut UsbConnection<Endpoint<'static, USB, In>, Endpoint<'static, USB, Out>>,
@@ -374,7 +362,7 @@ pub async fn message_loop(
         .await
         {
             Either::First(hardware_config_message) => {
-                if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
+                if matches!(hardware_config_message, Disconnect) {
                     info!("USB Disconnect, exiting USB Message loop");
                     return Ok(());
                 }
@@ -387,7 +375,7 @@ pub async fn message_loop(
                 )
                 .await;
                 let _ = persistence::store_config_change(db, &hardware_config_message).await;
-                if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
+                if matches!(hardware_config_message, GetConfig) {
                     usb_connection.send(&hw_config).await?;
                 }
             }

@@ -7,7 +7,7 @@ use ekv::Database;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
-use embassy_net::tcp::{AcceptError, TcpSocket};
+use embassy_net::tcp::TcpSocket;
 use embassy_net::Stack;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
@@ -15,15 +15,9 @@ use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_io_async::Write;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::HardwareDescription;
+use serde::Serialize;
 
 pub const TCP_PORT: u16 = 1234;
-
-/// Wait for an incoming TCP connection
-async fn accept(mut wifi_socket: TcpSocket<'_>) -> Result<TcpSocket<'_>, AcceptError> {
-    info!("Accepting TCP Connections on port: {}", TCP_PORT);
-    wifi_socket.accept(TCP_PORT).await?;
-    Ok(wifi_socket)
-}
 
 /// Send the [HardwareDescription] and [HardwareConfig] over the [TcpSocket]
 async fn send_hardware_description_and_config(
@@ -41,39 +35,20 @@ async fn send_hardware_description_and_config(
         .map_err(|_| "Could not send hardware description and config")
 }
 
-/// Send the [HardwareConfig] over the [TcpSocket]
-async fn send_hardware_config(
-    socket: &mut TcpSocket<'_>,
-    hw_config: &HardwareConfig,
-) -> Result<(), &'static str> {
-    let mut hw_buf = [0; 1024];
-    let slice =
-        postcard::to_slice(hw_config, &mut hw_buf).map_err(|_| "Could not serialize hw config")?;
-    info!("Sending hardware config (length: {})", slice.len());
-    socket
-        .write_all(slice)
-        .await
-        .map_err(|_| "Could not send hardware config")
-}
-
-/// Send a [HardwareConfigMessage] over TCP to the GUI
-async fn send_message(
-    socket: &mut TcpSocket<'_>,
-    hardware_config_message: HardwareConfigMessage,
-) -> Result<(), &'static str> {
+/// Send a serializable message over TCP to the GUI
+async fn send(socket: &mut TcpSocket<'_>, msg: impl Serialize) -> Result<(), &'static str> {
     let mut buf = [0; 1024];
-    let gui_message = postcard::to_slice(&hardware_config_message, &mut buf)
-        .map_err(|_| "Could not serialize message")?;
+    let gui_message = postcard::to_slice(&msg, &mut buf).map_err(|_| "Serialization error")?;
     socket
         .write_all(gui_message)
         .await
-        .map_err(|_| "Could not send message")
+        .map_err(|_| "TCP Write error")
 }
 
 /// Wait until a config message in received on the [TcpSocket] then deserialize it and return it
 /// or return `None` if the connection was broken
 async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessage> {
-    let mut buf = [0; 4096]; // TODO needed?
+    let mut buf = [0; 4096];
 
     let n = socket.read(&mut buf).await.ok()?;
     if n == 0 {
@@ -84,23 +59,34 @@ async fn wait_message(socket: &mut TcpSocket<'_>) -> Option<HardwareConfigMessag
     postcard::from_bytes(&buf[..n]).ok()
 }
 
-/// Wait for a TCP connection to be made to this device, then respond to it with the [HardwareDescription]
-pub async fn wait_connection<'a>(
+/// Accept a TCP connection to this device, then respond to it with the [HardwareDescription]
+pub async fn accept_connection<'a>(
     wifi_stack: Stack<'static>,
     wifi_rx_buffer: &'a mut [u8],
     wifi_tx_buffer: &'a mut [u8],
-) -> Result<TcpSocket<'a>, AcceptError> {
+    hw_desc: &HardwareDescription<'_>,
+    hw_config: &HardwareConfig,
+) -> Result<TcpSocket<'a>, &'static str> {
     // TODO check these are needed
     let client_state: TcpClientState<2, 1024, 1024> = TcpClientState::new();
     let _client = TcpClient::new(wifi_stack, &client_state);
-    let tcp_socket = TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer);
-    accept(tcp_socket).await
+    let mut tcp_socket = TcpSocket::new(wifi_stack, wifi_tx_buffer, wifi_rx_buffer);
+    info!("Accepting TCP Connections on port: {}", TCP_PORT);
+    tcp_socket
+        .accept(TCP_PORT)
+        .await
+        .map_err(|_| "TCP Accept error")?;
+    send_hardware_description_and_config(&mut tcp_socket, hw_desc, hw_config).await?;
+    Ok(tcp_socket)
 }
 
+/// Enter a loop waiting for messages either via TCP (from Piggui) or from the Hardware.
+/// - When receive a message over TCP from Piggui, apply it to the hardware, save in Flash
+/// - When receive a message from hardware, send the message to Piggui over TCP
+/// - Exit when receive the Disconnect message
 pub async fn message_loop(
     gpio: &mut Gpio,
     mut socket: TcpSocket<'_>,
-    hw_desc: &HardwareDescription<'_>,
     hw_config: &mut HardwareConfig,
     spawner: &Spawner,
     control: &mut Control<'_>,
@@ -109,8 +95,6 @@ pub async fn message_loop(
         NoopRawMutex,
     >,
 ) -> Result<(), &'static str> {
-    send_hardware_description_and_config(&mut socket, hw_desc, hw_config).await?;
-
     info!("Entering TCP message loop");
     loop {
         match select(
@@ -122,20 +106,20 @@ pub async fn message_loop(
             Either::First(config_message) => match config_message {
                 None => break,
                 Some(hardware_config_message) => {
+                    if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
+                        info!("TCP Disconnect, exiting TCP Message loop");
+                        return Ok(());
+                    }
                     gpio.apply_config_change(control, spawner, &hardware_config_message, hw_config)
                         .await;
                     let _ = persistence::store_config_change(db, &hardware_config_message).await;
                     if matches!(hardware_config_message, HardwareConfigMessage::GetConfig) {
-                        send_hardware_config(&mut socket, hw_config).await?;
-                    }
-                    if matches!(hardware_config_message, HardwareConfigMessage::Disconnect) {
-                        info!("TCP, Disconnect, exiting TCP Message loop");
-                        return Ok(());
+                        send(&mut socket, hw_config.clone()).await?;
                     }
                 }
             },
             Either::Second(hardware_config_message) => {
-                send_message(&mut socket, hardware_config_message.clone()).await?;
+                send(&mut socket, hardware_config_message.clone()).await?;
             }
         }
     }

@@ -181,13 +181,14 @@ impl Gpio {
         bcm_pin_number: BCMPinNumber,
         new_pin_function: &Option<PinFunction>,
     ) {
+        // Get the pin to be configured, by recovering from previous use or from Available pool
         let flex_pin = {
             match self.pins.remove(&bcm_pin_number) {
-                // Pin was set up as an Input - recover the Flex
+                // Pin was previously set up as an Input - recover the Flex pin for the future
                 Some(GPIOPin::GPIOInput((signaller, returner))) => {
-                    // Signal to pin monitor to exit
+                    // Signal to pin monitor to return the pin and exit
                     signaller.send(true).await;
-                    // Recover the Flex
+                    // Recover the Flex pin it should have sent back
                     Some(returner.receive().await)
                 }
                 // Pin is available - was unassigned
@@ -204,6 +205,7 @@ impl Gpio {
             }
         };
 
+        // Set up the pin with the new function assigned to it
         match new_pin_function {
             None => {
                 // if we recovered a pin above - then leave it as
