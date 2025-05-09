@@ -61,7 +61,7 @@ pigpio = { path = "../pigpio" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
-getrandom = { version = "0.3.2", features = ["wasm_js"] }
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
