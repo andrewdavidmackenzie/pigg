@@ -27,7 +27,7 @@ fn read_ssid(ssid_filename: &str) -> Result<SsidSpec, io::Error> {
     let ssid_string = std::fs::read_to_string(ssid_filename).map_err(|_| {
         io::Error::new(
             io::ErrorKind::NotFound,
-            format!("Could read {} file", ssid_filename),
+            format!("Could read {ssid_filename} file"),
         )
     })?;
     toml::from_str(&ssid_string)
@@ -70,7 +70,7 @@ pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
 }}",
                 spec.ssid_name, spec.ssid_pass, spec.security
             )
-            .as_bytes(),
+                .as_bytes(),
         ),
     }
 }
@@ -88,7 +88,7 @@ fn main() -> io::Result<()> {
     file.write_all(include_bytes!("memory2.x"))?;
     println!("cargo:rustc-link-search={}", out.display());
 
-    println!("cargo:rerun-if-changed={}", SSID_FILE_NAME);
+    println!("cargo:rerun-if-changed={SSID_FILE_NAME}");
 
     println!("cargo:rustc-link-arg-bins=--nmagic");
     println!("cargo:rustc-link-arg-bins=-Tlink.x");
