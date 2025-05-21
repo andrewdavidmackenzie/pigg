@@ -1,4 +1,5 @@
 use futures::channel::mpsc::Sender;
+use std::fmt;
 
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
 use pigdef::config::HardwareConfigMessage::IOLevelChanged;
@@ -84,7 +85,7 @@ pub enum SubscriptionEvent {
 
 /// This enum describes the states of the subscription
 enum HWState {
-    /// Just starting up, we have not yet set up a channel between GUI and Listener
+    /// Not connected to any particular hardware
     Disconnected,
     #[cfg(not(target_arch = "wasm32"))]
     /// The subscription is ready and will listen for config events on the channel contained
@@ -98,6 +99,22 @@ enum HWState {
     #[cfg(feature = "tcp")]
     /// The subscription is ready and will listen for config events on the channel contained
     ConnectedTcp(async_std::net::TcpStream),
+}
+
+impl fmt::Display for HWState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Disconnected => write!(f, "Disconnected"),
+            #[cfg(not(target_arch = "wasm32"))]
+            ConnectedLocal(_) => write!(f, "ConnectedLocal"),
+            #[cfg(feature = "usb")]
+            ConnectedUsb(_) => write!(f, "ConnectedUsb"),
+            #[cfg(feature = "iroh")]
+            ConnectedIroh(_) => write!(f, "ConnectedIroh"),
+            #[cfg(feature = "tcp")]
+            ConnectedTcp(_) => write!(f, "ConnectedTcp"),
+        }
+    }
 }
 
 /// Report an error to the GUI, if it cannot be sent print to STDERR
@@ -135,11 +152,13 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
             ))]
             let mut gui_sender_clone = gui_sender.clone();
 
+            println!("State = {state}");
+            println!("Target = {target:?}");
+
             match &mut state {
                 Disconnected => {
                     match target.clone() {
                         NoConnection => {
-                            println!("Disconnected");
                             // Wait for a message from the UI to request that we connect to a new target
                             if let Some(NewConnection(new_target)) =
                                 subscriber_receiver.next().await
@@ -159,17 +178,21 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                         ))
                                         .await
                                     {
+                                        state = Disconnected;
+                                        target = NoConnection;
                                         report_error(
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
                                         .await;
+                                    } else {
+                                        // We are ready to receive messages from the GUI and send messages to it
+                                        state = ConnectedLocal(local_hardware);
                                     }
-
-                                    // We are ready to receive messages from the GUI and send messages to it
-                                    state = ConnectedLocal(local_hardware);
                                 }
                                 Err(e) => {
+                                    state = Disconnected;
+                                    target = NoConnection;
                                     report_error(
                                         &mut gui_sender_clone,
                                         &format!("LocalHW error: {e}"),
@@ -190,17 +213,21 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                         ))
                                         .await
                                     {
+                                        state = Disconnected;
+                                        target = NoConnection;
                                         report_error(
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
                                         .await;
+                                    } else {
+                                        // We are ready to receive messages from the GUI and send messages to it
+                                        state = ConnectedUsb(connection);
                                     }
-
-                                    // We are ready to receive messages from the GUI and send messages to it
-                                    state = ConnectedUsb(connection);
                                 }
                                 Err(e) => {
+                                    state = Disconnected;
+                                    target = NoConnection;
                                     report_error(&mut gui_sender_clone, &format!("USB error: {e}"))
                                         .await
                                 }
@@ -219,17 +246,21 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                         ))
                                         .await
                                     {
+                                        state = Disconnected;
+                                        target = NoConnection;
                                         report_error(
                                             &mut gui_sender_clone,
                                             &format!("Send error: {e}"),
                                         )
                                         .await;
+                                    } else {
+                                        // We are ready to receive messages from the GUI
+                                        state = ConnectedIroh(connection);
                                     }
-
-                                    // We are ready to receive messages from the GUI
-                                    state = ConnectedIroh(connection);
                                 }
                                 Err(e) => {
+                                    state = Disconnected;
+                                    target = NoConnection;
                                     report_error(&mut gui_sender_clone, &format!("Iroh error: {e}"))
                                         .await
                                 }
@@ -241,18 +272,28 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                             match tcp_host::connect(ip, port).await {
                                 Ok((hardware_description, hardware_config, stream)) => {
                                     // Send the stream back to the GUI
-                                    gui_sender_clone
+                                    if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(
                                             hardware_description.clone(),
                                             hardware_config,
                                         ))
                                         .await
-                                        .unwrap_or_else(|e| eprintln!("Send error: {e}"));
-
-                                    // We are ready to receive messages from the GUI
-                                    state = ConnectedTcp(stream);
+                                    {
+                                        state = Disconnected;
+                                        target = NoConnection;
+                                        report_error(
+                                            &mut gui_sender_clone,
+                                            &format!("Send error: {e}"),
+                                        )
+                                        .await;
+                                    } else {
+                                        // We are ready to receive messages from the GUI
+                                        state = ConnectedTcp(stream);
+                                    }
                                 }
                                 Err(e) => {
+                                    state = Disconnected;
+                                    target = NoConnection;
                                     report_error(&mut gui_sender_clone, &format!("TCP error: {e}"))
                                         .await
                                 }
@@ -267,8 +308,11 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                         match &config_change {
                             NewConnection(new_target) => {
                                 if let Err(e) = local_host::disconnect(connection).await {
-                                    report_error(&mut gui_sender_clone, &format!("USB error: {e}"))
-                                        .await;
+                                    report_error(
+                                        &mut gui_sender_clone,
+                                        &format!("Local error: {e}"),
+                                    )
+                                    .await;
                                 }
                                 target = new_target.clone();
                                 state = Disconnected;
@@ -367,7 +411,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                     Hardware(config_change) => {
                                         if let Err(e) = iroh_host::send_config_message(connection, config_change).await
                                         {
-                                            report_error(&mut gui_sender_clone, &format!("Hardware error: {e}"))
+                                            report_error(&mut gui_sender_clone, &format!("Iroh error: {e}"))
                                                 .await;
                                         }
                                     }
@@ -407,7 +451,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                     NewConnection(new_target) => {
                                         if let Err(e) = tcp_host::disconnect(stream.clone()).await
                                         {
-                                            report_error(&mut gui_sender_clone, &format!("Iroh error: {e}"))
+                                            report_error(&mut gui_sender_clone, &format!("Tcp error: {e}"))
                                                 .await;
                                         }
                                         target = new_target.clone();
@@ -416,7 +460,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                     Hardware(config_change) => {
                                         if let Err(e) = tcp_host::send_config_message(stream.clone(), config_change).await
                                         {
-                                            report_error(&mut gui_sender_clone, &format!("Hardware error: {e}"))
+                                            report_error(&mut gui_sender_clone, &format!("Tcp error: {e}"))
                                                 .await;
                                         }
                                     }

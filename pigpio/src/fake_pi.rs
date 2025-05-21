@@ -58,12 +58,7 @@ impl HW {
             Some(pin) => {
                 *pin = Output(level);
             }
-            _ => {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Could not find a configured output pin",
-                ))
-            }
+            _ => return Err(io::Error::other("Could not find a configured output pin")),
         }
         Ok(())
     }
