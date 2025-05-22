@@ -3,9 +3,11 @@ use crate::views::about::REPOSITORY;
 use crate::views::dialog_styles::{
     cancel_button, connect_button, hyperlink_button, MODAL_CONTAINER_STYLE,
 };
+use crate::views::hardware_styles::TOOLTIP_STYLE;
 use crate::Message;
 use iced::keyboard::key;
-use iced::widget::{button, column, container, horizontal_space, text, Row, Space, Text};
+use iced::widget::tooltip::Position;
+use iced::widget::{button, column, container, horizontal_space, text, Row, Space, Text, Tooltip};
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
@@ -33,7 +35,10 @@ pub enum ModalType {
     Info {
         title: String,
         body: String,
-        is_version: bool,
+    },
+    Version {
+        title: String,
+        body: String,
     },
 }
 
@@ -96,16 +101,13 @@ impl InfoDialog {
                 self.show_modal = true;
                 self.is_warning = false;
                 #[allow(unused_mut)]
-                let mut body = format!("{hardware_details}");
+                let mut body = format!("{hardware_details}\n");
 
-                if !hardware_connections.is_empty() {
-                    self.hardware_connections = hardware_connections.clone();
-                }
+                self.hardware_connections = hardware_connections.clone();
 
                 self.modal_type = Some(ModalType::Info {
                     title: "Device Details".to_string(),
                     body,
-                    is_version: false,
                 });
                 Task::none()
             }
@@ -130,10 +132,9 @@ impl InfoDialog {
             InfoDialogMessage::AboutDialog => {
                 self.show_modal = true;
                 self.is_warning = false;
-                self.modal_type = Some(ModalType::Info {
+                self.modal_type = Some(ModalType::Version {
                     title: "About Piggui".to_string(),
                     body: crate::views::about::about().to_string(),
-                    is_version: true,
                 });
                 Task::none()
             }
@@ -222,48 +223,57 @@ impl InfoDialog {
 
                 Self::info_container(title, body, button_row, text_style)
             }
-            Some(ModalType::Info {
-                title,
-                body,
-                is_version,
-            }) => {
-                let mut hyperlink_row = Row::new().width(Length::Fill);
+
+            Some(ModalType::Info { title, body }) => {
                 let mut button_row = Row::new();
-                if *is_version {
-                    hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
-                    hyperlink_row = hyperlink_row
+
+                button_row = button_row.push(
+                    button("Close")
+                        .on_press(Message::Modal(InfoDialogMessage::HideModal))
+                        .style(cancel_button),
+                );
+                for (name, hardware_connection) in &self.hardware_connections {
+                    let button = button(text(format!("Connect via {}", name)))
+                        .on_press(Message::ConnectRequest(hardware_connection.clone()))
+                        .style(connect_button);
+                    button_row = button_row
+                        .push(horizontal_space())
                         .push(
-                            button(Text::new("github"))
-                                .on_press(Message::Modal(InfoDialogMessage::OpenLink(REPOSITORY)))
-                                .style(hyperlink_button),
+                            Tooltip::new(
+                                button,
+                                text(format!("{hardware_connection}")),
+                                Position::Top,
+                            )
+                            .gap(4.0)
+                            .style(|_| TOOLTIP_STYLE),
                         )
                         .align_y(Alignment::Center);
-                    button_row = button_row.push(hyperlink_row);
-                    button_row = button_row.push(
-                        button("Close")
-                            .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                            .style(cancel_button),
-                    );
-                } else {
-                    button_row = button_row.push(
-                        button("Close")
-                            .on_press(Message::Modal(InfoDialogMessage::HideModal))
-                            .style(cancel_button),
-                    );
-                    for (name, hardware_connection) in &self.hardware_connections {
-                        button_row = button_row
-                            .push(horizontal_space())
-                            .push(
-                                button(text(format!("Connect via {}", name)))
-                                    .on_press(Message::ConnectRequest(hardware_connection.clone()))
-                                    .style(connect_button),
-                            )
-                            .align_y(Alignment::Center);
-                    }
                 }
 
                 Self::info_container(title, body, button_row, WHITE_TEXT)
             }
+
+            Some(ModalType::Version { title, body }) => {
+                let mut hyperlink_row = Row::new().width(Length::Fill);
+                let mut button_row = Row::new();
+                hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
+                hyperlink_row = hyperlink_row
+                    .push(
+                        button(Text::new("github"))
+                            .on_press(Message::Modal(InfoDialogMessage::OpenLink(REPOSITORY)))
+                            .style(hyperlink_button),
+                    )
+                    .align_y(Alignment::Center);
+                button_row = button_row.push(hyperlink_row);
+                button_row = button_row.push(
+                    button("Close")
+                        .on_press(Message::Modal(InfoDialogMessage::HideModal))
+                        .style(cancel_button),
+                );
+
+                Self::info_container(title, body, button_row, WHITE_TEXT)
+            }
+
             None => container(column![]).into(), // Render empty container
 
             Some(ModalType::Error {
@@ -303,7 +313,6 @@ mod tests {
         display_modal.modal_type = Some(ModalType::Info {
             title: "Test".to_string(),
             body: "Test body".to_string(),
-            is_version: false,
         });
 
         let _ = display_modal.update(InfoDialogMessage::HideModal);
@@ -341,13 +350,7 @@ mod tests {
         let _ = display_modal.update(InfoDialogMessage::AboutDialog);
         assert!(display_modal.show_modal);
 
-        if let Some(ModalType::Info {
-            title,
-            body,
-            is_version,
-        }) = &display_modal.modal_type
-        {
-            assert!(is_version);
+        if let Some(ModalType::Version { title, body }) = &display_modal.modal_type {
             assert_eq!(title, "About Piggui");
             assert_eq!(body, &crate::views::about::about().to_string());
         } else {

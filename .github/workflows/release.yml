@@ -98,7 +98,7 @@ jobs:
       # Target platforms/runners are computed by dist in create-release.
       # Each member of the matrix has the following arguments:
       #
-      # - runner: the github runner
+      # - runner: the GitHub runner
       # - dist-args: cli flags to pass to dist
       # - install-dist: expression to run to install dist on the runner
       #
