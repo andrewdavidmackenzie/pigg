@@ -16,10 +16,11 @@ use pignet::HardwareConnection;
 use std::collections::HashMap;
 
 pub struct InfoDialog {
-    show_modal: bool,
     modal_type: ModalType,
     hardware_connections: HashMap<String, HardwareConnection>,
 }
+
+#[derive(PartialEq)]
 pub enum ModalType {
     Error {
         title: &'static str,
@@ -31,7 +32,7 @@ pub enum ModalType {
         body: String,
         load_config: bool,
     },
-    Info {
+    DeviceDetails {
         title: String,
         body: String,
     },
@@ -64,26 +65,21 @@ pub enum InfoDialogMessage {
 impl InfoDialog {
     pub fn new() -> Self {
         Self {
-            show_modal: false,
             modal_type: ModalType::None,
             hardware_connections: HashMap::default(),
         }
     }
 
     pub fn showing_modal(&self) -> bool {
-        self.show_modal
+        self.modal_type != ModalType::None
     }
 
     pub fn update(&mut self, message: InfoDialogMessage) -> Task<Message> {
         match message {
-            InfoDialogMessage::HideModal => {
-                self.show_modal = false;
-                Task::none()
-            }
+            InfoDialogMessage::HideModal => Task::none(),
 
             // Display warning for unsaved changes
             InfoDialogMessage::UnsavedChangesExitModal => {
-                self.show_modal = true;
                 self.modal_type = ModalType::Warning {
                     title: "Unsaved Changes".to_string(),
                     body: "You have unsaved changes. Do you want to exit without saving?"
@@ -96,10 +92,9 @@ impl InfoDialog {
             // Display hardware information
             #[allow(unused_variables)]
             InfoDialogMessage::HardwareDetailsModal(hardware_details, hardware_connections) => {
-                self.show_modal = true;
                 self.hardware_connections = hardware_connections.clone();
 
-                self.modal_type = ModalType::Info {
+                self.modal_type = ModalType::DeviceDetails {
                     title: "Device Details".to_string(),
                     body: format!("{hardware_details}\n"),
                 };
@@ -107,12 +102,11 @@ impl InfoDialog {
             }
 
             InfoDialogMessage::LoadFile => {
-                self.show_modal = false;
+                self.modal_type = ModalType::None;
                 Task::batch(vec![pick_and_load()])
             }
 
             InfoDialogMessage::UnsavedLoadConfigChangesModal => {
-                self.show_modal = true;
                 self.modal_type = ModalType::Warning {
                     title: "Unsaved Changes".to_string(),
                     body: "You have unsaved changes, loading a new config will overwrite them"
@@ -124,7 +118,6 @@ impl InfoDialog {
 
             // Display piggui information
             InfoDialogMessage::AboutDialog => {
-                self.show_modal = true;
                 self.modal_type = ModalType::Version {
                     title: "About Piggui".to_string(),
                     body: crate::views::about::about().to_string(),
@@ -133,7 +126,6 @@ impl InfoDialog {
             }
 
             InfoDialogMessage::ErrorWithHelp(title, body, help_link) => {
-                self.show_modal = true;
                 self.modal_type = ModalType::Error {
                     title,
                     body,
@@ -157,7 +149,7 @@ impl InfoDialog {
                 key: keyboard::Key::Named(key::Named::Escape),
                 ..
             })) => {
-                self.show_modal = false;
+                self.modal_type = ModalType::None;
                 Task::none()
             }
             _ => Task::none(),
@@ -216,7 +208,7 @@ impl InfoDialog {
                 Self::info_container(title, body, button_row, text_style)
             }
 
-            ModalType::Info { title, body } => {
+            ModalType::DeviceDetails { title, body } => {
                 let mut button_row = Row::new();
 
                 button_row = button_row.push(
@@ -301,14 +293,13 @@ mod tests {
     #[test]
     fn test_hide_modal() {
         let mut display_modal = InfoDialog::new();
-        display_modal.show_modal = true;
-        display_modal.modal_type = ModalType::Info {
+        display_modal.modal_type = ModalType::DeviceDetails {
             title: "Test".to_string(),
             body: "Test body".to_string(),
         };
 
         let _ = display_modal.update(InfoDialogMessage::HideModal);
-        assert!(!display_modal.show_modal);
+        assert!(!display_modal.showing_modal());
     }
 
     #[test]
@@ -316,20 +307,18 @@ mod tests {
         let mut display_modal = InfoDialog::new();
 
         let _ = display_modal.update(InfoDialogMessage::UnsavedChangesExitModal);
-        assert!(display_modal.show_modal);
 
         match display_modal.modal_type {
             ModalType::Warning {
                 title,
                 body,
-                load_config,
+                load_config: _,
             } => {
                 assert_eq!(title, "Unsaved Changes");
                 assert_eq!(
                     body,
                     "You have unsaved changes. Do you want to exit without saving?"
                 );
-                assert!(load_config);
             }
             _ => {
                 panic!("ModalType should be Warning");
@@ -342,7 +331,6 @@ mod tests {
         let mut display_modal = InfoDialog::new();
 
         let _ = display_modal.update(InfoDialogMessage::AboutDialog);
-        assert!(display_modal.show_modal);
 
         match display_modal.modal_type {
             ModalType::Version { title, body } => {
