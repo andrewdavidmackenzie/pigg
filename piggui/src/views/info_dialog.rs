@@ -75,7 +75,10 @@ impl InfoDialog {
 
     pub fn update(&mut self, message: InfoDialogMessage) -> Task<Message> {
         match message {
-            InfoDialogMessage::HideModal => Task::none(),
+            InfoDialogMessage::HideModal => {
+                self.modal_type = ModalType::None;
+                Task::none()
+            }
 
             // Display warning for unsaved changes
             InfoDialogMessage::UnsavedChangesExitModal => {
