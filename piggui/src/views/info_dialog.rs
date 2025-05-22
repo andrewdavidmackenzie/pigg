@@ -17,7 +17,6 @@ use std::collections::HashMap;
 
 pub struct InfoDialog {
     show_modal: bool,
-    is_warning: bool,
     modal_type: Option<ModalType>,
     hardware_connections: HashMap<String, HardwareConnection>,
 }
@@ -65,7 +64,6 @@ impl InfoDialog {
     pub fn new() -> Self {
         Self {
             show_modal: false,
-            is_warning: false,
             modal_type: None,
             hardware_connections: HashMap::default(),
         }
@@ -85,7 +83,6 @@ impl InfoDialog {
             // Display warning for unsaved changes
             InfoDialogMessage::UnsavedChangesExitModal => {
                 self.show_modal = true;
-                self.is_warning = true;
                 self.modal_type = Some(ModalType::Warning {
                     title: "Unsaved Changes".to_string(),
                     body: "You have unsaved changes. Do you want to exit without saving?"
@@ -99,15 +96,11 @@ impl InfoDialog {
             #[allow(unused_variables)]
             InfoDialogMessage::HardwareDetailsModal(hardware_details, hardware_connections) => {
                 self.show_modal = true;
-                self.is_warning = false;
-                #[allow(unused_mut)]
-                let mut body = format!("{hardware_details}\n");
-
                 self.hardware_connections = hardware_connections.clone();
 
                 self.modal_type = Some(ModalType::Info {
                     title: "Device Details".to_string(),
-                    body,
+                    body: format!("{hardware_details}\n"),
                 });
                 Task::none()
             }
@@ -131,7 +124,6 @@ impl InfoDialog {
             // Display piggui information
             InfoDialogMessage::AboutDialog => {
                 self.show_modal = true;
-                self.is_warning = false;
                 self.modal_type = Some(ModalType::Version {
                     title: "About Piggui".to_string(),
                     body: crate::views::about::about().to_string(),
@@ -141,7 +133,6 @@ impl InfoDialog {
 
             InfoDialogMessage::ErrorWithHelp(title, body, help_link) => {
                 self.show_modal = true;
-                self.is_warning = false;
                 self.modal_type = Some(ModalType::Error {
                     title,
                     body,
