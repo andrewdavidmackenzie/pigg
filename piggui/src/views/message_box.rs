@@ -32,7 +32,7 @@ pub enum MessageRowMessage {
 }
 
 #[derive(Default)]
-pub struct MessageQueue {
+struct MessageQueue {
     queue: Vec<InfoMessage>,
     current_message: Option<InfoMessage>,
 }
