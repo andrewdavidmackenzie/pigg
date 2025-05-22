@@ -43,7 +43,6 @@ pub async fn get_device() -> anyhow::Result<TcpDevice> {
     while retry_count < 4 {
         println!("Trying to get IP address:");
         if let Ok(ip) = local_ip() {
-            println!("Got IP address:");
             let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
             println!("ip: {ip}:{port}");
             let address = format!("{}:{}", ip, port);

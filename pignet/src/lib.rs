@@ -54,11 +54,11 @@ impl Display for HardwareConnection {
             #[cfg(not(target_arch = "wasm32"))]
             Self::Local => write!(f, "Local Hardware"),
             #[cfg(feature = "usb")]
-            Self::Usb(_) => write!(f, "USB"),
+            Self::Usb(serial) => write!(f, "USB: {serial}"),
             #[cfg(feature = "iroh")]
-            Self::Iroh(nodeid, _relay_url) => write!(f, "Iroh Network: {nodeid}"),
+            Self::Iroh(nodeid, _relay_url) => write!(f, "Iroh: {nodeid}"),
             #[cfg(feature = "tcp")]
-            Self::Tcp(ip, port) => write!(f, "TCP IP:Port: {ip}:{port}"),
+            Self::Tcp(ip, port) => write!(f, "TCP: {ip}:{port}"),
         }
     }
 }
