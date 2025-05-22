@@ -130,7 +130,7 @@ mod test {
             .pin_functions
             .insert(7, PinFunction::Output(Some(true))); // GPIO7 output set to 1
 
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let output_dir = tempdir().expect("Could not create a tempdir").keep();
         let test_file = output_dir.join("test.pigg");
 
         super::save_cfg(
@@ -151,7 +151,7 @@ mod test {
         };
         config.pin_functions.insert(7, PinFunction::Output(None)); // GPIO7 output set to 1
 
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let output_dir = tempdir().expect("Could not create a tempdir").keep();
         let test_file = output_dir.join("test.pigg");
 
         super::save_cfg(
@@ -172,7 +172,7 @@ mod test {
             pin_functions: HashMap::new(),
         };
         config.pin_functions.insert(1, PinFunction::Input(None));
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let output_dir = tempdir().expect("Could not create a tempdir").keep();
         let test_file = output_dir.join("test.pigg");
 
         super::save_cfg(
@@ -192,7 +192,7 @@ mod test {
     #[test]
     fn load_one_pin_config_input_no_pull() {
         let pin_config = r#"{"pin_functions":{"1":{"Input":null}}}"#;
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let output_dir = tempdir().expect("Could not create a tempdir").keep();
         let test_file = output_dir.join("test.pigg");
         let mut file = File::create(&test_file).expect("Could not create test file");
         file.write_all(pin_config.as_bytes())
