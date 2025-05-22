@@ -41,7 +41,7 @@ impl MessageQueue {
     /// Add a new [InfoMessage] to be displayed
     /// If none is being displayed currently, set it as the one that will be displayed by view().
     /// If a message is currently being displayed, add this one to the queue.
-    pub fn add_message(&mut self, message: InfoMessage) {
+    fn add_message(&mut self, message: InfoMessage) {
         match self.current_message {
             None => self.current_message = Some(message),
             Some(_) => {
@@ -54,12 +54,12 @@ impl MessageQueue {
     /// Clear the current message being displayed.
     /// If there is another message in the queue then it sets that as the new message to be shown
     /// If there is no other message queued to be shown, then set to None and no message is shown
-    pub fn clear_message(&mut self) {
+    fn clear_message(&mut self) {
         self.current_message = self.queue.pop();
     }
 
     /// Are there any [InfoMessage]  of type Info in the queue waiting to be displayed?
-    pub fn showing_info_message(&self) -> bool {
+    fn showing_info_message(&self) -> bool {
         matches!(self.current_message, Some(InfoMessage::Info(_)))
     }
 }
