@@ -29,6 +29,7 @@ pub enum InfoMessage {
 pub enum MessageRowMessage {
     ShowStatusMessage(InfoMessage),
     ClearStatusMessage,
+    ClearMessageQueue,
 }
 
 #[derive(Default)]
@@ -58,6 +59,12 @@ impl MessageQueue {
         self.current_message = self.queue.pop();
     }
 
+    /// Clear all messages from the queue and the current message being displayed
+    fn clear_queue(&mut self) {
+        self.queue.clear();
+        self.current_message = None;
+    }
+
     /// Are there any [InfoMessage]  of type Info in the queue waiting to be displayed?
     fn showing_info_message(&self) -> bool {
         matches!(self.current_message, Some(InfoMessage::Info(_)))
@@ -81,11 +88,17 @@ impl MessageRow {
         self.message_queue.add_message(msg);
     }
 
+    /// Clear the current message and all queued messages
+    pub fn clear_messages(&mut self) {
+        self.message_queue.clear_queue()
+    }
+
     /// Update the state and do actions depending on the [MessageRowMessage] sent
     pub fn update(&mut self, message: MessageRowMessage) -> Task<Message> {
         match message {
             MessageRowMessage::ShowStatusMessage(msg) => self.add_message(msg),
             MessageRowMessage::ClearStatusMessage => self.message_queue.clear_message(),
+            MessageRowMessage::ClearMessageQueue => self.message_queue.clear_queue(),
         }
 
         Task::none()
