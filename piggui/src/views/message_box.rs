@@ -53,13 +53,9 @@ impl MessageQueue {
 
     /// Clear the current message being displayed.
     /// If there is another message in the queue then it sets that as the new message to be shown
-    /// If there is no other message queues to be shown, then set to None and no message is shown
+    /// If there is no other message queued to be shown, then set to None and no message is shown
     pub fn clear_message(&mut self) {
-        if self.queue.is_empty() {
-            self.current_message = None;
-        } else {
-            self.current_message = self.queue.pop();
-        }
+        self.current_message = self.queue.pop();
     }
 
     /// Are there any [InfoMessage]  of type Info in the queue waiting to be displayed?
