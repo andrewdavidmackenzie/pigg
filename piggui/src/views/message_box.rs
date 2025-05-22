@@ -29,10 +29,11 @@ pub enum InfoMessage {
 pub enum MessageRowMessage {
     ShowStatusMessage(InfoMessage),
     ClearStatusMessage,
+    ClearMessageQueue,
 }
 
 #[derive(Default)]
-pub struct MessageQueue {
+struct MessageQueue {
     queue: Vec<InfoMessage>,
     current_message: Option<InfoMessage>,
 }
@@ -41,7 +42,7 @@ impl MessageQueue {
     /// Add a new [InfoMessage] to be displayed
     /// If none is being displayed currently, set it as the one that will be displayed by view().
     /// If a message is currently being displayed, add this one to the queue.
-    pub fn add_message(&mut self, message: InfoMessage) {
+    fn add_message(&mut self, message: InfoMessage) {
         match self.current_message {
             None => self.current_message = Some(message),
             Some(_) => {
@@ -53,17 +54,19 @@ impl MessageQueue {
 
     /// Clear the current message being displayed.
     /// If there is another message in the queue then it sets that as the new message to be shown
-    /// If there is no other message queues to be shown, then set to None and no message is shown
-    pub fn clear_message(&mut self) {
-        if self.queue.is_empty() {
-            self.current_message = None;
-        } else {
-            self.current_message = self.queue.pop();
-        }
+    /// If there is no other message queued to be shown, then set to None and no message is shown
+    fn clear_message(&mut self) {
+        self.current_message = self.queue.pop();
+    }
+
+    /// Clear all messages from the queue and the current message being displayed
+    fn clear_queue(&mut self) {
+        self.queue.clear();
+        self.current_message = None;
     }
 
     /// Are there any [InfoMessage]  of type Info in the queue waiting to be displayed?
-    pub fn showing_info_message(&self) -> bool {
+    fn showing_info_message(&self) -> bool {
         matches!(self.current_message, Some(InfoMessage::Info(_)))
     }
 }
@@ -85,11 +88,17 @@ impl MessageRow {
         self.message_queue.add_message(msg);
     }
 
+    /// Clear the current message and all queued messages
+    pub fn clear_messages(&mut self) {
+        self.message_queue.clear_queue()
+    }
+
     /// Update the state and do actions depending on the [MessageRowMessage] sent
     pub fn update(&mut self, message: MessageRowMessage) -> Task<Message> {
         match message {
             MessageRowMessage::ShowStatusMessage(msg) => self.add_message(msg),
             MessageRowMessage::ClearStatusMessage => self.message_queue.clear_message(),
+            MessageRowMessage::ClearMessageQueue => self.message_queue.clear_queue(),
         }
 
         Task::none()

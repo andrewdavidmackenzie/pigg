@@ -56,6 +56,7 @@ mod views;
 mod widgets;
 
 const PIGGUI_ID: &str = "piggui";
+const CONNECTION_ERROR: &str = "Connection Error";
 
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
@@ -146,6 +147,7 @@ fn reset_ssid(serial_number: SerialNumber) -> Task<Message> {
 impl Piggui {
     /// Disconnect from the hardware
     fn disconnect(&mut self) {
+        self.info_row.clear_info_messages(); // Clear out of date messages
         self.info_row
             .add_info_message(Info("Disconnected".to_string()));
         self.config_filename = None;
@@ -302,6 +304,7 @@ impl Piggui {
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
+                self.info_row.clear_info_messages(); // Hide out of date messages
                 self.info_row
                     .add_info_message(Info("Connected".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
@@ -313,7 +316,7 @@ impl Piggui {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 self.info_row
-                    .add_info_message(Error("Connection Error".to_string(), details.clone()));
+                    .add_info_message(Error(CONNECTION_ERROR.to_string(), details.clone()));
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.set_error(details);
             }

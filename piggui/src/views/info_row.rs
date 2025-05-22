@@ -158,6 +158,11 @@ impl InfoRow {
         self.message_row.add_message(msg);
     }
 
+    /// Clear all messages from the info message display and queue
+    pub fn clear_info_messages(&mut self) {
+        self.message_row.clear_messages();
+    }
+
     /// Update state based on [MessageRowMessage] messages received
     pub fn update(&mut self, message: MessageRowMessage) -> Task<Message> {
         self.message_row.update(message)

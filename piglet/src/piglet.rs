@@ -527,7 +527,7 @@ mod test {
     #[cfg(feature = "iroh")]
     #[test]
     fn write_info_file() {
-        let output_dir = tempdir().expect("Could not create a tempdir").into_path();
+        let output_dir = tempdir().expect("Could not create a tempdir").keep();
         let test_file = output_dir.join("test.info");
         let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
             .expect("Could not create nodeid");
