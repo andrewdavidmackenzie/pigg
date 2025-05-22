@@ -17,7 +17,7 @@ use std::collections::HashMap;
 
 pub struct InfoDialog {
     show_modal: bool,
-    modal_type: Option<ModalType>,
+    modal_type: ModalType,
     hardware_connections: HashMap<String, HardwareConnection>,
 }
 pub enum ModalType {
@@ -39,6 +39,7 @@ pub enum ModalType {
         title: String,
         body: String,
     },
+    None,
 }
 
 const WHITE_TEXT: text::Style = text::Style {
@@ -64,7 +65,7 @@ impl InfoDialog {
     pub fn new() -> Self {
         Self {
             show_modal: false,
-            modal_type: None,
+            modal_type: ModalType::None,
             hardware_connections: HashMap::default(),
         }
     }
@@ -83,12 +84,12 @@ impl InfoDialog {
             // Display warning for unsaved changes
             InfoDialogMessage::UnsavedChangesExitModal => {
                 self.show_modal = true;
-                self.modal_type = Some(ModalType::Warning {
+                self.modal_type = ModalType::Warning {
                     title: "Unsaved Changes".to_string(),
                     body: "You have unsaved changes. Do you want to exit without saving?"
                         .to_string(),
                     load_config: false,
-                });
+                };
                 Task::none()
             }
 
@@ -98,10 +99,10 @@ impl InfoDialog {
                 self.show_modal = true;
                 self.hardware_connections = hardware_connections.clone();
 
-                self.modal_type = Some(ModalType::Info {
+                self.modal_type = ModalType::Info {
                     title: "Device Details".to_string(),
                     body: format!("{hardware_details}\n"),
-                });
+                };
                 Task::none()
             }
 
@@ -112,32 +113,32 @@ impl InfoDialog {
 
             InfoDialogMessage::UnsavedLoadConfigChangesModal => {
                 self.show_modal = true;
-                self.modal_type = Some(ModalType::Warning {
+                self.modal_type = ModalType::Warning {
                     title: "Unsaved Changes".to_string(),
                     body: "You have unsaved changes, loading a new config will overwrite them"
                         .to_string(),
                     load_config: true,
-                });
+                };
                 Task::none()
             }
 
             // Display piggui information
             InfoDialogMessage::AboutDialog => {
                 self.show_modal = true;
-                self.modal_type = Some(ModalType::Version {
+                self.modal_type = ModalType::Version {
                     title: "About Piggui".to_string(),
                     body: crate::views::about::about().to_string(),
-                });
+                };
                 Task::none()
             }
 
             InfoDialogMessage::ErrorWithHelp(title, body, help_link) => {
                 self.show_modal = true;
-                self.modal_type = Some(ModalType::Error {
+                self.modal_type = ModalType::Error {
                     title,
                     body,
                     help_link,
-                });
+                };
                 Task::none()
             }
 
@@ -186,11 +187,11 @@ impl InfoDialog {
 
     pub fn view(&self) -> Element<Message> {
         match &self.modal_type {
-            Some(ModalType::Warning {
+            ModalType::Warning {
                 title,
                 body,
                 load_config,
-            }) => {
+            } => {
                 let text_style = text::Style {
                     color: Some(Color::new(0.988, 0.686, 0.243, 1.0)),
                 };
@@ -215,7 +216,7 @@ impl InfoDialog {
                 Self::info_container(title, body, button_row, text_style)
             }
 
-            Some(ModalType::Info { title, body }) => {
+            ModalType::Info { title, body } => {
                 let mut button_row = Row::new();
 
                 button_row = button_row.push(
@@ -244,7 +245,7 @@ impl InfoDialog {
                 Self::info_container(title, body, button_row, WHITE_TEXT)
             }
 
-            Some(ModalType::Version { title, body }) => {
+            ModalType::Version { title, body } => {
                 let mut hyperlink_row = Row::new().width(Length::Fill);
                 let mut button_row = Row::new();
                 hyperlink_row = hyperlink_row.push(Text::new("Full source available at: "));
@@ -265,13 +266,11 @@ impl InfoDialog {
                 Self::info_container(title, body, button_row, WHITE_TEXT)
             }
 
-            None => container(column![]).into(), // Render empty container
-
-            Some(ModalType::Error {
+            ModalType::Error {
                 title,
                 body,
                 help_link,
-            }) => {
+            } => {
                 let mut button_row = Row::new();
                 let help_button = button(Text::new("Help"))
                     .on_press(Message::Modal(InfoDialogMessage::OpenLink(help_link)))
@@ -285,6 +284,8 @@ impl InfoDialog {
 
                 Self::info_container(title, body, button_row, WHITE_TEXT)
             }
+
+            ModalType::None => container(column![]).into(), // Render empty container
         }
     }
 
@@ -301,10 +302,10 @@ mod tests {
     fn test_hide_modal() {
         let mut display_modal = InfoDialog::new();
         display_modal.show_modal = true;
-        display_modal.modal_type = Some(ModalType::Info {
+        display_modal.modal_type = ModalType::Info {
             title: "Test".to_string(),
             body: "Test body".to_string(),
-        });
+        };
 
         let _ = display_modal.update(InfoDialogMessage::HideModal);
         assert!(!display_modal.show_modal);
@@ -317,20 +318,22 @@ mod tests {
         let _ = display_modal.update(InfoDialogMessage::UnsavedChangesExitModal);
         assert!(display_modal.show_modal);
 
-        if let Some(ModalType::Warning {
-            title,
-            body,
-            load_config,
-        }) = &display_modal.modal_type
-        {
-            assert_eq!(title, "Unsaved Changes");
-            assert_eq!(
+        match display_modal.modal_type {
+            ModalType::Warning {
+                title,
                 body,
-                "You have unsaved changes. Do you want to exit without saving?"
-            );
-            assert!(!*load_config);
-        } else {
-            panic!("ModalType should be Warning");
+                load_config,
+            } => {
+                assert_eq!(title, "Unsaved Changes");
+                assert_eq!(
+                    body,
+                    "You have unsaved changes. Do you want to exit without saving?"
+                );
+                assert!(load_config);
+            }
+            _ => {
+                panic!("ModalType should be Warning");
+            }
         }
     }
 
@@ -341,11 +344,14 @@ mod tests {
         let _ = display_modal.update(InfoDialogMessage::AboutDialog);
         assert!(display_modal.show_modal);
 
-        if let Some(ModalType::Version { title, body }) = &display_modal.modal_type {
-            assert_eq!(title, "About Piggui");
-            assert_eq!(body, &crate::views::about::about().to_string());
-        } else {
-            panic!("ModalType should be Info");
+        match display_modal.modal_type {
+            ModalType::Version { title, body } => {
+                assert_eq!(title, "About Piggui");
+                assert_eq!(body, crate::views::about::about().to_string());
+            }
+            _ => {
+                panic!("ModalType should be Info");
+            }
         }
     }
 }
