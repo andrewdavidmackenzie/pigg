@@ -17,7 +17,6 @@ use std::collections::HashMap;
 
 pub struct InfoDialog {
     modal_type: ModalType,
-    hardware_connections: HashMap<String, HardwareConnection>,
 }
 
 #[derive(PartialEq)]
@@ -35,6 +34,7 @@ pub enum ModalType {
     DeviceDetails {
         title: String,
         body: String,
+        hardware_connections: HashMap<String, HardwareConnection>,
     },
     Version {
         title: String,
@@ -66,7 +66,6 @@ impl InfoDialog {
     pub fn new() -> Self {
         Self {
             modal_type: ModalType::None,
-            hardware_connections: HashMap::default(),
         }
     }
 
@@ -92,11 +91,10 @@ impl InfoDialog {
             // Display hardware information
             #[allow(unused_variables)]
             InfoDialogMessage::HardwareDetailsModal(hardware_details, hardware_connections) => {
-                self.hardware_connections = hardware_connections.clone();
-
                 self.modal_type = ModalType::DeviceDetails {
                     title: "Device Details".to_string(),
                     body: format!("{hardware_details}\n"),
+                    hardware_connections: hardware_connections.clone(),
                 };
                 Task::none()
             }
@@ -208,7 +206,11 @@ impl InfoDialog {
                 Self::info_container(title, body, button_row, text_style)
             }
 
-            ModalType::DeviceDetails { title, body } => {
+            ModalType::DeviceDetails {
+                title,
+                body,
+                hardware_connections,
+            } => {
                 let mut button_row = Row::new();
 
                 button_row = button_row.push(
@@ -216,7 +218,7 @@ impl InfoDialog {
                         .on_press(Message::Modal(InfoDialogMessage::HideModal))
                         .style(cancel_button),
                 );
-                for (name, hardware_connection) in &self.hardware_connections {
+                for (name, hardware_connection) in hardware_connections {
                     let button = button(text(format!("Connect via {}", name)))
                         .on_press(Message::ConnectRequest(hardware_connection.clone()))
                         .style(connect_button);
@@ -296,6 +298,7 @@ mod tests {
         display_modal.modal_type = ModalType::DeviceDetails {
             title: "Test".to_string(),
             body: "Test body".to_string(),
+            hardware_connections: HashMap::new(),
         };
 
         let _ = display_modal.update(InfoDialogMessage::HideModal);
