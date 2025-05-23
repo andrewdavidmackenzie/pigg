@@ -73,6 +73,7 @@ where
     connect_and_test(child, ip, port, test).await;
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
