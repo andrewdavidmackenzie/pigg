@@ -57,6 +57,7 @@ mod widgets;
 
 const PIGGUI_ID: &str = "piggui";
 const CONNECTION_ERROR: &str = "Connection Error";
+#[cfg(feature = "discovery")]
 const DISCOVERY_ERROR: &str = "Discovery Error";
 
 /// These are the messages that Piggui responds to
