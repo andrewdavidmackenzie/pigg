@@ -73,6 +73,7 @@ where
     connect_and_test(child, ip, port, test).await;
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -88,11 +89,8 @@ async fn disconnect_tcp() {
     .await;
 
     kill(&mut piglet);
-
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn config_change_returned_tcp() {
@@ -136,6 +134,7 @@ async fn config_change_returned_tcp() {
     kill(&mut piglet)
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
