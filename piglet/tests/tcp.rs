@@ -71,8 +71,6 @@ where
     connect_and_test(child, ip, port, test).await;
 }
 
-// TODO fix networking issue in ubuntu and macos in GH Actions
-#[cfg_attr(any(target_os = "macos", target_os = "linux"), ignore)]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -88,8 +86,6 @@ async fn disconnect_tcp() {
     kill(&mut child)
 }
 
-// TODO fix networking issue in ubuntu and macos in GH Actions
-#[cfg_attr(any(target_os = "macos", target_os = "linux"), ignore)]
 #[tokio::test]
 #[serial]
 async fn config_change_returned_tcp() {
@@ -131,8 +127,6 @@ async fn config_change_returned_tcp() {
     kill(&mut child)
 }
 
-// TODO fix networking issue in ubuntu and macos in GH Actions
-#[cfg_attr(any(target_os = "macos", target_os = "linux"), ignore)]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
@@ -159,5 +153,3 @@ async fn reconnect_tcp() {
 
     kill(&mut child);
 }
-
-// TODO add some tests that change the config, kill it, restart get the config and that it was persisted
