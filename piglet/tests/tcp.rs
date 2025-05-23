@@ -10,7 +10,6 @@ use std::future::Future;
 use std::net::IpAddr;
 use std::process::Child;
 use std::str::FromStr;
-use std::time::Duration;
 
 #[path = "../../piggui/tests/support.rs"]
 mod support;
