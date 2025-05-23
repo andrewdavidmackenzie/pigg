@@ -57,6 +57,7 @@ mod widgets;
 
 const PIGGUI_ID: &str = "piggui";
 const CONNECTION_ERROR: &str = "Connection Error";
+const DISCOVERY_ERROR: &str = "Discovery Error";
 
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
@@ -315,6 +316,7 @@ impl Piggui {
             ConnectionError(details) => {
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.enable_widgets_and_hide_spinner();
+                self.hardware_view.new_connection(NoConnection);
                 self.info_row
                     .add_info_message(Error(CONNECTION_ERROR.to_string(), details.clone()));
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -471,11 +473,11 @@ impl Piggui {
             }
             DiscoveryEvent::DeviceError(e) => {
                 self.info_row
-                    .add_info_message(Error("Connection Error".to_string(), e.clone()));
+                    .add_info_message(Error(DISCOVERY_ERROR.to_string(), e.clone()));
             }
             DiscoveryEvent::Error(e) => {
                 self.info_row
-                    .add_info_message(Error("Discovery Error".to_string(), e.clone()));
+                    .add_info_message(Error(DISCOVERY_ERROR.to_string(), e.clone()));
             }
             #[cfg(target_os = "linux")]
             DiscoveryEvent::USBPermissionsError(_) => {

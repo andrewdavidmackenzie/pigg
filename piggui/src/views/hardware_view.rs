@@ -157,14 +157,6 @@ impl HardwareView {
         &self.hardware_connection
     }
 
-    /// Returns Some(&str) describing the Model of HW Piggui is connected to, or None
-    #[must_use]
-    pub fn hw_model(&self) -> Option<&str> {
-        self.hardware_description
-            .as_ref()
-            .map(|desc| desc.details.model.as_str())
-    }
-
     /// Apply the [HardwareConfig] active here to the GPIO hardware
     // TODO this might cause a re-apply of same config coming _from_ the hardware?
     fn update_hw_config(&mut self) {
@@ -762,11 +754,5 @@ mod test {
     fn no_hardware_description() {
         let hw_view = HardwareView::new(NoConnection);
         assert!(hw_view.hardware_description.is_none());
-    }
-
-    #[test]
-    fn no_hardware_model() {
-        let hw_view = HardwareView::new(NoConnection);
-        assert_eq!(hw_view.hw_model(), None);
     }
 }
