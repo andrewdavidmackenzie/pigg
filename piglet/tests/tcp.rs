@@ -33,7 +33,10 @@ where
                 test(hw_desc, hw_config, tcp_stream).await;
             }
         }
-        Err(e) => fail(child, &format!("Could not connect to piglet: '{e}'")),
+        Err(e) => fail(
+            child,
+            &format!("Could not connect to piglet at {ip}:{port}: '{e}'"),
+        ),
     }
 }
 
