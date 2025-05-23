@@ -134,7 +134,6 @@ async fn config_change_returned_tcp() {
     kill(&mut piglet)
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
