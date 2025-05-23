@@ -1,6 +1,6 @@
 use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 use async_std::net::TcpStream;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig, NewPinConfig};
+use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::{HardwareConfig, InputPull};
 use pigdef::description::HardwareDescription;
 use pigdef::pin_function::PinFunction::Input;
@@ -34,7 +34,10 @@ where
                 test(hw_desc, hw_config, tcp_stream).await;
             }
         }
-        Err(e) => fail(child, &format!("Could not connect to piglet: '{e}'")),
+        Err(e) => fail(
+            child,
+            &format!("Could not connect to piglet at {ip}:{port}: '{e}'"),
+        ),
     }
 }
 
@@ -71,33 +74,36 @@ where
     connect_and_test(child, ip, port, test).await;
 }
 
-// TODO fix networking issue in ubuntu and macos in GH Actions
-#[cfg_attr(any(target_os = "macos", target_os = "linux"), ignore)]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
     kill_all("piglet");
     build("piglet");
-    let mut child = run("piglet", vec![], None);
-    connect(&mut child, |_, _, stream| async move {
-        tcp_host::send_config_message(stream, &Disconnect)
+    let mut piglet = run("piglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    connect(&mut piglet, |_, _, stream| async move {
+        tcp_host::disconnect(stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
-    kill(&mut child)
+
+    kill(&mut piglet);
 }
 
-// TODO fix networking issue in ubuntu and macos in GH Actions
-#[cfg_attr(any(target_os = "macos", target_os = "linux"), ignore)]
 #[tokio::test]
 #[serial]
 async fn config_change_returned_tcp() {
     kill_all("piglet");
     build("piglet");
-    let mut child = run("piglet", vec![], None);
+    let mut piglet = run("piglet", vec![], None);
 
-    connect(&mut child, |_, _, tcp_stream| async move {
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    connect(&mut piglet, |_, _, tcp_stream| async move {
+        // Change a pin's configuration
         tcp_host::send_config_message(
             tcp_stream.clone(),
             &NewPinConfig(1, Some(Input(Some(InputPull::PullUp)))),
@@ -105,15 +111,17 @@ async fn config_change_returned_tcp() {
         .await
         .expect("Could not send NewPinConfig");
 
-        // Request the device to send back the config
+        // Request the device to send back its current config
         tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
             .await
             .expect("Could not send GetConfig");
 
+        // Wait for the config to be sent back
         let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
             .await
             .expect("Could not get response to GetConfig");
 
+        // If we got a valid config back, compare it to what we expected
         if let NewConfig(hardware_config) = hw_message {
             assert_eq!(
                 hardware_config.pin_functions.get(&1),
@@ -121,43 +129,40 @@ async fn config_change_returned_tcp() {
                 "Configured pin doesn't match config sent"
             );
         }
-
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
+        tcp_host::disconnect(tcp_stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
 
-    kill(&mut child)
+    kill(&mut piglet);
 }
 
-// TODO fix networking issue in ubuntu and macos in GH Actions
-#[cfg_attr(any(target_os = "macos", target_os = "linux"), ignore)]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
     kill_all("piglet");
     build("piglet");
-    let mut child = run("piglet", vec![], None);
-    let (ip, port) = parse(&mut child).await;
-    connect_and_test(&mut child, ip, port, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
+    let mut piglet = run("piglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let (ip, port) = parse(&mut piglet).await;
+
+    connect_and_test(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
+        tcp_host::disconnect(tcp_stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
-    tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Test we can re-connect after sending a disconnect request
-    connect_and_test(&mut child, ip, port, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
+    connect_and_test(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
+        tcp_host::disconnect(tcp_stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
-    tokio::time::sleep(Duration::from_secs(1)).await;
 
-    kill(&mut child);
+    kill(&mut piglet);
 }
-
-// TODO add some tests that change the config, kill it, restart get the config and that it was persisted
