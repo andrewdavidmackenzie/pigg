@@ -1,6 +1,6 @@
 use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 use async_std::net::TcpStream;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig, NewPinConfig};
+use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::{HardwareConfig, InputPull};
 use pigdef::description::HardwareDescription;
 use pigdef::pin_function::PinFunction::Input;
@@ -129,22 +129,24 @@ async fn config_change_returned_tcp() {
                 "Configured pin doesn't match config sent"
             );
         }
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
+        tcp_host::disconnect(tcp_stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
 
     kill(&mut piglet);
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
     kill_all("piglet");
     build("piglet");
     let mut piglet = run("piglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     let (ip, port) = parse(&mut piglet).await;
 
     connect_and_test(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {

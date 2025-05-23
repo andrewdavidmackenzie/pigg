@@ -1,7 +1,7 @@
 use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 use iroh::endpoint::Connection;
 use iroh::NodeId;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig, NewConfig, NewPinConfig};
+use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::{HardwareConfig, InputPull};
 use pigdef::description::HardwareDescription;
 use pigdef::pin_function::PinFunction::Input;
@@ -21,6 +21,8 @@ fn fail(child: &mut Child, message: &str) -> ! {
     panic!("{}", message);
 }
 
+// TODO use the rleay url too?
+
 async fn connect_and_test<F, Fut>(child: &mut Child, nodeid: &NodeId, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
@@ -37,6 +39,8 @@ where
         _ => fail(child, "Could not connect to piglet"),
     }
 }
+
+// TODO parse out relay url too?
 
 async fn parse(child: &mut Child) -> NodeId {
     match wait_for_stdout(child, "nodeid:") {
@@ -67,7 +71,7 @@ async fn disconnect_iroh() {
     build("piglet");
     let mut child = run("piglet", vec![], None);
     connect(&mut child, |_, _, mut connection| async move {
-        iroh_host::send_config_message(&mut connection, &Disconnect)
+        iroh_host::disconnect(&mut connection)
             .await
             .expect("Could not send Disconnect");
     })
@@ -105,9 +109,9 @@ async fn config_change_returned_iroh() {
             );
         }
 
-        iroh_host::send_config_message(&mut connection, &Disconnect)
+        iroh_host::disconnect(&mut connection)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
     kill(&mut child);
@@ -121,19 +125,20 @@ async fn reconnect_iroh() {
     let mut child = run("piglet", vec![], None);
     let nodeid = parse(&mut child).await;
     connect_and_test(&mut child, &nodeid, |_, _, mut connection| async move {
-        iroh_host::send_config_message(&mut connection, &Disconnect)
+        iroh_host::disconnect(&mut connection)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
 
+    // TODO see if actually needed?
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Test we can re-connect after sending a disconnect request
     connect_and_test(&mut child, &nodeid, |_, _, mut connection| async move {
-        iroh_host::send_config_message(&mut connection, &Disconnect)
+        iroh_host::disconnect(&mut connection)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
 
