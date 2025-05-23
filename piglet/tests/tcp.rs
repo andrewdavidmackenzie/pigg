@@ -10,6 +10,7 @@ use std::future::Future;
 use std::net::IpAddr;
 use std::process::Child;
 use std::str::FromStr;
+use std::time::Duration;
 
 #[path = "../../piggui/tests/support.rs"]
 mod support;
@@ -80,6 +81,8 @@ async fn disconnect_tcp() {
     build("piglet");
     let mut piglet = run("piglet", vec![], None);
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     connect(&mut piglet, |_, _, stream| async move {
         tcp_host::disconnect(stream)
             .await
@@ -87,7 +90,7 @@ async fn disconnect_tcp() {
     })
     .await;
 
-    kill_all("piglet");
+    kill(&mut piglet);
 }
 
 #[tokio::test]
@@ -96,6 +99,8 @@ async fn config_change_returned_tcp() {
     kill_all("piglet");
     build("piglet");
     let mut piglet = run("piglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     connect(&mut piglet, |_, _, tcp_stream| async move {
         // Change a pin's configuration
@@ -130,7 +135,7 @@ async fn config_change_returned_tcp() {
     })
     .await;
 
-    kill_all("piglet");
+    kill(&mut piglet);
 }
 
 #[ignore]
@@ -157,5 +162,5 @@ async fn reconnect_tcp() {
     })
     .await;
 
-    kill_all("piglet");
+    kill(&mut piglet);
 }
