@@ -73,7 +73,6 @@ where
     connect_and_test(child, ip, port, test).await;
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
@@ -82,13 +81,13 @@ async fn disconnect_tcp() {
     let mut piglet = run("piglet", vec![], None);
 
     connect(&mut piglet, |_, _, stream| async move {
-        tcp_host::send_config_message(stream, &Disconnect)
+        tcp_host::disconnect(stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
 
-    kill(&mut piglet);
+    kill_all("piglet");
 }
 
 #[tokio::test]
@@ -131,7 +130,7 @@ async fn config_change_returned_tcp() {
     })
     .await;
 
-    kill(&mut piglet)
+    kill_all("piglet");
 }
 
 #[ignore]
@@ -144,21 +143,19 @@ async fn reconnect_tcp() {
     let (ip, port) = parse(&mut piglet).await;
 
     connect_and_test(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
+        tcp_host::disconnect(tcp_stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
 
     // Test we can re-connect after sending a disconnect request
     connect_and_test(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
-        tcp_host::send_config_message(tcp_stream, &Disconnect)
+        tcp_host::disconnect(tcp_stream)
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not disconnect");
     })
     .await;
 
-    kill(&mut piglet);
-
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    kill_all("piglet");
 }
