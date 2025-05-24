@@ -14,7 +14,7 @@ use mdns_support::get_iroh_by_mdns;
 
 /// Problem with using this test is that it doesn't disconnect from iroh and so after
 /// killing piggui, until the timeout expires, nothing else can connect to it by Iroh, and it
-/// causes other test sto fail
+/// causes other tests to fail
 #[tokio::test]
 #[serial]
 async fn mdns_discover_and_connect_iroh() {

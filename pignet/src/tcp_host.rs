@@ -44,8 +44,8 @@ pub async fn connect(
     // This array needs to be big enough for HardwareDescription
     let mut payload = vec![0u8; 1024];
     let length = stream.read(&mut payload).await?;
-    let reply: (HardwareDescription, HardwareConfig) = postcard::from_bytes(&payload[0..length])?;
-    Ok((reply.0, reply.1, stream))
+    let (hw_description, hw_config) = postcard::from_bytes(&payload[0..length])?;
+    Ok((hw_description, hw_config, stream))
 }
 
 /// Inform the device that we are disconnecting from TCP connection

@@ -1,9 +1,9 @@
-#![cfg(feature = "tcp")]
+#![cfg(all(feature = "discovery", feature = "iroh"))]
 
 use iroh::endpoint::Connection;
 use iroh::{NodeId, RelayUrl};
 use pigdef::config::HardwareConfig;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig};
+use pigdef::config::HardwareConfigMessage::GetConfig;
 use pigdef::description::HardwareDescription;
 use pignet::iroh_host;
 use serial_test::serial;
@@ -11,7 +11,6 @@ use std::future::Future;
 use std::time::Duration;
 
 mod mdns_support;
-#[cfg(feature = "discovery")]
 use mdns_support::get_iroh_by_mdns;
 
 async fn connect_iroh<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
@@ -29,7 +28,6 @@ where
 
 /// Use connect and disconnect test directly on Iroh, as the disconnect timeout is long and
 /// inconvenient for tests that follow this one if it only connected.
-#[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial]
 async fn mdns_discover_connect_and_disconnect_iroh() {
@@ -47,9 +45,9 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
                 "Didn't connect to fake hardware piglet"
             );
 
-            iroh_host::send_config_message(&mut connection, &Disconnect)
+            iroh_host::disconnect(&mut connection)
                 .await
-                .expect("Could not send Disconnect");
+                .expect("Could not disconnect");
         })
         .await;
     }
@@ -80,9 +78,9 @@ async fn mdns_discover_get_config_iroh() {
                 .await
                 .expect("Could not GetConfig");
 
-            iroh_host::send_config_message(&mut connection, &Disconnect)
+            iroh_host::disconnect(&mut connection)
                 .await
-                .expect("Could not send Disconnect");
+                .expect("Could not disconnect");
         })
         .await;
     }
@@ -92,6 +90,7 @@ async fn mdns_discover_get_config_iroh() {
     );
 }
 
+#[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial]
 async fn mdns_discover_reconnect_iroh() {
@@ -109,9 +108,9 @@ async fn mdns_discover_reconnect_iroh() {
                 "Didn't connect to fake hardware piglet"
             );
 
-            iroh_host::send_config_message(&mut connection, &Disconnect)
+            iroh_host::disconnect(&mut connection)
                 .await
-                .expect("Could not send Disconnect");
+                .expect("Could not disconnect");
         })
         .await;
 
@@ -124,9 +123,9 @@ async fn mdns_discover_reconnect_iroh() {
                 "Didn't connect to fake hardware piglet"
             );
 
-            iroh_host::send_config_message(&mut connection, &Disconnect)
+            iroh_host::disconnect(&mut connection)
                 .await
-                .expect("Could not send Disconnect");
+                .expect("Could not disconnect");
         })
         .await;
 

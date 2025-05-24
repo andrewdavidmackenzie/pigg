@@ -15,8 +15,7 @@ mod test {
 
     #[test]
     fn hw_can_be_got() {
-        let hw = crate::get_hardware().expect("Could not get hardware");
-        println!("HW Description: {:?}", hw.description("Test"));
+        let _hw = crate::get_hardware().expect("Could not get hardware");
     }
 
     #[test]

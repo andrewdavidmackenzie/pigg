@@ -27,7 +27,7 @@ else
 endif
 
 .PHONY: all
-all: clippy format-check build build-arm build-porky build-web test
+all: clippy format-check build build-arm build-porky build-web test docs
 
 .PHONY: clean
 clean:
@@ -44,7 +44,7 @@ ifeq ($(OSFLAG),macos)
 	@echo "Running macos specific setup"
 	$(MAKE) macos-setup
 endif
-	@cargo install cargo-all-features
+	@cargo install cargo-all-features mlc
 	@cd piggui && make setup
 	@cd piglet && make setup
 	@cd porky && make setup
@@ -196,3 +196,6 @@ coverage: clean-start
 
 build-web:
 	@cd piggui && make trunk-build
+
+docs:
+	mlc
