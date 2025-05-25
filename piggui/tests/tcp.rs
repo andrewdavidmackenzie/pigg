@@ -1,21 +1,21 @@
+use crate::support::parse_piglet;
 use serial_test::serial;
-use support::{ip_port, kill, run, wait_for_stdout};
+use support::{kill, run, wait_for_stdout};
 
 mod support;
 
 // TODO fix networking issue in ubuntu and macos in GH Actions
 #[cfg_attr(any(target_os = "macos", target_os = "linux"), ignore)]
 #[cfg(feature = "tcp")]
-#[test]
+#[tokio::test]
 #[serial]
-fn connect_via_ip() {
+async fn connect_via_ip() {
     let mut piglet = run("piglet", vec![], None);
-    let line = wait_for_stdout(&mut piglet, "ip:").expect("Could not get IP address");
-    let (a, p) = ip_port(&line);
+    let (ip, port, _) = parse_piglet(&mut piglet).await;
 
     let mut piggui = run(
         "piggui",
-        vec!["--ip".to_string(), format!("{}:{}", a, p)],
+        vec!["--ip".to_string(), format!("{}:{}", ip, port)],
         None,
     );
 

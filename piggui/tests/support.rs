@@ -1,5 +1,12 @@
 #![cfg(not(target_arch = "wasm32"))]
 
+use async_std::net::TcpStream;
+use iroh::endpoint::Connection;
+use iroh::{NodeId, RelayUrl};
+use pigdef::config::HardwareConfig;
+use pigdef::description::HardwareDescription;
+use pignet::{iroh_host, tcp_host};
+use std::future::Future;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::net::IpAddr;
@@ -60,26 +67,6 @@ pub fn kill_all(process_name: &str) {
     }
 }
 
-fn wait_for<R: BufRead>(token: &str, reader: &mut R) -> Option<String> {
-    let mut line = String::new();
-
-    while reader.read_line(&mut line).is_ok() {
-        if line.contains(token) {
-            return Some(line);
-        }
-        line.clear();
-    }
-
-    None
-}
-
-#[allow(dead_code)]
-pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
-    let stdout = child.stdout.as_mut().expect("Could not read stdout");
-    let mut reader = BufReader::new(stdout);
-    wait_for(token, &mut reader)
-}
-
 #[allow(dead_code)]
 pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -120,15 +107,136 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
 }
 
 #[allow(dead_code)]
-pub fn ip_port(output: &str) -> (IpAddr, u16) {
-    let ip = output
-        .split("ip:")
-        .nth(1)
-        .expect("Output of piglet does not contain ip")
-        .trim();
-    let ip = ip.trim_matches('\'');
-    let (address, port) = ip.split_once(":").expect("Could not find colon");
-    let a = IpAddr::from_str(address).expect("Could not parse valid IP Address");
-    let p = port.parse::<u16>().expect("Not a valid port number");
-    (a, p)
+pub fn fail(child: &mut Child, message: &str) -> ! {
+    // Kill process before possibly failing test and leaving process around
+    kill(child);
+    panic!("{}", message);
+}
+
+#[allow(dead_code)]
+pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
+    let stdout = child.stdout.as_mut().expect("Could not read stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let mut line = String::new();
+
+    while reader.read_line(&mut line).is_ok() {
+        if line.contains(token) {
+            return Some(line);
+        }
+        line.clear();
+    }
+
+    None
+}
+
+#[allow(dead_code)]
+pub async fn parse_piglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
+    let mut nodeid = None;
+    let stdout = child.stdout.as_mut().expect("Could not read stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let mut line = String::new();
+
+    while reader.read_line(&mut line).is_ok() {
+        if line.contains("ip:") {
+            match line.split_once(":") {
+                Some((_, address_str)) => match address_str.split_once(":") {
+                    Some((mut ip_str, mut port_str)) => {
+                        ip_str = ip_str.trim();
+                        port_str = port_str.trim();
+                        println!("IP: '{ip_str}' Port: '{port_str}'");
+                        match std::net::IpAddr::from_str(ip_str) {
+                            Ok(ip) => match u16::from_str(port_str) {
+                                Ok(port) => {
+                                    return (ip, port, nodeid.expect("Did not find iroh nodeid"))
+                                }
+                                _ => fail(child, "Could not parse port"),
+                            },
+                            _ => fail(child, "Could not parse port number"),
+                        }
+                    }
+                    _ => fail(child, "Could not split ip and port"),
+                },
+                _ => fail(child, "Could not parse out ip from ip line"),
+            }
+        }
+
+        if line.contains("nodeid:") {
+            match line.split_once(":") {
+                Some((_, nodeid_str)) => match NodeId::from_str(nodeid_str.trim()) {
+                    Ok(id) => nodeid = Some(id),
+                    Err(e) => fail(child, &e.to_string()),
+                },
+                _ => fail(child, "Could not parse out nodeid from nodeid line"),
+            }
+        }
+
+        line.clear();
+    }
+
+    fail(child, "Could not parse parameters from child output");
+}
+
+#[allow(dead_code)]
+pub async fn connect_and_test_tcp<F, Fut>(child: &mut Child, ip: IpAddr, port: u16, test: F)
+where
+    F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    match tcp_host::connect(ip, port).await {
+        Ok((hw_desc, hw_config, tcp_stream)) => {
+            if !hw_desc.details.model.contains("Fake") {
+                fail(child, "Didn't connect to fake hardware piglet")
+            } else {
+                test(hw_desc, hw_config, tcp_stream).await;
+            }
+        }
+        Err(e) => fail(
+            child,
+            &format!("Could not connect to piglet at {ip}:{port}: '{e}'"),
+        ),
+    }
+}
+
+#[allow(dead_code)]
+pub async fn connect_tcp<F, Fut>(child: &mut Child, test: F)
+where
+    F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    let (ip, port, _) = parse_piglet(child).await;
+    connect_and_test_tcp(child, ip, port, test).await;
+}
+
+#[allow(dead_code)]
+pub async fn connect_and_test_iroh<F, Fut>(
+    child: &mut Child,
+    nodeid: &NodeId,
+    relay_url: Option<RelayUrl>,
+    test: F,
+) where
+    F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    match iroh_host::connect(nodeid, relay_url).await {
+        Ok((hw_desc, hw_config, connection)) => {
+            if !hw_desc.details.model.contains("Fake") {
+                fail(child, "Didn't connect to fake hardware piglet")
+            } else {
+                test(hw_desc, hw_config, connection).await;
+            }
+        }
+        _ => fail(child, "Could not connect to piglet"),
+    }
+}
+
+#[allow(dead_code)]
+pub async fn connect_iroh<F, Fut>(child: &mut Child, test: F)
+where
+    F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    let (_ip, _port, nodeid) = parse_piglet(child).await;
+    connect_and_test_iroh(child, &nodeid, None, test).await;
 }
