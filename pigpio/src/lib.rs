@@ -35,7 +35,7 @@ mod tests;
 pub fn get_hardware() -> Option<HW> {
     // debug build - Pi or Non-Pi Hardware
     #[cfg(debug_assertions)]
-    return Some(HW::default());
+    return Some(HW::new(env!("CARGO_PKG_NAME")));
 
     // release build - Not Pi hardware
     #[cfg(all(

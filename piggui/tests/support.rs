@@ -14,6 +14,7 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::str::FromStr;
 use sysinfo::System;
+use tokio::fs;
 
 #[allow(dead_code)] // for piggui
 pub fn build(binary: &str) {
@@ -62,8 +63,14 @@ pub fn kill(child: &mut Child) {
 pub fn kill_all(process_name: &str) {
     let s = System::new_all();
     for process in s.processes_by_exact_name(process_name.as_ref()) {
+        let process_dir = process.exe();
         process.kill();
         process.wait();
+        // clean up files it left behind
+        if let Some(path) = process_dir {
+            let config_file = path.with_file_name(".piglet_config.json");
+            let _ = fs::remove_file(config_file);
+        }
     }
 }
 

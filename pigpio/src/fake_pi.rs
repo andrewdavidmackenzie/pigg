@@ -20,19 +20,26 @@ enum Pin {
 
 /// Fake Pi Hardware implementation for hosts (macOS, Linux, etc.) to show and develop GUI
 /// without real HW, and is provided mainly to aid GUI development and demoing it.
-#[derive(Default)]
 pub struct HW {
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
+    hardware_description: HardwareDescription,
 }
 
 /// Implementation code for fake hardware
 impl HW {
-    /// Find the Pi hardware description
-    pub fn description(&self, app_name: &str) -> HardwareDescription {
-        HardwareDescription {
-            details: Self::get_details(app_name),
-            pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
+    pub fn new(app_name: &str) -> Self {
+        HW {
+            configured_pins: Default::default(),
+            hardware_description: HardwareDescription {
+                details: Self::get_details(app_name),
+                pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
+            },
         }
+    }
+
+    /// Return a reference to the Pi hardware description
+    pub fn description(&self) -> &HardwareDescription {
+        &self.hardware_description
     }
 
     pub async fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>
@@ -101,7 +108,9 @@ impl HW {
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        use rand::Rng;
+        if bcm_pin_number > self.hardware_description.pins.pins().len() as u8 {
+            return Err(io::Error::other("Invalid pin number"));
+        }
 
         // If it was already configured, notify it to exit and remove it
         if let Some(Pin::Input(level, sender)) = self.configured_pins.get_mut(&bcm_pin_number) {

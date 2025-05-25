@@ -41,3 +41,39 @@ async fn connect_tcp_reconnect_iroh() {
 
     kill(&mut piglet);
 }
+
+#[tokio::test]
+#[serial]
+async fn connect_iroh_reconnect_tcp() {
+    kill_all("piglet");
+    build("piglet");
+    let mut piglet = run("piglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let (ip, port, nodeid) = parse_piglet(&mut piglet).await;
+
+    // Test we can re-connect over iroh after sending a disconnect request
+    connect_and_test_iroh(
+        &mut piglet,
+        &nodeid,
+        None,
+        |_d, _c, mut connection| async move {
+            iroh_host::disconnect(&mut connection)
+                .await
+                .expect("Could not disconnect");
+        },
+    )
+    .await;
+
+    tokio::time::sleep(Duration::from_secs(30)).await;
+
+    connect_and_test_tcp(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
+        tcp_host::disconnect(tcp_stream)
+            .await
+            .expect("Could not disconnect");
+    })
+    .await;
+
+    kill(&mut piglet);
+}

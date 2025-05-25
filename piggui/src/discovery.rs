@@ -171,17 +171,14 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
 pub fn local_discovery(local_hardware_opt: &Option<HW>) -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
     if let Some(local_hardware) = local_hardware_opt {
-        let serial = local_hardware
-            .description(env!("CARGO_PKG_NAME"))
-            .details
-            .serial;
+        let serial = local_hardware.description().clone().details.serial;
         let mut hardware_connections = HashMap::new();
         hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
         discovered_devices.insert(
             serial,
             DiscoveredDevice {
                 discovery_method: Local,
-                hardware_details: local_hardware.description(env!("CARGO_PKG_NAME")).details,
+                hardware_details: local_hardware.description().clone().details,
                 ssid_spec: None,
                 hardware_connections,
             },
