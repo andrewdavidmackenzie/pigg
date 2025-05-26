@@ -46,5 +46,16 @@ pub fn get_hardware() -> Option<HW> {
             target_env = "gnu"
         ))
     ))]
-    None
+    return None;
+
+    // release build - Pi hardware
+    #[cfg(all(
+        not(debug_assertions),
+        all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        )
+    ))]
+    return Some(HW::new(env!("CARGO_PKG_NAME")));
 }
