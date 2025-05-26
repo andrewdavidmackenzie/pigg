@@ -96,11 +96,15 @@ pub async fn tcp_message_loop(
             bail!("End of message stream");
         }
 
-        let config_message = postcard::from_bytes(&payload[0..length])?;
-        apply_config_change(hardware, config_message, hardware_config, stream.clone())
-            .await
-            .with_context(|| "Failed to apply config change to hardware")?;
-        let _ = persistence::store_config(hardware_config, exec_path).await;
+        if let Ok(config_message) = postcard::from_bytes(&payload[0..length]) {
+            if apply_config_change(hardware, config_message, hardware_config, stream.clone())
+                .await
+                .with_context(|| "Failed to apply config change to hardware")
+                .is_ok()
+            {
+                let _ = persistence::store_config(hardware_config, exec_path).await;
+            }
+        }
     }
 }
 

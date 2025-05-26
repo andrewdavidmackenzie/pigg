@@ -117,15 +117,19 @@ pub async fn iroh_message_loop(
             bail!("End of message stream");
         }
 
-        let config_message = postcard::from_bytes(&payload)?;
-        apply_config_change(
-            hardware,
-            config_message,
-            hardware_config,
-            connection.clone(),
-        )
-        .await?;
-        let _ = persistence::store_config(hardware_config, exec_path).await;
+        if let Ok(config_message) = postcard::from_bytes(&payload) {
+            if apply_config_change(
+                hardware,
+                config_message,
+                hardware_config,
+                connection.clone(),
+            )
+            .await
+            .is_ok()
+            {
+                let _ = persistence::store_config(hardware_config, exec_path).await;
+            }
+        }
     }
 }
 
