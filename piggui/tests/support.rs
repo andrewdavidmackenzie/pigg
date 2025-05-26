@@ -123,13 +123,10 @@ pub fn pass(child: &mut Child) {
 }
 
 /*
-fn assert(child: &mut Child) {
-    assert!(
-        line.contains(&level.to_uppercase()),
-        "Failed to set verbosity level to {}",
-        level
-    );
-    pass(&mut child);
+pub fn assert(child: &mut Child, test: bool, msg: &'static str) {
+    if !test {
+        fail(child, msg);
+    }
 }
  */
 
