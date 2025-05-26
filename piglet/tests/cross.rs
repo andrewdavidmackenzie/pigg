@@ -66,7 +66,7 @@ async fn connect_iroh_reconnect_tcp() {
     )
     .await;
 
-    tokio::time::sleep(Duration::from_secs(30)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     connect_and_test_tcp(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
