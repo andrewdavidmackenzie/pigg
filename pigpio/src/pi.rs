@@ -133,7 +133,9 @@ impl HW {
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        use pigdef::config::InputPull;
+        if bcm_pin_number > self.hardware_description.pins.pins().len() as u8 {
+            return Err(io::Error::other("Invalid pin number"));
+        }
 
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
