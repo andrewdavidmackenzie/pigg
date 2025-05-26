@@ -142,10 +142,12 @@ async fn apply_config_change(
                 .await?;
 
             if let Some(function) = pin_function {
+                // if a new config was set, reply with the new input state for that pin
                 send_current_input_state(&bcm, &function, wc, hardware).await?;
                 // add/replace the new pin config to the hardware config
                 hardware_config.pin_functions.insert(bcm, function);
             } else {
+                // if No new function was set (None) then remove from the current hardware_config
                 hardware_config.pin_functions.remove(&bcm);
             }
         }
