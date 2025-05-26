@@ -1,5 +1,5 @@
 use crate::support::{
-    build, connect_and_test_iroh, connect_iroh, kill, kill_all, parse_piglet, run,
+    build, connect_and_test_iroh, connect_iroh, kill_all, parse_piglet, pass, run,
 };
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
@@ -23,7 +23,7 @@ async fn disconnect_iroh() {
             .expect("Could not send Disconnect");
     })
     .await;
-    kill(&mut child);
+    pass(&mut child);
 }
 
 #[tokio::test]
@@ -61,7 +61,7 @@ async fn config_change_returned_iroh() {
             .expect("Could not disconnect");
     })
     .await;
-    kill(&mut child);
+    pass(&mut child);
 }
 
 #[tokio::test]
@@ -83,7 +83,6 @@ async fn reconnect_iroh() {
     )
     .await;
 
-    // TODO see if actually needed?
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Test we can re-connect after sending a disconnect request
@@ -99,5 +98,5 @@ async fn reconnect_iroh() {
     )
     .await;
 
-    kill(&mut child);
+    pass(&mut child);
 }

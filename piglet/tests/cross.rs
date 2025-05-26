@@ -1,5 +1,5 @@
 use crate::support::{
-    build, connect_and_test_iroh, connect_and_test_tcp, kill, kill_all, parse_piglet, run,
+    build, connect_and_test_iroh, connect_and_test_tcp, kill_all, parse_piglet, pass, run,
 };
 use pignet::{iroh_host, tcp_host};
 use serial_test::serial;
@@ -39,7 +39,7 @@ async fn connect_tcp_reconnect_iroh() {
     )
     .await;
 
-    kill(&mut piglet);
+    pass(&mut piglet);
 }
 
 #[tokio::test]
@@ -75,5 +75,5 @@ async fn connect_iroh_reconnect_tcp() {
     })
     .await;
 
-    kill(&mut piglet);
+    pass(&mut piglet);
 }

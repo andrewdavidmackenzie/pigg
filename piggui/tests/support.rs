@@ -14,7 +14,6 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::str::FromStr;
 use sysinfo::System;
-use tokio::fs;
 
 #[allow(dead_code)] // for piggui
 pub fn build(binary: &str) {
@@ -49,33 +48,9 @@ pub fn build(binary: &str) {
 }
 
 #[allow(dead_code)]
-pub fn kill(child: &mut Child) {
-    println!("Killing child process with Pid: {}", child.id());
-
-    child.kill().expect("Failed to kill child process");
-
-    // wait for the process to be removed
-    child.wait().expect("Failed to wait until child exited");
-}
-
-#[allow(dead_code)] // for piggui
-/// Kill all instances of a process based on it's name
-pub fn kill_all(process_name: &str) {
-    let s = System::new_all();
-    for process in s.processes_by_exact_name(process_name.as_ref()) {
-        let process_dir = process.exe();
-        process.kill();
-        process.wait();
-        // clean up files it left behind
-        if let Some(path) = process_dir {
-            let config_file = path.with_file_name(".piglet_config.json");
-            let _ = fs::remove_file(config_file);
-        }
-    }
-}
-
-#[allow(dead_code)]
 pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
+    delete_configs();
+
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let workspace_dir = crate_dir
         .parent()
@@ -113,10 +88,55 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
     child
 }
 
+#[allow(dead_code)] // for piggui
+fn delete_configs() {
+    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let workspace_dir = crate_dir
+        .parent()
+        .expect("Could not get workspace directory");
+    let config_file = workspace_dir.with_file_name(".piglet_config.json");
+    println!("Deleting file: {config_file:?}");
+    let _ = std::fs::remove_file(config_file);
+    let config_file = workspace_dir.join("target/debug/.piglet_config.json");
+    println!("Deleting file: {config_file:?}");
+    let _ = std::fs::remove_file(config_file);
+}
+
+#[allow(dead_code)] // for piggui
+/// Kill all instances of a process based on it's name
+pub fn kill_all(process_name: &str) {
+    let s = System::new_all();
+    for process in s.processes_by_exact_name(process_name.as_ref()) {
+        process.kill();
+        process.wait();
+    }
+}
+
+#[allow(dead_code)]
+pub fn pass(child: &mut Child) {
+    println!("Killing child process with Pid: {}", child.id());
+
+    child.kill().expect("Failed to kill child process");
+
+    // wait for the process to be removed
+    child.wait().expect("Failed to wait until child exited");
+}
+
+/*
+fn assert(child: &mut Child) {
+    assert!(
+        line.contains(&level.to_uppercase()),
+        "Failed to set verbosity level to {}",
+        level
+    );
+    pass(&mut child);
+}
+ */
+
 #[allow(dead_code)]
 pub fn fail(child: &mut Child, message: &str) -> ! {
     // Kill process before possibly failing test and leaving process around
-    kill(child);
+    pass(child);
     panic!("{}", message);
 }
 

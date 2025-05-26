@@ -1,6 +1,6 @@
 use crate::support::parse_piglet;
 use serial_test::serial;
-use support::{kill, run, wait_for_stdout};
+use support::{pass, run, wait_for_stdout};
 
 mod support;
 
@@ -19,6 +19,6 @@ async fn connect_via_iroh() {
 
     wait_for_stdout(&mut piggui, "Connected to hardware").expect("Did not get connected message");
 
-    kill(&mut piggui);
-    kill(&mut piglet);
+    pass(&mut piggui);
+    pass(&mut piglet);
 }
