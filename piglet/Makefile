@@ -14,7 +14,7 @@
 # brew install arm-unknown-linux-gnueabihf
 # brew install arm-unknown-linux-musleabihf
 #
-# Pi Zero is an ARMv6 CPU and so need a different target from v7 and v8 or aarch64 targets
+# Pi Zero is an ARMv6 CPU and so need a different target from v7 and v8 or aarch64 targets - target 'arm'
 
 # Detect if on a Raspberry Pi
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
