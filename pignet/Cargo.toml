@@ -26,7 +26,7 @@ postcard = { version = "1.1.1", features = ["alloc"] }
 anyhow = "1.0.98"
 async-std = "1.13.1"
 
-tokio = { version = "1.45.0", default-features = false, features = ["time"], optional = true }
+tokio = { version = "1.45.1", default-features = false, features = ["time"], optional = true }
 iroh = { version = "0.35.0", default-features = false, optional = true }
 nusb = { version = "0.1.14", default-features = false, optional = true }
 serde = { version = "1.0.219", default-features = false, features = ["derive"], optional = true }
