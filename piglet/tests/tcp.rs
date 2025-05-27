@@ -1,5 +1,5 @@
 use crate::support::{build, connect_and_test_tcp, kill_all, parse_piglet, pass, run};
-use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
+use pigdef::config::HardwareConfigMessage::{GetConfig, IOLevelChanged, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
 use pigdef::pin_function::PinFunction::Input;
 use pignet::tcp_host;
@@ -129,14 +129,21 @@ async fn config_change_returned_tcp() {
                 .expect("Could not get response to GetConfig");
 
             // If we got a valid config back, compare it to what we expected
-            if let NewConfig(hardware_config) = hw_message {
-                assert_eq!(
-                    hardware_config.pin_functions.get(&2),
-                    Some(&Input(Some(InputPull::PullUp))),
-                    "Configured pin doesn't match config sent"
-                );
-            } else {
-                panic!("Didn't get config back as expected");
+            match hw_message {
+                NewConfig(hardware_config) => {
+                    assert_eq!(
+                        hardware_config.pin_functions.get(&2),
+                        Some(&Input(Some(InputPull::PullUp))),
+                        "Configured pin doesn't match config sent"
+                    );
+                }
+                IOLevelChanged(pin_number, level_change) => {
+                    assert_eq!(pin_number, 2);
+                    assert_eq!(level_change.new_level, true);
+                }
+                _ => {
+                    panic!("Didn't get config back as expected");
+                }
             }
 
             tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(2, None))
