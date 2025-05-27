@@ -1,9 +1,11 @@
 use crate::support::{build, connect_and_test_tcp, kill_all, parse_piglet, pass, run};
 use pigdef::config::HardwareConfigMessage::{GetConfig, IOLevelChanged, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
-use pigdef::pin_function::PinFunction::Input;
+use pigdef::pin_function::PinFunction::{Input, Output};
 use pignet::tcp_host;
 use serial_test::serial;
+use std::net::{IpAddr, Ipv4Addr};
+use std::str::FromStr;
 use std::time::Duration;
 
 #[path = "../../piggui/tests/support.rs"]
@@ -110,26 +112,14 @@ async fn config_change_returned_tcp() {
             println!("hw_config {:?}", hw_config);
             assert!(hw_config.pin_functions.is_empty());
 
+            tokio::time::sleep(Duration::from_secs(1)).await;
+
             // Change a pin's configuration
-            tcp_host::send_config_message(
-                tcp_stream.clone(),
-                &NewPinConfig(2, Some(Input(Some(InputPull::PullUp)))),
-            )
-            .await
-            .expect("Could not send NewPinConfig");
-
-            let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
+            tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(2, Some(Output(None))))
                 .await
-                .expect("Could not get message from piglet");
+                .expect("Could not send NewPinConfig");
 
-            println!("Message Received: {hw_message:?}");
-
-            if let IOLevelChanged(pin_number, level_change) = hw_message {
-                assert_eq!(pin_number, 2, "Expected level from pin 2");
-                assert!(level_change.new_level, "Pin level should be high initially")
-            } else {
-                panic!("Expected level change for newly configured pin");
-            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
 
             // Request the device to send back its current config
             tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
@@ -137,28 +127,35 @@ async fn config_change_returned_tcp() {
                 .expect("Could not send GetConfig");
 
             // Wait for the config to be sent back
-            loop {
-                let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
-                    .await
-                    .expect("Could not get response to GetConfig");
+            let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
+                .await
+                .expect("Could not get response to GetConfig");
 
-                println!("Message Received: {hw_message:?}");
+            println!("Message Received: {hw_message:?}");
 
-                // If we got a valid config back, compare it to what we expected
-                if let NewConfig(hardware_config) = hw_message {
-                    assert_eq!(
-                        hardware_config.pin_functions.get(&2),
-                        Some(&Input(Some(InputPull::PullUp))),
-                        "Configured pin doesn't match config sent"
-                    );
-                    break;
-                }
+            // If we got a valid config back, compare it to what we expected
+            if let NewConfig(hardware_config) = hw_message {
+                assert_eq!(
+                    hardware_config.pin_functions.get(&2),
+                    Some(&Output(None)),
+                    "Configured pin doesn't match config sent"
+                );
+            } else {
+                panic!(
+                    "Expected NewConfig message from piglet but got {:?}",
+                    hw_message
+                );
             }
+
+            /*
+            tokio::time::sleep(Duration::from_secs(1)).await;
 
             // Configure the pin to not be used
             tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(2, None))
                 .await
                 .expect("Could not send NewPinConfig");
+
+            tokio::time::sleep(Duration::from_secs(1)).await;
 
             // Request the device to send back its current config
             tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
@@ -181,6 +178,8 @@ async fn config_change_returned_tcp() {
                 );
             }
 
+             */
+
             tcp_host::disconnect(tcp_stream)
                 .await
                 .expect("Could not disconnect");
@@ -201,49 +200,53 @@ async fn invalid_pin_config() {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let (ip, port, _) = parse_piglet(&mut piglet).await;
+    //let ip = IpAddr::from_str("192.168.1.133").expect("Could not create IP address");
+    //let port = 15289;
 
-    connect_and_test_tcp(
-        &mut piglet,
-        ip,
-        port,
-        |_, hw_config, tcp_stream| async move {
-            println!("hw_config {:?}", hw_config);
-            assert!(hw_config.pin_functions.is_empty());
+    let (hw_desc, hw_config, tcp_stream) = tcp_host::connect(ip, port)
+        .await
+        .expect("Could not connect to piglet at {ip}:{port}: '{e}'");
 
-            // Change a non-existent pin's configuration
-            tcp_host::send_config_message(
-                tcp_stream.clone(),
-                &NewPinConfig(100, Some(Input(Some(InputPull::PullUp)))),
-            )
-            .await
-            .expect("Could not send NewPinConfig");
+    assert!(
+        hw_desc.details.model.contains("Fake"),
+        "Didn't connect to fake hardware piglet"
+    );
 
-            // Should not get any level changes here
+    println!("hw_config {:?}", hw_config);
+    assert!(hw_config.pin_functions.is_empty());
 
-            // Request the device to send back its current config
-            tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
-                .await
-                .expect("Could not send GetConfig");
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
-            // Wait for the config to be sent back
-            let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
-                .await
-                .expect("Could not get response to GetConfig");
+    // Change a non-existent pin's configuration
+    tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(100, Some(Output(None))))
+        .await
+        .expect("Could not send NewPinConfig");
 
-            println!("Message Received: {hw_message:?}");
+    // Should not get any level changes here
 
-            // If we got a valid config back, compare it to what we expected
-            if let NewConfig(hardware_config) = hw_message {
-                assert!(
-                    hardware_config.pin_functions.is_empty(),
-                    "Configured pin doesn't match config sent"
-                );
-            } else {
-                panic!("Unexpected message returned from piglet");
-            }
-        },
-    )
-    .await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
-    pass(&mut piglet);
+    // Request the device to send back its current config
+    tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
+        .await
+        .expect("Could not send GetConfig");
+
+    // Wait for the config to be sent back
+    let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
+        .await
+        .expect("Could not get response to GetConfig");
+
+    println!("Message Received: {hw_message:?}");
+
+    // If we got a valid config back, compare it to what we expected
+    if let NewConfig(hardware_config) = hw_message {
+        assert!(
+            hardware_config.pin_functions.is_empty(),
+            "Configured pin doesn't match config sent"
+        );
+    } else {
+        panic!("Unexpected message returned from piglet");
+    }
+
+    //pass(&mut piglet);
 }

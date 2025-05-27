@@ -6,7 +6,7 @@ use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
 
 use crate::persistence;
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
@@ -89,8 +89,8 @@ pub async fn tcp_message_loop(
     hardware: &mut HW,
 ) -> anyhow::Result<()> {
     let mut payload = vec![0u8; 1024];
-    info!("Waiting for message");
     loop {
+        info!("Waiting for message");
         let length = stream.read(&mut payload).await?;
         if length == 0 {
             bail!("End of message stream");
@@ -99,7 +99,6 @@ pub async fn tcp_message_loop(
         if let Ok(config_message) = postcard::from_bytes(&payload[0..length]) {
             if apply_config_change(hardware, config_message, hardware_config, stream.clone())
                 .await
-                .with_context(|| "Failed to apply config change to hardware")
                 .is_ok()
             {
                 let _ = persistence::store_config(hardware_config, exec_path).await;
