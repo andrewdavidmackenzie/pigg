@@ -135,6 +135,8 @@ async fn config_change_returned_tcp() {
                     Some(&Input(Some(InputPull::PullUp))),
                     "Configured pin doesn't match config sent"
                 );
+            } else {
+                panic!("Didn't get config back as expected");
             }
 
             tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(2, None))
@@ -159,6 +161,8 @@ async fn config_change_returned_tcp() {
                     None,
                     "Configured pin doesn't match config expected"
                 );
+            } else {
+                panic!("Didn't get config back as expected");
             }
 
             tcp_host::disconnect(tcp_stream)
