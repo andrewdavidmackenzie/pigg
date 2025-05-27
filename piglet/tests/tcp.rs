@@ -128,6 +128,8 @@ async fn config_change_returned_tcp() {
                 .await
                 .expect("Could not get response to GetConfig");
 
+            println!("Message Received: {hw_message:?}");
+
             // If we got a valid config back, compare it to what we expected
             match hw_message {
                 NewConfig(hardware_config) => {
