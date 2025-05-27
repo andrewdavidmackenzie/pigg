@@ -140,8 +140,8 @@ async fn config_change_returned_tcp() {
                     );
                 }
                 IOLevelChanged(pin_number, level_change) => {
-                    assert_eq!(pin_number, 2);
-                    assert_eq!(level_change.new_level, true);
+                    assert_eq!(pin_number, 2, "Wrong pin number");
+                    assert!(level_change.new_level, "New level change should be true");
                 }
                 _ => {
                     panic!("Didn't get config back as expected");
@@ -158,12 +158,14 @@ async fn config_change_returned_tcp() {
                 .expect("Could not send GetConfig");
 
             // Wait for the config to be sent back
-            let hw_message_2 = tcp_host::wait_for_remote_message(tcp_stream.clone())
+            let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
                 .await
                 .expect("Could not get response to GetConfig");
 
+            println!("Message Received: {hw_message:?}");
+
             // If we got a valid config back, compare it to what we expected
-            if let NewConfig(hardware_config) = hw_message_2 {
+            if let NewConfig(hardware_config) = hw_message {
                 println!("hardware_config: {hardware_config}");
                 assert_eq!(
                     hardware_config.pin_functions.get(&2),
