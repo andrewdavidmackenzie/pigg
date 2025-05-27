@@ -4,6 +4,7 @@ use std::io;
 use std::time::Duration;
 
 use crate::pin_descriptions::*;
+use pigdef::config::InputPull;
 use pigdef::config::{HardwareConfig, LevelChange};
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
@@ -133,10 +134,6 @@ impl HW {
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        if bcm_pin_number > self.hardware_description.pins.pins().len() as u8 {
-            return Err(io::Error::other("Invalid pin number"));
-        }
-
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
 
