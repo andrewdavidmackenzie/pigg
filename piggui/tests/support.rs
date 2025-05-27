@@ -214,6 +214,7 @@ where
         ),
     }
 }
+
 #[allow(dead_code)]
 pub async fn connect_and_test_iroh<F, Fut>(
     child: &mut Child,

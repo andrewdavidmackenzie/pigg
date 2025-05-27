@@ -118,36 +118,44 @@ async fn config_change_returned_tcp() {
             .await
             .expect("Could not send NewPinConfig");
 
+            let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
+                .await
+                .expect("Could not get message from piglet");
+
+            println!("Message Received: {hw_message:?}");
+
+            if let IOLevelChanged(pin_number, level_change) = hw_message {
+                assert_eq!(pin_number, 2, "Expected level from pin 2");
+                assert!(level_change.new_level, "Pin level should be high initially")
+            } else {
+                panic!("Expected level change for newly configured pin");
+            }
+
             // Request the device to send back its current config
             tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
                 .await
                 .expect("Could not send GetConfig");
 
             // Wait for the config to be sent back
-            let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
-                .await
-                .expect("Could not get response to GetConfig");
+            loop {
+                let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
+                    .await
+                    .expect("Could not get response to GetConfig");
 
-            println!("Message Received: {hw_message:?}");
+                println!("Message Received: {hw_message:?}");
 
-            // If we got a valid config back, compare it to what we expected
-            match hw_message {
-                NewConfig(hardware_config) => {
+                // If we got a valid config back, compare it to what we expected
+                if let NewConfig(hardware_config) = hw_message {
                     assert_eq!(
                         hardware_config.pin_functions.get(&2),
                         Some(&Input(Some(InputPull::PullUp))),
                         "Configured pin doesn't match config sent"
                     );
-                }
-                IOLevelChanged(pin_number, level_change) => {
-                    assert_eq!(pin_number, 2, "Wrong pin number");
-                    assert!(level_change.new_level, "New level change should be true");
-                }
-                _ => {
-                    panic!("Didn't get config back as expected");
+                    break;
                 }
             }
 
+            // Configure the pin to not be used
             tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(2, None))
                 .await
                 .expect("Could not send NewPinConfig");
@@ -166,14 +174,11 @@ async fn config_change_returned_tcp() {
 
             // If we got a valid config back, compare it to what we expected
             if let NewConfig(hardware_config) = hw_message {
-                println!("hardware_config: {hardware_config}");
                 assert_eq!(
                     hardware_config.pin_functions.get(&2),
-                    None,
-                    "Configured pin doesn't match config expected"
+                    Some(&Input(Some(InputPull::PullUp))),
+                    "Configured pin doesn't match config sent"
                 );
-            } else {
-                panic!("Didn't get config back as expected");
             }
 
             tcp_host::disconnect(tcp_stream)
@@ -186,7 +191,6 @@ async fn config_change_returned_tcp() {
     pass(&mut piglet);
 }
 
-#[ignore = "Cannot get response from piglet after sending invalid NewPinConfig"]
 #[tokio::test]
 #[serial]
 async fn invalid_pin_config() {
@@ -214,6 +218,8 @@ async fn invalid_pin_config() {
             .await
             .expect("Could not send NewPinConfig");
 
+            // Should not get any level changes here
+
             // Request the device to send back its current config
             tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
                 .await
@@ -223,6 +229,8 @@ async fn invalid_pin_config() {
             let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
                 .await
                 .expect("Could not get response to GetConfig");
+
+            println!("Message Received: {hw_message:?}");
 
             // If we got a valid config back, compare it to what we expected
             if let NewConfig(hardware_config) = hw_message {
