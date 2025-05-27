@@ -1,6 +1,4 @@
-use crate::support::{
-    build, connect_and_test_iroh, connect_iroh, kill_all, parse_piglet, pass, run,
-};
+use crate::support::{build, connect_and_test_iroh, kill_all, parse_piglet, pass, run};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
 use pigdef::pin_function::PinFunction::Input;
@@ -16,14 +14,22 @@ mod support;
 async fn disconnect_iroh() {
     kill_all("piglet");
     build("piglet");
-    let mut child = run("piglet", vec![], None);
-    connect_iroh(&mut child, |_, _, mut connection| async move {
-        iroh_host::disconnect(&mut connection)
-            .await
-            .expect("Could not send Disconnect");
-    })
+    let mut piglet = run("piglet", vec![], None);
+
+    let (_ip, _port, nodeid) = parse_piglet(&mut piglet).await;
+
+    connect_and_test_iroh(
+        &mut piglet,
+        &nodeid,
+        None,
+        |_, _, mut connection| async move {
+            iroh_host::disconnect(&mut connection)
+                .await
+                .expect("Could not send Disconnect");
+        },
+    )
     .await;
-    pass(&mut child);
+    pass(&mut piglet);
 }
 
 #[tokio::test]
@@ -31,37 +37,45 @@ async fn disconnect_iroh() {
 async fn config_change_returned_iroh() {
     kill_all("piglet");
     build("piglet");
-    let mut child = run("piglet", vec![], None);
-    connect_iroh(&mut child, |_, _, mut connection| async move {
-        iroh_host::send_config_message(
-            &mut connection,
-            &NewPinConfig(1, Some(Input(Some(InputPull::PullUp)))),
-        )
-        .await
-        .expect("Could not send NewPinConfig");
+    let mut piglet = run("piglet", vec![], None);
 
-        iroh_host::send_config_message(&mut connection, &GetConfig)
+    let (_ip, _port, nodeid) = parse_piglet(&mut piglet).await;
+
+    connect_and_test_iroh(
+        &mut piglet,
+        &nodeid,
+        None,
+        |_, _, mut connection| async move {
+            iroh_host::send_config_message(
+                &mut connection,
+                &NewPinConfig(2, Some(Input(Some(InputPull::PullUp)))),
+            )
             .await
-            .expect("Could not send Disconnect");
+            .expect("Could not send NewPinConfig");
 
-        let hw_message = iroh_host::wait_for_remote_message(&mut connection)
-            .await
-            .expect("Could not get response to GetConfig");
+            iroh_host::send_config_message(&mut connection, &GetConfig)
+                .await
+                .expect("Could not send Disconnect");
 
-        if let NewConfig(hardware_config) = hw_message {
-            assert_eq!(
-                hardware_config.pin_functions.get(&1),
-                Some(&Input(Some(InputPull::PullUp))),
-                "Configured pin doesn't match config sent"
-            );
-        }
+            let hw_message = iroh_host::wait_for_remote_message(&mut connection)
+                .await
+                .expect("Could not get response to GetConfig");
 
-        iroh_host::disconnect(&mut connection)
-            .await
-            .expect("Could not disconnect");
-    })
+            if let NewConfig(hardware_config) = hw_message {
+                assert_eq!(
+                    hardware_config.pin_functions.get(&2),
+                    Some(&Input(Some(InputPull::PullUp))),
+                    "Configured pin doesn't match config sent"
+                );
+            }
+
+            iroh_host::disconnect(&mut connection)
+                .await
+                .expect("Could not disconnect");
+        },
+    )
     .await;
-    pass(&mut child);
+    pass(&mut piglet);
 }
 
 #[tokio::test]

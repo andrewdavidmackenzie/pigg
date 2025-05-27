@@ -122,14 +122,6 @@ pub fn pass(child: &mut Child) {
     child.wait().expect("Failed to wait until child exited");
 }
 
-/*
-pub fn assert(child: &mut Child, test: bool, msg: &'static str) {
-    if !test {
-        fail(child, msg);
-    }
-}
- */
-
 #[allow(dead_code)]
 pub fn fail(child: &mut Child, message: &str) -> ! {
     // Kill process before possibly failing test and leaving process around
@@ -222,17 +214,6 @@ where
         ),
     }
 }
-
-#[allow(dead_code)]
-pub async fn connect_tcp<F, Fut>(child: &mut Child, test: F)
-where
-    F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
-    Fut: Future<Output = ()>,
-{
-    let (ip, port, _) = parse_piglet(child).await;
-    connect_and_test_tcp(child, ip, port, test).await;
-}
-
 #[allow(dead_code)]
 pub async fn connect_and_test_iroh<F, Fut>(
     child: &mut Child,
@@ -253,14 +234,4 @@ pub async fn connect_and_test_iroh<F, Fut>(
         }
         _ => fail(child, "Could not connect to piglet"),
     }
-}
-
-#[allow(dead_code)]
-pub async fn connect_iroh<F, Fut>(child: &mut Child, test: F)
-where
-    F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
-    Fut: Future<Output = ()>,
-{
-    let (_ip, _port, nodeid) = parse_piglet(child).await;
-    connect_and_test_iroh(child, &nodeid, None, test).await;
 }

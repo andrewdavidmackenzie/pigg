@@ -148,6 +148,7 @@ async fn apply_config_change(
                 hardware_config.pin_functions.insert(bcm, function);
             } else {
                 // if No new function was set (None) then remove from the current hardware_config
+                info!("Removing pin from pin_functions");
                 hardware_config.pin_functions.remove(&bcm);
             }
         }
@@ -233,7 +234,7 @@ fn send_input_level(
     bcm: BCMPinNumber,
     level_change: LevelChange,
 ) -> anyhow::Result<()> {
-    trace!("Pin #{bcm} Input level change: {level_change:?}");
+    trace!("Sending pin #{bcm} Input level change event: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
     // TODO avoid recreating every time?
