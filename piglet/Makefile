@@ -20,7 +20,7 @@
 $(eval PI = $(shell cat /proc/cpuinfo 2>&1 | grep "Raspberry Pi"))
 
 .PHONY: all
-all: clippy build build-arm test
+all: clippy build build-arm build-armv7 build-aarch64 test
 
 .PHONY: clean
 clean:
@@ -68,11 +68,6 @@ test:
 .PHONY: features
 features:
 	cargo build-all-features
-
-#### arm builds
-.PHONY: build-arm
-# Don't build build-armv7-musl locally on macOS
-build-arm: build-armv7 build-aarch64 build-arm
 
 #### armv7 targets
 # Don't build build-armv7-musl locally on macOS
