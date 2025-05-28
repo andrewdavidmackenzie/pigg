@@ -4,7 +4,7 @@ default-members = ["pigdef", "piggui", "piglet", "pignet", "pigpio"]
 resolver = "2"
 
 [workspace.package]
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 description = "A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware, plus app and binaries for those targets"
 authors = ["Andrew Mackenzie <andrew@mackenzie-serres.net>", "Sundaram Krishnan <krishnsundaram@gmail.com>"]
