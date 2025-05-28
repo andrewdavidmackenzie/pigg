@@ -1,11 +1,8 @@
 use crate::support::{build, connect_and_test_tcp, kill_all, parse_piglet, pass, run};
-use pigdef::config::HardwareConfigMessage::{GetConfig, IOLevelChanged, NewConfig, NewPinConfig};
-use pigdef::config::InputPull;
-use pigdef::pin_function::PinFunction::{Input, Output};
+use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
+use pigdef::pin_function::PinFunction::Output;
 use pignet::tcp_host;
 use serial_test::serial;
-use std::net::{IpAddr, Ipv4Addr};
-use std::str::FromStr;
 use std::time::Duration;
 
 #[path = "../../piggui/tests/support.rs"]
@@ -176,8 +173,6 @@ async fn config_change_returned_tcp() {
                     "Configured pin doesn't match config sent"
                 );
             }
-
-             */
 
             tcp_host::disconnect(tcp_stream)
                 .await
