@@ -21,15 +21,16 @@ The steps to do a full release are:
   as assets and package them in installers/scripts and push those to the relevant
   locations
 - Check the release in [GitHub Releases](https://github.com/andrewdavidmackenzie/pigg/releases)
-- Test as many of the install methods as you can
+- Test as many of the installation methods as you can
 - Publish to crates.io also using:
     - `cargo publish`
+- Install from crates.io and check both run and have the correct version number
     - `cargo install pigg`
-    - `piggui` and check the version number displayed or `piggui --version`
-    - `piglet --version` and check the correct version number is displayed
+    - run `piggui` at the command line and check the version number displayed or run `piggui --version`
+    - run `piglet --version` and check the correct version number is displayed
 - Test `cargo binstall`
-    - Uninstall the version just installed with `cargo install`
-    - `cargo binstall pigg`
-    - `piggui` and check the version number displayed or `piggui --version`
-    - `piglet --version` and check the correct version number is displayed
+    - Uninstall the version just installed, using `cargo install` at the command line
+    - Install the pre-built binary from GH Releases using `cargo binstall pigg`at the command line
+    - run `piggui` and check the version number displayed or run `piggui --version`
+    - run `piglet --version` and check the correct version number is displayed
   
