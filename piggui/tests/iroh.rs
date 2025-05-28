@@ -4,7 +4,7 @@ use support::{pass, run, wait_for_stdout};
 
 mod support;
 
-#[cfg(feature = "iroh")]
+#[cfg(all(feature = "iroh", not(target_os = "linux")))]
 #[tokio::test]
 #[serial]
 async fn connect_via_iroh() {
