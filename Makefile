@@ -27,7 +27,7 @@ else
 endif
 
 .PHONY: all
-all: clippy format-check build build-arm build-porky build-web test docs
+all: clippy format-check build build-arm build-armv7 build-aarch64 build-porky build-web test docs
 
 .PHONY: clean
 clean:
@@ -97,10 +97,6 @@ hw_tests:
 features:
 	cargo build-all-features
 
-#### arm builds
-.PHONY: build-arm
-build-arm: build-armv7 build-aarch64
-
 #### armv7 targets
 # Don't build build-armv7-musl locally on macOS
 .PHONY: armv7
@@ -167,6 +163,43 @@ copy-aarch64:
 copy-release-aarch64:
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
 	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+
+#### arm targets - useful for Raspberry Pi Zero (not Zero 2)
+# Don't build build-arm-musl by default
+.PHONY: arm
+arm: clippy-arm build-arm
+
+.PHONY: clippy-arm
+clippy-arm:
+	cargo clippy --tests --no-deps --target=arm-unknown-linux-gnueabihf
+
+.PHONY: build-arm
+build-arm:
+	cargo build --target=arm-unknown-linux-gnueabihf
+
+.PHONY: build-arm-musl
+build-arm-musl:
+	cargo build --target=arm-unknown-linux-musleabihf
+
+.PHONY: release-build-arm
+release-build-arm:
+	cargo build --release --target=arm-unknown-linux-gnueabihf
+
+# NOTE: The tests will be built for arm architecture, so tests can only be run on that architecture
+.PHONY: test-arm
+test-arm:
+	cargo test --target=arm-unknown-linux-gnueabihf
+
+.PHONY: copy-arm
+copy-arm:
+	scp target/arm-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/arm-unknown-linux-gnueabihf/debug/piggui $(PI_USER)@$(PI_TARGET):~/
+
+.PHONY: copy-release-arm
+copy-release-arm:
+	scp target/arm-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/arm-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
+
 
 .PHONY: ssh
 ssh:
