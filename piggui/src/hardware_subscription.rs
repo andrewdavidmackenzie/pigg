@@ -84,6 +84,7 @@ pub enum SubscriptionEvent {
 }
 
 /// This enum describes the states of the subscription
+#[allow(clippy::large_enum_variant)]
 enum HWState {
     /// Not connected to any particular hardware
     Disconnected,
@@ -169,7 +170,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
 
                         #[cfg(not(target_arch = "wasm32"))]
                         Local => {
-                            match local_host::connect(env!("CARGO_PKG_NAME")).await {
+                            match local_host::connect().await {
                                 Ok((hardware_description, hardware_config, local_hardware)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(

@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::io;
 
 use std::time::Duration;
 
 use crate::pin_descriptions::*;
+use pigdef::config::InputPull;
 use pigdef::config::{HardwareConfig, LevelChange};
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
@@ -23,17 +25,24 @@ enum Pin {
 /// be other arm-based computers out there that support linux and are built using gnu for libc
 /// that do not have Raspberry Pi hardware. This would build for them, and then they will fail
 /// at run-time when trying to access drivers and hardware for GPIO.
-#[derive(Default)]
 pub struct HW {
+    app_name: &'static str,
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
 }
 
 /// Common implementation code for pi and fake hardware
 impl HW {
-    /// Find the Pi hardware description
-    pub fn description(&self, app_name: &str) -> HardwareDescription {
+    // Create a new HW instance
+    pub fn new(app_name: &'static str) -> Self {
+        HW {
+            app_name,
+            configured_pins: HashMap::default(),
+        }
+    }
+    /// Return the Pi hardware description
+    pub fn description(&self) -> HardwareDescription {
         HardwareDescription {
-            details: Self::get_details(app_name),
+            details: Self::get_details(self.app_name),
             pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
         }
     }
@@ -125,8 +134,6 @@ impl HW {
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        use pigdef::config::InputPull;
-
         // If it was already configured, remove it
         self.configured_pins.remove(&bcm_pin_number);
 

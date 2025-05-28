@@ -6,7 +6,7 @@ use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
 
 use crate::persistence;
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
 use async_std::prelude::*;
@@ -89,18 +89,21 @@ pub async fn tcp_message_loop(
     hardware: &mut HW,
 ) -> anyhow::Result<()> {
     let mut payload = vec![0u8; 1024];
-    info!("Waiting for message");
     loop {
+        info!("Waiting for message");
         let length = stream.read(&mut payload).await?;
         if length == 0 {
             bail!("End of message stream");
         }
 
-        let config_message = postcard::from_bytes(&payload[0..length])?;
-        apply_config_change(hardware, config_message, hardware_config, stream.clone())
-            .await
-            .with_context(|| "Failed to apply config change to hardware")?;
-        let _ = persistence::store_config(hardware_config, exec_path).await;
+        if let Ok(config_message) = postcard::from_bytes(&payload[0..length]) {
+            if apply_config_change(hardware, config_message, hardware_config, stream.clone())
+                .await
+                .is_ok()
+            {
+                let _ = persistence::store_config(hardware_config, exec_path).await;
+            }
+        }
     }
 }
 
@@ -138,10 +141,13 @@ async fn apply_config_change(
                 .await?;
 
             if let Some(function) = pin_function {
+                // if a new config was set, reply with the new input state for that pin
                 send_current_input_state(&bcm, &function, wc, hardware).await?;
                 // add/replace the new pin config to the hardware config
                 hardware_config.pin_functions.insert(bcm, function);
             } else {
+                // if No new function was set (None) then remove from the current hardware_config
+                info!("Removing pin from pin_functions");
                 hardware_config.pin_functions.remove(&bcm);
             }
         }
@@ -227,7 +233,7 @@ fn send_input_level(
     bcm: BCMPinNumber,
     level_change: LevelChange,
 ) -> anyhow::Result<()> {
-    trace!("Pin #{bcm} Input level change: {level_change:?}");
+    trace!("Sending pin #{bcm} Input level change event: {level_change:?}");
     let hardware_event = IOLevelChanged(bcm, level_change);
     let message = postcard::to_allocvec(&hardware_event)?;
     // TODO avoid recreating every time?

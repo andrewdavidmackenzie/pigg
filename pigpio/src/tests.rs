@@ -7,7 +7,7 @@ mod test {
     #[test]
     fn get_hardware() {
         let hw = crate::get_hardware().expect("Could not get hardware");
-        let description = hw.description("Test");
+        let description = hw.description();
         let pins = description.pins.pins();
         assert_eq!(pins.len(), 40);
         assert_eq!(pins[0].name, "3V3")
@@ -21,15 +21,14 @@ mod test {
     #[test]
     fn forty_board_pins() {
         let hw = crate::get_hardware().expect("Could not get hardware");
-        let pin_set = hw.description("Test").pins;
-        assert_eq!(pin_set.pins().len(), 40);
+        assert_eq!(hw.description().pins.pins().len(), 40);
     }
 
     #[test]
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = crate::get_hardware().expect("Could not get hardware");
-        let pin_set = hw.description("Test").pins;
+        let pin_set = hw.description().pins.clone();
         let sorted_bcm_pins = pin_set.bcm_pins_sorted();
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
         let mut previous = 1; // we start at GPIO2
