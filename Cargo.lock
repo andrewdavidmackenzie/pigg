@@ -4552,7 +4552,7 @@ dependencies = [
  "pigpio",
  "portpicker",
  "postcard",
- "rand 0.8.5",
+ "rand 0.9.1",
  "serde_json",
  "serial_test",
  "service-manager",
@@ -4571,7 +4571,7 @@ dependencies = [
  "nusb",
  "pigdef",
  "postcard",
- "rand 0.8.5",
+ "rand 0.9.1",
  "serde",
  "tokio",
 ]
@@ -4582,7 +4582,7 @@ version = "0.7.0"
 dependencies = [
  "libc",
  "pigdef",
- "rand 0.8.5",
+ "rand 0.9.1",
  "rppal",
 ]
 
