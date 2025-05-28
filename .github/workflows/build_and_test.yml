@@ -43,6 +43,30 @@ jobs:
       - name: cargo check-all-features
         run: cargo check-all-features
 
+  arm-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Add target
+        run: rustup target add arm-unknown-linux-gnueabihf
+
+      - name: Install armv (armv6) Linker
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-arm-linux-gnueabihf
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build for armv (armv6)
+        run: cargo build --target=arm-unknown-linux-gnueabihf
+
   arm7-build:
     runs-on: ubuntu-latest
     steps:
