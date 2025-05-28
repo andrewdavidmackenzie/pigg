@@ -112,14 +112,14 @@ async fn config_change_returned_tcp() {
             println!("hw_config {:?}", hw_config);
             assert!(hw_config.pin_functions.is_empty());
 
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_millis(100)).await;
 
             // Change a pin's configuration
             tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(2, Some(Output(None))))
                 .await
                 .expect("Could not send NewPinConfig");
 
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_millis(100)).await;
 
             // Request the device to send back its current config
             tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
@@ -147,15 +147,14 @@ async fn config_change_returned_tcp() {
                 );
             }
 
-            /*
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_millis(100)).await;
 
             // Configure the pin to not be used
             tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(2, None))
                 .await
                 .expect("Could not send NewPinConfig");
 
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_millis(100)).await;
 
             // Request the device to send back its current config
             tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
@@ -173,7 +172,7 @@ async fn config_change_returned_tcp() {
             if let NewConfig(hardware_config) = hw_message {
                 assert_eq!(
                     hardware_config.pin_functions.get(&2),
-                    Some(&Input(Some(InputPull::PullUp))),
+                    None,
                     "Configured pin doesn't match config sent"
                 );
             }
@@ -215,7 +214,7 @@ async fn invalid_pin_config() {
     println!("hw_config {:?}", hw_config);
     assert!(hw_config.pin_functions.is_empty());
 
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
 
     // Change a non-existent pin's configuration
     tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(100, Some(Output(None))))
@@ -224,7 +223,7 @@ async fn invalid_pin_config() {
 
     // Should not get any level changes here
 
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
 
     // Request the device to send back its current config
     tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
