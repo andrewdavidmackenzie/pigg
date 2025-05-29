@@ -23,7 +23,8 @@ The steps to do a full release are:
 - Check the release in [GitHub Releases](https://github.com/andrewdavidmackenzie/pigg/releases)
 - Test as many of the installation methods as you can
 - Publish to crates.io also using:
-    - `cargo publish`
+    - Make sure you are logged in to cargo/crates with `cargo login`
+    - Publish the entire workspace with `cargo publish`
 - Install from crates.io and check both run and have the correct version number
     - `cargo install pigg`
     - run `piggui` at the command line and check the version number displayed or run `piggui --version`

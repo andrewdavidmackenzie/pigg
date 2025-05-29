@@ -44,10 +44,10 @@ runner = "ubuntu-22.04"
 [[dist.extra-artifacts]]
 artifacts = [
     "porky/target/thumbv6m-none-eabi/release/porky_pico_w.uf2",
-    "porky/target/thumbv6m-none-eabi/release/porky_pico_w2.uf2",
+    "porky/target/thumbv8m.main-none-eabihf/release/porky_pico_w2.uf2",
     "porky/target/thumbv6m-none-eabi/release/porky_pico.uf2",
-    "porky/target/thumbv6m-none-eabi/release/porky_pico2.uf2",
+    "porky/target/thumbv8m.main-none-eabihf/release/porky_pico2.uf2",
     "70.pigg.rules"
 ]
-# For porky binary builds - install the 'elf2uf2-rs' tool, then build the uf2 files for artifacts above
-build = ["make", "-C", "porky", "install-uf2", "uf2s"]
+# Build extra UF2 artifacts above
+build = ["make", "-C", "porky", "uf2s"]
