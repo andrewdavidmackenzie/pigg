@@ -1,5 +1,5 @@
 [package]
-name = "pigpio"
+name = "piggpio"
 description = "A crate with GPIO code for use in other pigg project crates"
 version.workspace = true
 edition.workspace = true

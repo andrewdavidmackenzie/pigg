@@ -57,7 +57,7 @@ mdns-sd = { version = "0.13.9", default-features = false, features = ["async"], 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.15.3"
 clap = { version = "4.5.38", default-features = false, features = ["std", "help", "error-context"] }
-pigpio = { path = "../pigpio", version = "0.7" }
+piggpio = { path = "../piggpio", version = "0.7" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"

@@ -11,7 +11,7 @@ use pigdef::description::HardwareDescription;
 use pigdef::net_values::PIGLET_ALPN;
 use pigdef::pin_function::PinFunction;
 use pigdef::pin_function::PinFunction::Output;
-use pigpio::HW;
+use piggpio::HW;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;

@@ -4502,6 +4502,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "piggpio"
+version = "0.7.0"
+dependencies = [
+ "libc",
+ "pigdef",
+ "rand 0.8.5",
+ "rppal",
+]
+
+[[package]]
 name = "piggui"
 version = "0.7.0"
 dependencies = [
@@ -4521,8 +4531,8 @@ dependencies = [
  "mdns-sd",
  "once_cell",
  "pigdef",
+ "piggpio",
  "pignet",
- "pigpio",
  "plotters",
  "plotters-iced",
  "rfd",
@@ -4548,8 +4558,8 @@ dependencies = [
  "log",
  "mdns-sd",
  "pigdef",
+ "piggpio",
  "pignet",
- "pigpio",
  "portpicker",
  "postcard",
  "rand 0.8.5",
@@ -4574,16 +4584,6 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "tokio",
-]
-
-[[package]]
-name = "pigpio"
-version = "0.7.0"
-dependencies = [
- "libc",
- "pigdef",
- "rand 0.8.5",
- "rppal",
 ]
 
 [[package]]

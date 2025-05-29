@@ -28,7 +28,7 @@ use std::{
 };
 use sysinfo::{Process, System};
 
-use pigpio::get_hardware;
+use piggpio::get_hardware;
 
 #[cfg(feature = "iroh")]
 use crate::device_net::iroh_device;

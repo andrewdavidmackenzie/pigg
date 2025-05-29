@@ -13,7 +13,7 @@ use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{debug, info, trace};
 use pigdef::pin_function::PinFunction::Output;
-use pigpio::HW;
+use piggpio::HW;
 use portpicker::pick_unused_port;
 use std::fmt;
 use std::fmt::{Display, Formatter};
