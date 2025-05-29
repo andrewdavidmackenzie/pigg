@@ -8,7 +8,7 @@
 
 # pigg - Raspberry Pi GPIO GUI
 
-An app for Raspberry Pi GPIO Output control and Input visualization, with GUI and CLI Support for macos, Linux
+An app for Raspberry Pi GPIO Output control and Input visualization, with GUI and CLI Support for macOS, Linux
 (including Raspberry Pi) and Windows; GPIO CLI agent for Raspberry Pi and embedded applications for Pi Pico (USB)
 and Pi Pico W (USB, TCP).
 
@@ -41,36 +41,32 @@ The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
 
 [Website](https://mackenzie-serres.net/pigg/) (just README.md content for now...)
 
-## What's new in Release 0.6.0 - USB, Pi Pico and Discovery
+## What's new in Release 0.7.0 - Pico 2 Support, Improved Layouts, Bug fixing and Tests
 
-Full feature support for Pi Pico W and Pi Pico, USB discovery, SSID configuration, GPIO control and mDNS discovery.
-
-Pi Pico support includes:
-
-- Embedded application `porky` and `porky_w` for running on the Pi Pico and Pi Pico W.
-- UF2 firmware files provided as part of release to aid programming Pi Pico devices with `porky` or `porky_w`
-- Ability to build `porky` yourself with default SSID information so all devices programmed with that binary connect
-  automatically to Wi-Fi
-- USB direct connection between `piggui` and `porky` that allows you to:
-    - Discover USB connected `porky` devices
-    - View information about the device
-    - Determine if it is connected to the Wi-Fi network and if it is, get its IP and Port for remote GUI use
-    - Program the Wi-Fi network it will connect to, instead of the default one as part of the build.
-      This is persisted in Flash memory, so it is used again on restart/reboot.
-    - Reset a previously programmed Wi-Fi network so that on restart the device will connect to the default one if it
-      exists.
-    - Full functionality (i.e. Control the device and get input signal level changes) via USB, so on a par
-      with TCP connections to the Pi Pico W, but via USB to either a Pi Pico or Pi Pico W
-- Remote network access to the Pi Pico W's GPIO, in the same GUI as remote access to Raspberry Pis (not Pico).
-- Pi Pico specific pin layout and numbering displayed in GUI
-- Persisting of GPIO config to flash and recovery at reboot/restart so that the GPIO continues to work as before
-- `udev` rules file for allowing user access (for `piggui` application) to USB devices on Linux machines
-
-Additions to `pigglet` functionality:
-
-- Persisting of GPIO config to disk and recovery at reboot/restart so that the GPIO continues where you left off
-- mDNS discoverability of `pigglets` on the network and get the details required to connect to them by `TCP` or
-  `Iroh`
+* Pico 2 and Pico 2 W full support alongside Pico and Pico W
+* New compact pin layout view that shows only configured pins, suitable for devices with small displays
+* Menus to configure pins are now on the pin itself to reduce space used
+* Addition of a disconnected view when no connection is present. Connecting status added to the connecting menu while a
+  connection is being attempted
+* FakePi hardware view (mainly for development) is only included in debug builds. Release builds will show the "
+  Disconnected View" initially
+* LED output display is a clickable control now to reduce space used
+* Updated lots of dependencies. Almost all are on the latest versions available
+* Hardware compatibility tests are run in CI. Added "hw_tests" that are a set of tests running piggui against piglet and
+  porky running on real Hardware (Pi Zero, Pico and Pico 2) connected to my server, using a custom GH runner
+* Lots of test improvements across all subprojects
+* A number of small visual improvements around menus, dialogs, sizes etc.
+* Improvements in developer setup Makefile targets for any contributors
+* Improvements in connection handling and switching from one device directly to another
+* More robust service restart by retrying with a delay on startup and failure (pending the "proper" fix (for systemd)
+  which is in the works
+* Improvements to tooltips, adding connection details on connection buttons
+* Many code improvements, removing all unwraps among them. Project structured as a workspace enabling more code reuse
+  across projects
+* Added a FUNDING.yml
+* Improvements in the wasm32 build, a pre-requisite to getting a web UI working
+* A number of small bug fixes
+*
 
 ## Other Features
 
