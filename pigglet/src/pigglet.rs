@@ -44,6 +44,8 @@ use std::io::Write;
 mod device_net;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
+// Keep the old name for compatibility for users - although it doesn't match binary name anymore
+const CONFIG_FILENAME: &str = ".piglet_config.json";
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
@@ -506,7 +508,7 @@ pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfi
     let config_filename = match matches.get_one::<String>("config") {
         Some(config_filename) => config_filename.clone(),
         None => {
-            let filename = exec_path.with_file_name(".pigglet_config.json");
+            let filename = exec_path.with_file_name(CONFIG_FILENAME);
             filename.to_string_lossy().to_string()
         }
     };
@@ -539,7 +541,7 @@ pub async fn store_config(
     hardware_config: &HardwareConfig,
     exec_path: &Path,
 ) -> anyhow::Result<()> {
-    let last_run_filename = exec_path.with_file_name(".pigglet_config.json");
+    let last_run_filename = exec_path.with_file_name(CONFIG_FILENAME);
     let mut file = std::fs::File::create(&last_run_filename)?;
     let contents = serde_json::to_string(hardware_config)?;
     file.write_all(contents.as_bytes())
