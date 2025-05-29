@@ -66,10 +66,10 @@ Pi Pico support includes:
 - Persisting of GPIO config to flash and recovery at reboot/restart so that the GPIO continues to work as before
 - `udev` rules file for allowing user access (for `piggui` application) to USB devices on Linux machines
 
-Additions to `piglet` functionality:
+Additions to `pigglet` functionality:
 
 - Persisting of GPIO config to disk and recovery at reboot/restart so that the GPIO continues where you left off
-- mDNS discoverability of `piglets` on the network and get the details required to connect to them by `TCP` or
+- mDNS discoverability of `pigglets` on the network and get the details required to connect to them by `TCP` or
   `Iroh`
 
 ## Other Features
@@ -92,20 +92,20 @@ Additions to `piglet` functionality:
 - GPIO configurations can be loaded at startup with a command line filename option, or loaded via
   file-picker from the UI or saved to file via file picker, or the device will communicate it's current configuration
   to the GUI, allowing you to continue with the configuration currently being used by the GPIO hardware.
-- GUI discovery of devices using mDNS for networked `piglet`s and `porky`s, or USB for direct connected `porky`s.
-- The GUI (`piggui`) can connect to a Pi (running `piglet`) over the network, or to a Pi Pico/Pi Pico W (over the
+- GUI discovery of devices using mDNS for networked `pigglet`s and `porky`s, or USB for direct connected `porky`s.
+- The GUI (`piggui`) can connect to a Pi (running `pigglet`) over the network, or to a Pi Pico/Pi Pico W (over the
   network or USB direct connect) to control and view the GPIO hardware from a distance.
 - The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped at source (as close to the hardware
   as possible) so network delays should not affect the waveforms displayed. Please provide us feedback and ideas related
   to networking in Discussions or GH issues.
-- The data required to connect to a remote node via iroh-net is called the `nodeid`. `piglet` prints this out for you
-  if it is started in the foreground. When `piglet` has been started as a system service, start another instance in the
+- The data required to connect to a remote node via iroh-net is called the `nodeid`. `pigglet` prints this out for you
+  if it is started in the foreground. When `pigglet` has been started as a system service, start another instance in the
   foreground and this will detect the background instance and display its `nodeid` for you then exit.
 - Take the `nodeid` and either supply it as a command line option to `piggui` (`--nodeid $nodeid`, prefixed with `-- `
   if using `cargo run`) or enter it into the GUI. To connect to a remote instance from the GUI, click on the
   "hardware menu" in the left of the info bar at the bottom of the screen and select the "Connect to remote Pi..."
   menu item. Then enter the `nodeid` into the field provided and hit "Connect"
-- Here are two videos showing the two ways to use it, with piglet running on a RPi shown via VNC.
+- Here are two videos showing the two ways to use it, with pigglet running on a RPi shown via VNC.
     - Video with Dialog: https://youtu.be/aToJ1aT7NeM
     - Video using CLI argument: https://youtu.be/zcEa_Oke014
 
@@ -116,11 +116,11 @@ You can see more gifs and videos of features [here](assets/features.md)
 `piggui` is a GUI for configuring pins, observing input levels and controlling output levels.
 On Raspberry Pi it has a real GPIO hardware backend (via rppal).
 On macOS, Linux and Windows it uses a fake hardware backend (mainly for development) or can connect to a remote
-hardware backend that is running `piglet`.
+hardware backend that is running `pigglet`.
 
 ## Piglet
 
-`piglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
+`pigglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
 config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
 level changes to the GUI.
 
@@ -161,7 +161,7 @@ manually or are known to work as follows:
 |             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      
 |             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz 
 |             | armv7 gnu      | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  
-| piglet      | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           
+| pigglet     | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           
 |             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            
 |             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       
 |             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            
@@ -218,7 +218,7 @@ See [BUILDING.md](BUILDING.md)
 
 ## Running Piggui and Piglet
 
-For details on running `piglet` and `piggui` in the foreground or as a system service, on the same machine or with a
+For details on running `pigglet` and `piggui` in the foreground or as a system service, on the same machine or with a
 remote GUI to Pi hardware, see [RUNNING.md](RUNNING.md)
 
 ## Contributing

@@ -34,7 +34,7 @@ pub async fn send_config_message(
     Ok(())
 }
 
-/// Connect to a remote piglet and get the initial message with the [HardwareDescription],
+/// Connect to a remote pigglet and get the initial message with the [HardwareDescription],
 /// return that description plus the [TcpStream] to be used to communicate with it.
 pub async fn connect(
     ip: IpAddr,

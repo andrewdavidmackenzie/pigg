@@ -4502,6 +4502,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pigglet"
+version = "0.7.0"
+dependencies = [
+ "anyhow",
+ "async-std",
+ "clap",
+ "env_logger",
+ "futures",
+ "iroh",
+ "local-ip-address",
+ "log",
+ "mdns-sd",
+ "pigdef",
+ "piggpio",
+ "pignet",
+ "portpicker",
+ "postcard",
+ "rand 0.8.5",
+ "serde_json",
+ "serial_test",
+ "service-manager",
+ "sysinfo",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "piggpio"
 version = "0.7.0"
 dependencies = [
@@ -4542,33 +4569,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "webbrowser",
-]
-
-[[package]]
-name = "piglet"
-version = "0.7.0"
-dependencies = [
- "anyhow",
- "async-std",
- "clap",
- "env_logger",
- "futures",
- "iroh",
- "local-ip-address",
- "log",
- "mdns-sd",
- "pigdef",
- "piggpio",
- "pignet",
- "portpicker",
- "postcard",
- "rand 0.8.5",
- "serde_json",
- "serial_test",
- "service-manager",
- "sysinfo",
- "tempfile",
- "tokio",
 ]
 
 [[package]]

@@ -40,13 +40,13 @@ use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
 
-/// Module for performing the network transfer of config and events between GUI and piglet
+/// Module for performing the network transfer of config and events between GUI and pigglet
 mod device_net;
 
-const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
+const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
-/// Write a [ListenerInfo] file that captures information that can be used to connect to piglet
+/// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
 pub(crate) fn write_info_file(
     info_path: &Path,
     listener_info: &ListenerInfo,
@@ -59,7 +59,7 @@ pub(crate) fn write_info_file(
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
-/// `piglet` is listening on, that can be used with `piggui` to start a remote GPIO session
+/// `pigglet` is listening on, that can be used with `piggui` to start a remote GPIO session
 struct ListenerInfo {
     #[cfg(feature = "iroh")]
     pub iroh_info: iroh_device::IrohDevice,
@@ -113,7 +113,7 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
     Ok(())
 }
 
-/// Run piglet as a service - this could be interactively by a user in foreground or started
+/// Run pigglet as a service - this could be interactively by a user in foreground or started
 /// by the system as a user service, in background - use logging for output from here on
 #[allow(unused_variables)]
 async fn run_service(
@@ -274,7 +274,7 @@ async fn run_service(
     }
 }
 
-/// Check that this is the only instance of piglet running, both user process or system process
+/// Check that this is the only instance of pigglet running, both user process or system process
 /// If another version is detected:
 /// - print out that fact, with the process ID
 /// - print out the nodeid of the instance that is running
@@ -285,7 +285,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         .context("Could not get exec file name")?
         .to_str()
         .context("Could not get exec file name")?;
-    let info_path = exec_path.with_file_name("piglet.info");
+    let info_path = exec_path.with_file_name("pigglet.info");
 
     let my_pid = process::id();
     let sys = System::new_all();
@@ -302,7 +302,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         // If we can find the path to the executable - look for the info file
         if let Some(path) = process.exe() {
-            let info_path = path.with_file_name("piglet.info");
+            let info_path = path.with_file_name("pigglet.info");
             if info_path.exists() {
                 println!("You can use the following info to connect to it:");
                 println!("{}", fs::read_to_string(info_path)?);
@@ -335,7 +335,7 @@ fn get_matches() -> ArgMatches {
     let app = clap::Command::new(env!("CARGO_BIN_NAME")).version(env!("CARGO_PKG_VERSION"));
 
     let app = app.about(
-        "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
+        "'pigglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
     );
 
     let app = app.arg(
@@ -343,7 +343,7 @@ fn get_matches() -> ArgMatches {
             .short('i')
             .long("install")
             .action(clap::ArgAction::SetTrue)
-            .help("Install piglet as a System Service that restarts on reboot")
+            .help("Install pigglet as a System Service that restarts on reboot")
             .conflicts_with("uninstall"),
     );
 
@@ -352,7 +352,7 @@ fn get_matches() -> ArgMatches {
             .short('u')
             .long("uninstall")
             .action(clap::ArgAction::SetTrue)
-            .help("Uninstall any piglet System Service")
+            .help("Uninstall any pigglet System Service")
             .conflicts_with("install"),
     );
 
@@ -489,7 +489,7 @@ fn register_mdns(
         .context("Could not register mDNS daemon")?;
 
     println!(
-        "Registered piglet with mDNS:\n\tInstance: {}\n\tHostname: {}\n\tService Type: {}",
+        "Registered pigglet with mDNS:\n\tInstance: {}\n\tHostname: {}\n\tService Type: {}",
         serial_number, service_hostname, service_type
     );
 
@@ -506,7 +506,7 @@ pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfi
     let config_filename = match matches.get_one::<String>("config") {
         Some(config_filename) => config_filename.clone(),
         None => {
-            let filename = exec_path.with_file_name(".piglet_config.json");
+            let filename = exec_path.with_file_name(".pigglet_config.json");
             filename.to_string_lossy().to_string()
         }
     };
@@ -539,7 +539,7 @@ pub async fn store_config(
     hardware_config: &HardwareConfig,
     exec_path: &Path,
 ) -> anyhow::Result<()> {
-    let last_run_filename = exec_path.with_file_name(".piglet_config.json");
+    let last_run_filename = exec_path.with_file_name(".pigglet_config.json");
     let mut file = std::fs::File::create(&last_run_filename)?;
     let contents = serde_json::to_string(hardware_config)?;
     file.write_all(contents.as_bytes())
@@ -586,9 +586,9 @@ mod test {
         )
         .expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
-        let piglet_info = fs::read_to_string(test_file).expect("Could not read info file");
-        println!("piglet_info: {piglet_info}");
-        assert!(piglet_info.contains(&nodeid.to_string()))
+        let pigglet_info = fs::read_to_string(test_file).expect("Could not read info file");
+        println!("pigglet_info: {pigglet_info}");
+        assert!(pigglet_info.contains(&nodeid.to_string()))
     }
 
     #[cfg(feature = "iroh")]

@@ -1,5 +1,5 @@
 [package]
-name = "piglet"
+name = "pigglet"
 description = "A CLI agent for interacting with local Raspberry Pi GPIO Hardware from piggui GUI"
 version.workspace = true
 edition.workspace = true
@@ -19,8 +19,8 @@ license = false
 eula = false
 
 [[bin]]
-name = "piglet"
-path = "src/piglet.rs"
+name = "pigglet"
+path = "src/pigglet.rs"
 
 [features]
 default = ["iroh", "tcp", "discovery"]

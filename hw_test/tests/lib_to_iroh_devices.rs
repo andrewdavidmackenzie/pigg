@@ -42,7 +42,7 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
 
             iroh_host::disconnect(&mut connection)
@@ -71,7 +71,7 @@ async fn mdns_discover_get_config_iroh() {
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
 
             iroh_host::send_config_message(&mut connection, &GetConfig)
@@ -105,7 +105,7 @@ async fn mdns_discover_reconnect_iroh() {
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
 
             iroh_host::disconnect(&mut connection)
@@ -120,7 +120,7 @@ async fn mdns_discover_reconnect_iroh() {
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
 
             iroh_host::disconnect(&mut connection)

@@ -1,4 +1,4 @@
-use crate::support::parse_piglet;
+use crate::support::parse_pigglet;
 use serial_test::serial;
 use support::{pass, run, wait_for_stdout};
 
@@ -12,8 +12,8 @@ mod support;
 #[tokio::test]
 #[serial]
 async fn connect_via_ip() {
-    let mut piglet = run("piglet", vec![], None);
-    let (ip, port, _) = parse_piglet(&mut piglet).await;
+    let mut pigglet = run("pigglet", vec![], None);
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
     let mut piggui = run(
@@ -25,5 +25,5 @@ async fn connect_via_ip() {
     wait_for_stdout(&mut piggui, "Connected to hardware").expect("Did not get connected message");
 
     pass(&mut piggui);
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }

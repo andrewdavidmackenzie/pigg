@@ -84,12 +84,12 @@ entire groups of tests that don't need to be repeated in all scenarios.
 
 - Piggui can disconnect from the current hardware that was connected at startup (fake or Pi hw)
     - The board layout is not shown
-    - The option to connect to a remote piglet is shown
+    - The option to connect to a remote pigglet is shown
     - The option to reconnect to local hardware is shown
-- Piggui can connect to piglet using Iroh with a nodeid via command line
-- Piggui can connect to piglet using Iroh with a nodeid entered via dialog
-- Piggui can connect to piglet using TCP with a ip:port via command line
-- Piggui can connect to piglet using TCP with a ip:port entered via dialog
+- Piggui can connect to pigglet using Iroh with a nodeid via command line
+- Piggui can connect to pigglet using Iroh with a nodeid entered via dialog
+- Piggui can connect to pigglet using TCP with a ip:port via command line
+- Piggui can connect to pigglet using TCP with a ip:port entered via dialog
 - Piggui can connect to porky using TCP with a ip:port entered via dialog
     - A Pi Pico pin layout is shown
 - Piggui can connect to porky using TCP with a ip:port via command line
@@ -99,7 +99,7 @@ entire groups of tests that don't need to be repeated in all scenarios.
 - Piggui only
     - 1 - Piggui on Macos/Linux/Windows with fake hw
     - 2 - Piggui on Pi with real GPIO hw
-- Piggui and piglet
+- Piggui and pigglet
     - 3 - Piggui on Mac/Linux/Windows + Piglet on same machine
     - 4 - Piggui on Pi + Piglet on same machine
     - 5 - Piggui on Mac/Linux/Windows + Piglet on Pi
@@ -152,5 +152,5 @@ Execute the tests blocks in the specified scenario and click the checkbox when a
 
 ## Already automated tests
 
-- [X] piggui connects to piglet using Iroh by supplying nodeid at the command line
-- [X] piggui connects to piglet using Tcp by supplying an IP and port number at the command line
+- [X] piggui connects to pigglet using Iroh by supplying nodeid at the command line
+- [X] piggui connects to pigglet using Tcp by supplying an IP and port number at the command line
