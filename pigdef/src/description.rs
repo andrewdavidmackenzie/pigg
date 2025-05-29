@@ -19,11 +19,11 @@ use std::string::String;
 #[cfg(feature = "std")]
 use std::vec::Vec;
 
-#[allow(dead_code)] // Not used by piglet
+#[allow(dead_code)] // Not used by pigglet
 pub const SSID_NAME_MAX_LENGTH: usize = 32;
-#[allow(dead_code)] // Not used by piglet
+#[allow(dead_code)] // Not used by pigglet
 pub const SSID_PASS_MAX_LENGTH: usize = 63;
-#[allow(dead_code)] // Not used by piglet
+#[allow(dead_code)] // Not used by pigglet
 pub const SSID_PASS_MIN_LENGTH: usize = 8;
 
 #[allow(dead_code)] // Not used in piggui
@@ -63,7 +63,7 @@ pub struct HardwareDescription {
 impl PinDescriptionSet {
     /// Return a set of PinDescriptions *only** for pins that have BCM pin numbering, sorted in
     /// ascending order of [BCMPinNumber]
-    #[allow(dead_code)] // for piglet build
+    #[allow(dead_code)] // for pigglet build
     pub fn bcm_pins_sorted(&self) -> Vec<&PinDescription> {
         let mut pins = self
             .pins()
@@ -235,7 +235,7 @@ impl<'a> PinDescriptionSet<'a> {
 #[cfg(feature = "std")]
 impl PinDescriptionSet {
     /// Return a slice of PinDescriptions
-    #[allow(dead_code)] // for piglet
+    #[allow(dead_code)] // for pigglet
     pub fn pins(&self) -> &[PinDescription] {
         &self.pins
     }

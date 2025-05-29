@@ -60,7 +60,7 @@
 
     <Product
         Id='*'
-        Name='piglet'
+        Name='pigglet'
         UpgradeCode='7DCB054F-6CE0-4914-876E-AEA0C2E91328'
         Manufacturer='Andrew Mackenzie; Sundaram Krishnan'
         Language='1033'
@@ -83,11 +83,11 @@
             DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
         <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-        <Property Id='DiskPrompt' Value='piglet Installation'/>
+        <Property Id='DiskPrompt' Value='pigglet Installation'/>
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-                <Directory Id='APPLICATIONFOLDER' Name='piglet'>
+                <Directory Id='APPLICATIONFOLDER' Name='pigglet'>
                     
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
@@ -123,9 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='piglet.exe'
+                                Name='pigglet.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\piglet.exe'
+                                Source='$(var.CargoTargetBinDir)\pigglet.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>

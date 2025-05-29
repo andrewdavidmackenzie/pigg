@@ -1,6 +1,6 @@
 [workspace]
-members = ["pigdef", "piggui", "piglet", "pignet", "piggpio", "hw_test"]
-default-members = ["pigdef", "piggui", "piglet", "pignet", "piggpio"]
+members = ["pigdef", "piggui", "pigglet", "pignet", "piggpio", "hw_test"]
+default-members = ["pigdef", "piggui", "pigglet", "pignet", "piggpio"]
 resolver = "2"
 
 [workspace.package]

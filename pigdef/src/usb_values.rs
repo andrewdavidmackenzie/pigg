@@ -1,4 +1,4 @@
-#![allow(dead_code)] // for piglet
+#![allow(dead_code)] // for pigglet
 /// Constants used for USB commands back and fore between piggui and porky
 /// The request is coming from piggui GUI
 pub const PIGGUI_REQUEST: u8 = 101;
