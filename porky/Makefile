@@ -4,6 +4,7 @@ clean:
 	cargo clean
 
 setup:
+	rustup target add thumbv6m-none-eabi
 	rustup target add thumbv8m.main-none-eabihf
 	cargo binstall elf2uf2-rs
 
@@ -52,10 +53,10 @@ uf2-w: build-w
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico_w.uf2
 
 uf2-w2: build-w2
-	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico_w2.uf2
+	elf2uf2-rs target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico_w2.uf2
 
 uf2: build
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico.uf2
 
 uf2-2: build2
-	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico2.uf2
+	elf2uf2-rs target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico2.uf2
