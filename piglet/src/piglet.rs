@@ -15,6 +15,7 @@ use service_manager::{
 };
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::fs::File;
+use std::io::BufReader;
 use std::{
     env,
     env::current_exe,
@@ -33,6 +34,7 @@ use pigpio::get_hardware;
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
+use pigdef::config::HardwareConfig;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -40,10 +42,6 @@ use std::io::Write;
 
 /// Module for performing the network transfer of config and events between GUI and piglet
 mod device_net;
-
-#[path = "../../piggui/src/persistence.rs"]
-/// Module for persisting configs across runs
-mod persistence;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.piglet";
 
@@ -130,7 +128,7 @@ async fn run_service(
 
         // Get the boot config for the hardware
         #[allow(unused_mut)]
-        let mut hardware_config = persistence::get_config(matches, &exec_path).await;
+        let mut hardware_config = get_config(matches, &exec_path).await;
 
         // Apply the initial config to the hardware, whatever it is
         hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
@@ -496,6 +494,77 @@ fn register_mdns(
     );
 
     Ok((service_info, service_daemon))
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+/// Get the initial [HardwareConfig] determined following:
+/// - A config file specified on the command line, or
+/// - A config file saved from a previous run
+/// - The default (empty) config
+pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
+    // A config file specified on the command line overrides any config file from previous run
+    let config_file = matches.get_one::<String>("config");
+
+    // Load any config file specified on the command line
+    match config_file {
+        Some(config_filename) => match load_cfg(config_filename) {
+            Ok(config) => {
+                println!("Config loaded from file: {config_filename}");
+                trace!("{config}");
+                config
+            }
+            Err(_) => {
+                info!("Loaded default config");
+                HardwareConfig::default()
+            }
+        },
+        None => {
+            // look for config file from last run
+            let last_run_filename = exec_path.with_file_name(".piglet_config.json");
+            match load_cfg(&last_run_filename.to_string_lossy()) {
+                Ok(config) => {
+                    println!("Config loaded from file: {}", last_run_filename.display());
+                    trace!("{config}");
+                    config
+                }
+                Err(_) => {
+                    println!("Loaded default config");
+                    HardwareConfig::default()
+                }
+            }
+        }
+    }
+}
+
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
+/// Save the config to a file that will be picked up on restart
+pub async fn store_config(
+    hardware_config: &HardwareConfig,
+    exec_path: &Path,
+) -> anyhow::Result<()> {
+    let last_run_filename = exec_path.with_file_name(".piglet_config.json");
+    save_cfg(hardware_config, &last_run_filename.to_string_lossy())
+        .with_context(|| "Saving hardware config")?;
+    Ok(())
+}
+
+// TODO make this function async
+/// Save this GPIOConfig to the file named `filename`
+fn save_cfg(hardware_config: &HardwareConfig, filename: &str) -> io::Result<String> {
+    let mut file = std::fs::File::create(filename)?;
+    let contents = serde_json::to_string(hardware_config)?;
+    file.write_all(contents.as_bytes())?;
+    Ok(format!("File saved successfully to {}", filename))
+}
+
+// TODO make this function async
+/// Load a new GPIOConfig from the file named `filename`
+#[cfg(not(target_arch = "wasm32"))]
+pub fn load_cfg(filename: &str) -> io::Result<HardwareConfig> {
+    let file = std::fs::File::open(filename)?;
+    let reader = BufReader::new(file);
+    let config = serde_json::from_reader(reader)?;
+    Ok(config)
 }
 
 #[cfg(test)]
