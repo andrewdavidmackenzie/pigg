@@ -7,7 +7,9 @@ use pigdef::config::HardwareConfig;
 #[cfg(not(target_arch = "wasm32"))]
 use std::env;
 use std::io;
-use std::io::{BufReader, Write};
+use std::io::BufReader;
+#[cfg(not(target_arch = "wasm32"))]
+use std::io::Write;
 
 /// Asynchronously load a .piggui config file from file named `filename` (no picker)
 /// In the result, return the filename and the loaded [HardwareConfig]
