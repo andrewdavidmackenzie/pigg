@@ -12,7 +12,7 @@ installers = ["shell", "homebrew", "msi"]
 # A GitHub repo to push Homebrew formulas to
 tap = "andrewdavidmackenzie/pigg-tap"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "aarch64-pc-windows-msvc", "arm-unknown-linux-gnueabihf", "arm-unknown-linux-musleabihf", "armv7-unknown-linux-gnueabihf", "armv7-unknown-linux-musleabihf", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "arm-unknown-linux-gnueabihf", "arm-unknown-linux-musleabihf", "armv7-unknown-linux-gnueabihf", "armv7-unknown-linux-musleabihf", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Which actions to run on pull requests
@@ -40,12 +40,6 @@ arm-unknown-linux-musleabihf = "ubuntu-22.04"
 
 [dist.github-custom-runners.x86_64-unknown-linux-gnu]
 runner = "ubuntu-22.04"
-
-[dist.github-custom-runners.aarch64-pc-windows-msvc]
-# https://github.com/axodotdev/cargo-dist/blob/c8ba950c63f9c38c77782912ec6cdb6807bd0fbd/cargo-dist/src/backend/ci/github.rs#L678-L688
-runner = "ubuntu-22.04"
-host = "x86_64-unknown-linux-gnu"
-container = { image = "messense/cargo-xwin", host = "x86_64-unknown-linux-musl", package_manager = "apt" }
 
 [[dist.extra-artifacts]]
 artifacts = [
