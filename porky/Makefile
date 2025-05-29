@@ -3,14 +3,14 @@ all: clippy build build-w build2 build-w2
 clean:
 	cargo clean
 
-setup:
+install-targets:
 	rustup target add thumbv6m-none-eabi
 	rustup target add thumbv8m.main-none-eabihf
-	cargo binstall elf2uf2-rs
+
+setup: install-binstall install-targets
 
 .PHONY: features
 features:
-	cargo build-all-features --target thumbv6m-none-eabi
 	cargo build-all-features --target thumbv6m-none-eabi
 
 clippy:
@@ -43,11 +43,15 @@ build:
 build2:
 	cargo build --release --target thumbv8m.main-none-eabihf --features "usb, pico2"
 
-install-uf2:
+install-binstall:
 	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+install-elf2uf2: install-binstall
 	cargo binstall elf2uf2-rs
 
-uf2s: uf2-w uf2-w2 uf2 uf2-2
+uf2s: install-targets install-elf2uf2 build-uf2s
+
+build-uf2s: uf2-w uf2-w2 uf2 uf2-2
 
 uf2-w: build-w
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico_w.uf2
