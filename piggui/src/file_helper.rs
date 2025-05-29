@@ -1,17 +1,20 @@
 use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
-use crate::Message::{ConfigLoaded, InfoRow};
-use crate::{persistence, Message};
+use crate::Message;
+use crate::Message::{ConfigLoaded, ConfigSaved, InfoRow};
 use iced::Task;
 use pigdef::config::HardwareConfig;
 #[cfg(not(target_arch = "wasm32"))]
 use std::env;
 use std::io;
+use std::io::{BufReader, Write};
 
 /// Asynchronously load a .piggui config file from file named `filename` (no picker)
 /// In the result, return the filename and the loaded [HardwareConfig]
 async fn load(filename: String) -> io::Result<(String, HardwareConfig)> {
-    let config = persistence::load_cfg(&filename)?;
+    let file = std::fs::File::open(&filename)?;
+    let reader = BufReader::new(file);
+    let config = serde_json::from_reader(reader)?;
     Ok((filename, config))
 }
 
@@ -54,7 +57,10 @@ async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
     {
         let path: std::path::PathBuf = handle.path().to_owned();
         let path_str = path.display().to_string();
-        persistence::save_cfg(&gpio_config, &path_str)?;
+        let mut file = std::fs::File::create(path_str)?;
+        let contents = serde_json::to_string(&gpio_config)?;
+        file.write_all(contents.as_bytes())?;
+
         Ok(true)
     } else {
         Ok(false)
@@ -69,9 +75,9 @@ pub fn save(gpio_config: &HardwareConfig) -> Task<Message> {
     Task::perform(
         save_via_picker(gpio_config.clone()),
         |result| match result {
-            Ok(true) => Message::ConfigSaved,
-            Ok(false) => Message::InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
-            Err(e) => Message::InfoRow(ShowStatusMessage(Error(
+            Ok(true) => ConfigSaved,
+            Ok(false) => InfoRow(ShowStatusMessage(Info("File save cancelled".into()))),
+            Err(e) => InfoRow(ShowStatusMessage(Error(
                 "Error saving file".into(),
                 format!("Error saving file. {e}"),
             ))),
@@ -99,7 +105,7 @@ pub fn maybe_load_no_picker(arg: Option<String>) -> Task<Message> {
     match arg {
         Some(filename) => Task::perform(load(filename), |result| match result {
             Ok((filename, config)) => ConfigLoaded(filename, config),
-            Err(e) => Message::InfoRow(ShowStatusMessage(Error(
+            Err(e) => InfoRow(ShowStatusMessage(Error(
                 "Error loading config from file".into(),
                 format!("Error loading the file specified on command line: {}", e),
             ))),

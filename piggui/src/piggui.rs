@@ -51,7 +51,6 @@ pub mod file_helper;
 mod hardware_subscription;
 #[cfg(not(target_arch = "wasm32"))]
 mod local_host;
-mod persistence;
 mod views;
 mod widgets;
 
