@@ -94,10 +94,10 @@ fn delete_configs() {
     let workspace_dir = crate_dir
         .parent()
         .expect("Could not get workspace directory");
-    let config_file = workspace_dir.with_file_name(".pigglet_config.json");
+    let config_file = workspace_dir.with_file_name(".piglet_config.json");
     println!("Deleting file: {config_file:?}");
     let _ = std::fs::remove_file(config_file);
-    let config_file = workspace_dir.join("target/debug/.pigglet_config.json");
+    let config_file = workspace_dir.join("target/debug/.piglet_config.json");
     println!("Deleting file: {config_file:?}");
     let _ = std::fs::remove_file(config_file);
 }
