@@ -13,7 +13,7 @@ exclude.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-pigdef = { path = "../pigdef", default-features = false, features = ["std"] }
+pigdef = { path = "../pigdef", version = "0.7", default-features = false, features = ["std"] }
 
 [target.'cfg(not(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu")))'.dependencies]
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
