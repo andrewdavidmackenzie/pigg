@@ -30,8 +30,8 @@ discovery = ["pigdef/discovery", "pignet/discovery", "dep:mdns-sd"]
 usb = ["pigdef/usb", "pignet/usb"]
 
 [dependencies]
-pigdef = { path = "../pigdef", default-features = false, features = ["std"] }
-pignet = { path = "../pignet" }
+pigdef = { path = "../pigdef", version = "0.7", default-features = false, features = ["std"] }
+pignet = { path = "../pignet", version = "0.7" }
 
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
@@ -57,7 +57,7 @@ mdns-sd = { version = "0.13.9", default-features = false, features = ["async"], 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.15.3"
 clap = { version = "4.5.38", default-features = false, features = ["std", "help", "error-context"] }
-pigpio = { path = "../pigpio" }
+piggpio = { path = "../piggpio", version = "0.7" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
@@ -78,7 +78,7 @@ serial_test = "3.1.1"
 sysinfo = { version = "0.35" }
 
 [dev-dependencies] # For tests
-pignet = { path = "../pignet" }
+pignet = { path = "../pignet", version = "0.7" }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

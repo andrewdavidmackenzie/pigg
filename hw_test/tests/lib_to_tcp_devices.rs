@@ -45,7 +45,7 @@ async fn usb_discover_and_connect_tcp() {
         connect_tcp(&serial, &ip, port, |hw_desc, _c, _co| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
         })
         .await;
@@ -68,7 +68,7 @@ async fn usb_discover_and_disconnect_tcp() {
         connect_tcp(&serial, &ip, port, |hw_desc, _c, tcp_stream| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
 
             tcp_host::send_config_message(tcp_stream, &Disconnect)
@@ -98,7 +98,7 @@ async fn usb_discover_and_get_config_tcp() {
         connect_tcp(&serial, &ip, port, |hw_desc, _c, tcp_stream| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
 
             tcp_host::send_config_message(tcp_stream, &GetConfig)
@@ -125,7 +125,7 @@ async fn usb_discover_and_reconnect_tcp() {
         connect_tcp(&serial, &ip, port, |hw_desc, _c, tcp_stream| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
 
             tcp_host::send_config_message(tcp_stream, &Disconnect)
@@ -140,7 +140,7 @@ async fn usb_discover_and_reconnect_tcp() {
         connect_tcp(&serial, &ip, port, |hw_desc, _c, _tcp_stream| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
-                "Didn't connect to fake hardware piglet"
+                "Didn't connect to fake hardware pigglet"
             );
         })
         .await;

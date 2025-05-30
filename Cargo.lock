@@ -2403,7 +2403,7 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "hw_test"
-version = "0.6.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "async-std",
@@ -4493,7 +4493,7 @@ dependencies = [
 
 [[package]]
 name = "pigdef"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "embassy-time",
  "heapless 0.8.0",
@@ -4502,8 +4502,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "pigglet"
+version = "0.7.1"
+dependencies = [
+ "anyhow",
+ "async-std",
+ "clap",
+ "env_logger",
+ "futures",
+ "iroh",
+ "local-ip-address",
+ "log",
+ "mdns-sd",
+ "pigdef",
+ "piggpio",
+ "pignet",
+ "portpicker",
+ "postcard",
+ "rand 0.8.5",
+ "serde_json",
+ "serial_test",
+ "service-manager",
+ "sysinfo",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "piggpio"
+version = "0.7.1"
+dependencies = [
+ "libc",
+ "pigdef",
+ "rand 0.8.5",
+ "rppal",
+]
+
+[[package]]
 name = "piggui"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "async-std",
@@ -4521,8 +4558,8 @@ dependencies = [
  "mdns-sd",
  "once_cell",
  "pigdef",
+ "piggpio",
  "pignet",
- "pigpio",
  "plotters",
  "plotters-iced",
  "rfd",
@@ -4535,35 +4572,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "piglet"
-version = "0.7.0"
-dependencies = [
- "anyhow",
- "async-std",
- "clap",
- "env_logger",
- "futures",
- "iroh",
- "local-ip-address",
- "log",
- "mdns-sd",
- "pigdef",
- "pignet",
- "pigpio",
- "portpicker",
- "postcard",
- "rand 0.8.5",
- "serde_json",
- "serial_test",
- "service-manager",
- "sysinfo",
- "tempfile",
- "tokio",
-]
-
-[[package]]
 name = "pignet"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "anyhow",
  "async-std",
@@ -4574,16 +4584,6 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "tokio",
-]
-
-[[package]]
-name = "pigpio"
-version = "0.7.0"
-dependencies = [
- "libc",
- "pigdef",
- "rand 0.8.5",
- "rppal",
 ]
 
 [[package]]

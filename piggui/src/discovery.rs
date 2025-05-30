@@ -19,6 +19,7 @@ use pigdef::description::HardwareDetails;
 use pigdef::description::SerialNumber;
 #[cfg(feature = "tcp")]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
+use piggpio::HW;
 use pignet::discovery::DiscoveredDevice;
 #[cfg(any(feature = "tcp", feature = "usb"))]
 use pignet::discovery::DiscoveryEvent;
@@ -30,7 +31,6 @@ use pignet::discovery::DiscoveryMethod::USBRaw;
 #[cfg(feature = "usb")]
 use pignet::usb_host;
 use pignet::HardwareConnection;
-use pigpio::HW;
 use std::collections::HashMap;
 #[cfg(feature = "tcp")]
 use std::net::IpAddr;

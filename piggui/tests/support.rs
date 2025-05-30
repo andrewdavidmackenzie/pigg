@@ -74,7 +74,7 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
 
     println!("Running Command: cargo {}", args.join(" "));
 
-    // spawn the 'piglet' process
+    // spawn the 'pigglet' process
     let child = command
         .args(args)
         .current_dir(workspace_dir)
@@ -113,19 +113,22 @@ pub fn kill_all(process_name: &str) {
 }
 
 #[allow(dead_code)]
-pub fn pass(child: &mut Child) {
+pub fn kill(child: &mut Child) {
     println!("Killing child process with Pid: {}", child.id());
-
     child.kill().expect("Failed to kill child process");
-
     // wait for the process to be removed
     child.wait().expect("Failed to wait until child exited");
 }
 
 #[allow(dead_code)]
+pub fn pass(child: &mut Child) {
+    kill(child);
+}
+
+#[allow(dead_code)]
 pub fn fail(child: &mut Child, message: &str) -> ! {
     // Kill process before possibly failing test and leaving process around
-    pass(child);
+    kill(child);
     panic!("{}", message);
 }
 
@@ -147,7 +150,7 @@ pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
 }
 
 #[allow(dead_code)]
-pub async fn parse_piglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
+pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
     let mut nodeid = None;
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
@@ -203,14 +206,14 @@ where
     match tcp_host::connect(ip, port).await {
         Ok((hw_desc, hw_config, tcp_stream)) => {
             if !hw_desc.details.model.contains("Fake") {
-                fail(child, "Didn't connect to fake hardware piglet")
+                fail(child, "Didn't connect to fake hardware pigglet")
             } else {
                 test(hw_desc, hw_config, tcp_stream).await;
             }
         }
         Err(e) => fail(
             child,
-            &format!("Could not connect to piglet at {ip}:{port}: '{e}'"),
+            &format!("Could not connect to pigglet at {ip}:{port}: '{e}'"),
         ),
     }
 }
@@ -228,11 +231,11 @@ pub async fn connect_and_test_iroh<F, Fut>(
     match iroh_host::connect(nodeid, relay_url).await {
         Ok((hw_desc, hw_config, connection)) => {
             if !hw_desc.details.model.contains("Fake") {
-                fail(child, "Didn't connect to fake hardware piglet")
+                fail(child, "Didn't connect to fake hardware pigglet")
             } else {
                 test(hw_desc, hw_config, connection).await;
             }
         }
-        _ => fail(child, "Could not connect to piglet"),
+        _ => fail(child, "Could not connect to pigglet"),
     }
 }

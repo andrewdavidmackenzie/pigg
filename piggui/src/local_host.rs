@@ -8,8 +8,8 @@ use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use pigdef::description::HardwareDescription;
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
-use pigpio::get_hardware;
-use pigpio::HW;
+use piggpio::get_hardware;
+use piggpio::HW;
 use std::time::Duration;
 
 pub struct LocalConnection {

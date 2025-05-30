@@ -44,13 +44,13 @@ Here are some gifs and links to YouTube videos showing some of the features.
 
 [![Controlling an LED on an Output](https://img.youtube.com/vi/HBQWMZNyZw4/maxresdefault.jpg)](https://youtu.be/HBQWMZNyZw4)
 
-## Remote GPIO from piggui to piglet using Command Line option
+## Remote GPIO from piggui to pigglet using Command Line option
 
-[![Remote GPIO from piggui to piglet using Command Line option](https://img.youtube.com/vi/zcEa_Oke014/maxresdefault.jpg)](https://youtu.be/zcEa_Oke014)
+[![Remote GPIO from piggui to pigglet using Command Line option](https://img.youtube.com/vi/zcEa_Oke014/maxresdefault.jpg)](https://youtu.be/zcEa_Oke014)
 
-## Remote GPIO from piggui to piglet using Connect Dialog
+## Remote GPIO from piggui to pigglet using Connect Dialog
 
-[![Remote GPIO from piggui to piglet using Command Line option](https://img.youtube.com/vi/aToJ1aT7NeM/maxresdefault.jpg)](https://youtu.be/aToJ1aT7NeM)
+[![Remote GPIO from piggui to pigglet using Command Line option](https://img.youtube.com/vi/aToJ1aT7NeM/maxresdefault.jpg)](https://youtu.be/aToJ1aT7NeM)
 
 ## Piggui controlling a Pi Pico with porky
 

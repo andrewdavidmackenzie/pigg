@@ -29,9 +29,9 @@ use std::str::FromStr;
 use std::time::Duration;
 
 #[cfg(feature = "iroh")]
-const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure piglet is running on the remote Pi. Retrieve the nodeid from piglet, enter it below, and optionally provide a Relay URL";
+const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure pigglet is running on the remote Pi. Retrieve the nodeid from pigglet, enter it below, and optionally provide a Relay URL";
 #[cfg(feature = "tcp")]
-const TCP_INFO_TEXT: &str = "To connect to a Pi/Pi Pico using TCP, ensure it is reachable over the network. Retrieve the device's IP address and the port number from it (see piglet or porky docs) and enter below.";
+const TCP_INFO_TEXT: &str = "To connect to a Pi/Pi Pico using TCP, ensure it is reachable over the network. Retrieve the device's IP address and the port number from it (see pigglet or porky docs) and enter below.";
 
 use crate::views::dialog_styles::{
     cancel_button, connect_button, ACTIVE_TAB_BUTTON_STYLE, CONNECTION_ERROR_DISPLAY,

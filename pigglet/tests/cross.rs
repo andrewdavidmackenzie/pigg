@@ -1,5 +1,5 @@
 use crate::support::{
-    build, connect_and_test_iroh, connect_and_test_tcp, kill_all, parse_piglet, pass, run,
+    build, connect_and_test_iroh, connect_and_test_tcp, kill_all, parse_pigglet, pass, run,
 };
 use pignet::{iroh_host, tcp_host};
 use serial_test::serial;
@@ -11,15 +11,15 @@ mod support;
 #[tokio::test]
 #[serial]
 async fn connect_tcp_reconnect_iroh() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, nodeid) = parse_piglet(&mut piglet).await;
+    let (ip, port, nodeid) = parse_pigglet(&mut pigglet).await;
 
-    connect_and_test_tcp(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
+    connect_and_test_tcp(&mut pigglet, ip, port, |_d, _c, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
             .await
             .expect("Could not disconnect");
@@ -28,7 +28,7 @@ async fn connect_tcp_reconnect_iroh() {
 
     // Test we can re-connect over iroh after sending a disconnect request
     connect_and_test_iroh(
-        &mut piglet,
+        &mut pigglet,
         &nodeid,
         None,
         |_d, _c, mut connection| async move {
@@ -39,23 +39,23 @@ async fn connect_tcp_reconnect_iroh() {
     )
     .await;
 
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn connect_iroh_reconnect_tcp() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, nodeid) = parse_piglet(&mut piglet).await;
+    let (ip, port, nodeid) = parse_pigglet(&mut pigglet).await;
 
     // Test we can re-connect over iroh after sending a disconnect request
     connect_and_test_iroh(
-        &mut piglet,
+        &mut pigglet,
         &nodeid,
         None,
         |_d, _c, mut connection| async move {
@@ -68,12 +68,12 @@ async fn connect_iroh_reconnect_tcp() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    connect_and_test_tcp(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
+    connect_and_test_tcp(&mut pigglet, ip, port, |_d, _c, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
             .await
             .expect("Could not disconnect");
     })
     .await;
 
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }

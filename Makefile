@@ -36,7 +36,7 @@ clean:
 .PHONY: macos-setup
 macos-setup:
 	@cd piggui && make macos-setup
-	@cd piglet && make macos-setup
+	@cd pigglet && make macos-setup
 
 .PHONY: setup
 setup:
@@ -46,7 +46,7 @@ ifeq ($(OSFLAG),macos)
 endif
 	@cargo install cargo-all-features mlc
 	@cd piggui && make setup
-	@cd piglet && make setup
+	@cd pigglet && make setup
 	@cd porky && make setup
 
 .PHONY: clippy
@@ -69,13 +69,13 @@ run:
 run-release:
 	cargo run --bin piggui --release
 
-.PHONY: run-piglet
-run-piglet:
-	cargo run --bin piglet
+.PHONY: run-pigglet
+run-pigglet:
+	cargo run --bin pigglet
 
-.PHONY: run-release-piglet
-run-release-piglet:
-	cargo run --bin piglet --release
+.PHONY: run-release-pigglet
+run-release-pigglet:
+	cargo run --bin pigglet --release
 
 .PHONY: build-release
 build-release:
@@ -126,12 +126,12 @@ test-armv7:
 .PHONY: copy-armv7
 copy-armv7:
 	scp target/armv7-unknown-linux-gnueabihf/debug/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/armv7-unknown-linux-gnueabihf/debug/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-armv7
 copy-release-armv7:
 	scp target/armv7-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/armv7-unknown-linux-gnueabihf/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 #### aarch64 targets
 .PHONY: aarch64
@@ -157,12 +157,12 @@ test-aarch64:
 .PHONY: copy-aarch64
 copy-aarch64:
 	scp target/aarch64-unknown-linux-gnu/debug/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/aarch64-unknown-linux-gnu/debug/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-aarch64
 copy-release-aarch64:
 	scp target/aarch64-unknown-linux-gnu/release/piggui $(PI_USER)@$(PI_TARGET):~/
-	scp target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/aarch64-unknown-linux-gnu/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 #### arm targets - useful for Raspberry Pi Zero (not Zero 2)
 # Don't build build-arm-musl by default
@@ -192,12 +192,12 @@ test-arm:
 
 .PHONY: copy-arm
 copy-arm:
-	scp target/arm-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/arm-unknown-linux-gnueabihf/debug/pigglet $(PI_USER)@$(PI_TARGET):~/
 	scp target/arm-unknown-linux-gnueabihf/debug/piggui $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-arm
 copy-release-arm:
-	scp target/arm-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp target/arm-unknown-linux-gnueabihf/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 	scp target/arm-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
 
 

@@ -1,6 +1,6 @@
 # default target: "make" ran on macos or linux or windows and build for the host architecture
-# target/aarch64-unknown-linux-gnu/release/piglet - for Pi with GPIO, can be run natively from RPi command line
-# target/armv7-unknown-linux-gnueabihf/release/piglet - for armv7 based architecture with GPIO, can be run natively
+# target/aarch64-unknown-linux-gnu/release/pigglet - for Pi with GPIO, can be run natively from RPi command line
+# target/armv7-unknown-linux-gnueabihf/release/pigglet - for armv7 based architecture with GPIO, can be run natively
 
 # MacOS pre-requisites for cross-compiling to armv7
 # brew install arm-linux-gnueabihf-binutils
@@ -97,11 +97,11 @@ test-armv7:
 
 .PHONY: copy-armv7
 copy-armv7:
-	scp ../target/armv7-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/armv7-unknown-linux-gnueabihf/debug/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-armv7
 copy-release-armv7:
-	scp ../target/armv7-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/armv7-unknown-linux-gnueabihf/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 
 #### aarch64 targets
@@ -127,11 +127,11 @@ test-aarch64:
 
 .PHONY: copy-aarch64
 copy-aarch64:
-	scp ../target/aarch64-unknown-linux-gnu/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/aarch64-unknown-linux-gnu/debug/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-aarch64
 copy-release-aarch64:
-	scp ../target/aarch64-unknown-linux-gnu/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/aarch64-unknown-linux-gnu/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 
 #### arm targets - useful for Raspberry Pi Zero (not Zero 2)
@@ -162,11 +162,11 @@ test-arm:
 
 .PHONY: copy-arm
 copy-arm:
-	scp ../target/arm-unknown-linux-gnueabihf/debug/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/arm-unknown-linux-gnueabihf/debug/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-arm
 copy-release-arm:
-	scp ../target/arm-unknown-linux-gnueabihf/release/piglet $(PI_USER)@$(PI_TARGET):~/
+	scp ../target/arm-unknown-linux-gnueabihf/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 
 .PHONY: ssh
