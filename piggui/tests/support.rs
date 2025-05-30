@@ -113,19 +113,22 @@ pub fn kill_all(process_name: &str) {
 }
 
 #[allow(dead_code)]
-pub fn pass(child: &mut Child) {
+pub fn kill(child: &mut Child) {
     println!("Killing child process with Pid: {}", child.id());
-
     child.kill().expect("Failed to kill child process");
-
     // wait for the process to be removed
     child.wait().expect("Failed to wait until child exited");
 }
 
 #[allow(dead_code)]
+pub fn pass(child: &mut Child) {
+    kill(child);
+}
+
+#[allow(dead_code)]
 pub fn fail(child: &mut Child, message: &str) -> ! {
     // Kill process before possibly failing test and leaving process around
-    pass(child);
+    kill(child);
     panic!("{}", message);
 }
 
