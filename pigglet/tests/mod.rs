@@ -7,24 +7,24 @@ mod support;
 #[tokio::test]
 #[serial]
 async fn version_number() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec!["--version".into()], None);
-    let line = wait_for_stdout(&mut piglet, "piglet").expect("Failed to get expected output");
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec!["--version".into()], None);
+    let line = wait_for_stdout(&mut pigglet, "pigglet").expect("Failed to get expected output");
     let version = line.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn test_verbosity_levels() {
-    kill_all("piglet");
-    build("piglet");
+    kill_all("pigglet");
+    build("pigglet");
     let levels = ["info", "debug", "trace"];
     for &level in &levels {
-        let mut piglet = run("piglet", vec!["--verbosity".into(), level.into()], None);
-        let line = wait_for_stdout(&mut piglet, &level.to_uppercase())
+        let mut pigglet = run("pigglet", vec!["--verbosity".into(), level.into()], None);
+        let line = wait_for_stdout(&mut pigglet, &level.to_uppercase())
             .expect("Failed to get expected output");
 
         assert!(
@@ -32,20 +32,20 @@ async fn test_verbosity_levels() {
             "Failed to set verbosity level to {}",
             level
         );
-        pass(&mut piglet);
+        pass(&mut pigglet);
     }
 }
 
 #[tokio::test]
 #[serial]
 async fn help() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec!["--help".into()], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec!["--help".into()], None);
     wait_for_stdout(
-        &mut piglet,
-        "'piglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
+        &mut pigglet,
+        "'pigglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
     )
     .expect("Failed to get expected output");
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }

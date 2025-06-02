@@ -1,4 +1,4 @@
-use crate::support::{build, connect_and_test_iroh, kill_all, parse_piglet, pass, run};
+use crate::support::{build, connect_and_test_iroh, kill_all, parse_pigglet, pass, run};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
 use pigdef::pin_function::PinFunction::Input;
@@ -12,14 +12,14 @@ mod support;
 #[tokio::test]
 #[serial]
 async fn disconnect_iroh() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
-    let (_ip, _port, nodeid) = parse_piglet(&mut piglet).await;
+    let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_iroh(
-        &mut piglet,
+        &mut pigglet,
         &nodeid,
         None,
         |_, _, mut connection| async move {
@@ -29,20 +29,20 @@ async fn disconnect_iroh() {
         },
     )
     .await;
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn config_change_returned_iroh() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
-    let (_ip, _port, nodeid) = parse_piglet(&mut piglet).await;
+    let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_iroh(
-        &mut piglet,
+        &mut pigglet,
         &nodeid,
         None,
         |_, _, mut connection| async move {
@@ -75,16 +75,16 @@ async fn config_change_returned_iroh() {
         },
     )
     .await;
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn reconnect_iroh() {
-    kill_all("piglet");
-    build("piglet");
-    let mut child = run("piglet", vec![], None);
-    let (_ip, _port, nodeid) = parse_piglet(&mut child).await;
+    kill_all("pigglet");
+    build("pigglet");
+    let mut child = run("pigglet", vec![], None);
+    let (_ip, _port, nodeid) = parse_pigglet(&mut child).await;
     connect_and_test_iroh(
         &mut child,
         &nodeid,

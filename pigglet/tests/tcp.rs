@@ -1,4 +1,4 @@
-use crate::support::{build, connect_and_test_tcp, kill_all, parse_piglet, pass, run};
+use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::pin_function::PinFunction::Output;
 use pignet::tcp_host;
@@ -11,36 +11,36 @@ mod support;
 #[tokio::test]
 #[serial]
 async fn disconnect_tcp() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, _) = parse_piglet(&mut piglet).await;
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
-    connect_and_test_tcp(&mut piglet, ip, port, |_, _, tcp_stream| async move {
+    connect_and_test_tcp(&mut pigglet, ip, port, |_, _, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
             .await
             .expect("Could not disconnect");
     })
     .await;
 
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn reconnect_tcp() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, _) = parse_piglet(&mut piglet).await;
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
-    connect_and_test_tcp(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
+    connect_and_test_tcp(&mut pigglet, ip, port, |_d, _c, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
             .await
             .expect("Could not disconnect");
@@ -48,29 +48,29 @@ async fn reconnect_tcp() {
     .await;
 
     // Test we can re-connect after sending a disconnect request
-    connect_and_test_tcp(&mut piglet, ip, port, |_d, _c, tcp_stream| async move {
+    connect_and_test_tcp(&mut pigglet, ip, port, |_d, _c, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
             .await
             .expect("Could not disconnect");
     })
     .await;
 
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn clean_config() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, _) = parse_piglet(&mut piglet).await;
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_tcp(
-        &mut piglet,
+        &mut pigglet,
         ip,
         port,
         |_, hw_config, tcp_stream| async move {
@@ -87,22 +87,22 @@ async fn clean_config() {
     )
     .await;
 
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn config_change_returned_tcp() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, _) = parse_piglet(&mut piglet).await;
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_tcp(
-        &mut piglet,
+        &mut pigglet,
         ip,
         port,
         |_, hw_config, tcp_stream| async move {
@@ -139,7 +139,7 @@ async fn config_change_returned_tcp() {
                 );
             } else {
                 panic!(
-                    "Expected NewConfig message from piglet but got {:?}",
+                    "Expected NewConfig message from pigglet but got {:?}",
                     hw_message
                 );
             }
@@ -181,29 +181,29 @@ async fn config_change_returned_tcp() {
     )
     .await;
 
-    pass(&mut piglet);
+    pass(&mut pigglet);
 }
 
 #[tokio::test]
 #[serial]
 async fn invalid_pin_config() {
-    kill_all("piglet");
-    build("piglet");
-    let mut piglet = run("piglet", vec![], None);
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, _) = parse_piglet(&mut piglet).await;
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
     //let ip = IpAddr::from_str("192.168.1.133").expect("Could not create IP address");
     //let port = 15289;
 
     let (hw_desc, hw_config, tcp_stream) = tcp_host::connect(ip, port)
         .await
-        .expect("Could not connect to piglet at {ip}:{port}: '{e}'");
+        .expect("Could not connect to pigglet at {ip}:{port}: '{e}'");
 
     assert!(
         hw_desc.details.model.contains("Fake"),
-        "Didn't connect to fake hardware piglet"
+        "Didn't connect to fake hardware pigglet"
     );
 
     println!("hw_config {:?}", hw_config);
@@ -239,8 +239,8 @@ async fn invalid_pin_config() {
             "Configured pin doesn't match config sent"
         );
     } else {
-        panic!("Unexpected message returned from piglet");
+        panic!("Unexpected message returned from pigglet");
     }
 
-    //pass(&mut piglet);
+    //pass(&mut pigglet);
 }
