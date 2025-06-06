@@ -5,7 +5,10 @@ use support::{pass, run, wait_for_stdout};
 mod support;
 
 // TODO fix networking issue in ubuntu and macos in GH Actions
-#[cfg(feature = "tcp")]
+#[cfg_attr(
+    all(feature = "tcp", not(target_os = "linux")),
+    ignore = "https://github.com/andrewdavidmackenzie/pigg/issues/1014"
+)]
 #[tokio::test]
 #[serial]
 async fn connect_via_ip() {
