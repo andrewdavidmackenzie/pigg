@@ -8,6 +8,11 @@ use std::time::Duration;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
+#[cfg(all(feature = "tcp", feature = "iroh"))]
+#[cfg_attr(
+    target_os = "linux",
+    ignore = "https://github.com/andrewdavidmackenzie/pigg/issues/1014"
+)]
 #[tokio::test]
 #[serial]
 async fn connect_tcp_reconnect_iroh() {
@@ -42,6 +47,11 @@ async fn connect_tcp_reconnect_iroh() {
     pass(&mut piglet);
 }
 
+#[cfg(all(feature = "tcp", feature = "iroh"))]
+#[cfg_attr(
+    target_os = "linux",
+    ignore = "https://github.com/andrewdavidmackenzie/pigg/issues/1014"
+)]
 #[tokio::test]
 #[serial]
 async fn connect_iroh_reconnect_tcp() {
