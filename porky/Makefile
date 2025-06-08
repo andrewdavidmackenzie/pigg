@@ -53,14 +53,14 @@ uf2s: install-targets install-elf2uf2 build-uf2s
 
 build-uf2s: uf2-w uf2-w2 uf2 uf2-2
 
-uf2-w: build-w
+uf2-w: build-w # UF2 for Pi Pico (1) with Wi-FI
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico_w.uf2
 
-uf2-w2: build-w2
+uf2-w2: build-w2 # UF2 for Pi Pico 2 with Wi-Fi
 	elf2uf2-rs target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico_w2.uf2
 
-uf2: build
+uf2: build # UF2 for Pi Pico (1) without Wi-Fi
 	elf2uf2-rs target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico.uf2
 
-uf2-2: build2
+uf2-2: build2 # UF2 for Pi Pico 2 without WEi-Fi
 	elf2uf2-rs target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico2.uf2
