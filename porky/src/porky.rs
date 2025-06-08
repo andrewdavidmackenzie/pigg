@@ -103,7 +103,7 @@ pub static HARDWARE_EVENT_CHANNEL: Channel<ThreadModeRawMutex, HardwareConfigMes
     Channel::new();
 
 /// Create a [HardwareDescription] for this device with the provided serial number
-fn hardware_description(serial: &str) -> HardwareDescription {
+fn hardware_description(serial: &str) -> HardwareDescription<'_> {
     let details = HardwareDetails {
         #[cfg(all(feature = "pico1", not(feature = "wifi")))]
         model: "Raspberry Pi Pico",
@@ -181,7 +181,7 @@ async fn usb_only(
                 &mut control,
                 db,
             )
-            .await;
+                .await;
         }
     }
 }
@@ -289,7 +289,7 @@ async fn main(spawner: Spawner) {
         &HardwareConfigMessage::NewConfig(hardware_config.clone()),
         &mut hardware_config,
     )
-    .await;
+        .await;
 
     // If we have a valid SsidSpec, then try and join that network using it
     #[cfg(feature = "wifi")]
@@ -325,7 +325,7 @@ async fn main(spawner: Spawner) {
                     #[cfg(feature = "wifi")]
                     watchdog,
                 )
-                .await;
+                    .await;
 
                 #[cfg(feature = "wifi")]
                 let mut wifi_tx_buffer = [0; 4096];
@@ -344,7 +344,7 @@ async fn main(spawner: Spawner) {
                         ),
                         usb::accept_connection(&mut usb_connection, &hardware_config),
                     )
-                    .await
+                        .await
                     {
                         Either::First(socket_select) => match socket_select {
                             Ok(socket) => {
@@ -356,7 +356,7 @@ async fn main(spawner: Spawner) {
                                     &mut control,
                                     db,
                                 )
-                                .await
+                                    .await
                                 {
                                     error!("Could tcp::message_loop error: {}", e);
                                 }
@@ -372,7 +372,7 @@ async fn main(spawner: Spawner) {
                                 &mut control,
                                 db,
                             )
-                            .await;
+                                .await;
                         }
                     }
                 }
@@ -384,7 +384,7 @@ async fn main(spawner: Spawner) {
                         &mut wifi_tx_buffer,
                         &mut wifi_rx_buffer,
                     )
-                    .await
+                        .await
                     {
                         Ok(socket) => {
                             if let Err(e) = tcp::message_loop(
@@ -396,7 +396,7 @@ async fn main(spawner: Spawner) {
                                 &mut control,
                                 db,
                             )
-                            .await
+                                .await
                             {
                                 error!("Could tcp::message_loop error: {}", e);
                             }
@@ -424,5 +424,5 @@ async fn main(spawner: Spawner) {
         #[cfg(feature = "wifi")]
         control,
     )
-    .await;
+        .await;
 }
