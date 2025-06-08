@@ -28,10 +28,10 @@ The steps to do a full release are:
 - Install from crates.io and check both run and have the correct version number
     - `cargo install pigg`
     - run `piggui` at the command line and check the version number displayed or run `piggui --version`
-    - run `piglet --version` and check the correct version number is displayed
+    - run `pigglet --version` and check the correct version number is displayed
 - Test `cargo binstall`
     - Uninstall the version just installed, using `cargo install` at the command line
     - Install the pre-built binary from GH Releases using `cargo binstall pigg`at the command line
     - run `piggui` and check the version number displayed or run `piggui --version`
-    - run `piglet --version` and check the correct version number is displayed
+    - run `pigglet --version` and check the correct version number is displayed
   

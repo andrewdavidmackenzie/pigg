@@ -50,8 +50,8 @@ make
 
 This will run clip, build, and run tests, generating these binaries:
 
-- `target/debug/piggui` - GUI with a GPIO backend and ability to connect to remote `piglet` and `porky` devices
-- `target/debug/piglet` - CLI with a GPIO backend
+- `target/debug/piggui` - GUI with a GPIO backend and ability to connect to remote `pigglet` and `porky` devices
+- `target/debug/pigglet` - CLI with a GPIO backend
 - `porky/target/thumbv6m-none-eabi/release/porky` - an executable for use on Raspberry Pi Pico W
 
 By default, `cargo` (used by `make`) compiles for the machine it is running on. For cross-compiling for a Raspberry
@@ -59,7 +59,7 @@ Pi on a different host see later section.
 
 ## GPIO Backends
 
-If built for macOS, linux, Windows (building on the same OS) the GPIO backend of `piggui` and `piglet` will be a
+If built for macOS, linux, Windows (building on the same OS) the GPIO backend of `piggui` and `pigglet` will be a
 simulated backend to show the features and ease development.
 
 If built for a Raspberry Pi (building on the Pi or cross compiling for it) the GPIO backend will interact with the
@@ -69,8 +69,8 @@ real GPIO hardware present.
 
 - Use `make run` to start a debug build of `piggui`
 - Use `"make run-release"` to start a release build of `piggui`
-- Use `make run-piglet` to start a debug build of `piglet`
-- Use `"make run-release-piglet"` to start a release build of `piglet`
+- Use `make run-pigglet` to start a debug build of `pigglet`
+- Use `"make run-release-pigglet"` to start a release build of `pigglet`
 
 ## Building for Pi on a Pi
 
@@ -92,7 +92,7 @@ Relevant Makefile targets for `armv7` and `aarch64` architectures are:
 - [`release-build-armv7` | `release-build-aarch64`] - will run a release build
 - [`test-armv7` | `test-aarch64`] - will run tests
 
-These targets will build binary files for `piggui` and `piglet` in the `target/{architecture}/{release or debug}/`
+These targets will build binary files for `piggui` and `pigglet` in the `target/{architecture}/{release or debug}/`
 directory.
 
 Being built _for_ the Raspberry Pi, these binaries will have real GPIO backends that interact with the real Raspberry

@@ -1,8 +1,13 @@
 [package]
 name = "hw_test"
-version = "0.6.0"
+description = "Tests for pigg project that test interaction with real HW devices (Pi Zero, Pico etc) connected to the runner"
+version = "0.7.1"
 edition = "2021"
 rust-version = "1.80"
+license = "Apache-2.0"
+documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
+repository = "https://github.com/andrewdavidmackenzie/pigg/"
+homepage = "https://github.com/andrewdavidmackenzie/pigg/"
 
 [features]
 default = ["usb", "tcp", "discovery", "iroh"]
@@ -12,8 +17,8 @@ discovery = ["pigdef/discovery", "pignet/discovery"]
 iroh = ["pigdef/iroh", "pignet/iroh"]
 
 [dev-dependencies]
-pigdef = { path = "../pigdef" }
-pignet = { path = "../pignet" }
+pigdef = { path = "../pigdef", version = "0.7" }
+pignet = { path = "../pignet", version = "0.7" }
 tokio = { version = "1.45", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
 async-std = "1.13.1"
 serial_test = "3.1.1"

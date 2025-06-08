@@ -30,6 +30,8 @@ use iroh::NodeId;
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
+#[cfg(not(target_arch = "wasm32"))]
+use piggpio::get_hardware;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
@@ -38,8 +40,6 @@ use pignet::HardwareConnection;
 #[cfg(not(target_arch = "wasm32"))]
 use pignet::HardwareConnection::Local;
 use pignet::HardwareConnection::NoConnection;
-#[cfg(not(target_arch = "wasm32"))]
-use pigpio::get_hardware;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
@@ -51,7 +51,6 @@ pub mod file_helper;
 mod hardware_subscription;
 #[cfg(not(target_arch = "wasm32"))]
 mod local_host;
-mod persistence;
 mod views;
 mod widgets;
 

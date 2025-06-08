@@ -8,7 +8,7 @@
 
 # pigg - Raspberry Pi GPIO GUI
 
-An app for Raspberry Pi GPIO Output control and Input visualization, with GUI and CLI Support for macos, Linux
+An app for Raspberry Pi GPIO Output control and Input visualization, with GUI and CLI Support for macOS, Linux
 (including Raspberry Pi) and Windows; GPIO CLI agent for Raspberry Pi and embedded applications for Pi Pico (USB)
 and Pi Pico W (USB, TCP).
 
@@ -41,36 +41,33 @@ The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
 
 [Website](https://mackenzie-serres.net/pigg/) (just README.md content for now...)
 
-## What's new in Release 0.6.0 - USB, Pi Pico and Discovery
+## What's new in Release 0.7.0 - Pico 2 Support, Improved Layouts, Bug fixing and Tests
 
-Full feature support for Pi Pico W and Pi Pico, USB discovery, SSID configuration, GPIO control and mDNS discovery.
-
-Pi Pico support includes:
-
-- Embedded application `porky` and `porky_w` for running on the Pi Pico and Pi Pico W.
-- UF2 firmware files provided as part of release to aid programming Pi Pico devices with `porky` or `porky_w`
-- Ability to build `porky` yourself with default SSID information so all devices programmed with that binary connect
-  automatically to Wi-Fi
-- USB direct connection between `piggui` and `porky` that allows you to:
-    - Discover USB connected `porky` devices
-    - View information about the device
-    - Determine if it is connected to the Wi-Fi network and if it is, get its IP and Port for remote GUI use
-    - Program the Wi-Fi network it will connect to, instead of the default one as part of the build.
-      This is persisted in Flash memory, so it is used again on restart/reboot.
-    - Reset a previously programmed Wi-Fi network so that on restart the device will connect to the default one if it
-      exists.
-    - Full functionality (i.e. Control the device and get input signal level changes) via USB, so on a par
-      with TCP connections to the Pi Pico W, but via USB to either a Pi Pico or Pi Pico W
-- Remote network access to the Pi Pico W's GPIO, in the same GUI as remote access to Raspberry Pis (not Pico).
-- Pi Pico specific pin layout and numbering displayed in GUI
-- Persisting of GPIO config to flash and recovery at reboot/restart so that the GPIO continues to work as before
-- `udev` rules file for allowing user access (for `piggui` application) to USB devices on Linux machines
-
-Additions to `piglet` functionality:
-
-- Persisting of GPIO config to disk and recovery at reboot/restart so that the GPIO continues where you left off
-- mDNS discoverability of `piglets` on the network and get the details required to connect to them by `TCP` or
-  `Iroh`
+* Pico 2 and Pico 2 W full support alongside Pico and Pico W
+* New compact pin layout view that shows only configured pins, suitable for devices with small displays
+* Menus to configure pins are now on the pin itself to reduce space used
+* Addition of a disconnected view when no connection is present. Connecting status added to the connecting menu while a
+  connection is being attempted
+* FakePi hardware view (mainly for development) is only included in debug builds. Release builds will show the "
+  Disconnected View" initially
+* LED output display is a clickable control now to reduce space used
+* Updated lots of dependencies. Almost all are on the latest versions available
+* Hardware compatibility tests are run in CI. Added "hw_tests" that are a set of tests running piggui against pigglet
+  and
+  porky running on real Hardware (Pi Zero, Pico and Pico 2) connected to my server, using a custom GH runner
+* Lots of test improvements across all subprojects
+* A number of small visual improvements around menus, dialogs, sizes etc.
+* Improvements in developer setup Makefile targets for any contributors
+* Improvements in connection handling and switching from one device directly to another
+* More robust service restart by retrying with a delay on startup and failure (pending the "proper" fix (for systemd)
+  which is in the works
+* Improvements to tooltips, adding connection details on connection buttons
+* Many code improvements, removing all unwraps among them. Project structured as a workspace enabling more code reuse
+  across projects
+* Added a FUNDING.yml
+* Improvements in the wasm32 build, a pre-requisite to getting a web UI working
+* A number of small bug fixes
+*
 
 ## Other Features
 
@@ -92,20 +89,20 @@ Additions to `piglet` functionality:
 - GPIO configurations can be loaded at startup with a command line filename option, or loaded via
   file-picker from the UI or saved to file via file picker, or the device will communicate it's current configuration
   to the GUI, allowing you to continue with the configuration currently being used by the GPIO hardware.
-- GUI discovery of devices using mDNS for networked `piglet`s and `porky`s, or USB for direct connected `porky`s.
-- The GUI (`piggui`) can connect to a Pi (running `piglet`) over the network, or to a Pi Pico/Pi Pico W (over the
+- GUI discovery of devices using mDNS for networked `pigglet`s and `porky`s, or USB for direct connected `porky`s.
+- The GUI (`piggui`) can connect to a Pi (running `pigglet`) over the network, or to a Pi Pico/Pi Pico W (over the
   network or USB direct connect) to control and view the GPIO hardware from a distance.
 - The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped at source (as close to the hardware
   as possible) so network delays should not affect the waveforms displayed. Please provide us feedback and ideas related
   to networking in Discussions or GH issues.
-- The data required to connect to a remote node via iroh-net is called the `nodeid`. `piglet` prints this out for you
-  if it is started in the foreground. When `piglet` has been started as a system service, start another instance in the
+- The data required to connect to a remote node via iroh-net is called the `nodeid`. `pigglet` prints this out for you
+  if it is started in the foreground. When `pigglet` has been started as a system service, start another instance in the
   foreground and this will detect the background instance and display its `nodeid` for you then exit.
 - Take the `nodeid` and either supply it as a command line option to `piggui` (`--nodeid $nodeid`, prefixed with `-- `
   if using `cargo run`) or enter it into the GUI. To connect to a remote instance from the GUI, click on the
   "hardware menu" in the left of the info bar at the bottom of the screen and select the "Connect to remote Pi..."
   menu item. Then enter the `nodeid` into the field provided and hit "Connect"
-- Here are two videos showing the two ways to use it, with piglet running on a RPi shown via VNC.
+- Here are two videos showing the two ways to use it, with pigglet running on a RPi shown via VNC.
     - Video with Dialog: https://youtu.be/aToJ1aT7NeM
     - Video using CLI argument: https://youtu.be/zcEa_Oke014
 
@@ -116,11 +113,11 @@ You can see more gifs and videos of features [here](assets/features.md)
 `piggui` is a GUI for configuring pins, observing input levels and controlling output levels.
 On Raspberry Pi it has a real GPIO hardware backend (via rppal).
 On macOS, Linux and Windows it uses a fake hardware backend (mainly for development) or can connect to a remote
-hardware backend that is running `piglet`.
+hardware backend that is running `pigglet`.
 
 ## Piglet
 
-`piglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
+`pigglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
 config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
 level changes to the GUI.
 
@@ -161,7 +158,7 @@ manually or are known to work as follows:
 |             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      
 |             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz 
 |             | armv7 gnu      | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  
-| piglet      | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           
+| pigglet     | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           
 |             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            
 |             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       
 |             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            
@@ -218,7 +215,7 @@ See [BUILDING.md](BUILDING.md)
 
 ## Running Piggui and Piglet
 
-For details on running `piglet` and `piggui` in the foreground or as a system service, on the same machine or with a
+For details on running `pigglet` and `piggui` in the foreground or as a system service, on the same machine or with a
 remote GUI to Pi hardware, see [RUNNING.md](RUNNING.md)
 
 ## Contributing

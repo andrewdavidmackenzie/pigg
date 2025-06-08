@@ -1,4 +1,4 @@
-use crate::persistence;
+use crate::store_config;
 use anyhow::{anyhow, bail, Context};
 use iroh::endpoint::Connection;
 use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
@@ -11,7 +11,7 @@ use pigdef::description::HardwareDescription;
 use pigdef::net_values::PIGLET_ALPN;
 use pigdef::pin_function::PinFunction;
 use pigdef::pin_function::PinFunction::Output;
-use pigpio::HW;
+use piggpio::HW;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
@@ -127,7 +127,7 @@ pub async fn iroh_message_loop(
             .await
             .is_ok()
             {
-                let _ = persistence::store_config(hardware_config, exec_path).await;
+                let _ = store_config(hardware_config, exec_path).await;
             }
         }
     }
