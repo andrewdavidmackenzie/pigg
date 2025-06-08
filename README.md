@@ -52,7 +52,8 @@ The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
   Disconnected View" initially
 * LED output display is a clickable control now to reduce space used
 * Updated lots of dependencies. Almost all are on the latest versions available
-* Hardware compatibility tests are run in CI. Added "hw_tests" that are a set of tests running piggui against piglet and
+* Hardware compatibility tests are run in CI. Added "hw_tests" that are a set of tests running piggui against pigglet
+  and
   porky running on real Hardware (Pi Zero, Pico and Pico 2) connected to my server, using a custom GH runner
 * Lots of test improvements across all subprojects
 * A number of small visual improvements around menus, dialogs, sizes etc.
