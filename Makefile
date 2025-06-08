@@ -35,8 +35,8 @@ clean:
 
 .PHONY: macos-setup
 macos-setup:
-	@cd piggui && make macos-setup
-	@cd pigglet && make macos-setup
+	@cmake -C piggui macos-setup
+	@make -C pigglet macos-setup
 
 .PHONY: setup
 setup:
@@ -45,9 +45,9 @@ ifeq ($(OSFLAG),macos)
 	$(MAKE) macos-setup
 endif
 	@cargo install cargo-all-features mlc
-	@cd piggui && make setup
-	@cd pigglet && make setup
-	@cd porky && make setup
+	@make -C piggui setup
+	@make -C pigglet setup
+	@make -C porky setup
 
 .PHONY: clippy
 clippy:
@@ -83,7 +83,7 @@ build-release:
 
 .PHONY: build-porky
 build-porky:
-	cd porky && $(MAKE)
+	make -C porky
 
 .PHONY: test
 test:
@@ -91,7 +91,7 @@ test:
 
 .PHONY: hw_tests
 hw_tests:
-	cd hw_test && $(MAKE)
+	make -C hw_test
 
 .PHONY: features
 features:
@@ -228,7 +228,7 @@ coverage: clean-start
 	@echo "View coverage report using 'open target/coverage/index.html'"
 
 build-web:
-	@cd piggui && make trunk-build
+	@make -C piggui trunk-build
 
 docs:
 	mlc
