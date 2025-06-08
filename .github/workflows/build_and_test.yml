@@ -155,7 +155,7 @@ jobs:
         run: cargo binstall trunk
 
       - name: wasm32 trunk build
-        run: cd piggui && make trunk-build
+        run: make -C piggui trunk-build
 
   porky-release-build:
     runs-on: ubuntu-latest
