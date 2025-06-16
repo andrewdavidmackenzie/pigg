@@ -21,7 +21,8 @@ for the line to be used for the latest release, after 0.3.4)
 For platforms that use homebrew, you can install the appropriate prebuilt binary using:
 
 ```sh
-brew install andrewdavidmackenzie/pigg-tap/pigg
+brew install andrewdavidmackenzie/pigg-tap/piggui
+brew install andrewdavidmackenzie/pigg-tap/pigglet
 ```
 
 ## Install pre-built binaries via "cargo binstall"
@@ -30,7 +31,8 @@ If you have installed a rust toolchain, then you can install `cargo-binstall` fr
 and then use it to install the pre-built binaries, without building from source:
 
 ```sh
-cargo binstall pigg
+cargo binstall piggui
+cargo binstall pigglet
 ```
 
 ## Other Installation options for Windows
@@ -71,12 +73,23 @@ piggui --version
 pigglet --version
 ```
 
-## Installing with `cargo install`
+## Installing from source with `cargo install`
 
 For this option you will need a working rust toolchain installed.
 
+Clone the project https://github.com/andrewdavidmackenzie/pigg.git to a local disk, change into the root folder of the
+project.
+
+NOTE: Since the project has been moved to a workspace rust project, there are separate packages for each of the
+top-level
+parts of the project, the two installable binaries are:
+
+- `piggui` - the GUI fir pigg
+- `pigglet` - the CLI or background service for pigg
+
 ```
-cargo install pigg
+cargo install piggui
+cargo install pigglet
 ```
 
 `cargo` will build the binaries for the machine where you are running it, so:
