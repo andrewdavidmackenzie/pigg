@@ -64,6 +64,9 @@ setup:
 ifeq ($(OSFLAG),macos)
 	brew install picotool
 else
+	mkdir $(HOME)/.bin || true
+	curl -L --proto '=https' --tlsv1.2 -sSf https://github.com/raspberrypi/pico-sdk-tools/releases/download/v2.1.1-1/picotool-2.1.1-x86_64-lin.tar.gz | tar -xzv > $(HOME)/.bin/picotool
+	chmod +x $(HOME)/.bin/picotool
 endif
 
 uf2s: install-targets install-picotool build-uf2s
