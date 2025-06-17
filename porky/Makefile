@@ -1,3 +1,16 @@
+OSFLAG 				:=
+ifeq ($(OS),Windows_NT)
+	OSFLAG:=windows
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		OSFLAG:=linux
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OSFLAG:=macos
+	endif
+endif
+
 all: clippy build build-w build2 build-w2
 
 clean:
@@ -46,10 +59,12 @@ build2:
 install-binstall:
 	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
-install-brew:
-
-install-picotool: install-brew
+install-picotool:
+setup:
+ifeq ($(OSFLAG),macos)
 	brew install picotool
+else
+endif
 
 uf2s: install-targets install-picotool build-uf2s
 
