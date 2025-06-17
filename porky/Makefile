@@ -74,13 +74,13 @@ uf2s: install-targets install-picotool build-uf2s
 build-uf2s: uf2-w uf2-w2 uf2 uf2-2
 
 uf2-w: build-w # UF2 for Pi Pico (1) with Wi-FI
-	picotool uf2 convert -t elf target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico_w.uf2
+	$(HOME)/.bin/picotool uf2 convert -t elf target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico_w.uf2
 
 uf2-w2: build-w2 # UF2 for Pi Pico 2 with Wi-Fi
-	picotool uf2 convert -t elf target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico_w2.uf2
+	$(HOME)/.bin/picotool uf2 convert -t elf target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico_w2.uf2
 
 uf2: build # UF2 for Pi Pico (1) without Wi-Fi
-	picotool uf2 convert -t elf target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico.uf2
+	$(HOME)/.bin/picotool uf2 convert -t elf target/thumbv6m-none-eabi/release/porky target/thumbv6m-none-eabi/release/porky_pico.uf2
 
 uf2-2: build2 # UF2 for Pi Pico 2 without WEi-Fi
-	picotool uf2 convert -t elf target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico2.uf2
+	$(HOME)/.bin/picotool uf2 convert -t elf target/thumbv8m.main-none-eabihf/release/porky target/thumbv8m.main-none-eabihf/release/porky_pico2.uf2
