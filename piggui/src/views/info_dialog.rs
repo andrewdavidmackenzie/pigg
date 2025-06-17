@@ -178,7 +178,7 @@ impl InfoDialog {
         .into()
     }
 
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> Element<'_, Message> {
         match &self.modal_type {
             ModalType::Warning {
                 title,

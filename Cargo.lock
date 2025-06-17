@@ -4493,7 +4493,7 @@ dependencies = [
 
 [[package]]
 name = "pigdef"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "embassy-time",
  "heapless 0.8.0",
@@ -4503,7 +4503,7 @@ dependencies = [
 
 [[package]]
 name = "pigglet"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "anyhow",
  "async-std",
@@ -4530,7 +4530,7 @@ dependencies = [
 
 [[package]]
 name = "piggpio"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "libc",
  "pigdef",
@@ -4540,7 +4540,7 @@ dependencies = [
 
 [[package]]
 name = "piggui"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "anyhow",
  "async-std",
@@ -4573,7 +4573,7 @@ dependencies = [
 
 [[package]]
 name = "pignet"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "anyhow",
  "async-std",

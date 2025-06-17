@@ -210,7 +210,7 @@ where
 
     /// Return an Element that can be used in views to display the chart,
     /// specifying the direction to draw the waveform view in
-    pub fn view(&self, direction: Direction) -> Element<HardwareViewMessage> {
+    pub fn view(&self, direction: Direction) -> Element<'_, HardwareViewMessage> {
         self.direction.replace(direction);
         ChartWidget::new(self)
             .height(Length::Fixed(self.height))

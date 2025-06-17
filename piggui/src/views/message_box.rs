@@ -105,7 +105,7 @@ impl MessageRow {
     }
 
     /// Create the view that represents a status row at the bottom of the screen
-    pub fn view(&self) -> Element<MessageRowMessage> {
+    pub fn view(&self) -> Element<'_, MessageRowMessage> {
         let (text_color, message_text, details) = match &self.message_queue.current_message {
             None => (Color::TRANSPARENT, "".to_string(), ""),
             Some(msg) => match msg {

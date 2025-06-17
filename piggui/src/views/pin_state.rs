@@ -63,7 +63,7 @@ impl PinState {
         }
     }
 
-    pub fn view(&self, direction: Direction) -> Element<HardwareViewMessage> {
+    pub fn view(&self, direction: Direction) -> Element<'_, HardwareViewMessage> {
         self.chart.view(direction)
     }
 
