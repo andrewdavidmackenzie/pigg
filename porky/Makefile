@@ -20,7 +20,8 @@ install-targets:
 	rustup target add thumbv6m-none-eabi
 	rustup target add thumbv8m.main-none-eabihf
 
-setup: install-binstall install-targets
+.PHONY: setuo
+setup: install-targets install-picotool
 
 .PHONY: features
 features:
@@ -56,11 +57,7 @@ build:
 build2:
 	cargo build --release --target thumbv8m.main-none-eabihf --features "usb, pico2"
 
-install-binstall:
-	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-
 install-picotool:
-setup:
 ifeq ($(OSFLAG),macos)
 	brew install picotool
 else
