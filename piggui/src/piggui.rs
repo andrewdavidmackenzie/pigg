@@ -374,7 +374,7 @@ impl Piggui {
        |  +---------------------------------------------------------------------------------+ |
        +--------------------------------------------------------------------------------------+
     */
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<'_, Message> {
         let main_col = Column::new()
             .push(self.hardware_view.view(self.layout_selector.get()))
             .push(self.info_row.view(

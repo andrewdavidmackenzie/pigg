@@ -312,7 +312,7 @@ impl HardwareView {
     }
 
     /// Construct the hardware view
-    pub fn view(&self, layout: Layout) -> Element<Message> {
+    pub fn view(&self, layout: Layout) -> Element<'_, Message> {
         let inner: Element<HardwareViewMessage> =
             if let Some(hw_description) = &self.hardware_description {
                 let pin_layout = match layout {
@@ -727,7 +727,7 @@ fn pin_button_menu<'a>(
 }
 
 /// Create a button representing the pin with its physical (bpn) number, color
-fn pin_button(pin_description: &PinDescription) -> Button<HardwareViewMessage> {
+fn pin_button(pin_description: &PinDescription) -> Button<'_, HardwareViewMessage> {
     button(
         container(text(pin_description.bpn))
             .align_x(Center)
