@@ -94,12 +94,7 @@ The `porky/Makefile` has 5 targets for uf2 files:
 - `uf2-2`: Build UF2 file (`target/thumbv6m-none-eabi/release/porky_pico2.uf2`) for Pico 2 (no Wi-Fi)
 - `uf2s`: Build all of the above
 
-This uses [`elf2usb2-rs`](https://github.com/JoNil/elf2uf2-rs). This can be installed using the `porky/Makefile` target
-`install-uf2` or
-manually:
-
-- `cargo binstall elf2uf2-rs` if you use `cargo binstall` to install a pre-compiled binary
-- `cargo install elf2uf2-rs` to build it from source and install it
+This uses [`picotool`](https://github.com/raspberrypi/pico-sdk-tools/releases) to convert ELF files to UF2 files.
 
 You can check the generated files using: `file`.
 

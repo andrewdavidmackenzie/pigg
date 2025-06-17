@@ -169,9 +169,6 @@ jobs:
       - name: Install cargo binstall
         run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
-      - name: Install elf2uf2-rs
-        run: cargo binstall elf2uf2-rs
-
       - name: Build porky and porky_w and their UF2 files
         run: RUSTFLAGS= make -C porky uf2s
 

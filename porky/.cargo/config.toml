@@ -4,8 +4,6 @@
 # - probe-rs   - provides flashing and defmt via a hardware debugger, and stack unwind on panic
 # - picotool   - used while the pico2 was lacking probe-rs support
 #              - runner = "picotool load -u -v -x -t elf"
-# - elf2uf2-rs - loads firmware over USB when the rp2040 is in boot mode
-#              - runner = "elf2uf2-rs -d"
 
 # Runner to use for pico
 [target.thumbv6m-none-eabi]
