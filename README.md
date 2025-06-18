@@ -35,6 +35,7 @@ and Pi Pico W (USB, TCP).
     </td>
   </tr>
 </table>
+(some images/gifs/videos maybe slightly out of date as the GUI evolves...)
 
 See what's new in [latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
 
