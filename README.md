@@ -6,13 +6,11 @@
 </a>
 <a href="https://www.drips.network/app/projects/github/andrewdavidmackenzie/pigg" target="_blank"><img src="https://www.drips.network/api/embed/project/https%3A%2F%2Fgithub.com%2Fandrewdavidmackenzie%2Fpigg/support.png?background=blue&style=drips&text=project&stat=dependencies" alt="Support pigg on drips.network" height="32"></a>
 
-# pigg - Raspberry Pi GPIO GUI
+# pigg - Raspberry Pi and Pi Pico GPIO Remote control from GUI and CLI
 
-An app for Raspberry Pi GPIO Output control and Input visualization, with GUI and CLI Support for macOS, Linux
+A set of apps for Raspberry Pi GPIO Output control and Input visualization, with GUI and CLI Support for macOS, Linux
 (including Raspberry Pi) and Windows; GPIO CLI agent for Raspberry Pi and embedded applications for Pi Pico (USB)
 and Pi Pico W (USB, TCP).
-
-The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
 
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
@@ -27,7 +25,6 @@ The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
   </tr>
 </table>
 
-
 <table cellspacing="0" cellpadding="0" border="0">
   <tr>
     <td valign="top">
@@ -39,37 +36,18 @@ The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
   </tr>
 </table>
 
-[Website](https://mackenzie-serres.net/pigg/) (just README.md content for now...)
+See what's new in [latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
 
-## What's new in Release 0.7.0 - Pico 2 Support, Improved Layouts, Bug fixing and Tests
+- Here are two videos showing the two ways to use it, with pigglet running on a RPi shown via VNC.
+    - Video with Dialog: https://youtu.be/aToJ1aT7NeM
+    - Video using CLI argument: https://youtu.be/zcEa_Oke014
+-
 
-* Pico 2 and Pico 2 W full support alongside Pico and Pico W
-* New compact pin layout view that shows only configured pins, suitable for devices with small displays
-* Menus to configure pins are now on the pin itself to reduce space used
-* Addition of a disconnected view when no connection is present. Connecting status added to the connecting menu while a
-  connection is being attempted
-* FakePi hardware view (mainly for development) is only included in debug builds. Release builds will show the "
-  Disconnected View" initially
-* LED output display is a clickable control now to reduce space used
-* Updated lots of dependencies. Almost all are on the latest versions available
-* Hardware compatibility tests are run in CI. Added "hw_tests" that are a set of tests running piggui against pigglet
-  and
-  porky running on real Hardware (Pi Zero, Pico and Pico 2) connected to my server, using a custom GH runner
-* Lots of test improvements across all subprojects
-* A number of small visual improvements around menus, dialogs, sizes etc.
-* Improvements in developer setup Makefile targets for any contributors
-* Improvements in connection handling and switching from one device directly to another
-* More robust service restart by retrying with a delay on startup and failure (pending the "proper" fix (for systemd)
-  which is in the works
-* Improvements to tooltips, adding connection details on connection buttons
-* Many code improvements, removing all unwraps among them. Project structured as a workspace enabling more code reuse
-  across projects
-* Added a FUNDING.yml
-* Improvements in the wasm32 build, a pre-requisite to getting a web UI working
-* A number of small bug fixes
-*
+You can see more gifs and videos of features [here](assets/features.md)
 
-## Other Features
+[Website](https://mackenzie-serres.net/pigg/)
+
+## Feature Summary
 
 - Directly on a Pi or Pi Pico or remotely from other platforms you can configure the GPIO hardware Inputs and Outputs,
   controlling the level of the Outputs and view the level of the Inputs in the GUI.
@@ -102,43 +80,18 @@ The GUI (Pi Gpio GUI - PIGGUI) is affectionately known as "piggy".
   if using `cargo run`) or enter it into the GUI. To connect to a remote instance from the GUI, click on the
   "hardware menu" in the left of the info bar at the bottom of the screen and select the "Connect to remote Pi..."
   menu item. Then enter the `nodeid` into the field provided and hit "Connect"
-- Here are two videos showing the two ways to use it, with pigglet running on a RPi shown via VNC.
-    - Video with Dialog: https://youtu.be/aToJ1aT7NeM
-    - Video using CLI argument: https://youtu.be/zcEa_Oke014
 
-You can see more gifs and videos of features [here](assets/features.md)
+## Subprojects and their README files
 
-## Piggui (pronounced "Piggy")
+- `piggui` is a GUI for configuring pins, observing input levels and controlling output
+  levels. [README](piggui/README.md))
 
-`piggui` is a GUI for configuring pins, observing input levels and controlling output levels.
-On Raspberry Pi it has a real GPIO hardware backend (via rppal).
-On macOS, Linux and Windows it uses a fake hardware backend (mainly for development) or can connect to a remote
-hardware backend that is running `pigglet`.
+- `pigglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
+  config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
+  level changes to the GUI. [README](pigglet/README.md)
 
-## Pigglet
-
-`pigglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
-config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
-level changes to the GUI.
-
-If built on the Pi (with the "pi_hw" feature), then it has a real GPIO hardware backend.
-
-It can be built on macOS/Linux/Windows/Pi with the "fake_hw" feature for a fake hardware backend, mainly used
-for development.
-
-It takes an optional config file as a command line option. It will load the GPIO configuration from the file
-(like `piggui` can) and it will apply it to the hardware then stop.
-
-It offers the ability to interact with the hardware from a remote `piggui`instance.
-It will print out connection info at startup and start listing for Iroh network connections from `piggui` instances,
-then the user can interact with it and visualize inputs level changes from the `piggui` GUI.
-
-## Porky
-
-`porky` is an embedded application developer for the Raspberry Pi Pico and Pi Pico W for remote interaction with the
-Pico's GPIO hardware. It can be connected to over TCP or USB.
-
-For more details see [porky's README.md](porky/README.md)
+- `porky` is an embedded application developer for the Raspberry Pi Pico and Pi Pico W for remote interaction with the
+  Pico's GPIO hardware. It can be connected to over TCP or USB. [README.md](porky/README.md)
 
 ## Supported Hardware and Operating Systems
 
@@ -148,57 +101,35 @@ manually or are known to work as follows:
 | Application | Arch Supported | Device      | OS Supported       | Asset                                      |
 |-------------|----------------|-------------|--------------------|--------------------------------------------|
 | piggui      | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           |
-|             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            
-|             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       
-|             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            
-|             | aarch64        | Pi400       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | aarch64        | Pi4         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | aarch64        | Pi5         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | arm            | Pi Zero     | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          
-|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz 
-|             | armv7 gnu      | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  
-| pigglet     | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           
-|             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            
-|             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       
-|             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            
-|             | aarch64        | Pi400       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | aarch64        | Pi4         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | aarch64        | Pi5         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | arm            | Pi Zero     | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          
-|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz 
-| porky_w     | armv7          | Pi Pico W   | N/A                | porky_pico_w.uf2                           
-| porky       | armv7          | Pi Pico     | N/A                | porky_pico.uf2                             
-| porky_w2    | armv7          | Pi Pico 2 W | N/A                | porky_pico_w2.uf2                          
-| porky2      | armv7          | Pi Pico 2   | N/A                | porky_pico2.uf2                            
-
-## Input from Raspberry Pi users wanted
-
-We would like input from Raspberry Pi users to help us decide the order of things to work on in the future,
-and input on how integrate new functionalities (e.g. I2C buses, SPI, UART, etc.).
-
-Please let us know what you think, and suggestions, via
-[Discussions](https://github.com/andrewdavidmackenzie/pigg/discussions) or GH issues.
+|             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            |
+|             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       |
+|             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            |
+|             | aarch64        | Pi400       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | aarch64        | Pi4         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | aarch64        | Pi5         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | arm            | Pi Zero     | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          |
+|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz |
+|             | armv7 gnu      | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  |
+| pigglet     | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           |
+|             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            |
+|             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       |
+|             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            |
+|             | aarch64        | Pi400       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | aarch64        | Pi4         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | aarch64        | Pi5         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | arm            | Pi Zero     | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          |
+|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz |
+| porky_w     | armv7          | Pi Pico W   | N/A                | porky_pico_w.uf2                           |
+| porky       | armv7          | Pi Pico     | N/A                | porky_pico.uf2                             |
+| porky_w2    | armv7          | Pi Pico 2 W | N/A                | porky_pico_w2.uf2                          |
+| porky2      | armv7          | Pi Pico 2   | N/A                | porky_pico2.uf2                            |
 
 ## Roadmap
 
 We have identified a number of areas to work on in future releases, but we would really appreciate your input
 on what could be most useful or just the coolest, many have GH issues.
-
-See issues in
-milestone [0.7.0](https://github.com/andrewdavidmackenzie/pigg/issues?q=is%3Aopen+is%3Aissue+milestone%3A%220.7.0+Release%22)
-for the up-to-date list and progress.
-
-- Extend Pi Pico support:
-    - Support for Pi Pico 2 and Pi Pico 2 W
-- Expand support beyond Inputs and Outputs ( e.g. Clocks, PWM, I2C, UART, SPI etc.).
-  Issue [#53](https://github.com/andrewdavidmackenzie/pigg/issues/53), [#52](https://github.com/andrewdavidmackenzie/pigg/issues/52), [#5](https://github.com/andrewdavidmackenzie/pigg/issues/5)
-- True logical layout, grouping pins by function [Issue #94](https://github.com/andrewdavidmackenzie/pigg/issues/94)
-- Custom layouts to order, group pins and only show pins in use
-- Smaller window sizes for devices running `piggui` with small displays
-- Allow connections between pins [Issue #95](https://github.com/andrewdavidmackenzie/pigg/issues/95)
-- Trigger a script or WebAssembly plugin on an input event (edge, level, etc.)
 
 ## Installing
 
