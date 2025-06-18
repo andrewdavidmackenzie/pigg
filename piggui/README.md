@@ -79,7 +79,7 @@ See what's new in [latest release](https://github.com/andrewdavidmackenzie/pigg/
     - Video with Dialog: https://youtu.be/aToJ1aT7NeM
     - Video using CLI argument: https://youtu.be/zcEa_Oke014
 
-You can see more gifs and videos of features [here](assets/features.md)
+You can see more gifs and videos of features [here](../assets/features.md)
 
 ## Pigglet
 
@@ -104,16 +104,16 @@ manually or are known to work as follows:
 | Application | Arch Supported | Device    | OS Supported       | Asset                                      |
 |-------------|----------------|-----------|--------------------|--------------------------------------------|
 | piggui      | Apple Silicon  |           | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           |
-|             | x86_64         |           | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            
-|             | x86_64         |           | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       
-|             | x86_64         |           | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            
-|             | aarch64        | Pi400     | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | aarch64        | Pi4       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | aarch64        | Pi5       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | arm            | Pi Zero   | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          
-|             | aarch64        | Pi Zero 2 | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      
-|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz 
-|             | armv7 gnu      | Pi3B      | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  
+|             | x86_64         |           | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            |
+|             | x86_64         |           | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       |
+|             | x86_64         |           | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            |
+|             | aarch64        | Pi400     | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | aarch64        | Pi4       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | aarch64        | Pi5       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | arm            | Pi Zero   | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          |
+|             | aarch64        | Pi Zero 2 | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      |
+|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz |
+|             | armv7 gnu      | Pi3B      | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  |
 
 ## Installing
 
@@ -121,7 +121,7 @@ See [INSTALLING.md](../INSTALLING.md)
 
 ## Help
 
-See [HELP.md](HELP.md) for help with known issues. We hope to grow this and maybe link with the GUI and reported
+See [HELP.md](../HELP.md) for help with known issues. We hope to grow this and maybe link with the GUI and reported
 errors.
 
 ## Building from Source
