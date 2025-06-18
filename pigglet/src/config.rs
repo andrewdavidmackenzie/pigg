@@ -76,12 +76,10 @@ pub mod test {
     pub fn delete_configs() {
         let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let workspace_dir = crate_dir.parent().expect("Failed to get parent dir");
-        let config_file = workspace_dir.with_file_name(CONFIG_FILENAME);
+        let config_file = workspace_dir.join(CONFIG_FILENAME);
         println!("Deleting file: {config_file:?}");
         let _ = std::fs::remove_file(config_file);
-        let config_file = workspace_dir
-            .join("target/debug/")
-            .with_file_name(CONFIG_FILENAME);
+        let config_file = workspace_dir.join("target/debug/").join(CONFIG_FILENAME);
         println!("Deleting file: {config_file:?}");
         let _ = std::fs::remove_file(config_file);
     }
