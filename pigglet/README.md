@@ -23,7 +23,7 @@ Main features:
     - Video with Dialog: https://youtu.be/aToJ1aT7NeM
     - Video using CLI argument: https://youtu.be/zcEa_Oke014
 
-You can see more gifs and videos of features [here](assets/features.md)
+You can see more gifs and videos of features [here](../assets/features.md)
 
 [Website](https://mackenzie-serres.net/pigg/) (just README.md content for now...)
 
