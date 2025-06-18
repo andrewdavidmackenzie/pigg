@@ -1166,7 +1166,7 @@ dependencies = [
 
 [[package]]
 name = "pigdef"
-version = "0.7.2"
+version = "0.7.3"
 dependencies = [
  "embassy-time",
  "heapless 0.8.0",
