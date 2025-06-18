@@ -115,7 +115,7 @@ On Raspberry Pi it has a real GPIO hardware backend (via rppal).
 On macOS, Linux and Windows it uses a fake hardware backend (mainly for development) or can connect to a remote
 hardware backend that is running `pigglet`.
 
-## Piglet
+## Pigglet
 
 `pigglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
 config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
@@ -213,7 +213,7 @@ errors.
 
 See [BUILDING.md](BUILDING.md)
 
-## Running Piggui and Piglet
+## Running Piggui and Pigglet
 
 For details on running `pigglet` and `piggui` in the foreground or as a system service, on the same machine or with a
 remote GUI to Pi hardware, see [RUNNING.md](RUNNING.md)

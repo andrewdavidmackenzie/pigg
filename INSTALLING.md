@@ -93,7 +93,7 @@ cargo install pigglet
   in release builds. If you wish to have a version with this fake backend (so you can play with the GUI without
   having real Pi/Pico hardware) then you will have to clone the repo and do a `dev` (debug) build.
 
-### Piglet as a system service
+### Pigglet as a system service
 
 You can install `pigglet` as a system service that runs in the background and is restarted at boot, so it is always
 available.

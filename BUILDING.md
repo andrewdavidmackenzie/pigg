@@ -1,4 +1,4 @@
-# Building Piggui and Piglet from source
+# Building Piggui and Pigglet from source
 
 ## Pre requisites
 

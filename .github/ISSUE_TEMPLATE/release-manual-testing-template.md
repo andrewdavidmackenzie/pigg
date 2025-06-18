@@ -80,7 +80,7 @@ entire groups of tests that don't need to be repeated in all scenarios.
     - the "reset wifi" option causes a reboot and now the device no longer has a config
       and doesn't connect to the wifi
 
-#### Networking (only applies to Piggui+Piglet and Piggui+Porky scenarios)
+#### Networking (only applies to Piggui+Pigglet and Piggui+Porky scenarios)
 
 - Piggui can disconnect from the current hardware that was connected at startup (fake or Pi hw)
     - The board layout is not shown
@@ -100,9 +100,9 @@ entire groups of tests that don't need to be repeated in all scenarios.
     - 1 - Piggui on Macos/Linux/Windows with fake hw
     - 2 - Piggui on Pi with real GPIO hw
 - Piggui and pigglet
-    - 3 - Piggui on Mac/Linux/Windows + Piglet on same machine
-    - 4 - Piggui on Pi + Piglet on same machine
-    - 5 - Piggui on Mac/Linux/Windows + Piglet on Pi
+    - 3 - Piggui on Mac/Linux/Windows + Pigglet on same machine
+    - 4 - Piggui on Pi + Pigglet on same machine
+    - 5 - Piggui on Mac/Linux/Windows + Pigglet on Pi
         - a) - On Pi Zero / Zero 2 (gnu-aarch64)
         - b) - On Pi 3B (armv7 gnu and musl binaries)
         - c) - On Pi 4/400 (gnu-aarch64)
@@ -125,18 +125,18 @@ Execute the tests blocks in the specified scenario and click the checkbox when a
     - [ ] UI Interaction
 
 
-- Scenario: 3 - Piggui on Macos/Linux/Windows + Piglet on same machine
+- Scenario: 3 - Piggui on Macos/Linux/Windows + Pigglet on same machine
 - Test Blocks:
     - [ ] Networking
 
 
-- Scenario: 4 - Piggui on Pi + Piglet on same machine
+- Scenario: 4 - Piggui on Pi + Pigglet on same machine
 - Test Blocks:
     - [ ] HW Interaction
     - [ ] Networking
 
 
-- Scenario: 5 - Piggui on Mac/Linux/Windows + Piglet on Pi
+- Scenario: 5 - Piggui on Mac/Linux/Windows + Pigglet on Pi
     - a) - On Pi Zero / Zero 2 (gnu-aarch64)
     - b) - On Pi 3B (armv7 gnu and musl binaries)
     - c) - On Pi 4/400 (gnu-aarch64)

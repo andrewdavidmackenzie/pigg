@@ -8,7 +8,7 @@ use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinCon
 use pigdef::config::{HardwareConfigMessage, LevelChange};
 use pigdef::description::BCMPinNumber;
 use pigdef::description::HardwareDescription;
-use pigdef::net_values::PIGLET_ALPN;
+use pigdef::net_values::PIGGLET_ALPN;
 use pigdef::pin_function::PinFunction;
 use pigdef::pin_function::PinFunction::Output;
 use piggpio::HW;
@@ -45,7 +45,7 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
         // to as the `node_id` in our codebase.
         .secret_key(secret_key)
         // set the ALPN protocols this endpoint will accept on incoming connections
-        .alpns(vec![PIGLET_ALPN.to_vec()])
+        .alpns(vec![PIGGLET_ALPN.to_vec()])
         // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
         // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
         // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
