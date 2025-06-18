@@ -25,19 +25,9 @@ Main features:
 
 You can see more gifs and videos of features [here](../assets/features.md)
 
-[Website](https://mackenzie-serres.net/pigg/) (just README.md content for now...)
+See what's new in [latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
 
-## What's new in [latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
-
-* Updated lots of dependencies. Almost all are on the latest versions available
-* Hardware compatibility tests are run in CI.
-* Lots of test improvements across all subprojects
-* Improvements in developer setup Makefile targets for any contributors
-* More robust service start/restart by retrying with a delay on startup and failure
-* Many code improvements, removing all unwraps among them. Project structured as a workspace enabling more code reuse
-  across projects
-* Added a FUNDING.yml
-* A number of small bug fixes
+[Website](https://mackenzie-serres.net/pigg/)
 
 ## Details
 

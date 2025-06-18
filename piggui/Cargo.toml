@@ -1,6 +1,7 @@
 [package]
 name = "piggui"
 description = "A Graphical User Interface for interacting with local and remote Raspberry Pi and Pi Pico Hardware"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -8,7 +9,6 @@ license.workspace = true
 documentation.workspace = true
 repository.workspace = true
 homepage.workspace = true
-readme.workspace = true
 exclude.workspace = true
 rust-version.workspace = true
 
