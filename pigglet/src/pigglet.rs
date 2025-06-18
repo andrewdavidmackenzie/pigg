@@ -529,7 +529,7 @@ pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfi
 /// Load a new GPIOConfig from the file named `filename`
 #[cfg(not(target_arch = "wasm32"))]
 fn load_cfg(filename: &str) -> io::Result<HardwareConfig> {
-    let file = std::fs::File::open(filename)?;
+    let file = File::open(filename)?;
     let reader = BufReader::new(file);
     let config = serde_json::from_reader(reader)?;
     Ok(config)
@@ -542,7 +542,7 @@ pub async fn store_config(
     exec_path: &Path,
 ) -> anyhow::Result<()> {
     let last_run_filename = exec_path.with_file_name(CONFIG_FILENAME);
-    let mut file = std::fs::File::create(&last_run_filename)?;
+    let mut file = File::create(&last_run_filename)?;
     let contents = serde_json::to_string(hardware_config)?;
     file.write_all(contents.as_bytes())
         .with_context(|| "Saving hardware config")?;
