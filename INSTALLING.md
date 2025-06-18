@@ -3,13 +3,17 @@
 Up-to-date instructions for installing are also be in the release notes of the
 [latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
 
+The `pigg` project produces two main binaries: `piggui` (GUI) and `pigglet` (CLI), plus UF2 files for Pi Pico
+devices.
+
 ## Install prebuilt binaries via shell script
 
 If your platform supports `sh` (and you have `curl` installed), then you can install the appropriate prebuilt binary
 using:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/andrewdavidmackenzie/pigg/releases/download/0.3.4/pigg-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-installer.sh | sh
 ```
 
 (example shown is for version 0.3.4. Check
@@ -30,7 +34,8 @@ If you have installed a rust toolchain, then you can install `cargo-binstall` fr
 and then use it to install the pre-built binaries, without building from source:
 
 ```sh
-cargo binstall pigg
+cargo binstall piggui
+cargo binstall pigglet
 ```
 
 ## Other Installation options for Windows
@@ -62,7 +67,7 @@ already. Try `piggui`. If it works without an error then you are done!
 If `piggui` reports a USB permissions error in the UI, then the cause is most likely a lack of these `udev` rules.
 The problem and the fix is covered by a section of [HELP.md](HELP.md#permission-denied-os-error-13-linux-only).
 
-## Checking the version installed
+## Checking the versions installed
 
 Check the version you have installed is the latest with
 
@@ -76,15 +81,17 @@ pigglet --version
 For this option you will need a working rust toolchain installed.
 
 ```
-cargo install pigg
+cargo install piggui
+cargo install pigglet
 ```
 
 `cargo` will build the binaries for the machine where you are running it, so:
 
-- On a macOS/Windows/Linux host you will get a version of `piggui` and `pigglet` with a fake hardware backend,
-  not real Pi GPIO hardware, but you can play with the GUI.
-- On a Pi you will get a version of `piggui` and `pigglet` with a real GPIO hardware backend enabling you
+- On a Raspberry Pi you will get a version of `piggui` and `pigglet` with a real GPIO hardware backend enabling you
   to interact with real Pi GPIO hardware.
+- On a macOS/Windows/Linux host you no longer get a version of `piggui` and `pigglet` with a fake hardware backend
+  in release builds. If you wish to have a version with this fake backend (so you can play with the GUI without
+  having real Pi/Pico hardware) then you will have to clone the repo and do a `dev` (debug) build.
 
 ### Piglet as a system service
 
