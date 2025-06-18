@@ -15,7 +15,6 @@ use service_manager::{
 };
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::fs::File;
-use std::io::BufReader;
 use std::{
     env,
     env::current_exe,
@@ -34,18 +33,17 @@ use piggpio::get_hardware;
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
-use pigdef::config::HardwareConfig;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
 
+/// Module for handling pigglet config files
+mod config;
 /// Module for performing the network transfer of config and events between GUI and pigglet
 mod device_net;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
-// Keep the old name for compatibility for users - although it doesn't match binary name anymore
-const CONFIG_FILENAME: &str = ".piglet_config.json";
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
@@ -130,7 +128,7 @@ async fn run_service(
 
         // Get the boot config for the hardware
         #[allow(unused_mut)]
-        let mut hardware_config = get_config(matches, &exec_path).await;
+        let mut hardware_config = config::get_config(matches, &exec_path).await;
 
         // Apply the initial config to the hardware, whatever it is
         hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
@@ -496,57 +494,6 @@ fn register_mdns(
     );
 
     Ok((service_info, service_daemon))
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-/// Get the initial [HardwareConfig] determined following:
-/// - A config file specified on the command line, or
-/// - A config file saved from a previous run
-/// - The default (empty) config
-pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
-    // A config file specified on the command line overrides any config file from previous run
-    let config_filename = match matches.get_one::<String>("config") {
-        Some(config_filename) => config_filename.clone(),
-        None => {
-            let filename = exec_path.with_file_name(CONFIG_FILENAME);
-            filename.to_string_lossy().to_string()
-        }
-    };
-
-    match load_cfg(&config_filename) {
-        Ok(config) => {
-            println!("Config loaded from file: {config_filename}");
-            trace!("{config}");
-            config
-        }
-        Err(_) => {
-            info!("Loaded default config");
-            HardwareConfig::default()
-        }
-    }
-}
-
-/// Load a new GPIOConfig from the file named `filename`
-#[cfg(not(target_arch = "wasm32"))]
-fn load_cfg(filename: &str) -> io::Result<HardwareConfig> {
-    let file = File::open(filename)?;
-    let reader = BufReader::new(file);
-    let config = serde_json::from_reader(reader)?;
-    Ok(config)
-}
-
-#[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
-/// Save the config to a file that will be picked up on restart
-pub async fn store_config(
-    hardware_config: &HardwareConfig,
-    exec_path: &Path,
-) -> anyhow::Result<()> {
-    let last_run_filename = exec_path.with_file_name(CONFIG_FILENAME);
-    let mut file = File::create(&last_run_filename)?;
-    let contents = serde_json::to_string(hardware_config)?;
-    file.write_all(contents.as_bytes())
-        .with_context(|| "Saving hardware config")?;
-    Ok(())
 }
 
 #[cfg(test)]

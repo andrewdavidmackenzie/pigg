@@ -5,6 +5,8 @@ use pignet::tcp_host;
 use serial_test::serial;
 use std::time::Duration;
 
+#[path = "../src/config.rs"]
+mod config;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
@@ -63,6 +65,8 @@ async fn reconnect_tcp() {
 async fn clean_config() {
     kill_all("pigglet");
     build("pigglet");
+    #[cfg(not(target_arch = "wasm32"))]
+    config::test::delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -95,6 +99,8 @@ async fn clean_config() {
 async fn config_change_returned_tcp() {
     kill_all("pigglet");
     build("pigglet");
+    #[cfg(not(target_arch = "wasm32"))]
+    config::test::delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -189,6 +195,8 @@ async fn config_change_returned_tcp() {
 async fn invalid_pin_config() {
     kill_all("pigglet");
     build("pigglet");
+    #[cfg(not(target_arch = "wasm32"))]
+    config::test::delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
