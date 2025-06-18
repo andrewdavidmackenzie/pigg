@@ -5,7 +5,7 @@ use pigdef::description::HardwareDescription;
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
 
-use crate::store_config;
+use crate::config;
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
@@ -101,7 +101,7 @@ pub async fn tcp_message_loop(
                 .await
                 .is_ok()
             {
-                let _ = store_config(hardware_config, exec_path).await;
+                let _ = config::store_config(hardware_config, exec_path).await;
             }
         }
     }

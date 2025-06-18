@@ -6,7 +6,7 @@ use iroh::{
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::HardwareDescription;
-use pigdef::net_values::PIGLET_ALPN;
+use pigdef::net_values::PIGGLET_ALPN;
 use std::io;
 
 /// Wait until we receive a message from remote hardware
@@ -52,7 +52,7 @@ pub async fn connect(
         // The secret key is used to authenticate with other nodes.
         .secret_key(secret_key)
         // Set the ALPN protocols this endpoint will accept on incoming connections
-        .alpns(vec![PIGLET_ALPN.to_vec()])
+        .alpns(vec![PIGGLET_ALPN.to_vec()])
         // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
         .relay_mode(RelayMode::Default)
         .bind()
@@ -76,7 +76,7 @@ pub async fn connect(
     let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
-    let connection = endpoint.connect(addr, PIGLET_ALPN).await?;
+    let connection = endpoint.connect(addr, PIGGLET_ALPN).await?;
 
     // create a uni receiver to receive the hardware description on
     let mut gui_receiver = connection.accept_uni().await?;

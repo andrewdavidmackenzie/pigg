@@ -1,4 +1,4 @@
-# Running Piggui, Piglet, Porky
+# Running Piggui, Pigglet, Porky
 
 `piggui` is the GUI for user interaction. It can be run natively on a macOS, Linux or Windows host to interact
 remotely with GPIO hardware running on a Raspberry Pi (via `pigglet`) or a Raspberry Pi Pico W (via `porky`).
@@ -17,7 +17,7 @@ loading a config, the default config will be used.
 - `piggui -c <filename>`
 - `piggui --config <filename>`
 
-## Running Piglet
+## Running Pigglet
 
 If run on a macOS, Linux or Windows host `pigglet` will start with a fake hardware backend, for demo purposes.
 
@@ -40,7 +40,7 @@ loading a config, the default config will be used.
 For details on how to install the embedded `porky` application binary on your Raspberry Pi Pico W and run it, refer
 to `porky`'s own [README.md](porky/README.md)
 
-### Connecting Piggui to a remote Piglet or Porky - Command Line Options
+### Connecting Piggui to a remote Pigglet or Porky - Command Line Options
 
 To connect to a remote `pigglet` using the Iroh network method, get the `nodeid` value from the pigglet instance (see
 above)
@@ -59,7 +59,7 @@ a previous connection to it) and have 'piggui' connect to it using the 'usb' arg
 
 - `piggui --usb $serial_number`
 
-### Connecting Piggui to a remote Piglet/Porky - Using the GUI
+### Connecting Piggui to a remote Pigglet/Porky - Using the GUI
 
 To connect to a remote `pigglet` using the Iroh network method, get the `nodeid` value from the pigglet instance (see
 above).

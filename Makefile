@@ -27,7 +27,7 @@ else
 endif
 
 .PHONY: all
-all: clippy format-check build build-arm build-armv7 build-aarch64 build-porky build-web test docs
+all: clippy format-check build build-arm build-armv7 build-aarch64 build-porky build-web test
 
 .PHONY: clean
 clean:

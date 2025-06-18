@@ -49,8 +49,6 @@ pub fn build(binary: &str) {
 
 #[allow(dead_code)]
 pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child {
-    delete_configs();
-
     let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let workspace_dir = crate_dir
         .parent()
@@ -86,20 +84,6 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
 
     println!("Started '{}' with PID = {}", binary, child.id());
     child
-}
-
-#[allow(dead_code)] // for piggui
-fn delete_configs() {
-    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let workspace_dir = crate_dir
-        .parent()
-        .expect("Could not get workspace directory");
-    let config_file = workspace_dir.with_file_name(".piglet_config.json");
-    println!("Deleting file: {config_file:?}");
-    let _ = std::fs::remove_file(config_file);
-    let config_file = workspace_dir.join("target/debug/.piglet_config.json");
-    println!("Deleting file: {config_file:?}");
-    let _ = std::fs::remove_file(config_file);
 }
 
 #[allow(dead_code)] // for piggui
