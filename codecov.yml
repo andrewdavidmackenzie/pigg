@@ -34,3 +34,19 @@ component_management:
       name: porky
       paths:
         - porky/**
+    - component_id: pigdef
+      name: pigdef
+      paths:
+        - pigdef/**
+    - component_id: piggpio
+      name: piggpio
+      paths:
+        - piggpio/**
+    - component_id: pignet
+      name: pignet
+      paths:
+        - pignet/**
+    - component_id: hw_tests
+      name: hw_tests
+      paths:
+        - hw_tests/**
