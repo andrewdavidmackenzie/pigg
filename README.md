@@ -40,9 +40,8 @@ and Pi Pico W (USB, TCP).
 See what's new in [latest release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)
 
 - Here are two videos showing the two ways to use it, with pigglet running on a RPi shown via VNC.
-    - Video with Dialog: https://youtu.be/aToJ1aT7NeM
-    - Video using CLI argument: https://youtu.be/zcEa_Oke014
--
+    - [Video with Dialog](https://youtu.be/aToJ1aT7NeM)
+    - [Video using CLI argument](https://youtu.be/zcEa_Oke014)
 
 You can see more gifs and videos of features [here](assets/features.md)
 
@@ -92,7 +91,7 @@ You can see more gifs and videos of features [here](assets/features.md)
   level changes to the GUI. [README](pigglet/README.md)
 
 - `porky` is an embedded application developer for the Raspberry Pi Pico and Pi Pico W for remote interaction with the
-  Pico's GPIO hardware. It can be connected to over TCP or USB. [README.md](porky/README.md)
+  Pico's GPIO hardware. It can be connected to over TCP or USB. [README](porky/README.md)
 
 ## Supported Hardware and Operating Systems
 
