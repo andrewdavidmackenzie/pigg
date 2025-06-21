@@ -17,6 +17,7 @@ pigdef = { path = "../pigdef", version = "0.7", default-features = false, featur
 
 [target.'cfg(not(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu")))'.dependencies]
 rand = { version = "0.9.1", default-features = false, features = ["std", "std_rng"] }
+rand_core = { version = "0.6.4", features = ["getrandom"] }
 
 [target.'cfg(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu"))'.dependencies]
 rppal = "0.22.1"

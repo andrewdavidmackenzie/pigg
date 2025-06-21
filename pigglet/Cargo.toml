@@ -51,7 +51,7 @@ portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.5", default-features = false, optional = true }
 mdns-sd = { version = "0.13.9", default-features = false, optional = true }
 rand = { version = "0.9.1", default-features = false, features = ["std", "std_rng"], optional = true }
-rand_core = { version = "0.6.4", optional = true }
+rand_core = { version = "0.6.4", optional = true } # for iroh_device
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 
