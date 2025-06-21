@@ -7,6 +7,7 @@ use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::HardwareDescription;
 use pigdef::net_values::PIGGLET_ALPN;
+use rand_core::OsRng;
 use std::io;
 
 /// Wait until we receive a message from remote hardware
@@ -44,8 +45,7 @@ pub async fn connect(
     nodeid: &NodeId,
     relay: Option<RelayUrl>,
 ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection)> {
-    let rng = rand::rngs::OsRng;
-    let secret_key = SecretKey::generate(rng);
+    let secret_key = SecretKey::generate(OsRng);
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers
     let endpoint = Endpoint::builder()
