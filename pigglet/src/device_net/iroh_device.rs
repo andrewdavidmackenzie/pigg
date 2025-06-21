@@ -12,6 +12,7 @@ use pigdef::net_values::PIGGLET_ALPN;
 use pigdef::pin_function::PinFunction;
 use pigdef::pin_function::PinFunction::Output;
 use piggpio::HW;
+use rand_core::OsRng;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
@@ -31,8 +32,7 @@ impl Display for IrohDevice {
 }
 
 pub async fn get_device() -> anyhow::Result<IrohDevice> {
-    let rng = rand::rngs::OsRng;
-    let secret_key = SecretKey::generate(rng);
+    let secret_key = SecretKey::generate(OsRng);
 
     // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
     // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
