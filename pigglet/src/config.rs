@@ -1,3 +1,4 @@
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "iroh", feature = "tcp")))]
 use anyhow::Context;
 use clap::ArgMatches;
 use log::{info, trace};

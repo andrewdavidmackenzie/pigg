@@ -36,6 +36,7 @@ macos-setup: setup
 
 .PHONY: setup
 setup:
+	@cargo install cargo-all-features
 	rustup target add armv7-unknown-linux-gnueabihf
 	rustup target add arm-unknown-linux-gnueabihf # For Pi Zero
 	rustup target add armv7-unknown-linux-musleabihf

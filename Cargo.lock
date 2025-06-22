@@ -4519,7 +4519,8 @@ dependencies = [
  "pignet",
  "portpicker",
  "postcard",
- "rand 0.8.5",
+ "rand 0.9.1",
+ "rand_core 0.6.4",
  "serde_json",
  "serial_test",
  "service-manager",
@@ -4534,7 +4535,8 @@ version = "0.7.3"
 dependencies = [
  "libc",
  "pigdef",
- "rand 0.8.5",
+ "rand 0.9.1",
+ "rand_core 0.6.4",
  "rppal",
 ]
 
@@ -4581,7 +4583,8 @@ dependencies = [
  "nusb",
  "pigdef",
  "postcard",
- "rand 0.8.5",
+ "rand 0.9.1",
+ "rand_core 0.6.4",
  "serde",
  "tokio",
 ]

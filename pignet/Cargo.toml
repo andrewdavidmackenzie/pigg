@@ -14,7 +14,7 @@ rust-version.workspace = true
 
 [features]
 default = []
-iroh = ["pigdef/iroh", "dep:iroh", "dep:rand"]
+iroh = ["pigdef/iroh", "dep:iroh", "dep:rand", "dep:rand_core"]
 tcp = ["pigdef/tcp"]
 discovery = ["pigdef/discovery"]
 usb = ["pigdef/usb", "dep:nusb", "dep:tokio", "dep:serde"]
@@ -30,4 +30,5 @@ tokio = { version = "1.45.1", default-features = false, features = ["time"], opt
 iroh = { version = "0.35.0", default-features = false, optional = true }
 nusb = { version = "0.1.14", default-features = false, optional = true }
 serde = { version = "1.0.219", default-features = false, features = ["derive"], optional = true }
-rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"], optional = true }
+rand = { version = "0.9.1", default-features = false, features = ["std", "std_rng"], optional = true }
+rand_core = { version = "0.6.4", optional = true }

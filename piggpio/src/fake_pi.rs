@@ -9,7 +9,7 @@ use crate::pin_descriptions::*;
 use pigdef::description::{HardwareDescription, HardwareDetails, PinDescriptionSet};
 
 use crate::fake_pi::Pin::Output;
-use rand::Rng;
+use rand_core::{OsRng, RngCore};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 enum Pin {
@@ -84,8 +84,7 @@ impl HW {
         };
 
         {
-            let mut rng = rand::thread_rng();
-            let random_serial: u32 = rng.gen();
+            let random_serial: u32 = OsRng.next_u32();
             // format as 16 character hex number
             details.serial = format!("{:01$x}", random_serial, 18);
         }
@@ -125,9 +124,8 @@ impl HW {
             Some(PinFunction::Input(pullup)) => {
                 let (sender, receiver) = std::sync::mpsc::channel();
                 std::thread::spawn(move || {
-                    let mut rng = rand::thread_rng();
                     loop {
-                        let level: bool = rng.gen();
+                        let level: bool = OsRng.next_u32() > (u32::MAX / 2);
                         #[allow(clippy::unwrap_used)]
                         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
                         callback(bcm_pin_number, LevelChange::new(level, now));
