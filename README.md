@@ -84,7 +84,7 @@ You can see more gifs and videos of features [here](assets/features.md)
 ## Subprojects and their README files
 
 - `piggui` is a GUI for configuring pins, observing input levels and controlling output
-  levels. [README](piggui/README.md))
+  levels. [README](piggui/README.md)
 
 - `pigglet` is a "headless" command line utility that interacts with the GPIO hardware, and can either apply a
   config supplied from file and stop, or can listen for config changes from a remote `piggui` and report input
@@ -128,8 +128,8 @@ manually or are known to work as follows:
 
 ## Roadmap
 
-We have identified a number of areas to work on in future releases, but we would really appreciate your input
-on what could be most useful or just the coolest, many have GH issues.
+We have identified a number of areas to work on in future releases, most of which have been captured as GitHub
+issues, but we would really appreciate your input on what could be most useful or just the coolest.
 
 ## Installing
 
