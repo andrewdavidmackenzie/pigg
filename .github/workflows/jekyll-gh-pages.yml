@@ -42,6 +42,8 @@ jobs:
 
   # Deployment job
   deploy:
+    # Only deploy on pushes to master, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
