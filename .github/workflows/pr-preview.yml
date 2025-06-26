@@ -2,7 +2,7 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [ opened, synchronize, reopened, closed ]
 
 jobs:
   deploy-preview:
@@ -11,16 +11,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        
+
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./
           destination: ./_site
-          
+
       - name: Deploy to Surge
         uses: dswistowski/surge-sh-action@v1
         with:
@@ -28,7 +28,8 @@ jobs:
           project: './_site'
           login: ${{ secrets.SURGE_LOGIN }}
           token: ${{ secrets.SURGE_TOKEN }}
-          
+
+      # Add a comment to the PR with a link to the preview
       - name: Comment PR
         uses: actions/github-script@v7
         with:
