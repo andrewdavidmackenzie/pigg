@@ -22,7 +22,7 @@ usb = ["pigdef/usb", "dep:nusb", "dep:tokio", "dep:serde"]
 [dependencies]
 pigdef = { path = "../pigdef", version = "0.7", default-features = false, features = ["std"] }
 
-postcard = { version = "1.1.1", features = ["alloc"] }
+postcard = { version = "1.1.2", features = ["alloc"] }
 anyhow = "1.0.98"
 async-std = "1.13.1"
 
