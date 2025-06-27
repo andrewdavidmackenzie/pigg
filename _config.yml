@@ -18,5 +18,10 @@ include:
   - piggui/README.md
   - porky/README.md
   - porky/BUILDING.md
+  - assets
 exclude:
   - .idea/
+  - .github/
+  - .cargo/
+  - configs/
+  - hw_test/
