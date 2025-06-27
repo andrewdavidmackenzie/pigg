@@ -49,10 +49,10 @@ jobs:
             });
             
             const existingComment = comments.data.find(comment => 
-              comment.body.includes('🚀 Preview deployed')
+              comment.body.includes('Jekyll site preview deployed')
             );
             
-            const commentBody = `🚀 Preview deployed to: ${previewUrl}`;
+            const commentBody = `Jekyll site preview deployed to: ${previewUrl}`;
             
             if (existingComment) {
               await github.rest.issues.updateComment({
