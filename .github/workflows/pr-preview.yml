@@ -6,7 +6,8 @@ on:
 
 permissions:
   actions: write
-  
+  pull-requests: write
+
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
