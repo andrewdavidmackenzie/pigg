@@ -16,3 +16,6 @@ coverage.info
 
 # Ignore jekyll static site generated locally, is updated in GH Actions on PR merge
 _site
+
+# Ignore jekyll metadata
+.jekyll-metadata

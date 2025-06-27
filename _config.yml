@@ -1,0 +1,22 @@
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: true
+include:
+  - README.md
+  - BUILDING.md
+  - CODE_OF_CONDUCT.md
+  - CONTRIBUTING.md
+  - HELP.md
+  - INSTALLING.md
+  - LICENSE
+  - RELEASING.md
+  - RUNNING.md
+  - SECURITY.md
+  - pigglet/README.md
+  - piggui/README.md
+  - porky/README.md
+  - porky/BUILDING.md
+exclude:
+  - .idea/
