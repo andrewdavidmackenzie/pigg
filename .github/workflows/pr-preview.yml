@@ -1,0 +1,84 @@
+name: PR Preview
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, closed ]
+
+permissions:
+  actions: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Deploy to Surge
+        uses: dswistowski/surge-sh-action@v1
+        with:
+          domain: 'pigg-pr-${{ github.event.number }}.surge.sh'
+          project: './_site'
+          login: ${{ secrets.SURGE_LOGIN }}
+          token: ${{ secrets.SURGE_TOKEN }}
+
+      # Add a comment to the PR with a link to the preview
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { issue: { number: issue_number }, repo: { owner, repo } } = context;
+            const previewUrl = `https://pigg-pr-${issue_number}.surge.sh`;
+            
+            // Find existing preview comment
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number
+            });
+            
+            const existingComment = comments.data.find(comment => 
+              comment.body.includes('Jekyll site preview deployed')
+            );
+            
+            const commentBody = `Jekyll site preview deployed to: ${previewUrl}`;
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: commentBody
+              });
+            }
+
+  cleanup-preview:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+    steps:
+      - name: Remove Surge deployment
+        uses: dswistowski/surge-sh-action@v1
+        with:
+          domain: 'pigg-pr-${{ github.event.number }}.surge.sh'
+          project: './_site'
+          login: ${{ secrets.SURGE_LOGIN }}
+          token: ${{ secrets.SURGE_TOKEN }}
+          teardown: true 
