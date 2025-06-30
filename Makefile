@@ -231,4 +231,5 @@ build-web:
 	@make -C piggui trunk-build
 
 docs:
-	mlc
+	#mlc
+	jekyll build
