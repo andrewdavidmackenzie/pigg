@@ -506,7 +506,7 @@ fn choose_hardware_connection(
         if let Ok(nodeid) = NodeId::from_str(node_str) {
             connection = HardwareConnection::Iroh(nodeid, None);
         } else {
-            eprintln!("Could not create a NodeId for IrohNet from '{}'", node_str);
+            eprintln!("Could not create a NodeId for IrohNet from '{node_str}'");
         }
     }
 

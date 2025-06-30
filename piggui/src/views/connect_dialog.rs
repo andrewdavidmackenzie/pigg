@@ -163,7 +163,7 @@ impl ConnectDialog {
                                 })
                             }
                             Err(e) => {
-                                self.tcp_connection_error = format!("Invalid Port Number: {}", e);
+                                self.tcp_connection_error = format!("Invalid Port Number: {e}");
                                 self.show_spinner = false;
                                 self.disable_widgets = false;
                                 Task::none()
@@ -171,7 +171,7 @@ impl ConnectDialog {
                         }
                     }
                     Err(err) => {
-                        self.tcp_connection_error = format!("Invalid IP Address: {}", err);
+                        self.tcp_connection_error = format!("Invalid IP Address: {err}");
                         self.show_spinner = false;
                         self.disable_widgets = false;
                         Task::none()
@@ -200,7 +200,7 @@ impl ConnectDialog {
                                 Err(err) => {
                                     self.show_spinner = false;
                                     self.disable_widgets = false;
-                                    self.iroh_connection_error = format!("{}", err);
+                                    self.iroh_connection_error = format!("{err}");
                                     return Task::none();
                                 }
                             }
@@ -211,7 +211,7 @@ impl ConnectDialog {
                         })
                     }
                     Err(err) => {
-                        self.iroh_connection_error = format!("{}", err);
+                        self.iroh_connection_error = format!("{err}");
                         self.show_spinner = false;
                         self.disable_widgets = false;
                         Task::none()

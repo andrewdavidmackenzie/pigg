@@ -109,7 +109,7 @@ pub fn maybe_load_no_picker(arg: Option<String>) -> Task<Message> {
             Ok((filename, config)) => ConfigLoaded(filename, config),
             Err(e) => InfoRow(ShowStatusMessage(Error(
                 "Error loading config from file".into(),
-                format!("Error loading the file specified on command line: {}", e),
+                format!("Error loading the file specified on command line: {e}"),
             ))),
         }),
         None => Task::none(),

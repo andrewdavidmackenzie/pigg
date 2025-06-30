@@ -52,7 +52,7 @@ pub(crate) fn write_info_file(
     listener_info: &ListenerInfo,
 ) -> anyhow::Result<()> {
     let mut output = File::create(info_path)?;
-    write!(output, "{}", listener_info)?;
+    write!(output, "{listener_info}")?;
     info!("Info file written at: {info_path:?}");
     Ok(())
 }
@@ -444,10 +444,7 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
         label: service_name.clone(),
     })?;
 
-    println!(
-        "service '{}' stopped. Waiting for 10s before uninstalling",
-        service_name
-    );
+    println!("service '{service_name}' stopped. Waiting for 10s before uninstalling");
     std::thread::sleep(Duration::from_secs(10));
 
     // Uninstall our service using the underlying service management platform
@@ -455,7 +452,7 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
         label: service_name.clone(),
     })?;
 
-    println!("service '{}' uninstalled", service_name);
+    println!("service '{service_name}' uninstalled");
 
     Ok(())
 }
@@ -470,7 +467,7 @@ fn register_mdns(
 ) -> anyhow::Result<(ServiceInfo, ServiceDaemon)> {
     let service_daemon = ServiceDaemon::new().context("Could not create service daemon")?;
 
-    let service_hostname = format!("{}.local.", serial_number);
+    let service_hostname = format!("{serial_number}.local.");
 
     // Register a service.
     let service_info = ServiceInfo::new(
@@ -489,8 +486,7 @@ fn register_mdns(
         .context("Could not register mDNS daemon")?;
 
     println!(
-        "Registered pigglet with mDNS:\n\tInstance: {}\n\tHostname: {}\n\tService Type: {}",
-        serial_number, service_hostname, service_type
+        "Registered pigglet with mDNS:\n\tInstance: {serial_number}\n\tHostname: {service_hostname}\n\tService Type: {service_type}"
     );
 
     Ok((service_info, service_daemon))

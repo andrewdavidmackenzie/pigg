@@ -78,7 +78,7 @@ async fn clean_config() {
         ip,
         port,
         |_, hw_config, tcp_stream| async move {
-            println!("hw_config {:?}", hw_config);
+            println!("hw_config {hw_config:?}");
 
             assert!(
                 hw_config.pin_functions.is_empty(),
@@ -112,7 +112,7 @@ async fn config_change_returned_tcp() {
         ip,
         port,
         |_, hw_config, tcp_stream| async move {
-            println!("hw_config {:?}", hw_config);
+            println!("hw_config {hw_config:?}");
             assert!(hw_config.pin_functions.is_empty());
 
             tokio::time::sleep(Duration::from_millis(100)).await;
@@ -144,10 +144,7 @@ async fn config_change_returned_tcp() {
                     "Configured pin doesn't match config sent"
                 );
             } else {
-                panic!(
-                    "Expected NewConfig message from pigglet but got {:?}",
-                    hw_message
-                );
+                panic!("Expected NewConfig message from pigglet but got {hw_message:?}");
             }
 
             tokio::time::sleep(Duration::from_millis(100)).await;
@@ -214,7 +211,7 @@ async fn invalid_pin_config() {
         "Didn't connect to fake hardware pigglet"
     );
 
-    println!("hw_config {:?}", hw_config);
+    println!("hw_config {hw_config:?}");
     assert!(hw_config.pin_functions.is_empty());
 
     tokio::time::sleep(Duration::from_millis(100)).await;
