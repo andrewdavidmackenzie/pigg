@@ -13,4 +13,6 @@ target/
 *.profraw
 coverage.info
 
-**/dist
+_site
+
+.jekyll-metadata
