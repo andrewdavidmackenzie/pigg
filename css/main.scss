@@ -1,6 +1,6 @@
 ---
 ---
 
-@import "base";
-@import "layout";
-@import "syntax-highlighting";
+@forward "base";
+@forward "layout";
+@forward "syntax-highlighting";
