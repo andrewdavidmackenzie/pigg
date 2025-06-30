@@ -45,7 +45,7 @@ pub async fn get_device() -> anyhow::Result<TcpDevice> {
         if let Ok(ip) = local_ip() {
             let port = pick_unused_port().ok_or(anyhow!("Could not find a free port"))?;
             println!("ip: {ip}:{port}");
-            let address = format!("{}:{}", ip, port);
+            let address = format!("{ip}:{port}");
             info!("Waiting for TCP connection @ {address}");
             let listener = TcpListener::bind(&address).await?;
 

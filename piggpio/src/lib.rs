@@ -108,7 +108,7 @@ mod test {
             options: Cow::from(vec![]),
         };
 
-        println!("Pin: {}", pin);
+        println!("Pin: {pin}");
     }
 
     #[test]

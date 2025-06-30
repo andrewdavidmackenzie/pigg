@@ -45,7 +45,7 @@ impl std::fmt::Display for HardwareConfig {
         } else {
             writeln!(f, "Configured Pins:")?;
             for (bcm_pin_number, pin_function) in &self.pin_functions {
-                writeln!(f, "\tBCM Pin #: {bcm_pin_number} - {}", pin_function)?;
+                writeln!(f, "\tBCM Pin #: {bcm_pin_number} - {pin_function}")?;
             }
             Ok(())
         }

@@ -137,7 +137,7 @@ impl InfoDialog {
 
             InfoDialogMessage::OpenLink(link) => {
                 if let Err(e) = webbrowser::open(link) {
-                    eprintln!("failed to open project repository: {}", e);
+                    eprintln!("failed to open project repository: {e}");
                 }
                 Task::none()
             }
@@ -222,7 +222,7 @@ impl InfoDialog {
                         .style(cancel_button),
                 );
                 for (name, hardware_connection) in hardware_connections {
-                    let button = button(text(format!("Connect via {}", name)))
+                    let button = button(text(format!("Connect via {name}")))
                         .on_press(Message::ConnectRequest(hardware_connection.clone()))
                         .style(connect_button);
                     button_row = button_row

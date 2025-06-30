@@ -100,7 +100,7 @@ pub enum PinFunction {
 impl std::fmt::Display for PinFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Remove anything after the first opening bracket of debug representation
-        let full = format!("{:?}", self);
+        let full = format!("{self:?}");
         write!(f, "{}", full.split_once('(').unwrap_or((&full, "")).0)
     }
 }
@@ -122,7 +122,7 @@ mod test {
         ];
 
         for function in functions {
-            println!("{}", function);
+            println!("{function}");
         }
     }
 }
