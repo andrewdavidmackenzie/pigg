@@ -137,7 +137,7 @@ pub fn view<'a>(
         device_menu_items(discovered_devices, hardware_connection);
 
     Item::with_menu(
-        button(text(format!("devices ({})", device_count)))
+        button(text(format!("devices ({device_count})")))
             .on_press(Message::MenuBarButtonClicked) // Needed for highlighting
             .style(menu_bar_button),
         Menu::new(device_menu_items).width(380.0).max_width(400.0),

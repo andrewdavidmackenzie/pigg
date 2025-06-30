@@ -29,8 +29,7 @@ async fn test_verbosity_levels() {
 
         assert!(
             line.contains(&level.to_uppercase()),
-            "Failed to set verbosity level to {}",
-            level
+            "Failed to set verbosity level to {level}"
         );
         pass(&mut pigglet);
     }
