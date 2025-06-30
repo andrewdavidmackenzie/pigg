@@ -1,3 +1,8 @@
+---
+layout: page
+title: Building Porky
+---
+
 # Building Porky
 
 NOTE: These instructions below apply equally, whether you have cloned the repo or have downloaded and exploded the

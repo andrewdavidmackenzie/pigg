@@ -1,3 +1,9 @@
+---
+layout: page
+title: Installing
+nav_order: 2
+---
+
 # Installing
 
 Up-to-date instructions for installing are also be in the release notes of the

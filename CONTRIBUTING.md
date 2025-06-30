@@ -1,3 +1,9 @@
+---
+layout: page
+title: Contributing
+nav_order: 6
+---
+
 # Contributing to `pigg`
 
 We welcome your contributions to "pigg"!
