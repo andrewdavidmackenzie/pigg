@@ -1,3 +1,9 @@
+---
+layout: page
+title: Building
+nav_order: 4
+---
+
 # Building Piggui and Pigglet from source
 
 ## Pre requisites

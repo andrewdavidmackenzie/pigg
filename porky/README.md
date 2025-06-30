@@ -1,3 +1,8 @@
+---
+layout: page
+title: Porky
+---
+
 # Porky
 
 Porky is an implementation of pigglet remote GPIO client for the Raspberry Pi Pico W, supporting direct USB

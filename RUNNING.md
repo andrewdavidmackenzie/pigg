@@ -1,3 +1,9 @@
+---
+layout: page
+title: Running
+nav_order: 3
+---
+
 # Running Piggui, Pigglet, Porky
 
 `piggui` is the GUI for user interaction. It can be run natively on a macOS, Linux or Windows host to interact

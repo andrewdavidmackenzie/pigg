@@ -1,5 +1,12 @@
 plugins:
   - jekyll-relative-links
+title: Pigg Project Web Site
+email: andrew@mackenzie-serres.net
+baseurl: ''
+github_username: andrewdavidmackenzie
+description: > # this means to ignore newlines until "baseurl:"
+  This site describes the Pigg project for Remote control of GPIO
+  of Raspberry Pi devices (Pis and Picos) from CLI or GUI
 relative_links:
   enabled: true
   collections: true
@@ -25,3 +32,12 @@ exclude:
   - .cargo/
   - configs/
   - hw_test/
+  - target/
+  - porky/target/
+  - FUNDING.json
+  - Cargo.toml
+  - Cargo.lock
+  - 70.pigg.rules
+  - Makefile
+  - codecov.yml
+  - dist-workspace.toml

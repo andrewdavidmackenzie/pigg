@@ -1,3 +1,9 @@
+---
+layout: page
+title: Help
+nav_order: 5
+---
+
 # Help
 
 This files lists help for common problems found
