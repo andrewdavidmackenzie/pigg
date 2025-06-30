@@ -1,4 +1,5 @@
 use anyhow::{ensure, Context};
+use iroh::Watcher;
 use iroh::{
     endpoint::Connection,
     RelayMode, RelayUrl, SecretKey, {Endpoint, NodeAddr, NodeId},
