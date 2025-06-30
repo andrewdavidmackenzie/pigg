@@ -16,11 +16,12 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  markdown-link-check:
+  linkcheck:
+    name: Broken Link Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: becheran/mlc@v0.21.0
+      - name: Broken Link Check
+        uses: technote-space/broken-link-checker-action@v2
 
   Format-check:
     runs-on: ubuntu-latest

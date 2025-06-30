@@ -44,7 +44,7 @@ ifeq ($(OSFLAG),macos)
 	@echo "Running macos specific setup"
 	$(MAKE) macos-setup
 endif
-	@cargo install cargo-all-features mlc
+	@cargo install cargo-all-features
 	@make -C piggui setup
 	@make -C pigglet setup
 	@make -C porky setup
@@ -231,5 +231,4 @@ build-web:
 	@make -C piggui trunk-build
 
 docs:
-	#mlc
 	jekyll build
