@@ -1,3 +1,9 @@
+---
+layout: page
+title: Releasing
+permalink: /RELEASING/
+---
+
 # RELEASING
 
 We use `cargo dist` to automate our release and package publishing process.

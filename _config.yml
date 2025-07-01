@@ -2,9 +2,10 @@ plugins:
   - jekyll-relative-links
 title: Pigg Project Web Site
 email: andrew@mackenzie-serres.net
+source: ./site/
 baseurl: ''
 github_username: andrewdavidmackenzie
-description: > # this means to ignore newlines until "baseurl:"
+description: >
   This site describes the Pigg project for Remote control of GPIO
   of Raspberry Pi devices (Pis and Picos) from CLI or GUI
 relative_links:
