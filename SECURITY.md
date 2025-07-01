@@ -1,3 +1,9 @@
+---
+layout: page
+title: Security Policy
+permalink: /SECURITY/
+---
+
 # Security Policy
 
 We use dependabot to keep dependencies up to date as much as possible.
