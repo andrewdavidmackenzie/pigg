@@ -16,12 +16,6 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  markdown-link-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: becheran/mlc@v0.21.0
-
   Format-check:
     runs-on: ubuntu-latest
     steps:

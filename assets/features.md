@@ -1,3 +1,8 @@
+---
+layout: page
+title: Features
+---
+
 # Feature Showcase
 
 Here are some gifs and links to YouTube videos showing some of the features.

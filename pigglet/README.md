@@ -1,3 +1,8 @@
+---
+layout: page
+title: Pigglet
+---
+
 ![GH Action](https://github.com/andrewdavidmackenzie/pigg/actions/workflows/build_and_test.yml/badge.svg)
 [![codecov](https://codecov.io/gh/andrewdavidmackenzie/pigg/graph/badge.svg?token=Lv5SstEMGO)](https://codecov.io/gh/andrewdavidmackenzie/pigg)
 
@@ -47,7 +52,7 @@ then the user can interact with it and visualize inputs level changes from the `
 `porky` is an embedded application developer for the Raspberry Pi Pico and Pi Pico W for remote interaction with the
 Pico's GPIO hardware. It can be connected to over TCP or USB.
 
-For more details see [porky's README.md](../porky/README.md)
+For more details see [porky's README.md](../porky/)
 
 ## Supported Hardware and Operating Systems
 
