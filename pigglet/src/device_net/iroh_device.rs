@@ -1,6 +1,7 @@
 use crate::config;
 use anyhow::{anyhow, bail, Context};
 use iroh::endpoint::Connection;
+use iroh::Watcher;
 use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
 use log::{debug, info, trace};
 use pigdef::config::HardwareConfig;
