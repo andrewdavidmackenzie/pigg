@@ -119,12 +119,13 @@ async fn send_control_out(porky: &Interface, control_out: ControlOut<'_>) -> Res
 }
 
 /// Get the [Interface] of a specific USB device using its [SerialNumber]
-async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, Error> {
+/// NOTE: The `target_serial` could be a partial serial number, to make life easier
+async fn interface_from_serial(target_serial: &SerialNumber) -> Result<Interface, Error> {
     for device_info in
         nusb::list_devices()?.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
     {
         if let Some(serial_number) = device_info.serial_number() {
-            if serial_number == serial {
+            if serial_number.contains(target_serial) {
                 let device = device_info.open()?;
                 let interface = device.claim_interface(0)?;
                 interface.set_alt_setting(1)?;
@@ -134,7 +135,7 @@ async fn interface_from_serial(serial: &SerialNumber) -> Result<Interface, Error
     }
 
     Err(anyhow!(
-        "Could not find USB device with Serial Number: {serial}"
+        "Could not find USB device with Serial Number: {target_serial}"
     ))
 }
 

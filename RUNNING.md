@@ -65,6 +65,10 @@ a previous connection to it) and have 'piggui' connect to it using the 'usb' arg
 
 - `piggui --usb $serial_number`
 
+NOTE: To make connecting to USB easier, especially when you have few devices connected to USB,
+the `--usb` option accepts a partial USB serial number, and will connect to the first
+device it finds where the device's serial number contains the string provided in `$serial_number`
+
 ### Connecting Piggui to a remote Pigglet/Porky - Using the GUI
 
 To connect to a remote `pigglet` using the Iroh network method, get the `nodeid` value from the pigglet instance (see

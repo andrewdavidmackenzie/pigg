@@ -51,7 +51,7 @@ async fn usb_discover_and_connect_tcp() {
         .await;
     }
 
-    println!("Tested TCP connection to {} USB discovered devices", number);
+    println!("Tested TCP connection to {number} USB discovered devices");
 }
 
 #[tokio::test]
@@ -78,10 +78,7 @@ async fn usb_discover_and_disconnect_tcp() {
         .await;
     }
 
-    println!(
-        "Tested TCP connection and disconnection to {} USB discovered devices",
-        number
-    );
+    println!("Tested TCP connection and disconnection to {number} USB discovered devices");
 }
 
 #[tokio::test]
@@ -108,7 +105,7 @@ async fn usb_discover_and_get_config_tcp() {
         .await;
     }
 
-    println!("Tested TCP GetConfig to {} USB discovered devices", number);
+    println!("Tested TCP GetConfig to {number} USB discovered devices");
 }
 
 #[tokio::test]
@@ -146,10 +143,7 @@ async fn usb_discover_and_reconnect_tcp() {
         .await;
     }
 
-    println!(
-        "Tested TCP re-connection to {} USB discovered devices",
-        number
-    );
+    println!("Tested TCP re-connection to {number} USB discovered devices");
 }
 
 #[cfg(feature = "discovery")]
@@ -174,8 +168,5 @@ async fn mdns_discover_and_connect_tcp() {
         .await;
     }
 
-    println!(
-        "Tested TCP connection to {} mDNS discovered devices",
-        number
-    );
+    println!("Tested TCP connection to {number} mDNS discovered devices");
 }

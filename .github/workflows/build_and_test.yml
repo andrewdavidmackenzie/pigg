@@ -178,7 +178,6 @@ jobs:
 
       - name: Run HW Tests
         run: make hw_tests
-        continue-on-error: true
 
   clippy-build-and-test-matrix:
     runs-on: ${{ matrix.os }}

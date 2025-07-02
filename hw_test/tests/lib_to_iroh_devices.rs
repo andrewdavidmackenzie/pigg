@@ -51,10 +51,7 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
         })
         .await;
     }
-    println!(
-        "Tested Iroh connection and disconnection to {} mDNS discovered devices",
-        number
-    );
+    println!("Tested Iroh connection and disconnection to {number} mDNS discovered devices");
 }
 
 #[tokio::test]
@@ -84,10 +81,7 @@ async fn mdns_discover_get_config_iroh() {
         })
         .await;
     }
-    println!(
-        "Tested Iroh GetConfig to {} mDNS discovered devices",
-        number
-    );
+    println!("Tested Iroh GetConfig to {number} mDNS discovered devices");
 }
 
 #[cfg(feature = "discovery")]
@@ -132,8 +126,5 @@ async fn mdns_discover_reconnect_iroh() {
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
 
-    println!(
-        "Tested Iroh re-connection to {} mDNS discovered devices",
-        number
-    );
+    println!("Tested Iroh re-connection to {number} mDNS discovered devices");
 }
