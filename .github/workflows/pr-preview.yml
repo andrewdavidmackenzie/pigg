@@ -81,4 +81,3 @@ jobs:
           project: './_site'
           login: ${{ secrets.SURGE_LOGIN }}
           token: ${{ secrets.SURGE_TOKEN }}
-          teardown: true 
