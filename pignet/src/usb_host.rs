@@ -125,7 +125,7 @@ async fn interface_from_serial(target_serial: &SerialNumber) -> Result<Interface
         nusb::list_devices()?.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
     {
         if let Some(serial_number) = device_info.serial_number() {
-            if serial_number == target_serial {
+            if serial_number.contains(target_serial) {
                 let device = device_info.open()?;
                 let interface = device.claim_interface(0)?;
                 interface.set_alt_setting(1)?;
