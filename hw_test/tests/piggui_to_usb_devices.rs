@@ -45,7 +45,7 @@ async fn usb_discover_and_connect_partial_usb() {
     assert!(number > 0, "Could not find by USB to connect to by USB");
 
     for serial in serials {
-        let partial_serial = serial[..serial.len() / 2].to_string();
+        let partial_serial = serial[..serial.len() - 1].to_string();
         let mut piggui = run("piggui", vec!["--usb".to_string(), partial_serial], None);
 
         wait_for_stdout(&mut piggui, "Connected to hardware")
