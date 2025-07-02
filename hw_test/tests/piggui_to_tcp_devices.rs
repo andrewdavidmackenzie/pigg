@@ -37,10 +37,7 @@ async fn usb_discover_and_connect_tcp() {
         kill(&mut piggui);
     }
 
-    println!(
-        "Tested piggui TCP connection to {} USB discovered devices",
-        number
-    );
+    println!("Tested piggui TCP connection to {number} USB discovered devices");
 }
 
 #[tokio::test]
@@ -66,10 +63,7 @@ async fn mdns_discover_and_connect_tcp() {
         kill(&mut piggui);
     }
 
-    println!(
-        "Tested piggui TCP connection to {} mDNS discovered devices",
-        number
-    );
+    println!("Tested piggui TCP connection to {number} mDNS discovered devices");
 }
 
 //reconnect tcp (kill and restart)

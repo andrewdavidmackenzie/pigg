@@ -27,10 +27,7 @@ async fn usb_discover_and_connect_usb() {
         kill(&mut piggui);
     }
 
-    println!(
-        "Tested piggui USB connection to {} USB discovered devices",
-        number
-    );
+    println!("Tested piggui USB connection to {number} USB discovered devices");
 }
 
 /// Test that if a partial serial number is passed it also works
@@ -55,8 +52,7 @@ async fn usb_discover_and_connect_partial_usb() {
     }
 
     println!(
-        "Tested piggui USB connection to {} USB discovered devices using partial USB serial number",
-        number
+        "Tested piggui USB connection to {number} USB discovered devices using partial USB serial number"
     );
 }
 

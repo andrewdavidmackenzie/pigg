@@ -42,10 +42,7 @@ async fn mdns_discover_and_connect_iroh() {
         tokio::time::sleep(Duration::from_secs(30)).await;
     }
 
-    println!(
-        "Tested piggui Iroh connection to {} mDNS discovered devices",
-        number
-    );
+    println!("Tested piggui Iroh connection to {number} mDNS discovered devices");
 }
 
 //reconnect tcp (kill and restart)
