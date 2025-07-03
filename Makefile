@@ -32,6 +32,7 @@ all: clippy format-check build build-arm build-armv7 build-aarch64 build-porky b
 .PHONY: clean
 clean:
 	@cargo clean
+	@rm -rf _site
 
 .PHONY: macos-setup
 macos-setup:
