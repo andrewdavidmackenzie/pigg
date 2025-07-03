@@ -104,38 +104,33 @@ You can see more gifs and videos of features [here](assets/features.md)
 `pigg` has a number of binaries as part of the project (see descriptions above) and they are tested in CI, or
 manually or are known to work as follows:
 
-| Application | Arch Supported | Device      | OS Supported       | Asset                                      |
-|-------------|----------------|-------------|--------------------|--------------------------------------------|
-| piggui      | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           |
-|             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            |
-|             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       |
-|             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            |
-|             | aarch64        | Pi400       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | aarch64        | Pi4         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | aarch64        | Pi5         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | arm            | Pi Zero     | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          |
-|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz |
-|             | armv7 gnu      | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  |
-| pigglet     | Apple Silicon  |             | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           |
-|             | x86_64         |             | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            |
-|             | x86_64         |             | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       |
-|             | x86_64         |             | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            |
-|             | aarch64        | Pi400       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | aarch64        | Pi4         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | aarch64        | Pi5         | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | arm            | Pi Zero     | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          |
-|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz |
-| porky_w     | armv7          | Pi Pico W   | N/A                | porky_pico_w.uf2                           |
-| porky       | armv7          | Pi Pico     | N/A                | porky_pico.uf2                             |
-| porky_w2    | armv7          | Pi Pico 2 W | N/A                | porky_pico_w2.uf2                          |
-| porky2      | armv7          | Pi Pico 2   | N/A                | porky_pico2.uf2                            |
-
-## Roadmap
-
-We have identified a number of areas to work on in future releases, most of which have been captured as GitHub
-issues, but we would really appreciate your input on what could be most useful or just the coolest.
+| Application | Arch Supported | Device      | OS Supported       | Asset Links (see [Latest Release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)                                                                     |
+|-------------|----------------|-------------|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| piggui      | Apple Silicon  |             | macOS 15           | [piggui-aarch64-apple-darwin.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-apple-darwin.tar.xz)                       |
+|             | x86_64         |             | macOS 15           | [piggui-x86_64-apple-darwin.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-x86_64-apple-darwin.tar.xz)                         |
+|             | x86_64         |             | Ubuntu 24.04       | [piggui-x86_64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-x86_64-unknown-linux-gnu.tar.xz)               |
+|             | x86_64         |             | Windows 10         | [piggui-x86_64-pc-windows-msvc.msi](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-x86_64-pc-windows-msvc.msi)                         |
+|             | aarch64        | Pi400       | Pi OS              | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)             |
+|             | aarch64        | Pi4         | Pi OS              | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)             |
+|             | aarch64        | Pi5         | Pi OS              | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)             |
+|             | arm            | Pi Zero     | Pi OS (32bit)      | [piggui-arm-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-arm-unknown-linux-gnu.tar.xz)                     |
+|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)             |
+|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | [piggui-armv7-unknown-linux-musleabihf.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-armv7-unknown-linux-musleabihf.tar.xz)   |
+|             | armv7 gnu      | Pi3B        | Ubuntu 18.04.6 LTS | [piggui-armv7-unknown-linux-gnueabihf.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-armv7-unknown-linux-gnueabihf.tar.xz)     |
+| pigglet     | Apple Silicon  |             | macOS 15           | [pigglet-aarch64-apple-darwin.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-aarch64-apple-darwin.tar.xz)                     |
+|             | x86_64         |             | macOS 15           | [pigglet-x86_64-apple-darwin.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-x86_64-apple-darwin.tar.xz)                       |
+|             | x86_64         |             | Ubuntu 24.04       | [pigglet-x86_64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-x86_64-unknown-linux-gnu.tar.xz)             |
+|             | x86_64         |             | Windows 10         | [pigglet-x86_64-pc-windows-msvc.msi](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-x86_64-pc-windows-msvc.msi)                       |
+|             | aarch64        | Pi400       | Pi OS              | [pigglet-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | aarch64        | Pi4         | Pi OS              | [pigglet-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | aarch64        | Pi5         | Pi OS              | [pigglet-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | arm            | Pi Zero     | Pi OS (32bit)      | [pigglet-arm-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-arm-unknown-linux-gnu.tar.xz)                   |
+|             | aarch64        | Pi Zero 2   | Pi OS (64bit)      | [pigglet-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | armv7 musl     | Pi3B        | Ubuntu 18.04.6 LTS | [pigglet-armv7-unknown-linux-musleabihf.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-armv7-unknown-linux-musleabihf.tar.xz) |
+| porky_w     | armv7          | Pi Pico W   | N/A                | [porky_pico_w.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico_w.uf2)                                                           |
+| porky       | armv7          | Pi Pico     | N/A                | [porky_pico.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico.uf2)                                                               |
+| porky_w2    | armv7          | Pi Pico 2 W | N/A                | [porky_pico_w2.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico_w2.uf2)                                                         |
+| porky2      | armv7          | Pi Pico 2   | N/A                | [porky_pico2.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico2.uf2)                                                             |
 
 ## Installing
 
@@ -154,6 +149,11 @@ See [BUILDING.md](BUILDING.md)
 
 For details on running `pigglet` and `piggui` in the foreground or as a system service, on the same machine or with a
 remote GUI to Pi hardware, see [RUNNING.md](RUNNING.md)
+
+## Roadmap
+
+We have identified a number of areas to work on in future releases, most of which have been captured as GitHub
+issues, but we would really appreciate your input on what could be most useful or just the coolest.
 
 ## Contributing
 
