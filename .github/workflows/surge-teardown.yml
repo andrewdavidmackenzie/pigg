@@ -1,0 +1,20 @@
+name: Surge Teardown
+
+on:
+  pull_request:
+    types: [ closed ]
+
+permissions:
+  actions: write
+  pull-requests: write
+
+jobs:
+  teardown-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Teardown from Surge
+        uses: nelonoel/surge-sh-teardown@v1.0.4
+        with:
+          template: 'pigg-pr-${{ github.event.number }}.surge.sh'
+          login: ${{ secrets.SURGE_LOGIN }}
+          token: ${{ secrets.SURGE_TOKEN }}
