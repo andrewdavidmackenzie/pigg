@@ -3,13 +3,10 @@ use serial_test::serial;
 use std::time::Duration;
 use support::{pass, run, wait_for_stdout};
 
+#[path = "../../piggui/tests/support.rs"]
 mod support;
 
 #[cfg(feature = "tcp")]
-#[cfg_attr(
-    target_os = "linux",
-    ignore = "https://github.com/andrewdavidmackenzie/pigg/issues/1014"
-)]
 #[tokio::test]
 #[serial]
 async fn connect_via_ip() {
