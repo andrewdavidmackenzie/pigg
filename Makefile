@@ -237,3 +237,6 @@ build-web:
 
 docs:
 	bundle exec jekyll build --source site --destination _site
+
+serve-docs:
+	bundle exec jekyll serve --source site --destination _site
