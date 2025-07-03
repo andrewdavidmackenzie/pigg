@@ -32,6 +32,7 @@ all: clippy format-check build build-arm build-armv7 build-aarch64 build-porky b
 .PHONY: clean
 clean:
 	@cargo clean
+	@rm -rf _site
 
 .PHONY: macos-setup
 macos-setup:
@@ -235,4 +236,7 @@ build-web:
 	@make -C piggui trunk-build
 
 docs:
-	jekyll build
+	bundle exec jekyll build --source site --destination _site
+
+serve-docs:
+	bundle exec jekyll serve --source site --destination _site

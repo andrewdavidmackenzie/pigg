@@ -15,7 +15,12 @@ See [Building.md](BUILDING.md) on details of how to build from source.
 
 ### Getting a UF2 file
 
-You should find a `porky_pico_w.uf2` UF2 file as part of the pre-build binaries in a release.
+| Application | Arch Supported | Device      | OS Supported | Asset Links (see [Latest Release](https://github.com/andrewdavidmackenzie/pigg/releases/latest)             |
+|-------------|----------------|-------------|--------------|-------------------------------------------------------------------------------------------------------------|
+| porky_w     | armv7          | Pi Pico W   | N/A          | [porky_pico_w.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico_w.uf2)   |
+| porky       | armv7          | Pi Pico     | N/A          | [porky_pico.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico.uf2)       |
+| porky_w2    | armv7          | Pi Pico 2 W | N/A          | [porky_pico_w2.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico_w2.uf2) |
+| porky2      | armv7          | Pi Pico 2   | N/A          | [porky_pico2.uf2](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/porky_pico2.uf2)     |
 
 If you wish to build your own (e.g. maybe you want to specify a default Wi-Fi network to connect to), please consult
 the [UF2 Building section of BUILDING.md](BUILDING.md#creating-a-uf2-file)

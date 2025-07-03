@@ -24,29 +24,36 @@ component_management:
   individual_components:
     - component_id: pigglet
       name: pigglet
+      target: auto
       paths:
         - pigglet/**
     - component_id: piggui
       name: piggui
+      target: auto
       paths:
         - piggui/**
     - component_id: porky
       name: porky
+      target: auto
       paths:
         - porky/**
     - component_id: pigdef
       name: pigdef
+      target: auto
       paths:
         - pigdef/**
     - component_id: piggpio
       name: piggpio
+      target: auto
       paths:
         - piggpio/**
     - component_id: pignet
       name: pignet
+      target: auto
       paths:
         - pignet/**
     - component_id: hw_tests
       name: hw_tests
+      target: auto
       paths:
         - hw_tests/**

@@ -2,7 +2,6 @@ plugins:
   - jekyll-relative-links
 title: Pigg Project Web Site
 email: andrew@mackenzie-serres.net
-source: ./site/
 baseurl: ''
 github_username: andrewdavidmackenzie
 description: >
@@ -28,17 +27,19 @@ include:
   - porky/BUILDING.md
   - assets
 exclude:
-  - .idea/
-  - .github/
-  - .cargo/
-  - configs/
-  - hw_test/
-  - target/
-  - porky/target/
-  - FUNDING.json
-  - Cargo.toml
-  - Cargo.lock
-  - 70.pigg.rules
-  - Makefile
-  - codecov.yml
-  - dist-workspace.toml
+  - ../.idea/
+  - ../.github/
+  - ../.cargo/
+  - ../configs/
+  - ../hw_test/
+  - ../target/
+  - ../porky/target/
+  - ../FUNDING.json
+  - ../Cargo.toml
+  - ../Cargo.lock
+  - ../70.pigg.rules
+  - ../Makefile
+  - ../codecov.yml
+  - ../dist-workspace.toml
+  - target
+  - wix

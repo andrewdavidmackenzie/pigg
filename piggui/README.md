@@ -107,19 +107,19 @@ For more details see [porky's README.md](../porky/)
 `pigg` has a number of binaries as part of the project (see descriptions above) and they are tested in CI, or
 manually or are known to work as follows:
 
-| Application | Arch Supported | Device    | OS Supported       | Asset                                      |
-|-------------|----------------|-----------|--------------------|--------------------------------------------|
-| piggui      | Apple Silicon  |           | macOS 15           | pigg-aarch64-apple-darwin.tar.xz           |
-|             | x86_64         |           | macOS 15           | pigg-x86_64-apple-darwin.tar.xz            |
-|             | x86_64         |           | Ubuntu 24.04       | pigg-x86_64-unknown-linux-gnu.tar.xz       |
-|             | x86_64         |           | Windows 10         | pigg-x86_64-pc-windows-msvc.msi            |
-|             | aarch64        | Pi400     | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | aarch64        | Pi4       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | aarch64        | Pi5       | Pi OS              | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | arm            | Pi Zero   | Pi OS (32bit)      | pigg-arm-unknown-linux-gnu.tar.xz          |
-|             | aarch64        | Pi Zero 2 | Pi OS (64bit)      | pigg-aarch64-unknown-linux-gnu.tar.xz      |
-|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-musleabihf.tar.xz |
-|             | armv7 gnu      | Pi3B      | Ubuntu 18.04.6 LTS | pigg-armv7-unknown-linux-gnueabihf.tar.xz  |
+| Application | Arch Supported | Device    | OS Supported       | Asset                                                                                                                                                             |
+|-------------|----------------|-----------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| piggui      | Apple Silicon  |           | macOS 15           | [piggui-aarch64-apple-darwin.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-apple-darwin.tar.xz)                     |
+|             | x86_64         |           | macOS 15           | [piggui-x86_64-apple-darwin.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-x86_64-apple-darwin.tar.xz)                       |
+|             | x86_64         |           | Ubuntu 24.04       | [piggui-x86_64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-x86_64-unknown-linux-gnu.tar.xz)             |
+|             | x86_64         |           | Windows 10         | [piggui-x86_64-pc-windows-msvc.msi](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-x86_64-pc-windows-msvc.msi)                       |
+|             | aarch64        | Pi400     | Pi OS              | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | aarch64        | Pi4       | Pi OS              | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | aarch64        | Pi5       | Pi OS              | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | arm            | Pi Zero   | Pi OS (32bit)      | [piggui-arm-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-arm-unknown-linux-gnu.tar.xz)                   |
+|             | aarch64        | Pi Zero 2 | Pi OS (64bit)      | [piggui-aarch64-unknown-linux-gnu.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-aarch64-unknown-linux-gnu.tar.xz)           |
+|             | armv7 musl     | Pi3B      | Ubuntu 18.04.6 LTS | [piggui-armv7-unknown-linux-musleabihf.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-armv7-unknown-linux-musleabihf.tar.xz) |
+|             | armv7 gnu      | Pi3B      | Ubuntu 18.04.6 LTS | [piggui-armv7-unknown-linux-gnueabihf.tar.xz](https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-armv7-unknown-linux-gnueabihf.tar.xz)   |
 
 ## Installing
 
