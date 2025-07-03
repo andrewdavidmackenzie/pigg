@@ -1,8 +1,8 @@
-name: PR Preview
+name: Surge Preview
 
 on:
   pull_request:
-    types: [ opened, synchronize, reopened, closed ]
+    types: [ opened, synchronize, reopened ]
 
 permissions:
   actions: write
@@ -11,7 +11,6 @@ permissions:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
-    if: github.event.action != 'closed'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -69,15 +68,3 @@ jobs:
                 body: commentBody
               });
             }
-
-  cleanup-preview:
-    runs-on: ubuntu-latest
-    if: github.event.action == 'closed'
-    steps:
-      - name: Remove Surge deployment
-        uses: dswistowski/surge-sh-action@v1
-        with:
-          domain: 'pigg-pr-${{ github.event.number }}.surge.sh'
-          project: './_site'
-          login: ${{ secrets.SURGE_LOGIN }}
-          token: ${{ secrets.SURGE_TOKEN }}
