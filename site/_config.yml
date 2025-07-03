@@ -27,19 +27,26 @@ include:
   - porky/BUILDING.md
   - assets
 exclude:
-  - ../.idea/
-  - ../.github/
-  - ../.cargo/
+  - '**/.idea/'
+  - '**/.github/'
+  - '**/.gitignore/'
+  - '**/.cargo/'
   - ../configs/
   - ../hw_test/
-  - ../target/
-  - ../porky/target/
   - ../FUNDING.json
-  - ../Cargo.toml
-  - ../Cargo.lock
   - ../70.pigg.rules
-  - ../Makefile
+  - '**/Makefile'
+  - '**/Cargo.toml'
+  - '**/Cargo.lock'
   - ../codecov.yml
   - ../dist-workspace.toml
-  - target
-  - wix
+  - '**/target'
+  - '**/wix'
+  - '**/tests'
+  - '**/src'
+  - '**/*.rs'
+  - '**/dist'
+  - '**/*.toml'
+  - '**/*.lock'
+  - '**/*.bin'
+  - '**/*.x'
