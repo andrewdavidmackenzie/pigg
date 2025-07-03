@@ -2,7 +2,6 @@ plugins:
   - jekyll-relative-links
 title: Pigg Project Web Site
 email: andrew@mackenzie-serres.net
-source: .
 baseurl: ''
 github_username: andrewdavidmackenzie
 description: >
@@ -42,3 +41,5 @@ exclude:
   - ../Makefile
   - ../codecov.yml
   - ../dist-workspace.toml
+  - target
+  - wix
