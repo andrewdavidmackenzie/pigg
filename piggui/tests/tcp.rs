@@ -6,10 +6,6 @@ use support::{pass, run, wait_for_stdout};
 mod support;
 
 #[cfg(feature = "tcp")]
-#[cfg_attr(
-    target_os = "linux",
-    ignore = "https://github.com/andrewdavidmackenzie/pigg/issues/1014"
-)]
 #[tokio::test]
 #[serial]
 async fn connect_via_ip() {
