@@ -3,6 +3,7 @@ use serial_test::serial;
 use std::time::Duration;
 use support::{pass, run, wait_for_stdout};
 
+#[path = "../../piggui/tests/support.rs"]
 mod support;
 
 #[cfg(feature = "tcp")]

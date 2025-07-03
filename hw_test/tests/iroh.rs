@@ -2,6 +2,7 @@ use crate::support::parse_pigglet;
 use serial_test::serial;
 use support::{pass, run, wait_for_stdout};
 
+#[path = "../../piggui/tests/support.rs"]
 mod support;
 
 #[tokio::test]
