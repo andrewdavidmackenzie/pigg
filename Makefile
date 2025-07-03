@@ -235,4 +235,4 @@ build-web:
 	@make -C piggui trunk-build
 
 docs:
-	jekyll build
+	bundle exec jekyll build --source site --destination _site

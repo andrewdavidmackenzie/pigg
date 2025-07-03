@@ -1,0 +1,44 @@
+plugins:
+  - jekyll-relative-links
+title: Pigg Project Web Site
+email: andrew@mackenzie-serres.net
+source: .
+baseurl: ''
+github_username: andrewdavidmackenzie
+description: >
+  This site describes the Pigg project for Remote control of GPIO
+  of Raspberry Pi devices (Pis and Picos) from CLI or GUI
+relative_links:
+  enabled: true
+  collections: true
+include:
+  - ../README.md
+  - ../BUILDING.md
+  - ../CODE_OF_CONDUCT.md
+  - ../CONTRIBUTING.md
+  - ../HELP.md
+  - ../INSTALLING.md
+  - ../LICENSE
+  - ../RELEASING.md
+  - ../RUNNING.md
+  - ../SECURITY.md
+  - ../pigglet/README.md
+  - ../piggui/README.md
+  - ../porky/README.md
+  - ../porky/BUILDING.md
+  - ../assets
+exclude:
+  - ../.idea/
+  - ../.github/
+  - ../.cargo/
+  - ../configs/
+  - ../hw_test/
+  - ../target/
+  - ../porky/target/
+  - ../FUNDING.json
+  - ../Cargo.toml
+  - ../Cargo.lock
+  - ../70.pigg.rules
+  - ../Makefile
+  - ../codecov.yml
+  - ../dist-workspace.toml
