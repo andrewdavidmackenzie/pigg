@@ -33,13 +33,22 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: "./site"
-          destination: "./_site"
+        run: |
+          bundle exec jekyll build --source site --destination _site --verbose
+        env:
+          JEKYLL_ENV: production
 
-      - name: Show _site contents
-        run: tree _site
+      - name: Verify site build
+        run: |
+          echo "Checking if site was built correctly..."
+          if [ -f "_site/index.html" ]; then
+            echo "✅ Site built successfully - index.html found"
+            echo "Generated files:"
+            ls -la _site/
+          else
+            echo "❌ Site build failed - index.html not found"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

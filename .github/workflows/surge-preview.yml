@@ -46,9 +46,6 @@ jobs:
             exit 1
           fi
 
-      - name: Show all contents
-        run: tree .
-
       - name: Deploy to Surge
         uses: dswistowski/surge-sh-action@v1.1.0
         with:
