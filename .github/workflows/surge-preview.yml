@@ -18,13 +18,10 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Show site contents
-        run: tree site
-
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
-          source: "./site/_config.yml"
+          source: "./site/"
           destination: "./_site/"
 
       - name: Show _site contents
