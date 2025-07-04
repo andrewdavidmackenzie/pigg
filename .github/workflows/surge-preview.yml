@@ -25,7 +25,7 @@ jobs:
           destination: _site
 
       - name: Deploy to Surge
-        uses: dswistowski/surge-sh-action@v1
+        uses: dswistowski/surge-sh-action@v1.1.0
         with:
           domain: 'pigg-pr-${{ github.event.number }}.surge.sh'
           project: '_site'
