@@ -3,6 +3,7 @@ plugins:
 title: Pigg Project Web Site
 email: andrew@mackenzie-serres.net
 baseurl: ''
+source: .
 github_username: andrewdavidmackenzie
 description: >
   This site describes the Pigg project for Remote control of GPIO
