@@ -24,6 +24,9 @@ jobs:
           source: "./site"
           destination: "./_site"
 
+      - name: Show _site contents
+        run: tree _site
+
       - name: Deploy to Surge
         uses: dswistowski/surge-sh-action@v1.1.0
         with:
