@@ -19,15 +19,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: site
-          destination: "./_site"
-          verbose: 'true'
+        run: |
+          bundle exec jekyll build --source site --destination _site --verbose
+        env:
+          JEKYLL_ENV: production
+
+      - name: Verify site build
+        run: |
+          echo "Checking if site was built correctly..."
+          if [ -f "_site/index.html" ]; then
+            echo "✅ Site built successfully - index.html found"
+            echo "Generated files:"
+            ls -la _site/
+          else
+            echo "❌ Site build failed - index.html not found"
+            exit 1
+          fi
 
       - name: Show all contents
         run: tree .
