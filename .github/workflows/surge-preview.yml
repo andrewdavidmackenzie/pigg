@@ -28,7 +28,7 @@ jobs:
         uses: dswistowski/surge-sh-action@v1
         with:
           domain: 'pigg-pr-${{ github.event.number }}.surge.sh'
-          project: './_site'
+          project: '_site'
           login: ${{ secrets.SURGE_LOGIN }}
           token: ${{ secrets.SURGE_TOKEN }}
 
