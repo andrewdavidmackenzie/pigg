@@ -30,6 +30,7 @@ jobs:
         with:
           source: site
           destination: "./_site"
+          verbose: 'true'
 
       - name: Show _site contents
         run: tree _site
