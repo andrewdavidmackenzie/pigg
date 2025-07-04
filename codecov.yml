@@ -9,6 +9,7 @@ coverage:
       default:
         target: auto
         threshold: 20%
+        informational: true
     patch: off
 
 comment:
@@ -18,52 +19,34 @@ component_management:
   default_rules: # default rules that will be inherited by all components
     statuses:
       - type: project # in this case every component that doens't have a status defined will have a project type one
-        target: auto
         branches:
           - "!master"
   individual_components:
     - component_id: pigglet
       name: pigglet
-      target: auto
       paths:
         - pigglet/**
-      statuses:
-        - type: project
-          target: auto
-          informational: true  # Only pigglet is informational - won't fail PR
     - component_id: piggui
       name: piggui
-      target: auto
       paths:
         - piggui/**
-      # No explicit statuses - will inherit from default_rules (can fail PR)
     - component_id: porky
       name: porky
-      target: auto
       paths:
         - porky/**
-      # No explicit statuses - will inherit from default_rules (can fail PR)
     - component_id: pigdef
       name: pigdef
-      target: auto
       paths:
         - pigdef/**
-      # No explicit statuses - will inherit from default_rules (can fail PR)
     - component_id: piggpio
       name: piggpio
-      target: auto
       paths:
         - piggpio/**
-      # No explicit statuses - will inherit from default_rules (can fail PR)
     - component_id: pignet
       name: pignet
-      target: auto
       paths:
         - pignet/**
-      # No explicit statuses - will inherit from default_rules (can fail PR)
     - component_id: hw_tests
       name: hw_tests
-      target: auto
       paths:
         - hw_tests/**
-      # No explicit statuses - will inherit from default_rules (can fail PR)
