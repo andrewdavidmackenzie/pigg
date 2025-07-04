@@ -22,18 +22,12 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Show site contents
-        run: tree site
-
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
           source: site
           destination: "./_site"
           verbose: 'true'
-
-      - name: Show _site contents
-        run: tree _site
 
       - name: Show all contents
         run: tree .
