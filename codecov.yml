@@ -17,43 +17,36 @@ comment:
 component_management:
   default_rules: # default rules that will be inherited by all components
     statuses:
-      - type: project # in this case every component that doens't have a status defined will have a project type one
-        target: auto
+      - informational: true
+      - type: project
         branches:
           - "!master"
   individual_components:
     - component_id: pigglet
       name: pigglet
-      target: auto
       paths:
         - pigglet/**
     - component_id: piggui
       name: piggui
-      target: auto
       paths:
         - piggui/**
     - component_id: porky
       name: porky
-      target: auto
       paths:
         - porky/**
     - component_id: pigdef
       name: pigdef
-      target: auto
       paths:
         - pigdef/**
     - component_id: piggpio
       name: piggpio
-      target: auto
       paths:
         - piggpio/**
     - component_id: pignet
       name: pignet
-      target: auto
       paths:
         - pignet/**
     - component_id: hw_tests
       name: hw_tests
-      target: auto
       paths:
         - hw_tests/**
