@@ -35,6 +35,7 @@ mod service;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
 const PIGG_INFO_FILENAME: &str = "pigglet.info";
+const TWO_INSTANCES: i32 = 1;
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
@@ -116,7 +117,7 @@ fn check_unique(names: &[&str]) -> anyhow::Result<PathBuf> {
                 }
             }
 
-            exit(1);
+            exit(TWO_INSTANCES);
         }
     }
 
