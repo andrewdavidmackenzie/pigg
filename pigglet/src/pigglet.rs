@@ -24,7 +24,6 @@ use sysinfo::{Process, System};
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
-use service_manager::ServiceLabel;
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
 
@@ -80,29 +79,11 @@ async fn main() -> anyhow::Result<()> {
     let matches = get_matches();
     let exec_path = current_exe()?;
 
-    manage_service(&exec_path, &matches)?;
+    service::manage_service(&exec_path, &matches)?;
 
     let info_path = check_unique(&["pigglet", "piggui"])?;
 
     service::run_service(&info_path, &matches, exec_path).await
-}
-
-/// Handle any service installation or uninstallation tasks specified on the command line
-/// continue without doing anything if none were specified
-fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
-    let service_name: ServiceLabel = SERVICE_NAME.parse()?;
-
-    if matches.get_flag("uninstall") {
-        service::uninstall_service(&service_name)?;
-        exit(0);
-    }
-
-    if matches.get_flag("install") {
-        service::install_service(&service_name, exec_path)?;
-        exit(0);
-    };
-
-    Ok(())
 }
 
 /// Check that this is the only instance of the process running (user or service)
@@ -114,6 +95,7 @@ fn check_unique(names: &[&str]) -> anyhow::Result<PathBuf> {
     let my_pid = process::id();
     let sys = System::new_all();
     for process_name in names {
+        // Avoid detecting this process instance that is running
         let instances: Vec<&Process> = sys
             .processes_by_exact_name(process_name.as_ref())
             .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)

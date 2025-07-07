@@ -1,5 +1,5 @@
 use crate::device_net::{iroh_device, tcp_device};
-use crate::{config, register_mdns, setup_logging, write_info_file, ListenerInfo};
+use crate::{config, register_mdns, setup_logging, write_info_file, ListenerInfo, SERVICE_NAME};
 use anyhow::anyhow;
 use clap::ArgMatches;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
@@ -14,7 +14,26 @@ use service_manager::{
 };
 use std::io;
 use std::path::{Path, PathBuf};
+use std::process::exit;
 use std::time::Duration;
+
+/// Handle any service installation or uninstallation tasks specified on the command line
+/// continue without doing anything if none were specified
+pub fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
+    let service_name: ServiceLabel = SERVICE_NAME.parse()?;
+
+    if matches.get_flag("uninstall") {
+        uninstall_service(&service_name)?;
+        exit(0);
+    }
+
+    if matches.get_flag("install") {
+        install_service(&service_name, exec_path)?;
+        exit(0);
+    };
+
+    Ok(())
+}
 
 /// Run pigglet as a service - this could be interactively by a user in the foreground or
 /// started by the system as a user service, in the background - use logging for output from here on
@@ -187,7 +206,7 @@ fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
 }
 
 /// Install the binary as a user-level service and then start it
-pub fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
+fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
     let manager = get_service_manager()?;
     // Run from a dir where exec is for now, so it should find the config file in the ancestor's path
     let exec_dir = exec_path
