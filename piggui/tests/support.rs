@@ -111,13 +111,13 @@ pub fn pass(child: &mut Child) {
 
 #[allow(dead_code)]
 pub fn fail(child: &mut Child, message: &str) -> ! {
-    // Kill process before possibly failing test and leaving process around
+    // Kill the process before possibly failing the test and leaving the process around
     kill(child);
     panic!("{}", message);
 }
 
 #[allow(dead_code)]
-pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
+pub fn wait_for_stdout(child: &mut Child, token: &str, antitoken: Option<&str>) -> Option<String> {
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
 
@@ -126,6 +126,12 @@ pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
     while reader.read_line(&mut line).is_ok() {
         if line.contains(token) {
             return Some(line);
+        }
+
+        if let Some(reject) = antitoken {
+            if line.contains(reject) {
+                return None;
+            }
         }
         line.clear();
     }

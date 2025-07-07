@@ -1,7 +1,7 @@
 use crate::support::{kill, run, wait_for_stdout};
 use serial_test::serial;
 
-/// These tests test connecting to USB connected porky devices by USB and TCP, from the piggui
+/// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
 ///
 #[path = "../../piggui/tests/support.rs"]
@@ -31,7 +31,7 @@ async fn usb_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(&mut piggui, "Connected to hardware")
+        wait_for_stdout(&mut piggui, "Connected to hardware", None)
             .expect("Did not get connected message");
 
         kill(&mut piggui);
@@ -57,7 +57,7 @@ async fn mdns_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(&mut piggui, "Connected to hardware")
+        wait_for_stdout(&mut piggui, "Connected to hardware", None)
             .expect("Did not get connected message");
 
         kill(&mut piggui);

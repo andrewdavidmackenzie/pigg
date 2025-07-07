@@ -32,7 +32,7 @@ async fn mdns_discover_and_connect_iroh() {
             None,
         );
 
-        wait_for_stdout(&mut piggui, "Connected to hardware")
+        wait_for_stdout(&mut piggui, "Connected to hardware", None)
             .expect("Did not get connected message");
 
         kill(&mut piggui);
