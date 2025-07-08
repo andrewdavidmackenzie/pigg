@@ -1,13 +1,13 @@
 #![deny(clippy::unwrap_used)]
 #![cfg(not(target_arch = "wasm32"))]
 
+#[cfg(all(feature = "discovery", feature = "tcp"))]
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
 use env_logger::{Builder, Target};
 use log::{info, LevelFilter};
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use mdns_sd::{ServiceDaemon, ServiceInfo};
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::fs::File;
 use std::{
     env,
@@ -24,7 +24,6 @@ use sysinfo::{Process, System};
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
 
 /// Module for handling pigglet config files
@@ -37,7 +36,6 @@ const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
 const PIGG_INFO_FILENAME: &str = "pigglet.info";
 const TWO_INSTANCES: i32 = 1;
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
 pub(crate) fn write_info_file(
     info_path: &Path,
@@ -49,19 +47,20 @@ pub(crate) fn write_info_file(
     Ok(())
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
 /// `pigglet` is listening on, that can be used with `piggui` to start a remote GPIO session
 struct ListenerInfo {
+    pub pid: u32,
     #[cfg(feature = "iroh")]
     pub iroh_info: iroh_device::IrohDevice,
     #[cfg(feature = "tcp")]
     pub tcp_info: tcp_device::TcpDevice,
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 impl std::fmt::Display for ListenerInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.pid)?;
+
         #[cfg(feature = "iroh")]
         writeln!(f, "{}", self.iroh_info)?;
 
@@ -107,12 +106,10 @@ fn check_unique(names: &[&str]) -> anyhow::Result<PathBuf> {
                 process.pid(),
             );
 
-            #[cfg(any(feature = "iroh", feature = "tcp"))]
             // If we can find the path to the executable - look for the info file
             if let Some(path) = process.exe() {
                 let info_path = path.with_file_name(PIGG_INFO_FILENAME);
                 if info_path.exists() {
-                    println!("You can use the following info to connect to it:");
                     println!("{}", fs::read_to_string(info_path)?);
                 }
             }
@@ -236,8 +233,10 @@ mod test {
     use std::str::FromStr;
     use tempfile::tempdir;
 
-    fn listener_info(nodeid: &NodeId, relay_url_str: &str) -> ListenerInfo {
+    fn listener_info(pid: u32, nodeid: &NodeId, relay_url_str: &str) -> ListenerInfo {
         ListenerInfo {
+            pid,
+
             iroh_info: crate::iroh_device::IrohDevice {
                 nodeid: *nodeid,
                 relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
@@ -262,7 +261,11 @@ mod test {
             .expect("Could not create nodeid");
         super::write_info_file(
             &test_file,
-            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
+            &listener_info(
+                std::process::id(),
+                &nodeid,
+                "https://euw1-1.relay.iroh.network./ ",
+            ),
         )
         .expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
@@ -280,7 +283,11 @@ mod test {
             .expect("Could not create nodeid");
         assert!(super::write_info_file(
             &test_file,
-            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
+            &listener_info(
+                std::process::id(),
+                &nodeid,
+                "https://euw1-1.relay.iroh.network./ "
+            ),
         )
         .is_err());
         assert!(!test_file.exists(), "File was created!");

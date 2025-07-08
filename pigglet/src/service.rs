@@ -1,5 +1,10 @@
-use crate::device_net::{iroh_device, tcp_device};
-use crate::{config, register_mdns, setup_logging, write_info_file, ListenerInfo, SERVICE_NAME};
+#[cfg(feature = "iroh")]
+use crate::device_net::iroh_device;
+#[cfg(feature = "tcp")]
+use crate::device_net::tcp_device;
+#[cfg(all(feature = "discovery", feature = "tcp"))]
+use crate::register_mdns;
+use crate::{config, setup_logging, write_info_file, ListenerInfo, SERVICE_NAME};
 use anyhow::anyhow;
 use clap::ArgMatches;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
@@ -59,8 +64,8 @@ pub async fn run_service(
         .await?;
         trace!("Configuration applied to hardware");
 
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
         let listener_info = ListenerInfo {
+            pid: std::process::id(),
             #[cfg(feature = "iroh")]
             iroh_info: iroh_device::get_device().await?,
             #[cfg(feature = "tcp")]
@@ -68,7 +73,6 @@ pub async fn run_service(
         };
 
         // write the info about the node to the info_path file for use in piggui
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
         write_info_file(info_path, &listener_info)?;
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
