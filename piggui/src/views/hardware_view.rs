@@ -341,6 +341,12 @@ impl HardwareView {
             .into()
     }
 
+    #[cfg(any(
+        feature = "iroh",
+        feature = "tcp",
+        feature = "usb",
+        not(target_arch = "wasm32")
+    ))]
     /// Create subscriptions for ticks for updating charts of waveforms and events coming from hardware
     pub fn subscription(&self) -> Subscription<HardwareViewMessage> {
         let subscriptions = vec![

@@ -48,6 +48,12 @@ use std::str::FromStr;
 #[cfg(feature = "discovery")]
 mod discovery;
 pub mod file_helper;
+#[cfg(any(
+    feature = "iroh",
+    feature = "tcp",
+    feature = "usb",
+    not(target_arch = "wasm32")
+))]
 mod hardware_subscription;
 #[cfg(not(target_arch = "wasm32"))]
 mod local_host;
