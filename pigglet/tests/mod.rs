@@ -50,3 +50,29 @@ async fn help() {
     .expect("Failed to get expected output");
     pass(&mut pigglet);
 }
+
+#[tokio::test]
+#[serial]
+async fn two_instances() {
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
+    wait_for_stdout(
+        &mut pigglet,
+        "Waiting",
+        Some("An instance of pigglet is already running"),
+    )
+    .expect("Failed to start first pigglet instance correctly");
+
+    // Start a second instance
+    let mut pigglet2 = run("pigglet", vec![], None);
+    wait_for_stdout(
+        &mut pigglet2,
+        "An instance of pigglet is already running",
+        Some("Waiting"),
+    )
+    .expect("Failed to detect previous instance");
+
+    pass(&mut pigglet);
+    kill_all("pigglet");
+}
