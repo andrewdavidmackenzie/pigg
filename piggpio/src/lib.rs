@@ -13,6 +13,10 @@ pub mod pi;
     target_env = "gnu"
 ))]
 pub use pi::HW;
+use std::env::current_exe;
+use std::fs;
+use std::fs::File;
+use std::io::Write;
 
 #[cfg(not(all(
     target_os = "linux",
@@ -27,16 +31,74 @@ pub mod fake_pi;
     target_env = "gnu"
 )))]
 pub use fake_pi::HW;
+use log::info;
 
 mod pin_descriptions;
 
-/// Create a new HW instance - should only be called once
-pub fn get_hardware() -> Option<HW> {
-    // debug build - Pi or Non-Pi Hardware
-    #[cfg(debug_assertions)]
-    return Some(HW::new(env!("CARGO_PKG_NAME")));
+const PIGG_INFO_FILENAME: &str = "pigglet.info";
 
-    // release build - Not Pi hardware
+/// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
+pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
+    // remove any leftover file from a previous execution - ignore any failure
+    let exec_path = current_exe()?;
+    let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
+    let _ = fs::remove_file(&info_path);
+
+    let mut output = File::create(&info_path)?;
+    write!(output, "{contents}")?;
+    info!("Info file written at: {info_path:?}");
+    Ok(())
+}
+
+/// Check that this is the only instance of the process running (user or service)
+/// If another version is detected:
+/// - print out that fact, with the process ID
+/// - print out the nodeid of the instance that is running
+/// - exit
+#[cfg(any(
+    debug_assertions,
+    all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "arm"),
+        target_env = "gnu"
+    )
+))]
+fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Result<()> {
+    let my_pid = std::process::id();
+    let sys = sysinfo::System::new_all();
+    for process_name in process_names {
+        // Avoid detecting this process instance that is running
+        let instances: Vec<&sysinfo::Process> = sys
+            .processes_by_exact_name(process_name.as_ref())
+            .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)
+            .collect();
+        if let Some(process) = instances.first() {
+            println!(
+                "An instance of {process_name} is already running with PID='{}'",
+                process.pid(),
+            );
+
+            // If we can find the path to the executable - look for the info file
+            if let Some(path) = process.exe() {
+                let info_path = path.with_file_name(info_filename);
+                if info_path.exists() {
+                    println!("{}", fs::read_to_string(info_path)?);
+                }
+            }
+
+            anyhow::bail!("Two instances of {process_name} are not allowed");
+        }
+    }
+
+    Ok(())
+}
+
+/// Get access to GPIO Hardware - making sure we have unique access when we are actually
+/// accessing the GPIO hardware on a Pi - creating a file to ensure single access that
+/// contains information that maybe useful for other instances trying to gain access also
+#[allow(unused_variables)]
+pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
+    // release build and Not Pi hardware - No Hardware to get
     #[cfg(all(
         not(debug_assertions),
         not(all(
@@ -45,18 +107,23 @@ pub fn get_hardware() -> Option<HW> {
             target_env = "gnu"
         ))
     ))]
-    return None;
+    return Ok(None);
 
-    // release build - Pi hardware
-    #[cfg(all(
-        not(debug_assertions),
+    // debug build or Pi Hardware - Return some hardware, fake or real, if we can get
+    // exclusive access to it
+    #[cfg(any(
+        debug_assertions,
         all(
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "arm"),
             target_env = "gnu"
         )
     ))]
-    return Some(HW::new(env!("CARGO_PKG_NAME")));
+    {
+        check_unique(&["pigglet", "piggui"], PIGG_INFO_FILENAME)?;
+        write_info_file(content)?;
+        Ok(Some(HW::new(env!("CARGO_PKG_NAME"))))
+    }
 }
 
 #[cfg(test)]
@@ -66,8 +133,16 @@ mod test {
     use std::borrow::Cow;
 
     #[test]
+    fn write_info_file() {
+        let nodeid = "nodeid: rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq";
+        super::write_info_file(nodeid).expect("Writing info file failed");
+    }
+
+    #[test]
     fn get_hardware() {
-        let hw = crate::get_hardware().expect("Could not get hardware");
+        let hw = crate::get_hardware("")
+            .expect("Error getting hardware")
+            .expect("Could not get hardware");
         let description = hw.description();
         let pins = description.pins.pins();
         assert_eq!(pins.len(), 40);
@@ -75,20 +150,19 @@ mod test {
     }
 
     #[test]
-    fn hw_can_be_got() {
-        let _hw = crate::get_hardware().expect("Could not get hardware");
-    }
-
-    #[test]
     fn forty_board_pins() {
-        let hw = crate::get_hardware().expect("Could not get hardware");
+        let hw = crate::get_hardware("")
+            .expect("Error getting hardware")
+            .expect("Could not get hardware");
         assert_eq!(hw.description().pins.pins().len(), 40);
     }
 
     #[test]
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
-        let hw = crate::get_hardware().expect("Could not get hardware");
+        let hw = crate::get_hardware("")
+            .expect("Error getting hardware")
+            .expect("Could not get hardware");
         let pin_set = hw.description().pins.clone();
         let sorted_bcm_pins = pin_set.bcm_pins_sorted();
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);

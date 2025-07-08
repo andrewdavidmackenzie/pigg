@@ -60,19 +60,14 @@ async fn two_instances() {
     wait_for_stdout(
         &mut pigglet,
         "Waiting",
-        Some("An instance of pigglet is already running"),
+        Some("Could not get access to GPIO hardware"),
     )
     .expect("Failed to start first pigglet instance correctly");
 
-    // Start a second instance
+    // Start a second instance - which should exit with an error (not success)
     let mut pigglet2 = run("pigglet", vec![], None);
-    wait_for_stdout(
-        &mut pigglet2,
-        "An instance of pigglet is already running",
-        Some("Waiting"),
-    )
-    .expect("Failed to detect previous instance");
+    assert!(!pigglet2.wait().expect("Couldn't get ExitStatus").success());
 
-    pass(&mut pigglet);
+    // Always kill all
     kill_all("pigglet");
 }

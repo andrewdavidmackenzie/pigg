@@ -4489,11 +4489,14 @@ dependencies = [
 name = "piggpio"
 version = "0.7.3"
 dependencies = [
+ "anyhow",
  "libc",
+ "log",
  "pigdef",
  "rand 0.9.1",
  "rand_core 0.6.4",
  "rppal",
+ "sysinfo",
 ]
 
 [[package]]
