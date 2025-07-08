@@ -18,6 +18,9 @@ anyhow = "1.0.98"
 sysinfo = { version = "0.35" }
 log = "0.4.27"
 
+[dev-dependencies]
+serial_test = "3.1.1"
+
 [target.'cfg(not(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu")))'.dependencies]
 rand = { version = "0.9.1", default-features = false, features = ["std", "std_rng"] }
 rand_core = { version = "0.6.4", features = ["getrandom"] }

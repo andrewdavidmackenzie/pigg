@@ -130,6 +130,7 @@ pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
 mod test {
     use pigdef::description::{PinDescription, PinDescriptionSet};
     use pigdef::pin_function::PinFunction;
+    use serial_test::serial;
     use std::borrow::Cow;
 
     #[test]
@@ -139,6 +140,7 @@ mod test {
     }
 
     #[test]
+    #[serial] // HW access
     fn get_hardware() {
         let hw = crate::get_hardware("")
             .expect("Error getting hardware")
@@ -150,6 +152,7 @@ mod test {
     }
 
     #[test]
+    #[serial] // HW Access
     fn forty_board_pins() {
         let hw = crate::get_hardware("")
             .expect("Error getting hardware")
@@ -158,6 +161,7 @@ mod test {
     }
 
     #[test]
+    #[serial] // HW access
     fn bcm_pins_sort_in_order() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
         let hw = crate::get_hardware("")

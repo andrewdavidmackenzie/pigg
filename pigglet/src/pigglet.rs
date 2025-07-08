@@ -5,6 +5,7 @@
 use anyhow::Context;
 use clap::{Arg, ArgMatches};
 use env_logger::{Builder, Target};
+#[cfg(all(feature = "iroh", feature = "tcp"))]
 use futures::FutureExt;
 use log::{info, trace, LevelFilter};
 #[cfg(all(feature = "discovery", feature = "tcp"))]
@@ -16,6 +17,7 @@ use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
 use anyhow::anyhow;
+#[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 use piggpio::get_hardware;
 
