@@ -247,5 +247,5 @@ async fn invalid_pin_config() {
         panic!("Unexpected message returned from pigglet");
     }
 
-    //pass(&mut pigglet);
+    pass(&mut pigglet);
 }
