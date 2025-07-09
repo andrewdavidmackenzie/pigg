@@ -136,7 +136,7 @@ pub async fn apply_config_message(
 
 /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
 pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
-    let hw = get_hardware("")?.ok_or(anyhow!("Could not connect to local hardware"))?;
+    let hw = get_hardware("piggui")?.ok_or(anyhow!("Could not connect to local hardware"))?;
     let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
     Ok((hw.description().clone(), hw_config, LocalConnection { hw }))

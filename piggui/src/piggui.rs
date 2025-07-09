@@ -171,7 +171,7 @@ impl Piggui {
         let config_filename = None;
 
         #[cfg(not(target_arch = "wasm32"))]
-        let local_hardware_opt = get_hardware("").expect("No HW");
+        let local_hardware_opt = get_hardware("piggui\n").expect("No HW");
 
         #[cfg(not(target_arch = "wasm32"))]
         let default_connection = match &local_hardware_opt {

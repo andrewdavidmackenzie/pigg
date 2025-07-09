@@ -93,7 +93,7 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
         tcp_info: tcp_device::get_device().await?,
     };
 
-    if let Ok(Some(mut hw)) = get_hardware(&format!("{listener_info}")) {
+    if let Ok(Some(mut hw)) = get_hardware(&format!("pigglet\n{listener_info}")) {
         info!("\n{}", hw.description().details);
 
         // Get the boot config for the hardware

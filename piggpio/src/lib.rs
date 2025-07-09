@@ -134,15 +134,16 @@ mod test {
     use std::borrow::Cow;
 
     #[test]
-    fn write_info_file() {
+    fn write_info_file_test() {
         let nodeid = "nodeid: rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq";
-        super::write_info_file(nodeid).expect("Writing info file failed");
+        super::write_info_file(&format!("write_info_file_test\n{nodeid}"))
+            .expect("Writing info file failed");
     }
 
     #[test]
     #[serial] // HW access
-    fn get_hardware() {
-        let hw = crate::get_hardware("")
+    fn get_hardware_test() {
+        let hw = crate::get_hardware("get_hardware_test\n")
             .expect("Error getting hardware")
             .expect("Could not get hardware");
         let description = hw.description();
@@ -153,8 +154,8 @@ mod test {
 
     #[test]
     #[serial] // HW Access
-    fn forty_board_pins() {
-        let hw = crate::get_hardware("")
+    fn forty_board_pins_test() {
+        let hw = crate::get_hardware("forty_board_pins_test\n")
             .expect("Error getting hardware")
             .expect("Could not get hardware");
         assert_eq!(hw.description().pins.pins().len(), 40);
@@ -162,9 +163,9 @@ mod test {
 
     #[test]
     #[serial] // HW access
-    fn bcm_pins_sort_in_order() {
+    fn bcm_pins_sort_in_order_test() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
-        let hw = crate::get_hardware("")
+        let hw = crate::get_hardware("bcm_pins_sort_in_order_test\n")
             .expect("Error getting hardware")
             .expect("Could not get hardware");
         let pin_set = hw.description().pins.clone();
