@@ -199,12 +199,9 @@ async fn invalid_pin_config() {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
-    //let ip = IpAddr::from_str("192.168.1.133").expect("Could not create IP address");
-    //let port = 15289;
 
-    let (hw_desc, hw_config, tcp_stream) = tcp_host::connect(ip, port)
-        .await
-        .expect("Could not connect to pigglet at {ip}:{port}: '{e}'");
+    let msg = format!("Could not connect to pigglet at {ip}:{port}");
+    let (hw_desc, hw_config, tcp_stream) = tcp_host::connect(ip, port).await.expect(&msg);
 
     assert!(
         hw_desc.details.model.contains("Fake"),
