@@ -63,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Handle any system service installing/uninstalling - this may exit
     service::manage_service(&exec_path, &matches)?;
-
+    setup_logging(&matches);
     run(&matches, exec_path).await
 }
 
@@ -83,8 +83,6 @@ fn setup_logging(matches: &ArgMatches) {
 /// started by the system as a user service, in the background - use logging for output from here on
 #[allow(unused_variables)]
 async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
-    setup_logging(matches);
-
     let listener_info = ListenerInfo {
         pid: process::id(),
         #[cfg(feature = "iroh")]
@@ -280,6 +278,7 @@ fn get_matches() -> ArgMatches {
             .help("Path of a '.pigg' config file to load"),
     );
 
+    // This will process and exit immediately for "--help", "--version"
     app.get_matches()
 }
 
