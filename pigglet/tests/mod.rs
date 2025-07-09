@@ -15,6 +15,7 @@ async fn version_number() {
     let version = line.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
     pass(&mut pigglet);
+    kill_all("pigglet");
 }
 
 #[tokio::test]
@@ -34,6 +35,7 @@ async fn test_verbosity_levels() {
         );
         pass(&mut pigglet);
     }
+    kill_all("pigglet");
 }
 
 #[tokio::test]
@@ -49,6 +51,7 @@ async fn help() {
     )
     .expect("Failed to get expected output");
     pass(&mut pigglet);
+    kill_all("pigglet");
 }
 
 #[tokio::test]
