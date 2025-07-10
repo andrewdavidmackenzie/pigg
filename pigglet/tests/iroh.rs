@@ -16,6 +16,8 @@ async fn disconnect_iroh() {
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_iroh(
@@ -38,6 +40,8 @@ async fn config_change_returned_iroh() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
 
@@ -84,6 +88,9 @@ async fn reconnect_iroh() {
     kill_all("pigglet");
     build("pigglet");
     let mut child = run("pigglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     let (_ip, _port, nodeid) = parse_pigglet(&mut child).await;
     connect_and_test_iroh(
         &mut child,
