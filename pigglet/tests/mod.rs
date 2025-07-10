@@ -1,4 +1,5 @@
 use serial_test::serial;
+use std::time::Duration;
 use support::{build, kill_all, pass, run, wait_for_stdout};
 
 #[path = "../../piggui/tests/support.rs"]
@@ -20,6 +21,8 @@ async fn version_number() {
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
     pass(&mut pigglet);
     kill_all("pigglet");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 #[ignore]
@@ -45,6 +48,8 @@ async fn test_verbosity_levels() {
         pass(&mut pigglet);
     }
     kill_all("pigglet");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 #[ignore]
@@ -62,6 +67,8 @@ async fn help() {
     .expect("Failed to get expected output");
     pass(&mut pigglet);
     kill_all("pigglet");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
 
 #[tokio::test]
@@ -83,4 +90,6 @@ async fn two_instances() {
 
     // Always kill all
     kill_all("pigglet");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 }
