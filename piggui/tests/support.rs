@@ -193,6 +193,7 @@ where
     F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
     Fut: Future<Output = ()>,
 {
+    println!("Connecting to {ip}:{port}");
     match tcp_host::connect(ip, port).await {
         Ok((hw_desc, hw_config, tcp_stream)) => {
             if !hw_desc.details.model.contains("Fake") {
