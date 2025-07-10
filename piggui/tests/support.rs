@@ -1,11 +1,10 @@
 #![cfg(not(target_arch = "wasm32"))]
 
-use async_std::net::TcpStream;
 use iroh::endpoint::Connection;
 use iroh::{NodeId, RelayUrl};
 use pigdef::config::HardwareConfig;
 use pigdef::description::HardwareDescription;
-use pignet::{iroh_host, tcp_host};
+use pignet::iroh_host;
 use std::future::Future;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -185,28 +184,6 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
     }
 
     fail(child, "Could not parse parameters from child output");
-}
-
-#[allow(dead_code)]
-pub async fn connect_and_test_tcp<F, Fut>(child: &mut Child, ip: IpAddr, port: u16, test: F)
-where
-    F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
-    Fut: Future<Output = ()>,
-{
-    println!("Connecting to {ip}:{port}");
-    match tcp_host::connect(ip, port).await {
-        Ok((hw_desc, hw_config, tcp_stream)) => {
-            if !hw_desc.details.model.contains("Fake") {
-                fail(child, "Didn't connect to fake hardware pigglet")
-            } else {
-                test(hw_desc, hw_config, tcp_stream).await;
-            }
-        }
-        Err(e) => fail(
-            child,
-            &format!("Could not connect to pigglet at {ip}:{port}: '{e}'"),
-        ),
-    }
 }
 
 #[allow(dead_code)]

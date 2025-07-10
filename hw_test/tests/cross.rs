@@ -1,12 +1,38 @@
-use crate::support::{
-    build, connect_and_test_iroh, connect_and_test_tcp, kill_all, parse_pigglet, pass, run,
-};
+use crate::support::{build, connect_and_test_iroh, fail, kill_all, parse_pigglet, pass, run};
+use async_std::net::TcpStream;
+use pigdef::config::HardwareConfig;
+use pigdef::description::HardwareDescription;
 use pignet::{iroh_host, tcp_host};
 use serial_test::serial;
+use std::future::Future;
+use std::net::IpAddr;
+use std::process::Child;
 use std::time::Duration;
 
 #[path = "../../piggui/tests/support.rs"]
 mod support;
+
+#[allow(dead_code)]
+async fn connect_and_test_tcp<F, Fut>(child: &mut Child, ip: IpAddr, port: u16, test: F)
+where
+    F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    println!("Connecting to {ip}:{port}");
+    match tcp_host::connect(ip, port).await {
+        Ok((hw_desc, hw_config, tcp_stream)) => {
+            if !hw_desc.details.model.contains("Fake") {
+                fail(child, "Didn't connect to fake hardware pigglet")
+            } else {
+                test(hw_desc, hw_config, tcp_stream).await;
+            }
+        }
+        Err(e) => fail(
+            child,
+            &format!("Could not connect to pigglet at {ip}:{port}: '{e}'"),
+        ),
+    }
+}
 
 #[cfg(all(feature = "tcp", feature = "iroh"))]
 #[tokio::test]
