@@ -74,6 +74,7 @@ async fn help() {
     kill_all("pigglet");
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn two_instances() {

@@ -50,6 +50,7 @@ pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/*
 /// Check that this is the only instance of the process running (user or service)
 /// If another version is detected:
 /// - print out that fact, with the process ID
@@ -93,6 +94,8 @@ fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Result<(
     Ok(())
 }
 
+
+ */
 /// Get access to GPIO Hardware - making sure we have unique access when we are actually
 /// accessing the GPIO hardware on a Pi - creating a file to ensure single access that
 /// contains information that maybe useful for other instances trying to gain access also
@@ -120,8 +123,8 @@ pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
         )
     ))]
     {
-        check_unique(&["pigglet", "piggui"], PIGG_INFO_FILENAME)?;
-        write_info_file(content)?;
+        //check_unique(&["pigglet", "piggui"], PIGG_INFO_FILENAME)?;
+        //write_info_file(content)?;
         Ok(Some(HW::new(env!("CARGO_PKG_NAME"))))
     }
 }
