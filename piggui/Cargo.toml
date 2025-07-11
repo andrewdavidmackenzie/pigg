@@ -75,7 +75,7 @@ iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgp
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 serial_test = "3.1.1"
-sysinfo = { version = "0.35" }
+sysinfo = { version = "0.36" }
 
 [dev-dependencies] # For tests
 pignet = { path = "../pignet", version = "0.7" }
