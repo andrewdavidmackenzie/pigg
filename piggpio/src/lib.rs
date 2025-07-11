@@ -13,9 +13,6 @@ pub mod pi;
     target_env = "gnu"
 ))]
 pub use pi::HW;
-use std::env::current_exe;
-use std::fs;
-use std::fs::File;
 use std::io::Write;
 
 #[cfg(not(all(
@@ -31,11 +28,12 @@ pub mod fake_pi;
     target_env = "gnu"
 )))]
 pub use fake_pi::HW;
-use log::info;
 
 mod pin_descriptions;
 
 const PIGG_INFO_FILENAME: &str = "pigglet.info";
+
+/*
 
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
 pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
@@ -50,7 +48,6 @@ pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/*
 /// Check that this is the only instance of the process running (user or service)
 /// If another version is detected:
 /// - print out that fact, with the process ID
@@ -123,7 +120,7 @@ pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
     ))]
     {
         //check_unique(&["pigglet"], PIGG_INFO_FILENAME)?;
-        write_info_file(content)?;
+        //write_info_file(content)?;
         Ok(Some(HW::new(env!("CARGO_PKG_NAME"))))
     }
 }
