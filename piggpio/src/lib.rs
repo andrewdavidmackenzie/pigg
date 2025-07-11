@@ -7,12 +7,16 @@
 ))]
 pub mod pi;
 
+use log::info;
 #[cfg(all(
     target_os = "linux",
     any(target_arch = "aarch64", target_arch = "arm"),
     target_env = "gnu"
 ))]
 pub use pi::HW;
+use std::env::current_exe;
+use std::fs;
+use std::fs::File;
 use std::io::Write;
 
 #[cfg(not(all(
@@ -33,8 +37,6 @@ mod pin_descriptions;
 
 const PIGG_INFO_FILENAME: &str = "pigglet.info";
 
-/*
-
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
 pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
     // remove any leftover file from a previous execution - ignore any failure
@@ -47,6 +49,8 @@ pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
     info!("Info file written at: {info_path:?}");
     Ok(())
 }
+
+/*
 
 /// Check that this is the only instance of the process running (user or service)
 /// If another version is detected:
