@@ -4,7 +4,6 @@ use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::pin_function::PinFunction::Output;
 use pignet::tcp_host;
 use serial_test::serial;
-use std::future::Future;
 use std::path::PathBuf;
 use std::time::Duration;
 
