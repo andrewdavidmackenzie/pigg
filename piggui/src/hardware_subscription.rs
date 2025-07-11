@@ -145,12 +145,6 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
         }
 
         loop {
-            #[cfg(any(
-                feature = "iroh",
-                feature = "tcp",
-                feature = "usb",
-                not(target_arch = "wasm32")
-            ))]
             let mut gui_sender_clone = gui_sender.clone();
 
             println!("State = {state}");

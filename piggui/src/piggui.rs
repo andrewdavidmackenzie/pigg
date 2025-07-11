@@ -48,6 +48,12 @@ use std::str::FromStr;
 #[cfg(feature = "discovery")]
 mod discovery;
 pub mod file_helper;
+#[cfg(any(
+    feature = "iroh",
+    feature = "tcp",
+    feature = "usb",
+    not(target_arch = "wasm32")
+))]
 mod hardware_subscription;
 #[cfg(not(target_arch = "wasm32"))]
 mod local_host;
@@ -165,7 +171,7 @@ impl Piggui {
         let config_filename = None;
 
         #[cfg(not(target_arch = "wasm32"))]
-        let local_hardware_opt = get_hardware();
+        let local_hardware_opt = get_hardware("piggui\n").expect("No HW");
 
         #[cfg(not(target_arch = "wasm32"))]
         let default_connection = match &local_hardware_opt {

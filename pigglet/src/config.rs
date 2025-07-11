@@ -20,7 +20,7 @@ pub(crate) const CONFIG_FILENAME: &str = ".piglet_config.json";
 /// - A config file saved from a previous run
 /// - The default (empty) config
 pub async fn get_config(matches: &ArgMatches, exec_path: &Path) -> HardwareConfig {
-    // A config file specified on the command line overrides any config file from previous run
+    // A config file specified on the command line overrides any config file from a previous run
     let config_filename = match matches.get_one::<String>("config") {
         Some(config_filename) => config_filename.clone(),
         None => {
@@ -65,23 +65,4 @@ pub async fn store_config(
     file.write_all(contents.as_bytes())
         .with_context(|| "Saving hardware config")?;
     Ok(())
-}
-
-#[cfg(all(not(target_arch = "wasm32"), feature = "tcp"))]
-#[cfg(test)]
-pub mod test {
-    use crate::config::CONFIG_FILENAME;
-    use std::path::PathBuf;
-
-    #[allow(dead_code)]
-    pub fn delete_configs() {
-        let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let workspace_dir = crate_dir.parent().expect("Failed to get parent dir");
-        let config_file = workspace_dir.join(CONFIG_FILENAME);
-        println!("Deleting file: {config_file:?}");
-        let _ = std::fs::remove_file(config_file);
-        let config_file = workspace_dir.join("target/debug/").join(CONFIG_FILENAME);
-        println!("Deleting file: {config_file:?}");
-        let _ = std::fs::remove_file(config_file);
-    }
 }
