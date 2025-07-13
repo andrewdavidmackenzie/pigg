@@ -35,7 +35,7 @@ pub use fake_pi::HW;
 
 mod pin_descriptions;
 
-const PIGG_INFO_FILENAME: &str = "pigglet.info";
+pub const PIGG_INFO_FILENAME: &str = "pigglet.info";
 
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
 pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
@@ -50,8 +50,6 @@ pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/*
-
 /// Check that this is the only instance of the process running (user or service)
 /// If another version is detected:
 /// - print out that fact, with the process ID
@@ -65,7 +63,7 @@ pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
         target_env = "gnu"
     )
 ))]
-fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Result<()> {
+pub fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Result<()> {
     let my_pid = std::process::id();
     let sys = sysinfo::System::new_all();
     for process_name in process_names {
@@ -94,7 +92,6 @@ fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Result<(
 
     Ok(())
 }
- */
 
 /// Get access to GPIO Hardware - making sure we have unique access when we are actually
 /// accessing the GPIO hardware on a Pi - creating a file to ensure single access that
@@ -123,8 +120,6 @@ pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
         )
     ))]
     {
-        //check_unique(&["pigglet"], PIGG_INFO_FILENAME)?;
-        //write_info_file(content)?;
         Ok(Some(HW::new(env!("CARGO_PKG_NAME"))))
     }
 }
@@ -137,6 +132,7 @@ mod test {
     use std::borrow::Cow;
 
     #[test]
+    #[serial] // HW access
     fn write_info_file_test() {
         let nodeid = "nodeid: rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq";
         super::write_info_file(&format!("write_info_file_test\n{nodeid}"))
