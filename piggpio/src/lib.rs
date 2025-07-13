@@ -64,7 +64,7 @@ pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
         target_env = "gnu"
     )
 ))]
-pub fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Result<()> {
+pub fn check_unique(process_names: &[&str]) -> anyhow::Result<()> {
     let my_pid = std::process::id();
     let sys = sysinfo::System::new_all();
     for process_name in process_names {
@@ -81,7 +81,7 @@ pub fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Resu
 
             // If we can find the path to the executable - look for the info file
             if let Some(path) = process.exe() {
-                let info_path = path.with_file_name(info_filename);
+                let info_path = path.with_file_name(PIGG_INFO_FILENAME);
                 if info_path.exists() {
                     println!("{}", fs::read_to_string(info_path)?);
                 }
@@ -124,7 +124,7 @@ pub fn local_hardware_description(app_name: &str) -> Option<HardwareDescription>
 /// accessing the GPIO hardware on a Pi - creating a file to ensure single access that
 /// contains information that maybe useful for other instances trying to gain access also
 #[allow(unused_variables)]
-pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
+pub fn get_hardware() -> anyhow::Result<Option<HW>> {
     // release build and Not Pi hardware - No Hardware to get
     #[cfg(all(
         not(debug_assertions),
@@ -146,12 +146,7 @@ pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
             target_env = "gnu"
         )
     ))]
-    {
-        check_unique(&["pigglet"], PIGG_INFO_FILENAME)?;
-        write_info_file("pigglet\n{listener_info}")?;
-
-        Ok(Some(HW::new(env!("CARGO_PKG_NAME"))))
-    }
+    Ok(Some(HW::new(env!("CARGO_PKG_NAME"))))
 }
 
 #[cfg(test)]

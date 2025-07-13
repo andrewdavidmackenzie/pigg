@@ -29,9 +29,6 @@ async fn disconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
     let msg = format!("Could not connect to pigglet at {ip}:{port}");
     let (_hw_desc, _hw_config, tcp_stream) = tcp_host::connect(ip, port).await.expect(&msg);
@@ -49,9 +46,6 @@ async fn reconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
     let msg = format!("Could not connect to pigglet at {ip}:{port}");
     let (_hw_desc, _hw_config, tcp_stream) = tcp_host::connect(ip, port).await.expect(&msg);
@@ -78,9 +72,6 @@ async fn clean_config() {
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
     let msg = format!("Could not connect to pigglet at {ip}:{port}");
@@ -107,9 +98,6 @@ async fn config_change_returned_tcp() {
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
     let msg = format!("Could not connect to pigglet at {ip}:{port}");
@@ -196,9 +184,6 @@ async fn invalid_pin_config() {
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
     let msg = format!("Could not connect to pigglet at {ip}:{port}");

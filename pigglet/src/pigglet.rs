@@ -19,7 +19,7 @@ use crate::device_net::tcp_device;
 use anyhow::anyhow;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-use piggpio::{get_hardware, HW};
+use piggpio::{check_unique, get_hardware, write_info_file, HW};
 
 /// Module for handling pigglet config files
 mod config;
@@ -91,7 +91,10 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
         tcp_info: tcp_device::get_device().await?,
     };
 
-    if let Ok(Some(mut hw)) = get_hardware(&format!("pigglet\n{listener_info}")) {
+    check_unique(&["piggui", "pigglet"])?;
+    write_info_file(&format!("pigglet\n{listener_info}"))?;
+
+    if let Ok(Some(mut hw)) = get_hardware() {
         let desc = HW::description("pigglet").clone();
         info!("\n{}", desc.details);
 

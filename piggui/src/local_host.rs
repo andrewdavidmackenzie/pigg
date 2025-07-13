@@ -8,8 +8,8 @@ use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use pigdef::description::HardwareDescription;
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
-use piggpio::get_hardware;
 use piggpio::HW;
+use piggpio::{check_unique, get_hardware, write_info_file};
 use std::time::Duration;
 
 pub struct LocalConnection {
@@ -35,7 +35,7 @@ async fn send_current_input_states(
     Ok(())
 }
 
-/// Send the current input state for one input - with timestamp matching future LevelChanges
+/// Send the current input state for one input - with the timestamp matching future LevelChanges
 async fn send_current_input_state(
     bcm_pin_number: &BCMPinNumber,
     pin_function: &PinFunction,
@@ -136,7 +136,10 @@ pub async fn apply_config_message(
 
 /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
 pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
-    let hw = get_hardware("piggui")?.ok_or(anyhow!("Could not connect to local hardware"))?;
+    check_unique(&["pigglet", "piggui"])?;
+    write_info_file("piggui\n")?;
+
+    let hw = get_hardware()?.ok_or(anyhow!("Could not connect to local hardware"))?;
     let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
     Ok((
