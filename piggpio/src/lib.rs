@@ -36,7 +36,7 @@ pub use fake_pi::HW;
 
 mod pin_descriptions;
 
-pub const PIGG_INFO_FILENAME: &str = "pigglet.info";
+const PIGG_INFO_FILENAME: &str = "pigglet.info";
 
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
 pub fn write_info_file(contents: &str) -> anyhow::Result<()> {
@@ -147,6 +147,9 @@ pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
         )
     ))]
     {
+        check_unique(&["pigglet"], PIGG_INFO_FILENAME)?;
+        write_info_file("pigglet\n{listener_info}")?;
+
         Ok(Some(HW::new(env!("CARGO_PKG_NAME"))))
     }
 }
