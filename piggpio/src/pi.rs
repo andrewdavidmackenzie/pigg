@@ -17,14 +17,11 @@ enum Pin {
     Output(OutputPin),
 }
 
-/// This is the Hardware implementation for the Raspberry Pi using "rppal" crate
-/// It should support most Pi hardware from Model B
-/// If we are building on a platform (arm, linux, gnu) that is compatible with a Pi platform
-/// (e.g. "aarch64" for Pi4/400, "arm" (arm7) for Pi3B) then build a binary that includes the
-/// real `pi_hw` version and that would work wif deployed on a real Raspberry Pi. There may
-/// be other arm-based computers out there that support linux and are built using gnu for libc
-/// that do not have Raspberry Pi hardware. This would build for them, and then they will fail
-/// at run-time when trying to access drivers and hardware for GPIO.
+/// This is the Hardware implementation for the Raspberry Pi using "rppal" crate.
+/// It should support most Pi hardware from Model B onwards.
+/// There may be other arm-based computers out there that support linux and are built using gnu
+/// for libc that do not have Raspberry Pi hardware. This would build for them, and then they will
+/// fail at run-time when trying to access drivers and hardware for GPIO.
 pub struct HW {
     app_name: &'static str,
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
@@ -39,10 +36,11 @@ impl HW {
             configured_pins: HashMap::default(),
         }
     }
+
     /// Return the Pi hardware description
-    pub fn description(&self) -> HardwareDescription {
+    pub fn description(app_name: &str) -> HardwareDescription {
         HardwareDescription {
-            details: Self::get_details(self.app_name),
+            details: Self::get_details(app_name),
             pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
         }
     }

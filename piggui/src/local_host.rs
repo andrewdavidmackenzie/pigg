@@ -139,7 +139,11 @@ pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConn
     let hw = get_hardware("piggui")?.ok_or(anyhow!("Could not connect to local hardware"))?;
     let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
 
-    Ok((hw.description().clone(), hw_config, LocalConnection { hw }))
+    Ok((
+        HW::description("piggui").clone(),
+        hw_config,
+        LocalConnection { hw },
+    ))
 }
 
 /// Disconnect from the local hardware

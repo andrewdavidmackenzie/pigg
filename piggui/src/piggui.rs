@@ -30,8 +30,7 @@ use iroh::NodeId;
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
-#[cfg(not(target_arch = "wasm32"))]
-use piggpio::get_hardware;
+use piggpio::local_hardware_description;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
@@ -171,16 +170,16 @@ impl Piggui {
         let config_filename = None;
 
         #[cfg(not(target_arch = "wasm32"))]
-        let local_hardware_opt = get_hardware("piggui\n").expect("No HW");
+        let hw_desc = local_hardware_description("piggui");
 
         #[cfg(not(target_arch = "wasm32"))]
-        let default_connection = match &local_hardware_opt {
+        let default_connection = match hw_desc {
             None => NoConnection,
-            Some(_hw) => Local,
+            Some(_) => Local,
         };
 
         #[cfg(feature = "discovery")]
-        let discovered_devices = discovery::local_discovery(&local_hardware_opt);
+        let discovered_devices = discovery::local_discovery(&hw_desc);
 
         (
             Self {

@@ -14,6 +14,7 @@ use log::info;
     target_env = "gnu"
 ))]
 pub use pi::HW;
+use pigdef::description::HardwareDescription;
 use std::env::current_exe;
 use std::fs;
 use std::fs::File;
@@ -93,6 +94,32 @@ pub fn check_unique(process_names: &[&str], info_filename: &str) -> anyhow::Resu
     Ok(())
 }
 
+/// Function to return if there is local GPIO hardware accessible
+pub fn local_hardware_description(app_name: &str) -> Option<HardwareDescription> {
+    // release build and Not Pi hardware - No Hardware to get
+    #[cfg(all(
+        not(debug_assertions),
+        not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))
+    ))]
+    return None;
+
+    // debug build or Pi Hardware - Return some hardware, fake or real, if we can get
+    // exclusive access to it
+    #[cfg(any(
+        debug_assertions,
+        all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        )
+    ))]
+    Some(HW::description(app_name))
+}
+
 /// Get access to GPIO Hardware - making sure we have unique access when we are actually
 /// accessing the GPIO hardware on a Pi - creating a file to ensure single access that
 /// contains information that maybe useful for other instances trying to gain access also
@@ -126,6 +153,7 @@ pub fn get_hardware(content: &str) -> anyhow::Result<Option<HW>> {
 
 #[cfg(test)]
 mod test {
+    use crate::HW;
     use pigdef::description::{PinDescription, PinDescriptionSet};
     use pigdef::pin_function::PinFunction;
     use serial_test::serial;
@@ -142,10 +170,7 @@ mod test {
     #[test]
     #[serial] // HW access
     fn get_hardware_test() {
-        let hw = crate::get_hardware("get_hardware_test\n")
-            .expect("Error getting hardware")
-            .expect("Could not get hardware");
-        let description = hw.description();
+        let description = HW::description("get_hardware_test");
         let pins = description.pins.pins();
         assert_eq!(pins.len(), 40);
         assert_eq!(pins[0].name, "3V3")
@@ -154,20 +179,15 @@ mod test {
     #[test]
     #[serial] // HW Access
     fn forty_board_pins_test() {
-        let hw = crate::get_hardware("forty_board_pins_test\n")
-            .expect("Error getting hardware")
-            .expect("Could not get hardware");
-        assert_eq!(hw.description().pins.pins().len(), 40);
+        let description = HW::description("get_hardware_test");
+        assert_eq!(description.pins.pins().len(), 40);
     }
 
     #[test]
     #[serial] // HW access
     fn bcm_pins_sort_in_order_test() {
         // 0-27, not counting the gpio0 and gpio1 pins with no options
-        let hw = crate::get_hardware("bcm_pins_sort_in_order_test\n")
-            .expect("Error getting hardware")
-            .expect("Could not get hardware");
-        let pin_set = hw.description().pins.clone();
+        let pin_set = HW::description("bcm_pins_sort_in_order_test").pins.clone();
         let sorted_bcm_pins = pin_set.bcm_pins_sorted();
         assert_eq!(pin_set.bcm_pins_sorted().len(), 26);
         let mut previous = 1; // we start at GPIO2

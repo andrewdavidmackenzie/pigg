@@ -19,7 +19,7 @@ use crate::device_net::tcp_device;
 use anyhow::anyhow;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-use piggpio::{check_unique, get_hardware, write_info_file, PIGG_INFO_FILENAME};
+use piggpio::{check_unique, get_hardware, write_info_file, HW, PIGG_INFO_FILENAME};
 
 /// Module for handling pigglet config files
 mod config;
@@ -95,7 +95,8 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
     write_info_file("pigglet\n{listener_info}")?;
 
     if let Ok(Some(mut hw)) = get_hardware(&format!("pigglet\n{listener_info}")) {
-        info!("\n{}", hw.description().details);
+        let desc = HW::description("pigglet").clone();
+        info!("\n{}", desc.details);
 
         // Get the boot config for the hardware
         #[allow(unused_mut)]
@@ -108,8 +109,6 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
         .await?;
         trace!("Configuration applied to hardware");
 
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
-        let desc = hw.description().clone();
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         println!("Serial Number: {}", desc.details.serial);
 

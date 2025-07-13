@@ -30,16 +30,16 @@ impl HW {
     pub fn new(app_name: &str) -> Self {
         HW {
             configured_pins: Default::default(),
-            hardware_description: HardwareDescription {
-                details: Self::get_details(app_name),
-                pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
-            },
+            hardware_description: Self::description(app_name),
         }
     }
 
     /// Return a reference to the Pi hardware description
-    pub fn description(&self) -> &HardwareDescription {
-        &self.hardware_description
+    pub fn description(app_name: &str) -> HardwareDescription {
+        HardwareDescription {
+            details: Self::get_details(app_name),
+            pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
+        }
     }
 
     pub async fn apply_config<C>(&mut self, config: &HardwareConfig, callback: C) -> io::Result<()>

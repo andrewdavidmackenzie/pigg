@@ -16,10 +16,9 @@ use mdns_sd::ServiceInfo;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 #[cfg(feature = "tcp")]
 use pigdef::description::HardwareDetails;
-use pigdef::description::SerialNumber;
 #[cfg(feature = "tcp")]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-use piggpio::HW;
+use pigdef::description::{HardwareDescription, SerialNumber};
 use pignet::discovery::DiscoveredDevice;
 #[cfg(any(feature = "tcp", feature = "usb"))]
 use pignet::discovery::DiscoveryEvent;
@@ -168,17 +167,19 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
 }
 
 /// Discover the local hardware - if there is any
-pub fn local_discovery(local_hardware_opt: &Option<HW>) -> HashMap<SerialNumber, DiscoveredDevice> {
+pub fn local_discovery(
+    hw_desc: &Option<HardwareDescription>,
+) -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-    if let Some(local_hardware) = local_hardware_opt {
-        let serial = local_hardware.description().clone().details.serial;
+    if let Some(local_hardware) = hw_desc {
+        let serial = local_hardware.clone().details.serial;
         let mut hardware_connections = HashMap::new();
         hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
         discovered_devices.insert(
             serial,
             DiscoveredDevice {
                 discovery_method: Local,
-                hardware_details: local_hardware.description().clone().details,
+                hardware_details: local_hardware.clone().details,
                 ssid_spec: None,
                 hardware_connections,
             },
