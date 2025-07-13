@@ -30,6 +30,7 @@ use iroh::NodeId;
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
+#[cfg(not(target_arch = "wasm32"))]
 use piggpio::local_hardware_description;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
