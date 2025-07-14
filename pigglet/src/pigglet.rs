@@ -81,7 +81,7 @@ impl std::fmt::Display for ListenerInfo {
 }
 
 /// Pigglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
-/// in Piggy, but without any GUI or related dependencies, loading a config from file and
+/// in Piggy, but without any GUI or related dependencies, loading a config from a file and
 /// over the network.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -91,8 +91,18 @@ async fn main() -> anyhow::Result<()> {
     manage_service(&exec_path, &matches)?;
 
     let info_path = check_unique(&exec_path)?;
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    let listener_info = ListenerInfo {
+        #[cfg(feature = "iroh")]
+        iroh_info: iroh_device::get_device().await?,
+        #[cfg(feature = "tcp")]
+        tcp_info: tcp_device::get_device().await?,
+    };
+    // write the info about the node to the info_path file for use in piggui
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    write_info_file(&info_path, &listener_info)?;
 
-    run_service(&info_path, &matches, exec_path).await
+    run_service(&info_path, listener_info, &matches, exec_path).await
 }
 
 /// Handle any service installation or uninstallation tasks specified on the command line
@@ -113,11 +123,12 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
     Ok(())
 }
 
-/// Run pigglet as a service - this could be interactively by a user in foreground or started
-/// by the system as a user service, in background - use logging for output from here on
+/// Run pigglet as a service - this could be interactively by a user in the foreground or started
+/// by the system as a user service, in the background - use logging for output from here on
 #[allow(unused_variables)]
 async fn run_service(
     info_path: &Path,
+    listener_info: ListenerInfo,
     matches: &ArgMatches,
     exec_path: PathBuf,
 ) -> anyhow::Result<()> {
@@ -136,18 +147,6 @@ async fn run_service(
         })
         .await?;
         trace!("Configuration applied to hardware");
-
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
-        let listener_info = ListenerInfo {
-            #[cfg(feature = "iroh")]
-            iroh_info: iroh_device::get_device().await?,
-            #[cfg(feature = "tcp")]
-            tcp_info: tcp_device::get_device().await?,
-        };
-
-        // write the info about the node to the info_path file for use in piggui
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
-        write_info_file(info_path, &listener_info)?;
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         let desc = hw.description().clone();
@@ -390,10 +389,10 @@ fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
     Ok(manager)
 }
 
-/// Install the binary as a user level service and then start it
+/// Install the binary as a user-level service and then start it
 fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
     let manager = get_service_manager()?;
-    // Run from dir where exec is for now, so it should find the config file in ancestors path
+    // Run from a dir where exec is for now, so it should find the config file in the ancestor's path
     let exec_dir = exec_path
         .parent()
         .ok_or(io::Error::new(
@@ -407,8 +406,8 @@ fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), 
         label: service_name.clone(),
         program: exec_path.to_path_buf(),
         args: vec![],
-        contents: None, // Optional String for system-specific service content.
-        username: None, // Optional String for alternative user to run service.
+        contents: None, // Optional String for system-specific service content
+        username: None, // Optional String for an alternative username to run service with
         working_directory: Some(exec_dir),
         environment: None, // Optional list of environment variables to supply the service process.
         autostart: true,
