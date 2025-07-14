@@ -90,26 +90,7 @@ async fn main() -> anyhow::Result<()> {
 
     manage_service(&exec_path, &matches)?;
 
-    let info_path = check_unique(&exec_path)?;
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
-    let listener_info = ListenerInfo {
-        #[cfg(feature = "iroh")]
-        iroh_info: iroh_device::get_device().await?,
-        #[cfg(feature = "tcp")]
-        tcp_info: tcp_device::get_device().await?,
-    };
-    // write the info about the node to the info_path file for use in piggui
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
-    write_info_file(&info_path, &listener_info)?;
-
-    run_service(
-        &info_path,
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
-        listener_info,
-        &matches,
-        exec_path,
-    )
-    .await
+    run_service(&matches, exec_path).await
 }
 
 /// Handle any service installation or uninstallation tasks specified on the command line
@@ -133,15 +114,22 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
 /// Run pigglet as a service - this could be interactively by a user in the foreground or started
 /// by the system as a user service, in the background - use logging for output from here on
 #[allow(unused_variables)]
-async fn run_service(
-    info_path: &Path,
-    #[cfg(any(feature = "iroh", feature = "tcp"))] listener_info: ListenerInfo,
-    matches: &ArgMatches,
-    exec_path: PathBuf,
-) -> anyhow::Result<()> {
+async fn run_service(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
     setup_logging(matches);
 
     if let Some(mut hw) = get_hardware() {
+        let info_path = check_unique(&exec_path)?;
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        let listener_info = ListenerInfo {
+            #[cfg(feature = "iroh")]
+            iroh_info: iroh_device::get_device().await?,
+            #[cfg(feature = "tcp")]
+            tcp_info: tcp_device::get_device().await?,
+        };
+        // write the info about the node to the info_path file for use in piggui
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        write_info_file(&info_path, &listener_info)?;
+
         info!("\n{}", hw.description().details);
 
         // Get the boot config for the hardware
