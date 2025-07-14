@@ -55,7 +55,7 @@ iroh = { version = "0.90.0", default-features = false, optional = true }
 mdns-sd = { version = "0.13.11", default-features = false, features = ["async"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rfd = "0.15.3"
+rfd = "0.15.4"
 clap = { version = "4.5.41", default-features = false, features = ["std", "help", "error-context"] }
 piggpio = { path = "../piggpio", version = "0.7" }
 
