@@ -102,7 +102,14 @@ async fn main() -> anyhow::Result<()> {
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     write_info_file(&info_path, &listener_info)?;
 
-    run_service(&info_path, listener_info, &matches, exec_path).await
+    run_service(
+        &info_path,
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        listener_info,
+        &matches,
+        exec_path,
+    )
+    .await
 }
 
 /// Handle any service installation or uninstallation tasks specified on the command line
@@ -128,7 +135,7 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
 #[allow(unused_variables)]
 async fn run_service(
     info_path: &Path,
-    listener_info: ListenerInfo,
+    #[cfg(any(feature = "iroh", feature = "tcp"))] listener_info: ListenerInfo,
     matches: &ArgMatches,
     exec_path: PathBuf,
 ) -> anyhow::Result<()> {
