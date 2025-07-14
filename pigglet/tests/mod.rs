@@ -26,7 +26,6 @@ async fn version_number() {
     kill_all("pigglet");
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn test_verbosity_levels() {
@@ -54,7 +53,6 @@ async fn test_verbosity_levels() {
     kill_all("pigglet");
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn help() {
@@ -74,7 +72,6 @@ async fn help() {
     kill_all("pigglet");
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn two_instances() {
