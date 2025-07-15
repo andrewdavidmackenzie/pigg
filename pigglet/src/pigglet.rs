@@ -45,14 +45,10 @@ mod device_net;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
-pub(crate) fn write_info_file(
-    info_path: &Path,
-    listener_info: &ListenerInfo,
-) -> anyhow::Result<()> {
+pub(crate) fn write_info_file(info_path: &Path, content: &str) -> anyhow::Result<()> {
     let mut output = File::create(info_path)?;
-    write!(output, "{listener_info}")?;
+    write!(output, "{content}")?;
     info!("Info file written at: {info_path:?}");
     Ok(())
 }
@@ -61,6 +57,7 @@ pub(crate) fn write_info_file(
 /// The [ListenerInfo] struct captures information about network connections the instance of
 /// `pigglet` is listening on, that can be used with `piggui` to start a remote GPIO session
 struct ListenerInfo {
+    process_name: String,
     #[cfg(feature = "iroh")]
     pub iroh_info: iroh_device::IrohDevice,
     #[cfg(feature = "tcp")]
@@ -70,6 +67,8 @@ struct ListenerInfo {
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 impl std::fmt::Display for ListenerInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.process_name)?;
+
         #[cfg(feature = "iroh")]
         writeln!(f, "{}", self.iroh_info)?;
 
@@ -121,14 +120,15 @@ async fn run_service(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result
         let info_path = check_unique(&exec_path)?;
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         let listener_info = ListenerInfo {
+            process_name: "pigglet".to_string(),
             #[cfg(feature = "iroh")]
             iroh_info: iroh_device::get_device().await?,
             #[cfg(feature = "tcp")]
             tcp_info: tcp_device::get_device().await?,
         };
+
         // write the info about the node to the info_path file for use in piggui
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
-        write_info_file(&info_path, &listener_info)?;
+        write_info_file(&info_path, &format!("{listener_info}"))?;
 
         info!("\n{}", hw.description().details);
 
@@ -489,6 +489,7 @@ fn register_mdns(
 #[cfg(test)]
 mod test {
     use crate::ListenerInfo;
+    #[cfg(feature = "iroh")]
     use iroh::{NodeId, RelayUrl};
     use std::fs;
     use std::path::PathBuf;
@@ -497,6 +498,8 @@ mod test {
 
     fn listener_info(nodeid: &NodeId, relay_url_str: &str) -> ListenerInfo {
         ListenerInfo {
+            process_name: "pigglet_unit_test".to_string(),
+            #[cfg(feature = "iroh")]
             iroh_info: crate::iroh_device::IrohDevice {
                 nodeid: *nodeid,
                 relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
@@ -521,7 +524,10 @@ mod test {
             .expect("Could not create nodeid");
         super::write_info_file(
             &test_file,
-            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
+            &format!(
+                "{}",
+                listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ ")
+            ),
         )
         .expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
@@ -539,7 +545,10 @@ mod test {
             .expect("Could not create nodeid");
         assert!(super::write_info_file(
             &test_file,
-            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
+            &format!(
+                "{}",
+                listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ ")
+            ),
         )
         .is_err());
         assert!(!test_file.exists(), "File was created!");
