@@ -112,19 +112,19 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
 async fn run_service(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
     setup_logging(matches);
 
+    let info_path = check_unique(&exec_path)?;
+    let listener_info = ListenerInfo {
+        process_name: "pigglet".to_string(),
+        #[cfg(feature = "iroh")]
+        iroh_info: iroh_device::get_device().await?,
+        #[cfg(feature = "tcp")]
+        tcp_info: tcp_device::get_device().await?,
+    };
+
+    // write the info about the node to the info_path file for use in piggui
+    write_info_file(&info_path, &format!("{listener_info}"))?;
+
     if let Some(mut hw) = get_hardware() {
-        let info_path = check_unique(&exec_path)?;
-        let listener_info = ListenerInfo {
-            process_name: "pigglet".to_string(),
-            #[cfg(feature = "iroh")]
-            iroh_info: iroh_device::get_device().await?,
-            #[cfg(feature = "tcp")]
-            tcp_info: tcp_device::get_device().await?,
-        };
-
-        // write the info about the node to the info_path file for use in piggui
-        write_info_file(&info_path, &format!("{listener_info}"))?;
-
         info!("\n{}", hw.description().details);
 
         // Get the boot config for the hardware
