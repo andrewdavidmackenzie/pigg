@@ -13,7 +13,6 @@ use service_manager::{
     ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
     ServiceUninstallCtx,
 };
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::fs::File;
 use std::{
     env,
@@ -35,7 +34,6 @@ use crate::device_net::iroh_device;
 use crate::device_net::tcp_device;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::io::Write;
 
 /// Module for handling pigglet config files
@@ -53,7 +51,6 @@ pub(crate) fn write_info_file(info_path: &Path, content: &str) -> anyhow::Result
     Ok(())
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
 /// `pigglet` is listening on, that can be used with `piggui` to start a remote GPIO session
 struct ListenerInfo {
@@ -64,7 +61,6 @@ struct ListenerInfo {
     pub tcp_info: tcp_device::TcpDevice,
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 impl std::fmt::Display for ListenerInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.process_name)?;
@@ -118,7 +114,6 @@ async fn run_service(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result
 
     if let Some(mut hw) = get_hardware() {
         let info_path = check_unique(&exec_path)?;
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
         let listener_info = ListenerInfo {
             process_name: "pigglet".to_string(),
             #[cfg(feature = "iroh")]
