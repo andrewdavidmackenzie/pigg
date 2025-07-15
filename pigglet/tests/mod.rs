@@ -48,3 +48,24 @@ async fn help() {
     .expect("Failed to get expected output");
     pass(&mut pigglet);
 }
+
+#[tokio::test]
+#[serial]
+async fn two_instances() {
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
+
+    wait_for_stdout(&mut pigglet, "Waiting")
+        .expect("Failed to start first pigglet instance correctly");
+
+    // Start a second instance - which should exit with an error (not success)
+    let mut pigglet2 = run("pigglet", vec![], None);
+
+    assert!(!pigglet2.wait().expect("Couldn't get ExitStatus").success());
+
+    pass(&mut pigglet);
+
+    // Always kill all
+    kill_all("pigglet");
+}
