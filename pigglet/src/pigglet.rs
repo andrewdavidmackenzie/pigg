@@ -1,7 +1,9 @@
 #![deny(clippy::unwrap_used)]
 #![cfg(not(target_arch = "wasm32"))]
 
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
+#[cfg(all(feature = "discovery", feature = "tcp"))]
+use anyhow::Context;
 use clap::{Arg, ArgMatches};
 use env_logger::{Builder, Target};
 #[cfg(all(feature = "iroh", feature = "tcp"))]
@@ -95,7 +97,6 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
         };
 
         // write the info about the node to the info_path file for use in piggui
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
         listener_info.write_to_file(&info_path)?;
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]

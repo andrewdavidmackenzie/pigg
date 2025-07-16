@@ -1,4 +1,7 @@
-use crate::device_net::{iroh_device, tcp_device};
+#[cfg(feature = "iroh")]
+use crate::device_net::iroh_device;
+#[cfg(feature = "tcp")]
+use crate::device_net::tcp_device;
 use anyhow::{anyhow, Context};
 use log::info;
 use std::fs;
@@ -47,7 +50,6 @@ impl InstanceInfo {
         })
     }
 
-    #[cfg(any(feature = "iroh", feature = "tcp"))]
     /// Write a [InstanceInfo] file that captures information that can be used to connect to pigglet
     pub(crate) fn write_to_file(&self, info_path: &Path) -> anyhow::Result<()> {
         let mut output = File::create(info_path)?;
@@ -84,6 +86,7 @@ mod test {
         InstanceInfo {
             process_name: "pigglet_tests".to_string(),
             pid: process::id(),
+            #[cfg(feature = "iroh")]
             iroh_info: crate::iroh_device::IrohDevice {
                 nodeid: *nodeid,
                 relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
@@ -99,7 +102,6 @@ mod test {
         }
     }
 
-    #[cfg(feature = "iroh")]
     #[test]
     fn write_info_file() {
         let output_dir = tempdir().expect("Could not create a tempdir").keep();
@@ -116,7 +118,6 @@ mod test {
         assert!(pigglet_info.contains(&nodeid.to_string()))
     }
 
-    #[cfg(feature = "iroh")]
     #[test]
     fn write_info_file_non_existent() {
         let output_dir = PathBuf::from("/foo");
