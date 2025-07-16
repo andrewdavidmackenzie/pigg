@@ -55,7 +55,12 @@ async fn two_instances_run() {
     match piggui2.try_wait() {
         Ok(Some(_status)) => panic!("Second instance should not exit"),
         Ok(None) => (),
-        Err(_) => println!("Second instance running"),
+        Err(_) => {
+            println!("Second instance running");
+            // TODO invert this when check implemented
+            wait_for_stdout(&mut piggui2, "Connected to hardware")
+                .expect("Second piggui instance didn't connect to hardware");
+        }
     }
 
     kill_all("piggui");
