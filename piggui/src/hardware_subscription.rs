@@ -153,9 +153,6 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
             ))]
             let mut gui_sender_clone = gui_sender.clone();
 
-            println!("State = {state}");
-            println!("Target = {target:?}");
-
             match &mut state {
                 Disconnected => {
                     match target.clone() {

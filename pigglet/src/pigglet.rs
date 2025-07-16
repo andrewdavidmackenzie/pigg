@@ -44,6 +44,7 @@ mod config;
 mod device_net;
 
 const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
+const PIGG_INFO_FILENAME: &str = "pigglet.info";
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
 /// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
@@ -122,7 +123,7 @@ async fn main() -> anyhow::Result<()> {
     manage_service(&exec_path, &matches)?;
 
     match check_unique(&exec_path) {
-        Ok(info_path) => run_service(&info_path, &matches, exec_path).await,
+        Ok(info_path) => run(&info_path, &matches, exec_path).await,
         Err(None) => {
             println!("There is another instance of pigglet running, but we couldn't get more information");
             exit(1);
@@ -157,14 +158,10 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
     Ok(())
 }
 
-/// Run pigglet as a service - this could be interactively by a user in the foreground or started
-/// by the system as a user service, in the background - use logging for output from here on
+/// Run pigglet - interactively by a user in the foreground or started by the system as a
+/// user service, in the background - use logging for output from here on
 #[allow(unused_variables)]
-async fn run_service(
-    info_path: &Path,
-    matches: &ArgMatches,
-    exec_path: PathBuf,
-) -> anyhow::Result<()> {
+async fn run(info_path: &Path, matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
     // remove any leftover file from a previous execution - ignore any failure
     let _ = fs::remove_file(info_path);
 
@@ -328,7 +325,7 @@ async fn run_service(
 /// - print out the nodeid of the instance that is running
 /// - exit
 #[allow(clippy::result_large_err)]
-pub fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf, Option<ListenerInfo>> {
+fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf, Option<ListenerInfo>> {
     let exec_name = exec_path
         .file_name()
         .context("Could not get exec file name")
@@ -336,7 +333,7 @@ pub fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf, Option<Listener
         .to_str()
         .context("Could not get exec file name")
         .map_err(|_| None)?;
-    let info_path = exec_path.with_file_name("pigglet.info");
+    let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
 
     let my_pid = process::id();
     let sys = System::new_all();
