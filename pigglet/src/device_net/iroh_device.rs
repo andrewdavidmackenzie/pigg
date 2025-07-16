@@ -17,6 +17,7 @@ use rand_core::OsRng;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
+use std::str::{FromStr, Lines};
 
 pub struct IrohDevice {
     pub nodeid: NodeId,
@@ -24,10 +25,25 @@ pub struct IrohDevice {
     pub endpoint: Option<Endpoint>,
 }
 
+impl IrohDevice {
+    /// Don't fail parsing on lack of endpoint data
+    pub fn parse(lines: &mut Lines) -> anyhow::Result<Self> {
+        let nodeid = lines.next().ok_or_else(|| anyhow!("Missing nodeid"))?;
+        let relay = lines.next().ok_or_else(|| anyhow!("Missing relayUrl"))?;
+        let _endpoint = lines.next();
+
+        Ok(IrohDevice {
+            nodeid: NodeId::from_str(nodeid)?,
+            relay_url: RelayUrl::from_str(relay)?,
+            endpoint: None, // TODO
+        })
+    }
+}
 impl Display for IrohDevice {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "nodeid:{}", self.nodeid)?;
         writeln!(f, "relay URL:{}", self.relay_url)?;
+        writeln!(f, "Endpoint:{:?}", self.endpoint)?;
         Ok(())
     }
 }
@@ -35,7 +51,7 @@ impl Display for IrohDevice {
 pub async fn get_device() -> anyhow::Result<IrohDevice> {
     let secret_key = SecretKey::generate(OsRng);
 
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers, uses QUIC for directly
+    // Build an `Endpoint`, which uses PublicKeys as node identifiers, that uses QUIC for directly
     // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
     // connections between nodes when there are NATs or firewalls preventing direct connections.
     // If no direct connection can be made, packets are relayed over the relay servers.
@@ -102,7 +118,8 @@ pub async fn accept_connection(
     }
 }
 
-/// Process incoming config change messages from the GUI. On end of stream exit the loop
+/// Process incoming config change messages from the GUI.
+/// On the end of the stream exit the loop
 pub async fn iroh_message_loop(
     connection: Connection,
     hardware_config: &mut HardwareConfig,
@@ -207,7 +224,7 @@ async fn send_current_input_levels(
     Ok(())
 }
 
-/// Send the current input level for one input - with timestamp that will match with future
+/// Send the current input level for one input - with a timestamp that will match with future
 /// LevelChange timestamps (time since boot)
 async fn send_current_input_level(
     bcm_pin_number: &BCMPinNumber,

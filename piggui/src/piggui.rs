@@ -42,8 +42,10 @@ use pignet::HardwareConnection::Local;
 use pignet::HardwareConnection::NoConnection;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
+use std::process;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
 use std::str::FromStr;
+use sysinfo::{Process, System};
 
 #[cfg(feature = "discovery")]
 mod discovery;
@@ -145,6 +147,17 @@ fn reset_ssid(serial_number: SerialNumber) -> Task<Message> {
     Task::none()
 }
 
+/// Check that there is no pigglet running on the same device
+fn process_running(process_name: &str) -> bool {
+    let my_pid = process::id();
+    let sys = System::new_all();
+    let instances: Vec<&Process> = sys
+        .processes_by_exact_name(process_name.as_ref())
+        .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)
+        .collect();
+    !instances.is_empty()
+}
+
 impl Piggui {
     /// Disconnect from the hardware
     fn disconnect(&mut self) {
@@ -164,8 +177,17 @@ impl Piggui {
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
 
+        // If there is an instance of pigglet running and in control of any local GPIO
+        // hardware, then we will not offer the option to directly control the local GPIO.
+        // We will rely on discovery methods to provide an option on the GUI to connect to the
+        // locally running instance of pigglet and hence be able to control the GPIO from the GUI.
+        // The same if there is another instance of piggui running and able to connect to hardware
         #[cfg(not(target_arch = "wasm32"))]
-        let local_hardware_opt = get_hardware();
+        let local_hardware_opt = if process_running("pigglet") || process_running("piggui") {
+            None
+        } else {
+            get_hardware()
+        };
 
         #[cfg(not(target_arch = "wasm32"))]
         let default_connection = match &local_hardware_opt {
