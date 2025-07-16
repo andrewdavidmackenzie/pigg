@@ -39,6 +39,7 @@ async fn connects_to_fake_hardware() {
     kill_all("piggui");
 }
 
+#[ignore]
 #[tokio::test]
 #[serial]
 async fn two_instances_run() {

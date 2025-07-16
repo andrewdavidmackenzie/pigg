@@ -9,22 +9,7 @@ use futures::FutureExt;
 use log::{info, trace, LevelFilter};
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use mdns_sd::{ServiceDaemon, ServiceInfo};
-use service_manager::{
-    ServiceInstallCtx, ServiceLabel, ServiceManager, ServiceStartCtx, ServiceStopCtx,
-    ServiceUninstallCtx,
-};
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-use std::fs::File;
-use std::{
-    env,
-    env::current_exe,
-    fs, io,
-    path::{Path, PathBuf},
-    process,
-    process::exit,
-    str::FromStr,
-    time::Duration,
-};
+use std::{env, env::current_exe, fs, path::PathBuf, process, process::exit, str::FromStr};
 use sysinfo::{Process, System};
 
 use piggpio::get_hardware;
@@ -33,84 +18,18 @@ use piggpio::get_hardware;
 use crate::device_net::iroh_device;
 #[cfg(feature = "tcp")]
 use crate::device_net::tcp_device;
+use crate::instance::InstanceInfo;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-use std::io::Write;
 
 /// Module for handling pigglet config files
 mod config;
 /// Module for performing the network transfer of config and events between GUI and pigglet
 mod device_net;
+mod instance;
+mod service;
 
-const SERVICE_NAME: &str = "net.mackenzie-serres.pigg.pigglet";
 const PIGG_INFO_FILENAME: &str = "pigglet.info";
-
-#[cfg(any(feature = "iroh", feature = "tcp"))]
-/// Write a [ListenerInfo] file that captures information that can be used to connect to pigglet
-pub(crate) fn write_info_file(
-    info_path: &Path,
-    listener_info: &ListenerInfo,
-) -> anyhow::Result<()> {
-    let mut output = File::create(info_path)?;
-    write!(output, "{listener_info}")?;
-    info!("Info file written at: {info_path:?}");
-    Ok(())
-}
-
-/// The [ListenerInfo] struct captures information about network connections the instance of
-/// `pigglet` is listening on, that can be used with `piggui` to start a remote GPIO session
-struct ListenerInfo {
-    process_name: String,
-    pid: u32,
-    #[cfg(feature = "iroh")]
-    pub iroh_info: iroh_device::IrohDevice,
-    #[cfg(feature = "tcp")]
-    pub tcp_info: tcp_device::TcpDevice,
-}
-
-impl ListenerInfo {
-    fn parse(string: &str) -> anyhow::Result<Self> {
-        let mut lines = string.lines();
-        let process_name = lines
-            .next()
-            .ok_or_else(|| anyhow!("Missing process name"))?
-            .to_string();
-        let pid = lines
-            .next()
-            .ok_or_else(|| anyhow!("Missing PID"))?
-            .parse::<u32>()
-            .context("Invalid PID")?;
-
-        #[cfg(feature = "iroh")]
-        let iroh_info = iroh_device::IrohDevice::parse(&mut lines)?;
-
-        #[cfg(feature = "tcp")]
-        let tcp_info = tcp_device::TcpDevice::parse(&mut lines)?;
-
-        Ok(Self {
-            process_name,
-            pid,
-            #[cfg(feature = "iroh")]
-            iroh_info,
-            #[cfg(feature = "tcp")]
-            tcp_info,
-        })
-    }
-}
-impl std::fmt::Display for ListenerInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.process_name)?;
-        writeln!(f, "{}", self.pid)?;
-        #[cfg(feature = "iroh")]
-        writeln!(f, "{}", self.iroh_info)?;
-
-        #[cfg(feature = "tcp")]
-        writeln!(f, "{}", self.tcp_info)?;
-
-        Ok(())
-    }
-}
 
 /// Pigglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
 /// in Piggy, but without any GUI or related dependencies, loading a config from a file and
@@ -120,14 +39,10 @@ async fn main() -> anyhow::Result<()> {
     let matches = get_matches();
     let exec_path = current_exe()?;
 
-    manage_service(&exec_path, &matches)?;
+    service::manage(&exec_path, &matches)?;
 
     match check_unique("pigglet") {
-        Ok(_) => {
-            // We'll create the info file in the directory where we are running
-            let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
-            run(&info_path, &matches, exec_path).await
-        }
+        Ok(_) => run(&matches, exec_path).await,
         Err(None) => {
             println!("There is another instance of pigglet running, but we couldn't get more information");
             exit(1);
@@ -144,30 +59,15 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-/// Handle any service installation or uninstallation tasks specified on the command line
-/// continue without doing anything if none were specified
-fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> {
-    let service_name: ServiceLabel = SERVICE_NAME.parse()?;
-
-    if matches.get_flag("uninstall") {
-        uninstall_service(&service_name)?;
-        exit(0);
-    }
-
-    if matches.get_flag("install") {
-        install_service(&service_name, exec_path)?;
-        exit(0);
-    };
-
-    Ok(())
-}
-
 /// Run pigglet - interactively by a user in the foreground or started by the system as a
 /// user service, in the background - use logging for output from here on
 #[allow(unused_variables)]
-async fn run(info_path: &Path, matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
+async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
+    // We'll create the info file in the directory where we are running
+    let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
+
     // remove any leftover file from a previous execution - ignore any failure
-    let _ = fs::remove_file(info_path);
+    let _ = fs::remove_file(&info_path);
 
     setup_logging(matches);
 
@@ -185,7 +85,7 @@ async fn run(info_path: &Path, matches: &ArgMatches, exec_path: PathBuf) -> anyh
         .await?;
         trace!("Configuration applied to hardware");
 
-        let listener_info = ListenerInfo {
+        let listener_info = InstanceInfo {
             process_name: "pigglet".to_string(),
             pid: process::id(),
             #[cfg(feature = "iroh")]
@@ -196,7 +96,7 @@ async fn run(info_path: &Path, matches: &ArgMatches, exec_path: PathBuf) -> anyh
 
         // write the info about the node to the info_path file for use in piggui
         #[cfg(any(feature = "iroh", feature = "tcp"))]
-        write_info_file(info_path, &listener_info)?;
+        listener_info.write_to_file(&info_path)?;
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         let desc = hw.description().clone();
@@ -324,12 +224,12 @@ async fn run(info_path: &Path, matches: &ArgMatches, exec_path: PathBuf) -> anyh
 }
 
 /// Check that this is the only instance of a process running, both user process or system process
-/// If another version is detected:
-/// - print out that fact, with the process ID
-/// - print out the nodeid of the instance that is running
-/// - exit
+/// If no other instance is detected, return Ok
+/// If another version is detected, return:
+///     - Err(Some([InstanceInfo])) if the info file could be read and parsed
+///     - Err(None) if the file could not be read, or the contents not parsed to a [InstanceInfo]
 #[allow(clippy::result_large_err)]
-fn check_unique(process_name: &str) -> anyhow::Result<(), Option<ListenerInfo>> {
+fn check_unique(process_name: &str) -> anyhow::Result<(), Option<InstanceInfo>> {
     let my_pid = process::id();
     let sys = System::new_all();
     let instances: Vec<&Process> = sys
@@ -340,8 +240,9 @@ fn check_unique(process_name: &str) -> anyhow::Result<(), Option<ListenerInfo>> 
         // If we can find the path to the executable - load for the info file
         if let Some(path) = process.exe() {
             let info_path = path.with_file_name(PIGG_INFO_FILENAME);
-            let listener_info = fs::read_to_string(info_path).map_err(|_| None)?;
-            return Err(Some(ListenerInfo::parse(&listener_info).map_err(|_| None)?));
+            return Err(Some(
+                InstanceInfo::load_from_file(info_path).map_err(|_| None)?,
+            ));
         }
 
         return Err(None);
@@ -413,82 +314,6 @@ fn get_matches() -> ArgMatches {
     app.get_matches()
 }
 
-/// Get a [ServiceManager] instance to use to install or remove system services
-fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
-    // Get generic service by detecting what is available on the platform
-    let manager = <dyn ServiceManager>::native()
-        .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "Could not create ServiceManager"))?;
-
-    Ok(manager)
-}
-
-/// Install the binary as a user-level service and then start it
-fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
-    let manager = get_service_manager()?;
-    // Run from the dir where exec is for now, so it should find the config file in the ancestor's path
-    let exec_dir = exec_path
-        .parent()
-        .ok_or(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Could not get exec dir",
-        ))?
-        .to_path_buf();
-
-    // Install our service using the underlying service management platform
-    manager.install(ServiceInstallCtx {
-        label: service_name.clone(),
-        program: exec_path.to_path_buf(),
-        args: vec![],
-        contents: None, // Optional String for system-specific service content.
-        username: None, // Optional String for an alternative user to run service.
-        working_directory: Some(exec_dir),
-        environment: None, // Optional list of environment variables to supply the service process.
-        autostart: true,
-        disable_restart_on_failure: false,
-    })?;
-
-    // Start our service using the underlying service management platform
-    manager.start(ServiceStartCtx {
-        label: service_name.clone(),
-    })?;
-
-    println!(
-        "service '{}' ('{}') installed and started",
-        service_name,
-        exec_path.display()
-    );
-
-    #[cfg(target_os = "linux")]
-    println!(
-        "You can view service logs using 'sudo journalctl -u {}'",
-        service_name
-    );
-
-    Ok(())
-}
-
-/// Stop any running instance of the service, then uninstall it
-fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
-    let manager = get_service_manager()?;
-
-    // Stop our service using the underlying service management platform
-    manager.stop(ServiceStopCtx {
-        label: service_name.clone(),
-    })?;
-
-    println!("service '{service_name}' stopped. Waiting for 10s before uninstalling");
-    std::thread::sleep(Duration::from_secs(10));
-
-    // Uninstall our service using the underlying service management platform
-    manager.uninstall(ServiceUninstallCtx {
-        label: service_name.clone(),
-    })?;
-
-    println!("service '{service_name}' uninstalled");
-
-    Ok(())
-}
-
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 /// Register a mDNS service so we can get discovered
 fn register_mdns(
@@ -522,66 +347,4 @@ fn register_mdns(
     );
 
     Ok((service_info, service_daemon))
-}
-
-#[cfg(test)]
-mod test {
-    use crate::ListenerInfo;
-    use iroh::{NodeId, RelayUrl};
-    use std::path::PathBuf;
-    use std::str::FromStr;
-    use std::{fs, process};
-    use tempfile::tempdir;
-
-    fn listener_info(nodeid: &NodeId, relay_url_str: &str) -> ListenerInfo {
-        ListenerInfo {
-            process_name: "pigglet_tests".to_string(),
-            pid: process::id(),
-            iroh_info: crate::iroh_device::IrohDevice {
-                nodeid: *nodeid,
-                relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
-                endpoint: None,
-            },
-
-            #[cfg(feature = "tcp")]
-            tcp_info: crate::tcp_device::TcpDevice {
-                ip: std::net::IpAddr::from_str("10.0.0.0").expect("Could not parse IpAddr"),
-                port: 9001,
-                listener: None,
-            },
-        }
-    }
-
-    #[cfg(feature = "iroh")]
-    #[test]
-    fn write_info_file() {
-        let output_dir = tempdir().expect("Could not create a tempdir").keep();
-        let test_file = output_dir.join("test.info");
-        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        super::write_info_file(
-            &test_file,
-            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
-        )
-        .expect("Writing info file failed");
-        assert!(test_file.exists(), "File was not created as expected");
-        let pigglet_info = fs::read_to_string(test_file).expect("Could not read info file");
-        println!("pigglet_info: {pigglet_info}");
-        assert!(pigglet_info.contains(&nodeid.to_string()))
-    }
-
-    #[cfg(feature = "iroh")]
-    #[test]
-    fn write_info_file_non_existent() {
-        let output_dir = PathBuf::from("/foo");
-        let test_file = output_dir.join("test.info");
-        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        assert!(super::write_info_file(
-            &test_file,
-            &listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ "),
-        )
-        .is_err());
-        assert!(!test_file.exists(), "File was created!");
-    }
 }
