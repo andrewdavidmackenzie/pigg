@@ -30,8 +30,7 @@ use iroh::NodeId;
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
-#[cfg(not(target_arch = "wasm32"))]
-use piggpio::get_hardware;
+use piggpio::local_hardware;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
@@ -93,7 +92,7 @@ pub enum Message {
     SsidSpecSent(Result<(), String>),
 }
 
-/// [Piggui] Is the struct that holds application state and implements [Application] for Iced
+/// [Piggui] holds the application state and implements [Application] for Iced
 pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
@@ -161,7 +160,7 @@ fn process_running(process_name: &str) -> bool {
 impl Piggui {
     /// Disconnect from the hardware
     fn disconnect(&mut self) {
-        self.info_row.clear_info_messages(); // Clear out of date messages
+        self.info_row.clear_info_messages(); // Clear out-of-date messages
         self.info_row
             .add_info_message(Info("Disconnected".to_string()));
         self.config_filename = None;
@@ -186,7 +185,7 @@ impl Piggui {
         let local_hardware_opt = if process_running("pigglet") || process_running("piggui") {
             None
         } else {
-            get_hardware()
+            local_hardware()
         };
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -196,7 +195,7 @@ impl Piggui {
         };
 
         #[cfg(feature = "discovery")]
-        let discovered_devices = discovery::local_discovery(&local_hardware_opt);
+        let discovered_devices = discovery::local_discovery(local_hardware_opt);
 
         (
             Self {
@@ -327,7 +326,7 @@ impl Piggui {
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
-                self.info_row.clear_info_messages(); // Hide out of date messages
+                self.info_row.clear_info_messages(); // Hide out-of-date messages
                 self.info_row
                     .add_info_message(Info("Connected".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
@@ -345,7 +344,8 @@ impl Piggui {
                 self.connect_dialog.set_error(details);
             }
 
-            MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
+            MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on the menu bar */
+            }
 
             #[cfg(feature = "discovery")]
             Discovery(event) => self.discovery_event(event),
