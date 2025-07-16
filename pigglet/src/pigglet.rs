@@ -122,8 +122,12 @@ async fn main() -> anyhow::Result<()> {
 
     manage_service(&exec_path, &matches)?;
 
-    match check_unique(&exec_path) {
-        Ok(info_path) => run(&info_path, &matches, exec_path).await,
+    match check_unique("pigglet") {
+        Ok(_) => {
+            // We'll create the info file in the directory where we are running
+            let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
+            run(&info_path, &matches, exec_path).await
+        }
         Err(None) => {
             println!("There is another instance of pigglet running, but we couldn't get more information");
             exit(1);
@@ -319,32 +323,23 @@ async fn run(info_path: &Path, matches: &ArgMatches, exec_path: PathBuf) -> anyh
     }
 }
 
-/// Check that this is the only instance of pigglet running, both user process or system process
+/// Check that this is the only instance of a process running, both user process or system process
 /// If another version is detected:
 /// - print out that fact, with the process ID
 /// - print out the nodeid of the instance that is running
 /// - exit
 #[allow(clippy::result_large_err)]
-fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf, Option<ListenerInfo>> {
-    let exec_name = exec_path
-        .file_name()
-        .context("Could not get exec file name")
-        .map_err(|_| None)?
-        .to_str()
-        .context("Could not get exec file name")
-        .map_err(|_| None)?;
-    let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
-
+fn check_unique(process_name: &str) -> anyhow::Result<(), Option<ListenerInfo>> {
     let my_pid = process::id();
     let sys = System::new_all();
     let instances: Vec<&Process> = sys
-        .processes_by_exact_name(exec_name.as_ref())
+        .processes_by_exact_name(process_name.as_ref())
         .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)
         .collect();
     if let Some(process) = instances.first() {
         // If we can find the path to the executable - load for the info file
         if let Some(path) = process.exe() {
-            let info_path = path.with_file_name("pigglet.info");
+            let info_path = path.with_file_name(PIGG_INFO_FILENAME);
             let listener_info = fs::read_to_string(info_path).map_err(|_| None)?;
             return Err(Some(ListenerInfo::parse(&listener_info).map_err(|_| None)?));
         }
@@ -352,7 +347,7 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf, Option<ListenerInfo
         return Err(None);
     }
 
-    Ok(info_path)
+    Ok(())
 }
 
 /// Setup logging to StdOut with the requested verbosity level - or default (ERROR) if no valid
