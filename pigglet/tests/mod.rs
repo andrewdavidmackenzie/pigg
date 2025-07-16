@@ -51,6 +51,10 @@ async fn help() {
 
 #[tokio::test]
 #[serial]
+async fn check_unique() {}
+
+#[tokio::test]
+#[serial]
 async fn two_instances() {
     kill_all("pigglet");
     build("pigglet");

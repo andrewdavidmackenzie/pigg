@@ -19,12 +19,26 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 use std::path::Path;
+use std::str::{FromStr, Lines};
 use std::time::Duration;
 
 pub struct TcpDevice {
     pub ip: IpAddr,
     pub port: u16,
     pub listener: Option<TcpListener>,
+}
+
+impl TcpDevice {
+    pub fn parse(lines: &mut Lines) -> anyhow::Result<Self> {
+        let ip = lines.next().ok_or_else(|| anyhow!("Missing ip"))?;
+        let port = lines.next().ok_or_else(|| anyhow!("Missing port"))?;
+
+        Ok(TcpDevice {
+            ip: IpAddr::from_str(ip)?,
+            port: u16::from_str(port)?,
+            listener: None,
+        })
+    }
 }
 
 impl Display for TcpDevice {
@@ -146,7 +160,7 @@ async fn apply_config_change(
                 // add/replace the new pin config to the hardware config
                 hardware_config.pin_functions.insert(bcm, function);
             } else {
-                // if No new function was set (None) then remove from the current hardware_config
+                // if No new function was set (None), then remove from the current hardware_config
                 info!("Removing pin from pin_functions");
                 hardware_config.pin_functions.remove(&bcm);
             }

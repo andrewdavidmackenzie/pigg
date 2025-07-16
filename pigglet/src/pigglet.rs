@@ -57,19 +57,50 @@ pub(crate) fn write_info_file(
     Ok(())
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
 /// The [ListenerInfo] struct captures information about network connections the instance of
 /// `pigglet` is listening on, that can be used with `piggui` to start a remote GPIO session
 struct ListenerInfo {
+    process_name: String,
+    pid: u32,
     #[cfg(feature = "iroh")]
     pub iroh_info: iroh_device::IrohDevice,
     #[cfg(feature = "tcp")]
     pub tcp_info: tcp_device::TcpDevice,
 }
 
-#[cfg(any(feature = "iroh", feature = "tcp"))]
+impl ListenerInfo {
+    fn parse(string: &str) -> anyhow::Result<Self> {
+        let mut lines = string.lines();
+        let process_name = lines
+            .next()
+            .ok_or_else(|| anyhow!("Missing process name"))?
+            .to_string();
+        let pid = lines
+            .next()
+            .ok_or_else(|| anyhow!("Missing PID"))?
+            .parse::<u32>()
+            .context("Invalid PID")?;
+
+        #[cfg(feature = "iroh")]
+        let iroh_info = iroh_device::IrohDevice::parse(&mut lines)?;
+
+        #[cfg(feature = "tcp")]
+        let tcp_info = tcp_device::TcpDevice::parse(&mut lines)?;
+
+        Ok(Self {
+            process_name,
+            pid,
+            #[cfg(feature = "iroh")]
+            iroh_info,
+            #[cfg(feature = "tcp")]
+            tcp_info,
+        })
+    }
+}
 impl std::fmt::Display for ListenerInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.process_name)?;
+        writeln!(f, "{}", self.pid)?;
         #[cfg(feature = "iroh")]
         writeln!(f, "{}", self.iroh_info)?;
 
@@ -81,7 +112,7 @@ impl std::fmt::Display for ListenerInfo {
 }
 
 /// Pigglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
-/// in Piggy, but without any GUI or related dependencies, loading a config from file and
+/// in Piggy, but without any GUI or related dependencies, loading a config from a file and
 /// over the network.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -90,9 +121,22 @@ async fn main() -> anyhow::Result<()> {
 
     manage_service(&exec_path, &matches)?;
 
-    let info_path = check_unique(&exec_path)?;
+    match check_unique(&exec_path) {
+        Ok(info_path) => run_service(&info_path, &matches, exec_path).await,
+        Err(None) => {
+            println!("There is another instance of pigglet running, but we couldn't get more information");
+            exit(1);
+        }
+        Err(Some(listener_info)) => {
+            println!(
+                "An instance of {} is already running with PID='{}'",
+                listener_info.process_name, listener_info.pid,
+            );
+            println!("You can use the following info to connect to it:\n{listener_info}");
 
-    run_service(&info_path, &matches, exec_path).await
+            exit(1);
+        }
+    }
 }
 
 /// Handle any service installation or uninstallation tasks specified on the command line
@@ -113,14 +157,17 @@ fn manage_service(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<()> 
     Ok(())
 }
 
-/// Run pigglet as a service - this could be interactively by a user in foreground or started
-/// by the system as a user service, in background - use logging for output from here on
+/// Run pigglet as a service - this could be interactively by a user in the foreground or started
+/// by the system as a user service, in the background - use logging for output from here on
 #[allow(unused_variables)]
 async fn run_service(
     info_path: &Path,
     matches: &ArgMatches,
     exec_path: PathBuf,
 ) -> anyhow::Result<()> {
+    // remove any leftover file from a previous execution - ignore any failure
+    let _ = fs::remove_file(info_path);
+
     setup_logging(matches);
 
     if let Some(mut hw) = get_hardware() {
@@ -137,8 +184,9 @@ async fn run_service(
         .await?;
         trace!("Configuration applied to hardware");
 
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
         let listener_info = ListenerInfo {
+            process_name: "pigglet".to_string(),
+            pid: process::id(),
             #[cfg(feature = "iroh")]
             iroh_info: iroh_device::get_device().await?,
             #[cfg(feature = "tcp")]
@@ -279,12 +327,15 @@ async fn run_service(
 /// - print out that fact, with the process ID
 /// - print out the nodeid of the instance that is running
 /// - exit
-fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
+#[allow(clippy::result_large_err)]
+pub fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf, Option<ListenerInfo>> {
     let exec_name = exec_path
         .file_name()
-        .context("Could not get exec file name")?
+        .context("Could not get exec file name")
+        .map_err(|_| None)?
         .to_str()
-        .context("Could not get exec file name")?;
+        .context("Could not get exec file name")
+        .map_err(|_| None)?;
     let info_path = exec_path.with_file_name("pigglet.info");
 
     let my_pid = process::id();
@@ -294,26 +345,15 @@ fn check_unique(exec_path: &Path) -> anyhow::Result<PathBuf> {
         .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)
         .collect();
     if let Some(process) = instances.first() {
-        println!(
-            "An instance of {exec_name} is already running with PID='{}'",
-            process.pid(),
-        );
-
-        #[cfg(any(feature = "iroh", feature = "tcp"))]
-        // If we can find the path to the executable - look for the info file
+        // If we can find the path to the executable - load for the info file
         if let Some(path) = process.exe() {
             let info_path = path.with_file_name("pigglet.info");
-            if info_path.exists() {
-                println!("You can use the following info to connect to it:");
-                println!("{}", fs::read_to_string(info_path)?);
-            }
+            let listener_info = fs::read_to_string(info_path).map_err(|_| None)?;
+            return Err(Some(ListenerInfo::parse(&listener_info).map_err(|_| None)?));
         }
 
-        exit(1);
+        return Err(None);
     }
-
-    // remove any leftover file from a previous execution - ignore any failure
-    let _ = fs::remove_file(&info_path);
 
     Ok(info_path)
 }
@@ -390,10 +430,10 @@ fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
     Ok(manager)
 }
 
-/// Install the binary as a user level service and then start it
+/// Install the binary as a user-level service and then start it
 fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
     let manager = get_service_manager()?;
-    // Run from dir where exec is for now, so it should find the config file in ancestors path
+    // Run from the dir where exec is for now, so it should find the config file in the ancestor's path
     let exec_dir = exec_path
         .parent()
         .ok_or(io::Error::new(
@@ -408,7 +448,7 @@ fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), 
         program: exec_path.to_path_buf(),
         args: vec![],
         contents: None, // Optional String for system-specific service content.
-        username: None, // Optional String for alternative user to run service.
+        username: None, // Optional String for an alternative user to run service.
         working_directory: Some(exec_dir),
         environment: None, // Optional list of environment variables to supply the service process.
         autostart: true,
@@ -496,13 +536,15 @@ fn register_mdns(
 mod test {
     use crate::ListenerInfo;
     use iroh::{NodeId, RelayUrl};
-    use std::fs;
     use std::path::PathBuf;
     use std::str::FromStr;
+    use std::{fs, process};
     use tempfile::tempdir;
 
     fn listener_info(nodeid: &NodeId, relay_url_str: &str) -> ListenerInfo {
         ListenerInfo {
+            process_name: "pigglet_tests".to_string(),
+            pid: process::id(),
             iroh_info: crate::iroh_device::IrohDevice {
                 nodeid: *nodeid,
                 relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
