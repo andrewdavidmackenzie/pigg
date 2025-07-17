@@ -9,9 +9,12 @@ use crate::views::hardware_view::{HardwareView, HardwareViewMessage};
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::views::message_box::InfoMessage;
 use crate::views::message_box::InfoMessage::{Error, Info};
+use crate::views::message_box::MessageRowMessage;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
-use crate::views::message_box::{InfoMessage, MessageRowMessage};
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialog;
 #[cfg(feature = "usb")]
@@ -29,6 +32,7 @@ use iroh::NodeId;
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
+#[cfg(not(target_arch = "wasm32"))]
 use piggpio::local_hardware;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
@@ -145,6 +149,7 @@ fn reset_ssid(serial_number: SerialNumber) -> Task<Message> {
     Task::none()
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Check that there is no pigglet running on the same device
 fn process_running(process_name: &str) -> bool {
     let my_pid = process::id();
@@ -166,6 +171,8 @@ impl Piggui {
         self.unsaved_changes = false;
         self.hardware_view.new_connection(NoConnection);
     }
+
+    #[cfg(not(target_arch = "wasm32"))]
     async fn empty() {}
 
     fn new() -> (Self, Task<Message>) {
