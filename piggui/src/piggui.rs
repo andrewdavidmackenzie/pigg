@@ -10,9 +10,8 @@ use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
 use crate::views::message_box::InfoMessage::{Error, Info};
-use crate::views::message_box::MessageRowMessage;
-#[cfg(feature = "usb")]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
+use crate::views::message_box::{InfoMessage, MessageRowMessage};
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialog;
 #[cfg(feature = "usb")]
@@ -167,6 +166,7 @@ impl Piggui {
         self.unsaved_changes = false;
         self.hardware_view.new_connection(NoConnection);
     }
+    async fn empty() {}
 
     fn new() -> (Self, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
@@ -176,13 +176,31 @@ impl Piggui {
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
 
+        // We may request a number of tasks to be done on start
+        #[allow(unused_mut)]
+        let mut tasks = vec![maybe_load_no_picker(config_filename.clone())];
+
         // If there is an instance of pigglet running and in control of any local GPIO
         // hardware, then we will not offer the option to directly control the local GPIO.
         // We will rely on discovery methods to provide an option on the GUI to connect to the
         // locally running instance of pigglet and hence be able to control the GPIO from the GUI.
         // The same if there is another instance of piggui running and able to connect to hardware
         #[cfg(not(target_arch = "wasm32"))]
-        let local_hardware_opt = if process_running("pigglet") || process_running("piggui") {
+        let local_hardware_opt = if process_running("pigglet") {
+            let message = Task::perform(Self::empty(), |_| {
+                InfoRow(ShowStatusMessage(InfoMessage::Warning(
+                    "GPIO Hardware is being controlled by an instance of pigglet".to_string(),
+                )))
+            });
+            tasks.push(message);
+            None
+        } else if process_running("piggui") {
+            let message = Task::perform(Self::empty(), |_| {
+                InfoRow(ShowStatusMessage(InfoMessage::Warning(
+                    "GPIO Hardware is being controlled by another instance of piggui".to_string(),
+                )))
+            });
+            tasks.push(message);
             None
         } else {
             local_hardware()
@@ -199,7 +217,7 @@ impl Piggui {
 
         (
             Self {
-                config_filename: config_filename.clone(),
+                config_filename,
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
@@ -218,7 +236,7 @@ impl Piggui {
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
-            maybe_load_no_picker(config_filename),
+            Task::batch(tasks),
         )
     }
 
