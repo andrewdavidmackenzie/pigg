@@ -31,6 +31,8 @@ use pigdef::description::HardwareDescription;
 
 mod pin_descriptions;
 
+pub mod config;
+
 /// Return the Description of the local GPIO hardware is available for use on this machine
 pub fn local_hardware() -> Option<HardwareDescription> {
     // release build - Not Pi hardware

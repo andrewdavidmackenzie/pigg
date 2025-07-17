@@ -1,12 +1,12 @@
-use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
+use crate::support::{
+    build, connect_and_test_tcp, delete_configs, kill_all, parse_pigglet, pass, run,
+};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::pin_function::PinFunction::Output;
 use pignet::tcp_host;
 use serial_test::serial;
 use std::time::Duration;
 
-#[path = "../src/config.rs"]
-mod config;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
@@ -66,7 +66,7 @@ async fn clean_config() {
     kill_all("pigglet");
     build("pigglet");
     #[cfg(not(target_arch = "wasm32"))]
-    config::test::delete_configs();
+    delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -100,7 +100,7 @@ async fn config_change_returned_tcp() {
     kill_all("pigglet");
     build("pigglet");
     #[cfg(not(target_arch = "wasm32"))]
-    config::test::delete_configs();
+    delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -193,14 +193,12 @@ async fn invalid_pin_config() {
     kill_all("pigglet");
     build("pigglet");
     #[cfg(not(target_arch = "wasm32"))]
-    config::test::delete_configs();
+    delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
-    //let ip = IpAddr::from_str("192.168.1.133").expect("Could not create IP address");
-    //let port = 15289;
 
     let (hw_desc, hw_config, tcp_stream) = tcp_host::connect(ip, port)
         .await
