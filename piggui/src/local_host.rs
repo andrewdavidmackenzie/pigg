@@ -8,8 +8,10 @@ use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use pigdef::description::HardwareDescription;
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
+use piggpio::config::{get_config, CONFIG_FILENAME};
 use piggpio::get_hardware;
 use piggpio::HW;
+use std::env::current_exe;
 use std::time::Duration;
 
 pub struct LocalConnection {
@@ -137,9 +139,13 @@ pub async fn apply_config_message(
 /// Connect to the local hardware and get the [HardwareDescription] and [HardwareConfig]
 pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
     let hw = get_hardware().ok_or(anyhow!("Could not connect to local hardware"))?;
-    let hw_config = HardwareConfig::default(); // Local HW doesn't save a config TODO
-
-    Ok((hw.description().clone(), hw_config, LocalConnection { hw }))
+    let config_file_path = current_exe()?.with_file_name(CONFIG_FILENAME);
+    let hardware_config = get_config(&config_file_path);
+    Ok((
+        hw.description().clone(),
+        hardware_config,
+        LocalConnection { hw },
+    ))
 }
 
 /// Disconnect from the local hardware

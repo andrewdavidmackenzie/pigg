@@ -4483,6 +4483,7 @@ name = "piggpio"
 version = "0.7.3"
 dependencies = [
  "libc",
+ "log",
  "pigdef",
  "rand 0.9.1",
  "rand_core 0.6.4",

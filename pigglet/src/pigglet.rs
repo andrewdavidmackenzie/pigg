@@ -24,9 +24,7 @@ use crate::instance::InstanceInfo;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 
-use pigdef::config::HardwareConfig;
-use piggpio::config::{load_cfg, CONFIG_FILENAME};
-use std::path::Path;
+use piggpio::config::{get_config, CONFIG_FILENAME};
 
 /// Module for performing the network transfer of config and events between GUI and pigglet
 mod device_net;
@@ -65,40 +63,17 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-#[allow(dead_code)] // Not used in tests
-#[cfg(not(target_arch = "wasm32"))]
-/// Get the initial [HardwareConfig] determined following:
-/// - A config file specified on the command line, or
-/// - A config file saved from a previous run
-/// - The default (empty) config
-async fn get_config(matches: &ArgMatches, config_file_path: &Path) -> HardwareConfig {
-    // A config file specified on the command line overrides any config file from a previous run
-    let config_filename = match matches.get_one::<String>("config") {
-        Some(config_filename) => config_filename.clone(),
-        None => config_file_path.to_string_lossy().to_string(),
-    };
-
-    match load_cfg(&config_filename) {
-        Ok(config) => {
-            println!("Config loaded from file: {config_filename}");
-            trace!("{config}");
-            config
-        }
-        Err(_) => {
-            info!("Loaded default config");
-            HardwareConfig::default()
-        }
-    }
-}
-
 /// Run pigglet - interactively by a user in the foreground or started by the system as a
 /// user service, in the background - use logging for output from here on
 #[allow(unused_variables)]
 async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
     // We'll create the info file in the directory where we are running
     let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
-    // And a file to store the config of locally controlled hardware
-    let config_file_path = exec_path.with_file_name(CONFIG_FILENAME);
+    // A config file specified on the command line overrides the default config file
+    let config_file_path = match matches.get_one::<String>("config") {
+        Some(config_filename) => PathBuf::from(config_filename),
+        None => exec_path.with_file_name(CONFIG_FILENAME),
+    };
 
     // remove any leftover file from a previous execution - ignore any failure
     let _ = fs::remove_file(&info_path);
@@ -110,7 +85,7 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
 
         // Get the boot config for the hardware
         #[allow(unused_mut)]
-        let mut hardware_config = get_config(matches, &config_file_path).await;
+        let mut hardware_config = get_config(&config_file_path);
 
         // Apply the initial config to the hardware, whatever it is
         hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
