@@ -23,7 +23,7 @@ pub fn delete_configs() {
     let config_file = workspace_dir.join(CONFIG_FILENAME);
     println!("Deleting file: {config_file:?}");
     let _ = std::fs::remove_file(config_file);
-    let config_file = workspace_dir.join("target/debug/").join(".test.json");
+    let config_file = workspace_dir.join("target/debug/").join(CONFIG_FILENAME);
     println!("Deleting file: {config_file:?}");
     let _ = std::fs::remove_file(config_file);
 }
