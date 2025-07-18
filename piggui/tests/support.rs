@@ -140,10 +140,7 @@ pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
 
     while reader.read_line(&mut line).is_ok() {
         if line.contains(token) {
-            println!("Found '{token}' in '{line}'");
             return Some(line);
-        } else {
-            println!("Ignored stdout: '{line}'");
         }
         line.clear();
     }

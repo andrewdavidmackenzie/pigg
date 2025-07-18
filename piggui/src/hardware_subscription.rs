@@ -39,6 +39,7 @@ use iced::stream;
 use iced::{futures, futures::pin_mut};
 #[cfg(feature = "iroh")]
 use iroh::endpoint::Connection;
+use log::info;
 use pigdef::description::BCMPinNumber;
 use pigdef::description::HardwareDescription;
 #[cfg(feature = "iroh")]
@@ -103,7 +104,7 @@ enum HWState {
 }
 
 impl fmt::Display for HWState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Disconnected => write!(f, "Disconnected"),
             #[cfg(not(target_arch = "wasm32"))]
@@ -118,7 +119,7 @@ impl fmt::Display for HWState {
     }
 }
 
-/// Report an error to the GUI, if it cannot be sent print to STDERR
+/// Report an error to the GUI if it cannot be sent print to STDERR
 async fn report_error(gui_sender: &mut Sender<SubscriptionEvent>, e: &str) {
     gui_sender
         .send(SubscriptionEvent::ConnectionError(e.to_string()))
@@ -171,7 +172,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                 Ok((hardware_description, hardware_config, local_hardware)) => {
                                     if let Err(e) = gui_sender_clone
                                         .send(SubscriptionEvent::Connected(
-                                            hardware_description.clone(),
+                                            hardware_description,
                                             hardware_config,
                                         ))
                                         .await
@@ -316,7 +317,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                 state = Disconnected;
                             }
                             Hardware(config_change) => {
-                                if let Err(e) = local_host::apply_config_message(
+                                if let Err(e) = local_host::apply_config_change(
                                     connection,
                                     config_change,
                                     gui_sender_clone.clone(),
@@ -368,7 +369,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
 
                         // receive an input level change from remote hardware
                         remote_event = fused_wait_for_remote_message => {
-                            log::info!("Remote Hw event Message received via USB: {remote_event:?}");
+                            info!("Remote Hw event Message received via USB: {remote_event:?}");
                             match remote_event {
                                  Ok(IOLevelChanged(bcm, level_change)) => {
                                     if let Err(e) = gui_sender_clone.send(InputChange(bcm, level_change)).await {

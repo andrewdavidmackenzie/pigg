@@ -189,7 +189,6 @@ pub fn local_discovery(
     discovered_devices
 }
 
-// TODO Could separate out the TCP part and mDNS discover devices for Iroh connections only also
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
 pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {

@@ -39,7 +39,6 @@ async fn connects_to_fake_hardware() {
     kill_all("piggui");
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn two_instances_run() {
@@ -58,9 +57,11 @@ async fn two_instances_run() {
         Ok(None) => (),
         Err(_) => {
             println!("Second instance running");
-            // TODO invert this when check implemented
-            wait_for_stdout(&mut piggui2, "Connected to hardware")
-                .expect("Second piggui instance didn't connect to hardware");
+            wait_for_stdout(
+                &mut piggui2,
+                "GPIO Hardware is being controlled by another instance",
+            )
+            .expect("Second piggui instance didn't print message");
         }
     }
 

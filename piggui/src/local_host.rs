@@ -92,14 +92,14 @@ fn send_input_level(
 }
 
 /// Send (apply) a [HardwareConfigMessage] to the local hardware
-pub async fn apply_config_message(
+pub async fn apply_config_change(
     connection: &mut LocalConnection,
     config_change: &HardwareConfigMessage,
     gui_sender: Sender<SubscriptionEvent>,
 ) -> Result<(), Error> {
     match config_change {
         NewConfig(config) => {
-            info!("New config applied");
+            info!("New config applied to local hardware");
             let gui_sender_clone = gui_sender.clone();
             connection
                 .hw
@@ -111,8 +111,8 @@ pub async fn apply_config_message(
             send_current_input_states(gui_sender_clone, config, connection).await?;
         }
         NewPinConfig(bcm, pin_function) => {
-            info!("New pin config for pin #{bcm}: {pin_function:?}");
-            let gc = gui_sender.clone();
+            info!("New pin config for local hardware pin #{bcm}: {pin_function:?}");
+            let gui_sender_clone = gui_sender.clone();
             connection
                 .hw
                 .apply_pin_config(*bcm, pin_function, move |bcm_pin_number, level_change| {
@@ -121,11 +121,11 @@ pub async fn apply_config_message(
                 .await?;
 
             if let Some(function) = pin_function {
-                send_current_input_state(bcm, function, gc, connection).await?;
+                send_current_input_state(bcm, function, gui_sender_clone, connection).await?;
             }
         }
         IOLevelChanged(bcm, level_change) => {
-            trace!("Pin #{bcm} Output level change: {level_change:?}");
+            trace!("Local hardware pin #{bcm} output level changed: {level_change:?}");
             connection
                 .hw
                 .set_output_level(*bcm, level_change.new_level)?;
@@ -133,6 +133,11 @@ pub async fn apply_config_message(
         HardwareConfigMessage::GetConfig => {}
         HardwareConfigMessage::Disconnect => {}
     }
+
+    info!("Config change applied");
+    // TODO save to the default config file if that is what is in use
+    // TODO maintain a copy of the total config somewhere?
+
     Ok(())
 }
 

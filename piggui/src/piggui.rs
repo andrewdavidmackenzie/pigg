@@ -195,17 +195,19 @@ impl Piggui {
         #[cfg(not(target_arch = "wasm32"))]
         let local_hardware_opt = if process_running("pigglet") {
             let message = Task::perform(Self::empty(), |_| {
-                InfoRow(ShowStatusMessage(InfoMessage::Warning(
-                    "GPIO Hardware is being controlled by an instance of pigglet".to_string(),
-                )))
+                let string =
+                    "GPIO Hardware is being controlled by an instance of pigglet".to_string();
+                println!("{string}");
+                InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
             });
             tasks.push(message);
             None
         } else if process_running("piggui") {
             let message = Task::perform(Self::empty(), |_| {
-                InfoRow(ShowStatusMessage(InfoMessage::Warning(
-                    "GPIO Hardware is being controlled by another instance of piggui".to_string(),
-                )))
+                let string =
+                    "GPIO Hardware is being controlled by another instance of piggui".to_string();
+                println!("{string}");
+                InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
             });
             tasks.push(message);
             None
