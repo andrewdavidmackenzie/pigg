@@ -52,7 +52,7 @@ impl std::fmt::Display for HardwareConfig {
     }
 }
 
-/// This enum is for hardware config changes initiated in the GUI by the user,
+/// This enum is for hardware config changes initiated in the GUI by the user
 /// and sent to the subscription for it to apply to the hardware
 ///    * NewConfig
 ///    * NewPinConfig
@@ -68,7 +68,7 @@ pub enum HardwareConfigMessage {
     NewPinConfig(BCMPinNumber, Option<PinFunction>),
     /// The level of a pin has changed
     IOLevelChanged(BCMPinNumber, LevelChange),
-    /// A request for device to send back the hardware config
+    /// A request for the device to send back the hardware config
     GetConfig,
     /// A message sent from the GUI to the device to ask it to disconnect, as GUI will disconnect
     Disconnect,
@@ -99,8 +99,8 @@ impl From<Duration> for embassy_time::Duration {
 }
 
 /// LevelChange describes the change in level of an input or Output and when it occurred
-/// - `new_level` : [PinLevel]
-/// - `timestamp` : [Duration]
+/// - `new_level`: [PinLevel]
+/// - `timestamp`: [Duration]
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LevelChange {

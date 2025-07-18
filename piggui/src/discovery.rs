@@ -16,10 +16,9 @@ use mdns_sd::ServiceInfo;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 #[cfg(feature = "tcp")]
 use pigdef::description::HardwareDetails;
-use pigdef::description::SerialNumber;
 #[cfg(feature = "tcp")]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-use piggpio::HW;
+use pigdef::description::{HardwareDescription, SerialNumber};
 use pignet::discovery::DiscoveredDevice;
 #[cfg(any(feature = "tcp", feature = "usb"))]
 use pignet::discovery::DiscoveryEvent;
@@ -40,7 +39,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 #[cfg(feature = "usb")]
-/// Report an error to the GUI, if it cannot be sent print to STDERR
+/// Report an error to the GUI if it cannot be sent print to STDERR
 async fn report_error(mut gui_sender: Sender<DiscoveryEvent>, e: anyhow::Error) {
     #[cfg(target_os = "linux")]
     if e.to_string().contains("Permission denied") {
@@ -64,7 +63,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
         let mut previous_serial_numbers = vec![];
 
         loop {
-            // Get the vector of serial numbers of all compatible devices
+            // Get the vector of serial numbers of all the compatible devices
             match usb_host::get_serials().await {
                 Ok(current_serial_numbers) => {
                     // Filter out old devices, retaining new devices in the list
@@ -74,7 +73,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
                     match usb_host::get_details(&new_serial_numbers).await {
                         Ok(details) => {
                             for (new_serial_number, new_device) in details {
-                                // inform UI of new device found
+                                // inform GUI of a new device found
                                 gui_sender
                                     .send(DiscoveryEvent::DeviceFound(
                                         new_serial_number.clone(),
@@ -167,18 +166,22 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
     })
 }
 
-/// Discover the local hardware - if there is any
-pub fn local_discovery(local_hardware_opt: &Option<HW>) -> HashMap<SerialNumber, DiscoveredDevice> {
+/// Create the initial HashMap of devices - initialized with the local GPIO hardware if it
+/// exists
+pub fn local_discovery(
+    description_opt: Option<HardwareDescription>,
+) -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-    if let Some(local_hardware) = local_hardware_opt {
-        let serial = local_hardware.description().clone().details.serial;
+    if let Some(mut description) = description_opt {
+        description.details.app_name = env!("CARGO_PKG_NAME").to_string();
+        description.details.app_version = env!("CARGO_PKG_VERSION").to_string();
         let mut hardware_connections = HashMap::new();
         hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
         discovered_devices.insert(
-            serial,
+            description.details.serial.clone(),
             DiscoveredDevice {
                 discovery_method: Local,
-                hardware_details: local_hardware.description().clone().details,
+                hardware_details: description.details,
                 ssid_spec: None,
                 hardware_connections,
             },
@@ -188,7 +191,6 @@ pub fn local_discovery(local_hardware_opt: &Option<HW>) -> HashMap<SerialNumber,
     discovered_devices
 }
 
-// TODO Could separate out the TCP part and mDNS discover devices for Iroh connections only also
 #[cfg(feature = "tcp")]
 /// A stream of [DiscoveryEvent] announcing the discovery or loss of devices via mDNS
 pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {

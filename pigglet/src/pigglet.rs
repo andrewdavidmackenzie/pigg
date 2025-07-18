@@ -24,13 +24,15 @@ use crate::instance::InstanceInfo;
 #[cfg(all(feature = "discovery", feature = "tcp"))]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
 
-/// Module for handling pigglet config files
-mod config;
+use piggpio::config::{get_config, CONFIG_FILENAME};
+
 /// Module for performing the network transfer of config and events between GUI and pigglet
 mod device_net;
 mod instance;
 mod service;
 
+/// The name of the file where information about a running instance of pigglet will be stored
+/// for other instances attempting to run can find it
 const PIGG_INFO_FILENAME: &str = "pigglet.info";
 
 /// Pigglet will expose the same functionality from the GPIO Hardware Backend used by the GUI
@@ -67,6 +69,11 @@ async fn main() -> anyhow::Result<()> {
 async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
     // We'll create the info file in the directory where we are running
     let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
+    // A config file specified on the command line overrides the default config file
+    let config_file_path = match matches.get_one::<String>("config") {
+        Some(config_filename) => PathBuf::from(config_filename),
+        None => exec_path.with_file_name(CONFIG_FILENAME),
+    };
 
     // remove any leftover file from a previous execution - ignore any failure
     let _ = fs::remove_file(&info_path);
@@ -78,7 +85,7 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
 
         // Get the boot config for the hardware
         #[allow(unused_mut)]
-        let mut hardware_config = config::get_config(matches, &exec_path).await;
+        let mut hardware_config = get_config(&config_file_path);
 
         // Apply the initial config to the hardware, whatever it is
         hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
@@ -134,7 +141,7 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
                     let _ = tcp_device::tcp_message_loop(
                         stream,
                         &mut hardware_config,
-                        &exec_path,
+                        &config_file_path,
                         &mut hw,
                     )
                     .await;
@@ -153,7 +160,7 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
                     let _ = iroh_device::iroh_message_loop(
                         connection,
                         &mut hardware_config,
-                        &exec_path,
+                        &config_file_path,
                         &mut hw,
                     )
                     .await;
@@ -206,11 +213,11 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
                 futures::select! {
                     tcp_stream = fused_tcp => {
                         println!("Connection via Tcp");
-                        let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &exec_path, &mut hw).await;
+                        let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &config_file_path, &mut hw).await;
                     },
                     iroh_connection = fused_iroh => {
                         println!("Connection via Iroh");
-                        let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &exec_path, &mut hw).await;
+                        let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &config_file_path, &mut hw).await;
                     }
                     complete => {}
                 }

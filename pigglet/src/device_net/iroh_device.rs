@@ -1,4 +1,3 @@
-use crate::config;
 use anyhow::{anyhow, bail, Context};
 use iroh::endpoint::Connection;
 use iroh::Watcher;
@@ -12,6 +11,7 @@ use pigdef::description::HardwareDescription;
 use pigdef::net_values::PIGGLET_ALPN;
 use pigdef::pin_function::PinFunction;
 use pigdef::pin_function::PinFunction::Output;
+use piggpio::config::store_config;
 use piggpio::HW;
 use rand_core::OsRng;
 use std::fmt;
@@ -26,7 +26,7 @@ pub struct IrohDevice {
 }
 
 impl IrohDevice {
-    /// Don't fail parsing on lack of endpoint data
+    /// Don't fail to parse on lack of endpoint data
     pub fn parse(lines: &mut Lines) -> anyhow::Result<Self> {
         let nodeid = lines.next().ok_or_else(|| anyhow!("Missing nodeid"))?;
         let relay = lines.next().ok_or_else(|| anyhow!("Missing relayUrl"))?;
@@ -123,7 +123,7 @@ pub async fn accept_connection(
 pub async fn iroh_message_loop(
     connection: Connection,
     hardware_config: &mut HardwareConfig,
-    exec_path: &Path,
+    config_file_path: &Path,
     hardware: &mut HW,
 ) -> anyhow::Result<()> {
     loop {
@@ -145,7 +145,7 @@ pub async fn iroh_message_loop(
             .await
             .is_ok()
             {
-                let _ = config::store_config(hardware_config, exec_path).await;
+                let _ = store_config(hardware_config, config_file_path).await;
             }
         }
     }

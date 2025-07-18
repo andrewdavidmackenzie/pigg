@@ -27,11 +27,11 @@ pub struct HW {
 
 /// Implementation code for fake hardware
 impl HW {
-    pub fn new(app_name: &str) -> Self {
+    pub fn new() -> Self {
         HW {
             configured_pins: Default::default(),
             hardware_description: HardwareDescription {
-                details: Self::get_details(app_name),
+                details: Self::get_details(),
                 pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
             },
         }
@@ -72,14 +72,14 @@ impl HW {
 
     /// Return the [HardwareDetails] struct that describes a number of details about the general
     /// hardware, not GPIO specifics or pin outs or such.
-    fn get_details(app_name: &str) -> HardwareDetails {
+    fn get_details() -> HardwareDetails {
         let mut details = HardwareDetails {
             hardware: "fake gpio".to_string(),
             revision: "unknown".to_string(),
             serial: "unknown".to_string(),
             model: "Fake local GPIO".to_string(),
             wifi: true,
-            app_name: app_name.to_string(),
+            app_name: env!("CARGO_PKG_NAME").to_string(),
             app_version: env!("CARGO_PKG_VERSION").to_string(),
         };
 
@@ -161,5 +161,11 @@ impl HW {
     /// Read the input level of an input using the bcm pin number
     pub fn get_input_level(&self, _bcm_pin_number: BCMPinNumber) -> io::Result<bool> {
         Ok(true)
+    }
+}
+
+impl Default for HW {
+    fn default() -> Self {
+        Self::new()
     }
 }

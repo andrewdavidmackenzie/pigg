@@ -27,15 +27,14 @@ pub mod fake_pi;
     target_env = "gnu"
 )))]
 pub use fake_pi::HW;
+use pigdef::description::HardwareDescription;
 
 mod pin_descriptions;
 
-/// Create a new HW instance - should only be called once
-pub fn get_hardware() -> Option<HW> {
-    // debug build - Pi or Non-Pi Hardware
-    #[cfg(debug_assertions)]
-    return Some(HW::new(env!("CARGO_PKG_NAME")));
+pub mod config;
 
+/// Return the Description of the local GPIO hardware is available for use on this machine
+pub fn local_hardware() -> Option<HardwareDescription> {
     // release build - Not Pi hardware
     #[cfg(all(
         not(debug_assertions),
@@ -47,16 +46,41 @@ pub fn get_hardware() -> Option<HW> {
     ))]
     return None;
 
-    // release build - Pi hardware
-    #[cfg(all(
-        not(debug_assertions),
+    // debug build or Pi hardware
+    #[cfg(any(
+        debug_assertions,
         all(
             target_os = "linux",
             any(target_arch = "aarch64", target_arch = "arm"),
             target_env = "gnu"
         )
     ))]
-    return Some(HW::new(env!("CARGO_PKG_NAME")));
+    Some(HW::new().description().clone())
+}
+
+/// Create a new HW instance - should only be called once
+pub fn get_hardware() -> Option<HW> {
+    // release build - Not Pi hardware
+    #[cfg(all(
+        not(debug_assertions),
+        not(all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        ))
+    ))]
+    return None;
+
+    // debug build or Pi hardware
+    #[cfg(any(
+        debug_assertions,
+        all(
+            target_os = "linux",
+            any(target_arch = "aarch64", target_arch = "arm"),
+            target_env = "gnu"
+        )
+    ))]
+    Some(HW::new())
 }
 
 #[cfg(test)]

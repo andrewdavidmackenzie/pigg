@@ -25,7 +25,7 @@ pub async fn wait_for_remote_message(
     Ok(postcard::from_bytes(&message)?)
 }
 
-/// Send config change received form the GUI to the remote hardware
+/// Send config change received from the GUI to the remote hardware
 pub async fn send_config_message(
     connection: &mut Connection,
     config_change_message: &HardwareConfigMessage,
@@ -48,7 +48,7 @@ pub async fn connect(
 ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection)> {
     let secret_key = SecretKey::generate(OsRng);
 
-    // Build a `Endpoint`, which uses PublicKeys as node identifiers
+    // Build an `Endpoint`, which uses PublicKeys as node identifiers
     let endpoint = Endpoint::builder()
         // The secret key is used to authenticate with other nodes.
         .secret_key(secret_key)
@@ -69,8 +69,8 @@ pub async fn connect(
         .collect::<Vec<_>>()
         .join(" ");
 
-    // find my closest relay - maybe set this as a default in the UI but allow used to
-    // override it in a text entry box. Leave black for user if fails to fetch it.
+    // Find my closest relay - maybe set this as a default in the UI but allow used to
+    // override it in a text entry box. Leave blank for the user if it fails to get fetched.
     let relay_url = relay.unwrap_or(endpoint.home_relay().initialized().await?);
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.

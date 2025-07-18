@@ -5,7 +5,6 @@ use pigdef::description::HardwareDescription;
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
 
-use crate::config;
 use anyhow::{anyhow, bail};
 use async_std::net::TcpListener;
 use async_std::net::TcpStream;
@@ -13,6 +12,7 @@ use async_std::prelude::*;
 use local_ip_address::local_ip;
 use log::{debug, info, trace};
 use pigdef::pin_function::PinFunction::Output;
+use piggpio::config::store_config;
 use piggpio::HW;
 use portpicker::pick_unused_port;
 use std::fmt;
@@ -99,7 +99,7 @@ pub async fn accept_connection(
 pub async fn tcp_message_loop(
     mut stream: TcpStream,
     hardware_config: &mut HardwareConfig,
-    exec_path: &Path,
+    config_file_path: &Path,
     hardware: &mut HW,
 ) -> anyhow::Result<()> {
     let mut payload = vec![0u8; 1024];
@@ -115,7 +115,7 @@ pub async fn tcp_message_loop(
                 .await
                 .is_ok()
             {
-                let _ = config::store_config(hardware_config, exec_path).await;
+                let _ = store_config(hardware_config, config_file_path).await;
             }
         }
     }

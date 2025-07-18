@@ -20,7 +20,6 @@ pub mod usb_host;
 pub enum HardwareConnection {
     #[default]
     NoConnection,
-    #[cfg(not(target_arch = "wasm32"))]
     Local,
     #[cfg(feature = "usb")]
     Usb(SerialNumber),
@@ -35,7 +34,6 @@ impl HardwareConnection {
     pub const fn name(&self) -> &'static str {
         match self {
             Self::NoConnection => "disconnected",
-            #[cfg(not(target_arch = "wasm32"))]
             Self::Local => "Local",
             #[cfg(feature = "usb")]
             Self::Usb(_) => "USB",
@@ -51,7 +49,6 @@ impl Display for HardwareConnection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NoConnection => write!(f, "No Connection"),
-            #[cfg(not(target_arch = "wasm32"))]
             Self::Local => write!(f, "Local Hardware"),
             #[cfg(feature = "usb")]
             Self::Usb(serial) => write!(f, "USB: {serial}"),
