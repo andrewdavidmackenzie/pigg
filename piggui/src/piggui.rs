@@ -48,6 +48,7 @@ use std::collections::HashMap;
 use std::process;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
 use std::str::FromStr;
+#[cfg(not(target_arch = "wasm32"))]
 use sysinfo::{Process, System};
 
 #[cfg(feature = "discovery")]
@@ -70,7 +71,7 @@ const DISCOVERY_ERROR: &str = "Discovery Error";
 pub enum Message {
     ConfigLoaded(String, HardwareConfig),
     ConfigSaved,
-    ConfigChangesMade(bool),
+    ConfigChangesMade(bool, bool),
     Save,
     Load,
     LayoutChanged(Layout),
@@ -300,7 +301,7 @@ impl Piggui {
             ConfigSaved => {
                 self.unsaved_changes = false;
                 self.info_row
-                    .add_info_message(Info("File saved successfully".to_string()));
+                    .add_info_message(Info("Config saved".to_string()));
             }
 
             Load => {
@@ -330,8 +331,8 @@ impl Piggui {
                 return self.hardware_view.update(msg);
             }
 
-            ConfigChangesMade(resize_window) => {
-                self.unsaved_changes = true;
+            ConfigChangesMade(resize_window, mark_unsaved) => {
+                self.unsaved_changes = mark_unsaved;
                 if resize_window {
                     return self.window_size_change_request();
                 }

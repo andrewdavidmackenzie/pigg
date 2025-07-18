@@ -39,6 +39,7 @@ use iced::stream;
 use iced::{futures, futures::pin_mut};
 #[cfg(feature = "iroh")]
 use iroh::endpoint::Connection;
+#[cfg(feature = "usb")]
 use log::info;
 use pigdef::description::BCMPinNumber;
 use pigdef::description::HardwareDescription;
@@ -53,8 +54,6 @@ use pignet::usb_host::UsbConnection;
 use pignet::HardwareConnection;
 #[cfg(feature = "iroh")]
 use pignet::HardwareConnection::Iroh;
-#[cfg(not(target_arch = "wasm32"))]
-use pignet::HardwareConnection::Local;
 use pignet::HardwareConnection::NoConnection;
 #[cfg(feature = "tcp")]
 use pignet::HardwareConnection::Tcp;
@@ -166,8 +165,8 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                             }
                         }
 
-                        #[cfg(not(target_arch = "wasm32"))]
-                        Local => {
+                        HardwareConnection::Local => {
+                            #[cfg(not(target_arch = "wasm32"))]
                             match local_host::connect().await {
                                 Ok((hardware_description, hardware_config, local_hardware)) => {
                                     if let Err(e) = gui_sender_clone

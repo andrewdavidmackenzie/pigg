@@ -8,14 +8,17 @@ use pigdef::config::{HardwareConfig, HardwareConfigMessage, LevelChange};
 use pigdef::description::HardwareDescription;
 use pigdef::description::{BCMPinNumber, PinLevel};
 use pigdef::pin_function::PinFunction;
-use piggpio::config::{get_config, CONFIG_FILENAME};
+use piggpio::config::{get_config, store_config, CONFIG_FILENAME};
 use piggpio::get_hardware;
 use piggpio::HW;
 use std::env::current_exe;
+use std::path::PathBuf;
 use std::time::Duration;
 
 pub struct LocalConnection {
     hw: HW,
+    config: HardwareConfig,
+    config_file_path: PathBuf,
 }
 
 /// Send the current input state for all inputs configured in the config
@@ -93,7 +96,7 @@ fn send_input_level(
 
 /// Send (apply) a [HardwareConfigMessage] to the local hardware
 pub async fn apply_config_change(
-    connection: &mut LocalConnection,
+    local: &mut LocalConnection,
     config_change: &HardwareConfigMessage,
     gui_sender: Sender<SubscriptionEvent>,
 ) -> Result<(), Error> {
@@ -101,19 +104,23 @@ pub async fn apply_config_change(
         NewConfig(config) => {
             println!("NewConfig applied to local hardware");
             let gui_sender_clone = gui_sender.clone();
-            connection
+            local
                 .hw
                 .apply_config(config, move |bcm_pin_number, level_change| {
                     let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
                 })
                 .await?;
 
-            send_current_input_states(gui_sender_clone, config, connection).await?;
+            send_current_input_states(gui_sender_clone, config, local).await?;
+            // Cache new config
+            local.config = config.clone();
+            // Save config to config file
+            store_config(config, &local.config_file_path).await?;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for local hardware pin #{bcm}: {pin_function:?}");
             let gui_sender_clone = gui_sender.clone();
-            connection
+            local
                 .hw
                 .apply_pin_config(*bcm, pin_function, move |bcm_pin_number, level_change| {
                     let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
@@ -121,14 +128,20 @@ pub async fn apply_config_change(
                 .await?;
 
             if let Some(function) = pin_function {
-                send_current_input_state(bcm, function, gui_sender_clone, connection).await?;
+                send_current_input_state(bcm, function, gui_sender_clone, local).await?;
             }
+
+            // update the cached config with the change
+            match pin_function {
+                None => local.config.pin_functions.remove(bcm),
+                Some(function) => local.config.pin_functions.insert(*bcm, *function),
+            };
+            // save the entire config with the change to the save file
+            store_config(&local.config, &local.config_file_path).await?;
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Local hardware pin #{bcm} output level changed: {level_change:?}");
-            connection
-                .hw
-                .set_output_level(*bcm, level_change.new_level)?;
+            local.hw.set_output_level(*bcm, level_change.new_level)?;
         }
         HardwareConfigMessage::GetConfig => {}
         HardwareConfigMessage::Disconnect => {}
@@ -148,7 +161,15 @@ pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConn
     let mut description = hw.description().clone();
     description.details.app_name = env!("CARGO_PKG_NAME").to_string();
     description.details.app_version = env!("CARGO_PKG_VERSION").to_string();
-    Ok((description, hardware_config, LocalConnection { hw }))
+    Ok((
+        description,
+        hardware_config.clone(),
+        LocalConnection {
+            hw,
+            config_file_path,
+            config: hardware_config,
+        },
+    ))
 }
 
 /// Disconnect from the local hardware
