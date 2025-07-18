@@ -146,11 +146,10 @@ pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConn
     let hw = get_hardware().ok_or(anyhow!("Could not connect to local hardware"))?;
     let config_file_path = current_exe()?.with_file_name(CONFIG_FILENAME);
     let hardware_config = get_config(&config_file_path);
-    Ok((
-        hw.description().clone(),
-        hardware_config,
-        LocalConnection { hw },
-    ))
+    let mut description = hw.description().clone();
+    description.details.app_name = env!("CARGO_PKG_NAME").to_string();
+    description.details.app_version = env!("CARGO_PKG_VERSION").to_string();
+    Ok((description, hardware_config, LocalConnection { hw }))
 }
 
 /// Disconnect from the local hardware

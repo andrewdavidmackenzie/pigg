@@ -1,4 +1,4 @@
-use log::{error, info, trace};
+use log::{info, trace};
 use pigdef::config::HardwareConfig;
 use std::fs::File;
 use std::io;
@@ -22,9 +22,8 @@ pub fn get_config(config_file_path: &Path) -> HardwareConfig {
             trace!("{config}");
             config
         }
-        Err(e) => {
-            error!("Error loading config file: {e}");
-            info!("Loaded default config");
+        Err(_) => {
+            info!("No config file could be loaded, using default config");
             HardwareConfig::default()
         }
     }

@@ -40,7 +40,6 @@ fn device_menu_items<'a>(
         // Menu items under each device menu
         let mut device_menu_items: Vec<Item<Message, Theme, Renderer>> = vec![];
 
-        // TODO avoid the current connected device altogether
         // Avoid the current connection being a connect option in the details dialog
         let mut connect_options = hardware_connections.clone();
         connect_options.remove(current_connection.name());

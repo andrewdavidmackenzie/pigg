@@ -26,23 +26,21 @@ enum Pin {
 /// that do not have Raspberry Pi hardware. This would build for them, and then they will fail
 /// at run-time when trying to access drivers and hardware for GPIO.
 pub struct HW {
-    app_name: &'static str,
     configured_pins: std::collections::HashMap<BCMPinNumber, Pin>,
 }
 
 /// Common implementation code for pi and fake hardware
 impl HW {
     // Create a new HW instance
-    pub fn new(app_name: &'static str) -> Self {
+    pub fn new() -> Self {
         HW {
-            app_name,
             configured_pins: HashMap::default(),
         }
     }
     /// Return the Pi hardware description
     pub fn description(&self) -> HardwareDescription {
         HardwareDescription {
-            details: Self::get_details(self.app_name),
+            details: Self::get_details(),
             pins: PinDescriptionSet::new(&GPIO_PIN_DESCRIPTIONS),
         }
     }
@@ -84,14 +82,14 @@ impl HW {
 
     /// Return the [HardwareDetails] struct that describes a number of details about the general
     /// hardware, not GPIO specifics or pin outs or such.
-    fn get_details(app_name: &str) -> HardwareDetails {
+    fn get_details() -> HardwareDetails {
         let mut details = HardwareDetails {
-            hardware: "fake".to_string(),
-            revision: "unknown".to_string(),
-            serial: "unknown".to_string(),
-            model: "Fake Pi".to_string(),
+            hardware: "".to_string(),
+            revision: "".to_string(),
+            serial: "".to_string(),
+            model: "".to_string(),
             wifi: true,
-            app_name: app_name.to_string(),
+            app_name: env!("CARGO_CRATE_NAME").to_string(),
             app_version: env!("CARGO_PKG_VERSION").to_string(),
         };
 
@@ -200,5 +198,11 @@ impl HW {
                 "Could not find a configured input pin",
             )),
         }
+    }
+}
+
+impl Default for crate::HW {
+    fn default() -> Self {
+        Self::new()
     }
 }

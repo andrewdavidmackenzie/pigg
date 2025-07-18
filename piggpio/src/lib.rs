@@ -55,7 +55,7 @@ pub fn local_hardware() -> Option<HardwareDescription> {
             target_env = "gnu"
         )
     ))]
-    Some(HW::new(env!("CARGO_PKG_NAME")).description().clone())
+    Some(HW::new().description().clone())
 }
 
 /// Create a new HW instance - should only be called once
@@ -80,7 +80,7 @@ pub fn get_hardware() -> Option<HW> {
             target_env = "gnu"
         )
     ))]
-    Some(HW::new(env!("CARGO_PKG_NAME")))
+    Some(HW::new())
 }
 
 #[cfg(test)]

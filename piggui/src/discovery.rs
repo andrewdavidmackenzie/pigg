@@ -172,7 +172,9 @@ pub fn local_discovery(
     description_opt: Option<HardwareDescription>,
 ) -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-    if let Some(description) = description_opt {
+    if let Some(mut description) = description_opt {
+        description.details.app_name = env!("CARGO_PKG_NAME").to_string();
+        description.details.app_version = env!("CARGO_PKG_VERSION").to_string();
         let mut hardware_connections = HashMap::new();
         hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
         discovered_devices.insert(

@@ -44,6 +44,7 @@ use pignet::HardwareConnection::Local;
 use pignet::HardwareConnection::NoConnection;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::process;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
 use std::str::FromStr;
