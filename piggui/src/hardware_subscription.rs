@@ -174,6 +174,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                         .send(SubscriptionEvent::Connected(
                                             hardware_description,
                                             hardware_config,
+                                            // TODO send filename loaded from?
                                         ))
                                         .await
                                     {

@@ -37,7 +37,7 @@ async fn send_current_input_states(
     Ok(())
 }
 
-/// Send the current input state for one input - with timestamp matching future LevelChanges
+/// Send the current input state for one input - with the timestamp matching future LevelChanges
 async fn send_current_input_state(
     bcm_pin_number: &BCMPinNumber,
     pin_function: &PinFunction,
@@ -99,7 +99,7 @@ pub async fn apply_config_change(
 ) -> Result<(), Error> {
     match config_change {
         NewConfig(config) => {
-            info!("New config applied to local hardware");
+            println!("NewConfig applied to local hardware");
             let gui_sender_clone = gui_sender.clone();
             connection
                 .hw
@@ -134,7 +134,6 @@ pub async fn apply_config_change(
         HardwareConfigMessage::Disconnect => {}
     }
 
-    info!("Config change applied");
     // TODO save to the default config file if that is what is in use
     // TODO maintain a copy of the total config somewhere?
 
