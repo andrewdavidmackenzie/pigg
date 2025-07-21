@@ -202,19 +202,29 @@ where
     F: FnOnce(HardwareDescription, HardwareConfig, TcpStream) -> Fut,
     Fut: Future<Output = ()>,
 {
-    match tcp_host::connect(ip, port).await {
-        Ok((hw_desc, hw_config, tcp_stream)) => {
-            if !hw_desc.details.model.contains("Fake") {
-                fail(child, "Didn't connect to fake hardware pigglet")
-            } else {
-                test(hw_desc, hw_config, tcp_stream).await;
+    let mut failures = 0;
+
+    while failures < 3 {
+        match tcp_host::connect(ip, port).await {
+            Ok((hw_desc, hw_config, tcp_stream)) => {
+                if !hw_desc.details.model.contains("Fake") {
+                    fail(child, "Didn't connect to fake hardware pigglet");
+                } else {
+                    test(hw_desc, hw_config, tcp_stream).await;
+                    return;
+                }
+            }
+            Err(_) => {
+                failures += 1;
+                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
             }
         }
-        Err(e) => fail(
-            child,
-            &format!("Could not connect to pigglet at {ip}:{port}: '{e}'"),
-        ),
     }
+
+    fail(
+        child,
+        &format!("Could not connect to pigglet at {ip}:{port}"),
+    )
 }
 
 #[allow(dead_code)]
