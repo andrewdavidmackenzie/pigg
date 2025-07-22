@@ -182,12 +182,10 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - name: Install latest nightly
+      - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
-          override: true
           components: clippy
       - name: Checkout
         uses: actions/checkout@v3
@@ -210,7 +208,7 @@ jobs:
       - name: Install rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy,llvm-tools-preview
+          components: llvm-tools-preview
 
       - uses: Swatinem/rust-cache@v2
 
