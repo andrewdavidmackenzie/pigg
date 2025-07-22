@@ -179,7 +179,25 @@ jobs:
       - name: Run HW Tests
         run: make hw_tests
 
-  clippy-build-and-test-matrix:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: clippy
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --tests --no-deps --all-features --all-targets
+
+  build-and-test-matrix:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -206,17 +224,17 @@ jobs:
         with:
           ref: HEAD
 
-      - name: Clippy build and test - non-Linux
+      - name: build and test - non-Linux
         if: runner.os != 'Linux'
-        run: make clippy build test
+        run: make build test
 
-      - name: Clippy build and test - Linux
+      - name: build and test - Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install weston
           weston -Bheadless -Sweston &
-          make clippy build test
+          make build test
         env:
           WAYLAND_DISPLAY: weston
 
