@@ -204,7 +204,7 @@ where
 {
     let mut failures = 0;
 
-    while failures < 3 {
+    while failures < 10 {
         match tcp_host::connect(ip, port).await {
             Ok((hw_desc, hw_config, tcp_stream)) => {
                 if !hw_desc.details.model.contains("Fake") {
