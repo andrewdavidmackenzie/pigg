@@ -183,9 +183,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           components: clippy
       - name: Checkout
         uses: actions/checkout@v3
