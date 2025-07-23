@@ -7,6 +7,7 @@ mod support;
 #[test]
 #[serial]
 fn version_number() {
+    kill_all("piggui");
     let mut child = run("piggui", vec!["--version".into()], None);
     let line = wait_for_stdout(&mut child, "piggui").expect("Failed to get expected output");
     pass(&mut child);
@@ -17,6 +18,7 @@ fn version_number() {
 #[test]
 #[serial]
 fn help() {
+    kill_all("piggui");
     let mut child = run("piggui", vec!["--help".into()], None);
     wait_for_stdout(
         &mut child,

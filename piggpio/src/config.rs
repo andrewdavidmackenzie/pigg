@@ -15,11 +15,10 @@ pub const CONFIG_FILENAME: &str = ".piglet_config.json";
 pub fn get_config(config_file_path: &Path) -> HardwareConfig {
     match load_cfg(config_file_path) {
         Ok(config) => {
-            println!(
-                "Config loaded from file: {}",
+            trace!(
+                "Config loaded from {}: {config}",
                 config_file_path.to_string_lossy()
             );
-            trace!("{config}");
             config
         }
         Err(_) => {
