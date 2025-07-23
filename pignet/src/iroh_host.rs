@@ -44,7 +44,7 @@ pub async fn send_config_message(
 /// Connect to an Iroh-Net node using the [NodeId] and an optional [RelayUrl]
 pub async fn connect(
     nodeid: &NodeId,
-    relay: Option<RelayUrl>,
+    relay: &Option<RelayUrl>,
 ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection)> {
     let secret_key = SecretKey::generate(OsRng);
 
@@ -71,7 +71,9 @@ pub async fn connect(
 
     // Find my closest relay - maybe set this as a default in the UI but allow used to
     // override it in a text entry box. Leave blank for the user if it fails to get fetched.
-    let relay_url = relay.unwrap_or(endpoint.home_relay().initialized().await?);
+    let relay_url = relay
+        .clone()
+        .unwrap_or(endpoint.home_relay().initialized().await?);
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
     let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);

@@ -235,7 +235,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
 
                         #[cfg(feature = "iroh")]
                         Iroh(nodeid, relay) => {
-                            match iroh_host::connect(&nodeid, relay.clone()).await {
+                            match iroh_host::connect(&nodeid, &relay).await {
                                 Ok((hardware_description, hardware_config, connection)) => {
                                     // Send the sender back to the GUI
                                     if let Err(e) = gui_sender_clone

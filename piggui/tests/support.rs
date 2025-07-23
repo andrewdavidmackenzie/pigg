@@ -237,14 +237,23 @@ pub async fn connect_and_test_iroh<F, Fut>(
     F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
     Fut: Future<Output = ()>,
 {
-    match iroh_host::connect(nodeid, relay_url).await {
-        Ok((hw_desc, hw_config, connection)) => {
-            if !hw_desc.details.model.contains("Fake") {
-                fail(child, "Didn't connect to fake hardware pigglet")
-            } else {
-                test(hw_desc, hw_config, connection).await;
+    let mut failures = 0;
+
+    while failures < 3 {
+        match iroh_host::connect(nodeid, &relay_url).await {
+            Ok((hw_desc, hw_config, connection)) => {
+                if !hw_desc.details.model.contains("Fake") {
+                    fail(child, "Didn't connect to fake hardware pigglet")
+                } else {
+                    test(hw_desc, hw_config, connection).await;
+                    return;
+                }
+            }
+            _ => {
+                failures += 1;
+                tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
             }
         }
-        _ => fail(child, "Could not connect to pigglet"),
     }
+    fail(child, "Could not connect to pigglet");
 }
