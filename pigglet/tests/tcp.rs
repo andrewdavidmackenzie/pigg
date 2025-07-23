@@ -1,10 +1,15 @@
 use crate::support::{
     build, connect_and_test_tcp, delete_configs, kill_all, parse_pigglet, pass, run,
 };
+use anyhow::bail;
+use async_std::net::TcpStream;
+use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
+use pigdef::description::HardwareDescription;
 use pigdef::pin_function::PinFunction::Output;
 use pignet::tcp_host;
 use serial_test::serial;
+use std::net::IpAddr;
 use std::time::Duration;
 
 #[path = "../../piggui/tests/support.rs"]
@@ -175,6 +180,22 @@ async fn config_change_returned_tcp() {
     pass(&mut pigglet);
 }
 
+async fn conn(
+    ip: IpAddr,
+    port: u16,
+) -> anyhow::Result<(HardwareDescription, HardwareConfig, TcpStream)> {
+    let mut failures = 0;
+    while failures < 3 {
+        match tcp_host::connect(ip, port).await {
+            Ok(worked) => return Ok(worked),
+            _ => {
+                failures += 1;
+            }
+        }
+    }
+    bail!("Could not connect after 3 retries");
+}
+
 #[tokio::test]
 #[serial]
 async fn invalid_pin_config() {
@@ -185,9 +206,9 @@ async fn invalid_pin_config() {
     let mut pigglet = run("pigglet", vec![], None);
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
-    let (hw_desc, hw_config, tcp_stream) = tcp_host::connect(ip, port)
+    let (hw_desc, hw_config, tcp_stream) = conn(ip, port)
         .await
-        .expect("Could not connect to pigglet at {ip}:{port}: '{e}'");
+        .expect("Could not connect to pigglet at {ip}:{port}");
 
     assert!(
         hw_desc.details.model.contains("Fake"),
