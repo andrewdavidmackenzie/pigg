@@ -18,7 +18,7 @@ where
     F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
     Fut: Future<Output = ()>,
 {
-    match iroh_host::connect(nodeid, relay_url.clone()).await {
+    match iroh_host::connect(nodeid, &relay_url).await {
         Ok((hw_desc, hw_config, connection)) => {
             test(hw_desc, hw_config, connection).await;
         }

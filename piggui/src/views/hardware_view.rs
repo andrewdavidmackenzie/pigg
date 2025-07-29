@@ -37,6 +37,7 @@ use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use pignet::HardwareConnection;
+use pignet::HardwareConnection::Local;
 
 const HARDWARE_VIEW_PADDING: f32 = 10.0;
 const PIN_DOCK_SPACING: f32 = 2.0;
@@ -108,7 +109,7 @@ pub(crate) fn bcm_layout_size(num_pins: usize) -> Size {
 #[derive(Debug, Clone)]
 pub enum HardwareViewMessage {
     Activate(BoardPinNumber),
-    PinFunctionChanged(BCMPinNumber, Option<PinFunction>, bool),
+    PinFunctionChanged(BCMPinNumber, Option<PinFunction>, bool, bool),
     NewConfig(HardwareConfig),
     SubscriptionMessage(SubscriptionEvent),
     ChangeOutputLevel(BCMPinNumber, LevelChange),
@@ -121,7 +122,7 @@ pub struct HardwareView {
     hardware_config: HardwareConfig,
     subscriber_sender: Option<Sender<SubscriberMessage>>,
     hardware_description: Option<HardwareDescription>,
-    /// Either desired state of an output, or detected state of input.
+    /// Either the desired state of an output or the detected state of input
     pin_states: HashMap<BCMPinNumber, PinState>,
 }
 
@@ -133,8 +134,8 @@ impl HardwareView {
         Self {
             hardware_connection,
             hardware_config: HardwareConfig::default(),
-            hardware_description: None, // Until listener is ready
-            subscriber_sender: None,    // Until listener is ready
+            hardware_description: None, // Until the listener is ready
+            subscriber_sender: None,    // Until the listener is ready
             pin_states: HashMap::new(),
         }
     }
@@ -187,6 +188,7 @@ impl HardwareView {
         bcm_pin_number: BCMPinNumber,
         new_function: Option<PinFunction>,
         resize_window: bool,
+        mark_unsaved: bool,
     ) -> Task<Message> {
         let previous_function = self.hardware_config.pin_functions.get(&bcm_pin_number);
 
@@ -205,7 +207,7 @@ impl HardwareView {
             }
 
             // Report config changes to the hardware listener
-            // Since config loading and hardware listener setup can occur out of order
+            // Since config loading and hardware listener setup can occur out-of-order
             // mark the config as changed. If we send to the listener, then mark as done
             if let Some(ref mut listener) = &mut self.subscriber_sender {
                 let _ = listener.try_send(Hardware(HardwareConfigMessage::NewPinConfig(
@@ -213,10 +215,19 @@ impl HardwareView {
                     new_function,
                 )));
             }
-            return Task::perform(empty(), move |_| Message::ConfigChangesMade(resize_window));
+            return Task::perform(empty(), move |_| {
+                Message::ConfigChangesMade(resize_window, mark_unsaved)
+            });
         }
 
         Task::none()
+    }
+
+    /// Save the new config in the view, update pin states and apply it to the connected hardware
+    pub fn new_config(&mut self, new_config: HardwareConfig) {
+        self.hardware_config = new_config;
+        self.set_pin_states_after_load();
+        self.update_hw_config();
     }
 
     /// Go through all the pins in the [HardwareConfig], make sure a pin state exists for the pin
@@ -227,8 +238,8 @@ impl HardwareView {
     /// TODO it should use hardware::get_time_since_boot()
     fn set_pin_states_after_load(&mut self) {
         for (bcm_pin_number, pin_function) in &self.hardware_config.pin_functions {
-            // For output pins, if there is an initial state set then set that in pin state
-            // so the toggler will be drawn correctly on first draw
+            // For output pins, if there is an initial state set, then set that in the pin state
+            // so the toggler will be drawn correctly on the first draw
             if let Output(Some(level)) = pin_function {
                 if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
                     self.pin_states
@@ -240,13 +251,6 @@ impl HardwareView {
         }
     }
 
-    /// Save the new config in the view, update pin states and apply it to the connected hardware
-    pub fn new_config(&mut self, new_config: HardwareConfig) {
-        self.hardware_config = new_config;
-        self.set_pin_states_after_load();
-        self.update_hw_config();
-    }
-
     pub fn update(&mut self, message: HardwareViewMessage) -> Task<Message> {
         match message {
             UpdateCharts => {
@@ -256,8 +260,13 @@ impl HardwareView {
                 }
             }
 
-            PinFunctionChanged(bcm_pin_number, pin_function, resize_window) => {
-                return self.new_pin_function(bcm_pin_number, pin_function, resize_window);
+            PinFunctionChanged(bcm_pin_number, pin_function, resize_window, mark_unsaved) => {
+                return self.new_pin_function(
+                    bcm_pin_number,
+                    pin_function,
+                    resize_window,
+                    mark_unsaved,
+                );
             }
 
             NewConfig(config) => {
@@ -416,7 +425,7 @@ impl HardwareView {
                     .contains_key(bcm_pin_number)
                 {
                     // Pin is not configured, add it to the doc, just as a pin
-                    unused_pins.push(pin_button_menu(
+                    unused_pins.push(self.pin_button_menu(
                         pin_description,
                         self.hardware_config.pin_functions.get(bcm_pin_number),
                         true,
@@ -512,7 +521,7 @@ impl HardwareView {
         resize_window_on_change: bool,
     ) -> Row<'a, HardwareViewMessage> {
         let pin_widget = if let Some(state) = pin_state {
-            // Create a widget that is either used to visualize an input or control an output
+            // Create a widget used either to visualize an input or control an output
             get_pin_widget(pin_description.bcm, pin_function, state, alignment)
         } else {
             horizontal_space().width(PIN_WIDGET_ROW_WIDTH).into()
@@ -526,7 +535,7 @@ impl HardwareView {
 
         // If the pin is configurable, create a menu on it, if not just the button
         let pin_button: Element<HardwareViewMessage> = if let Some(bcm) = pin_description.bcm {
-            MenuBar::new(vec![pin_button_menu(
+            MenuBar::new(vec![self.pin_button_menu(
                 pin_description,
                 self.hardware_config.pin_functions.get(&bcm),
                 resize_window_on_change,
@@ -552,9 +561,96 @@ impl HardwareView {
 
         row.align_y(Center).spacing(WIDGET_ROW_SPACING)
     }
+
+    /// Create a button representing the pin with its physical (bpn) number, color and maybe a menu
+    fn pin_button_menu<'a>(
+        &self,
+        pin_description: &'a PinDescription,
+        current_option: Option<&PinFunction>,
+        resize_window_on_change: bool,
+    ) -> Item<'a, HardwareViewMessage, Theme, Renderer> {
+        let mut pin_menu_items: Vec<Item<HardwareViewMessage, _, _>> = vec![];
+        if let Some(bcm_pin_number) = pin_description.bcm {
+            for option in pin_description.options.iter() {
+                match option {
+                    Input(_) => {
+                        let mut pullup_items = vec![];
+                        for (name, pullup) in [
+                            ("Pullup", Some(PullUp)),
+                            ("Pulldown", Some(PullDown)),
+                            ("None", None),
+                        ] {
+                            let mut pullup_button =
+                                button(name).width(Fill).style(menu_button_style);
+                            if let Some(&Input(pull)) = current_option {
+                                if pullup != pull {
+                                    pullup_button = pullup_button.on_press(PinFunctionChanged(
+                                        bcm_pin_number,
+                                        Some(Input(pullup)),
+                                        resize_window_on_change,
+                                        self.hardware_connection != Local,
+                                    ));
+                                }
+                            } else {
+                                pullup_button = pullup_button.on_press(PinFunctionChanged(
+                                    bcm_pin_number,
+                                    Some(Input(pullup)),
+                                    resize_window_on_change,
+                                    self.hardware_connection != Local,
+                                ));
+                            }
+                            pullup_items.push(Item::new(pullup_button));
+                        }
+                        let input_button = button(row!(
+                            text("Input"),
+                            horizontal_space(),
+                            text(" >").align_y(alignment::Vertical::Center),
+                        ))
+                        .width(100.0)
+                        .on_press(MenuBarButtonClicked) // Needed for highlighting
+                        .style(menu_button_style);
+                        pin_menu_items.push(Item::with_menu(
+                            input_button,
+                            Menu::new(pullup_items).width(80.0),
+                        ));
+                    }
+
+                    Output(_) => {
+                        let mut output_button =
+                            button("Output").width(Fill).style(menu_button_style);
+                        if !matches!(current_option, Some(&Output(..))) {
+                            output_button = output_button.on_press(PinFunctionChanged(
+                                bcm_pin_number,
+                                Some(Output(None)),
+                                resize_window_on_change,
+                                self.hardware_connection != Local,
+                            ));
+                        }
+                        pin_menu_items.push(Item::new(output_button));
+                    }
+                }
+            }
+
+            let mut unused = button("Unused").width(Fill).style(menu_button_style);
+            if current_option.is_some() {
+                unused = unused.on_press(PinFunctionChanged(
+                    bcm_pin_number,
+                    None,
+                    resize_window_on_change,
+                    self.hardware_connection != Local,
+                ));
+            }
+            pin_menu_items.push(Item::new(unused));
+        }
+
+        Item::with_menu(
+            pin_button(pin_description).on_press(MenuBarButtonClicked), // Needed for highlighting
+            Menu::new(pin_menu_items).width(80.0),
+        )
+    }
 }
 
-/// Create the widget that either shows an input pin's state,
+/// Create the widget that either shows an input pin's state
 /// or allows the user to control the state of an output pin
 /// This should only be called for pins that have a valid BCMPinNumber
 fn get_pin_widget<'a>(
@@ -610,10 +706,10 @@ fn get_pin_widget<'a>(
                     let level: PinLevel = pin_state.get_level().unwrap_or(false as PinLevel);
                     ChangeOutputLevel(bcm, LevelChange::new(!level, now))
                 } else {
-                    MenuBarButtonClicked // Fake for error case
+                    MenuBarButtonClicked // Fake for the error case
                 }
             } else {
-                MenuBarButtonClicked // Fake for error case
+                MenuBarButtonClicked // Fake for the error case
             };
 
             let led = led::<HardwareViewMessage>(LED_RADIUS, pin_state.get_level())
@@ -644,86 +740,6 @@ fn get_pin_widget<'a>(
         .spacing(WIDGET_ROW_SPACING)
         .align_y(Center)
         .into()
-}
-
-/// Create a button representing the pin with its physical (bpn) number, color and maybe a menu
-fn pin_button_menu<'a>(
-    pin_description: &'a PinDescription,
-    current_option: Option<&PinFunction>,
-    resize_window_on_change: bool,
-) -> Item<'a, HardwareViewMessage, Theme, Renderer> {
-    let mut pin_menu_items: Vec<Item<HardwareViewMessage, _, _>> = vec![];
-    if let Some(bcm_pin_number) = pin_description.bcm {
-        for option in pin_description.options.iter() {
-            match option {
-                Input(_) => {
-                    let mut pullup_items = vec![];
-                    for (name, pullup) in [
-                        ("Pullup", Some(PullUp)),
-                        ("Pulldown", Some(PullDown)),
-                        ("None", None),
-                    ] {
-                        let mut pullup_button = button(name).width(Fill).style(menu_button_style);
-                        if let Some(&Input(pull)) = current_option {
-                            if pullup != pull {
-                                pullup_button = pullup_button.on_press(PinFunctionChanged(
-                                    bcm_pin_number,
-                                    Some(Input(pullup)),
-                                    resize_window_on_change,
-                                ));
-                            }
-                        } else {
-                            pullup_button = pullup_button.on_press(PinFunctionChanged(
-                                bcm_pin_number,
-                                Some(Input(pullup)),
-                                resize_window_on_change,
-                            ));
-                        }
-                        pullup_items.push(Item::new(pullup_button));
-                    }
-                    let input_button = button(row!(
-                        text("Input"),
-                        horizontal_space(),
-                        text(" >").align_y(alignment::Vertical::Center),
-                    ))
-                    .width(100.0)
-                    .on_press(MenuBarButtonClicked) // Needed for highlighting
-                    .style(menu_button_style);
-                    pin_menu_items.push(Item::with_menu(
-                        input_button,
-                        Menu::new(pullup_items).width(80.0),
-                    ));
-                }
-
-                Output(_) => {
-                    let mut output_button = button("Output").width(Fill).style(menu_button_style);
-                    if !matches!(current_option, Some(&Output(..))) {
-                        output_button = output_button.on_press(PinFunctionChanged(
-                            bcm_pin_number,
-                            Some(Output(None)),
-                            resize_window_on_change,
-                        ));
-                    }
-                    pin_menu_items.push(Item::new(output_button));
-                }
-            }
-        }
-
-        let mut unused = button("Unused").width(Fill).style(menu_button_style);
-        if current_option.is_some() {
-            unused = unused.on_press(PinFunctionChanged(
-                bcm_pin_number,
-                None,
-                resize_window_on_change,
-            ));
-        }
-        pin_menu_items.push(Item::new(unused));
-    }
-
-    Item::with_menu(
-        pin_button(pin_description).on_press(MenuBarButtonClicked), // Needed for highlighting
-        Menu::new(pin_menu_items).width(80.0),
-    )
 }
 
 /// Create a button representing the pin with its physical (bpn) number, color

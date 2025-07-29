@@ -7,6 +7,7 @@ mod support;
 #[test]
 #[serial]
 fn version_number() {
+    kill_all("piggui");
     let mut child = run("piggui", vec!["--version".into()], None);
     let line = wait_for_stdout(&mut child, "piggui").expect("Failed to get expected output");
     pass(&mut child);
@@ -17,6 +18,7 @@ fn version_number() {
 #[test]
 #[serial]
 fn help() {
+    kill_all("piggui");
     let mut child = run("piggui", vec!["--help".into()], None);
     wait_for_stdout(
         &mut child,
@@ -39,7 +41,6 @@ async fn connects_to_fake_hardware() {
     kill_all("piggui");
 }
 
-#[ignore]
 #[tokio::test]
 #[serial]
 async fn two_instances_run() {
@@ -58,9 +59,11 @@ async fn two_instances_run() {
         Ok(None) => (),
         Err(_) => {
             println!("Second instance running");
-            // TODO invert this when check implemented
-            wait_for_stdout(&mut piggui2, "Connected to hardware")
-                .expect("Second piggui instance didn't connect to hardware");
+            wait_for_stdout(
+                &mut piggui2,
+                "GPIO Hardware is being controlled by another instance",
+            )
+            .expect("Second piggui instance didn't print message");
         }
     }
 

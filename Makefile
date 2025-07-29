@@ -52,7 +52,7 @@ endif
 
 .PHONY: clippy
 clippy:
-	cargo clippy --tests --no-deps
+	cargo clippy --tests --no-deps --all-features --all-targets
 
 .PHONY: format-check
 format-check:

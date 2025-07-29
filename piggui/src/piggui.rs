@@ -9,9 +9,11 @@ use crate::views::hardware_view::{HardwareView, HardwareViewMessage};
 use crate::views::info_dialog::{InfoDialog, InfoDialogMessage};
 use crate::views::info_row::InfoRow;
 use crate::views::layout_menu::{Layout, LayoutSelector};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::views::message_box::InfoMessage;
 use crate::views::message_box::InfoMessage::{Error, Info};
 use crate::views::message_box::MessageRowMessage;
-#[cfg(feature = "usb")]
+#[cfg(not(target_arch = "wasm32"))]
 use crate::views::message_box::MessageRowMessage::ShowStatusMessage;
 #[cfg(feature = "usb")]
 use crate::views::ssid_dialog::SsidDialog;
@@ -31,7 +33,7 @@ use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
 #[cfg(not(target_arch = "wasm32"))]
-use piggpio::get_hardware;
+use piggpio::local_hardware;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
@@ -42,9 +44,11 @@ use pignet::HardwareConnection::Local;
 use pignet::HardwareConnection::NoConnection;
 #[cfg(feature = "discovery")]
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::process;
 #[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
 use std::str::FromStr;
+#[cfg(not(target_arch = "wasm32"))]
 use sysinfo::{Process, System};
 
 #[cfg(feature = "discovery")]
@@ -67,7 +71,7 @@ const DISCOVERY_ERROR: &str = "Discovery Error";
 pub enum Message {
     ConfigLoaded(String, HardwareConfig),
     ConfigSaved,
-    ConfigChangesMade(bool),
+    ConfigChangesMade(bool, bool),
     Save,
     Load,
     LayoutChanged(Layout),
@@ -93,7 +97,7 @@ pub enum Message {
     SsidSpecSent(Result<(), String>),
 }
 
-/// [Piggui] Is the struct that holds application state and implements [Application] for Iced
+/// [Piggui] holds the application state and implements [Application] for Iced
 pub struct Piggui {
     config_filename: Option<String>,
     layout_selector: LayoutSelector,
@@ -147,6 +151,7 @@ fn reset_ssid(serial_number: SerialNumber) -> Task<Message> {
     Task::none()
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 /// Check that there is no pigglet running on the same device
 fn process_running(process_name: &str) -> bool {
     let my_pid = process::id();
@@ -161,13 +166,16 @@ fn process_running(process_name: &str) -> bool {
 impl Piggui {
     /// Disconnect from the hardware
     fn disconnect(&mut self) {
-        self.info_row.clear_info_messages(); // Clear out of date messages
+        self.info_row.clear_info_messages(); // Clear out-of-date messages
         self.info_row
             .add_info_message(Info("Disconnected".to_string()));
         self.config_filename = None;
         self.unsaved_changes = false;
         self.hardware_view.new_connection(NoConnection);
     }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    async fn empty() {}
 
     fn new() -> (Self, Task<Message>) {
         #[cfg(not(target_arch = "wasm32"))]
@@ -177,16 +185,36 @@ impl Piggui {
         #[cfg(target_arch = "wasm32")]
         let config_filename = None;
 
+        // We may request a number of tasks to be done on start
+        #[allow(unused_mut)]
+        let mut tasks = vec![maybe_load_no_picker(config_filename.clone())];
+
         // If there is an instance of pigglet running and in control of any local GPIO
         // hardware, then we will not offer the option to directly control the local GPIO.
         // We will rely on discovery methods to provide an option on the GUI to connect to the
         // locally running instance of pigglet and hence be able to control the GPIO from the GUI.
         // The same if there is another instance of piggui running and able to connect to hardware
         #[cfg(not(target_arch = "wasm32"))]
-        let local_hardware_opt = if process_running("pigglet") || process_running("piggui") {
+        let local_hardware_opt = if process_running("pigglet") {
+            let message = Task::perform(Self::empty(), |_| {
+                let string =
+                    "GPIO Hardware is being controlled by an instance of pigglet".to_string();
+                println!("{string}");
+                InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
+            });
+            tasks.push(message);
+            None
+        } else if process_running("piggui") {
+            let message = Task::perform(Self::empty(), |_| {
+                let string =
+                    "GPIO Hardware is being controlled by another instance of piggui".to_string();
+                println!("{string}");
+                InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
+            });
+            tasks.push(message);
             None
         } else {
-            get_hardware()
+            local_hardware()
         };
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -196,11 +224,11 @@ impl Piggui {
         };
 
         #[cfg(feature = "discovery")]
-        let discovered_devices = discovery::local_discovery(&local_hardware_opt);
+        let discovered_devices = discovery::local_discovery(local_hardware_opt);
 
         (
             Self {
-                config_filename: config_filename.clone(),
+                config_filename,
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
@@ -219,7 +247,7 @@ impl Piggui {
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
-            maybe_load_no_picker(config_filename),
+            Task::batch(tasks),
         )
     }
 
@@ -273,7 +301,7 @@ impl Piggui {
             ConfigSaved => {
                 self.unsaved_changes = false;
                 self.info_row
-                    .add_info_message(Info("File saved successfully".to_string()));
+                    .add_info_message(Info("Config saved".to_string()));
             }
 
             Load => {
@@ -303,8 +331,8 @@ impl Piggui {
                 return self.hardware_view.update(msg);
             }
 
-            ConfigChangesMade(resize_window) => {
-                self.unsaved_changes = true;
+            ConfigChangesMade(resize_window, mark_unsaved) => {
+                self.unsaved_changes = mark_unsaved;
                 if resize_window {
                     return self.window_size_change_request();
                 }
@@ -327,7 +355,7 @@ impl Piggui {
                 self.connect_dialog.enable_widgets_and_hide_spinner();
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.hide_modal();
-                self.info_row.clear_info_messages(); // Hide out of date messages
+                self.info_row.clear_info_messages(); // Hide out-of-date messages
                 self.info_row
                     .add_info_message(Info("Connected".to_string()));
                 #[cfg(debug_assertions)] // Output used in testing - DON'T REMOVE
@@ -345,7 +373,8 @@ impl Piggui {
                 self.connect_dialog.set_error(details);
             }
 
-            MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on menu bar */ }
+            MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on the menu bar */
+            }
 
             #[cfg(feature = "discovery")]
             Discovery(event) => self.discovery_event(event),
