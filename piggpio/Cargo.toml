@@ -14,7 +14,7 @@ rust-version.workspace = true
 
 [dependencies]
 pigdef = { path = "../pigdef", version = "0.7", default-features = false, features = ["std"] }
-serde_json = "1.0.140"
+serde_json = "1.0.141"
 log = "0.4.27"
 
 [target.'cfg(not(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu")))'.dependencies]
