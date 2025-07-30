@@ -152,11 +152,6 @@ jobs:
       - name: Add target
         run: rustup target add aarch64-linux-android
 
-      - name: Install aarch64-android Linker
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-aarch64-linux-android
-
       - name: Checkout
         uses: actions/checkout@v4
 
