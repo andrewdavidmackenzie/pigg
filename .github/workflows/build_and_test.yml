@@ -133,30 +133,6 @@ jobs:
       - name: Build for aarch64
         run: cargo build --target=aarch64-unknown-linux-gnu
 
-  aarch64-android-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clean up files
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-
-      - name: Add target
-        run: rustup target add aarch64-linux-android
-
-      - name: Install aarch64-android Linker
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-aarch64-linux-android
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build for aarch64
-        run: cargo build --target=aarch64-linux-android
-
   web-build:
     runs-on: ubuntu-latest
     steps:
