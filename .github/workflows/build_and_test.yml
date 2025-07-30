@@ -149,6 +149,12 @@ jobs:
           ndk-version: r21e
           add-to-path: true
 
+      - name: debug
+        run: ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt
+
+      - name: Add android clang to PATH
+        run: echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+
       - name: Add target
         run: rustup target add aarch64-linux-android
 
