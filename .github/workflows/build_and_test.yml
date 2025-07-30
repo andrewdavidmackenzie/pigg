@@ -162,7 +162,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build for aarch64
-        run: cargo build --target=aarch64-linux-android
+        run: cargo build --bin pigglet --target=aarch64-linux-android
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
