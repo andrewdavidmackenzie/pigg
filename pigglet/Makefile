@@ -33,7 +33,6 @@ macos-setup: setup
 	brew install aarch64-unknown-linux-gnu
 	brew install arm-unknown-linux-gnueabihf
 	brew install arm-unknown-linux-musleabihf
-	brew install --cask gcc-aarch64-embedded
 
 .PHONY: setup
 setup:

@@ -104,6 +104,55 @@ directory.
 Being built _for_ the Raspberry Pi, these binaries will have real GPIO backends that interact with the real Raspberry
 Pi hardware.
 
+### Building Piglet for aarch64 for Android
+
+You can build piglet for this target (for debugging or development on a tablet/phone!).
+
+But you need the Android SDK and NDK installed and environment variables set to point to where it is installed.
+
+```bash
+cd pigglet
+make setup
+```
+
+That will add the target via `rustup target add aarch64-linux-android`
+
+The `.cargo/config.toml` file has an entry to specify the compiler to use:
+
+```toml
+[target.aarch64-linux-android]
+linker = "aarch64-linux-android35-clang"
+```
+
+which in that case uses Android API Level 35 version.
+
+The folder where that compiler resides in the Android NDK must be in your `$PATH`.
+It will look something like:
+
+```bash
+$HOME/Library/Android/sdk/ndk/29.0.13599879/toolchains/llvm/prebuilt/darwin-x86_64/bin
+```
+
+Then you can build using the Makefile target:
+
+```bash
+make build-aarch64-android
+```
+
+which uses:
+
+```bash
+cargo build --target=aarch64-linux-android
+```
+
+to cross compile.
+
+If you are running on a aarch64 Android device you can run piglet using
+
+```bash
+cargo run
+```
+
 ### Helper Env vars
 
 There are a couple of env vars that can be setup to help you interact with your Raspberry Pi.
