@@ -64,10 +64,10 @@ impl std::fmt::Display for InstanceInfo {
         writeln!(f, "{}", self.process_name)?;
         writeln!(f, "{}", self.pid)?;
         #[cfg(feature = "iroh")]
-        writeln!(f, "{}", self.iroh_info)?;
+        write!(f, "{}", self.iroh_info)?;
 
         #[cfg(feature = "tcp")]
-        writeln!(f, "{}", self.tcp_info)?;
+        write!(f, "{}", self.tcp_info)?;
 
         Ok(())
     }
