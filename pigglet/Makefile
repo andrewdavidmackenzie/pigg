@@ -41,6 +41,7 @@ setup:
 	rustup target add arm-unknown-linux-gnueabihf # For Pi Zero
 	rustup target add armv7-unknown-linux-musleabihf
 	rustup target add aarch64-unknown-linux-gnu
+	rustup target add aarch64-linux-android
 
 .PHONY: clippy
 clippy:
@@ -116,6 +117,10 @@ clippy-aarch64:
 .PHONY: build-aarch64
 build-aarch64:
 	cargo build --target=aarch64-unknown-linux-gnu
+
+.PHONY: build-aarch64-android
+build-aarch64-android:
+	cargo build --target=aarch64-linux-android
 
 .PHONY: release-build-aarch64
 release-build-aarch64:

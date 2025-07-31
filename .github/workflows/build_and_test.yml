@@ -133,6 +133,39 @@ jobs:
       - name: Build for aarch64
         run: cargo build --target=aarch64-unknown-linux-gnu
 
+  aarch64-android-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r21e
+          add-to-path: true
+
+      - name: debug
+        run: ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt
+
+      - name: Add android clang to PATH
+        run: echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      - name: Add target
+        run: rustup target add aarch64-linux-android
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build for aarch64
+        run: cargo build --bin pigglet --target=aarch64-linux-android
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
   web-build:
     runs-on: ubuntu-latest
     steps:
