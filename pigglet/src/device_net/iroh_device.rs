@@ -43,7 +43,6 @@ impl Display for IrohDevice {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "nodeid:{}", self.nodeid)?;
         writeln!(f, "relay URL:{}", self.relay_url)?;
-        writeln!(f, "Endpoint:{:?}", self.endpoint)?;
         Ok(())
     }
 }
