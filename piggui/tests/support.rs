@@ -5,7 +5,6 @@ use iroh::endpoint::Connection;
 use iroh::{NodeId, RelayUrl};
 use pigdef::config::HardwareConfig;
 use pigdef::description::HardwareDescription;
-use piggpio::config::CONFIG_FILENAME;
 use pignet::{iroh_host, tcp_host};
 use std::future::Future;
 use std::io::prelude::*;
@@ -15,18 +14,6 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::str::FromStr;
 use sysinfo::System;
-
-#[allow(dead_code)]
-pub fn delete_configs() {
-    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let workspace_dir = crate_dir.parent().expect("Failed to get parent dir");
-    let config_file = workspace_dir.join(CONFIG_FILENAME);
-    println!("Deleting file: {config_file:?}");
-    let _ = std::fs::remove_file(config_file);
-    let config_file = workspace_dir.join("target/debug/").join(CONFIG_FILENAME);
-    println!("Deleting file: {config_file:?}");
-    let _ = std::fs::remove_file(config_file);
-}
 
 #[allow(dead_code)] // for piggui
 pub fn build(binary: &str) {
@@ -130,7 +117,7 @@ pub fn fail(child: &mut Child, message: &str) -> ! {
 }
 
 #[allow(dead_code)]
-pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
+pub fn wait_for_stdout(child: &mut Child, token: &str, term_token: Option<&str>) -> Option<String> {
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
 
@@ -141,6 +128,11 @@ pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
     while reader.read_line(&mut line).is_ok() {
         if line.contains(token) {
             return Some(line);
+        }
+        if let Some(term) = term_token {
+            if line.contains(term) {
+                return None;
+            }
         }
         line.clear();
     }

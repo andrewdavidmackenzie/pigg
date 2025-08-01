@@ -31,8 +31,12 @@ async fn usb_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(&mut piggui, "Connected to hardware")
-            .expect("Did not get connected message");
+        wait_for_stdout(
+            &mut piggui,
+            "Connected to hardware",
+            Some("Connection Error"),
+        )
+        .expect("Did not get connected message");
 
         kill(&mut piggui);
     }
@@ -57,13 +61,15 @@ async fn mdns_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(&mut piggui, "Connected to hardware")
-            .expect("Did not get connected message");
+        wait_for_stdout(
+            &mut piggui,
+            "Connected to hardware",
+            Some("Connection Error"),
+        )
+        .expect("Did not get connected message");
 
         kill(&mut piggui);
     }
 
     println!("Tested piggui TCP connection to {number} mDNS discovered devices");
 }
-
-//reconnect tcp (kill and restart)

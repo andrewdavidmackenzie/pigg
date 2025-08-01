@@ -1,15 +1,15 @@
-use crate::support::{
-    build, connect_and_test_tcp, delete_configs, kill_all, parse_pigglet, pass, run,
-};
+use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
 use anyhow::bail;
 use async_std::net::TcpStream;
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::description::HardwareDescription;
 use pigdef::pin_function::PinFunction::Output;
+use piggpio::config::CONFIG_FILENAME;
 use pignet::tcp_host;
 use serial_test::serial;
 use std::net::IpAddr;
+use std::path::PathBuf;
 use std::time::Duration;
 
 #[path = "../../piggui/tests/support.rs"]
@@ -57,6 +57,18 @@ async fn reconnect_tcp() {
     .await;
 
     pass(&mut pigglet);
+}
+
+#[allow(dead_code)]
+pub fn delete_configs() {
+    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let workspace_dir = crate_dir.parent().expect("Failed to get parent dir");
+    let config_file = workspace_dir.join(CONFIG_FILENAME);
+    println!("Deleting file: {config_file:?}");
+    let _ = std::fs::remove_file(config_file);
+    let config_file = workspace_dir.join("target/debug/").join(CONFIG_FILENAME);
+    println!("Deleting file: {config_file:?}");
+    let _ = std::fs::remove_file(config_file);
 }
 
 #[tokio::test]
