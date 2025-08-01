@@ -1,4 +1,4 @@
-use anyhow::{ensure, Context};
+use anyhow::ensure;
 use iroh::Watcher;
 use iroh::{
     endpoint::Connection,
@@ -63,7 +63,6 @@ pub async fn connect(
         .direct_addresses()
         .initialized()
         .await
-        .context("no endpoints")?
         .into_iter()
         .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
@@ -73,7 +72,7 @@ pub async fn connect(
     // override it in a text entry box. Leave blank for the user if it fails to get fetched.
     let relay_url = relay
         .clone()
-        .unwrap_or(endpoint.home_relay().initialized().await?);
+        .unwrap_or(endpoint.home_relay().initialized().await);
 
     // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
     let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);
