@@ -9,6 +9,7 @@ use std::time::Duration;
 mod support;
 
 mod mdns_support;
+
 #[cfg(feature = "discovery")]
 use mdns_support::get_iroh_by_mdns;
 
@@ -33,17 +34,22 @@ async fn mdns_discover_and_connect_iroh() {
             None,
         );
 
-        wait_for_stdout(
+        match wait_for_stdout(
             &mut piggui,
             "Connected to hardware",
             Some("Connection Error"),
-        )
-        .expect("Did not get connected message");
-
-        kill(&mut piggui);
+        ) {
+            None => {
+                kill(&mut piggui);
+                panic!("Failed to connect by Iroh");
+            }
+            Some(_) => {
+                kill(&mut piggui);
+            }
+        }
     }
 
-    // Wait the iroh timeout period so the server disconnects and other tests can connect
+    // Wait the iroh timeout period so the device disconnects and other tests can connect
     // again via Iroh
     tokio::time::sleep(Duration::from_secs(30)).await;
 

@@ -51,6 +51,7 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
         })
         .await;
     }
+
     println!("Tested Iroh connection and disconnection to {number} mDNS discovered devices");
 }
 

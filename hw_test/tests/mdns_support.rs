@@ -1,6 +1,5 @@
 #![cfg(feature = "discovery")]
 
-use anyhow::bail;
 #[cfg(feature = "iroh")]
 use iroh::{NodeId, RelayUrl};
 #[cfg(feature = "discovery")]
