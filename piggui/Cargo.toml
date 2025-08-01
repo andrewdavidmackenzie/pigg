@@ -50,7 +50,7 @@ lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
 iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
-serde_json = { version = "1.0.141", default-features = false, features = ["std"] }
+serde_json = { version = "1.0.142", default-features = false, features = ["std"] }
 
 iroh = { version = "0.90.0", default-features = false, optional = true }
 mdns-sd = { version = "0.13.11", default-features = false, features = ["async"], optional = true }
