@@ -1,6 +1,4 @@
-use crate::support::{
-    build, connect_and_test_tcp, delete_configs, kill_all, parse_pigglet, pass, run,
-};
+use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
 use anyhow::bail;
 use async_std::net::TcpStream;
 use pigdef::config::HardwareConfig;
