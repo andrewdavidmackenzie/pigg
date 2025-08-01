@@ -52,7 +52,7 @@ webbrowser = { version = "1.0", default-features = false }
 iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.142", default-features = false, features = ["std"] }
 
-iroh = { version = "0.90.0", default-features = false, optional = true }
+iroh = { version = "0.91.0", default-features = false, optional = true }
 mdns-sd = { version = "0.13.11", default-features = false, features = ["async"], optional = true }
 sysinfo = { version = "0.36" }
 
