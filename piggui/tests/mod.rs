@@ -9,7 +9,7 @@ mod support;
 fn version_number() {
     kill_all("piggui");
     let mut child = run("piggui", vec!["--version".into()], None);
-    let line = wait_for_stdout(&mut child, "piggui").expect("Failed to get expected output");
+    let line = wait_for_stdout(&mut child, "piggui", None).expect("Failed to get expected output");
     pass(&mut child);
     let version = line.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
@@ -23,6 +23,7 @@ fn help() {
     wait_for_stdout(
         &mut child,
         "'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware",
+        None,
     )
     .expect("Failed to get expected output");
     pass(&mut child);
@@ -35,7 +36,7 @@ async fn connects_to_fake_hardware() {
     build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
-    wait_for_stdout(&mut piggui, "Connected to hardware")
+    wait_for_stdout(&mut piggui, "Connected to hardware", None)
         .expect("piggui failed to connect to fake hardware");
 
     kill_all("piggui");
@@ -48,7 +49,7 @@ async fn two_instances_run() {
     build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
-    wait_for_stdout(&mut piggui, "Connected to hardware")
+    wait_for_stdout(&mut piggui, "Connected to hardware", None)
         .expect("Failed to start first piggui instance correctly");
 
     // Start a second instance - which should exit with an error (not success)
@@ -62,6 +63,7 @@ async fn two_instances_run() {
             wait_for_stdout(
                 &mut piggui2,
                 "GPIO Hardware is being controlled by another instance",
+                None,
             )
             .expect("Second piggui instance didn't print message");
         }

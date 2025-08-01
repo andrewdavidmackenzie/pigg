@@ -53,6 +53,7 @@ endif
 .PHONY: clippy
 clippy:
 	cargo clippy --tests --no-deps --all-features --all-targets
+	cargo clippy --manifest-path=hw_test/Cargo.toml --tests --no-deps --all-features --all-targets
 
 .PHONY: format-check
 format-check:
@@ -61,6 +62,7 @@ format-check:
 .PHONY: build
 build:
 	cargo build
+	cargo build --manifest-path=hw_test/Cargo.toml
 
 .PHONY: run
 run:

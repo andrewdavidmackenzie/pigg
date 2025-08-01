@@ -24,6 +24,7 @@ async fn mdns_discover_and_connect_iroh() {
 
     let number = devices.len();
     assert!(number > 0, "Could not find device with Iroh via mDNS");
+    println!("Found {number} devices to connect to by mDNS");
 
     for (_ip, _port, node, _relay) in devices.values() {
         let mut piggui = run(
@@ -32,17 +33,15 @@ async fn mdns_discover_and_connect_iroh() {
             None,
         );
 
-        wait_for_stdout(&mut piggui, "Connected to hardware")
+        wait_for_stdout(&mut piggui, "Connected to hardware", None)
             .expect("Did not get connected message");
 
         kill(&mut piggui);
-
-        // Wait the iroh timeout period so the server disconnects and other tests can connect
-        // again via Iroh
-        tokio::time::sleep(Duration::from_secs(30)).await;
     }
+
+    // Wait the iroh timeout period so the server disconnects and other tests can connect
+    // again via Iroh
+    tokio::time::sleep(Duration::from_secs(30)).await;
 
     println!("Tested piggui Iroh connection to {number} mDNS discovered devices");
 }
-
-//reconnect tcp (kill and restart)

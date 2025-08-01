@@ -117,7 +117,7 @@ pub fn fail(child: &mut Child, message: &str) -> ! {
 }
 
 #[allow(dead_code)]
-pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
+pub fn wait_for_stdout(child: &mut Child, token: &str, term_token: Option<&str>) -> Option<String> {
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
 
@@ -128,6 +128,11 @@ pub fn wait_for_stdout(child: &mut Child, token: &str) -> Option<String> {
     while reader.read_line(&mut line).is_ok() {
         if line.contains(token) {
             return Some(line);
+        }
+        if let Some(term) = term_token {
+            if line.contains(term) {
+                return None;
+            }
         }
         line.clear();
     }
