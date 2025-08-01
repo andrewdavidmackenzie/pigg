@@ -1,5 +1,6 @@
 #![cfg(feature = "discovery")]
 
+use anyhow::bail;
 #[cfg(feature = "iroh")]
 use iroh::{NodeId, RelayUrl};
 #[cfg(feature = "discovery")]
@@ -19,7 +20,7 @@ use std::time::{Duration, Instant};
 pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
-        .checked_add(Duration::from_secs(5))
+        .checked_add(Duration::from_secs(10))
         .expect("Could not set a deadline");
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
@@ -41,6 +42,7 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
 
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
+        bail!("Exceeded 10s deadline for finding a device by mDNS");
     }
 
     Ok(discovered)
@@ -52,7 +54,7 @@ pub async fn get_iroh_by_mdns(
 ) -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16, NodeId, Option<RelayUrl>)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
-        .checked_add(Duration::from_secs(5))
+        .checked_add(Duration::from_secs(10))
         .expect("Could not set a deadline");
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
@@ -85,6 +87,7 @@ pub async fn get_iroh_by_mdns(
 
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
+        bail!("Exceeded 10s deadline for finding a device by mDNS");
     }
 
     Ok(discovered)
