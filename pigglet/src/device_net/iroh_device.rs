@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, bail};
 use iroh::endpoint::Connection;
 use iroh::Watcher;
 use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
@@ -78,14 +78,13 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
         .direct_addresses()
         .initialized()
         .await
-        .context("no endpoints")?
         .into_iter()
         .map(|endpoint| endpoint.addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
     info!("local Addresses: {local_addrs}");
 
-    let relay_url = endpoint.home_relay().initialized().await?;
+    let relay_url = endpoint.home_relay().initialized().await;
     println!("Relay URL: {relay_url}"); // Don't remove - required by integration tests
 
     Ok(IrohDevice {
