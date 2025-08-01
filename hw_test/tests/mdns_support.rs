@@ -42,7 +42,6 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
 
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
-        bail!("Exceeded 10s deadline for finding a device by mDNS");
     }
 
     Ok(discovered)
@@ -87,7 +86,6 @@ pub async fn get_iroh_by_mdns(
 
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
-        bail!("Exceeded 10s deadline for finding a device by mDNS");
     }
 
     Ok(discovered)
