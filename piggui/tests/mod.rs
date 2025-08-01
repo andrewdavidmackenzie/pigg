@@ -36,8 +36,12 @@ async fn connects_to_fake_hardware() {
     build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
-    wait_for_stdout(&mut piggui, "Connected to hardware", None)
-        .expect("piggui failed to connect to fake hardware");
+    wait_for_stdout(
+        &mut piggui,
+        "Connected to hardware",
+        Some("Connection Error"),
+    )
+    .expect("piggui failed to connect to fake hardware");
 
     kill_all("piggui");
 }
@@ -49,8 +53,12 @@ async fn two_instances_run() {
     build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
-    wait_for_stdout(&mut piggui, "Connected to hardware", None)
-        .expect("Failed to start first piggui instance correctly");
+    wait_for_stdout(
+        &mut piggui,
+        "Connected to hardware",
+        Some("Connection Error"),
+    )
+    .expect("Failed to start first piggui instance correctly");
 
     // Start a second instance - which should exit with an error (not success)
     let mut piggui2 = run("piggui", vec![], None);
@@ -63,7 +71,7 @@ async fn two_instances_run() {
             wait_for_stdout(
                 &mut piggui2,
                 "GPIO Hardware is being controlled by another instance",
-                None,
+                Some("Connected to hardware"),
             )
             .expect("Second piggui instance didn't print message");
         }

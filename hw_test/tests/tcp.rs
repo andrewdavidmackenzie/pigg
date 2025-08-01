@@ -26,8 +26,12 @@ async fn connect_via_ip() {
         None,
     );
 
-    wait_for_stdout(&mut piggui, "Connected to hardware", None)
-        .expect("Did not get connected message");
+    wait_for_stdout(
+        &mut piggui,
+        "Connected to hardware",
+        Some("Connection Error"),
+    )
+    .expect("Did not get connected message");
 
     pass(&mut piggui);
     pass(&mut pigglet);
