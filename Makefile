@@ -207,7 +207,6 @@ copy-release-arm:
 	scp target/arm-unknown-linux-gnueabihf/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 	scp target/arm-unknown-linux-gnueabihf/release/piggui $(PI_USER)@$(PI_TARGET):~/
 
-
 .PHONY: ssh
 ssh:
 	ssh $(PI_USER)@$(PI_TARGET)
