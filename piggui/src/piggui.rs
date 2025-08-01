@@ -369,7 +369,7 @@ impl Piggui {
                 self.hardware_view.new_connection(NoConnection);
                 self.info_row
                     .add_info_message(Error(CONNECTION_ERROR.to_string(), details.clone()));
-                println!("{}: {}", CONNECTION_ERROR, details);
+                println!("{CONNECTION_ERROR}: {details}");
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 self.connect_dialog.set_error(details);
             }
