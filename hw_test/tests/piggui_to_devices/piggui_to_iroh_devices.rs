@@ -1,16 +1,14 @@
 use serial_test::serial;
 use std::time::Duration;
 
-#[path = "../../piggui/tests/support.rs"]
-mod support;
 use crate::support::{kill, run, wait_for_stdout};
 
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
 ///
-mod mdns_support;
 #[cfg(feature = "discovery")]
-use mdns_support::get_iroh_by_mdns;
+use crate::mdns_support::get_iroh_by_mdns;
+
 
 /// The problem with using this test is that it doesn't disconnect from iroh, and so after
 /// killing piggui, until the timeout expires, nothing else can connect to it by Iroh, and it

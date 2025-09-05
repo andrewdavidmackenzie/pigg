@@ -1,22 +1,20 @@
 use serial_test::serial;
 
-#[path = "../../piggui/tests/support.rs"]
-mod support;
-use support::{kill, run, wait_for_stdout};
-
-mod lib_to_usb_devices;
+use crate::support::{kill, run, wait_for_stdout};
 
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
 ///
 #[cfg(feature = "discovery")]
-pub mod mdns_support;
-use mdns_support::get_ip_and_port_by_mdns;
+use crate::mdns_support::get_ip_and_port_by_mdns;
+
+
+use crate::usb_support::get_ip_and_port_by_usb;
 
 #[tokio::test]
 #[serial]
 async fn usb_discover_and_connect_tcp() {
-    let ip_and_ports = lib_to_usb_devices::get_ip_and_port_by_usb()
+    let ip_and_ports = get_ip_and_port_by_usb()
         .await
         .expect("Could not get IP and port of USB connected devices");
 

@@ -1,15 +1,11 @@
-/// These tests test connecting to USB connected porky devices by USB and TCP, from the piggui
+/// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
 ///
 use pignet::usb_host;
 use serial_test::serial;
 
 
-#[path = "../../piggui/tests/support.rs"]
-mod support;
-use support::{kill, run, wait_for_stdout};
-
-mod lib_to_usb_devices;
+use crate::support::{kill, run, wait_for_stdout};
 
 #[tokio::test]
 #[serial]

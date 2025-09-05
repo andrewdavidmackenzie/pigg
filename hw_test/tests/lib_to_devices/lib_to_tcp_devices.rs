@@ -10,12 +10,10 @@ use std::future::Future;
 use std::net::IpAddr;
 use std::time::Duration;
 
-mod lib_to_usb_devices;
-use lib_to_usb_devices::get_ip_and_port_by_usb;
+use crate::usb_support::get_ip_and_port_by_usb;
 
-mod mdns_support;
 #[cfg(feature = "discovery")]
-use mdns_support::get_ip_and_port_by_mdns;
+use crate::mdns_support::get_ip_and_port_by_mdns;
 
 async fn connect_tcp<F, Fut>(serial: &SerialNumber, ip: &IpAddr, port: u16, test: F)
 where

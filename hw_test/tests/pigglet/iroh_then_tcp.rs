@@ -1,8 +1,10 @@
+use pignet::{iroh_host, tcp_host};
+use serial_test::serial;
+use std::time::Duration;
+
 use crate::support::{
     build, connect_and_test_iroh, connect_and_test_tcp, kill_all, parse_pigglet, pass, run,
 };
-use pignet::{iroh_host, tcp_host};
-use serial_test::serial;
 
 #[cfg(all(feature = "tcp", feature = "iroh"))]
 #[tokio::test]

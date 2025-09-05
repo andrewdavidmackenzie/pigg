@@ -1,8 +1,6 @@
 use serial_test::serial;
 use std::time::Duration;
 
-#[path = "../../../piggui/tests/support.rs"]
-mod support;
 use crate::support::{build, kill_all, parse_pigglet, pass, run, wait_for_stdout};
 
 #[cfg(feature = "tcp")]

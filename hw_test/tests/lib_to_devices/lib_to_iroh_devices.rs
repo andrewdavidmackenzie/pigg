@@ -10,9 +10,8 @@ use serial_test::serial;
 use std::future::Future;
 use std::time::Duration;
 
-mod mdns_support;
 #[cfg(feature = "discovery")]
-use mdns_support::get_iroh_by_mdns;
+use crate::mdns_support::get_iroh_by_mdns;
 
 async fn connect_iroh<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
 where
