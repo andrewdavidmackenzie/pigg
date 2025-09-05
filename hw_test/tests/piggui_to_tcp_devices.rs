@@ -1,17 +1,16 @@
-use crate::support::{kill, run, wait_for_stdout};
 use serial_test::serial;
 
-/// These tests test connecting to USB connected porky devices by USB and TCP, from the piggui
-/// binary using CLIP options
-///
 #[path = "../../piggui/tests/support.rs"]
 mod support;
+use support::{kill, run, wait_for_stdout};
 
-#[path = "lib_to_usb_devices.rs"]
 mod lib_to_usb_devices;
 
-mod mdns_support;
+/// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
+/// binary using CLIP options
+///
 #[cfg(feature = "discovery")]
+pub mod mdns_support;
 use mdns_support::get_ip_and_port_by_mdns;
 
 #[tokio::test]

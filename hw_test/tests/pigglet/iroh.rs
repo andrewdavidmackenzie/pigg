@@ -1,28 +1,27 @@
-use crate::support::{build, kill_all, parse_pigglet};
 use serial_test::serial;
 use std::time::Duration;
-use support::{pass, run, wait_for_stdout};
 
-#[path = "../../piggui/tests/support.rs"]
+#[path = "../../../piggui/tests/support.rs"]
 mod support;
 
-#[cfg(feature = "tcp")]
+use crate::support::{build, kill_all, parse_pigglet, pass, run, wait_for_stdout};
+
 #[tokio::test]
 #[serial]
-async fn connect_via_ip() {
+async fn connect_via_iroh() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
 
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     let mut piggui = run(
         "piggui",
-        vec!["--ip".to_string(), format!("{}:{}", ip, port)],
+        vec!["--nodeid".to_string(), nodeid.to_string()],
         None,
     );
 

@@ -11,7 +11,6 @@ use std::net::IpAddr;
 use std::time::Duration;
 
 mod lib_to_usb_devices;
-#[cfg(feature = "usb")]
 use lib_to_usb_devices::get_ip_and_port_by_usb;
 
 mod mdns_support;

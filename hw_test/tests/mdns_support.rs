@@ -1,5 +1,3 @@
-#![cfg(feature = "discovery")]
-
 #[cfg(feature = "iroh")]
 use iroh::{NodeId, RelayUrl};
 #[cfg(feature = "discovery")]
