@@ -8,7 +8,6 @@ use crate::support::{kill, run, wait_for_stdout};
 #[cfg(feature = "discovery")]
 use crate::discovery::mdns::get_ip_and_port_by_mdns;
 
-
 #[cfg(feature = "discovery")]
 use crate::discovery::usb::get_ip_and_port_by_usb;
 
