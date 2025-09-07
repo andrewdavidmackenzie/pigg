@@ -11,7 +11,7 @@ use std::future::Future;
 use std::time::Duration;
 
 #[cfg(feature = "discovery")]
-use crate::mdns_support::get_iroh_by_mdns;
+use crate::discovery::mdns::get_iroh_by_mdns;
 
 async fn connect_iroh<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
 where

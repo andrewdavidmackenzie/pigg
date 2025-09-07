@@ -7,7 +7,8 @@ use crate::support::{kill, run, wait_for_stdout};
 /// binary using CLIP options
 ///
 #[cfg(feature = "discovery")]
-use crate::mdns_support::get_iroh_by_mdns;
+use crate::discovery::mdns::get_iroh_by_mdns;
+
 
 /// The problem with using this test is that it doesn't disconnect from iroh, and so after
 /// killing piggui, until the timeout expires, nothing else can connect to it by Iroh, and it

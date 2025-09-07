@@ -4,6 +4,7 @@
 use pignet::usb_host;
 use serial_test::serial;
 
+
 use crate::support::{kill, run, wait_for_stdout};
 
 #[tokio::test]
@@ -32,7 +33,7 @@ async fn usb_discover_and_connect_usb() {
     println!("Tested piggui USB connection to {number} USB discovered devices");
 }
 
-/// Test that if a partial serial number is passed it also works
+/// Test that if a partial serial number is passed, it also works
 #[tokio::test]
 #[serial]
 async fn usb_discover_and_connect_partial_usb() {
