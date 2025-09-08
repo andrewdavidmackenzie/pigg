@@ -5,7 +5,7 @@ use support::{pass, run, wait_for_stdout};
 mod support;
 
 #[test]
-#[serial]
+#[serial(piggui)]
 fn version_number() {
     kill_all("piggui");
     let mut child = run("piggui", vec!["--version".into()], None);
@@ -16,7 +16,7 @@ fn version_number() {
 }
 
 #[test]
-#[serial]
+#[serial(piggui)]
 fn help() {
     kill_all("piggui");
     let mut child = run("piggui", vec!["--help".into()], None);
@@ -30,7 +30,7 @@ fn help() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(piggui)]
 async fn connects_to_fake_hardware() {
     kill_all("piggui");
     build("piggui");
@@ -47,6 +47,7 @@ async fn connects_to_fake_hardware() {
 }
 
 #[tokio::test]
+#[serial(piggui)]
 #[serial]
 async fn two_instances_run() {
     kill_all("piggui");
@@ -76,6 +77,8 @@ async fn two_instances_run() {
             .expect("Second piggui instance didn't print message");
         }
     }
+
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
     kill_all("piggui");
 }
