@@ -198,11 +198,12 @@ jobs:
         run: |
           gh release --repo raspberrypi/pico-sdk-tools download --pattern 'picotool-*-x86_64-lin.tar.gz'
           tar xf picotool-*-x86_64-lin.tar.gz
-          echo "PWD/picotool" >> $GITHUB_PATH
           ./picotool/picotool help
 
       - name: Build porky and porky_w and their UF2 files
-        run: RUSTFLAGS= make -C porky build-uf2s
+        run: |
+          echo "PWD/picotool" >> "$GITHUB_PATH"
+          RUSTFLAGS= make -C porky build-uf2s
 
   hw_tests:
     runs-on: [ self-hosted, macOS, ARM64, pigg ]
