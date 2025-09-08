@@ -154,7 +154,7 @@ jobs:
         run: ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt
 
       - name: Add android clang to PATH
-        run: echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+        run: echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
 
       - name: Add target
         run: rustup target add aarch64-linux-android
@@ -202,7 +202,7 @@ jobs:
 
       - name: Build porky and porky_w and their UF2 files
         run: |
-          echo "PWD/picotool" >> "$GITHUB_PATH"
+          echo $PWD/picotool >> $GITHUB_PATH
           RUSTFLAGS= make -C porky build-uf2s
 
   hw_tests:
