@@ -39,4 +39,5 @@ async fn two_instances_run() {
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
     pass(&mut piggui);
+    pass(&mut piggui2);
 }
