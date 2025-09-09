@@ -51,7 +51,7 @@ pub async fn get_iroh_by_mdns(
 ) -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16, NodeId, Option<RelayUrl>)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
-        .checked_add(Duration::from_secs(10))
+        .checked_add(Duration::from_secs(60))
         .expect("Could not set a deadline");
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
