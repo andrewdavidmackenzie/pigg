@@ -191,8 +191,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: add thumbv6m-none-eabi target
-        run: rustup target add thumbv6m-none-eabi
+      - name: Install arm targets
+        run: make -C porky install-targets
 
       - name: Install picotool
         run: |
