@@ -13,7 +13,7 @@ use crate::discovery::mdns::get_iroh_by_mdns;
 /// killing piggui, until the timeout expires, nothing else can connect to it by Iroh, and it
 /// causes other tests to fail
 #[tokio::test]
-#[serial]
+#[serial(piggui, devices)]
 async fn mdns_discover_and_connect_iroh() {
     let devices = get_iroh_by_mdns()
         .await

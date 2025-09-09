@@ -7,7 +7,7 @@ use serial_test::serial;
 use std::time::Duration;
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn connect_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -23,7 +23,7 @@ async fn connect_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn disconnect_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -44,7 +44,7 @@ async fn disconnect_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn get_config_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -71,7 +71,7 @@ async fn get_config_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn reconnect_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -101,7 +101,7 @@ async fn reconnect_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn get_details_usb() {
     let serials = usb_host::get_serials()
         .await

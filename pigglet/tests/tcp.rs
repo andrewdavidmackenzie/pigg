@@ -1,4 +1,6 @@
-use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
+use crate::support::{
+    build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run, wait_for_stdout,
+};
 use anyhow::bail;
 use async_std::net::TcpStream;
 use pigdef::config::HardwareConfig;
@@ -15,8 +17,39 @@ use std::time::Duration;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
+#[cfg(feature = "tcp")]
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
+async fn connect_tcp() {
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let mut piggui = run(
+        "piggui",
+        vec!["--ip".to_string(), format!("{}:{}", ip, port)],
+        None,
+    );
+
+    wait_for_stdout(
+        &mut piggui,
+        "Connected to hardware",
+        Some("Connection Error"),
+    )
+    .expect("Did not get connected message");
+
+    pass(&mut piggui);
+    pass(&mut pigglet);
+}
+
+#[tokio::test]
+#[serial(pigglet)]
 async fn disconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
@@ -34,7 +67,7 @@ async fn disconnect_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn reconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
@@ -72,7 +105,7 @@ pub fn delete_configs() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn clean_config() {
     kill_all("pigglet");
     build("pigglet");
@@ -103,7 +136,7 @@ async fn clean_config() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn config_change_returned_tcp() {
     kill_all("pigglet");
     build("pigglet");
@@ -209,7 +242,7 @@ async fn conn(
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn invalid_pin_config() {
     kill_all("pigglet");
     build("pigglet");
@@ -263,5 +296,5 @@ async fn invalid_pin_config() {
         panic!("Unexpected message returned from pigglet");
     }
 
-    //pass(&mut pigglet);
+    pass(&mut pigglet);
 }

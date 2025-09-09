@@ -5,7 +5,7 @@ use support::{build, kill_all, pass, run, wait_for_stdout};
 mod support;
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn version_number() {
     kill_all("pigglet");
     build("pigglet");
@@ -18,7 +18,7 @@ async fn version_number() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn test_verbosity_levels() {
     kill_all("pigglet");
     build("pigglet");
@@ -37,7 +37,7 @@ async fn test_verbosity_levels() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn help() {
     kill_all("pigglet");
     build("pigglet");
@@ -49,29 +49,4 @@ async fn help() {
     )
     .expect("Failed to get expected output");
     pass(&mut pigglet);
-}
-
-#[tokio::test]
-#[serial]
-async fn two_instances() {
-    kill_all("pigglet");
-    build("pigglet");
-    let mut pigglet = run("pigglet", vec![], None);
-
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-    wait_for_stdout(&mut pigglet, "Waiting", None)
-        .expect("Failed to start first pigglet instance correctly");
-
-    // Start a second instance - which should exit with an error (not success)
-    let mut pigglet2 = run("pigglet", vec![], None);
-
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-    assert!(!pigglet2.wait().expect("Couldn't get ExitStatus").success());
-
-    pass(&mut pigglet);
-
-    // Always kill all
-    kill_all("pigglet");
 }

@@ -1,4 +1,6 @@
-use crate::support::{build, connect_and_test_iroh, kill_all, parse_pigglet, pass, run};
+use crate::support::{
+    build, connect_and_test_iroh, kill_all, parse_pigglet, pass, run, wait_for_stdout,
+};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
 use pigdef::pin_function::PinFunction::Input;
@@ -10,7 +12,37 @@ use std::time::Duration;
 mod support;
 
 #[tokio::test]
-#[serial]
+#[serial(piggui, pigglet)]
+async fn connect_via_iroh() {
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let mut piggui = run(
+        "piggui",
+        vec!["--nodeid".to_string(), nodeid.to_string()],
+        None,
+    );
+
+    wait_for_stdout(
+        &mut piggui,
+        "Connected to hardware",
+        Some("Connection Error"),
+    )
+    .expect("Did not get connected message");
+
+    pass(&mut piggui);
+    pass(&mut pigglet);
+}
+
+#[tokio::test]
+#[serial(pigglet)]
 async fn disconnect_iroh() {
     kill_all("pigglet");
     build("pigglet");
@@ -33,7 +65,7 @@ async fn disconnect_iroh() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn config_change_returned_iroh() {
     kill_all("pigglet");
     build("pigglet");
@@ -79,14 +111,14 @@ async fn config_change_returned_iroh() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn reconnect_iroh() {
     kill_all("pigglet");
     build("pigglet");
-    let mut child = run("pigglet", vec![], None);
-    let (_ip, _port, nodeid) = parse_pigglet(&mut child).await;
+    let mut pigglet = run("pigglet", vec![], None);
+    let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
     connect_and_test_iroh(
-        &mut child,
+        &mut pigglet,
         &nodeid,
         None,
         |_, _, mut connection| async move {
@@ -101,7 +133,7 @@ async fn reconnect_iroh() {
 
     // Test we can re-connect after sending a disconnect request
     connect_and_test_iroh(
-        &mut child,
+        &mut pigglet,
         &nodeid,
         None,
         |_, _, mut connection| async move {
@@ -112,5 +144,5 @@ async fn reconnect_iroh() {
     )
     .await;
 
-    pass(&mut child);
+    pass(&mut pigglet);
 }

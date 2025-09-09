@@ -29,7 +29,7 @@ where
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_connect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -52,7 +52,7 @@ async fn usb_discover_and_connect_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_disconnect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -79,7 +79,7 @@ async fn usb_discover_and_disconnect_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_get_config_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -106,7 +106,7 @@ async fn usb_discover_and_get_config_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_reconnect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -145,7 +145,7 @@ async fn usb_discover_and_reconnect_tcp() {
 
 #[cfg(feature = "discovery")]
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn mdns_discover_and_connect_tcp() {
     let devices = get_ip_and_port_by_mdns()
         .await

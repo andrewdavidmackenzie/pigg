@@ -29,7 +29,7 @@ where
 /// Use connect and disconnect test directly on Iroh, as the disconnect timeout is long and
 /// inconvenient for tests that follow this one if it only connected.
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn mdns_discover_connect_and_disconnect_iroh() {
     let devices = get_iroh_by_mdns()
         .await
@@ -55,7 +55,7 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn mdns_discover_get_config_iroh() {
     let devices = get_iroh_by_mdns()
         .await
@@ -86,7 +86,7 @@ async fn mdns_discover_get_config_iroh() {
 
 #[cfg(feature = "discovery")]
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn mdns_discover_reconnect_iroh() {
     let devices = get_iroh_by_mdns()
         .await

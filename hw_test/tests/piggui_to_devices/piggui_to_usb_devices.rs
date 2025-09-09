@@ -7,7 +7,7 @@ use serial_test::serial;
 use crate::support::{kill, run, wait_for_stdout};
 
 #[tokio::test]
-#[serial]
+#[serial(piggui, devices)]
 async fn usb_discover_and_connect_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -34,7 +34,7 @@ async fn usb_discover_and_connect_usb() {
 
 /// Test that if a partial serial number is passed, it also works
 #[tokio::test]
-#[serial]
+#[serial(piggui, devices)]
 async fn usb_discover_and_connect_partial_usb() {
     let serials = usb_host::get_serials()
         .await

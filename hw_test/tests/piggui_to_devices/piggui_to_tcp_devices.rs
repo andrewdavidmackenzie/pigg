@@ -12,7 +12,7 @@ use crate::discovery::mdns::get_ip_and_port_by_mdns;
 use crate::discovery::usb::get_ip_and_port_by_usb;
 
 #[tokio::test]
-#[serial]
+#[serial(piggui, devices)]
 async fn usb_discover_and_connect_tcp() {
     let ip_and_ports = get_ip_and_port_by_usb()
         .await
@@ -42,7 +42,7 @@ async fn usb_discover_and_connect_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(piggui, devices)]
 async fn mdns_discover_and_connect_tcp() {
     let devices = get_ip_and_port_by_mdns()
         .await
