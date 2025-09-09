@@ -90,12 +90,12 @@ On your Raspberry Pi, use `make` to build and `make run` as above.
 You can cross compile for a Raspberry Pi device on a macOS/Windows/Linux host and take advantage of the increased
 computing power to reduce compile times.
 
-Relevant Makefile targets for `armv7` and `aarch64` architectures are:
+Relevant Makefile targets for `arm` (armv6), armv7` and `aarch64` architectures are:
 
 - [`armv7` | `aarch64`] - will run clippy and build
 - [`clippy-armv7` | `clippy-aarch64`] - will run clippy
 - [`build-armv7` | `build-aarch64`] - will run build
-- [`release-build-armv7` | `release-build-aarch64`] - will run a release build
+- [`build-release-armv` | `build-release-armv7` | `build-release-aarch64`] - will run a release build
 - [`test-armv7` | `test-aarch64`] - will run tests
 
 These targets will build binary files for `piggui` and `pigglet` in the `target/{architecture}/{release or debug}/`
