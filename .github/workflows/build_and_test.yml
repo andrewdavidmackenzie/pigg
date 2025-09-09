@@ -202,6 +202,7 @@ jobs:
           echo $PWD
           $PWD/picotool/picotool help
           echo $PWD/picotool >> $GITHUB_PATH
+          export PATH="$PWD/picotool:$PATH"
           picotool help
 
       - name: Build all pico variants and their UF2 files
