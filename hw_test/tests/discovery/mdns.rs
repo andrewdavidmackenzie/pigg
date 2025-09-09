@@ -13,7 +13,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
-#[allow(dead_code)] // Only lib_to_pigglet device will offer Iroh properties
+#[allow(dead_code)] // Only pigglet device will offer Iroh properties
 #[cfg(feature = "tcp")]
 pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16)>> {
     let mut discovered = HashMap::new();
@@ -45,7 +45,7 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
     Ok(discovered)
 }
 
-#[allow(dead_code)] // Only lib_to_pigglet device will offer Iroh properties
+#[allow(dead_code)] // Only pigglet device will offer Iroh properties
 #[cfg(feature = "iroh")]
 pub async fn get_iroh_by_mdns(
 ) -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16, NodeId, Option<RelayUrl>)>> {

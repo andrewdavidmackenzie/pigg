@@ -1,5 +1,4 @@
-/// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
-/// binary using CLIP options
+/// These tests test connecting to USB-connected porky devices by USB
 ///
 use pignet::usb_host;
 use serial_test::serial;

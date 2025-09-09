@@ -72,7 +72,7 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
 
     println!("Running Command: cargo {}", args.join(" "));
 
-    // spawn the 'lib_to_pigglet' process
+    // spawn the 'pigglet' process
     let child = command
         .args(args)
         .current_dir(workspace_dir)
@@ -200,7 +200,7 @@ where
         match tcp_host::connect(ip, port).await {
             Ok((hw_desc, hw_config, tcp_stream)) => {
                 if !hw_desc.details.model.contains("Fake") {
-                    fail(child, "Didn't connect to fake hardware lib_to_pigglet");
+                    fail(child, "Didn't connect to fake hardware pigglet");
                 } else {
                     test(hw_desc, hw_config, tcp_stream).await;
                     return;
@@ -215,7 +215,7 @@ where
 
     fail(
         child,
-        &format!("Could not connect to lib_to_pigglet at {ip}:{port}"),
+        &format!("Could not connect to pigglet at {ip}:{port}"),
     )
 }
 
@@ -235,7 +235,7 @@ pub async fn connect_and_test_iroh<F, Fut>(
         match iroh_host::connect(nodeid, &relay_url).await {
             Ok((hw_desc, hw_config, connection)) => {
                 if !hw_desc.details.model.contains("Fake") {
-                    fail(child, "Didn't connect to fake hardware lib_to_pigglet")
+                    fail(child, "Didn't connect to fake hardware pigglet")
                 } else {
                     test(hw_desc, hw_config, connection).await;
                     return;
@@ -247,5 +247,5 @@ pub async fn connect_and_test_iroh<F, Fut>(
             }
         }
     }
-    fail(child, "Could not connect to lib_to_pigglet");
+    fail(child, "Could not connect to pigglet");
 }

@@ -1,6 +1,4 @@
-use crate::support::{
-    build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run, wait_for_stdout,
-};
+use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
 use anyhow::bail;
 use async_std::net::TcpStream;
 use pigdef::config::HardwareConfig;
@@ -24,30 +22,14 @@ async fn connect_tcp() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     let (ip, port, _) = parse_pigglet(&mut pigglet).await;
 
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    connect_and_test_tcp(&mut pigglet, ip, port, |_, _, _tcp_stream| async move {}).await;
 
-    let mut piggui = run(
-        "piggui",
-        vec!["--ip".to_string(), format!("{}:{}", ip, port)],
-        None,
-    );
-
-    wait_for_stdout(
-        &mut piggui,
-        "Connected to hardware",
-        Some("Connection Error"),
-    )
-    .expect("Did not get connected message");
-
-    pass(&mut piggui);
     pass(&mut pigglet);
 }
 
+#[cfg(feature = "tcp")]
 #[tokio::test]
 #[serial(pigglet)]
 async fn disconnect_tcp() {

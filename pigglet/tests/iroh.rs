@@ -1,6 +1,4 @@
-use crate::support::{
-    build, connect_and_test_iroh, kill_all, parse_pigglet, pass, run, wait_for_stdout,
-};
+use crate::support::{build, connect_and_test_iroh, kill_all, parse_pigglet, pass, run};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
 use pigdef::pin_function::PinFunction::Input;
@@ -12,7 +10,7 @@ use std::time::Duration;
 mod support;
 
 #[tokio::test]
-#[serial(piggui, pigglet)]
+#[serial(pigglet)]
 async fn connect_via_iroh() {
     kill_all("pigglet");
     build("pigglet");
@@ -22,22 +20,13 @@ async fn connect_via_iroh() {
 
     let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
 
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
-    let mut piggui = run(
-        "piggui",
-        vec!["--nodeid".to_string(), nodeid.to_string()],
+    connect_and_test_iroh(
+        &mut pigglet,
+        &nodeid,
         None,
-    );
-
-    wait_for_stdout(
-        &mut piggui,
-        "Connected to hardware",
-        Some("Connection Error"),
+        |_, _, _connection| async move {},
     )
-    .expect("Did not get connected message");
-
-    pass(&mut piggui);
+    .await;
     pass(&mut pigglet);
 }
 
