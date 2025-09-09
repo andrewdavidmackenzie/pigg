@@ -198,12 +198,8 @@ jobs:
         run: |
           gh release --repo raspberrypi/pico-sdk-tools download --pattern 'picotool-*-x86_64-lin.tar.gz'
           tar xf picotool-*-x86_64-lin.tar.gz
-          ./picotool/picotool help
-          echo $PWD
-          $PWD/picotool/picotool help
           echo $PWD/picotool >> $GITHUB_PATH
           export PATH="$PWD/picotool:$PATH"
-          picotool help
 
       - name: Build all pico variants and their UF2 files
         run: |
