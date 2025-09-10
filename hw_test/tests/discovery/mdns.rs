@@ -1,6 +1,5 @@
 #[cfg(feature = "iroh")]
 use iroh::{NodeId, RelayUrl};
-use mdns_sd::ServiceInfo;
 #[cfg(feature = "discovery")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use pigdef::description::SerialNumber;
@@ -87,16 +86,4 @@ pub async fn get_iroh_by_mdns(
     }
 
     Ok(discovered)
-}
-
-/// Unregister this device from mDNS
-#[allow(dead_code)]
-fn unregister_mdns(service_info: ServiceInfo, service_daemon: ServiceDaemon) -> anyhow::Result<()> {
-    let service_fullname = service_info.get_fullname().to_string();
-    let receiver = service_daemon.unregister(&service_fullname)?;
-    while let Ok(event) = receiver.recv() {
-        println!("unregister result: {:?}", &event);
-    }
-
-    Ok(())
 }

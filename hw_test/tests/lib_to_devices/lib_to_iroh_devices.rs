@@ -26,6 +26,7 @@ where
     }
 }
 
+#[cfg(feature = "discovery")]
 /// Use connect and disconnect test directly on Iroh, as the disconnect timeout is long and
 /// inconvenient for tests that follow this one if it only connected.
 #[tokio::test]
@@ -33,10 +34,13 @@ where
 async fn mdns_discover_connect_and_disconnect_iroh() {
     let devices = get_iroh_by_mdns()
         .await
-        .expect("Could not find device to test by mDNS");
+        .expect("Error while discovering pigg Iroh devices by mDNS");
 
     let number = devices.len();
-    assert!(number > 0, "Could not find device with Iroh via mDNS");
+    assert!(
+        number > 0,
+        "Could not find a pigg device with Iroh via mDNS"
+    );
 
     for (_ip, _port, node, relay) in devices.values() {
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
@@ -54,15 +58,19 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
     println!("Tested Iroh connection and disconnection to {number} mDNS discovered devices");
 }
 
+#[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial(devices)]
 async fn mdns_discover_get_config_iroh() {
     let devices = get_iroh_by_mdns()
         .await
-        .expect("Could not find device to test by mDNS");
+        .expect("Error while discovering pigg Iroh devices by mDNS");
 
     let number = devices.len();
-    assert!(number > 0, "Could not find device with Iroh via mDNS");
+    assert!(
+        number > 0,
+        "Could not find a pigg device with Iroh via mDNS"
+    );
 
     for (_ip, _port, node, relay) in devices.values() {
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
@@ -90,10 +98,13 @@ async fn mdns_discover_get_config_iroh() {
 async fn mdns_discover_reconnect_iroh() {
     let devices = get_iroh_by_mdns()
         .await
-        .expect("Could not find device to test by mDNS");
+        .expect("Error while discovering pigg Iroh devices by mDNS");
 
     let number = devices.len();
-    assert!(number > 0, "Could not find device with Iroh via mDNS");
+    assert!(
+        number > 0,
+        "Could not find a pigg device with Iroh via mDNS"
+    );
 
     for (_ip, _port, node, relay) in devices.values() {
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
@@ -108,7 +119,7 @@ async fn mdns_discover_reconnect_iroh() {
         })
         .await;
 
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_secs(10)).await;
 
         // Test we can re-connect after sending a disconnect request
         connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
@@ -122,8 +133,6 @@ async fn mdns_discover_reconnect_iroh() {
                 .expect("Could not disconnect");
         })
         .await;
-
-        tokio::time::sleep(Duration::from_secs(1)).await;
     }
 
     println!("Tested Iroh re-connection to {number} mDNS discovered devices");
