@@ -10,7 +10,6 @@ use serial_test::serial;
 use std::future::Future;
 use std::time::Duration;
 
-#[cfg(feature = "discovery")]
 use crate::discovery::mdns::get_iroh_by_mdns;
 
 async fn connect_iroh<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
@@ -26,7 +25,6 @@ where
     }
 }
 
-#[cfg(feature = "discovery")]
 /// Use connect and disconnect test directly on Iroh, as the disconnect timeout is long and
 /// inconvenient for tests that follow this one if it only connected.
 #[tokio::test]
@@ -42,8 +40,8 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
         "Could not find a pigg device with Iroh via mDNS"
     );
 
-    for (_ip, _port, node, relay) in devices.values() {
-        connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
+    for (node, _relay) in devices.values() {
+        connect_iroh(node, &None, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
                 "Didn't connect to fake hardware pigglet"
@@ -58,7 +56,6 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
     println!("Tested Iroh connection and disconnection to {number} mDNS discovered devices");
 }
 
-#[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial(devices)]
 async fn mdns_discover_get_config_iroh() {
@@ -72,8 +69,8 @@ async fn mdns_discover_get_config_iroh() {
         "Could not find a pigg device with Iroh via mDNS"
     );
 
-    for (_ip, _port, node, relay) in devices.values() {
-        connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
+    for (node, _relay) in devices.values() {
+        connect_iroh(node, &None, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
                 "Didn't connect to fake hardware pigglet"
@@ -82,6 +79,8 @@ async fn mdns_discover_get_config_iroh() {
             iroh_host::send_config_message(&mut connection, &GetConfig)
                 .await
                 .expect("Could not GetConfig");
+
+            tokio::time::sleep(Duration::from_secs(1)).await;
 
             iroh_host::disconnect(&mut connection)
                 .await
@@ -92,7 +91,6 @@ async fn mdns_discover_get_config_iroh() {
     println!("Tested Iroh GetConfig to {number} mDNS discovered devices");
 }
 
-#[cfg(feature = "discovery")]
 #[tokio::test]
 #[serial(devices)]
 async fn mdns_discover_reconnect_iroh() {
@@ -106,8 +104,8 @@ async fn mdns_discover_reconnect_iroh() {
         "Could not find a pigg device with Iroh via mDNS"
     );
 
-    for (_ip, _port, node, relay) in devices.values() {
-        connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
+    for (node, _relay) in devices.values() {
+        connect_iroh(node, &None, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
                 "Didn't connect to fake hardware pigglet"
@@ -119,10 +117,10 @@ async fn mdns_discover_reconnect_iroh() {
         })
         .await;
 
-        tokio::time::sleep(Duration::from_secs(10)).await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
 
         // Test we can re-connect after sending a disconnect request
-        connect_iroh(node, relay, |hw_desc, _c, mut connection| async move {
+        connect_iroh(node, &None, |hw_desc, _c, mut connection| async move {
             assert!(
                 hw_desc.details.model.contains("Pi"),
                 "Didn't connect to fake hardware pigglet"

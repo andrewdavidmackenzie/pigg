@@ -1,3 +1,4 @@
-mod lib_to_iroh_devices;
-mod lib_to_tcp_devices;
-mod lib_to_usb_devices;
+mod mdns_iroh;
+mod usb_iroh;
+mod usb_tcp;
+mod usb_usb;
