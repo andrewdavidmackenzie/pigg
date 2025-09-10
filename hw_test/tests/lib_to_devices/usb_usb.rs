@@ -8,7 +8,7 @@ use std::time::Duration;
 
 #[tokio::test]
 #[serial(devices)]
-async fn connect_usb() {
+async fn usb_discover_connect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -24,7 +24,7 @@ async fn connect_usb() {
 
 #[tokio::test]
 #[serial(devices)]
-async fn disconnect_usb() {
+async fn usb_discover_disconnect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -45,7 +45,7 @@ async fn disconnect_usb() {
 
 #[tokio::test]
 #[serial(devices)]
-async fn get_config_usb() {
+async fn usb_discover_get_config_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -72,7 +72,7 @@ async fn get_config_usb() {
 
 #[tokio::test]
 #[serial(devices)]
-async fn reconnect_usb() {
+async fn usb_discover_connect_reconnect_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -102,7 +102,7 @@ async fn reconnect_usb() {
 
 #[tokio::test]
 #[serial(devices)]
-async fn get_details_usb() {
+async fn usb_discover_get_details_usb() {
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");

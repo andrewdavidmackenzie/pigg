@@ -23,7 +23,7 @@ async fn mdns_discover_and_connect_iroh() {
     assert!(number > 0, "Could not find device with Iroh via mDNS");
     println!("Found {number} devices to connect to by mDNS");
 
-    for (_ip, _port, node, _relay) in devices.values() {
+    for (node, _relay) in devices.values() {
         let mut piggui = run(
             "piggui",
             vec!["--nodeid".to_string(), node.to_string()],
