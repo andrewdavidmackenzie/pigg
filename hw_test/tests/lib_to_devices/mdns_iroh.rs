@@ -47,6 +47,8 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
                 "Didn't connect to fake hardware pigglet"
             );
 
+            tokio::time::sleep(Duration::from_secs(1)).await;
+
             iroh_host::disconnect(&mut connection)
                 .await
                 .expect("Could not disconnect");
@@ -111,6 +113,8 @@ async fn mdns_discover_reconnect_iroh() {
                 "Didn't connect to fake hardware pigglet"
             );
 
+            tokio::time::sleep(Duration::from_secs(1)).await;
+
             iroh_host::disconnect(&mut connection)
                 .await
                 .expect("Could not disconnect");
@@ -125,6 +129,8 @@ async fn mdns_discover_reconnect_iroh() {
                 hw_desc.details.model.contains("Pi"),
                 "Didn't connect to fake hardware pigglet"
             );
+
+            tokio::time::sleep(Duration::from_secs(1)).await;
 
             iroh_host::disconnect(&mut connection)
                 .await
