@@ -14,6 +14,7 @@ env:
   RUSTFLAGS: -C instrument-coverage
   LLVM_PROFILE_FILE: pigg-%p-%m.profraw
   RUST_BACKTRACE: 1
+  GH_TOKEN: ${{ github.token }}
 
 jobs:
   Format-check:
@@ -153,7 +154,7 @@ jobs:
         run: ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt
 
       - name: Add android clang to PATH
-        run: echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+        run: echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
 
       - name: Add target
         run: rustup target add aarch64-linux-android
@@ -190,17 +191,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: add thumbv6m-none-eabi target
-        run: rustup target add thumbv6m-none-eabi
+      - name: Install arm targets
+        run: make -C porky install-targets
 
-      - name: Install cargo binstall
-        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - name: Install picotool
+        run: |
+          gh release --repo raspberrypi/pico-sdk-tools download --pattern 'picotool-*-x86_64-lin.tar.gz'
+          tar xf picotool-*-x86_64-lin.tar.gz
+          echo $PWD/picotool >> $GITHUB_PATH
+          export PATH="$PWD/picotool:$PATH"
 
-      - name: Install elf2uf2-rs
-        run: cargo binstall elf2uf2-rs
-
-      - name: Build porky and porky_w and their UF2 files
-        run: RUSTFLAGS= make -C porky uf2s
+      - name: Build all pico variants and their UF2 files
+        run: |
+          RUSTFLAGS= make -C porky build-uf2s
 
   hw_tests:
     runs-on: [ self-hosted, macOS, ARM64, pigg ]

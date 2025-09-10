@@ -15,8 +15,23 @@ use std::time::Duration;
 #[path = "../../piggui/tests/support.rs"]
 mod support;
 
+#[cfg(feature = "tcp")]
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
+async fn connect_tcp() {
+    kill_all("pigglet");
+    build("pigglet");
+    let mut pigglet = run("pigglet", vec![], None);
+    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+
+    connect_and_test_tcp(&mut pigglet, ip, port, |_, _, _tcp_stream| async move {}).await;
+
+    pass(&mut pigglet);
+}
+
+#[cfg(feature = "tcp")]
+#[tokio::test]
+#[serial(pigglet)]
 async fn disconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
@@ -34,7 +49,7 @@ async fn disconnect_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn reconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
@@ -72,7 +87,7 @@ pub fn delete_configs() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn clean_config() {
     kill_all("pigglet");
     build("pigglet");
@@ -103,7 +118,7 @@ async fn clean_config() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn config_change_returned_tcp() {
     kill_all("pigglet");
     build("pigglet");
@@ -209,7 +224,7 @@ async fn conn(
 }
 
 #[tokio::test]
-#[serial]
+#[serial(pigglet)]
 async fn invalid_pin_config() {
     kill_all("pigglet");
     build("pigglet");
@@ -263,5 +278,5 @@ async fn invalid_pin_config() {
         panic!("Unexpected message returned from pigglet");
     }
 
-    //pass(&mut pigglet);
+    pass(&mut pigglet);
 }

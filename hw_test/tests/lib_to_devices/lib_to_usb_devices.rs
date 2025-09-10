@@ -2,37 +2,12 @@
 
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
-use pigdef::description::SerialNumber;
 use pignet::usb_host;
-use pignet::HardwareConnection::Tcp;
 use serial_test::serial;
-use std::net::IpAddr;
 use std::time::Duration;
 
-/// These tests test connecting to USB connected porky devices by USB and TCP, using library
-/// methods to do so.
-///
-/// Get the IP and Port for a TCP connection to a USB connected porky
-pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(SerialNumber, IpAddr, u16)>> {
-    let mut ip_devices: Vec<(SerialNumber, IpAddr, u16)> = vec![];
-    let serials = usb_host::get_serials()
-        .await
-        .expect("No usb porky attached");
-    let details = usb_host::get_details(&serials)
-        .await
-        .expect("Could not get details");
-
-    for (serial, device_detail) in details {
-        if let Some(Tcp(ip, port)) = device_detail.hardware_connections.get("TCP") {
-            ip_devices.push((serial, *ip, *port));
-        }
-    }
-
-    Ok(ip_devices)
-}
-
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn connect_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -48,7 +23,7 @@ async fn connect_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn disconnect_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -69,7 +44,7 @@ async fn disconnect_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn get_config_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -96,7 +71,7 @@ async fn get_config_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn reconnect_usb() {
     let serials = usb_host::get_serials()
         .await
@@ -126,7 +101,7 @@ async fn reconnect_usb() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn get_details_usb() {
     let serials = usb_host::get_serials()
         .await

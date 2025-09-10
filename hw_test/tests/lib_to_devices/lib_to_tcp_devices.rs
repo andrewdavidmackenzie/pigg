@@ -10,13 +10,10 @@ use std::future::Future;
 use std::net::IpAddr;
 use std::time::Duration;
 
-mod lib_to_usb_devices;
-#[cfg(feature = "usb")]
-use lib_to_usb_devices::get_ip_and_port_by_usb;
+use crate::discovery::usb::get_ip_and_port_by_usb;
 
-mod mdns_support;
 #[cfg(feature = "discovery")]
-use mdns_support::get_ip_and_port_by_mdns;
+use crate::discovery::mdns::get_ip_and_port_by_mdns;
 
 async fn connect_tcp<F, Fut>(serial: &SerialNumber, ip: &IpAddr, port: u16, test: F)
 where
@@ -32,7 +29,7 @@ where
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_connect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -55,7 +52,7 @@ async fn usb_discover_and_connect_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_disconnect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -82,7 +79,7 @@ async fn usb_discover_and_disconnect_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_get_config_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -109,7 +106,7 @@ async fn usb_discover_and_get_config_tcp() {
 }
 
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn usb_discover_and_reconnect_tcp() {
     let ip_devices = get_ip_and_port_by_usb()
         .await
@@ -148,7 +145,7 @@ async fn usb_discover_and_reconnect_tcp() {
 
 #[cfg(feature = "discovery")]
 #[tokio::test]
-#[serial]
+#[serial(devices)]
 async fn mdns_discover_and_connect_tcp() {
     let devices = get_ip_and_port_by_mdns()
         .await

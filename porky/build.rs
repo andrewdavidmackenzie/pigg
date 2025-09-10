@@ -34,7 +34,7 @@ fn read_ssid(ssid_filename: &str) -> Result<SsidSpec, io::Error> {
         .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "Could not parse toml ssid file"))
 }
 
-/// Given an optional override of SSID details,generate that as a source file in OUT_DIR
+/// Given an optional override of SSID details, generate that as a source file in OUT_DIR
 fn generate_ssid(filename: &str, ssid: Option<SsidSpec>) -> io::Result<()> {
     let out = env::var("OUT_DIR").unwrap();
     let out_dir = Path::new(&out);
@@ -70,7 +70,7 @@ pub(crate) fn get_default_ssid_spec() -> Option<SsidSpec> {{ \n\
 }}",
                 spec.ssid_name, spec.ssid_pass, spec.security
             )
-                .as_bytes(),
+            .as_bytes(),
         ),
     }
 }
@@ -81,6 +81,7 @@ compile_error!("You must use either feature \"pico1\" or \"pico2\" to build 'por
 fn main() -> io::Result<()> {
     // Put `memory.x` in our output directory and ensure it's on the linker search path.
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
+    #[cfg(any(feature = "pico1", feature = "pico2"))]
     let mut file = File::create(out.join("memory.x"))?;
     #[cfg(feature = "pico1")]
     file.write_all(include_bytes!("memory1.x"))?;

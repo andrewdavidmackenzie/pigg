@@ -1,8 +1,6 @@
-#![cfg(feature = "discovery")]
-
-use anyhow::bail;
 #[cfg(feature = "iroh")]
 use iroh::{NodeId, RelayUrl};
+use mdns_sd::ServiceInfo;
 #[cfg(feature = "discovery")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use pigdef::description::SerialNumber;
@@ -53,7 +51,7 @@ pub async fn get_iroh_by_mdns(
 ) -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16, NodeId, Option<RelayUrl>)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
-        .checked_add(Duration::from_secs(10))
+        .checked_add(Duration::from_secs(60))
         .expect("Could not set a deadline");
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
@@ -91,9 +89,8 @@ pub async fn get_iroh_by_mdns(
     Ok(discovered)
 }
 
-/*
-#[cfg(feature = "discovery")]
 /// Unregister this device from mDNS
+#[allow(dead_code)]
 fn unregister_mdns(service_info: ServiceInfo, service_daemon: ServiceDaemon) -> anyhow::Result<()> {
     let service_fullname = service_info.get_fullname().to_string();
     let receiver = service_daemon.unregister(&service_fullname)?;
@@ -103,4 +100,3 @@ fn unregister_mdns(service_info: ServiceInfo, service_daemon: ServiceDaemon) -> 
 
     Ok(())
 }
- */

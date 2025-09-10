@@ -121,8 +121,8 @@ build-armv7:
 build-armv7-musl:
 	cargo build --target=armv7-unknown-linux-musleabihf
 
-.PHONY: release-build-armv7
-release-build-armv7:
+.PHONY: build-release-armv7
+build-release-armv7:
 	cargo build --release --target=armv7-unknown-linux-gnueabihf
 
 # NOTE: The tests will be built for armv7 architecture, so tests can only be run on that architecture
@@ -152,8 +152,8 @@ clippy-aarch64:
 build-aarch64:
 	cargo build --target=aarch64-unknown-linux-gnu
 
-.PHONY: release-build-aarch64
-release-build-aarch64:
+.PHONY: build-release-aarch64
+build-release-aarch64:
 	cargo build --release --target=aarch64-unknown-linux-gnu
 
 # NOTE: The tests will be built for aarch64 architecture, so tests can only be run on that architecture
@@ -188,8 +188,8 @@ build-arm:
 build-arm-musl:
 	cargo build --target=arm-unknown-linux-musleabihf
 
-.PHONY: release-build-arm
-release-build-arm:
+.PHONY: build-release-arm
+build-release-arm:
 	cargo build --release --target=arm-unknown-linux-gnueabihf
 
 # NOTE: The tests will be built for arm architecture, so tests can only be run on that architecture
