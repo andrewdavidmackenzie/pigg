@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (IpAddr, u16)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
-        .checked_add(Duration::from_secs(10))
+        .checked_add(Duration::from_secs(60))
         .expect("Could not set a deadline");
 
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
