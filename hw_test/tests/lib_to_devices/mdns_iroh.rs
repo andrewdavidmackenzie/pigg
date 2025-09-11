@@ -21,7 +21,10 @@ where
         Ok((hw_desc, hw_config, connection)) => {
             test(hw_desc, hw_config, connection).await;
         }
-        _ => panic!("Could not connect to device by Iroh"),
+        _ => panic!(
+            "Could not connect to device with nodeid '{}' by Iroh",
+            nodeid
+        ),
     }
 }
 
@@ -55,6 +58,8 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
         })
         .await;
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested Iroh connection and disconnection to {number} mDNS discovered devices");
 }
 
@@ -90,6 +95,8 @@ async fn mdns_discover_get_config_iroh() {
         })
         .await;
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested Iroh GetConfig to {number} mDNS discovered devices");
 }
 
@@ -139,5 +146,6 @@ async fn mdns_discover_reconnect_iroh() {
         .await;
     }
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested Iroh re-connection to {number} mDNS discovered devices");
 }
