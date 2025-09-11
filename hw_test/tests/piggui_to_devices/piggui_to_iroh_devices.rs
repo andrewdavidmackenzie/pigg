@@ -30,14 +30,19 @@ async fn mdns_discover_and_connect_iroh() {
             None,
         );
 
-        wait_for_stdout(
+        match wait_for_stdout(
             &mut piggui,
             "Connected to hardware",
             Some("Connection Error"),
-        )
-        .expect("Did not get connected message");
-
-        kill(&mut piggui);
+        ) {
+            None => {
+                kill(&mut piggui);
+                panic!("Failed to connect by Iroh");
+            }
+            Some(_) => {
+                kill(&mut piggui);
+            }
+        }
     }
 
     // Wait the iroh timeout period so the server disconnects and other tests can connect
