@@ -14,34 +14,34 @@ features:
 	cargo build-all-features --target thumbv6m-none-eabi
 
 clippy:
-	cargo clippy --target thumbv6m-none-eabi --features "usb, wifi, pico1"
-	cargo clippy --target thumbv6m-none-eabi --features "usb, pico1"
-	cargo clippy --target thumbv8m.main-none-eabihf --features "usb, wifi, pico2"
-	cargo clippy --target thumbv8m.main-none-eabihf --features "usb, pico2"
+	cargo clippy --target thumbv6m-none-eabi --no-default-features --features "usb, wifi, pico1"
+	cargo clippy --target thumbv6m-none-eabi --no-default-features --features "usb, pico1"
+	cargo clippy --target thumbv8m.main-none-eabihf --no-default-features --features "usb, wifi, pico2"
+	cargo clippy --target thumbv8m.main-none-eabihf --no-default-features --features "usb, pico2"
 
 run-w:
-	cargo run --release --target thumbv6m-none-eabi --features "usb, wifi, pico1"
+	cargo run --release --target thumbv6m-none-eabi --no-default-features --features "usb, wifi, pico1"
 
 run-w2:
-	cargo run --release --target thumbv8m.main-none-eabihf --features "usb, wifi, pico2"
+	cargo run --release --target thumbv8m.main-none-eabihf --no-default-features --features "usb, wifi, pico2"
 
 run:
-	cargo run --release --target thumbv6m-none-eabi --features "usb, pico1"
+	cargo run --release --target thumbv6m-none-eabi --no-default-features --features "usb, pico1"
 
 run2:
-	cargo run --release --target thumbv8m.main-none-eabihf --features "usb, pico2"
+	cargo run --release --target thumbv8m.main-none-eabihf --no-default-features --features "usb, pico2"
 
 build-w:
-	cargo build --release --target thumbv6m-none-eabi --features "usb, wifi, pico1"
+	cargo build --release --target thumbv6m-none-eabi --no-default-features --features "usb, wifi, pico1"
 
 build-w2:
-	cargo build --release --target thumbv8m.main-none-eabihf --features "usb, wifi, pico2"
+	cargo build --release --target thumbv8m.main-none-eabihf --no-default-features --features "usb, wifi, pico2"
 
 build:
-	cargo build --release --target thumbv6m-none-eabi --features "usb, pico1"
+	cargo build --release --target thumbv6m-none-eabi --no-default-features --features "usb, pico1"
 
 build2:
-	cargo build --release --target thumbv8m.main-none-eabihf --features "usb, pico2"
+	cargo build --release --target thumbv8m.main-none-eabihf --no-default-features --features "usb, pico2"
 
 install-binstall:
 	curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
