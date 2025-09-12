@@ -44,7 +44,7 @@ log = { version = "0.4.27", default-features = false }
 sysinfo = { version = "0.37", default-features = false, features = ["system"] }
 service-manager = { version = "0.8.0", default-features = false }
 clap = { version = "4.5.47", default-features = false, features = ["std", "help", "error-context"] }
-serde_json = { version = "1.0.142", default-features = false, features = ["std"] }
+serde_json = { version = "1.0.143", default-features = false, features = ["std"] }
 
 iroh = { version = "0.91.2", default-features = false, optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
