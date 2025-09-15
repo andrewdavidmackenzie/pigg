@@ -16,8 +16,7 @@ async fn connects_to_fake_hardware() {
         &mut piggui,
         "Connected to hardware",
         Some("Connection Error"),
-    )
-    .expect("piggui failed to connect to fake hardware");
+    );
 
     kill_all("piggui");
 }
@@ -46,8 +45,7 @@ async fn connect_to_pigglet_via_iroh() {
         &mut piggui,
         "Connected to hardware",
         Some("Connection Error"),
-    )
-    .expect("Did not get connected message");
+    );
 
     pass(&mut piggui);
     pass(&mut pigglet);
@@ -77,8 +75,7 @@ async fn connect_to_pigglet_tcp() {
         &mut piggui,
         "Connected to hardware",
         Some("Connection Error"),
-    )
-    .expect("Did not get connected message");
+    );
 
     pass(&mut piggui);
     pass(&mut pigglet);

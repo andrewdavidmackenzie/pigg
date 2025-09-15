@@ -19,6 +19,8 @@ async fn usb_discover_connect_usb() {
             .await
             .expect("Could not connect by USB");
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB connect to {number} USB connected devices");
 }
 
@@ -40,6 +42,8 @@ async fn usb_discover_disconnect_usb() {
             .await
             .expect("Could not send Disconnect");
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB disconnect {number} USB connected devices");
 }
 

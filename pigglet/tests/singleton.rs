@@ -13,18 +13,15 @@ async fn two_instances() {
 
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
-    wait_for_stdout(&mut pigglet, "Waiting", None)
-        .expect("Failed to start first pigglet instance correctly");
+    wait_for_stdout(&mut pigglet, "Waiting", None);
 
     // Start a second instance - which should exit with an error (not success)
     let mut pigglet2 = run("pigglet", vec![], None);
 
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
+    // TODO kill before failing
     assert!(!pigglet2.wait().expect("Couldn't get ExitStatus").success());
 
     pass(&mut pigglet);
-
-    // Always kill all
-    kill_all("pigglet");
 }

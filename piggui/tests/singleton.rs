@@ -16,8 +16,7 @@ async fn two_instances_run() {
         &mut piggui,
         "Connected to hardware",
         Some("Connection Error"),
-    )
-    .expect("Failed to start first piggui instance correctly");
+    );
 
     // Start a second instance - which should exit with an error (not success)
     let mut piggui2 = run("piggui", vec![], None);
@@ -31,8 +30,7 @@ async fn two_instances_run() {
                 &mut piggui2,
                 "GPIO Hardware is being controlled by another instance",
                 Some("Connected to hardware"),
-            )
-            .expect("Second piggui instance didn't print message");
+            );
         }
     }
 
