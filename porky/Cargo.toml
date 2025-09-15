@@ -13,7 +13,7 @@ name = "porky"
 path = "src/porky.rs"
 
 [features]
-default = []
+default = ["pico1"]
 pico1 = ["embassy-rp/rp2040"]
 pico2 = ["embassy-rp/rp235xa"]
 wifi = ["dep:cyw43", "discovery", "tcp"]
