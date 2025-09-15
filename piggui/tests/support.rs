@@ -132,13 +132,13 @@ pub fn wait_for_stdout(child: &mut Child, token: &str, error_token: Option<&str>
         }
         if let Some(term) = error_token {
             if line.contains(term) {
-                panic!("Found the token: {term} in stdout");
+                panic!("Found the token: '{term}' in stdout:\n\t'{line}'");
             }
         }
         line.clear();
     }
 
-    panic!("Did not find the token: {token} in stdout");
+    panic!("Did not find the token: '{token}' in stdout");
 }
 
 #[allow(dead_code)]
