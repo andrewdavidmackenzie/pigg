@@ -3,7 +3,6 @@
 use pignet::usb_host;
 use serial_test::serial;
 
-
 use crate::support::{kill, run, wait_for_stdout};
 
 #[tokio::test]
