@@ -1,14 +1,9 @@
 use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
-use anyhow::bail;
-use async_std::net::TcpStream;
-use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
-use pigdef::description::HardwareDescription;
 use pigdef::pin_function::PinFunction::Output;
 use piggpio::config::CONFIG_FILENAME;
 use pignet::tcp_host;
 use serial_test::serial;
-use std::net::IpAddr;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -207,75 +202,64 @@ async fn config_change_returned_tcp() {
     pass(&mut pigglet);
 }
 
-async fn conn(
-    ip: IpAddr,
-    port: u16,
-) -> anyhow::Result<(HardwareDescription, HardwareConfig, TcpStream)> {
-    let mut failures = 0;
-    while failures < 3 {
-        match tcp_host::connect(ip, port).await {
-            Ok(worked) => return Ok(worked),
-            _ => {
-                failures += 1;
-            }
-        }
-    }
-    bail!("Could not connect after 3 retries");
-}
-
 #[tokio::test]
 #[serial(pigglet)]
 async fn invalid_pin_config() {
     kill_all("pigglet");
     build("pigglet");
+
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
+
     let mut pigglet = run("pigglet", vec![], None);
     let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
-    let msg = format!("Could not connect to pigglet at {}:{}", ip, port);
-    let (hw_desc, hw_config, tcp_stream) = conn(ip, port).await.expect(&msg);
+    connect_and_test_tcp(
+        &mut pigglet,
+        ip,
+        port,
+        |_, hw_config, tcp_stream| async move {
+            println!("hw_config {hw_config:?}");
+            assert!(hw_config.pin_functions.is_empty());
 
-    assert!(
-        hw_desc.details.model.contains("Fake"),
-        "Didn't connect to fake hardware pigglet"
-    );
+            tokio::time::sleep(Duration::from_millis(100)).await;
 
-    println!("hw_config {hw_config:?}");
-    assert!(hw_config.pin_functions.is_empty());
+            // Change a non-existent pin's configuration
+            tcp_host::send_config_message(
+                tcp_stream.clone(),
+                &NewPinConfig(100, Some(Output(None))),
+            )
+            .await
+            .expect("Could not send NewPinConfig");
 
-    tokio::time::sleep(Duration::from_millis(100)).await;
+            // Should not get any level changes here
 
-    // Change a non-existent pin's configuration
-    tcp_host::send_config_message(tcp_stream.clone(), &NewPinConfig(100, Some(Output(None))))
-        .await
-        .expect("Could not send NewPinConfig");
+            tokio::time::sleep(Duration::from_millis(100)).await;
 
-    // Should not get any level changes here
+            // Request the device to send back its current config
+            tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
+                .await
+                .expect("Could not send GetConfig");
 
-    tokio::time::sleep(Duration::from_millis(100)).await;
+            // Wait for the config to be sent back
+            let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
+                .await
+                .expect("Could not get response to GetConfig");
 
-    // Request the device to send back its current config
-    tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
-        .await
-        .expect("Could not send GetConfig");
+            println!("Message Received: {hw_message:?}");
 
-    // Wait for the config to be sent back
-    let hw_message = tcp_host::wait_for_remote_message(tcp_stream.clone())
-        .await
-        .expect("Could not get response to GetConfig");
-
-    println!("Message Received: {hw_message:?}");
-
-    // If we got a valid config back, compare it to what we expected
-    if let NewConfig(hardware_config) = hw_message {
-        assert!(
-            hardware_config.pin_functions.is_empty(),
-            "Configured pin doesn't match config sent"
-        );
-    } else {
-        panic!("Unexpected message returned from pigglet");
-    }
+            // If we got a valid config back, compare it to what we expected
+            if let NewConfig(hardware_config) = hw_message {
+                assert!(
+                    hardware_config.pin_functions.is_empty(),
+                    "Configured pin doesn't match config sent"
+                );
+            } else {
+                panic!("Unexpected message returned from pigglet");
+            }
+        },
+    )
+    .await;
 
     pass(&mut pigglet);
 }
