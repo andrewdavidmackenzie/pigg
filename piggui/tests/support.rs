@@ -141,6 +141,8 @@ pub fn wait_for_stdout(child: &mut Child, token: &str, error_token: Option<&str>
     panic!("Did not find the token: '{token}' in stdout");
 }
 
+// Parse info out of stdout. This is a simple implementation for tests that relies on ip:port
+// coming after Iroh lines
 #[allow(dead_code)]
 pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId, Option<RelayUrl>) {
     let mut nodeid = None;
@@ -189,7 +191,7 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId, Option<Re
             }
         }
 
-        if line.contains("relay URL:") {
+        if line.contains("Relay URL:") {
             match line.split_once(":") {
                 Some((_, relay_url_str)) => match RelayUrl::from_str(relay_url_str.trim()) {
                     Ok(url) => relay_url = Some(url),
