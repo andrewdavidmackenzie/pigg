@@ -187,10 +187,15 @@ impl Piggui {
         #[allow(unused_mut)]
         let mut tasks = vec![maybe_load_no_picker(config_filename.clone())];
 
+        #[cfg(not(target_arch = "wasm32"))]
+        #[allow(unused_variables)]
         let (requested_connection, local_hardware_option, connection_tasks) =
             Self::choose_hardware_connection(&matches);
-
+        #[cfg(not(target_arch = "wasm32"))]
         tasks.extend(connection_tasks);
+
+        #[cfg(target_arch = "wasm32")]
+        let (requested_connection, local_hardware_option) = (NoConnection, None);
 
         #[cfg(feature = "discovery")]
         let discovered_devices = discovery::local_discovery(local_hardware_option);
@@ -202,10 +207,7 @@ impl Piggui {
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
-                #[cfg(not(target_arch = "wasm32"))]
                 hardware_view: HardwareView::new(requested_connection),
-                #[cfg(target_arch = "wasm32")]
-                hardware_view: HardwareView::new(HardwareConnection::default()),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 #[cfg(feature = "discovery")]
