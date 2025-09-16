@@ -248,6 +248,10 @@ async fn invalid_pin_config() {
 
             println!("Message Received: {hw_message:?}");
 
+            tcp_host::disconnect(tcp_stream)
+                .await
+                .expect("Could not disconnect");
+
             // If we got a valid config back, compare it to what we expected
             if let NewConfig(hardware_config) = hw_message {
                 assert!(
