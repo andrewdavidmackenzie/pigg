@@ -22,7 +22,7 @@ async fn connect_tcp() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_tcp(&mut pigglet, ip, port, |_, _, _tcp_stream| async move {}).await;
 
@@ -36,7 +36,7 @@ async fn disconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_tcp(&mut pigglet, ip, port, |_, _, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
@@ -54,7 +54,7 @@ async fn reconnect_tcp() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_tcp(&mut pigglet, ip, port, |_d, _c, tcp_stream| async move {
         tcp_host::disconnect(tcp_stream)
@@ -94,7 +94,7 @@ async fn clean_config() {
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_tcp(
         &mut pigglet,
@@ -125,7 +125,7 @@ async fn config_change_returned_tcp() {
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_tcp(
         &mut pigglet,
@@ -231,11 +231,10 @@ async fn invalid_pin_config() {
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
-    let (hw_desc, hw_config, tcp_stream) = conn(ip, port)
-        .await
-        .expect("Could not connect to pigglet at {ip}:{port}");
+    let msg = format!("Could not connect to pigglet at {}:{}", ip, port);
+    let (hw_desc, hw_config, tcp_stream) = conn(ip, port).await.expect(&msg);
 
     assert!(
         hw_desc.details.model.contains("Fake"),

@@ -142,8 +142,9 @@ pub fn wait_for_stdout(child: &mut Child, token: &str, error_token: Option<&str>
 }
 
 #[allow(dead_code)]
-pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
+pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId, Option<RelayUrl>) {
     let mut nodeid = None;
+    let mut relay_url = None;
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
 
@@ -156,11 +157,16 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
                     Some((mut ip_str, mut port_str)) => {
                         ip_str = ip_str.trim();
                         port_str = port_str.trim();
-                        println!("IP: '{ip_str}' Port: '{port_str}'");
+                        println!("IP: '{ip_str}' Port: '{port_str}' NodeID: '{nodeid:?} RelayURL: '{relay_url:?}'");
                         match std::net::IpAddr::from_str(ip_str) {
                             Ok(ip) => match u16::from_str(port_str) {
                                 Ok(port) => {
-                                    return (ip, port, nodeid.expect("Did not find iroh nodeid"))
+                                    return (
+                                        ip,
+                                        port,
+                                        nodeid.expect("Did not find iroh nodeid"),
+                                        relay_url,
+                                    )
                                 }
                                 _ => fail(child, "Could not parse port"),
                             },
@@ -180,6 +186,16 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
                     Err(e) => fail(child, &e.to_string()),
                 },
                 _ => fail(child, "Could not parse out nodeid from nodeid line"),
+            }
+        }
+
+        if line.contains("relay URL:") {
+            match line.split_once(":") {
+                Some((_, relay_url_str)) => match RelayUrl::from_str(relay_url_str.trim()) {
+                    Ok(url) => relay_url = Some(url),
+                    Err(e) => fail(child, &e.to_string()),
+                },
+                _ => fail(child, "Could not parse out Real URL from 'relay URL' line"),
             }
         }
 

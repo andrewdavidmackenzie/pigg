@@ -31,15 +31,15 @@ async fn connect_to_pigglet_via_iroh() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (_ip, _port, nodeid) = parse_pigglet(&mut pigglet).await;
-
+    let (_ip, _port, nodeid, relay_url) = parse_pigglet(&mut pigglet).await;
+    let mut args = vec!["--nodeid".to_string(), nodeid.to_string()];
+    if let Some(relay) = relay_url {
+        args.push("--relay".to_string());
+        args.push(relay.to_string());
+    }
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let mut piggui = run(
-        "piggui",
-        vec!["--nodeid".to_string(), nodeid.to_string()],
-        None,
-    );
+    let mut piggui = run("piggui", args, None);
 
     wait_for_stdout(
         &mut piggui,
@@ -61,7 +61,7 @@ async fn connect_to_pigglet_tcp() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, _) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
