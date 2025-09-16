@@ -124,7 +124,7 @@ pub fn wait_for_stdout(child: &mut Child, token: &str, error_token: Option<&str>
 
     let mut line = String::new();
 
-    println!("Waiting for '{token}' in stdout: ");
+    println!("Waiting for '{token}' in stdout...");
 
     while reader.read_line(&mut line).is_ok() {
         if line.contains(token) {

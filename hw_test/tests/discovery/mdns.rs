@@ -29,10 +29,11 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
                     let serial = info
                         .get_property_val_str("Serial")
                         .expect("Could not get serial number");
-                    println!("Addresses: {:?}", info.get_addresses());
-                    println!("Hostname: {}", info.get_hostname());
-                    println!("Fullname: {}", info.get_fullname());
-                    println!("Discovered device: {serial} : ip = {ip}\n");
+                    println!("Discovered device: {serial}");
+                    println!("\tAddresses: {:?}", info.get_addresses());
+                    println!("\tHostname: {}", info.get_hostname());
+                    println!("\tFullname: {}", info.get_fullname());
+                    println!("\tip = {ip}\n");
                     discovered.insert(serial.to_string(), (IpAddr::V4(*ip), port));
                 }
             }
@@ -66,10 +67,12 @@ pub async fn get_iroh_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (NodeId,
                         let relay_url = device_properties
                             .get_property_val_str("IrohRelayURL")
                             .map(|s| RelayUrl::from_str(s).unwrap());
-                        println!("Addresses: {:?}", info.get_addresses());
-                        println!("Hostname: {}", info.get_hostname());
-                        println!("Fullname: {}", info.get_fullname());
-                        println!("Discovered device: {serial} : nodeid = {nodeid}\n");
+                        println!("Discovered device: {serial} ");
+                        println!("\tAddresses: {:?}", info.get_addresses());
+                        println!("\tHostname: {}", info.get_hostname());
+                        println!("\tFullname: {}", info.get_fullname());
+                        println!("\tIroh nodeid = {nodeid}");
+                        println!("\tIroh relayURL = {:?}", relay_url);
                         discovered.insert(serial.to_string(), (nodeid as NodeId, relay_url));
                     }
                 }
