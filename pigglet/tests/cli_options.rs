@@ -10,7 +10,7 @@ async fn version_number() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec!["--version".into()], None);
-    let line = wait_for_stdout(&mut pigglet, "pigglet", None);
+    let line = wait_for_stdout(&mut pigglet, "pigglet", Some("Error:"));
     let version = line.split(' ').nth(1).unwrap().trim();
     assert_eq!(version, env!("CARGO_PKG_VERSION"));
     pass(&mut pigglet);
@@ -24,7 +24,7 @@ async fn test_verbosity_levels() {
     let levels = ["info", "debug", "trace"];
     for &level in &levels {
         let mut pigglet = run("pigglet", vec!["--verbosity".into(), level.into()], None);
-        let line = wait_for_stdout(&mut pigglet, &level.to_uppercase(), None);
+        let line = wait_for_stdout(&mut pigglet, &level.to_uppercase(), Some("Error:"));
 
         assert!(
             line.contains(&level.to_uppercase()),
@@ -43,7 +43,7 @@ async fn help() {
     wait_for_stdout(
         &mut pigglet,
         "'pigglet' - for making Raspberry Pi GPIO hardware accessible remotely using 'piggui'",
-        None,
+        Some("Error:"),
     );
     pass(&mut pigglet);
 }

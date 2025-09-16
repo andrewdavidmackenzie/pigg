@@ -12,11 +12,7 @@ async fn connects_to_fake_hardware() {
     build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
-    wait_for_stdout(
-        &mut piggui,
-        "Connected to hardware",
-        Some("Connection Error"),
-    );
+    wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
     kill_all("piggui");
 }
@@ -41,11 +37,7 @@ async fn connect_to_pigglet_via_iroh() {
 
     let mut piggui = run("piggui", args, None);
 
-    wait_for_stdout(
-        &mut piggui,
-        "Connected to hardware",
-        Some("Connection Error"),
-    );
+    wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
     pass(&mut piggui);
     pass(&mut pigglet);
@@ -71,11 +63,7 @@ async fn connect_to_pigglet_tcp() {
         None,
     );
 
-    wait_for_stdout(
-        &mut piggui,
-        "Connected to hardware",
-        Some("Connection Error"),
-    );
+    wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
     pass(&mut piggui);
     pass(&mut pigglet);

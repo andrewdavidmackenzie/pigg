@@ -29,11 +29,7 @@ async fn usb_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(
-            &mut piggui,
-            "Connected to hardware",
-            Some("Connection Error"),
-        );
+        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
         kill(&mut piggui);
     }
@@ -59,11 +55,7 @@ async fn mdns_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(
-            &mut piggui,
-            "Connected to hardware",
-            Some("Connection Error"),
-        );
+        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
         kill(&mut piggui);
     }

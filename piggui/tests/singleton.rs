@@ -12,11 +12,7 @@ async fn two_instances_run() {
     build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
-    wait_for_stdout(
-        &mut piggui,
-        "Connected to hardware",
-        Some("Connection Error"),
-    );
+    wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error: "));
 
     // Start a second instance - which should exit with an error (not success)
     let mut piggui2 = run("piggui", vec![], None);
@@ -26,11 +22,7 @@ async fn two_instances_run() {
         Ok(None) => (),
         Err(_) => {
             println!("Second instance running");
-            wait_for_stdout(
-                &mut piggui2,
-                "GPIO Hardware is being controlled by another instance",
-                Some("Connected to hardware"),
-            );
+            wait_for_stdout(&mut piggui2, "Error:", Some("Connected to hardware"));
         }
     }
 

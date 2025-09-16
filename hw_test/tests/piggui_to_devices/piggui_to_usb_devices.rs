@@ -18,11 +18,7 @@ async fn usb_discover_and_connect_usb() {
     for serial in serials {
         let mut piggui = run("piggui", vec!["--usb".to_string(), serial], None);
 
-        wait_for_stdout(
-            &mut piggui,
-            "Connected to hardware",
-            Some("Connection Error"),
-        );
+        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
         kill(&mut piggui);
     }
@@ -45,11 +41,7 @@ async fn usb_discover_and_connect_partial_usb() {
         let partial_serial = serial[..serial.len() - 1].to_string();
         let mut piggui = run("piggui", vec!["--usb".to_string(), partial_serial], None);
 
-        wait_for_stdout(
-            &mut piggui,
-            "Connected to hardware",
-            Some("Connection Error"),
-        );
+        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
         kill(&mut piggui);
     }

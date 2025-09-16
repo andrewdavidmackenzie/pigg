@@ -31,11 +31,7 @@ async fn mdns_discover_and_connect_iroh() {
         }
         let mut piggui = run("piggui", args, None);
 
-        wait_for_stdout(
-            &mut piggui,
-            "Connected to hardware",
-            Some("Connection Error"),
-        );
+        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error: "));
     }
 
     // Wait the iroh timeout period so the server disconnects and other tests can connect

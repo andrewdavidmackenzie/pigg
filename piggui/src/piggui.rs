@@ -32,8 +32,6 @@ use iroh::{NodeId, RelayUrl};
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
-#[cfg(not(target_arch = "wasm32"))]
-use piggpio::local_hardware;
 #[cfg(feature = "discovery")]
 use pignet::discovery::{DiscoveredDevice, DiscoveryEvent};
 #[cfg(feature = "usb")]
@@ -61,9 +59,9 @@ mod views;
 mod widgets;
 
 const PIGGUI_ID: &str = "piggui";
-const CONNECTION_ERROR: &str = "Connection Error";
+const CONNECTION_ERROR: &str = "Error: Connecting";
 #[cfg(feature = "discovery")]
-const DISCOVERY_ERROR: &str = "Discovery Error";
+const DISCOVERY_ERROR: &str = "Error: Discovery Error";
 
 /// These are the messages that Piggui responds to
 #[derive(Debug, Clone)]
@@ -189,42 +187,13 @@ impl Piggui {
         #[allow(unused_mut)]
         let mut tasks = vec![maybe_load_no_picker(config_filename.clone())];
 
-        // If there is an instance of pigglet running and in control of any local GPIO
-        // hardware, then we will not offer the option to directly control the local GPIO.
-        // We will rely on discovery methods to provide an option on the GUI to connect to the
-        // locally running instance of pigglet and hence be able to control the GPIO from the GUI.
-        // The same if there is another instance of piggui running and able to connect to hardware
-        #[cfg(not(target_arch = "wasm32"))]
-        let local_hardware_opt = if process_running("pigglet") {
-            let message = Task::perform(Self::empty(), |_| {
-                let string =
-                    "GPIO Hardware is being controlled by an instance of pigglet".to_string();
-                println!("{string}");
-                InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
-            });
-            tasks.push(message);
-            None
-        } else if process_running("piggui") {
-            let message = Task::perform(Self::empty(), |_| {
-                let string =
-                    "GPIO Hardware is being controlled by another instance of piggui".to_string();
-                println!("{string}");
-                InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
-            });
-            tasks.push(message);
-            None
-        } else {
-            local_hardware()
-        };
+        let (requested_connection, local_hardware_option, connection_tasks) =
+            Self::choose_hardware_connection(&matches);
 
-        #[cfg(not(target_arch = "wasm32"))]
-        let default_connection = match &local_hardware_opt {
-            None => NoConnection,
-            Some(_hw) => Local,
-        };
+        tasks.extend(connection_tasks);
 
         #[cfg(feature = "discovery")]
-        let discovered_devices = discovery::local_discovery(local_hardware_opt);
+        let discovered_devices = discovery::local_discovery(local_hardware_option);
 
         (
             Self {
@@ -234,10 +203,7 @@ impl Piggui {
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
                 #[cfg(not(target_arch = "wasm32"))]
-                hardware_view: HardwareView::new(choose_hardware_connection(
-                    &matches,
-                    default_connection,
-                )),
+                hardware_view: HardwareView::new(requested_connection),
                 #[cfg(target_arch = "wasm32")]
                 hardware_view: HardwareView::new(HardwareConnection::default()),
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -406,6 +372,7 @@ impl Piggui {
                     ));
                 }
             },
+
             Disconnect => self.disconnect(),
         }
 
@@ -541,45 +508,88 @@ impl Piggui {
             }
         }
     }
-}
 
-#[cfg(not(target_arch = "wasm32"))]
-/// Determine the hardware connection based on command line options
-#[allow(unused_variables)]
-fn choose_hardware_connection(
-    matches: &ArgMatches,
-    default_connection: HardwareConnection,
-) -> HardwareConnection {
-    #[allow(unused_mut)]
-    let mut connection = default_connection;
+    #[cfg(not(target_arch = "wasm32"))]
+    /// Determine the hardware connection based on command line options
+    #[allow(unused_variables)]
+    fn choose_hardware_connection(
+        matches: &ArgMatches,
+    ) -> (
+        HardwareConnection,
+        Option<HardwareConnection>,
+        Vec<Task<Message>>,
+    ) {
+        #[allow(unused_mut)]
+        #[cfg(not(target_arch = "wasm32"))]
+        let mut connection = NoConnection;
+        #[cfg(target_arch = "wasm32")]
+        let mut connection = Local;
+        let mut tasks = vec![];
 
-    #[cfg(feature = "iroh")]
-    if let Some(node_str) = matches.get_one::<String>("nodeid") {
-        if let Ok(nodeid) = NodeId::from_str(node_str) {
-            // Get the optional relay (RelayURL)
-            let relay_url = match matches.get_one::<String>("relay") {
-                None => None,
-                Some(relay_str) => RelayUrl::from_str(relay_str).ok(),
-            };
-            connection = HardwareConnection::Iroh(nodeid, relay_url);
+        #[cfg(feature = "iroh")]
+        if let Some(node_str) = matches.get_one::<String>("nodeid") {
+            if let Ok(nodeid) = NodeId::from_str(node_str) {
+                // Get the optional relay (RelayURL)
+                let relay_url = match matches.get_one::<String>("relay") {
+                    None => None,
+                    Some(relay_str) => RelayUrl::from_str(relay_str).ok(),
+                };
+                connection = HardwareConnection::Iroh(nodeid, relay_url);
+            } else {
+                eprintln!("Could not create a NodeId for IrohNet from '{node_str}'");
+            }
+        }
+
+        #[cfg(feature = "tcp")]
+        if let Some(ip_str) = matches.get_one::<String>("ip") {
+            if let Ok(tcp_target) = parse_ip_string(ip_str) {
+                connection = tcp_target;
+            }
+        }
+
+        #[cfg(feature = "usb")]
+        if let Some(usb_str) = matches.get_one::<String>("usb") {
+            connection = HardwareConnection::Usb(usb_str.to_string());
+        }
+
+        // If there is an instance of pigglet or piggui running then we will not offer the option
+        // to directly control the local GPIO.
+        // Discovery methods may detect the locally running instance of pigglet and offer a way
+        // to control the GPIO from the GUI.
+        #[cfg(not(target_arch = "wasm32"))]
+        let local_hardware_opt = if process_running("pigglet") || process_running("piggui") {
+            None
         } else {
-            eprintln!("Could not create a NodeId for IrohNet from '{node_str}'");
+            Some(Local)
+        };
+
+        // If there is an instance of pigglet or piggui already controlling the hardware, and we
+        // defaulted to use the local connection, then display warning messages in the UI
+        #[cfg(not(target_arch = "wasm32"))]
+        if connection == Local {
+            if process_running("pigglet") {
+                let message = Task::perform(Self::empty(), |_| {
+                    let string =
+                        "Error: Local GPIO Hardware is being controlled by an instance of pigglet"
+                            .to_string();
+                    println!("{string}");
+                    InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
+                });
+                tasks.push(message);
+            } else if process_running("piggui") {
+                let message = Task::perform(Self::empty(), |_| {
+                    let string =
+                        "Error: Local GPIO Hardware is being controlled by another instance of piggui"
+                            .to_string();
+                    println!("{string}");
+                    InfoRow(ShowStatusMessage(InfoMessage::Warning(string)))
+                });
+                tasks.push(message);
+            }
         }
-    }
 
-    #[cfg(feature = "tcp")]
-    if let Some(ip_str) = matches.get_one::<String>("ip") {
-        if let Ok(tcp_target) = parse_ip_string(ip_str) {
-            connection = tcp_target;
-        }
+        (connection, local_hardware_opt, tasks)
     }
-
-    #[cfg(feature = "usb")]
-    if let Some(usb_str) = matches.get_one::<String>("usb") {
-        connection = HardwareConnection::Usb(usb_str.to_string());
-    }
-
-    connection
 }
 
 #[cfg(feature = "tcp")]
@@ -616,6 +626,8 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("NODEID")
+            .conflicts_with("ip")
+            .conflicts_with("usb")
             .help("Node Id of the device to connect to via Iroh"),
     );
 
@@ -628,6 +640,8 @@ fn get_matches() -> ArgMatches {
             .number_of_values(1)
             .value_name("RELAY")
             .requires("nodeid")
+            .conflicts_with("ip")
+            .conflicts_with("usb")
             .help("RelayURL of the device to connect to via Iroh"),
     );
 
@@ -639,6 +653,8 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("IP")
+            .conflicts_with("ip")
+            .conflicts_with("usb")
             .help("'IP:port' of device to connect to via TCP"),
     );
 
@@ -650,6 +666,9 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("Serial")
+            .conflicts_with("nodeid")
+            .conflicts_with("relay")
+            .conflicts_with("ip")
             .help("Serial Number of a device to connect to via USB"),
     );
 

@@ -13,7 +13,7 @@ async fn two_instances() {
 
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
-    wait_for_stdout(&mut pigglet, "Waiting", None);
+    wait_for_stdout(&mut pigglet, "Waiting", Some("Error:"));
 
     // Start a second instance - which should exit with an error (not success)
     let mut pigglet2 = run("pigglet", vec![], None);

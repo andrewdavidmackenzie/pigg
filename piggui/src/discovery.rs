@@ -16,9 +16,10 @@ use mdns_sd::ServiceInfo;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 #[cfg(feature = "tcp")]
 use pigdef::description::HardwareDetails;
+use pigdef::description::SerialNumber;
 #[cfg(feature = "tcp")]
 use pigdef::description::TCP_MDNS_SERVICE_TYPE;
-use pigdef::description::{HardwareDescription, SerialNumber};
+use piggpio::local_hardware;
 use pignet::discovery::DiscoveredDevice;
 #[cfg(any(feature = "tcp", feature = "usb"))]
 use pignet::discovery::DiscoveryEvent;
@@ -166,26 +167,27 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
     })
 }
 
-/// Create the initial HashMap of devices - initialized with the local GPIO hardware if it
-/// exists
+/// Create the initial HashMap of devices - initialized with the local GPIO hardware if it exists
 pub fn local_discovery(
-    description_opt: Option<HardwareDescription>,
+    local_connection: Option<HardwareConnection>,
 ) -> HashMap<SerialNumber, DiscoveredDevice> {
     let mut discovered_devices: HashMap<SerialNumber, DiscoveredDevice> = HashMap::new();
-    if let Some(mut description) = description_opt {
-        description.details.app_name = env!("CARGO_PKG_NAME").to_string();
-        description.details.app_version = env!("CARGO_PKG_VERSION").to_string();
-        let mut hardware_connections = HashMap::new();
-        hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
-        discovered_devices.insert(
-            description.details.serial.clone(),
-            DiscoveredDevice {
-                discovery_method: Local,
-                hardware_details: description.details,
-                ssid_spec: None,
-                hardware_connections,
-            },
-        );
+    if local_connection.is_some() {
+        if let Some(mut description) = local_hardware() {
+            description.details.app_name = env!("CARGO_PKG_NAME").to_string();
+            description.details.app_version = env!("CARGO_PKG_VERSION").to_string();
+            let mut hardware_connections = HashMap::new();
+            hardware_connections.insert("Local".to_string(), HardwareConnection::Local);
+            discovered_devices.insert(
+                description.details.serial.clone(),
+                DiscoveredDevice {
+                    discovery_method: Local,
+                    hardware_details: description.details,
+                    ssid_spec: None,
+                    hardware_connections,
+                },
+            );
+        }
     }
 
     discovered_devices
