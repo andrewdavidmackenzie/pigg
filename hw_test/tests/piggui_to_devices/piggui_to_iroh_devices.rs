@@ -23,12 +23,13 @@ async fn mdns_discover_and_connect_iroh() {
     assert!(number > 0, "Could not find device with Iroh via mDNS");
     println!("Found {number} devices to connect to by mDNS");
 
-    for (node, _relay) in devices.values() {
-        let mut piggui = run(
-            "piggui",
-            vec!["--nodeid".to_string(), node.to_string()],
-            None,
-        );
+    for (node, relay) in devices.values() {
+        let mut args = vec!["--nodeid".to_string(), node.to_string()];
+        if let Some(relay_url) = relay {
+            args.push("--relay".to_string());
+            args.push(relay_url.to_string());
+        }
+        let mut piggui = run("piggui", args, None);
 
         wait_for_stdout(
             &mut piggui,

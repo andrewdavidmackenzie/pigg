@@ -29,6 +29,7 @@ use iced::widget::{container, Column};
 use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme};
 #[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
 use iroh::NodeId;
+use iroh::RelayUrl;
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
@@ -556,7 +557,12 @@ fn choose_hardware_connection(
     #[cfg(feature = "iroh")]
     if let Some(node_str) = matches.get_one::<String>("nodeid") {
         if let Ok(nodeid) = NodeId::from_str(node_str) {
-            connection = HardwareConnection::Iroh(nodeid, None);
+            // Get the optional relay (RelayURL)
+            let relay_url = match matches.get_one::<String>("relay") {
+                None => None,
+                Some(relay_str) => RelayUrl::from_str(relay_str).ok(),
+            };
+            connection = HardwareConnection::Iroh(nodeid, relay_url);
         } else {
             eprintln!("Could not create a NodeId for IrohNet from '{node_str}'");
         }
@@ -611,7 +617,19 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("NODEID")
-            .help("Node Id of device to connect to via Iroh"),
+            .help("Node Id of the device to connect to via Iroh"),
+    );
+
+    #[cfg(feature = "iroh")]
+    let app = app.arg(
+        Arg::new("relay")
+            .short('r')
+            .long("relay")
+            .num_args(1)
+            .number_of_values(1)
+            .value_name("RELAY")
+            .requires("nodeid")
+            .help("RelayURL of the device to connect to via Iroh"),
     );
 
     #[cfg(feature = "tcp")]
