@@ -15,7 +15,7 @@ use embassy_rp::peripherals::{
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::channel::{Receiver, Sender};
-use heapless::FnvIndexMap;
+use heapless::index_map::FnvIndexMap;
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage;
 use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};

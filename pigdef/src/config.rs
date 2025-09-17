@@ -19,7 +19,7 @@ use core::option::Option;
 #[cfg(not(feature = "std"))]
 use core::prelude::rust_2024::derive;
 #[cfg(not(feature = "std"))]
-use heapless::FnvIndexMap;
+use heapless::index_map::FnvIndexMap;
 
 #[cfg(feature = "std")]
 use std::collections::HashMap;

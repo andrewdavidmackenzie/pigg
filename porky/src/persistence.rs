@@ -11,7 +11,7 @@ use ekv::ReadError;
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
-use heapless::FnvIndexMap;
+use heapless::index_map::FnvIndexMap;
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage;
 use pigdef::config::HardwareConfigMessage::{
