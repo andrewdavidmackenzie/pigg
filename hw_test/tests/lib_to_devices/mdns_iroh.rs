@@ -50,8 +50,6 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
 
     for (node, relay) in devices.values() {
         connect_iroh(node, relay, |_hw_desc, _c, mut connection| async move {
-            tokio::time::sleep(Duration::from_secs(1)).await;
-
             iroh_host::disconnect(&mut connection)
                 .await
                 .expect("Could not disconnect");
@@ -108,8 +106,6 @@ async fn mdns_discover_reconnect_iroh() {
 
     for (node, relay) in devices.values() {
         connect_iroh(node, relay, |_hw_desc, _c, mut connection| async move {
-            tokio::time::sleep(Duration::from_secs(1)).await;
-
             iroh_host::disconnect(&mut connection)
                 .await
                 .expect("Could not disconnect");
@@ -120,8 +116,6 @@ async fn mdns_discover_reconnect_iroh() {
 
         // Test we can re-connect after sending a disconnect request
         connect_iroh(node, relay, |_hw_desc, _c, mut connection| async move {
-            tokio::time::sleep(Duration::from_secs(1)).await;
-
             iroh_host::disconnect(&mut connection)
                 .await
                 .expect("Could not disconnect");
