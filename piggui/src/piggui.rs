@@ -195,7 +195,9 @@ impl Piggui {
         tasks.extend(connection_tasks);
 
         #[cfg(target_arch = "wasm32")]
-        let (requested_connection, local_hardware_option) = (NoConnection, None);
+        #[allow(unused_variables)]
+        let (requested_connection, local_hardware_option) =
+            (NoConnection, Option::<HardwareConnection>::None);
 
         #[cfg(feature = "discovery")]
         let discovered_devices = discovery::local_discovery(local_hardware_option);
@@ -342,7 +344,8 @@ impl Piggui {
                 self.connect_dialog.set_error(details);
             }
 
-            MenuBarButtonClicked => { /* Needed for Highlighting on hover to work on the menu bar */
+            MenuBarButtonClicked => {
+                /* Needed for Highlighting on hover to work on the menu bar */
             }
 
             #[cfg(feature = "discovery")]
@@ -504,9 +507,9 @@ impl Piggui {
             DiscoveryEvent::USBPermissionsError(_) => {
                 // SHow the dialog explaining the error
                 let _ = self.modal_handler.update(InfoDialogMessage::ErrorWithHelp("USB Permissions Error",
-                           "Your user lacks the required permissions on USB device folders and files to write \
+                                                                                   "Your user lacks the required permissions on USB device folders and files to write \
                 to USB. Please consult the help at the link below on how to fix it",
-                           "https://github.com/andrewdavidmackenzie/pigg/blob/master/HELP.md#permission-denied-os-error-13-linux-only"));
+                                                                                   "https://github.com/andrewdavidmackenzie/pigg/blob/master/HELP.md#permission-denied-os-error-13-linux-only"));
             }
         }
     }
