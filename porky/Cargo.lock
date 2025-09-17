@@ -203,7 +203,7 @@ dependencies = [
  "embassy-futures",
  "embassy-net-driver-channel",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.4.0",
  "embedded-hal 1.0.0",
  "embedded-io-async",
  "futures",
@@ -383,7 +383,7 @@ dependencies = [
  "edge-nal",
  "embassy-futures",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.4.0",
  "heapless 0.8.0",
  "log",
 ]
@@ -394,7 +394,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac19c3edcdad839c71cb919cd09a632d9915d630760b37f0b74290188c08f248"
 dependencies = [
- "embassy-time",
+ "embassy-time 0.4.0",
  "embedded-io-async",
 ]
 
@@ -435,7 +435,7 @@ checksum = "41fea5ef5bed4d3468dfd44f5c9fa4cda8f54c86d4fb4ae683eacf9d39e2ea12"
 dependencies = [
  "embassy-futures",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.4.0",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
@@ -497,7 +497,7 @@ dependencies = [
  "document-features",
  "embassy-net-driver",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.4.0",
  "embedded-io-async",
  "embedded-nal-async",
  "heapless 0.8.0",
@@ -542,7 +542,7 @@ dependencies = [
  "embassy-futures",
  "embassy-hal-internal",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.4.0",
  "embassy-time-driver",
  "embassy-time-queue-utils",
  "embassy-usb-driver",
@@ -597,10 +597,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "embassy-time-driver"
-version = "0.2.0"
+name = "embassy-time"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d45f5d833b6d98bd2aab0c2de70b18bfaa10faf661a1578fd8e5dfb15eb7eba"
+checksum = "f4fa65b9284d974dad7a23bb72835c4ec85c0b540d86af7fc4098c88cff51d65"
+dependencies = [
+ "cfg-if",
+ "critical-section",
+ "defmt 1.0.1",
+ "document-features",
+ "embassy-time-driver",
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "futures-core",
+]
+
+[[package]]
+name = "embassy-time-driver"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0a244c7dc22c8d0289379c8d8830cae06bb93d8f990194d0de5efb3b5ae7ba6"
 dependencies = [
  "document-features",
 ]
@@ -1188,7 +1205,7 @@ dependencies = [
 name = "pigdef"
 version = "0.7.3"
 dependencies = [
- "embassy-time",
+ "embassy-time 0.5.0",
  "heapless 0.9.1",
  "serde",
 ]
@@ -1264,7 +1281,7 @@ dependencies = [
  "embassy-net",
  "embassy-rp",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.5.0",
  "embassy-usb",
  "embedded-io-async",
  "embedded-storage",
