@@ -2210,6 +2210,7 @@ version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1edcd5a338e64688fbdcb7531a846cfd3476a54784dcb918a0844682bc7ada5"
 dependencies = [
+ "defmt",
  "hash32 0.3.1",
  "serde",
  "stable_deref_trait",
