@@ -526,9 +526,9 @@ impl Piggui {
     ) {
         #[allow(unused_mut)]
         #[cfg(not(target_arch = "wasm32"))]
-        let mut connection = NoConnection;
-        #[cfg(target_arch = "wasm32")]
         let mut connection = Local;
+        #[cfg(target_arch = "wasm32")]
+        let mut connection = NoConnection;
         let mut tasks = vec![];
 
         #[cfg(feature = "iroh")]

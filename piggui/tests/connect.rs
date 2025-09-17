@@ -14,7 +14,7 @@ async fn connects_to_fake_hardware() {
 
     wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
-    kill_all("piggui");
+    pass(&mut piggui);
 }
 
 #[cfg(feature = "iroh")]
