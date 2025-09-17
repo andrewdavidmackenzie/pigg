@@ -1,17 +1,19 @@
 use serial_test::serial;
 use std::time::Duration;
 
-use crate::support::{run, wait_for_stdout};
+use crate::support::{kill, run, wait_for_stdout};
 
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
 ///
-#[cfg(feature = "discovery")]
 use crate::discovery::mdns::get_iroh_by_mdns;
 
-/// The problem with using this test is that it doesn't disconnect from iroh, and so after
-/// killing piggui, until the timeout expires, nothing else can connect to it by Iroh, and it
-/// causes other tests to fail
+/// The problem with using this test is that piggui doesn't disconnect from iroh when killed,
+/// so until the timeout expires for a device, nothing else can connect to it by Iroh, and it
+/// causes other tests to fail.
+/// So, we have added a sleep that is longer than the Iroh timeout at the end of the test to ensure
+/// that Iroh has timed out for each device before any other test attempts to connect to it using
+/// Iroh again
 #[tokio::test]
 #[serial(piggui, devices)]
 async fn mdns_discover_and_connect_iroh() {
@@ -32,6 +34,8 @@ async fn mdns_discover_and_connect_iroh() {
         let mut piggui = run("piggui", args, None);
 
         wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error: "));
+
+        kill(&mut piggui);
     }
 
     // Wait the iroh timeout period so the server disconnects and other tests can connect
