@@ -19,6 +19,11 @@ where
 {
     match iroh_host::connect(nodeid, relay_url).await {
         Ok((hw_desc, hw_config, connection)) => {
+            assert!(
+                hw_desc.details.model.contains("Pi"),
+                "Didn't connect to fake hardware pigglet"
+            );
+
             test(hw_desc, hw_config, connection).await;
         }
         _ => panic!("Could not connect to device by Iroh"),
@@ -40,12 +45,7 @@ async fn usb_discover_connect_and_disconnect_iroh() {
         connect_iroh(
             &nodeid,
             &relay_url,
-            |hw_desc, _c, mut connection| async move {
-                assert!(
-                    hw_desc.details.model.contains("Pi"),
-                    "Didn't connect to fake hardware pigglet"
-                );
-
+            |_hw_desc, _c, mut connection| async move {
                 iroh_host::disconnect(&mut connection)
                     .await
                     .expect("Could not disconnect");
@@ -72,15 +72,16 @@ async fn usb_discover_connect_and_get_config_iroh() {
         connect_iroh(
             &nodeid,
             &relay_url,
-            |hw_desc, _c, mut connection| async move {
-                assert!(
-                    hw_desc.details.model.contains("Pi"),
-                    "Didn't connect to a Pi"
-                );
-
+            |_hw_desc, _c, mut connection| async move {
                 iroh_host::send_config_message(&mut connection, &GetConfig)
                     .await
                     .expect("Could not GetConfig");
+
+                let _config = iroh_host::wait_for_remote_message(&mut connection).await;
+
+                iroh_host::disconnect(&mut connection)
+                    .await
+                    .expect("Could not disconnect");
             },
         )
         .await;
@@ -104,12 +105,7 @@ async fn usb_discover_connect_and_reconnect_iroh() {
         connect_iroh(
             &nodeid,
             &relay_url,
-            |hw_desc, _c, mut connection| async move {
-                assert!(
-                    hw_desc.details.model.contains("Pi"),
-                    "Didn't connect to a Pi"
-                );
-
+            |_hw_desc, _c, mut connection| async move {
                 iroh_host::disconnect(&mut connection)
                     .await
                     .expect("Could not disconnect");
@@ -120,12 +116,15 @@ async fn usb_discover_connect_and_reconnect_iroh() {
         tokio::time::sleep(Duration::from_secs(1)).await;
 
         // Test we can re-connect after sending a disconnect request
-        connect_iroh(&nodeid, &relay_url, |hw_desc, _c, _connection| async move {
-            assert!(
-                hw_desc.details.model.contains("Pi"),
-                "Didn't connect to a Pi"
-            );
-        })
+        connect_iroh(
+            &nodeid,
+            &relay_url,
+            |_hw_desc, _c, mut connection| async move {
+                iroh_host::disconnect(&mut connection)
+                    .await
+                    .expect("Could not disconnect");
+            },
+        )
         .await;
     }
 

@@ -1,6 +1,7 @@
 use serial_test::serial;
+use std::time::Duration;
 
-use crate::support::{kill, run, wait_for_stdout};
+use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
@@ -14,6 +15,9 @@ use crate::discovery::usb::get_ip_and_port_by_usb;
 #[tokio::test]
 #[serial(piggui, devices)]
 async fn usb_discover_and_connect_tcp() {
+    kill_all("piggui");
+    build("piggui");
+
     let ip_and_ports = get_ip_and_port_by_usb()
         .await
         .expect("Could not get IP and port of USB connected devices");
@@ -28,22 +32,21 @@ async fn usb_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(
-            &mut piggui,
-            "Connected to hardware",
-            Some("Connection Error"),
-        )
-        .expect("Did not get connected message");
+        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
         kill(&mut piggui);
     }
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested piggui TCP connection to {number} USB discovered devices");
 }
 
 #[tokio::test]
 #[serial(piggui, devices)]
 async fn mdns_discover_and_connect_tcp() {
+    kill_all("piggui");
+    build("piggui");
+
     let devices = get_ip_and_port_by_mdns()
         .await
         .expect("Could not find device to test by mDNS");
@@ -58,15 +61,11 @@ async fn mdns_discover_and_connect_tcp() {
             None,
         );
 
-        wait_for_stdout(
-            &mut piggui,
-            "Connected to hardware",
-            Some("Connection Error"),
-        )
-        .expect("Did not get connected message");
+        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
 
         kill(&mut piggui);
     }
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested piggui TCP connection to {number} mDNS discovered devices");
 }

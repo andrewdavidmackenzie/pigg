@@ -19,6 +19,8 @@ async fn usb_discover_connect_usb() {
             .await
             .expect("Could not connect by USB");
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB connect to {number} USB connected devices");
 }
 
@@ -40,6 +42,8 @@ async fn usb_discover_disconnect_usb() {
             .await
             .expect("Could not send Disconnect");
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB disconnect {number} USB connected devices");
 }
 
@@ -67,6 +71,8 @@ async fn usb_discover_get_config_usb() {
 
         assert_eq!(hw_config, hardware_config);
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested GetConfig to {number} USB connected devices");
 }
 
@@ -97,6 +103,8 @@ async fn usb_discover_connect_reconnect_usb() {
             .await
             .expect("Could not reconnect by USB");
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB re-connect to {number} USB connected devices");
 }
 
@@ -131,5 +139,7 @@ async fn usb_discover_get_details_usb() {
             );
         }
     }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested GetDetails to {number} USB connected devices");
 }

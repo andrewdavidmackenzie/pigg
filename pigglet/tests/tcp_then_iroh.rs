@@ -19,7 +19,7 @@ async fn connect_tcp_then_iroh() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (ip, port, nodeid) = parse_pigglet(&mut pigglet).await;
+    let (ip, port, nodeid, relay_url) = parse_pigglet(&mut pigglet).await;
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
@@ -36,7 +36,7 @@ async fn connect_tcp_then_iroh() {
     connect_and_test_iroh(
         &mut pigglet,
         &nodeid,
-        None,
+        relay_url,
         |_d, _c, mut connection| async move {
             iroh_host::disconnect(&mut connection)
                 .await

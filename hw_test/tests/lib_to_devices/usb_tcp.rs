@@ -2,7 +2,7 @@
 
 use async_std::net::TcpStream;
 use pigdef::config::HardwareConfig;
-use pigdef::config::HardwareConfigMessage::{Disconnect, GetConfig};
+use pigdef::config::HardwareConfigMessage::GetConfig;
 use pigdef::description::{HardwareDescription, SerialNumber};
 use pignet::tcp_host;
 use serial_test::serial;
@@ -19,6 +19,11 @@ where
 {
     match tcp_host::connect(*ip, port).await {
         Ok((hw_desc, hw_config, tcp_stream)) => {
+            assert!(
+                hw_desc.details.model.contains("Pi"),
+                "Didn't connect to a Pi"
+            );
+
             test(hw_desc, hw_config, tcp_stream).await;
         }
         Err(e) => panic!("Could not connect to device ({ip}, with serial: {serial}) by TCP: {e}"),
@@ -36,13 +41,8 @@ async fn usb_discover_connect_and_disconnect_tcp() {
     assert!(number > 0, "Could not find usb connected device with TCP");
 
     for (serial, ip, port) in ip_devices {
-        connect_tcp(&serial, &ip, port, |hw_desc, _c, tcp_stream| async move {
-            assert!(
-                hw_desc.details.model.contains("Pi"),
-                "Didn't connect to a Pi"
-            );
-
-            tcp_host::send_config_message(tcp_stream, &Disconnect)
+        connect_tcp(&serial, &ip, port, |_hw_desc, _c, tcp_stream| async move {
+            tcp_host::disconnect(tcp_stream)
                 .await
                 .expect("Could not send Disconnect");
         })
@@ -63,15 +63,16 @@ async fn usb_discover_connect_and_get_config_tcp() {
     assert!(number > 0, "Could not find usb connected device with TCP");
 
     for (serial, ip, port) in ip_devices {
-        connect_tcp(&serial, &ip, port, |hw_desc, _c, tcp_stream| async move {
-            assert!(
-                hw_desc.details.model.contains("Pi"),
-                "Didn't connect to a Pi"
-            );
-
-            tcp_host::send_config_message(tcp_stream, &GetConfig)
+        connect_tcp(&serial, &ip, port, |_hw_desc, _c, tcp_stream| async move {
+            tcp_host::send_config_message(tcp_stream.clone(), &GetConfig)
                 .await
                 .expect("Could not GetConfig");
+
+            let _config = tcp_host::wait_for_remote_message(tcp_stream.clone()).await;
+
+            tcp_host::disconnect(tcp_stream)
+                .await
+                .expect("Could not send Disconnect");
         })
         .await;
     }
@@ -90,13 +91,8 @@ async fn usb_discover_connect_and_reconnect_tcp() {
     assert!(number > 0, "Could not find usb connected device with TCP");
 
     for (serial, ip, port) in ip_devices {
-        connect_tcp(&serial, &ip, port, |hw_desc, _c, tcp_stream| async move {
-            assert!(
-                hw_desc.details.model.contains("Pi"),
-                "Didn't connect to a Pi"
-            );
-
-            tcp_host::send_config_message(tcp_stream, &Disconnect)
+        connect_tcp(&serial, &ip, port, |_hw_desc, _c, tcp_stream| async move {
+            tcp_host::disconnect(tcp_stream)
                 .await
                 .expect("Could not send Disconnect");
         })
@@ -105,11 +101,10 @@ async fn usb_discover_connect_and_reconnect_tcp() {
         tokio::time::sleep(Duration::from_secs(1)).await;
 
         // Test we can re-connect after sending a disconnect request
-        connect_tcp(&serial, &ip, port, |hw_desc, _c, _tcp_stream| async move {
-            assert!(
-                hw_desc.details.model.contains("Pi"),
-                "Didn't connect to a Pi"
-            );
+        connect_tcp(&serial, &ip, port, |_hw_desc, _c, tcp_stream| async move {
+            tcp_host::disconnect(tcp_stream)
+                .await
+                .expect("Could not send Disconnect");
         })
         .await;
     }

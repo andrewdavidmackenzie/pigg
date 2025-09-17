@@ -116,33 +116,37 @@ pub fn fail(child: &mut Child, message: &str) -> ! {
     panic!("{}", message);
 }
 
+// TODO kill the instance before failing on stdout matches
 #[allow(dead_code)]
-pub fn wait_for_stdout(child: &mut Child, token: &str, term_token: Option<&str>) -> Option<String> {
+pub fn wait_for_stdout(child: &mut Child, token: &str, error_token: Option<&str>) -> String {
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
 
     let mut line = String::new();
 
-    println!("Waiting for '{token}' in stdout: ");
+    println!("Waiting for '{token}' in stdout...");
 
     while reader.read_line(&mut line).is_ok() {
         if line.contains(token) {
-            return Some(line);
+            return line;
         }
-        if let Some(term) = term_token {
+        if let Some(term) = error_token {
             if line.contains(term) {
-                return None;
+                panic!("Found the token: '{term}' in stdout:\n\t'{line}'");
             }
         }
         line.clear();
     }
 
-    None
+    panic!("Did not find the token: '{token}' in stdout");
 }
 
+// Parse info out of stdout. This is a simple implementation for tests that relies on ip:port
+// coming after Iroh lines
 #[allow(dead_code)]
-pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
+pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId, Option<RelayUrl>) {
     let mut nodeid = None;
+    let mut relay_url = None;
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
 
@@ -155,11 +159,16 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
                     Some((mut ip_str, mut port_str)) => {
                         ip_str = ip_str.trim();
                         port_str = port_str.trim();
-                        println!("IP: '{ip_str}' Port: '{port_str}'");
+                        println!("IP: '{ip_str}' Port: '{port_str}' NodeID: '{nodeid:?} RelayURL: '{relay_url:?}'");
                         match std::net::IpAddr::from_str(ip_str) {
                             Ok(ip) => match u16::from_str(port_str) {
                                 Ok(port) => {
-                                    return (ip, port, nodeid.expect("Did not find iroh nodeid"))
+                                    return (
+                                        ip,
+                                        port,
+                                        nodeid.expect("Did not find iroh nodeid"),
+                                        relay_url,
+                                    )
                                 }
                                 _ => fail(child, "Could not parse port"),
                             },
@@ -179,6 +188,16 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId) {
                     Err(e) => fail(child, &e.to_string()),
                 },
                 _ => fail(child, "Could not parse out nodeid from nodeid line"),
+            }
+        }
+
+        if line.contains("Relay URL:") {
+            match line.split_once(":") {
+                Some((_, relay_url_str)) => match RelayUrl::from_str(relay_url_str.trim()) {
+                    Ok(url) => relay_url = Some(url),
+                    Err(e) => fail(child, &e.to_string()),
+                },
+                _ => fail(child, "Could not parse out Real URL from 'relay URL' line"),
             }
         }
 
