@@ -658,7 +658,8 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("IP")
-            .conflicts_with("ip")
+            .conflicts_with("nodeid")
+            .conflicts_with("relay")
             .conflicts_with("usb")
             .help("'IP:port' of device to connect to via TCP"),
     );
