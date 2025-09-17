@@ -77,7 +77,7 @@ async fn usb_discover_connect_and_get_config_iroh() {
                     .await
                     .expect("Could not GetConfig");
 
-                // TODO check we don't have to request the response to unblock Iroh
+                let _config = iroh_host::wait_for_remote_message(&mut connection).await;
 
                 iroh_host::disconnect(&mut connection)
                     .await
