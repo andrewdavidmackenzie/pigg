@@ -5,6 +5,7 @@ use ekv::flash::{self, PageID};
 use ekv::{config, Database};
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::FLASH;
+use embassy_rp::Peri;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_storage::nor_flash::{NorFlash, ReadNorFlash};
 #[cfg(feature = "pico1")]
@@ -98,7 +99,7 @@ impl<T: NorFlash + ReadNorFlash> flash::Flash for DbFlash<T> {
     }
 }
 
-pub fn get_flash<'a>(flash_pin: FLASH) -> Flash<'a, FLASH, Blocking, FLASH_SIZE> {
+pub fn get_flash<'a>(flash_pin: Peri<'a, FLASH>) -> Flash<'a, FLASH, Blocking, FLASH_SIZE> {
     Flash::new_blocking(flash_pin)
 }
 
