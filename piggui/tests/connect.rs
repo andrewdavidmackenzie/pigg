@@ -41,6 +41,10 @@ async fn connect_to_pigglet_via_iroh() {
 
     pass(&mut piggui);
     pass(&mut pigglet);
+
+    // Wait the iroh timeout period so the server disconnects and other tests can connect
+    // again via Iroh
+    tokio::time::sleep(Duration::from_secs(31)).await;
 }
 
 #[cfg(feature = "tcp")]
