@@ -3,11 +3,14 @@
 use pignet::usb_host;
 use serial_test::serial;
 
-use crate::support::{kill, run, wait_for_stdout};
+use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 
 #[tokio::test]
 #[serial(piggui, devices)]
 async fn usb_discover_and_connect_usb() {
+    kill_all("piggui");
+    build("piggui");
+
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -30,6 +33,9 @@ async fn usb_discover_and_connect_usb() {
 #[tokio::test]
 #[serial(piggui, devices)]
 async fn usb_discover_and_connect_partial_usb() {
+    kill_all("piggui");
+    build("piggui");
+
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");

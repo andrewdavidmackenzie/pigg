@@ -1,7 +1,7 @@
 use serial_test::serial;
 use std::time::Duration;
 
-use crate::support::{kill, run, wait_for_stdout};
+use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
@@ -17,6 +17,9 @@ use crate::discovery::mdns::get_iroh_by_mdns;
 #[tokio::test]
 #[serial(piggui, devices)]
 async fn mdns_discover_and_connect_iroh() {
+    kill_all("piggui");
+    build("piggui");
+
     let devices = get_iroh_by_mdns()
         .await
         .expect("Could not find device to test by mDNS");
