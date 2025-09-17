@@ -10,4 +10,4 @@ build:
 
 .PHONY: test
 test:
-	cargo test --no-fail-fast -- --show-output
+	cargo test -- --show-output
