@@ -20,7 +20,7 @@ iroh = ["pigdef/iroh", "pignet/iroh"]
 pigdef = { path = "../pigdef", version = "0.7" }
 pignet = { path = "../pignet", version = "0.7" }
 tokio = { version = "1.47", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
-async-std = "1.13.1"
+async-std = "1.13.2"
 serial_test = "3.1.1"
 anyhow = "1.0.99"
 mdns-sd = { version = "0.13.11", default-features = false, features = ["async"] }
