@@ -1,4 +1,5 @@
 use anyhow::ensure;
+use iroh::endpoint::VarInt;
 use iroh::Watcher;
 use iroh::{
     endpoint::Connection,
@@ -88,7 +89,9 @@ pub async fn connect(
     Ok((reply.0, reply.1, connection))
 }
 
-/// Inform the device that we are disconnecting from the Iroh connection
+/// Inform the device that we are disconnecting from the Iroh connection, and close it
 pub async fn disconnect(connection: &mut Connection) -> anyhow::Result<()> {
-    send_config_message(connection, &Disconnect).await
+    send_config_message(connection, &Disconnect).await?;
+    connection.close(VarInt::from_u32(0u32), "disconnect".as_bytes());
+    Ok(())
 }
