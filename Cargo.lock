@@ -2920,9 +2920,9 @@ dependencies = [
 
 [[package]]
 name = "iroh"
-version = "0.91.2"
+version = "0.92.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e52be9b8f33833ec080042f82035f87e90762c44be67b8c1aa0c593ff31a97d3"
+checksum = "135ad6b793a5851b9e5435ad36fea63df485f8fd4520a58117e7dc3326a69c15"
 dependencies = [
  "aead",
  "backon",
@@ -2950,7 +2950,7 @@ dependencies = [
  "n0-snafu",
  "n0-watcher",
  "nested_enum_utils",
- "netdev",
+ "netdev 0.36.0",
  "netwatch",
  "pin-project",
  "pkarr",
@@ -2981,9 +2981,9 @@ dependencies = [
 
 [[package]]
 name = "iroh-base"
-version = "0.91.2"
+version = "0.92.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42393ff3628e5c765acdceb7da693d5f7869ec4c92599a83fa62368b15b0034e"
+checksum = "04ae51a14c9255a735b1db2d8cf29b875b971e96a5b23e4d0d1ee7d85bf32132"
 dependencies = [
  "curve25519-dalek",
  "data-encoding",
@@ -3079,9 +3079,9 @@ dependencies = [
 
 [[package]]
 name = "iroh-relay"
-version = "0.91.0"
+version = "0.92.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49596b5079817d0904fe4985307f532a4e23a33eb494bd680baaf2743f0c456b"
+checksum = "315cb02e660de0de339303296df9a29b27550180bb3979d0753a267649b34a7f"
 dependencies = [
  "blake3",
  "bytes",
@@ -3562,9 +3562,9 @@ dependencies = [
 
 [[package]]
 name = "n0-snafu"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4fed465ff57041f29db78a9adc8864296ef93c6c16029f9e192dc303404ebd0"
+checksum = "1815107e577a95bfccedb4cfabc73d709c0db6d12de3f14e0f284a8c5036dc4f"
 dependencies = [
  "anyhow",
  "btparse",
@@ -3713,6 +3713,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "netdev"
+version = "0.37.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daa1e3eaf125c54c21e6221df12dd2a0a682784a068782dd564c836c0f281b6d"
+dependencies = [
+ "dlopen2",
+ "ipnet",
+ "libc",
+ "netlink-packet-core",
+ "netlink-packet-route 0.22.0",
+ "netlink-sys",
+ "once_cell",
+ "system-configuration",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "netlink-packet-core"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3794,9 +3811,9 @@ dependencies = [
 
 [[package]]
 name = "netwatch"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8901dbb408894af3df3fc51420ba0c6faf3a7d896077b797c39b7001e2f787bd"
+checksum = "8a63d76f52f3f15ebde3ca751a2ab73a33ae156662bc04383bac8e824f84e9bb"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -3808,7 +3825,7 @@ dependencies = [
  "n0-future",
  "n0-watcher",
  "nested_enum_utils",
- "netdev",
+ "netdev 0.37.3",
  "netlink-packet-core",
  "netlink-packet-route 0.24.0",
  "netlink-proto",
@@ -4799,9 +4816,9 @@ checksum = "350e9b48cbc6b0e028b0473b114454c6316e57336ee184ceab6e53f72c178b3e"
 
 [[package]]
 name = "portmapper"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62f1975debe62a70557e42b9ff9466e4890cf9d3d156d296408a711f1c5f642b"
+checksum = "a9f99e8cd25cd8ee09fc7da59357fd433c0a19272956ebb4ad7443b21842988d"
 dependencies = [
  "base64",
  "bytes",
