@@ -1,15 +1,20 @@
+use chrono::{DateTime, Utc};
 /// These tests test connecting to USB-connected porky devices by USB
 ///
 use pignet::usb_host;
 use serial_test::serial;
 
-use crate::support::{build, kill, kill_all, run, wait_for_stdout};
+use crate::support::{kill, kill_all, run, wait_for_stdout};
 
 #[tokio::test]
-#[serial(piggui, devices)]
+#[serial]
 async fn usb_discover_and_connect_usb() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_and_connect_usb' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     kill_all("piggui");
-    build("piggui");
 
     let serials = usb_host::get_serials()
         .await
@@ -27,14 +32,27 @@ async fn usb_discover_and_connect_usb() {
     }
 
     println!("Tested piggui USB connection to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_and_connect_usb' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_and_connect_usb': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 /// Test that if a partial serial number is passed, it also works
 #[tokio::test]
-#[serial(piggui, devices)]
+#[serial]
 async fn usb_discover_and_connect_partial_usb() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_and_connect_partial_usb' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     kill_all("piggui");
-    build("piggui");
 
     let serials = usb_host::get_serials()
         .await
@@ -55,6 +73,13 @@ async fn usb_discover_and_connect_partial_usb() {
     println!(
         "Tested piggui USB connection to {number} USB discovered devices using partial USB serial number"
     );
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_and_connect_partial_usb' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_and_connect_partial_usb': {}s",
+        ((end - start).num_seconds())
+    );
 }
-
-//reconnect usb (kill and restart)
