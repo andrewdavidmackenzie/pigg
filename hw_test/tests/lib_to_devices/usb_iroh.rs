@@ -2,6 +2,7 @@
 
 #[cfg(feature = "discovery")]
 use crate::discovery::usb::get_iroh_by_usb;
+use chrono::{DateTime, Utc};
 use iroh::endpoint::Connection;
 use iroh::{NodeId, RelayUrl};
 use pigdef::config::HardwareConfig;
@@ -31,8 +32,13 @@ where
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_and_disconnect_iroh() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_and_disconnect_iroh' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let iroh_devices = get_iroh_by_usb()
         .await
         .expect("Could detect Iroh devices via USB");
@@ -55,11 +61,25 @@ async fn usb_discover_connect_and_disconnect_iroh() {
     }
 
     println!("Tested Iroh connection and disconnection to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_and_disconnect_iroh' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_and_disconnect_iroh': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_and_get_config_iroh() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_and_get_config_iroh' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let iroh_devices = get_iroh_by_usb()
         .await
         .expect("Could detect Iroh devices via USB");
@@ -88,11 +108,25 @@ async fn usb_discover_connect_and_get_config_iroh() {
     }
 
     println!("Tested Iroh GetConfig to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_and_get_config_iroh' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_and_get_config_iroh': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_and_reconnect_iroh() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_and_reconnect_iroh' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let iroh_devices = get_iroh_by_usb()
         .await
         .expect("Could detect Iroh devices via USB");
@@ -129,4 +163,13 @@ async fn usb_discover_connect_and_reconnect_iroh() {
     }
 
     println!("Tested Iroh re-connection to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_and_reconnect_iroh' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_and_reconnect_iroh': {:?}s",
+        (end - start).num_seconds()
+    );
 }

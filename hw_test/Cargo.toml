@@ -26,6 +26,7 @@ anyhow = "1.0.99"
 mdns-sd = { version = "0.13.11", default-features = false, features = ["async"] }
 iroh = { version = "0.92.0", default-features = false }
 sysinfo = { version = "0.37" } # used in support.rs via path
+chrono = "0.4.42"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

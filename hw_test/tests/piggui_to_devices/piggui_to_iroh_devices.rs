@@ -1,7 +1,7 @@
+use crate::support::{kill, kill_all, run, wait_for_stdout};
+use chrono::{DateTime, Utc};
 use serial_test::serial;
 use std::time::Duration;
-
-use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
@@ -15,12 +15,16 @@ use crate::discovery::mdns::get_iroh_by_mdns;
 /// that Iroh has timed out for each device before any other test attempts to connect to it using
 /// Iroh again
 #[tokio::test]
-#[serial(piggui, devices)]
+#[serial]
 async fn mdns_discover_and_connect_iroh() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'mdns_discover_and_connect_iroh' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     kill_all("piggui");
-    build("piggui");
 
-    let devices = get_iroh_by_mdns()
+    let devices = get_iroh_by_mdns(1)
         .await
         .expect("Could not find device to test by mDNS");
 
@@ -46,4 +50,13 @@ async fn mdns_discover_and_connect_iroh() {
     tokio::time::sleep(Duration::from_secs(31)).await;
 
     println!("Tested piggui Iroh connection to {number} mDNS discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'mdns_discover_and_connect_iroh' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'mdns_discover_and_connect_iroh': {:?}s",
+        (end - start).num_seconds()
+    );
 }
