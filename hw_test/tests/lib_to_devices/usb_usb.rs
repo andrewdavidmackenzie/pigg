@@ -1,5 +1,6 @@
 #![cfg(feature = "usb")]
 
+use chrono::{DateTime, Utc};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
 use pignet::usb_host;
@@ -7,8 +8,13 @@ use serial_test::serial;
 use std::time::Duration;
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_usb() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_usb' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -22,11 +28,25 @@ async fn usb_discover_connect_usb() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB connect to {number} USB connected devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_usb' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_usb': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_disconnect_usb() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_disconnect_usb' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -45,11 +65,25 @@ async fn usb_discover_disconnect_usb() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB disconnect {number} USB connected devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_disconnect_usb' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_disconnect_usb': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_get_config_usb() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_get_config_usb' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -74,11 +108,25 @@ async fn usb_discover_get_config_usb() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested GetConfig to {number} USB connected devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_get_config_usb' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_get_config_usb': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_reconnect_usb() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_reconnect_usb' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -106,11 +154,25 @@ async fn usb_discover_connect_reconnect_usb() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested USB re-connect to {number} USB connected devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_reconnect_usb' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_reconnect_usb': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_get_details_usb() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_get_details_usb' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
@@ -142,4 +204,13 @@ async fn usb_discover_get_details_usb() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested GetDetails to {number} USB connected devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_get_details_usb' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_get_details_usb': {:?}s",
+        (end - start).num_seconds()
+    );
 }
