@@ -92,12 +92,8 @@ build-porky:
 test:
 	cargo test -- --show-output
 
-.PHONY: build_hw_tests
-build_hw_tests:
-	make -C hw_test build
-
 .PHONY: hw_tests
-hw_tests:
+hw_tests: build
 	make -C hw_test
 
 .PHONY: features

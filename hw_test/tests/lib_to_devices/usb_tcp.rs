@@ -1,6 +1,8 @@
 #![cfg(all(feature = "usb", feature = "tcp"))]
 
+use crate::discovery::usb::get_ip_and_port_by_usb;
 use async_std::net::TcpStream;
+use chrono::{DateTime, Utc};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
 use pigdef::description::{HardwareDescription, SerialNumber};
@@ -9,8 +11,6 @@ use serial_test::serial;
 use std::future::Future;
 use std::net::IpAddr;
 use std::time::Duration;
-
-use crate::discovery::usb::get_ip_and_port_by_usb;
 
 async fn connect_tcp<F, Fut>(serial: &SerialNumber, ip: &IpAddr, port: u16, test: F)
 where
@@ -31,8 +31,13 @@ where
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_and_disconnect_tcp() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_and_disconnect_tcp' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let ip_devices = get_ip_and_port_by_usb()
         .await
         .expect("Could detect TCP devices via USB");
@@ -50,11 +55,25 @@ async fn usb_discover_connect_and_disconnect_tcp() {
     }
 
     println!("Tested TCP connection and disconnection to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_and_disconnect_tcp' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_and_disconnect_tcp': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_and_get_config_tcp() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_and_get_config_tcp' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let ip_devices = get_ip_and_port_by_usb()
         .await
         .expect("Could detect TCP devices via USB");
@@ -78,11 +97,25 @@ async fn usb_discover_connect_and_get_config_tcp() {
     }
 
     println!("Tested TCP GetConfig to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_and_get_config_tcp' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_and_get_config_tcp': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn usb_discover_connect_and_reconnect_tcp() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_connect_and_reconnect_tcp' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     let ip_devices = get_ip_and_port_by_usb()
         .await
         .expect("Could detect TCP devices via USB");
@@ -110,4 +143,13 @@ async fn usb_discover_connect_and_reconnect_tcp() {
     }
 
     println!("Tested TCP re-connection to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_connect_and_reconnect_tcp' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_connect_and_reconnect_tcp': {:?}s",
+        (end - start).num_seconds()
+    );
 }

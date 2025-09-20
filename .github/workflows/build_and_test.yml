@@ -207,7 +207,6 @@ jobs:
 
   hw_tests:
     runs-on: [ self-hosted, macOS, ARM64, pigg ]
-    timeout-minutes: 10 # test it times out
     steps:
       - name: Checkout
         uses: actions/checkout@v4
