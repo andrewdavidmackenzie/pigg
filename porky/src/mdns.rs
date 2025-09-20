@@ -13,7 +13,6 @@ use embassy_net::Stack;
 use embassy_rp::clocks::RoscRng;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::signal::Signal;
-use rand::RngCore;
 
 /// mDNS responder embassy task
 #[embassy_executor::task]

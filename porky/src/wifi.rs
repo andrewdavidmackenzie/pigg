@@ -8,10 +8,11 @@ use embassy_net::{Config, Runner, Stack, StackResources};
 use embassy_rp::clocks::RoscRng;
 use embassy_rp::gpio::Level;
 use embassy_rp::gpio::Output;
+use embassy_rp::peripherals::PIN_23;
 use embassy_rp::peripherals::{DMA_CH0, PIO0};
+use embassy_rp::Peri;
 use embassy_time::Timer;
 use pigdef::description::SsidSpec;
-use rand::RngCore;
 use static_cell::StaticCell;
 
 const WIFI_JOIN_RETRY_ATTEMPT_LIMIT: usize = 3;
@@ -99,7 +100,7 @@ while let Some(bss) = scanner.next().await {
 ///     - boolean indicating if Wi-Fi is working as expected
 pub async fn start_net<'a>(
     spawner: Spawner,
-    pin_23: embassy_rp::peripherals::PIN_23,
+    pin_23: Peri<'static, PIN_23>,
     spi: PioSpi<'static, PIO0, 0, DMA_CH0>,
 ) -> (Control<'a>, Stack<'static>, bool) {
     let fw = include_bytes!("../assets/43439A0.bin");

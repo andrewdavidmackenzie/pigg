@@ -12,6 +12,7 @@ use embassy_rp::peripherals::{
     PIN_2, PIN_20, PIN_21, PIN_22, PIN_26, PIN_27, PIN_28, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7,
     PIN_8, PIN_9,
 };
+use embassy_rp::Peri;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::channel::{Receiver, Sender};
@@ -78,32 +79,32 @@ impl Gpio {
     /// Take the following pins out of peripherals for use a GPIO
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        pin_0: PIN_0,
-        pin_1: PIN_1,
-        pin_2: PIN_2,
-        pin_3: PIN_3,
-        pin_4: PIN_4,
-        pin_5: PIN_5,
-        pin_6: PIN_6,
-        pin_7: PIN_7,
-        pin_8: PIN_8,
-        pin_9: PIN_9,
-        pin_10: PIN_10,
-        pin_11: PIN_11,
-        pin_12: PIN_12,
-        pin_13: PIN_13,
-        pin_14: PIN_14,
-        pin_15: PIN_15,
-        pin_16: PIN_16,
-        pin_17: PIN_17,
-        pin_18: PIN_18,
-        pin_19: PIN_19,
-        pin_20: PIN_20,
-        pin_21: PIN_21,
-        pin_22: PIN_22,
-        pin_26: PIN_26,
-        pin_27: PIN_27,
-        pin_28: PIN_28,
+        pin_0: Peri<'static, PIN_0>,
+        pin_1: Peri<'static, PIN_1>,
+        pin_2: Peri<'static, PIN_2>,
+        pin_3: Peri<'static, PIN_3>,
+        pin_4: Peri<'static, PIN_4>,
+        pin_5: Peri<'static, PIN_5>,
+        pin_6: Peri<'static, PIN_6>,
+        pin_7: Peri<'static, PIN_7>,
+        pin_8: Peri<'static, PIN_8>,
+        pin_9: Peri<'static, PIN_9>,
+        pin_10: Peri<'static, PIN_10>,
+        pin_11: Peri<'static, PIN_11>,
+        pin_12: Peri<'static, PIN_12>,
+        pin_13: Peri<'static, PIN_13>,
+        pin_14: Peri<'static, PIN_14>,
+        pin_15: Peri<'static, PIN_15>,
+        pin_16: Peri<'static, PIN_16>,
+        pin_17: Peri<'static, PIN_17>,
+        pin_18: Peri<'static, PIN_18>,
+        pin_19: Peri<'static, PIN_19>,
+        pin_20: Peri<'static, PIN_20>,
+        pin_21: Peri<'static, PIN_21>,
+        pin_22: Peri<'static, PIN_22>,
+        pin_26: Peri<'static, PIN_26>,
+        pin_27: Peri<'static, PIN_27>,
+        pin_28: Peri<'static, PIN_28>,
     ) -> Self {
         let mut pins = FnvIndexMap::new();
 
