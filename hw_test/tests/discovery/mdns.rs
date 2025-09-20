@@ -38,7 +38,8 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
                 }
             }
 
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            println!("Failed to discover devices by mDNS, sleeping 1 second and trying again");
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 
@@ -47,8 +48,9 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
 
 #[allow(dead_code)] // Only pigglet device will offer Iroh properties
 #[cfg(feature = "iroh")]
-pub async fn get_iroh_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (NodeId, Option<RelayUrl>)>>
-{
+pub async fn get_iroh_by_mdns(
+    minimum_number: usize,
+) -> anyhow::Result<HashMap<SerialNumber, (NodeId, Option<RelayUrl>)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
         .checked_add(Duration::from_secs(60))
@@ -74,11 +76,15 @@ pub async fn get_iroh_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (NodeId,
                         println!("\tIroh nodeid = {nodeid}");
                         println!("\tIroh relayURL = {:?}", relay_url);
                         discovered.insert(serial.to_string(), (nodeid as NodeId, relay_url));
+                        if discovered.len() >= minimum_number {
+                            return Ok(discovered);
+                        }
                     }
                 }
             }
 
-            tokio::time::sleep(Duration::from_millis(100)).await;
+            println!("Failed to discover devices by mDNS, sleeping 1 second and trying again");
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 

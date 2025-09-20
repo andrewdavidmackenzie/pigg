@@ -1,7 +1,7 @@
+use crate::support::{kill, kill_all, run, wait_for_stdout};
+use chrono::{DateTime, Utc};
 use serial_test::serial;
 use std::time::Duration;
-
-use crate::support::{build, kill, kill_all, run, wait_for_stdout};
 
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
 /// binary using CLIP options
@@ -13,10 +13,14 @@ use crate::discovery::mdns::get_ip_and_port_by_mdns;
 use crate::discovery::usb::get_ip_and_port_by_usb;
 
 #[tokio::test]
-#[serial(piggui, devices)]
+#[serial]
 async fn usb_discover_and_connect_tcp() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'usb_discover_and_connect_tcp' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     kill_all("piggui");
-    build("piggui");
 
     let ip_and_ports = get_ip_and_port_by_usb()
         .await
@@ -39,13 +43,26 @@ async fn usb_discover_and_connect_tcp() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested piggui TCP connection to {number} USB discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'usb_discover_and_connect_tcp' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'usb_discover_and_connect_tcp': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(piggui, devices)]
+#[serial]
 async fn mdns_discover_and_connect_tcp() {
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'mdns_discover_and_connect_tcp' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
     kill_all("piggui");
-    build("piggui");
 
     let devices = get_ip_and_port_by_mdns()
         .await
@@ -68,4 +85,13 @@ async fn mdns_discover_and_connect_tcp() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("Tested piggui TCP connection to {number} mDNS discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'mdns_discover_and_connect_tcp' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'mdns_discover_and_connect_tcp': {:?}s",
+        (end - start).num_seconds()
+    );
 }

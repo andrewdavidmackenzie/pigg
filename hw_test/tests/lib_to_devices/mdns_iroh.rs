@@ -1,5 +1,7 @@
 #![cfg(all(feature = "discovery", feature = "iroh"))]
 
+use crate::discovery::mdns::get_iroh_by_mdns;
+use chrono::{DateTime, Utc};
 use iroh::endpoint::Connection;
 use iroh::{NodeId, RelayUrl};
 use pigdef::config::HardwareConfig;
@@ -9,8 +11,6 @@ use pignet::iroh_host;
 use serial_test::serial;
 use std::future::Future;
 use std::time::Duration;
-
-use crate::discovery::mdns::get_iroh_by_mdns;
 
 async fn connect_iroh<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
 where
@@ -36,9 +36,14 @@ where
 /// Use connect and disconnect test directly on Iroh, as the disconnect timeout is long and
 /// inconvenient for tests that follow this one if it only connected.
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn mdns_discover_connect_and_disconnect_iroh() {
-    let devices = get_iroh_by_mdns()
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'mdns_discover_connect_and_disconnect_iroh' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
+    let devices = get_iroh_by_mdns(1)
         .await
         .expect("Error while discovering pigg Iroh devices by mDNS");
 
@@ -58,12 +63,26 @@ async fn mdns_discover_connect_and_disconnect_iroh() {
     }
 
     println!("Tested Iroh connection and disconnection to {number} mDNS discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'mdns_discover_connect_and_disconnect_iroh' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'mdns_discover_connect_and_disconnect_iroh': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn mdns_discover_get_config_iroh() {
-    let devices = get_iroh_by_mdns()
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'mdns_discover_get_config_iroh' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
+    let devices = get_iroh_by_mdns(1)
         .await
         .expect("Error while discovering pigg Iroh devices by mDNS");
 
@@ -89,12 +108,26 @@ async fn mdns_discover_get_config_iroh() {
     }
 
     println!("Tested Iroh GetConfig to {number} mDNS discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'mdns_discover_get_config_iroh' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'mdns_discover_get_config_iroh': {:?}s",
+        (end - start).num_seconds()
+    );
 }
 
 #[tokio::test]
-#[serial(devices)]
+#[serial]
 async fn mdns_discover_reconnect_iroh() {
-    let devices = get_iroh_by_mdns()
+    let start: DateTime<Utc> = Utc::now();
+    println!(
+        "Starting 'mdns_discover_reconnect_iroh' at {}",
+        start.format("%Y-%m-%d %H:%M:%S")
+    );
+    let devices = get_iroh_by_mdns(1)
         .await
         .expect("Error while discovering pigg Iroh devices by mDNS");
 
@@ -124,4 +157,13 @@ async fn mdns_discover_reconnect_iroh() {
     }
 
     println!("Tested Iroh re-connection to {number} mDNS discovered devices");
+    let end: DateTime<Utc> = Utc::now();
+    println!(
+        "Test Ended 'mdns_discover_reconnect_iroh' at {}",
+        end.format("%Y-%m-%d %H:%M:%S")
+    );
+    println!(
+        "Test Duration 'mdns_discover_reconnect_iroh': {:?}s",
+        (end - start).num_seconds()
+    );
 }
