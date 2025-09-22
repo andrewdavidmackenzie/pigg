@@ -298,8 +298,9 @@ pub async fn start(
     let _ = interface_builder.alt_setting(0xFF, 0, 0, None);
     // This should set alt_settings #1
     let mut interface_alt_builder = interface_builder.alt_setting(0xFF, 0, 0, None);
-    let ep_in = interface_alt_builder.endpoint_interrupt_in(USB_PACKET_SIZE, 10);
-    let _ep_out = interface_alt_builder.endpoint_interrupt_out(USB_PACKET_SIZE, 10);
+    // TODO None - not sure this is correct - check embassy examples
+    let ep_in = interface_alt_builder.endpoint_interrupt_in(None, USB_PACKET_SIZE, 10);
+    let _ep_out = interface_alt_builder.endpoint_interrupt_out(None, USB_PACKET_SIZE, 10);
 
     drop(function_builder);
     builder.handler(control_handler);
