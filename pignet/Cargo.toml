@@ -29,6 +29,6 @@ async-std = "1.13.2"
 iroh = { version = "0.92.0", default-features = false, optional = true }
 tokio = { version = "1.47.1", default-features = false, features = ["time"], optional = true }
 nusb = { version = "0.1.14", default-features = false, optional = true }
-serde = { version = "1.0.225", default-features = false, features = ["derive"], optional = true }
+serde = { version = "1.0.226", default-features = false, features = ["derive"], optional = true }
 rand = { version = "0.9.2", default-features = false, features = ["std", "std_rng"], optional = true }
 rand_core = { version = "0.6.4", optional = true }
