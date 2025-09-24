@@ -1,0 +1,23 @@
+name: Build and Test with Coverage
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  hw_tests:
+    runs-on: [ self-hosted, macOS, ARM64, pigg ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run HW Tests
+        run: make hw_tests
