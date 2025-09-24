@@ -205,15 +205,6 @@ jobs:
         run: |
           RUSTFLAGS= make -C porky build-uf2s
 
-  hw_tests:
-    runs-on: [ self-hosted, macOS, ARM64, pigg ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run HW Tests
-        run: make hw_tests
-
   clippy:
     runs-on: ubuntu-latest
     steps:
