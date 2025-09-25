@@ -247,8 +247,19 @@ jobs:
         with:
           ref: HEAD
 
-      - name: build and test
+      - name: build and test - non-Linux
+        if: runner.os != 'Linux'
         run: make build test
+
+      - name: build and test - Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install weston
+          weston -Bheadless -Sweston &
+          make build test
+        env:
+          WAYLAND_DISPLAY: weston
 
       - name: Clean up coverage
         if: runner.os != 'Windows'
