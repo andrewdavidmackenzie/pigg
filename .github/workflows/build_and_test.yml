@@ -248,7 +248,7 @@ jobs:
         with:
           ref: HEAD
 
-      - name: build and test - non-Linux
+      - name: build and test
         run: make build test
 
       - name: Clean up coverage
