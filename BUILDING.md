@@ -173,3 +173,29 @@ Example: `PI_TARGET=pizero2w0.local PI_USER=andrew make copy-armv7`
 
 For more details on building and running `porky` on a Raspberry Pi Pico W device,
 see [porky/BUILDING.md](porky/BUILDING.md).
+
+### Compressing debug info of piggui and pigglet
+
+I
+followed [this blog post](https://kobzol.github.io/rust/2025/09/22/reducing-binary-size-of-rust-programs-with-debuginfo.html)
+to
+compress the debug info included in binaries, with the following results.
+
+use e.g. `llvm-objcopy --compress-debug-sections=zlib target/debug/pigglet target/debug/pigglet-zlib`
+
+before macos Tahoe 26 with rustc
+piggui release 10084176
+pigglet release 7196816
+piggui debug 91613560
+pigglet debug 58418248
+
+after
+piggui release 10084160
+pigglet release 7196800
+piggui debug 90874960
+pigglet debug 58418248
+
+marginal gains
+
+on linux:
+
