@@ -49,6 +49,7 @@ endif
 	@make -C piggui setup
 	@make -C pigglet setup
 	@make -C porky setup
+	@brew install mlc
 
 .PHONY: clippy
 clippy:
@@ -234,6 +235,7 @@ build-web:
 
 docs:
 	bundle exec jekyll build --source site --destination _site
+	mlc _site
 	surge _site
 
 serve-docs:
