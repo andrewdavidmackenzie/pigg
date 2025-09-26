@@ -197,5 +197,18 @@ pigglet debug 58418248
 
 marginal gains
 
-on linux:
+
+before linux with rustc 1.92.0 nightly
+piggui release 17295984
+pigglet release 9755696
+piggui debug 520623368
+pigglet debug 257827608
+
+after
+piggui release 17295136 / 17295984 = 1.0
+pigglet release 9754888 / 9755696 = 1.0
+piggui debug 223388960 / 520623368 = 0.42
+pigglet debug 112947440 / 257827608 = 0.44
+
+So, it's worth doing it for debug builds on linux, but not much else.
 
