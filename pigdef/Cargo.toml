@@ -21,7 +21,7 @@ iroh = []
 std = ["serde/std"]
 
 [dependencies]
-serde = { version = "1.0.227", default-features = false, features = ["derive"] }
+serde = { version = "1.0.228", default-features = false, features = ["derive"] }
 
 # Optional Dependencies for "no_std" case
 heapless = { version = "0.9.1", default-features = false, features = ["serde", "defmt"], optional = true }
