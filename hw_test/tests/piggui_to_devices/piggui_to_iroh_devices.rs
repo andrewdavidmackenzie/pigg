@@ -8,7 +8,6 @@ use std::time::Duration;
 ///
 use crate::discovery::mdns::get_iroh_by_mdns;
 
-
 /// The piggui app doesn't disconnect from iroh when killed, so until the timeout expires for a device,
 /// nothing else can connect to it by Iroh, and it causes other tests to fail.
 /// I have added a sleep that is longer than the Iroh timeout at the end of the test to ensure
