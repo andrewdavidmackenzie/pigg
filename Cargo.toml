@@ -21,8 +21,9 @@ rust-version = "1.80"
 opt-level = "s"
 lto = "fat"
 panic = "abort"
-strip = "debuginfo"
+strip = "debuginfo" # Saves about 10%
 codegen-units = 1
+debug = "line-tables-only" # Minimal savings, but seems the right option
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
