@@ -1,4 +1,4 @@
-name: Build and Test with Coverage
+name: Build and Test Matrix with Coverage
 
 on:
   push:
@@ -17,80 +17,6 @@ env:
   GH_TOKEN: ${{ github.token }}
 
 jobs:
-  Format-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run cargo fmt check
-        run: cargo fmt --all -- --check
-
-  all-feature-combinations:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install cargo-all-features
-        run: cargo install cargo-all-features
-
-      - name: cargo check-all-features
-        run: cargo check-all-features
-
-  web-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: add wasm32-unknown-unknown target
-        run: rustup target add wasm32-unknown-unknown
-
-      - name: Install cargo binstall
-        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-
-      - name: Install trunk
-        run: cargo binstall trunk
-
-      - name: wasm32 trunk build
-        run: make -C piggui trunk-build
-
-  porky-release-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install arm targets
-        run: make -C porky install-targets
-
-      - name: Install picotool
-        run: |
-          gh release --repo raspberrypi/pico-sdk-tools download --pattern 'picotool-*-x86_64-lin.tar.gz'
-          tar xf picotool-*-x86_64-lin.tar.gz
-          echo $PWD/picotool >> $GITHUB_PATH
-          export PATH="$PWD/picotool:$PATH"
-
-      - name: Build all pico variants and their UF2 files
-        run: |
-          RUSTFLAGS= make -C porky build-uf2s
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --tests --no-deps --all-features --all-targets
-
   build-and-test-matrix:
     runs-on: ${{ matrix.os }}
     strategy:

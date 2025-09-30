@@ -141,3 +141,24 @@ jobs:
         run: cargo build --bin pigglet --target=aarch64-linux-android
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+
+  porky-uf2-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install arm targets
+        run: make -C porky install-targets
+
+      - name: Install picotool
+        run: |
+          gh release --repo raspberrypi/pico-sdk-tools download --pattern 'picotool-*-x86_64-lin.tar.gz'
+          tar xf picotool-*-x86_64-lin.tar.gz
+          echo $PWD/picotool >> $GITHUB_PATH
+          export PATH="$PWD/picotool:$PATH"
+
+      - name: Build all pico variants and their UF2 files
+        run: |
+          RUSTFLAGS= make -C porky build-uf2s
