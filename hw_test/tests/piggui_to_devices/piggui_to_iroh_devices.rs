@@ -8,12 +8,13 @@ use std::time::Duration;
 ///
 use crate::discovery::mdns::get_iroh_by_mdns;
 
-/// The problem with using this test is that piggui doesn't disconnect from iroh when killed,
-/// so until the timeout expires for a device, nothing else can connect to it by Iroh, and it
-/// causes other tests to fail.
-/// So, we have added a sleep that is longer than the Iroh timeout at the end of the test to ensure
-/// that Iroh has timed out for each device before any other test attempts to connect to it using
-/// Iroh again
+
+/// The piggui app doesn't disconnect from iroh when killed, so until the timeout expires for a device,
+/// nothing else can connect to it by Iroh, and it causes other tests to fail.
+/// I have added a sleep that is longer than the Iroh timeout at the end of the test to ensure
+/// that Iroh has timed out.
+/// This is to ensure that the connection is closed by the device and returned to the state
+/// where it accepts new connections before any other test attempts to connect to it again.
 #[tokio::test]
 #[serial]
 async fn mdns_discover_and_connect_iroh() {
