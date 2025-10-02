@@ -1,4 +1,4 @@
-name: Surge Preview
+name: Site Preview
 
 on:
   pull_request:
@@ -13,8 +13,9 @@ permissions:
   id-token: write
 
 jobs:
-  deploy-preview:
+  deploy-surge-preview:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4

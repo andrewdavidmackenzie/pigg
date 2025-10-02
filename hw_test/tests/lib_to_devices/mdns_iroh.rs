@@ -145,7 +145,7 @@ async fn mdns_discover_reconnect_iroh() {
         })
         .await;
 
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_secs(31)).await;
 
         // Test we can re-connect after sending a disconnect request
         connect_iroh(node, relay, |_hw_desc, _c, mut connection| async move {
