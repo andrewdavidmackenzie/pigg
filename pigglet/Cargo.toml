@@ -43,7 +43,7 @@ tokio = { version = "1.48", default-features = false, features = ["time", "rt", 
 log = { version = "0.4.28", default-features = false }
 sysinfo = { version = "0.37", default-features = false, features = ["system"] }
 service-manager = { version = "0.8.0", default-features = false }
-clap = { version = "4.5.49", default-features = false, features = ["std", "help", "error-context"] }
+clap = { version = "4.5.50", default-features = false, features = ["std", "help", "error-context"] }
 serde_json = { version = "1.0.145", default-features = false, features = ["std"] }
 
 iroh = { version = "0.92.0", default-features = false, optional = true }
