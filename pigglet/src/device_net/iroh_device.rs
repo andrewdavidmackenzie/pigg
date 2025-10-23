@@ -1,6 +1,5 @@
 use anyhow::{anyhow, bail};
 use iroh::endpoint::Connection;
-use iroh::Watcher;
 use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
 use log::{debug, info, trace};
 use pigdef::config::HardwareConfig;
@@ -73,18 +72,21 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
     let nodeid = endpoint.node_id();
     println!("nodeid: {nodeid}"); // Don't remove - required by integration tests
 
+    // TODO - still unclear if this is needed or not - apart from the info!()
     let local_addrs = endpoint
-        .direct_addresses()
-        .initialized()
-        .await
+        .node_addr()
+        .direct_addresses
         .into_iter()
-        .map(|endpoint| endpoint.addr.to_string())
+        .map(|addr| addr.to_string())
         .collect::<Vec<_>>()
         .join(" ");
     info!("local Addresses: {local_addrs}");
 
-    let relay_url = endpoint.home_relay().initialized().await;
-    println!("Relay URL: {relay_url}"); // Don't remove - required by integration tests
+    endpoint.online().await;
+    let relay_url = endpoint
+        .node_addr()
+        .relay_url
+        .ok_or_else(|| anyhow!("No relay url"))?;
 
     Ok(IrohDevice {
         nodeid,
