@@ -1,15 +1,13 @@
 use anyhow::ensure;
 use iroh::endpoint::VarInt;
-use iroh::Watcher;
 use iroh::{
     endpoint::Connection,
-    RelayMode, RelayUrl, SecretKey, {Endpoint, NodeAddr, NodeId},
+    NodeAddr, RelayMode, RelayUrl, SecretKey, {Endpoint, NodeId},
 };
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 use pigdef::description::HardwareDescription;
 use pigdef::net_values::PIGGLET_ALPN;
-use rand_core::OsRng;
 use std::io;
 
 /// Wait until we receive a message from remote hardware
@@ -47,7 +45,7 @@ pub async fn connect(
     nodeid: &NodeId,
     relay: &Option<RelayUrl>,
 ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection)> {
-    let secret_key = SecretKey::generate(OsRng);
+    let secret_key = SecretKey::generate(&mut rand::rng());
 
     // Build an `Endpoint`, which uses PublicKeys as node identifiers
     let endpoint = Endpoint::builder()
@@ -60,22 +58,14 @@ pub async fn connect(
         .bind()
         .await?;
 
-    let _local_addrs = endpoint
-        .direct_addresses()
-        .initialized()
-        .await
-        .into_iter()
-        .map(|endpoint| endpoint.addr.to_string())
-        .collect::<Vec<_>>()
-        .join(" ");
-
     // Find my closest relay - maybe set this as a default in the UI but allow used to
     // override it in a text entry box. Leave blank for the user if it fails to get fetched.
+    endpoint.online().await;
+
     let relay_url = relay
         .clone()
-        .unwrap_or(endpoint.home_relay().initialized().await);
+        .unwrap_or(endpoint.node_addr().relay_url().unwrap().clone());
 
-    // Build a `NodeAddr` from the node_id, relay url, and UDP addresses.
     let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
@@ -89,7 +79,7 @@ pub async fn connect(
     Ok((reply.0, reply.1, connection))
 }
 
-/// Inform the device that we are disconnecting from the Iroh connection, and close it
+/// Inform the device that we are disconnecting from the Iroh connection and close it
 pub async fn disconnect(connection: &mut Connection) -> anyhow::Result<()> {
     send_config_message(connection, &Disconnect).await?;
     connection.close(VarInt::from_u32(0u32), "disconnect".as_bytes());
