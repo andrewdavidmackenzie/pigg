@@ -9,7 +9,7 @@ use futures::SinkExt;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 #[cfg(feature = "tcp")]
 use mdns_sd::ServiceInfo;
 #[cfg(feature = "tcp")]
@@ -140,12 +140,12 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
     );
 
     #[cfg(feature = "iroh")]
-    if let Some(nodeid_str) = device_properties.get_property_val_str("IrohNodeID") {
-        if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
+    if let Some(endpoint_id_str) = device_properties.get_property_val_str("IrohNodeID") {
+        if let Ok(endpoint_id) = EndpointId::from_str(endpoint_id_str) {
             if let Some(relay_url_str) = device_properties.get_property_val_str("IrohRelayURL") {
                 hardware_connections.insert(
                     "Iroh".to_string(),
-                    HardwareConnection::Iroh(nodeid, Some(RelayUrl::from_str(relay_url_str)?)),
+                    HardwareConnection::Iroh(endpoint_id, Some(RelayUrl::from_str(relay_url_str)?)),
                 );
             }
         }

@@ -74,13 +74,15 @@ See what's new in [latest release](https://github.com/andrewdavidmackenzie/pigg/
 - The GUI can run on Mac, Linux, Windows or Raspberry Pis. Events are timestamped at source (as close to the hardware
   as possible) so network delays should not affect the waveforms displayed. Please provide us feedback and ideas related
   to networking in Discussions or GH issues.
-- The data required to connect to a remote node via iroh-net is called the `nodeid`. `pigglet` prints this out for you
+- The data required to connect to a remote node via iroh-net is called the `endpoint_id`. `pigglet` prints this out for
+  you
   if it is started in the foreground. When `pigglet` has been started as a system service, start another instance in the
-  foreground and this will detect the background instance and display its `nodeid` for you then exit.
-- Take the `nodeid` and either supply it as a command line option to `piggui` (`--nodeid $nodeid`, prefixed with `-- `
+  foreground and this will detect the background instance and display its `endpoint_id` for you then exit.
+- Take the `endpoint_id` and either supply it as a command line option to `piggui` (`--endpoint_id $endpoint_id`,
+  prefixed with `-- `
   if using `cargo run`) or enter it into the GUI. To connect to a remote instance from the GUI, click on the
   "hardware menu" in the left of the info bar at the bottom of the screen and select the "Connect to remote Pi..."
-  menu item. Then enter the `nodeid` into the field provided and hit "Connect"
+  menu item. Then enter the `endpoint_id` into the field provided and hit "Connect"
 - Here are two videos showing the two ways to use it, with pigglet running on a RPi shown via VNC.
     - Video with Dialog: https://youtu.be/aToJ1aT7NeM
     - Video using CLI argument: https://youtu.be/zcEa_Oke014

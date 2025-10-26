@@ -1,5 +1,5 @@
 #[cfg(feature = "iroh")]
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
 use std::fmt::{Display, Formatter};
@@ -24,7 +24,7 @@ pub enum HardwareConnection {
     #[cfg(feature = "usb")]
     Usb(SerialNumber),
     #[cfg(feature = "iroh")]
-    Iroh(NodeId, Option<RelayUrl>),
+    Iroh(EndpointId, Option<RelayUrl>),
     #[cfg(feature = "tcp")]
     Tcp(IpAddr, u16),
 }
@@ -53,7 +53,7 @@ impl Display for HardwareConnection {
             #[cfg(feature = "usb")]
             Self::Usb(serial) => write!(f, "USB: {serial}"),
             #[cfg(feature = "iroh")]
-            Self::Iroh(nodeid, _relay_url) => write!(f, "Iroh: {nodeid}"),
+            Self::Iroh(endpoint_id, _relay_url) => write!(f, "Iroh: {endpoint_id}"),
             #[cfg(feature = "tcp")]
             Self::Tcp(ip, port) => write!(f, "TCP: {ip}:{port}"),
         }

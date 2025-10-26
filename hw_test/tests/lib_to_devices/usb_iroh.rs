@@ -4,7 +4,7 @@
 use crate::discovery::usb::get_iroh_by_usb;
 use chrono::{DateTime, Utc};
 use iroh::endpoint::Connection;
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
 use pigdef::description::HardwareDescription;
@@ -13,12 +13,12 @@ use serial_test::serial;
 use std::future::Future;
 use std::time::Duration;
 
-async fn connect_iroh<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
+async fn connect_iroh<F, Fut>(endpoint_id: &EndpointId, relay_url: &Option<RelayUrl>, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
     Fut: Future<Output = ()>,
 {
-    match iroh_host::connect(nodeid, relay_url).await {
+    match iroh_host::connect(endpoint_id, relay_url).await {
         Ok((hw_desc, hw_config, connection)) => {
             assert!(
                 hw_desc.details.model.contains("Pi"),
@@ -47,9 +47,9 @@ async fn usb_discover_connect_and_disconnect_iroh() {
     // Currently we don't have any devices that implement USB discoverability and Iroh
     // assert!(number > 0, "Could not find usb connected device with Iroh");
 
-    for (_serial, (nodeid, relay_url)) in iroh_devices {
+    for (_serial, (endpoint_id, relay_url)) in iroh_devices {
         connect_iroh(
-            &nodeid,
+            &endpoint_id,
             &relay_url,
             |_hw_desc, _c, mut connection| async move {
                 iroh_host::disconnect(&mut connection)
@@ -88,9 +88,9 @@ async fn usb_discover_connect_and_get_config_iroh() {
     // Currently we don't have any devices that implement USB discoverability and Iroh
     // assert!(number > 0, "Could not find usb connected device with Iroh");
 
-    for (_serial, (nodeid, relay_url)) in iroh_devices {
+    for (_serial, (endpoint_id, relay_url)) in iroh_devices {
         connect_iroh(
-            &nodeid,
+            &endpoint_id,
             &relay_url,
             |_hw_desc, _c, mut connection| async move {
                 iroh_host::send_config_message(&mut connection, &GetConfig)
@@ -135,9 +135,9 @@ async fn usb_discover_connect_and_reconnect_iroh() {
     // Currently we don't have any devices that implement USB discoverability and Iroh
     // assert!(number > 0, "Could not find usb connected device with Iroh");
 
-    for (_serial, (nodeid, relay_url)) in iroh_devices {
+    for (_serial, (endpoint_id, relay_url)) in iroh_devices {
         connect_iroh(
-            &nodeid,
+            &endpoint_id,
             &relay_url,
             |_hw_desc, _c, mut connection| async move {
                 iroh_host::disconnect(&mut connection)
@@ -151,7 +151,7 @@ async fn usb_discover_connect_and_reconnect_iroh() {
 
         // Test we can re-connect after sending a disconnect request
         connect_iroh(
-            &nodeid,
+            &endpoint_id,
             &relay_url,
             |_hw_desc, _c, mut connection| async move {
                 iroh_host::disconnect(&mut connection)

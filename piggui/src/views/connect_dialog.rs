@@ -29,7 +29,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 #[cfg(feature = "iroh")]
-const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure pigglet is running on the remote Pi. Retrieve the nodeid from pigglet, enter it below, and optionally provide a Relay URL";
+const IROH_INFO_TEXT: &str = "To connect to a Pi using iroh-net, ensure pigglet is running on the remote Pi. Retrieve the endpoint_id from pigglet, enter it below, and optionally provide a Relay URL";
 #[cfg(feature = "tcp")]
 const TCP_INFO_TEXT: &str = "To connect to a Pi/Pi Pico using TCP, ensure it is reachable over the network. Retrieve the device's IP address and the port number from it (see pigglet or porky docs) and enter below.";
 
@@ -41,7 +41,7 @@ use crate::views::dialog_styles::{
 use iced::widget::button::Status::Hovered;
 use iced::widget::horizontal_space;
 #[cfg(feature = "iroh")]
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 use std::sync::LazyLock;
 
 #[cfg(feature = "tcp")]
@@ -51,7 +51,7 @@ static IROH_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::u
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {
     #[cfg(feature = "iroh")]
-    nodeid: String,
+    endpoint_id: String,
     #[cfg(feature = "iroh")]
     relay_url: String,
     #[cfg(feature = "tcp")]
@@ -101,7 +101,7 @@ impl ConnectDialog {
     pub fn new() -> Self {
         Self {
             #[cfg(feature = "iroh")]
-            nodeid: String::new(),
+            endpoint_id: String::new(),
             #[cfg(feature = "iroh")]
             relay_url: String::new(),
             #[cfg(feature = "iroh")]
@@ -137,13 +137,13 @@ impl ConnectDialog {
         match message {
             #[cfg(feature = "tcp")]
             ConnectionButtonPressedTcp(ip_address, port_num) => {
-                // Display error when Ip address field is empty
+                // Display error when the Ip address field is empty
                 if ip_address.trim().is_empty() {
                     self.tcp_connection_error = String::from("Please Enter IP Address");
                     return Task::none();
                 }
 
-                // Display error when port number field is empty
+                // Display error when the port number field is empty
                 if port_num.trim().is_empty() {
                     self.tcp_connection_error = String::from("Please Enter Port Number");
                     return Task::none();
@@ -186,8 +186,8 @@ impl ConnectDialog {
                     return Task::none();
                 }
 
-                match NodeId::from_str(node_id.as_str().trim()) {
-                    Ok(nodeid) => {
+                match EndpointId::from_str(node_id.as_str().trim()) {
+                    Ok(endpoint_id) => {
                         let url_str = url.trim();
                         let relay_url = if url_str.is_empty() {
                             None
@@ -207,7 +207,7 @@ impl ConnectDialog {
                         };
 
                         Task::perform(Self::empty(), move |_| {
-                            Message::ConnectRequest(Iroh(nodeid, relay_url.clone()))
+                            Message::ConnectRequest(Iroh(endpoint_id, relay_url.clone()))
                         })
                     }
                     Err(err) => {
@@ -250,7 +250,7 @@ impl ConnectDialog {
 
             ModalKeyEvent(event) => {
                 match event {
-                    // When Pressed `Tab` focuses on previous/next widget
+                    // When Pressed `Tab` focuses on the previous / next widget
                     Event::Keyboard(keyboard::Event::KeyPressed {
                         key: keyboard::Key::Named(key::Named::Tab),
                         modifiers,
@@ -289,7 +289,7 @@ impl ConnectDialog {
 
             #[cfg(feature = "iroh")]
             NodeIdEntered(node_id) => {
-                self.nodeid = node_id;
+                self.endpoint_id = node_id;
                 Task::none()
             }
 
@@ -324,7 +324,7 @@ impl ConnectDialog {
     pub fn hide_modal(&mut self) {
         self.show_modal = false; // Hide the dialog
         #[cfg(feature = "iroh")]
-        self.nodeid.clear(); // Clear the node id, on Cancel
+        self.endpoint_id.clear(); // Clear the node id, on Cancel
         #[cfg(feature = "iroh")]
         self.iroh_connection_error.clear(); // Clear the error, on Cancel
         #[cfg(feature = "iroh")]
@@ -395,7 +395,7 @@ impl ConnectDialog {
             .push(
                 Button::new(Text::new("Connect"))
                     .on_press(Message::ConnectDialog(ConnectButtonPressedIroh(
-                        self.nodeid.clone(),
+                        self.endpoint_id.clone(),
                         self.relay_url.clone(),
                     )))
                     .style(connect_button),
@@ -455,11 +455,11 @@ impl ConnectDialog {
                             .style(move |_theme| { CONNECTION_ERROR_DISPLAY }),
                         text("Node Id").size(12),
                         {
-                            let mut node_input = text_input("Enter node id", &self.nodeid)
+                            let mut node_input = text_input("Enter node id", &self.endpoint_id)
                                 .padding(5)
                                 .id(IROH_INPUT_ID.clone())
                                 .on_submit(Message::ConnectDialog(ConnectButtonPressedIroh(
-                                    self.nodeid.clone(),
+                                    self.endpoint_id.clone(),
                                     self.relay_url.clone(),
                                 )));
                             if !self.disable_widgets {
@@ -475,7 +475,7 @@ impl ConnectDialog {
                             text_input("Enter Relay Url (Optional)", &self.relay_url)
                                 .padding(5)
                                 .on_submit(Message::ConnectDialog(ConnectButtonPressedIroh(
-                                    self.nodeid.clone(),
+                                    self.endpoint_id.clone(),
                                     self.relay_url.clone(),
                                 )));
                         if !self.disable_widgets {
@@ -626,7 +626,7 @@ mod tests {
 
         let _ = connect_dialog.update(HideConnectDialog);
         assert!(!connect_dialog.show_modal);
-        assert!(connect_dialog.nodeid.is_empty());
+        assert!(connect_dialog.endpoint_id.is_empty());
         assert!(connect_dialog.relay_url.is_empty());
         assert!(connect_dialog.iroh_connection_error.is_empty());
         assert!(!connect_dialog.show_spinner);
@@ -640,7 +640,7 @@ mod tests {
         let node_id = "test_node_id".to_string();
 
         let _ = connect_dialog.update(NodeIdEntered(node_id.clone()));
-        assert_eq!(connect_dialog.nodeid, node_id);
+        assert_eq!(connect_dialog.endpoint_id, node_id);
     }
 
     #[cfg(feature = "iroh")]

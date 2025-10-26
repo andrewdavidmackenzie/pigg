@@ -28,7 +28,7 @@ use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme};
 #[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
 use pigdef::description::SerialNumber;
@@ -532,16 +532,16 @@ impl Piggui {
         let mut tasks = vec![];
 
         #[cfg(feature = "iroh")]
-        if let Some(node_str) = matches.get_one::<String>("nodeid") {
-            if let Ok(nodeid) = NodeId::from_str(node_str) {
+        if let Some(endpoint_id_str) = matches.get_one::<String>("endpoint_id") {
+            if let Ok(endpoint_id) = EndpointId::from_str(endpoint_id_str) {
                 // Get the optional relay (RelayURL)
                 let relay_url = match matches.get_one::<String>("relay") {
                     None => None,
                     Some(relay_str) => RelayUrl::from_str(relay_str).ok(),
                 };
-                connection = HardwareConnection::Iroh(nodeid, relay_url);
+                connection = HardwareConnection::Iroh(endpoint_id, relay_url);
             } else {
-                eprintln!("Could not create a NodeId for IrohNet from '{node_str}'");
+                eprintln!("Could not create a NodeId for IrohNet from '{endpoint_id_str}'");
             }
         }
 
@@ -557,7 +557,7 @@ impl Piggui {
             connection = HardwareConnection::Usb(usb_str.to_string());
         }
 
-        // If there is an instance of pigglet or piggui running then we will not offer the option
+        // If there is an instance of pigglet or piggui running, then we will not offer the option
         // to directly control the local GPIO.
         // Discovery methods may detect the locally running instance of pigglet and offer a way
         // to control the GPIO from the GUI.
@@ -625,15 +625,15 @@ fn get_matches() -> ArgMatches {
 
     #[cfg(feature = "iroh")]
     let app = app.arg(
-        Arg::new("nodeid")
-            .short('n')
-            .long("nodeid")
+        Arg::new("endpoint_id")
+            .short('e')
+            .long("endpoint_id")
             .num_args(1)
             .number_of_values(1)
-            .value_name("NODEID")
+            .value_name("ENDPOINT_ID")
             .conflicts_with("ip")
             .conflicts_with("usb")
-            .help("Node Id of the device to connect to via Iroh"),
+            .help("Endpoint Id of the device to connect to via Iroh"),
     );
 
     #[cfg(feature = "iroh")]
@@ -644,7 +644,7 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("RELAY")
-            .requires("nodeid")
+            .requires("endpoint_id")
             .conflicts_with("ip")
             .conflicts_with("usb")
             .help("RelayURL of the device to connect to via Iroh"),
@@ -658,7 +658,7 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("IP")
-            .conflicts_with("nodeid")
+            .conflicts_with("endpoint_id")
             .conflicts_with("relay")
             .conflicts_with("usb")
             .help("'IP:port' of device to connect to via TCP"),
@@ -672,7 +672,7 @@ fn get_matches() -> ArgMatches {
             .num_args(1)
             .number_of_values(1)
             .value_name("Serial")
-            .conflicts_with("nodeid")
+            .conflicts_with("endpoint_id")
             .conflicts_with("relay")
             .conflicts_with("ip")
             .help("Serial Number of a device to connect to via USB"),

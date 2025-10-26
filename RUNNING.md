@@ -32,7 +32,7 @@ If run that on a Raspberry Pi, it will start with the real Pi GPIO hardware back
 - `pigglet`
 
 `pigglet` will print to the terminal a series of values that you can use with `piggui` to connect remotely to that
-`pigglet` instance, such `nodeid` for an Iroh connection, or IP Address and Port for a TCP connection.
+`pigglet` instance, such `endpoint_id` for an Iroh connection, or IP Address and Port for a TCP connection.
 
 `pigglet` also takes an optional filename argument, to load a config from. If there is an error
 loading a config, the default config will be used.
@@ -48,12 +48,13 @@ to `porky`'s own [README.md](porky/README.md)
 
 ### Connecting Piggui to a remote Pigglet or Porky - Command Line Options
 
-To connect to a remote `pigglet` using the Iroh network method, get the `nodeid` value from the pigglet instance (see
+To connect to a remote `pigglet` using the Iroh network method, get the `endpoint_id` value from the pigglet instance (
+see
 above)
 and pass it to
 `piggui` as a command line option.
 
-- `piggui --nodeid $nodeid`
+- `piggui --endpoint_id $endpoint_id`
 
 To connect to a remote `pigglet` using TCP, get the `ip` value (ip address and port together as a string, seperated by a
 ':') from the pigglet instance (see above) and pass it to `piggui` as a command line option.
@@ -71,12 +72,14 @@ device it finds where the device's serial number contains the string provided in
 
 ### Connecting Piggui to a remote Pigglet/Porky - Using the GUI
 
-To connect to a remote `pigglet` using the Iroh network method, get the `nodeid` value from the pigglet instance (see
+To connect to a remote `pigglet` using the Iroh network method, get the `endpoint_id` value from the pigglet instance (
+see
 above).
 Open the "hardware" menu (bottom center), select the "Disconnect" menu item to disconnect from the current device
 (this maybe the simulated GPIO hardware), then chose the "Connect to remote Pi..." menu.
 
-This will display the Conection Dialog. Enter the `nodeid` of the `pigglet` you wish to connect to and hit "Connect".
+This will display the Conection Dialog. Enter the `endpoint_id` of the `pigglet` you wish to connect to and hit "
+Connect".
 
 To connect to a remote `pigglet` using TCP, get the `ip` value (ip address and port together as a string, seperated by a
 ':') from the pigglet instance (see above), open the "Connection Dialog" as above, enter the IP Address and Port and

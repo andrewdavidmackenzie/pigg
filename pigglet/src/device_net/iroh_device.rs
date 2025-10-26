@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail};
 use iroh::endpoint::Connection;
-use iroh::{Endpoint, NodeId, RelayMode, RelayUrl, SecretKey};
+use iroh::{Endpoint, EndpointId, RelayMode, RelayUrl, SecretKey};
 use log::{debug, info, trace};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
@@ -18,7 +18,7 @@ use std::path::Path;
 use std::str::{FromStr, Lines};
 
 pub struct IrohDevice {
-    pub nodeid: NodeId,
+    pub endpoint_id: EndpointId,
     pub relay_url: RelayUrl,
     pub endpoint: Option<Endpoint>,
 }
@@ -26,12 +26,12 @@ pub struct IrohDevice {
 impl IrohDevice {
     /// Don't fail to parse on lack of endpoint data
     pub fn parse(lines: &mut Lines) -> anyhow::Result<Self> {
-        let nodeid = lines.next().ok_or_else(|| anyhow!("Missing nodeid"))?;
+        let endpoint_id = lines.next().ok_or_else(|| anyhow!("Missing endpoint_id"))?;
         let relay = lines.next().ok_or_else(|| anyhow!("Missing relayUrl"))?;
         let _endpoint = lines.next();
 
         Ok(IrohDevice {
-            nodeid: NodeId::from_str(nodeid)?,
+            endpoint_id: EndpointId::from_str(endpoint_id)?,
             relay_url: RelayUrl::from_str(relay)?,
             endpoint: None, // TODO
         })
@@ -39,7 +39,7 @@ impl IrohDevice {
 }
 impl Display for IrohDevice {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "nodeid:{}", self.nodeid)?;
+        writeln!(f, "endpoint_id:{}", self.endpoint_id)?;
         writeln!(f, "relay URL:{}", self.relay_url)?;
         Ok(())
     }
@@ -69,27 +69,19 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
 
     let endpoint = builder.bind().await?;
 
-    let nodeid = endpoint.node_id();
-    println!("nodeid: {nodeid}"); // Don't remove - required by integration tests
-
-    // TODO - still unclear if this is needed or not - apart from the info!()
-    let local_addrs = endpoint
-        .node_addr()
-        .direct_addresses
-        .into_iter()
-        .map(|addr| addr.to_string())
-        .collect::<Vec<_>>()
-        .join(" ");
-    info!("local Addresses: {local_addrs}");
+    let endpoint_id = endpoint.id();
+    println!("endpoint_id: {endpoint_id}"); // Don't remove - required by integration tests
 
     endpoint.online().await;
     let relay_url = endpoint
-        .node_addr()
-        .relay_url
-        .ok_or_else(|| anyhow!("No relay url"))?;
+        .addr()
+        .relay_urls()
+        .next()
+        .ok_or_else(|| anyhow!("No relay url"))?
+        .clone();
 
     Ok(IrohDevice {
-        nodeid,
+        endpoint_id,
         relay_url,
         endpoint: Some(endpoint),
     })
@@ -104,8 +96,8 @@ pub async fn accept_connection(
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
-        let node_id = Connection::remote_node_id(&connection)?;
-        debug!("New connection from nodeid: '{node_id}'",);
+        let endpoint_id = Connection::remote_id(&connection)?;
+        debug!("New connection from endpoint_id: '{endpoint_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
         let message = postcard::to_allocvec(&(&desc, hardware_config))?;
