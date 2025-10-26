@@ -44,7 +44,7 @@ async fn usb_discover_connect_and_disconnect_iroh() {
         .expect("Could detect Iroh devices via USB");
 
     let number = iroh_devices.len();
-    // Currently we don't have any devices that implement USB discoverability and Iroh
+    // Currently, we don't have any devices that implement USB discoverability, and Iroh
     // assert!(number > 0, "Could not find usb connected device with Iroh");
 
     for (_serial, (endpoint_id, relay_url)) in iroh_devices {
@@ -85,7 +85,7 @@ async fn usb_discover_connect_and_get_config_iroh() {
         .expect("Could detect Iroh devices via USB");
 
     let number = iroh_devices.len();
-    // Currently we don't have any devices that implement USB discoverability and Iroh
+    // Currently, we don't have any devices that implement USB discoverability, and Iroh
     // assert!(number > 0, "Could not find usb connected device with Iroh");
 
     for (_serial, (endpoint_id, relay_url)) in iroh_devices {
@@ -132,7 +132,7 @@ async fn usb_discover_connect_and_reconnect_iroh() {
         .expect("Could detect Iroh devices via USB");
 
     let number = iroh_devices.len();
-    // Currently we don't have any devices that implement USB discoverability and Iroh
+    // Currently, we don't have any devices that implement USB discoverability, and Iroh
     // assert!(number > 0, "Could not find usb connected device with Iroh");
 
     for (_serial, (endpoint_id, relay_url)) in iroh_devices {
