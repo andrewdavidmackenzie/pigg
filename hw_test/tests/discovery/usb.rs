@@ -1,4 +1,4 @@
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 use pigdef::description::SerialNumber;
 use pignet::usb_host;
 use pignet::HardwareConnection::{Iroh, Tcp};
@@ -28,8 +28,8 @@ pub async fn get_ip_and_port_by_usb() -> anyhow::Result<Vec<(SerialNumber, IpAdd
 }
 
 #[cfg(feature = "iroh")]
-pub async fn get_iroh_by_usb() -> anyhow::Result<HashMap<SerialNumber, (NodeId, Option<RelayUrl>)>>
-{
+pub async fn get_iroh_by_usb(
+) -> anyhow::Result<HashMap<SerialNumber, (EndpointId, Option<RelayUrl>)>> {
     let mut discovered = HashMap::new();
 
     let serials = usb_host::get_serials()
@@ -40,8 +40,8 @@ pub async fn get_iroh_by_usb() -> anyhow::Result<HashMap<SerialNumber, (NodeId, 
         .expect("Could not get details");
 
     for (serial, device_detail) in details {
-        if let Some(Iroh(nodeid, relay_url)) = device_detail.hardware_connections.get("Iroh") {
-            discovered.insert(serial, (*nodeid, relay_url.clone()));
+        if let Some(Iroh(endpoint_id, relay_url)) = device_detail.hardware_connections.get("Iroh") {
+            discovered.insert(serial, (*endpoint_id, relay_url.clone()));
         }
     }
 

@@ -76,19 +76,19 @@ impl std::fmt::Display for InstanceInfo {
 #[cfg(test)]
 mod test {
     use crate::InstanceInfo;
-    use iroh::{NodeId, RelayUrl};
+    use iroh::{EndpointId, RelayUrl};
     use std::path::PathBuf;
     use std::str::FromStr;
     use std::{fs, process};
     use tempfile::tempdir;
 
-    fn listener_info(nodeid: &NodeId, relay_url_str: &str) -> InstanceInfo {
+    fn listener_info(endpoint_id: &EndpointId, relay_url_str: &str) -> InstanceInfo {
         InstanceInfo {
             process_name: "pigglet_tests".to_string(),
             pid: process::id(),
             #[cfg(feature = "iroh")]
             iroh_info: crate::iroh_device::IrohDevice {
-                nodeid: *nodeid,
+                endpoint_id: *endpoint_id,
                 relay_url: RelayUrl::from_str(relay_url_str).expect("Could not create Relay URL"),
                 endpoint: None,
             },
@@ -106,25 +106,27 @@ mod test {
     fn write_info_file() {
         let output_dir = tempdir().expect("Could not create a tempdir").keep();
         let test_file = output_dir.join("test.info");
-        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        let listener_info = listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ ");
+        let endpoint_id =
+            iroh::EndpointId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+                .expect("Could not create endpoint_id");
+        let listener_info = listener_info(&endpoint_id, "https://euw1-1.relay.iroh.network./ ");
         listener_info
             .write_to_file(&test_file)
             .expect("Writing info file failed");
         assert!(test_file.exists(), "File was not created as expected");
         let pigglet_info = fs::read_to_string(test_file).expect("Could not read info file");
         println!("pigglet_info: {pigglet_info}");
-        assert!(pigglet_info.contains(&nodeid.to_string()))
+        assert!(pigglet_info.contains(&endpoint_id.to_string()))
     }
 
     #[test]
     fn write_info_file_non_existent() {
         let output_dir = PathBuf::from("/foo");
         let test_file = output_dir.join("test.info");
-        let nodeid = iroh::NodeId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
-            .expect("Could not create nodeid");
-        let listener_info = listener_info(&nodeid, "https://euw1-1.relay.iroh.network./ ");
+        let endpoint_id =
+            iroh::EndpointId::from_str("rxci3kuuxljxqej7hau727aaemcjo43zvf2zefnqla4p436sqwhq")
+                .expect("Could not create endpoint_id");
+        let listener_info = listener_info(&endpoint_id, "https://euw1-1.relay.iroh.network./ ");
         assert!(listener_info.write_to_file(&test_file).is_err());
         assert!(!test_file.exists(), "File was created!");
     }

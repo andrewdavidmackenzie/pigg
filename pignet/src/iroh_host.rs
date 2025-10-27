@@ -1,8 +1,8 @@
 use anyhow::ensure;
 use iroh::endpoint::VarInt;
 use iroh::{
-    endpoint::Connection,
-    NodeAddr, RelayMode, RelayUrl, SecretKey, {Endpoint, NodeId},
+    endpoint::Connection, Endpoint, EndpointAddr, EndpointId, RelayMode, RelayUrl, SecretKey,
+    TransportAddr,
 };
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
@@ -42,7 +42,7 @@ pub async fn send_config_message(
 
 /// Connect to an Iroh-Net node using the [NodeId] and an optional [RelayUrl]
 pub async fn connect(
-    nodeid: &NodeId,
+    endpoint_id: &EndpointId,
     relay: &Option<RelayUrl>,
 ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection)> {
     let secret_key = SecretKey::generate(&mut rand::rng());
@@ -64,9 +64,8 @@ pub async fn connect(
 
     let relay_url = relay
         .clone()
-        .unwrap_or(endpoint.node_addr().relay_url().unwrap().clone());
-
-    let addr = NodeAddr::from_parts(*nodeid, Some(relay_url), vec![]);
+        .unwrap_or(endpoint.addr().relay_urls().next().unwrap().clone());
+    let addr = EndpointAddr::from_parts(*endpoint_id, vec![TransportAddr::Relay(relay_url)]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
     let connection = endpoint.connect(addr, PIGGLET_ALPN).await?;

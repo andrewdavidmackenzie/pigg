@@ -181,7 +181,10 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
                 ("Model", &desc.details.model as &str),
                 ("AppName", env!("CARGO_BIN_NAME")),
                 ("AppVersion", env!("CARGO_PKG_VERSION")),
-                ("IrohNodeID", &listener_info.iroh_info.nodeid.to_string()),
+                (
+                    "IrohNodeID",
+                    &listener_info.iroh_info.endpoint_id.to_string(),
+                ),
                 (
                     "IrohRelayURL",
                     &listener_info.iroh_info.relay_url.to_string(),

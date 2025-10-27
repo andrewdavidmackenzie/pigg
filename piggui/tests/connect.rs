@@ -27,8 +27,8 @@ async fn connect_to_pigglet_via_iroh() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (_ip, _port, nodeid, relay_url) = parse_pigglet(&mut pigglet).await;
-    let mut args = vec!["--nodeid".to_string(), nodeid.to_string()];
+    let (_ip, _port, endpoint_id, relay_url) = parse_pigglet(&mut pigglet).await;
+    let mut args = vec!["--endpoint_id".to_string(), endpoint_id.to_string()];
     if let Some(relay) = relay_url {
         args.push("--relay".to_string());
         args.push(relay.to_string());

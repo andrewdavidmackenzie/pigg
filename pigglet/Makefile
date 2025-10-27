@@ -167,13 +167,12 @@ test-arm:
 	cargo test --target=arm-unknown-linux-gnueabihf
 
 .PHONY: copy-arm
-copy-arm:
+copy-arm: build-arm
 	scp ../target/arm-unknown-linux-gnueabihf/debug/pigglet $(PI_USER)@$(PI_TARGET):~/
 
 .PHONY: copy-release-arm
-copy-release-arm:
+copy-release-arm: build-release-arm
 	scp ../target/arm-unknown-linux-gnueabihf/release/pigglet $(PI_USER)@$(PI_TARGET):~/
-
 
 .PHONY: ssh
 ssh:

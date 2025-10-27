@@ -1,5 +1,5 @@
 #[cfg(feature = "iroh")]
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 #[cfg(feature = "discovery")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use pigdef::description::SerialNumber;
@@ -50,7 +50,7 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
 #[cfg(feature = "iroh")]
 pub async fn get_iroh_by_mdns(
     minimum_number: usize,
-) -> anyhow::Result<HashMap<SerialNumber, (NodeId, Option<RelayUrl>)>> {
+) -> anyhow::Result<HashMap<SerialNumber, (EndpointId, Option<RelayUrl>)>> {
     let mut discovered = HashMap::new();
     let deadline = Instant::now()
         .checked_add(Duration::from_secs(60))
@@ -64,8 +64,9 @@ pub async fn get_iroh_by_mdns(
                     .get_property_val_str("Serial")
                     .expect("Could not get serial number");
                 let device_properties = info.get_properties();
-                if let Some(nodeid_str) = device_properties.get_property_val_str("IrohNodeID") {
-                    if let Ok(nodeid) = NodeId::from_str(nodeid_str) {
+                if let Some(endpoint_id_str) = device_properties.get_property_val_str("IrohNodeID")
+                {
+                    if let Ok(endpoint_id) = EndpointId::from_str(endpoint_id_str) {
                         let relay_url = device_properties
                             .get_property_val_str("IrohRelayURL")
                             .map(|s| RelayUrl::from_str(s).unwrap());
@@ -73,9 +74,10 @@ pub async fn get_iroh_by_mdns(
                         println!("\tAddresses: {:?}", info.get_addresses());
                         println!("\tHostname: {}", info.get_hostname());
                         println!("\tFullname: {}", info.get_fullname());
-                        println!("\tIroh nodeid = {nodeid}");
+                        println!("\tIroh endpoint_id = {endpoint_id}");
                         println!("\tIroh relayURL = {:?}", relay_url);
-                        discovered.insert(serial.to_string(), (nodeid as NodeId, relay_url));
+                        discovered
+                            .insert(serial.to_string(), (endpoint_id as EndpointId, relay_url));
                         if discovered.len() >= minimum_number {
                             return Ok(discovered);
                         }

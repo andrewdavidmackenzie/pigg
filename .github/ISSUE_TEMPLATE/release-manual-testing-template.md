@@ -86,8 +86,8 @@ entire groups of tests that don't need to be repeated in all scenarios.
     - The board layout is not shown
     - The option to connect to a remote pigglet is shown
     - The option to reconnect to local hardware is shown
-- Piggui can connect to pigglet using Iroh with a nodeid via command line
-- Piggui can connect to pigglet using Iroh with a nodeid entered via dialog
+- Piggui can connect to pigglet using Iroh with a endpoint_id via command line
+- Piggui can connect to pigglet using Iroh with a endpoint_id entered via dialog
 - Piggui can connect to pigglet using TCP with a ip:port via command line
 - Piggui can connect to pigglet using TCP with a ip:port entered via dialog
 - Piggui can connect to porky using TCP with a ip:port entered via dialog
@@ -152,5 +152,5 @@ Execute the tests blocks in the specified scenario and click the checkbox when a
 
 ## Already automated tests
 
-- [X] piggui connects to pigglet using Iroh by supplying nodeid at the command line
+- [X] piggui connects to pigglet using Iroh by supplying endpoint_id at the command line
 - [X] piggui connects to pigglet using Tcp by supplying an IP and port number at the command line

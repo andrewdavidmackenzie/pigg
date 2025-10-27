@@ -18,11 +18,11 @@ async fn connect_via_iroh() {
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let (_ip, _port, nodeid, relay) = parse_pigglet(&mut pigglet).await;
+    let (_ip, _port, endpoint_id, relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_iroh(
         &mut pigglet,
-        &nodeid,
+        &endpoint_id,
         relay,
         |_, _, _connection| async move {},
     )
@@ -37,11 +37,11 @@ async fn disconnect_iroh() {
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
-    let (_ip, _port, nodeid, relay) = parse_pigglet(&mut pigglet).await;
+    let (_ip, _port, endpoint_id, relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_iroh(
         &mut pigglet,
-        &nodeid,
+        &endpoint_id,
         relay,
         |_, _, mut connection| async move {
             iroh_host::disconnect(&mut connection)
@@ -60,11 +60,11 @@ async fn config_change_returned_iroh() {
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
-    let (_ip, _port, nodeid, relay) = parse_pigglet(&mut pigglet).await;
+    let (_ip, _port, endpoint_id, relay) = parse_pigglet(&mut pigglet).await;
 
     connect_and_test_iroh(
         &mut pigglet,
-        &nodeid,
+        &endpoint_id,
         relay,
         |_, _, mut connection| async move {
             iroh_host::send_config_message(
@@ -105,10 +105,10 @@ async fn reconnect_iroh() {
     kill_all("pigglet");
     build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
-    let (_ip, _port, nodeid, relay) = parse_pigglet(&mut pigglet).await;
+    let (_ip, _port, endpoint_id, relay) = parse_pigglet(&mut pigglet).await;
     connect_and_test_iroh(
         &mut pigglet,
-        &nodeid,
+        &endpoint_id,
         relay.clone(),
         |_, _, mut connection| async move {
             iroh_host::disconnect(&mut connection)
@@ -123,7 +123,7 @@ async fn reconnect_iroh() {
     // Test we can re-connect after sending a disconnect request
     connect_and_test_iroh(
         &mut pigglet,
-        &nodeid,
+        &endpoint_id,
         relay,
         |_, _, mut connection| async move {
             iroh_host::disconnect(&mut connection)

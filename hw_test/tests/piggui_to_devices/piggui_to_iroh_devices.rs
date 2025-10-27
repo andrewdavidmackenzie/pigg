@@ -33,7 +33,7 @@ async fn mdns_discover_and_connect_iroh() {
     println!("Found {number} devices to connect to by mDNS");
 
     for (node, relay) in devices.values() {
-        let mut args = vec!["--nodeid".to_string(), node.to_string()];
+        let mut args = vec!["--endpoint_id".to_string(), node.to_string()];
         if let Some(relay_url) = relay {
             args.push("--relay".to_string());
             args.push(relay_url.to_string());

@@ -3,7 +3,7 @@
 use crate::discovery::mdns::get_iroh_by_mdns;
 use chrono::{DateTime, Utc};
 use iroh::endpoint::Connection;
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::GetConfig;
 use pigdef::description::HardwareDescription;
@@ -12,12 +12,12 @@ use serial_test::serial;
 use std::future::Future;
 use std::time::Duration;
 
-async fn connect_iroh<F, Fut>(nodeid: &NodeId, relay_url: &Option<RelayUrl>, test: F)
+async fn connect_iroh<F, Fut>(endpoint_id: &EndpointId, relay_url: &Option<RelayUrl>, test: F)
 where
     F: FnOnce(HardwareDescription, HardwareConfig, Connection) -> Fut,
     Fut: Future<Output = ()>,
 {
-    match iroh_host::connect(nodeid, relay_url).await {
+    match iroh_host::connect(endpoint_id, relay_url).await {
         Ok((hw_desc, hw_config, connection)) => {
             assert!(
                 hw_desc.details.model.contains("Pi"),
@@ -27,8 +27,8 @@ where
             test(hw_desc, hw_config, connection).await;
         }
         Err(e) => panic!(
-            "Could not connect to device with nodeid '{}' and relayURL '{:?}' by Iroh\nError = '{}'",
-            nodeid, relay_url, e
+            "Could not connect to device with endpoint id '{}' and relayURL '{:?}' by Iroh\nError = '{}'",
+            endpoint_id, relay_url, e
         ),
     }
 }

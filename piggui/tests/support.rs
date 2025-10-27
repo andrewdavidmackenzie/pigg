@@ -2,7 +2,7 @@
 
 use async_std::net::TcpStream;
 use iroh::endpoint::Connection;
-use iroh::{NodeId, RelayUrl};
+use iroh::{EndpointId, RelayUrl};
 use pigdef::config::HardwareConfig;
 use pigdef::description::HardwareDescription;
 use pignet::{iroh_host, tcp_host};
@@ -141,11 +141,11 @@ pub fn wait_for_stdout(child: &mut Child, token: &str, error_token: Option<&str>
     panic!("Did not find the token: '{token}' in stdout");
 }
 
-// Parse info out of stdout. This is a simple implementation for tests that relies on ip:port
+// Parse info out of stdout. This is a simple implementation for tests that rely on ip:port
 // coming after Iroh lines
 #[allow(dead_code)]
-pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId, Option<RelayUrl>) {
-    let mut nodeid = None;
+pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, EndpointId, Option<RelayUrl>) {
+    let mut endpoint_id = None;
     let mut relay_url = None;
     let stdout = child.stdout.as_mut().expect("Could not read stdout");
     let mut reader = BufReader::new(stdout);
@@ -159,14 +159,14 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId, Option<Re
                     Some((mut ip_str, mut port_str)) => {
                         ip_str = ip_str.trim();
                         port_str = port_str.trim();
-                        println!("IP: '{ip_str}' Port: '{port_str}' NodeID: '{nodeid:?} RelayURL: '{relay_url:?}'");
+                        println!("IP: '{ip_str}' Port: '{port_str}' NodeID: '{endpoint_id:?} RelayURL: '{relay_url:?}'");
                         match std::net::IpAddr::from_str(ip_str) {
                             Ok(ip) => match u16::from_str(port_str) {
                                 Ok(port) => {
                                     return (
                                         ip,
                                         port,
-                                        nodeid.expect("Did not find iroh nodeid"),
+                                        endpoint_id.expect("Did not find iroh endpoint_id"),
                                         relay_url,
                                     )
                                 }
@@ -181,13 +181,16 @@ pub async fn parse_pigglet(child: &mut Child) -> (IpAddr, u16, NodeId, Option<Re
             }
         }
 
-        if line.contains("nodeid:") {
+        if line.contains("endpoint_id:") {
             match line.split_once(":") {
-                Some((_, nodeid_str)) => match NodeId::from_str(nodeid_str.trim()) {
-                    Ok(id) => nodeid = Some(id),
+                Some((_, endpoint_id_str)) => match EndpointId::from_str(endpoint_id_str.trim()) {
+                    Ok(id) => endpoint_id = Some(id),
                     Err(e) => fail(child, &e.to_string()),
                 },
-                _ => fail(child, "Could not parse out nodeid from nodeid line"),
+                _ => fail(
+                    child,
+                    "Could not parse out endpoint_id from endpoint_id line",
+                ),
             }
         }
 
@@ -241,7 +244,7 @@ where
 #[allow(dead_code)]
 pub async fn connect_and_test_iroh<F, Fut>(
     child: &mut Child,
-    nodeid: &NodeId,
+    endpoint_id: &EndpointId,
     relay_url: Option<RelayUrl>,
     test: F,
 ) where
@@ -251,7 +254,7 @@ pub async fn connect_and_test_iroh<F, Fut>(
     let mut failures = 0;
 
     while failures < 3 {
-        match iroh_host::connect(nodeid, &relay_url).await {
+        match iroh_host::connect(endpoint_id, &relay_url).await {
             Ok((hw_desc, hw_config, connection)) => {
                 if !hw_desc.details.model.contains("Fake") {
                     fail(child, "Didn't connect to fake hardware pigglet")
