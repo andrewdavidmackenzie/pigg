@@ -174,7 +174,6 @@ copy-arm: build-arm
 copy-release-arm: build-release-arm
 	scp ../target/arm-unknown-linux-gnueabihf/release/pigglet $(PI_USER)@$(PI_TARGET):~/
 
-
 .PHONY: ssh
 ssh:
 	ssh $(PI_USER)@$(PI_TARGET)
