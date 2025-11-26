@@ -3103,7 +3103,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.53.5",
 ]
 
 [[package]]
@@ -3750,21 +3750,20 @@ dependencies = [
 
 [[package]]
 name = "nusb"
-version = "0.1.14"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f861541f15de120eae5982923d073bfc0c1a65466561988c82d6e197734c19e"
+checksum = "d0226f4db3ee78f820747cf713767722877f6449d7a0fcfbf2ec3b840969763f"
 dependencies = [
- "atomic-waker",
- "core-foundation 0.9.4",
+ "core-foundation 0.10.1",
  "core-foundation-sys",
  "futures-core",
  "io-kit-sys",
- "libc",
+ "linux-raw-sys 0.9.4",
  "log",
  "once_cell",
- "rustix 0.38.44",
+ "rustix 1.0.7",
  "slab",
- "windows-sys 0.48.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
