@@ -5,8 +5,9 @@ use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(all(feature = "usb", feature = "discovery"))]
 use crate::HardwareConnection;
 use anyhow::{anyhow, Error};
-use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient, RequestBuffer};
+use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
+use nusb::MaybeFuture;
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
@@ -29,6 +30,9 @@ use std::collections::HashMap;
 #[cfg(all(feature = "usb", feature = "discovery", feature = "tcp"))]
 use std::net::IpAddr;
 use std::time::Duration;
+
+const CONTROL_IN_TIMEOUT: Duration = Duration::from_secs(10);
+const CONTROL_OUT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// [ControlIn] "command" to request the [HardwareDescription]
 const GET_HARDWARE_DESCRIPTION: ControlIn = ControlIn {
@@ -77,9 +81,8 @@ async fn receive_control_in<T>(porky: &Interface, control_in: ControlIn) -> Resu
 where
     T: for<'a> Deserialize<'a>,
 {
-    let response = porky.control_in(control_in).await;
-    response.status?;
-    let data = response.data;
+    let response = porky.control_in(control_in, CONTROL_IN_TIMEOUT).await;
+    let data = response?;
     let length = data.len();
     Ok(postcard::from_bytes(&data[0..length])?)
 }
@@ -115,20 +118,21 @@ pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, Error> {
 
 /// Generic request to send data to device over USB [ControlOut]
 async fn send_control_out(porky: &Interface, control_out: ControlOut<'_>) -> Result<(), Error> {
-    Ok(porky.control_out(control_out).await.status?)
+    Ok(porky.control_out(control_out, CONTROL_OUT_TIMEOUT).await?)
 }
 
 /// Get the [Interface] of a specific USB device using its [SerialNumber]
 /// NOTE: The `target_serial` could be a partial serial number, to make life easier
 async fn interface_from_serial(target_serial: &SerialNumber) -> Result<Interface, Error> {
-    for device_info in
-        nusb::list_devices()?.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
+    for device_info in nusb::list_devices()
+        .wait()?
+        .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
     {
         if let Some(serial_number) = device_info.serial_number() {
             if serial_number.contains(target_serial) {
-                let device = device_info.open()?;
-                let interface = device.claim_interface(0)?;
-                interface.set_alt_setting(1)?;
+                let device = device_info.open().wait()?;
+                let interface = device.claim_interface(0).wait()?;
+                interface.set_alt_setting(1).wait()?;
                 return Ok(interface);
             }
         }
@@ -227,7 +231,8 @@ pub async fn connect(
 /// Return a Vec of the [SerialNumber] of all compatible connected devices
 #[cfg(all(feature = "usb", feature = "discovery"))]
 pub async fn get_serials() -> Result<Vec<SerialNumber>, Error> {
-    Ok(nusb::list_devices()?
+    Ok(nusb::list_devices()
+        .wait()?
         .filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface)
         .filter_map(|device_info| {
             device_info
@@ -242,7 +247,7 @@ pub async fn get_serials() -> Result<Vec<SerialNumber>, Error> {
 pub async fn get_details(
     serial_numbers: &[SerialNumber],
 ) -> Result<HashMap<SerialNumber, DiscoveredDevice>, Error> {
-    let device_list = nusb::list_devices()?;
+    let device_list = nusb::list_devices().wait()?;
     let mut devices = HashMap::<SerialNumber, DiscoveredDevice>::new();
 
     for device_info in device_list.filter(|d| d.vendor_id() == 0xbabe && d.product_id() == 0xface) {
@@ -250,9 +255,9 @@ pub async fn get_details(
             .serial_number()
             .ok_or(anyhow!("Could not get device serial_number"))?;
         if serial_numbers.contains(&serial_number.to_string()) {
-            let device = device_info.open()?;
-            let interface = device.claim_interface(0)?;
-            interface.set_alt_setting(1)?;
+            let device = device_info.open().wait()?;
+            let interface = device.claim_interface(0).wait()?;
+            interface.set_alt_setting(1).wait()?;
             let hardware_details = get_hardware_details(&interface).await?;
 
             let wifi_details = if hardware_details.wifi {
