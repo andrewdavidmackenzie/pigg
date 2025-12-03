@@ -57,7 +57,7 @@ faster-hex = { version = "0.10.0", default-features = false }
 
 serde = { version = "1.0.208", default-features = false, features = ["derive"] }
 postcard = { version = "1.0.10", default-features = false, features = ["heapless"] }
-heapless = { version = "0.9.1", default-features = false, features = ["serde", "defmt"] }
+heapless = { version = "0.9.2", default-features = false, features = ["serde", "defmt"] }
 
 edge-mdns = { version = "0.5.0", default-features = false, optional = true, features = ["io"] } #TODO check out "embassy"  https://github.com/ivmarkov/edge-net/issues/63
 edge-nal-embassy = { version = "0.5.0", default-features = false, optional = true }
