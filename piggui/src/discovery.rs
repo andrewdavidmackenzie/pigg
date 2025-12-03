@@ -10,8 +10,7 @@ use futures::SinkExt;
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh::{EndpointId, RelayUrl};
-#[cfg(feature = "tcp")]
-use mdns_sd::ServiceInfo;
+use mdns_sd::ResolvedService;
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 #[cfg(feature = "tcp")]
@@ -113,7 +112,7 @@ pub fn usb_discovery() -> impl Stream<Item = DiscoveryEvent> {
 }
 
 #[cfg(feature = "tcp")]
-fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevice> {
+fn device_from_service_info(info: &ResolvedService) -> anyhow::Result<DiscoveredDevice> {
     let device_properties = info.get_properties();
     let serial_number = device_properties
         .get_property_val_str("Serial")
@@ -136,7 +135,7 @@ fn device_from_service_info(info: &ServiceInfo) -> anyhow::Result<DiscoveredDevi
     let mut hardware_connections = HashMap::new();
     hardware_connections.insert(
         "TCP".to_string(),
-        HardwareConnection::Tcp(IpAddr::V4(*ip), port),
+        HardwareConnection::Tcp(IpAddr::V4(ip), port),
     );
 
     #[cfg(feature = "iroh")]

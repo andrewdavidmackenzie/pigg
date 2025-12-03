@@ -34,7 +34,7 @@ pub async fn get_ip_and_port_by_mdns() -> anyhow::Result<HashMap<SerialNumber, (
                     println!("\tHostname: {}", info.get_hostname());
                     println!("\tFullname: {}", info.get_fullname());
                     println!("\tip = {ip}\n");
-                    discovered.insert(serial.to_string(), (IpAddr::V4(*ip), port));
+                    discovered.insert(serial.to_string(), (IpAddr::V4(ip), port));
                 }
             }
 
