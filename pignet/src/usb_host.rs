@@ -180,18 +180,18 @@ where
     T: DeserializeOwned,
 {
 
-	// Ideally create this once on initialization, so maybe lift it out of a loop,
-	// or keep it in a field of `porky`. It's not too expensive to create every time if
-	// necessary, but only one instance can exist at a time for a given endpoint address.
-	let mut endpoint = interface.endpoint::<Interrupt, In>(0x81)?;
+    // Ideally create this once on initialization, so maybe lift it out of a loop,
+    // or keep it in a field of `porky`. It's not too expensive to create every time if
+    // necessary, but only one instance can exist at a time for a given endpoint address.
+    let mut endpoint = interface.endpoint::<Interrupt, In>(0x81)?;
 
-	loop {
-		endpoint.submit(Buffer::new(1024));
-		let completion = endpoint.next_complete().await;
-		if completion.status.is_ok() {
-			let msg = postcard::from_bytes(&completion.buffer)?;
-			return Ok(msg);
-		}
+    loop {
+        endpoint.submit(Buffer::new(1024));
+        let completion = endpoint.next_complete().await;
+        if completion.status.is_ok() {
+            let msg = postcard::from_bytes(&completion.buffer)?;
+            return Ok(msg);
+        }
 	tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }
