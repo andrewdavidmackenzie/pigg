@@ -182,7 +182,7 @@ where
     // Ideally create this once on initialization, so maybe lift it out of a loop,
     // or keep it in a field of `porky`. It's not too expensive to create every time if
     // necessary, but only one instance can exist at a time for a given endpoint address.
-    let mut endpoint = interface.endpoint::<Interrupt, In>(0x81)?;
+    let mut endpoint = porky.interface.endpoint::<Interrupt, In>(0x81)?;
 
     loop {
         endpoint.submit(Buffer::new(1024));
