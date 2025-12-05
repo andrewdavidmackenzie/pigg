@@ -8,7 +8,7 @@ use anyhow::{anyhow, Error};
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use nusb::MaybeFuture;
-use nusb::transfer:In:Buffer;
+use nusb::transfer::In:Buffer;
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
