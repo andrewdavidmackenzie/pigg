@@ -5,7 +5,7 @@ use crate::discovery::DiscoveryMethod::USBRaw;
 #[cfg(all(feature = "usb", feature = "discovery"))]
 use crate::HardwareConnection;
 use anyhow::{anyhow, Error};
-use nusb::transfer::In::Buffer;
+use nusb::transfer::Buffer;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use nusb::MaybeFuture;
