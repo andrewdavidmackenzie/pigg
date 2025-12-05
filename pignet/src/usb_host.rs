@@ -1,14 +1,14 @@
-#[cfg(all(feature = "usb", feature = "discovery"))]
-use crate::HardwareConnection;
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveredDevice;
 #[cfg(feature = "discovery")]
 use crate::discovery::DiscoveryMethod::USBRaw;
-use anyhow::{Error, anyhow};
-use nusb::Interface;
-use nusb::MaybeFuture;
+#[cfg(all(feature = "usb", feature = "discovery"))]
+use crate::HardwareConnection;
+use anyhow::{anyhow, Error};
 use nusb::transfer::In::Buffer;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
+use nusb::Interface;
+use nusb::MaybeFuture;
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
 #[cfg(feature = "discovery")]
@@ -24,8 +24,8 @@ use pigdef::usb_values::{
     GET_HARDWARE_DESCRIPTION_VALUE, HW_CONFIG_MESSAGE, PIGGUI_REQUEST, RESET_SSID_VALUE,
     SET_SSID_VALUE,
 };
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
 #[cfg(all(feature = "usb", feature = "discovery"))]
 use std::collections::HashMap;
 #[cfg(all(feature = "usb", feature = "discovery", feature = "tcp"))]
