@@ -6,6 +6,8 @@ use crate::discovery::DiscoveryMethod::USBRaw;
 use crate::HardwareConnection;
 use anyhow::{anyhow, Error};
 use nusb::transfer::Buffer;
+use nusb::transfer::In;
+use nusb::transfer::Interrupt;
 use nusb::transfer::{ControlIn, ControlOut, ControlType, Recipient};
 use nusb::Interface;
 use nusb::MaybeFuture;
