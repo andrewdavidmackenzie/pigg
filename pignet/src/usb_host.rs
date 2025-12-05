@@ -179,7 +179,6 @@ pub async fn wait_for_remote_message<T>(porky: &UsbConnection) -> Result<T, Erro
 where
     T: DeserializeOwned,
 {
-
     // Ideally create this once on initialization, so maybe lift it out of a loop,
     // or keep it in a field of `porky`. It's not too expensive to create every time if
     // necessary, but only one instance can exist at a time for a given endpoint address.
