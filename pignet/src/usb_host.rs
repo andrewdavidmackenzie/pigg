@@ -192,7 +192,7 @@ where
             let msg = postcard::from_bytes(&completion.buffer)?;
             return Ok(msg);
         }
-	tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }
 
