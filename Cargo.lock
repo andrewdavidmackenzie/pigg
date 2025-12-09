@@ -4748,7 +4748,7 @@ dependencies = [
  "getrandom 0.3.4",
  "iced 0.14.0",
  "iced_aw",
- "iced_futures 0.13.2",
+ "iced_futures 0.14.0",
  "iroh",
  "log",
  "lyon_algorithms",

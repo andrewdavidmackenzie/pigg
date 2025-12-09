@@ -9,7 +9,7 @@ use iced::advanced::{Clipboard, Shell, Widget};
 use iced::event::{self, Event};
 use iced::mouse;
 use iced::theme;
-use iced::widget::{button, column, container, horizontal_rule, horizontal_space, row, text};
+use iced::widget::{button, column, container, row, text};
 use iced::window;
 use iced::{Alignment, Element, Fill, Length, Point, Rectangle, Renderer, Size, Theme, Vector};
 

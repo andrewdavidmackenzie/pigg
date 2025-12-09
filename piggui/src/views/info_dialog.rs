@@ -7,7 +7,7 @@ use crate::views::hardware_styles::TOOLTIP_STYLE;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::tooltip::Position;
-use iced::widget::{button, column, container, horizontal_space, text, Row, Space, Text, Tooltip};
+use iced::widget::{button, column, container, text, Row, Space, Text, Tooltip};
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;

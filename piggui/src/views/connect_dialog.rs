@@ -39,14 +39,13 @@ use crate::views::dialog_styles::{
     MODAL_CONTAINER_STYLE, TAB_BAR_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
 use iced::widget::button::Status::Hovered;
-use iced::widget::horizontal_space;
 #[cfg(feature = "iroh")]
 use iroh::{EndpointId, RelayUrl};
 use std::sync::LazyLock;
 
 #[cfg(feature = "tcp")]
-static TCP_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
-static IROH_INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
+static TCP_INPUT_ID: LazyLock<widget::Id> = LazyLock::new(widget::Id::unique);
+static IROH_INPUT_ID: LazyLock<widget::Id> = LazyLock::new(widget::Id::unique);
 
 #[derive(Debug, Clone)]
 pub struct ConnectDialog {

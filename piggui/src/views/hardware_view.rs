@@ -16,9 +16,7 @@ use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::tooltip::Position;
-use iced::widget::{
-    button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text,
-};
+use iced::widget::{button, row, scrollable, text, toggler, Button, Column, Row, Text};
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
 use iced::{alignment, Alignment, Center, Element, Fill, Length, Size, Task};

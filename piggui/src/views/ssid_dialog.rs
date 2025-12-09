@@ -8,8 +8,7 @@ use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{
-    self, checkbox, column, container, horizontal_space, pick_list, row, text, text_input, Button,
-    Row, Text,
+    self, checkbox, column, container, pick_list, row, text, text_input, Button, Row, Text,
 };
 use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
@@ -25,7 +24,7 @@ use pigdef::description::SsidSpec;
 use pignet::usb_host;
 use std::sync::LazyLock;
 
-static INPUT_ID: LazyLock<text_input::Id> = LazyLock::new(text_input::Id::unique);
+static INPUT_ID: LazyLock<widget::Id> = LazyLock::new(widget::Id::unique);
 
 #[derive(Debug, Clone)]
 pub struct SsidDialog {

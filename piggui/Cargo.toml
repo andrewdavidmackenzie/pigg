@@ -39,7 +39,7 @@ anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
 tokio = { version = "1.48", default-features = false, features = ["time", "rt", "macros"] }
 log = { version = "0.4.29", default-features = false }
-iced_futures = { version = "0.13", default-features = false }
+iced_futures = { version = "0.14.0", default-features = false }
 plotters-iced = { version = "0.11", default-features = false }
 plotters = { version = "0.3", default-features = false, features = [
     "chrono",
@@ -68,11 +68,11 @@ getrandom = { version = "0.3.4", features = ["wasm_js"] }
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
 # Use 'tiny-skia' renderer in iced
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced"] }
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
-iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "advanced"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
