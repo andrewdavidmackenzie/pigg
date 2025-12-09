@@ -6,12 +6,13 @@ use iced::advanced::{self, Clipboard, Layout, Shell, Widget};
 use iced::event;
 use iced::mouse;
 use iced::time::Instant;
-use iced::widget::canvas;
 use iced::window::{self, RedrawRequest};
 use iced::{Background, Color, Element, Event, Length, Radians, Rectangle, Renderer, Size, Vector};
 
 use crate::widgets::spinner::easing::{self, Easing};
 
+use iced::widget::canvas;
+use iced::widget::canvas::Cache;
 use std::f32::consts::PI;
 use std::time::Duration;
 
@@ -213,7 +214,7 @@ impl Animation {
 #[derive(Default)]
 struct State {
     animation: Animation,
-    cache: canvas::Cache,
+    cache: Cache,
 }
 
 impl<'a, Message, Theme> Widget<Message, Theme, Renderer> for Circular<'a, Theme>
