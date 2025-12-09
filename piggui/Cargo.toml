@@ -49,7 +49,7 @@ once_cell = { version = "1.21.3", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
-iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
+iced_aw = { version = "0.13", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.145", default-features = false, features = ["std"] }
 
 iroh = { version = "0.95.1", default-features = false, optional = true }
