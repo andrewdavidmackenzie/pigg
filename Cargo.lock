@@ -5491,12 +5491,13 @@ dependencies = [
 
 [[package]]
 name = "service-manager"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cae942acfe9cecd4450998408f52e1c1ee083145226b7b803bd0d82e1c86912"
+checksum = "44843b1e23129168ae92a47dda1f8b1a86f82fbc06336b9344b4646508f28c73"
 dependencies = [
  "cfg-if",
  "dirs",
+ "log",
  "plist",
  "which",
  "xml-rs",
