@@ -5,7 +5,6 @@ use std::{collections::VecDeque, time::Duration};
 
 use chrono::{DateTime, TimeDelta, Utc};
 use iced::advanced::text::editor::Direction;
-use iced::widget::canvas::Cache;
 use iced::{
     widget::canvas::{Frame, Geometry},
     Element, Size,
@@ -62,7 +61,7 @@ where
     width: f32,
     height: f32,
     direction: RefCell<Direction>,
-    cache: Cache,
+    cache: iced::widget::canvas::Cache,
     timespan: Duration,
     offset: Option<TimeDelta>,
     samples: VecDeque<Sample<T>>,

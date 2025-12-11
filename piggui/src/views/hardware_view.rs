@@ -353,8 +353,7 @@ impl HardwareView {
         let subscriptions = vec![
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| UpdateCharts),
-            Subscription::run_with("hardware", hardware_subscription::subscribe())
-                .map(SubscriptionMessage),
+            Subscription::run(hardware_subscription::subscribe).map(SubscriptionMessage),
         ];
 
         Subscription::batch(subscriptions)

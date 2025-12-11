@@ -21,7 +21,7 @@ pub enum Status {
     #[default]
     /// Used for general information
     Primary,
-    /// Used for less prominent function
+    /// Used for less prominent information
     Secondary,
     /// Indicating successful operation
     Success,
@@ -77,11 +77,11 @@ where
                         row![
                             text(toast.title.as_str()),
                             space::horizontal(),
-                            button("X").on_press((on_close)(index)).padding(3),
+                            button("X").on_press(on_close(index)).padding(3),
                         ]
                         .align_y(Alignment::Center)
                     )
-                    .width(Length::Fill)
+                    .width(Fill)
                     .padding(5)
                     .style(match toast.status {
                         Status::Primary => primary,
@@ -90,9 +90,7 @@ where
                         Status::Danger => danger,
                     }),
                     rule::horizontal(1),
-                    container(text(toast.body.as_str()))
-                        .width(Length::Fill)
-                        .padding(5),
+                    container(text(toast.body.as_str())).width(Fill).padding(5),
                 ])
                 .width(550)
                 .into()
@@ -129,6 +127,27 @@ impl<Message> Widget<Message, Theme, Renderer> for Manager<'_, Message> {
         self.content
             .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits)
+    }
+
+    fn draw(
+        &self,
+        state: &Tree,
+        renderer: &mut Renderer,
+        theme: &Theme,
+        style: &renderer::Style,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &Rectangle,
+    ) {
+        self.content.as_widget().draw(
+            &state.children[0],
+            renderer,
+            theme,
+            style,
+            layout,
+            cursor,
+            viewport,
+        );
     }
 
     fn tag(&self) -> widget::tree::Tag {
@@ -178,10 +197,14 @@ impl<Message> Widget<Message, Theme, Renderer> for Manager<'_, Message> {
         renderer: &Renderer,
         operation: &mut dyn Operation,
     ) {
-        operation.container(None, layout.bounds(), &mut |operation| {
-            self.content
-                .as_widget()
-                .operate(&mut state.children[0], layout, renderer, operation);
+        operation.container(None, layout.bounds());
+        operation.traverse(&mut |operation| {
+            self.content.as_widget_mut().operate(
+                &mut state.children[0],
+                layout,
+                renderer,
+                operation,
+            );
         });
     }
 
@@ -206,27 +229,6 @@ impl<Message> Widget<Message, Theme, Renderer> for Manager<'_, Message> {
             shell,
             viewport,
         )
-    }
-
-    fn draw(
-        &self,
-        state: &Tree,
-        renderer: &mut Renderer,
-        theme: &Theme,
-        style: &renderer::Style,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        viewport: &Rectangle,
-    ) {
-        self.content.as_widget().draw(
-            &state.children[0],
-            renderer,
-            theme,
-            style,
-            layout,
-            cursor,
-            viewport,
-        );
     }
 
     fn mouse_interaction(
@@ -333,14 +335,15 @@ impl<Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'_, '_, Mes
     }
 
     fn operate(&mut self, layout: Layout<'_>, renderer: &Renderer, operation: &mut dyn Operation) {
-        operation.container(None, layout.bounds(), &mut |operation| {
+        operation.container(None, layout.bounds());
+        operation.traverse(&mut |operation| {
             self.toasts
-                .iter()
+                .iter_mut()
                 .zip(self.state.iter_mut())
                 .zip(layout.children())
                 .for_each(|((child, state), layout)| {
                     child
-                        .as_widget()
+                        .as_widget_mut()
                         .operate(state, layout, renderer, operation);
                 });
         });

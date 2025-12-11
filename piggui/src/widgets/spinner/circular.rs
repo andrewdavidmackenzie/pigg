@@ -123,22 +123,22 @@ impl Default for Animation {
 }
 
 impl Animation {
-    fn next(&self, additional_rotation: u32, now: Instant) -> Self {
+    fn next(&self, additional_rotation: u32, now: &Instant) -> Self {
         match self {
             Self::Expanding { rotation, .. } => Self::Contracting {
-                start: now,
+                start: now.clone(),
                 progress: 0.0,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
+                last: now.clone(),
             },
             Self::Contracting { rotation, .. } => {
                 Self::Expanding {
-                    start: now,
+                    start: now.clone(),
                     progress: 0.0,
                     rotation: rotation.wrapping_add(BASE_ROTATION_SPEED.wrapping_add(
                         (f64::from(WRAP_ANGLE / (2.0 * Radians::PI)) * f64::MAX) as u32,
                     )),
-                    last: now,
+                    last: now.clone(),
                 }
             }
         }
@@ -160,10 +160,10 @@ impl Animation {
         &self,
         cycle_duration: Duration,
         rotation_duration: Duration,
-        now: Instant,
+        now: &Instant,
     ) -> Self {
         let elapsed = now.duration_since(self.start());
-        let additional_rotation = ((now - self.last()).as_secs_f32()
+        let additional_rotation = ((*now - self.last()).as_secs_f32()
             / rotation_duration.as_secs_f32()
             * u32::MAX as f32) as u32;
 
@@ -178,7 +178,7 @@ impl Animation {
         cycle_duration: Duration,
         additional_rotation: u32,
         elapsed: Duration,
-        now: Instant,
+        now: &Instant,
     ) -> Self {
         let progress = elapsed.as_secs_f32() / cycle_duration.as_secs_f32();
         match self {
@@ -188,7 +188,7 @@ impl Animation {
                 start: *start,
                 progress,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
+                last: now.clone(),
             },
             Self::Contracting {
                 start, rotation, ..
@@ -196,7 +196,7 @@ impl Animation {
                 start: *start,
                 progress,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
+                last: now.clone(),
             },
         }
     }
