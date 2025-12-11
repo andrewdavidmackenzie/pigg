@@ -126,19 +126,19 @@ impl Animation {
     fn next(&self, additional_rotation: u32, now: &Instant) -> Self {
         match self {
             Self::Expanding { rotation, .. } => Self::Contracting {
-                start: now.clone(),
+                start: *now,
                 progress: 0.0,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now.clone(),
+                last: *now,
             },
             Self::Contracting { rotation, .. } => {
                 Self::Expanding {
-                    start: now.clone(),
+                    start: *now,
                     progress: 0.0,
                     rotation: rotation.wrapping_add(BASE_ROTATION_SPEED.wrapping_add(
                         (f64::from(WRAP_ANGLE / (2.0 * Radians::PI)) * f64::MAX) as u32,
                     )),
-                    last: now.clone(),
+                    last: *now,
                 }
             }
         }
@@ -188,7 +188,7 @@ impl Animation {
                 start: *start,
                 progress,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now.clone(),
+                last: *now,
             },
             Self::Contracting {
                 start, rotation, ..
@@ -196,7 +196,7 @@ impl Animation {
                 start: *start,
                 progress,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now.clone(),
+                last: *now,
             },
         }
     }

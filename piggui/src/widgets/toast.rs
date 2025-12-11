@@ -221,7 +221,7 @@ impl<Message> Widget<Message, Theme, Renderer> for Manager<'_, Message> {
     ) {
         self.content.as_widget_mut().update(
             &mut state.children[0],
-            &event,
+            event,
             layout,
             cursor,
             renderer,
@@ -401,7 +401,7 @@ impl<Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'_, '_, Mes
 
                 child.as_widget_mut().update(
                     state,
-                    &event,
+                    event,
                     layout,
                     cursor,
                     renderer,

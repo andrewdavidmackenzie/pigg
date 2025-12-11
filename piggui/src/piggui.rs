@@ -129,6 +129,7 @@ fn main() -> iced::Result {
         .settings(settings)
         .window_size(LayoutSelector::get_default_window_size())
         .theme(Theme::Dark)
+        .title(Piggui::title)
         .run()
 }
 
