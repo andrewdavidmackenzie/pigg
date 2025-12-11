@@ -67,7 +67,8 @@ getrandom = { version = "0.3.4", features = ["wasm_js"] }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas", "x11", "wayland"] }
+wayland-sys = { version = "0.31.7", features = ["dlopen"] }
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
