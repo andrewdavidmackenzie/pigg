@@ -429,9 +429,13 @@ impl<Message> overlay::Overlay<Message, Theme, Renderer> for Overlay<'_, '_, Mes
             .zip(self.state.iter())
             .zip(layout.children())
             .map(|((child, state), layout)| {
-                child
-                    .as_widget()
-                    .mouse_interaction(state, layout, cursor, renderer)
+                child.as_widget().mouse_interaction(
+                    state,
+                    layout,
+                    cursor,
+                    &Rectangle::INFINITE,
+                    renderer,
+                )
             })
             .max()
             .unwrap_or_default()
