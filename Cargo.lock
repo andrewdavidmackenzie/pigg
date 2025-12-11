@@ -2603,7 +2603,7 @@ dependencies = [
  "iced_futures 0.14.0",
  "iced_renderer 0.14.0",
  "iced_runtime 0.14.0",
- "iced_widget 0.14.1",
+ "iced_widget 0.14.2",
  "iced_winit",
  "thiserror 2.0.17",
 ]
@@ -2617,7 +2617,7 @@ dependencies = [
  "cfg-if",
  "iced_core 0.14.0",
  "iced_fonts",
- "iced_widget 0.14.1",
+ "iced_widget 0.14.2",
  "web-time",
 ]
 
@@ -2677,7 +2677,7 @@ checksum = "214cff7c8499e328774216690e58e315a1a5f8f6fdd1035aed6298e62ffc4c1d"
 dependencies = [
  "iced_core 0.14.0",
  "iced_fonts_macros",
- "iced_widget 0.14.1",
+ "iced_widget 0.14.2",
 ]
 
 [[package]]
@@ -2929,9 +2929,9 @@ dependencies = [
 
 [[package]]
 name = "iced_widget"
-version = "0.14.1"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f86f6948998a5e031849afae1bb852f3b100c71572befa0be70b19075dcb2163"
+checksum = "b1596afa0d3109c2618e8bc12bae6c11d3064df8f95c42dfce570397dbe957ab"
 dependencies = [
  "iced_renderer 0.14.0",
  "log",
