@@ -6,8 +6,8 @@ use crate::views::info_row::{menu_bar_button, menu_button_style};
 use crate::views::ssid_dialog::SsidDialogMessage;
 use crate::Message;
 use iced::alignment;
-use iced::widget::row;
 use iced::widget::{button, text};
+use iced::widget::{row, space};
 use iced::{Length, Renderer, Theme};
 use iced_aw::menu::{Item, Menu};
 use pignet::discovery::DiscoveredDevice;
@@ -62,7 +62,7 @@ fn device_menu_items<'a>(
                         .width(Length::Fill)
                         .style(menu_button_style);
 
-                // avoid re-offering the current connection method if connected
+                // Avoid re-offering the current connection method if connected
                 if current_connection != hardware_connection {
                     connect_button = connect_button
                         .on_press(Message::ConnectRequest(hardware_connection.clone()));
@@ -100,7 +100,7 @@ fn device_menu_items<'a>(
         // Button for each device menu
         let device_button = button(row!(
             text(format!("{} ({})", hardware_details.model, key)),
-            horizontal_space(),
+            space::horizontal(),
             text(" >").align_y(alignment::Vertical::Center),
         ))
         .on_press(Message::MenuBarButtonClicked) // Needed for highlighting

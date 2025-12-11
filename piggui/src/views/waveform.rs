@@ -5,9 +5,10 @@ use std::{collections::VecDeque, time::Duration};
 
 use chrono::{DateTime, TimeDelta, Utc};
 use iced::advanced::text::editor::Direction;
+use iced::widget::canvas::Cache;
 use iced::{
-    widget::canvas::{Cache, Frame, Geometry},
-    Element, Length, Size,
+    widget::canvas::{Frame, Geometry},
+    Element, Size,
 };
 use plotters::backend::DrawingBackend;
 use plotters::chart::ChartBuilder;
@@ -16,9 +17,9 @@ use plotters::style::ShapeStyle;
 use plotters_iced::{Chart, ChartWidget, Renderer};
 
 use crate::views::hardware_view::HardwareViewMessage;
-use crate::views::waveform::ChartType::{Squarewave, Verbatim};
+use crate::views::waveform::ChartType::{SquareWave, Verbatim};
 
-/// `Sample<T>` can be used to send new samples to a waveform widget for display in a moving chart
+/// `Sample<T>` can be used to send new samples to a waveform widget for display in a moving chart.
 /// It must have a type `T` that implements `Into<u32>` for Y-axis value, and a `DateTime` when it
 /// was measured/detected for the X-axis (or time axis).
 #[derive(Clone, PartialEq, Debug)]
@@ -40,13 +41,13 @@ where
 }
 
 /// Two types of charts can be drawn:
-/// - `Squarewave(min, max)` - which forces square wave display of values
+/// - `SquareWave(min, max)` - which forces square wave display of values
 /// - `Verbatim(min, max)` - for display of continuous Y-axis values in a Line Series chart
 pub enum ChartType<T>
 where
     T: Clone + Into<u32> + PartialEq,
 {
-    Squarewave(T, T),
+    SquareWave(T, T),
     #[allow(dead_code)]
     Verbatim(T, T),
 }
@@ -72,12 +73,12 @@ where
     T: Clone + Into<u32> + PartialEq + Display,
 {
     /// Create a new `Waveform` chart for display with parameters:
-    /// - `chart_type` : The type of chart to draw. See [ChartType]
-    /// - `line_style` : The Style to be applied to the line. See [ShapeStyle]
-    /// - `width` : The width of the chart in pixels
-    /// - `height` : The height of the chart in pixels
-    /// - `timespan` : The period of time the chart should cover
-    /// - `direction` : If chart should be drawn moving left, or moving right
+    /// - `chart_type`: The type of chart to draw. See [ChartType]
+    /// - `line_style`: The Style to be applied to the line. See [ShapeStyle]
+    /// - `width`: The width of the chart in pixels
+    /// - `height`: The height of the chart in pixels
+    /// - `timespan`: The period of time the chart should cover
+    /// - `direction`: If the chart should be drawn moving left, or moving right
     pub fn new(
         chart_type: ChartType<T>,
         line_style: ShapeStyle,
@@ -91,7 +92,7 @@ where
             width,
             height,
             direction: RefCell::new(Direction::Right),
-            cache: Cache::new(),
+            cache: iced::widget::canvas::Cache::new(),
             timespan,
             offset: None,
             samples: VecDeque::new(),
@@ -111,8 +112,8 @@ where
     ///
     /// If it is the first sample we receive - calculate the time offset between source timestamps
     /// and the DateTime Now. Use Now as the DateTime of this first sample.
-    /// If it is a subsequent samples, then add the offset to the origin timestamp to bring the
-    /// sample into the present time, but preserving the relative time between the two samples.
+    /// If it is a later sample, then add the offset to the origin timestamp to bring the
+    /// sample into the present time but preserving the relative time between the two samples.
     pub fn date_time(&mut self, duration: Duration) -> Result<DateTime<Utc>, &'static str> {
         match self.offset {
             None => {
@@ -160,7 +161,7 @@ where
     /// Get the Vector of (DateTime, u32) samples to be displayed in the chart
     fn get_data(&self) -> Vec<(DateTime<Utc>, u32)> {
         match &self.chart_type {
-            Squarewave(_, _) => {
+            SquareWave(_, _) => {
                 let mut previous_sample: Option<Sample<T>> = None;
                 let mut graph_data = vec![];
 
@@ -170,12 +171,12 @@ where
                 for sample in &self.samples {
                     if let Some(previous) = &previous_sample {
                         if previous.value != sample.value {
-                            // edge - insert a point at previous time at current level
+                            // edge - insert a point at previous time at the current level
                             graph_data.push((previous.time, sample.value.clone().into()));
                         }
                     } else {
-                        // (first) most recently added value. Insert a value at current time,
-                        // with the same value, to stretch the line out to the right hand side
+                        // (first) most recently added value. Insert a value at the current time,
+                        // with the same value, to stretch the line out to the right-hand side
                         // of the graph
                         graph_data.push((Utc::now(), sample.value.clone().into()));
                     }
@@ -195,7 +196,7 @@ where
     /// Determine the vertical (Y) axis range of values for the chart
     fn range(&self) -> Range<u32> {
         let (min, max) = match &self.chart_type {
-            Squarewave(min, max) => (
+            SquareWave(min, max) => (
                 <T as Into<u32>>::into(min.clone()),
                 <T as Into<u32>>::into(max.clone()),
             ),
@@ -213,8 +214,8 @@ where
     pub fn view(&self, direction: Direction) -> Element<'_, HardwareViewMessage> {
         self.direction.replace(direction);
         ChartWidget::new(self)
-            .height(Length::Fixed(self.height))
-            .width(Length::Fixed(self.width))
+            .height(self.height.into())
+            .width(self.width.into())
             .into()
     }
 }
@@ -273,7 +274,7 @@ mod test {
     #[test]
     fn falling_edge() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -307,7 +308,7 @@ mod test {
         let data = chart.get_data();
         assert_eq!(data.len(), 4);
 
-        // Next most recent (and first) value should be the "low" inserted at query time
+        // The next most recent (and first) value should be the "low" inserted at query time
         assert_eq!(data.first().expect("Could not get first sample").1, 0);
 
         // Next most recent value should be "low" value sent
@@ -316,13 +317,13 @@ mod test {
             &(datetime(low_sent_time), 0)
         );
 
-        // Next most recent value should be the "high" inserted when "low" was sent
+        // The next most recent value should be the "high" inserted when "low" was sent
         assert_eq!(
             data.get(2).expect("Could not get sample 2"),
             &(datetime(low_sent_time), 1)
         );
 
-        // Next most recent value should be the "high" sent initially
+        // The next most recent value should be the "high" sent initially
         assert_eq!(
             data.get(3).expect("Could not get sample 3"),
             &(datetime(high_sent_time), 1)
@@ -332,7 +333,7 @@ mod test {
     #[test]
     fn rising_edge() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -366,7 +367,7 @@ mod test {
         let data = chart.get_data();
         assert_eq!(data.len(), 4);
 
-        // Next most recent (and first) value should be the "high" inserted at query time
+        // The next most recent (and first) value should be the "high" inserted at query time
         assert_eq!(data.first().expect("Could not get sample 0").1, 1);
 
         // Next most recent value should be "high" value sent
@@ -375,13 +376,13 @@ mod test {
             &(datetime(high_sent_time), 1)
         );
 
-        // Next most recent value should be the "low" inserted when "high" was sent
+        // The next most recent value should be the "low" inserted when "high" was sent
         assert_eq!(
             data.get(2).expect("Could not get sample 2"),
             &(datetime(high_sent_time), 0)
         );
 
-        // Next most recent value should be the "low" sent initially
+        // The next most recent value should be the "low" sent initially
         assert_eq!(
             data.get(3).expect("Could not get sample 3"),
             &(datetime(low_sent_time), 0)
@@ -391,7 +392,7 @@ mod test {
     #[test]
     fn sample_outside_window_preserved() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -418,10 +419,10 @@ mod test {
         // Check the chart data
         let data = chart.get_data();
 
-        // chart data should have added a new point at time of query with the same level
+        // chart data should have added a new point at the time of a query with the same level
         assert_eq!(data.len(), 2);
 
-        // Next most recent (and first) value should be a "low" inserted at query time
+        // The next most recent (and first) value should be a "low" inserted at query time
         assert_eq!(data.first().expect("Could not get sample 0").1, 0);
 
         // Next most recent value should be "low" value sent
@@ -434,7 +435,7 @@ mod test {
     #[test]
     fn extra_samples_outside_window_deleted() {
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -460,10 +461,10 @@ mod test {
         // Check the chart data
         let data = chart.get_data();
 
-        // chart data should have added a new point at time of query with the same level
+        // chart data should have added a new point at the time of a query with the same level
         assert_eq!(data.len(), 2);
 
-        // Next most recent (and first) value should be a "low" inserted at query time
+        // The next most recent (and first) value should be a "low" inserted at query time
         assert_eq!(data.first().expect("Could not get sample 0").1, 0);
 
         // Next most recent value should be "low" value sent
@@ -482,7 +483,7 @@ mod test {
     fn expired_then_new_sample() {
         // Create a chart that spans the last 10 seconds
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -493,7 +494,7 @@ mod test {
             .duration_since(UNIX_EPOCH)
             .expect("Could not get now time");
 
-        // create a sample from 20s ago. It should pruned as it's older than the chart window
+        // Create a sample 20 seconds in the past. It should be pruned as it's older than the chart window
         let low_sent_time = now.sub(Duration::from_secs(20));
         let low_sample: Sample<PinLevel> = LevelChange {
             new_level: false,
@@ -529,13 +530,13 @@ mod test {
         let data = chart.get_data();
 
         // chart data should have:
-        // - a new point at time of query with the same level
+        // - a new point at the time of a query with the same level
         // - the high we sent
-        // - a low added at the same time as high sent, to create an edge
-        // - original low that is out of window
+        // - a 'low' added at the same time as 'high' sent, to create an edge
+        // - original low that is out of the window
         assert_eq!(data.len(), 4);
 
-        // Next most recent (and first) value should be a "low" inserted at query time
+        // The next most recent (and first) value should be a "low" inserted at query time
         assert_eq!(data.first().expect("Could not get sample 0").1, 1);
 
         // Next most recent value should be "high" value sent
@@ -544,13 +545,13 @@ mod test {
             &(datetime(high_sent_time), 1)
         );
 
-        // Next most recent value should be "low" added with same time as "high" sent
+        // The next most recent value should be "low" added with same time as "high" sent
         assert_eq!(
             data.get(2).expect("Could not get sample 2"),
             &(datetime(high_sent_time), 0)
         );
 
-        // Next most recent value should be "low" that is outside window but kept
+        // The next most recent value should be "low" that is outside the window but kept
         assert_eq!(
             data.get(3).expect("Could not get sample 3"),
             &(datetime(low_sent_time), 0)
@@ -597,7 +598,7 @@ mod test {
     #[test]
     fn no_sample_empty_graph() {
         let chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -620,7 +621,7 @@ mod test {
         //  |        +----------|---o
         //  |                   |
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -631,7 +632,7 @@ mod test {
             .duration_since(UNIX_EPOCH)
             .expect("Could not get now time");
 
-        // Create an old low sample that is out of the display window
+        // Create an old low sample out of the display window
         let old_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(20)),
@@ -641,7 +642,7 @@ mod test {
 
         chart.push_data(old_sample);
 
-        // create a new high sample that is in the window
+        // create a new high sample in the window
         let new_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(2)),
@@ -657,7 +658,7 @@ mod test {
         // Get the chart data
         let data = chart.get_data();
 
-        // graph should need 4 points to represent the edge
+        // the graph should need 4 points to represent the edge
         assert_eq!(data.len(), 4);
         assert_eq!(data.first().expect("Could not get sample 0").1, 1); // added at query time
         assert_eq!(data.get(1).expect("Could not get sample 1").1, 1); // top of rising edge
@@ -673,7 +674,7 @@ mod test {
         //  +--------o          |
         //  |                   |
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -684,7 +685,7 @@ mod test {
             .duration_since(UNIX_EPOCH)
             .expect("Could not get now time");
 
-        // Create an old high sample that is out of the display window
+        // Create an old high sample out of the display window
         let old_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(20)),
@@ -693,7 +694,7 @@ mod test {
         .expect("Could not convert level change to sample");
         chart.push_data(old_sample);
 
-        // create a new low sample that is in the window
+        // create a new low sample in the window
         let new_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(2)),
@@ -708,7 +709,7 @@ mod test {
         // Get the chart data
         let data = chart.get_data();
 
-        // graph should need 4 points to represent the edge
+        // the graph should need 4 points to represent the edge
         assert_eq!(data.len(), 4);
         assert_eq!(data.first().expect("Could not get sample 0").1, 0); // added at query time
         assert_eq!(data.get(1).expect("Could not get sample 1").1, 0); // bottom of rising edge
@@ -724,7 +725,7 @@ mod test {
         //  +----o   +-------o--|
         //  |                   |
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -735,7 +736,7 @@ mod test {
             .duration_since(UNIX_EPOCH)
             .expect("Could not get now time");
 
-        // Create a low sample that is in the display window
+        // Create a low sample in the display window
         let old_sample = LevelChange {
             new_level: false,
             timestamp: now.sub(Duration::from_secs(9)),
@@ -768,7 +769,7 @@ mod test {
         // Get the chart data
         let data = chart.get_data();
 
-        // graph should need 4 points to represent the edge
+        // the graph should need 4 points to represent the edge
         assert_eq!(data.len(), 6);
         assert_eq!(data.first().expect("Could not get sample 0").1, 0);
         assert_eq!(data.get(1).expect("Could not get sample 1").1, 0); // bottom left of pulse
@@ -786,7 +787,7 @@ mod test {
         //  |    +---o          |
         //  |                   |
         let mut chart = Waveform::<PinLevel>::new(
-            ChartType::Squarewave(false, true),
+            ChartType::SquareWave(false, true),
             CHART_LINE_STYLE,
             256.0,
             16.0,
@@ -797,7 +798,7 @@ mod test {
             .duration_since(UNIX_EPOCH)
             .expect("Could not get now time");
 
-        // Create a high sample that is in the display window
+        // Create a high sample in the display window
         let old_sample = LevelChange {
             new_level: true,
             timestamp: now.sub(Duration::from_secs(9)),
@@ -831,7 +832,7 @@ mod test {
         // Get the chart data
         let data = chart.get_data();
 
-        // graph should need 4 points to represent the edge
+        // the graph should need 4 points to represent the edge
         assert_eq!(data.len(), 6);
         assert_eq!(data.first().expect("Could not get sample 0").1, 1); // added at query time
         assert_eq!(data.get(1).expect("Could not get sample 1").1, 1); // top left of pulse

@@ -41,7 +41,7 @@ tokio = { version = "1.48", default-features = false, features = ["time", "rt", 
 log = { version = "0.4.29", default-features = false }
 iced_futures = { version = "0.14.0", default-features = false }
 plotters-iced = { version = "0.11", default-features = false }
-plotters = { version = "0.3", default-features = false, features = [
+plotters = { version = "0.3.7", default-features = false, features = [
     "chrono",
     "line_series",
 ] }

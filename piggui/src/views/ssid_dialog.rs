@@ -8,7 +8,8 @@ use crate::widgets::spinner::easing::EMPHASIZED_ACCELERATE;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::{
-    self, checkbox, column, container, pick_list, row, text, text_input, Button, Row, Text,
+    self, checkbox, column, container, operation, pick_list, row, space, text, text_input, Button,
+    Row, Text,
 };
 use iced::{keyboard, Element, Event, Length, Task};
 use iced_futures::Subscription;
@@ -83,9 +84,9 @@ impl SsidDialog {
                 ..
             }) => {
                 if modifiers.shift() {
-                    widget::focus_previous()
+                    operation::focus_previous()
                 } else {
-                    widget::focus_next()
+                    operation::focus_next()
                 }
             }
             // When Pressed `Esc` focuses on previous widget and hide modal
@@ -124,7 +125,7 @@ impl SsidDialog {
                 self.hardware_details = hardware_details;
                 self.ssid_spec = wifi.unwrap_or(SsidSpec::default());
                 self.show_modal = true;
-                text_input::focus(INPUT_ID.clone())
+                operation::focus(INPUT_ID.clone())
             }
 
             HideSsidDialog => {
@@ -198,8 +199,8 @@ impl SsidDialog {
                 },
                 row![
                     text("SSID Password"),
-                    horizontal_space(),
-                    checkbox("Hide Password", self.hide_password)
+                    space::horizontal(),
+                    checkbox(self.hide_password).label("Hide Password")
                         .on_toggle(|_| Message::SsidDialog(HidePasswordToggled))
                 ],
                 {
@@ -266,13 +267,13 @@ impl SsidDialog {
         if self.show_spinner {
             row = row
                 .push(cancel_button)
-                .push(horizontal_space())
+                .push(space::horizontal())
                 .push(
                     Circular::new()
                         .easing(&EMPHASIZED_ACCELERATE)
                         .cycle_duration(Duration::from_secs_f32(2.0)),
                 )
-                .push(horizontal_space())
+                .push(space::horizontal())
         } else {
             cancel_button = cancel_button.on_press(Message::SsidDialog(HideSsidDialog));
             send_button = send_button.on_press(Message::SsidDialog(SendButtonPressed(
@@ -280,7 +281,7 @@ impl SsidDialog {
                 self.ssid_spec.ssid_pass.clone(),
                 self.ssid_spec.ssid_security.clone(),
             )));
-            row = row.push(cancel_button).push(horizontal_space());
+            row = row.push(cancel_button).push(space::horizontal());
         }
 
         row.push(send_button)

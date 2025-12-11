@@ -54,7 +54,7 @@ impl PinState {
         PinState {
             current_level: None,
             chart: Waveform::new(
-                ChartType::Squarewave(false, true),
+                ChartType::SquareWave(false, true),
                 CHART_LINE_STYLE,
                 CHART_WIDTH,
                 CHART_HEIGHT,

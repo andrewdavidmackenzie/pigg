@@ -7,7 +7,7 @@ use crate::views::hardware_styles::TOOLTIP_STYLE;
 use crate::Message;
 use iced::keyboard::key;
 use iced::widget::tooltip::Position;
-use iced::widget::{button, column, container, text, Row, Space, Text, Tooltip};
+use iced::widget::{button, column, container, space, text, Row, Space, Text, Tooltip};
 use iced::{keyboard, window, Color, Element, Event, Length, Task};
 use iced_futures::core::Alignment;
 use iced_futures::Subscription;
@@ -143,7 +143,7 @@ impl InfoDialog {
             }
 
             // Exits the Application
-            InfoDialogMessage::ExitApp => window::get_latest().and_then(window::close),
+            InfoDialogMessage::ExitApp => window::latest().and_then(window::close),
 
             // When Pressed `Esc` focuses on previous widget and hide modal
             InfoDialogMessage::EscKeyEvent(Event::Keyboard(keyboard::Event::KeyPressed {
@@ -186,7 +186,7 @@ impl InfoDialog {
                 load_config,
             } => {
                 let text_style = text::Style {
-                    color: Some(Color::new(0.988, 0.686, 0.243, 1.0)),
+                    color: Some(Color::from_rgba(0.988, 0.686, 0.243, 1.0)),
                 };
 
                 let mut action_button = if *load_config {
@@ -199,7 +199,7 @@ impl InfoDialog {
 
                 action_button = action_button.style(cancel_button);
                 let mut button_row = Row::new().push(action_button);
-                button_row = button_row.push(Space::new(Length::Fill, 10));
+                button_row = button_row.push(Space::new().width(Length::Fill));
                 button_row = button_row.push(
                     button("Return to app")
                         .on_press(Message::Modal(InfoDialogMessage::HideModal))
@@ -226,7 +226,7 @@ impl InfoDialog {
                         .on_press(Message::ConnectRequest(hardware_connection.clone()))
                         .style(connect_button);
                     button_row = button_row
-                        .push(horizontal_space())
+                        .push(space::horizontal())
                         .push(
                             Tooltip::new(
                                 button,
@@ -282,7 +282,7 @@ impl InfoDialog {
                 Self::info_container(title, body, button_row, WHITE_TEXT)
             }
 
-            ModalType::None => container(column![]).into(), // Render empty container
+            ModalType::None => container(column![]).into(), // Render the empty container
         }
     }
 

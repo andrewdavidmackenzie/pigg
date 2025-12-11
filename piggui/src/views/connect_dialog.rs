@@ -39,6 +39,7 @@ use crate::views::dialog_styles::{
     MODAL_CONTAINER_STYLE, TAB_BAR_STYLE, TEXT_BOX_CONTAINER_STYLE,
 };
 use iced::widget::button::Status::Hovered;
+use iced::widget::{operation, space};
 #[cfg(feature = "iroh")]
 use iroh::{EndpointId, RelayUrl};
 use std::sync::LazyLock;
@@ -132,6 +133,7 @@ impl ConnectDialog {
 
     async fn empty() {}
 
+    //noinspection DuplicatedCode
     pub fn update(&mut self, message: ConnectDialogMessage) -> Task<Message> {
         match message {
             #[cfg(feature = "tcp")]
@@ -226,7 +228,7 @@ impl ConnectDialog {
                 }
                 #[cfg(feature = "iroh")]
                 self.iroh_connection_error.clear();
-                text_input::focus(TCP_INPUT_ID.clone())
+                operation::focus(TCP_INPUT_ID.clone())
             }
 
             #[cfg(feature = "iroh")]
@@ -234,12 +236,12 @@ impl ConnectDialog {
                 self.display_iroh = true;
                 #[cfg(feature = "tcp")]
                 self.tcp_connection_error.clear();
-                text_input::focus(IROH_INPUT_ID.clone())
+                operation::focus(IROH_INPUT_ID.clone())
             }
 
             ShowConnectDialog => {
                 self.show_modal = true;
-                text_input::focus(IROH_INPUT_ID.clone())
+                operation::focus(IROH_INPUT_ID.clone())
             }
 
             HideConnectDialog => {
@@ -256,9 +258,9 @@ impl ConnectDialog {
                         ..
                     }) => {
                         if modifiers.shift() {
-                            widget::focus_previous()
+                            operation::focus_previous()
                         } else {
-                            widget::focus_next()
+                            operation::focus_next()
                         }
                     }
                     // When Pressed `Esc` focuses on previous widget and hide modal
@@ -306,6 +308,7 @@ impl ConnectDialog {
         }
     }
 
+    //noinspection RsLift
     pub fn view(&self) -> Element<'_, Message> {
         if self.display_iroh {
             #[cfg(feature = "iroh")]
@@ -371,13 +374,13 @@ impl ConnectDialog {
                 Button::new(Text::new("Cancel"))
                     .style(move |_theme, _status| ACTIVE_TAB_BUTTON_STYLE),
             )
-            .push(horizontal_space())
+            .push(space::horizontal())
             .push(
                 Circular::new()
                     .easing(&EMPHASIZED_ACCELERATE)
                     .cycle_duration(Duration::from_secs_f32(2.0)),
             )
-            .push(horizontal_space())
+            .push(space::horizontal())
             .push(Button::new(Text::new("Connect")).style(connect_button))
             .align_y(iced::Alignment::Center)
     }
@@ -390,7 +393,7 @@ impl ConnectDialog {
                     .on_press(Message::ConnectDialog(HideConnectDialog))
                     .style(cancel_button),
             )
-            .push(horizontal_space())
+            .push(space::horizontal())
             .push(
                 Button::new(Text::new("Connect"))
                     .on_press(Message::ConnectDialog(ConnectButtonPressedIroh(
@@ -410,7 +413,7 @@ impl ConnectDialog {
                     .on_press(Message::ConnectDialog(HideConnectDialog))
                     .style(cancel_button),
             )
-            .push(horizontal_space())
+            .push(space::horizontal())
             .push(
                 Button::new(Text::new("Connect"))
                     .on_press(Message::ConnectDialog(ConnectionButtonPressedTcp(
