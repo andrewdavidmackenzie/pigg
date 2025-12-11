@@ -130,7 +130,7 @@ jobs:
         run: |
           sudo apt install gcc-arm-linux-gnueabihf
           sudo apt install gcc-aarch64-linux-gnu
-          sudo apt-get install -y libwayland-client0
+          sudo apt-get install -y libwayland-dev
       - name: Install dist
         run: ${{ matrix.install_dist.run }}
       # Get the dist-manifest

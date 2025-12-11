@@ -52,6 +52,10 @@ macos-setup:
 	@echo 'export PATH="/opt/homebrew/opt/llvm/bin:$$PATH"' >> ~/.zshrc
 	@export PATH="/opt/homebrew/opt/llvm/bin:$$PATH"
 
+.PHONY: linux-setup
+linux-setup:
+	sudo apt-get install -y libwayland-dev
+
 .PHONY: binstall
 binstall:
 	@echo "installing cargo binstall"
@@ -62,6 +66,9 @@ setup: binstall
 ifeq ($(OSFLAG),macos)
 	@echo "Running macos specific setup"
 	$(MAKE) macos-setup
+else
+	@echo "Running linux specific setup"
+	$(MAKE) linux-setup
 endif
 	rustup target add wasm32-unknown-unknown
 	rustup target add aarch64-unknown-linux-gnu
