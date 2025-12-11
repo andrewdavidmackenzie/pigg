@@ -53,7 +53,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y wayland-client
+          sudo apt-get install -y libwayland-client0
           sudo apt-get install weston
           weston -Bheadless -Sweston &
           make build test
