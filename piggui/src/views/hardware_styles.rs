@@ -34,15 +34,18 @@ const PIN_BORDER_HOVER: Border = Border {
 
 pub fn toggler_style(_theme: &Theme, status: toggler::Status) -> toggler::Style {
     toggler::Style {
-        background: Color::from_rgba(0.0, 0.3, 0.0, 1.0), // Dark green background (inactive)
+        background: Background::Color(Color::from_rgba(0.0, 0.3, 0.0, 1.0)), // Dark green background (inactive)
         background_border_width: 3.0,
         background_border_color: match status {
             Hovered { .. } => WHITE,
             _ => Color::from_rgba(0.0, 0.2, 0.0, 1.0),
         },
-        foreground: Color::from_rgba(1.0, 0.9, 0.8, 1.0), // Light yellowish foreground
+        foreground: Background::Color(Color::from_rgba(1.0, 0.9, 0.8, 1.0)), // Light yellowish foreground
         foreground_border_width: 3.0,
         foreground_border_color: Color::from_rgba(0.9, 0.9, 0.9, 1.0), // Light gray foreground border
+        text_color: None,
+        border_radius: None,
+        padding_ratio: 0.0,
     }
 }
 
@@ -60,6 +63,7 @@ pub(crate) const TOOLTIP_STYLE: container::Style = container::Style {
         },
     },
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 /// Return a style used to draw a pin, based on it's name and if it has options or not and
@@ -94,5 +98,6 @@ pub(crate) fn get_pin_style(status: Status, pin_name: &str, options: bool) -> bu
             offset: iced::Vector { x: 0.0, y: 0.0 },
             blur_radius: 0.0,
         },
+        snap: false,
     }
 }

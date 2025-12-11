@@ -9,8 +9,8 @@ use crate::Message;
 use iced::border::Radius;
 use iced::widget::button::Status::Hovered;
 use iced::widget::button::{Status, Style};
-use iced::widget::{container, Row};
-use iced::{Background, Border, Color, Element, Length, Padding, Shadow, Task, Theme};
+use iced::widget::{container, Row, Space};
+use iced::{Background, Border, Color, Element, Length, Shadow, Task, Theme};
 use iced_aw::style::menu_bar;
 use iced_aw::MenuBar;
 use iced_futures::Subscription;
@@ -67,6 +67,7 @@ const MENU_BAR_BUTTON_STYLE: Style = Style {
     text_color: UNHOVERED_COLOR,
     border: MENU_BUTTON_BORDER,
     shadow: MENU_SHADOW,
+    snap: false,
 };
 
 const MENU_BAR_BUTTON_HOVER_STYLE: Style = Style {
@@ -74,6 +75,7 @@ const MENU_BAR_BUTTON_HOVER_STYLE: Style = Style {
     text_color: HOVERED_COLOR,
     border: MENU_BAR_BORDER,
     shadow: MENU_SHADOW,
+    snap: false,
 };
 
 const MENU_BAR_BUTTON_HIGHLIGHT_STYLE: Style = Style {
@@ -81,6 +83,7 @@ const MENU_BAR_BUTTON_HIGHLIGHT_STYLE: Style = Style {
     text_color: Color::from_rgba(1.0, 0.647, 0.0, 0.7),
     border: MENU_BAR_BORDER,
     shadow: MENU_SHADOW,
+    snap: false,
 };
 
 const MENU_BUTTON_STYLE: Style = Style {
@@ -88,6 +91,7 @@ const MENU_BUTTON_STYLE: Style = Style {
     text_color: UNHOVERED_COLOR,
     border: MENU_BUTTON_BORDER,
     shadow: MENU_SHADOW,
+    snap: false,
 };
 
 const MENU_BUTTON_HOVER_STYLE: Style = Style {
@@ -95,17 +99,16 @@ const MENU_BUTTON_HOVER_STYLE: Style = Style {
     text_color: HOVERED_COLOR,
     border: MENU_BUTTON_BORDER,
     shadow: MENU_SHADOW,
+    snap: false,
 };
 
 pub const MENU_BAR_STYLE: menu_bar::Style = menu_bar::Style {
     bar_background: Background::Color(Color::TRANSPARENT),
     bar_border: MENU_BAR_BORDER,
     bar_shadow: MENU_SHADOW,
-    bar_background_expand: Padding::new(0.0),
     menu_background: Background::Color(MENU_BACKGROUND_COLOR),
     menu_border: MENU_BORDER,
     menu_shadow: BLACK_SHADOW,
-    menu_background_expand: Padding::new(0.0),
     path: Background::Color(Color::TRANSPARENT),
     path_border: MENU_BORDER,
 };
@@ -115,6 +118,7 @@ const INFO_BAR_STYLE: container::Style = container::Style {
     background: Some(Background::Color(MENU_BACKGROUND_COLOR)),
     border: MENU_BAR_BORDER,
     shadow: MENU_SHADOW,
+    snap: false,
 };
 
 pub fn menu_button_style(_: &Theme, status: Status) -> Style {
@@ -190,7 +194,7 @@ impl InfoRow {
         container(
             Row::new()
                 .push(menu_bar)
-                .push(iced::widget::Space::with_width(Length::Fill)) // This takes up remaining space
+                .push(Space::new().width(Length::Fill)) // This takes up the remaining space
                 .push(self.message_row.view().map(Message::InfoRow))
                 .spacing(20.0)
                 .padding(0),

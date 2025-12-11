@@ -44,6 +44,7 @@ const MODAL_CANCEL_BUTTON_STYLE: Style = Style {
     text_color: Color::WHITE,
     border: NO_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 const MODAL_CANCEL_BUTTON_HOVER_STYLE: Style = Style {
@@ -51,6 +52,7 @@ const MODAL_CANCEL_BUTTON_HOVER_STYLE: Style = Style {
     text_color: Color::WHITE,
     border: WHITE_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 const MODAL_CONNECT_BUTTON_STYLE: Style = Style {
@@ -58,6 +60,7 @@ const MODAL_CONNECT_BUTTON_STYLE: Style = Style {
     text_color: Color::BLACK,
     border: NO_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 const MODAL_CONNECT_BUTTON_HOVER_STYLE: Style = Style {
@@ -65,6 +68,7 @@ const MODAL_CONNECT_BUTTON_HOVER_STYLE: Style = Style {
     text_color: Color::BLACK,
     border: WHITE_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 pub(crate) const MODAL_CONTAINER_STYLE: container::Style = container::Style {
@@ -72,6 +76,7 @@ pub(crate) const MODAL_CONTAINER_STYLE: container::Style = container::Style {
     background: Some(Background::Color(Color::BLACK)),
     border: WHITE_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 const HYPERLINK_BUTTON_STYLE: Style = Style {
@@ -83,6 +88,7 @@ const HYPERLINK_BUTTON_STYLE: Style = Style {
         radius: RADIUS_2,
     },
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 const HYPERLINK_BUTTON_HOVER_STYLE: Style = Style {
@@ -94,6 +100,7 @@ const HYPERLINK_BUTTON_HOVER_STYLE: Style = Style {
         radius: RADIUS_2,
     },
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
@@ -111,6 +118,7 @@ pub(crate) const TEXT_BOX_CONTAINER_STYLE: container::Style = container::Style {
         radius: RADIUS_10,
     },
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp", feature = "usb"))]
@@ -124,6 +132,7 @@ pub(crate) const ACTIVE_TAB_BUTTON_STYLE: Style = Style {
     text_color: Color::WHITE,
     border: NO_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -133,6 +142,7 @@ pub(crate) const INACTIVE_TAB_BUTTON_STYLE: Style = Style {
     text_color: Color::from_rgba(0.7, 0.7, 0.7, 1.0),
     border: NO_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -141,6 +151,7 @@ pub(crate) const INACTIVE_TAB_BUTTON_HOVER_STYLE: Style = Style {
     text_color: Color::WHITE,
     border: WHITE_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -149,6 +160,7 @@ pub(crate) const TAB_BAR_STYLE: container::Style = container::Style {
     background: Some(Background::Color(Color::from_rgb(0.2, 0.2, 0.2))),
     border: NO_BORDER,
     shadow: NO_SHADOW,
+    snap: false,
 };
 
 pub fn connect_button(_: &Theme, status: Status) -> Style {

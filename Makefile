@@ -36,20 +36,28 @@ clean:
 
 .PHONY: macos-setup
 macos-setup:
+	@echo "Running macos specific setup"
 	@cmake -C piggui macos-setup
 	@make -C pigglet macos-setup
+
+.PHONY: linux-setup
+linux-setup:
+	@echo "Running linux specific setup"
+	sudo apt install gcc-arm-linux-gnueabihf
+	sudo apt install gcc-aarch64-linux-gnu
 
 .PHONY: setup
 setup:
 ifeq ($(OSFLAG),macos)
-	@echo "Running macos specific setup"
 	$(MAKE) macos-setup
+else
+	$(MAKE) linux-setup
 endif
+	@cargo install mlc
 	@cargo install cargo-all-features
 	@make -C piggui setup
 	@make -C pigglet setup
 	@make -C porky setup
-	@brew install mlc
 
 .PHONY: clippy
 clippy:

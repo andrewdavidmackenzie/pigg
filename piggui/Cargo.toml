@@ -39,9 +39,9 @@ anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
 tokio = { version = "1.48", default-features = false, features = ["time", "rt", "macros"] }
 log = { version = "0.4.29", default-features = false }
-iced_futures = { version = "0.13", default-features = false }
-plotters-iced = { version = "0.11", default-features = false }
-plotters = { version = "0.3", default-features = false, features = [
+iced_futures = { version = "0.14.0", default-features = false }
+plotters-iced = { version = "0.12", git = "https://github.com/Joylei/plotters-iced", branch = "iced-0.14", default-features = false }
+plotters = { version = "0.3.7", default-features = false, features = [
     "chrono",
     "line_series",
 ] }
@@ -49,7 +49,7 @@ once_cell = { version = "1.21.3", default-features = false }
 lyon_algorithms = { version = "1.0", default-features = false }
 async-std = "1.13"
 webbrowser = { version = "1.0", default-features = false }
-iced_aw = { version = "0.12", default-features = false, features = ["menu"] }
+iced_aw = { version = "0.13", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.145", default-features = false, features = ["std"] }
 
 iroh = { version = "0.95.1", default-features = false, optional = true }
@@ -61,18 +61,21 @@ rfd = "0.16.0"
 clap = { version = "4.5.53", default-features = false, features = ["std", "help", "error-context"] }
 piggpio = { path = "../piggpio", version = "0.7" }
 
+# wasm32 - Use 'tiny-skia' renderer in iced
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
 getrandom = { version = "0.3.4", features = ["wasm_js"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas"] }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
-[target.'cfg(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))'.dependencies]
-# Use 'tiny-skia' renderer in iced
-iced = { version = "0.13.1", default-features = false, features = ["tokio", "tiny-skia"] }
+[target.'cfg(all(not(target_arch = "wasm32"), any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm")))'.dependencies]
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas", "x11", "wayland"] }
+wayland-sys = { version = "0.31.7", features = ["dlopen"] }
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
-[target.'cfg(not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm" )))'.dependencies]
-iced = { version = "0.13.1", default-features = false, features = ["tokio", "wgpu"] }
+[target.'cfg(all(not(target_arch = "wasm32"), not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))))'.dependencies]
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "canvas", "advanced", "x11", "wayland"] }
+wayland-sys = { version = "0.31.7", features = ["dlopen"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"

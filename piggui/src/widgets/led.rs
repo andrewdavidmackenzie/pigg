@@ -3,7 +3,7 @@ use iced::advanced::layout::{self, Layout};
 use iced::advanced::renderer;
 use iced::advanced::widget::{Tree, Widget};
 use iced::{advanced::Clipboard, advanced::Shell, touch, Theme};
-use iced::{event, mouse, Event};
+use iced::{mouse, Event};
 use iced::{Color, Element, Length, Rectangle, Size};
 use pigdef::description::PinLevel;
 
@@ -72,7 +72,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         _renderer: &Renderer,
         _limits: &layout::Limits,
@@ -124,24 +124,23 @@ where
         );
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         _tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
                 if let Some(on_press) = self.on_press.clone() {
                     if cursor.is_over(layout.bounds()) {
                         shell.publish(on_press);
-                        return event::Status::Captured;
                     }
                 }
             }
@@ -150,15 +149,12 @@ where
                 if let Some(on_release) = self.on_release.clone() {
                     if cursor.is_over(layout.bounds()) {
                         shell.publish(on_release);
-                        return event::Status::Captured;
                     }
                 }
             }
             Event::Touch(touch::Event::FingerLost { .. }) => {}
             _ => {}
         }
-
-        event::Status::Ignored
     }
 
     fn mouse_interaction(

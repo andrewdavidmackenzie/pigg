@@ -3,15 +3,15 @@ use iced::advanced::layout;
 use iced::advanced::renderer;
 use iced::advanced::widget::tree::{self, Tree};
 use iced::advanced::{self, Clipboard, Layout, Shell, Widget};
-use iced::event;
 use iced::mouse;
 use iced::time::Instant;
-use iced::widget::canvas;
-use iced::window::{self, RedrawRequest};
+use iced::window::{self};
 use iced::{Background, Color, Element, Event, Length, Radians, Rectangle, Renderer, Size, Vector};
 
 use crate::widgets::spinner::easing::{self, Easing};
 
+use iced::widget::canvas;
+use iced::widget::canvas::Cache;
 use std::f32::consts::PI;
 use std::time::Duration;
 
@@ -123,22 +123,22 @@ impl Default for Animation {
 }
 
 impl Animation {
-    fn next(&self, additional_rotation: u32, now: Instant) -> Self {
+    fn next(&self, additional_rotation: u32, now: &Instant) -> Self {
         match self {
             Self::Expanding { rotation, .. } => Self::Contracting {
-                start: now,
+                start: *now,
                 progress: 0.0,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
+                last: *now,
             },
             Self::Contracting { rotation, .. } => {
                 Self::Expanding {
-                    start: now,
+                    start: *now,
                     progress: 0.0,
                     rotation: rotation.wrapping_add(BASE_ROTATION_SPEED.wrapping_add(
                         (f64::from(WRAP_ANGLE / (2.0 * Radians::PI)) * f64::MAX) as u32,
                     )),
-                    last: now,
+                    last: *now,
                 }
             }
         }
@@ -160,10 +160,10 @@ impl Animation {
         &self,
         cycle_duration: Duration,
         rotation_duration: Duration,
-        now: Instant,
+        now: &Instant,
     ) -> Self {
         let elapsed = now.duration_since(self.start());
-        let additional_rotation = ((now - self.last()).as_secs_f32()
+        let additional_rotation = ((*now - self.last()).as_secs_f32()
             / rotation_duration.as_secs_f32()
             * u32::MAX as f32) as u32;
 
@@ -178,7 +178,7 @@ impl Animation {
         cycle_duration: Duration,
         additional_rotation: u32,
         elapsed: Duration,
-        now: Instant,
+        now: &Instant,
     ) -> Self {
         let progress = elapsed.as_secs_f32() / cycle_duration.as_secs_f32();
         match self {
@@ -188,7 +188,7 @@ impl Animation {
                 start: *start,
                 progress,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
+                last: *now,
             },
             Self::Contracting {
                 start, rotation, ..
@@ -196,7 +196,7 @@ impl Animation {
                 start: *start,
                 progress,
                 rotation: rotation.wrapping_add(additional_rotation),
-                last: now,
+                last: *now,
             },
         }
     }
@@ -213,7 +213,7 @@ impl Animation {
 #[derive(Default)]
 struct State {
     animation: Animation,
-    cache: canvas::Cache,
+    cache: Cache,
 }
 
 impl<'a, Message, Theme> Widget<Message, Theme, Renderer> for Circular<'a, Theme>
@@ -229,7 +229,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         _renderer: &Renderer,
         limits: &layout::Limits,
@@ -312,17 +312,17 @@ where
         tree::State::new(State::default())
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         _layout: Layout<'_>,
         _cursor: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
+    ) {
         let state = tree.state.downcast_mut::<State>();
 
         if let Event::Window(window::Event::RedrawRequested(now)) = event {
@@ -332,10 +332,8 @@ where
                     .timed_transition(self.cycle_duration, self.rotation_duration, now);
 
             state.cache.clear();
-            shell.request_redraw(RedrawRequest::NextFrame);
+            shell.request_redraw();
         }
-
-        event::Status::Ignored
     }
 }
 

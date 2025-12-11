@@ -10,12 +10,12 @@ use std::time::Duration;
 /// There are three types of messages we can display in the message text in the status bar.
 ///
 /// They are (in order of priority - highest to lowest):
-/// * Error -  will remain until clicked
+/// * Error - will remain until clicked
 /// * Warning - will remain until clicked
 /// * Info - will disappear after a short time
 ///
 /// Messages of higher priority are shown before those of lower priority.
-/// Clicking a message removes it and shows next message.
+/// Clicking a message removes it and shows the next message.
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum InfoMessage {
@@ -53,8 +53,8 @@ impl MessageQueue {
     }
 
     /// Clear the current message being displayed.
-    /// If there is another message in the queue then it sets that as the new message to be shown
-    /// If there is no other message queued to be shown, then set to None and no message is shown
+    /// If there is another message in the queue, then it sets that as the new message to be shown
+    /// If there is no other message queued to be shown, then set to None, and no message is shown
     fn clear_message(&mut self) {
         self.current_message = self.queue.pop();
     }
@@ -65,7 +65,7 @@ impl MessageQueue {
         self.current_message = None;
     }
 
-    /// Are there any [InfoMessage]  of type Info in the queue waiting to be displayed?
+    /// Are there any [InfoMessage] of type Info in the queue waiting to be displayed?
     fn showing_info_message(&self) -> bool {
         matches!(self.current_message, Some(InfoMessage::Info(_)))
     }
@@ -113,7 +113,7 @@ impl MessageRow {
                     (Color::from_rgb8(255, 0, 0), text.into(), details as &str)
                 }
                 InfoMessage::Warning(text) => (
-                    Color::new(1.0, 0.647, 0.0, 1.0),
+                    Color::from_rgba(1.0, 0.647, 0.0, 1.0),
                     text.into(),
                     "No additional details",
                 ),
@@ -126,6 +126,7 @@ impl MessageRow {
             text_color,
             border: NO_BORDER,
             shadow: NO_SHADOW,
+            snap: false,
         };
 
         let button = Button::new(Text::new(message_text))
@@ -169,7 +170,7 @@ mod test {
         queue.add_message(Warning("middle".into()));
         assert_eq!(queue.queue.len(), 3);
 
-        // clear the current message, it should be replaced by highest priority message in the queue
+        // Clear the current message. Tt should be replaced by the highest priority message in the queue
         queue.clear_message();
         assert_eq!(
             queue.current_message,

@@ -121,15 +121,16 @@ fn main() -> iced::Result {
         ..Default::default()
     };
 
-    iced::application(Piggui::title, Piggui::update, Piggui::view)
+    iced::application(Piggui::new, Piggui::update, Piggui::view)
         .subscription(Piggui::subscription)
         .window_size((500.0, 800.0))
         .exit_on_close_request(false)
         .resizable(true)
         .settings(settings)
         .window_size(LayoutSelector::get_default_window_size())
-        .theme(|_| Theme::Dark)
-        .run_with(Piggui::new)
+        .theme(Theme::Dark)
+        .title(Piggui::title)
+        .run()
 }
 
 #[cfg(feature = "usb")]
@@ -232,7 +233,7 @@ impl Piggui {
             self.hardware_view.get_description(),
             self.hardware_view.get_config(),
         );
-        window::get_latest().then(move |latest| {
+        window::latest().then(move |latest| {
             if let Some(id) = latest {
                 window::resize(id, layout_size)
             } else {
@@ -250,7 +251,7 @@ impl Piggui {
                             .modal_handler
                             .update(InfoDialogMessage::UnsavedChangesExitModal);
                     } else {
-                        return window::get_latest().and_then(window::close);
+                        return window::latest().and_then(window::close);
                     }
                 }
             }

@@ -16,9 +16,7 @@ use iced::advanced::text::editor::Direction::{Left, Right};
 use iced::futures::channel::mpsc::Sender;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::tooltip::Position;
-use iced::widget::{
-    button, horizontal_space, row, scrollable, text, toggler, Button, Column, Row, Text,
-};
+use iced::widget::{button, row, scrollable, space, text, toggler, Button, Column, Row, Text};
 use iced::widget::{container, Tooltip};
 use iced::Alignment::{End, Start};
 use iced::{alignment, Alignment, Center, Element, Fill, Length, Size, Task};
@@ -355,8 +353,7 @@ impl HardwareView {
         let subscriptions = vec![
             iced::time::every(Duration::from_millis(1000 / CHART_UPDATES_PER_SECOND))
                 .map(|_| UpdateCharts),
-            Subscription::run_with_id("hardware", hardware_subscription::subscribe())
-                .map(SubscriptionMessage),
+            Subscription::run(hardware_subscription::subscribe).map(SubscriptionMessage),
         ];
 
         Subscription::batch(subscriptions)
@@ -524,7 +521,7 @@ impl HardwareView {
             // Create a widget used either to visualize an input or control an output
             get_pin_widget(pin_description.bcm, pin_function, state, alignment)
         } else {
-            horizontal_space().width(PIN_WIDGET_ROW_WIDTH).into()
+            space::horizontal().width(PIN_WIDGET_ROW_WIDTH).into()
         };
 
         let pin_name = Text::new(&pin_description.name)
@@ -603,7 +600,7 @@ impl HardwareView {
                         }
                         let input_button = button(row!(
                             text("Input"),
-                            horizontal_space(),
+                            space::horizontal(),
                             text(" >").align_y(alignment::Vertical::Center),
                         ))
                         .width(100.0)
@@ -666,10 +663,10 @@ fn get_pin_widget<'a>(
                 Row::new()
                     .push(pin_state.view(Left))
                     .push(led)
-                    .push(horizontal_space().width(TOGGLER_WIDTH))
+                    .push(space::horizontal().width(TOGGLER_WIDTH))
             } else {
                 Row::new()
-                    .push(horizontal_space().width(TOGGLER_WIDTH))
+                    .push(space::horizontal().width(TOGGLER_WIDTH))
                     .push(led)
                     .push(pin_state.view(Right))
             }
