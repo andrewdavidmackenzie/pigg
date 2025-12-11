@@ -1,6 +1,6 @@
 #[cfg(feature = "tcp")]
 use anyhow::anyhow;
-#[cfg(feature = "usb")]
+#[cfg(any(feature = "usb", feature = "tcp"))]
 use futures::channel::mpsc::Sender;
 #[cfg(any(feature = "usb", feature = "tcp"))]
 use futures::stream::Stream;
@@ -10,6 +10,7 @@ use futures::SinkExt;
 use iced_futures::stream;
 #[cfg(all(feature = "iroh", feature = "tcp"))]
 use iroh::{EndpointId, RelayUrl};
+#[cfg(feature = "tcp")]
 use mdns_sd::ResolvedService;
 #[cfg(feature = "tcp")]
 use mdns_sd::{ServiceDaemon, ServiceEvent};
