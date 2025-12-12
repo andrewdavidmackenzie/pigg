@@ -1,5 +1,5 @@
 use serial_test::serial;
-use support::{build, kill_all, pass, run, wait_for_stdout};
+use support::{kill_all, pass, run, wait_for_stdout};
 
 #[path = "../../piggui/tests/support.rs"]
 mod support;
@@ -8,7 +8,6 @@ mod support;
 #[serial(pigglet)]
 async fn two_instances() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;

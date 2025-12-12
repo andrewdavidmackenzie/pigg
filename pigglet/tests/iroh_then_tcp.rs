@@ -3,7 +3,7 @@ use serial_test::serial;
 use std::time::Duration;
 
 use support::{
-    build, connect_and_test_iroh, connect_and_test_tcp, kill_all, parse_pigglet, pass, run,
+    connect_and_test_iroh, connect_and_test_tcp, kill_all, parse_pigglet, pass, run,
 };
 
 #[path = "../../piggui/tests/support.rs"]
@@ -14,7 +14,6 @@ mod support;
 #[serial(pigglet)]
 async fn connect_iroh_then_tcp() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;

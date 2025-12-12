@@ -1,5 +1,5 @@
 use serial_test::serial;
-use support::{build, kill_all, pass, run, wait_for_stdout};
+use support::{kill_all, pass, run, wait_for_stdout};
 
 #[path = "../../piggui/tests/support.rs"]
 mod support;
@@ -8,7 +8,6 @@ mod support;
 #[serial(pigglet)]
 async fn version_number() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec!["--version".into()], None);
     let line = wait_for_stdout(&mut pigglet, "pigglet", Some("Error:"));
     let version = line.split(' ').nth(1).unwrap().trim();
@@ -20,7 +19,6 @@ async fn version_number() {
 #[serial(pigglet)]
 async fn test_verbosity_levels() {
     kill_all("pigglet");
-    build("pigglet");
     let levels = ["info", "debug", "trace"];
     for &level in &levels {
         let mut pigglet = run("pigglet", vec!["--verbosity".into(), level.into()], None);
@@ -38,7 +36,6 @@ async fn test_verbosity_levels() {
 #[serial(pigglet)]
 async fn help() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec!["--help".into()], None);
     wait_for_stdout(
         &mut pigglet,
