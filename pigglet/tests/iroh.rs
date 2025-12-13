@@ -1,4 +1,4 @@
-use crate::support::{build, connect_and_test_iroh, kill_all, parse_pigglet, pass, run};
+use crate::support::{connect_and_test_iroh, kill_all, parse_pigglet, pass, run};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::config::InputPull;
 use pigdef::pin_function::PinFunction::Input;
@@ -13,7 +13,6 @@ mod support;
 #[serial(pigglet)]
 async fn connect_via_iroh() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -34,7 +33,6 @@ async fn connect_via_iroh() {
 #[serial(pigglet)]
 async fn disconnect_iroh() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     let (_ip, _port, endpoint_id, relay) = parse_pigglet(&mut pigglet).await;
@@ -57,7 +55,6 @@ async fn disconnect_iroh() {
 #[serial(pigglet)]
 async fn config_change_returned_iroh() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     let (_ip, _port, endpoint_id, relay) = parse_pigglet(&mut pigglet).await;
@@ -103,7 +100,6 @@ async fn config_change_returned_iroh() {
 #[serial(pigglet)]
 async fn reconnect_iroh() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
     let (_ip, _port, endpoint_id, relay) = parse_pigglet(&mut pigglet).await;
     connect_and_test_iroh(

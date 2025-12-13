@@ -1,4 +1,4 @@
-use crate::support::{build, connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
+use crate::support::{connect_and_test_tcp, kill_all, parse_pigglet, pass, run};
 use pigdef::config::HardwareConfigMessage::{GetConfig, NewConfig, NewPinConfig};
 use pigdef::pin_function::PinFunction::Output;
 use piggpio::config::CONFIG_FILENAME;
@@ -15,7 +15,6 @@ mod support;
 #[serial(pigglet)]
 async fn connect_tcp() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
     let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
@@ -29,7 +28,6 @@ async fn connect_tcp() {
 #[serial(pigglet)]
 async fn disconnect_tcp() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
     let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
@@ -47,7 +45,6 @@ async fn disconnect_tcp() {
 #[serial(pigglet)]
 async fn reconnect_tcp() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
     let (ip, port, _, _relay) = parse_pigglet(&mut pigglet).await;
 
@@ -85,7 +82,6 @@ pub fn delete_configs() {
 #[serial(pigglet)]
 async fn clean_config() {
     kill_all("pigglet");
-    build("pigglet");
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
@@ -116,7 +112,6 @@ async fn clean_config() {
 #[serial(pigglet)]
 async fn config_change_returned_tcp() {
     kill_all("pigglet");
-    build("pigglet");
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
     let mut pigglet = run("pigglet", vec![], None);
@@ -206,7 +201,6 @@ async fn config_change_returned_tcp() {
 #[serial(pigglet)]
 async fn invalid_pin_config() {
     kill_all("pigglet");
-    build("pigglet");
 
     #[cfg(not(target_arch = "wasm32"))]
     delete_configs();
