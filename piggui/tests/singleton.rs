@@ -1,4 +1,4 @@
-use crate::support::{build, kill_all};
+use crate::support::kill_all;
 use serial_test::serial;
 use support::{pass, run, wait_for_stdout};
 
@@ -9,7 +9,6 @@ mod support;
 #[serial]
 async fn two_instances_run() {
     kill_all("piggui");
-    build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
     wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error: "));

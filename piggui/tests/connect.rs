@@ -1,4 +1,4 @@
-use crate::support::{build, kill_all, parse_pigglet};
+use crate::support::{kill_all, parse_pigglet};
 use serial_test::serial;
 use std::time::Duration;
 use support::{pass, run, wait_for_stdout};
@@ -9,7 +9,6 @@ mod support;
 #[serial(piggui)]
 async fn connects_to_fake_hardware() {
     kill_all("piggui");
-    build("piggui");
     let mut piggui = run("piggui", vec![], None);
 
     wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
@@ -22,7 +21,6 @@ async fn connects_to_fake_hardware() {
 #[serial(piggui, pigglet)]
 async fn connect_to_pigglet_via_iroh() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -52,7 +50,6 @@ async fn connect_to_pigglet_via_iroh() {
 #[serial(piggui, pigglet)]
 async fn connect_to_pigglet_tcp() {
     kill_all("pigglet");
-    build("pigglet");
     let mut pigglet = run("pigglet", vec![], None);
 
     tokio::time::sleep(Duration::from_secs(1)).await;
