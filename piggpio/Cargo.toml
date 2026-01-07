@@ -23,4 +23,4 @@ rand_core = { version = "0.6.4", features = ["getrandom"] }
 
 [target.'cfg(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu"))'.dependencies]
 rppal = "0.22.1"
-libc = "0.2.178"
+libc = "0.2.179"
