@@ -37,7 +37,7 @@ piggpio = { path = "../piggpio", version = "0.7" }
 chrono = { version = "0.4", default-features = false, features = ["now", "serde"] }
 anyhow = { version = "1", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false }
-tokio = { version = "1.48", default-features = false, features = ["time", "rt", "macros"] }
+tokio = { version = "1.49", default-features = false, features = ["time", "rt", "macros"] }
 log = { version = "0.4.29", default-features = false }
 iced_futures = { version = "0.14.0", default-features = false }
 plotters-iced = { version = "0.12", git = "https://github.com/Joylei/plotters-iced", branch = "iced-0.14", default-features = false }
