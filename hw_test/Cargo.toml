@@ -19,7 +19,7 @@ iroh = ["pigdef/iroh", "pignet/iroh"]
 [dev-dependencies]
 pigdef = { path = "../pigdef", version = "0.7" }
 pignet = { path = "../pignet", version = "0.7" }
-tokio = { version = "1.48", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
+tokio = { version = "1.49", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
 async-std = "1.13.2"
 serial_test = "3.3.1"
 anyhow = "1.0.100"
