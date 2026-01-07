@@ -70,12 +70,12 @@ iced = { version = "0.14.0", default-features = false, features = ["tokio", "tin
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(all(not(target_arch = "wasm32"), any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm")))'.dependencies]
 iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas", "x11", "wayland"] }
-wayland-sys = { version = "0.31.7", features = ["dlopen"] }
+wayland-sys = { version = "0.31.8", features = ["dlopen"] }
 
 # Non-Raspberry Pi - use 'wgpu' renderer in iced
 [target.'cfg(all(not(target_arch = "wasm32"), not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))))'.dependencies]
 iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "canvas", "advanced", "x11", "wayland"] }
-wayland-sys = { version = "0.31.7", features = ["dlopen"] }
+wayland-sys = { version = "0.31.8", features = ["dlopen"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
