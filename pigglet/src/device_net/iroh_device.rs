@@ -96,7 +96,7 @@ pub async fn accept_connection(
     debug!("Waiting for connection");
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
-        let endpoint_id = Connection::remote_id(&connection);
+        let endpoint_id = connection.remote_id();
         debug!("New connection from endpoint_id: '{endpoint_id}'",);
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
