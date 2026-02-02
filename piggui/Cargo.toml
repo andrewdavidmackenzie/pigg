@@ -53,7 +53,7 @@ iced_aw = { version = "0.13", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.149", default-features = false, features = ["std"] }
 
 iroh = { version = "0.95.1", default-features = false, optional = true }
-mdns-sd = { version = "0.17.1", default-features = false, features = ["async"], optional = true }
+mdns-sd = { version = "0.17.2", default-features = false, features = ["async"], optional = true }
 sysinfo = { version = "0.38" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
