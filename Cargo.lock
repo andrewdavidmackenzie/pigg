@@ -1749,9 +1749,9 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd66c162c2a0609c0507f49814877c621d00cb85978e6fbbf04e88b8048c07c8"
+checksum = "139ef39800118c7683f2fd3c98c1b23c09ae076556b435f8e9064ae108aaeeec"
 dependencies = [
  "cfg-if",
  "js-sys",
@@ -4031,7 +4031,7 @@ dependencies = [
  "clap",
  "console_error_panic_hook",
  "futures",
- "getrandom 0.4.0",
+ "getrandom 0.4.1",
  "iced",
  "iced_aw",
  "iced_futures",
