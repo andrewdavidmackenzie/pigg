@@ -52,8 +52,11 @@ webbrowser = { version = "1.0", default-features = false }
 iced_aw = { version = "0.13", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.149", default-features = false, features = ["std"] }
 
-iroh = { version = "0.95.1", default-features = false, optional = true }
-mdns-sd = { version = "0.17.2", default-features = false, features = ["async", "reuseport"], optional = true }
+iroh = { version = "0.96.0", default-features = false, optional = true }
+# FIX: Pin digest to version compatible with curve25519-dalek 5.0.0-pre.1
+digest = { version = "=0.11.0-rc.10" }
+
+mdns-sd = { version = "0.17.1", default-features = false, features = ["async", "reuseport"], optional = true }
 sysinfo = { version = "0.38" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
