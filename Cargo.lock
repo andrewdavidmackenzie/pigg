@@ -1057,6 +1057,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afa94b64bfc6549e6e4b5a3216f22593224174083da7a90db47e951c4fb31725"
 dependencies = [
  "block-buffer",
+ "const-oid",
  "crypto-common",
 ]
 
@@ -2570,9 +2571,9 @@ dependencies = [
 
 [[package]]
 name = "iroh"
-version = "0.96.0"
+version = "0.96.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3790cc3a5ef6a89a1e30b64de54de31e692958e2dc8a37cf2831d52c76805de9"
+checksum = "5236da4d5681f317ec393c8fe2b7e3d360d31c6bb40383991d0b7429ca5ad117"
 dependencies = [
  "backon",
  "bytes",
@@ -2589,13 +2590,13 @@ dependencies = [
  "iroh-metrics",
  "iroh-quinn",
  "iroh-quinn-proto",
- "iroh-quinn-udp 0.8.0",
+ "iroh-quinn-udp",
  "iroh-relay",
  "n0-error",
  "n0-future",
  "n0-watcher",
  "netdev",
- "netwatch 0.14.0",
+ "netwatch",
  "papaya",
  "pin-project",
  "pkarr",
@@ -2623,17 +2624,19 @@ dependencies = [
 
 [[package]]
 name = "iroh-base"
-version = "0.96.0"
+version = "0.96.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4c3fc0440c8775bf2677a58550fcef7e544346add01bf1b163f9fc0cedd436e"
+checksum = "20c99d836a1c99e037e98d1bf3ef209c3a4df97555a00ce9510eb78eccdf5567"
 dependencies = [
  "curve25519-dalek",
  "data-encoding",
  "derive_more",
+ "digest",
  "ed25519-dalek",
  "n0-error",
  "rand_core 0.9.5",
  "serde",
+ "sha2",
  "url",
  "zeroize",
  "zeroize_derive",
@@ -2675,7 +2678,7 @@ dependencies = [
  "bytes",
  "cfg_aliases",
  "iroh-quinn-proto",
- "iroh-quinn-udp 0.8.0",
+ "iroh-quinn-udp",
  "pin-project-lite",
  "rustc-hash 2.1.1",
  "rustls",
@@ -2711,19 +2714,6 @@ dependencies = [
  "tinyvec",
  "tracing",
  "web-time",
-]
-
-[[package]]
-name = "iroh-quinn-udp"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a91fe9ec3db6615d7ab1b303717f3b98fc40b96955a4ea25b113b1b879f7481f"
-dependencies = [
- "cfg_aliases",
- "libc",
- "socket2 0.6.2",
- "tracing",
- "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3412,42 +3402,6 @@ dependencies = [
 
 [[package]]
 name = "netwatch"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "970729c08dbe7987d698f996c6b4945cbfdcdd6ee627df6de51d5469cec13b99"
-dependencies = [
- "atomic-waker",
- "bytes",
- "cfg_aliases",
- "derive_more",
- "iroh-quinn-udp 0.7.0",
- "js-sys",
- "libc",
- "n0-error",
- "n0-future",
- "n0-watcher",
- "netdev",
- "netlink-packet-core",
- "netlink-packet-route 0.28.0",
- "netlink-proto",
- "netlink-sys",
- "objc2-core-foundation",
- "objc2-system-configuration",
- "pin-project-lite",
- "serde",
- "socket2 0.6.2",
- "time",
- "tokio",
- "tokio-util",
- "tracing",
- "web-sys",
- "windows 0.62.2",
- "windows-result 0.4.1",
- "wmi",
-]
-
-[[package]]
-name = "netwatch"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "454b8c0759b2097581f25ed5180b4a1d14c324fde6d0734932a288e044d06232"
@@ -3456,7 +3410,7 @@ dependencies = [
  "bytes",
  "cfg_aliases",
  "derive_more",
- "iroh-quinn-udp 0.8.0",
+ "iroh-quinn-udp",
  "js-sys",
  "libc",
  "n0-error",
@@ -4289,9 +4243,9 @@ dependencies = [
 
 [[package]]
 name = "portmapper"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f29fb522a166045a35b507dea30e3eb69bca1c5a53669d252744d5a0d8474ffa"
+checksum = "7d2a8825353ace3285138da3378b1e21860d60351942f7aa3b99b13b41f80318"
 dependencies = [
  "base64",
  "bytes",
@@ -4303,7 +4257,7 @@ dependencies = [
  "iroh-metrics",
  "libc",
  "n0-error",
- "netwatch 0.13.0",
+ "netwatch",
  "num_enum",
  "rand 0.9.2",
  "serde",
@@ -5053,9 +5007,9 @@ checksum = "bbfa15b3dddfee50a0fff136974b3e1bde555604ba463834a7eb7deb6417705d"
 
 [[package]]
 name = "sha2"
-version = "0.11.0-rc.4"
+version = "0.11.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7535f94fa3339fe9e5e9be6260a909e62af97f6e14b32345ccf79b92b8b81233"
+checksum = "d1e3878ab0f98e35b2df35fe53201d088299b41a6bb63e3e34dada2ac4abd924"
 dependencies = [
  "cfg-if",
  "cpufeatures",
