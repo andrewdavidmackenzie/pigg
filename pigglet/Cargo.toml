@@ -42,7 +42,7 @@ futures = { version = "0.3.32", default-features = false }
 tokio = { version = "1.49", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
 log = { version = "0.4.29", default-features = false }
 sysinfo = { version = "0.38", default-features = false, features = ["system"] }
-service-manager = { version = "0.10.0", default-features = false }
+service-manager = { version = "0.11.0", default-features = false }
 clap = { version = "4.5.59", default-features = false, features = ["std", "help", "error-context"] }
 serde_json = { version = "1.0.149", default-features = false, features = ["std"] }
 
