@@ -18,7 +18,7 @@ serde_json = "1.0.149"
 log = "0.4.29"
 
 [target.'cfg(not(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu")))'.dependencies]
-rand = { version = "0.9.2", default-features = false, features = ["std", "std_rng"] }
+rand = { version = "0.10.0", default-features = false, features = ["std", "std_rng"] }
 rand_core = { version = "0.6.4", features = ["getrandom"] }
 
 [target.'cfg(all(target_os = "linux", any(target_arch = "aarch64", target_arch = "arm"), target_env = "gnu"))'.dependencies]
