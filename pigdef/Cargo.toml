@@ -25,7 +25,7 @@ serde = { version = "1.0.228", default-features = false, features = ["derive"] }
 
 # Optional Dependencies for "no_std" case
 heapless = { version = "0.9.2", default-features = false, features = ["serde", "defmt"], optional = true }
-embassy-time = { version = "0.5.0", default-features = false, features = ["defmt", "defmt-timestamp-uptime"], optional = true }
+embassy-time = { version = "0.5.1", default-features = false, features = ["defmt", "defmt-timestamp-uptime"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
