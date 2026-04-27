@@ -1,5 +1,8 @@
 codecov:
   token: f15e8f2f-b8ef-4d82-8bca-02addf9e49fd
+  notify:
+    after_n_builds: 2
+    wait_for_ci: true
 
 coverage:
   round: up
