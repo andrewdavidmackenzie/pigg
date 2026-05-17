@@ -57,7 +57,7 @@ iroh = { version = "0.97.0", default-features = false, optional = true }
 digest = { version = "=0.11.0-rc.10" }
 
 mdns-sd = { version = "0.17.1", default-features = false, features = ["async", "reuseport"], optional = true }
-sysinfo = { version = "0.38" }
+sysinfo = { version = "0.39" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rfd = "0.17.2"
@@ -83,7 +83,7 @@ wayland-sys = { version = "0.31.11", features = ["dlopen"] }
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 serial_test = "3.4.0"
-sysinfo = { version = "0.38" }
+sysinfo = { version = "0.39" }
 
 [dev-dependencies] # For tests
 pignet = { path = "../pignet", version = "0.7" }
