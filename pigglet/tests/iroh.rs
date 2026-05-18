@@ -114,8 +114,6 @@ async fn reconnect_iroh() {
     )
     .await;
 
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     // Test we can re-connect after sending a disconnect request
     connect_and_test_iroh(
         &mut pigglet,

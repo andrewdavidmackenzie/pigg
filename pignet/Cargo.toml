@@ -14,7 +14,7 @@ rust-version.workspace = true
 
 [features]
 default = []
-iroh = ["pigdef/iroh", "dep:iroh", "dep:rand", "dep:rand_core"]
+iroh = ["pigdef/iroh", "dep:iroh", "dep:rand", "dep:rand_core", "dep:tokio"]
 tcp = ["pigdef/tcp"]
 discovery = ["pigdef/discovery"]
 usb = ["pigdef/usb", "dep:nusb", "dep:tokio", "dep:serde"]

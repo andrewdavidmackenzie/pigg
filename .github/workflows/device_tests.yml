@@ -19,5 +19,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Run HW Tests
         run: RUST_LOG=iroh=debug make hw_tests

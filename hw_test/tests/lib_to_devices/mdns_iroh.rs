@@ -10,7 +10,6 @@ use pigdef::description::HardwareDescription;
 use pignet::iroh_host;
 use serial_test::serial;
 use std::future::Future;
-use std::time::Duration;
 
 async fn connect_iroh<F, Fut>(endpoint_id: &EndpointId, relay_url: &Option<RelayUrl>, test: F)
 where
@@ -144,8 +143,6 @@ async fn mdns_discover_reconnect_iroh() {
                 .expect("Could not disconnect");
         })
         .await;
-
-        tokio::time::sleep(Duration::from_secs(31)).await;
 
         // Test we can re-connect after sending a disconnect request
         connect_iroh(node, relay, |_hw_desc, _c, mut connection| async move {

@@ -85,5 +85,8 @@ pub async fn connect(
 pub async fn disconnect(connection: &mut Connection) -> anyhow::Result<()> {
     send_config_message(connection, &Disconnect).await?;
     connection.close(VarInt::from_u32(0u32), "disconnect".as_bytes());
+    // Allow the QUIC background task to transmit the CLOSE frame before
+    // the caller drops the connection and endpoint
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     Ok(())
 }
