@@ -685,3 +685,6 @@ fn get_matches() -> ArgMatches {
 
     app.get_matches()
 }
+
+#[cfg(test)]
+mod ui_test;
