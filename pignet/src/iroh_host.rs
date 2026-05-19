@@ -2,7 +2,7 @@ use anyhow::ensure;
 use iroh::endpoint::VarInt;
 use iroh::{
     endpoint::{presets, Connection},
-    Endpoint, EndpointAddr, EndpointId, RelayMode, RelayUrl, SecretKey, TransportAddr,
+    Endpoint, EndpointAddr, EndpointId, RelayUrl, SecretKey, TransportAddr,
 };
 use pigdef::config::HardwareConfigMessage::Disconnect;
 use pigdef::config::{HardwareConfig, HardwareConfigMessage};
@@ -48,16 +48,11 @@ pub async fn connect(
     endpoint_id: &EndpointId,
     relay: &Option<RelayUrl>,
 ) -> anyhow::Result<(HardwareDescription, HardwareConfig, Connection, Endpoint)> {
-    let secret_key = SecretKey::generate(&mut rand::rng());
+    let secret_key = SecretKey::generate();
 
-    // Build an `Endpoint`, which uses PublicKeys as node identifiers
     let endpoint = Endpoint::builder(presets::N0)
-        // The secret key is used to authenticate with other nodes.
         .secret_key(secret_key)
-        // Set the ALPN protocols this endpoint will accept on incoming connections
         .alpns(vec![PIGGLET_ALPN.to_vec()])
-        // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
-        .relay_mode(RelayMode::Default)
         .bind()
         .await?;
 

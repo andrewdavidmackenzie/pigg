@@ -26,7 +26,7 @@ path = "src/pigglet.rs"
 default = ["iroh", "tcp", "discovery"]
 tcp = ["pigdef/tcp", "dep:portpicker", "dep:local-ip-address"]
 discovery = ["pigdef/discovery", "dep:mdns-sd"]
-iroh = ["pigdef/iroh", "dep:iroh", "dep:rand", "dep:rand_core"]
+iroh = ["pigdef/iroh", "dep:iroh"]
 usb = ["pigdef/usb"]
 
 [dependencies]
@@ -46,12 +46,10 @@ service-manager = { version = "0.11.0", default-features = false }
 clap = { version = "4.6.1", default-features = false, features = ["std", "help", "error-context"] }
 serde_json = { version = "1.0.149", default-features = false, features = ["std"] }
 
-iroh = { version = "0.97.0", default-features = false, optional = true }
+iroh = { version = "1.0.0-rc.0", default-features = false, features = ["tls-ring"], optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.12", default-features = false, optional = true }
 mdns-sd = { version = "0.17.2", default-features = false, features = ["reuseport"], optional = true }
-rand = { version = "0.9.2", default-features = false, features = ["std", "std_rng"], optional = true }
-rand_core = { version = "0.6.4", optional = true } # for iroh_device
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 

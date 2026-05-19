@@ -24,7 +24,7 @@ async-std = "1.13.2"
 serial_test = "3.4.0"
 anyhow = "1.0.102"
 mdns-sd = { version = "0.17.2", default-features = false, features = ["async", "reuseport"] }
-iroh = { version = "0.97.0", default-features = false }
+iroh = { version = "1.0.0-rc.0", default-features = false, features = ["tls-ring"] }
 sysinfo = { version = "0.39" } # used in support.rs via path
 chrono = "0.4.44"
 
