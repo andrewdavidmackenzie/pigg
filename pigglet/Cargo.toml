@@ -48,7 +48,7 @@ serde_json = { version = "1.0.149", default-features = false, features = ["std"]
 
 iroh = { version = "1.0.0-rc.0", default-features = false, features = ["tls-ring"], optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
-local-ip-address = { version = "0.6.12", default-features = false, optional = true }
+local-ip-address = { version = "0.6.13", default-features = false, optional = true }
 mdns-sd = { version = "0.17.2", default-features = false, features = ["reuseport"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
