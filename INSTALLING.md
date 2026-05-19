@@ -18,8 +18,8 @@ If your platform supports `sh` (and you have `curl` installed), then you can ins
 using:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/piggui-installer.sh | sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/andrewdavidmackenzie/pigg/releases/download/0.7.2/pigglet-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/andrewdavidmackenzie/pigg/releases/latest/download/piggui-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/andrewdavidmackenzie/pigg/releases/latest/download/pigglet-installer.sh | sh
 ```
 
 (example shown is for version 0.3.4. Check
