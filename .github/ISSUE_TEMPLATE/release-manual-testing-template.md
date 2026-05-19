@@ -45,26 +45,15 @@ entire groups of tests that don't need to be repeated in all scenarios.
 
 #### UI Interaction
 
-- Pin can be set to be an Input
-    - Pullup can be set to pull-up
-    - Pullup can be set to None
-    - Pullup can be set to pull-down
-- Pin can be set to be an Output
-    - Toggle changes the displayed value and stays there
-    - Toggle changes back the displayed value and stays there
-    - clicker changes value while pressed only
 - Board layout toggle changes the layout and changes it back and window changes size and is not clipped
+  (layout state change is automated; visual window resize verification remains manual)
 - Edit some pins and the config can be saved. If later reloaded from that file the config is loaded and applied
-  including any output level set in the UI
-- If no edit has been made, exiting by clicking on "X" in window manager exits immediately
-- If an edit has been made, exiting by clicking on "X" in window manager causes exit dialog to show
-    - If exit anyway is chosen the app exits
-    - If cancel exit is chosen you return to the app
-        - Trying to exit again will cause the dialog to show again
+  including any output level set in the UI (config load state is automated; file picker UX remains manual)
+- Pin can be set to be an Output
+    - clicker changes value while pressed only
 - If a config was loaded from file, exiting by clicking on "X" in window manager causes exit dialog to show
     - If after loading you make an edit, it behaves as above when edit was made without loading from file first
 - If edit is made and you chose to load a config then the load config or cancel dialog is shown
-    - If you cancel, you return to the app
     - If you chose to load anyway, the config is loaded and overwrites previous edits and app is in "no unsaved changes"
       state
         - Trying to exit should exit immediately
@@ -152,5 +141,25 @@ Execute the tests blocks in the specified scenario and click the checkbox when a
 
 ## Already automated tests
 
+### Networking (integration tests)
 - [X] piggui connects to pigglet using Iroh by supplying endpoint_id at the command line
 - [X] piggui connects to pigglet using Tcp by supplying an IP and port number at the command line
+
+### UI Interaction (iced_test headless tests in piggui/src/ui_test.rs)
+- [X] Pin can be set to Input with pull-up, pull-down, or none
+- [X] Pin can be set to Output
+- [X] Output toggle sends level change
+- [X] Pin function can be cleared
+- [X] Board layout toggle changes layout and changes back
+- [X] Config loaded from file updates pin configuration and filename
+- [X] Config loaded clears unsaved changes flag
+- [X] Exit without changes does not show dialog
+- [X] Exit with unsaved changes shows exit dialog
+- [X] Cancel in exit dialog returns to app
+- [X] Exit dialog reappears after cancel
+- [X] Exit dialog has correct buttons (Exit without saving / Return to app)
+- [X] Clicking "Return to app" in exit dialog dismisses it
+- [X] Load with unsaved changes shows warning dialog
+- [X] Cancel in load warning dialog returns to app
+- [X] Disconnected view renders without crash
+- [X] Connected view renders without crash
