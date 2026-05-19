@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail};
 use iroh::endpoint::Connection;
-use iroh::{endpoint::presets, Endpoint, EndpointId, RelayMode, RelayUrl, SecretKey};
+use iroh::{endpoint::presets, Endpoint, EndpointId, RelayUrl, SecretKey};
 use log::{debug, info, trace};
 use pigdef::config::HardwareConfig;
 use pigdef::config::HardwareConfigMessage::{IOLevelChanged, NewConfig, NewPinConfig};
@@ -46,26 +46,12 @@ impl Display for IrohDevice {
 }
 
 pub async fn get_device() -> anyhow::Result<IrohDevice> {
-    let secret_key = SecretKey::generate(&mut rand::rng());
+    let secret_key = SecretKey::generate();
 
-    // Build an `Endpoint`, which uses PublicKeys as node identifiers, that uses QUIC for directly
-    // connecting to other nodes, and uses the relay protocol and relay servers to holepunch direct
-    // connections between nodes when there are NATs or firewalls preventing direct connections.
-    // If no direct connection can be made, packets are relayed over the relay servers.
     #[allow(unused_mut)]
     let mut builder = Endpoint::builder(presets::N0)
-        // The secret key is used to authenticate with other nodes.
-        // The PublicKey portion of this secret key is how we identify nodes, often referred
-        // to as the `node_id` in our codebase.
         .secret_key(secret_key)
-        // set the ALPN protocols this endpoint will accept on incoming connections
-        .alpns(vec![PIGGLET_ALPN.to_vec()])
-        // `RelayMode::Default` means that we will use the default relay servers to holepunch and relay.
-        // Use `RelayMode::Custom` to pass in a `RelayMap` with custom relay urls.
-        // Use `RelayMode::Disable` to disable holepunching and relaying over HTTPS
-        // If you want to experiment with relaying using your own relay server,
-        // you must pass in the same custom relay url to both the `listen` code AND the `connect` code
-        .relay_mode(RelayMode::Default);
+        .alpns(vec![PIGGLET_ALPN.to_vec()]);
 
     let endpoint = builder.bind().await?;
 
