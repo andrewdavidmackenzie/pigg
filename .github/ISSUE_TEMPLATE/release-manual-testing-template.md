@@ -43,20 +43,15 @@ entire groups of tests that don't need to be repeated in all scenarios.
             - Clicking the clicker changes the value while pressed and back when released
 - Same as above, but config is loaded from a file.
 
-#### UI Interaction
+#### UI Interaction (remaining manual-only items)
 
-- Board layout toggle changes the layout and changes it back and window changes size and is not clipped
-  (layout state change is automated; visual window resize verification remains manual)
-- Edit some pins and the config can be saved. If later reloaded from that file the config is loaded and applied
-  including any output level set in the UI (config load state is automated; file picker UX remains manual)
-- Pin can be set to be an Output
-    - clicker changes value while pressed only
-- If a config was loaded from file, exiting by clicking on "X" in window manager causes exit dialog to show
-    - If after loading you make an edit, it behaves as above when edit was made without loading from file first
-- If edit is made and you chose to load a config then the load config or cancel dialog is shown
-    - If you chose to load anyway, the config is loaded and overwrites previous edits and app is in "no unsaved changes"
-      state
-        - Trying to exit should exit immediately
+Most UI interaction tests are now automated via headless tests (see "Already automated" below).
+The following require manual verification due to platform-specific or visual behavior:
+
+- Window resizes correctly after layout toggle (no clipping)
+- File picker opens and works for save/load config
+- Output pin clicker changes value while pressed only (widget interaction)
+- Loading a config via file picker overwrites previous edits and clears unsaved state
 
 #### USB (applies to Piggui+Porky scenario only)
 
@@ -75,9 +70,7 @@ entire groups of tests that don't need to be repeated in all scenarios.
     - The board layout is not shown
     - The option to connect to a remote pigglet is shown
     - The option to reconnect to local hardware is shown
-- Piggui can connect to pigglet using Iroh with a endpoint_id via command line
 - Piggui can connect to pigglet using Iroh with a endpoint_id entered via dialog
-- Piggui can connect to pigglet using TCP with a ip:port via command line
 - Piggui can connect to pigglet using TCP with a ip:port entered via dialog
 - Piggui can connect to porky using TCP with a ip:port entered via dialog
     - A Pi Pico pin layout is shown
@@ -157,8 +150,7 @@ Execute the tests blocks in the specified scenario and click the checkbox when a
 - [X] Exit with unsaved changes shows exit dialog
 - [X] Cancel in exit dialog returns to app
 - [X] Exit dialog reappears after cancel
-- [X] Exit dialog has correct buttons (Exit without saving / Return to app)
-- [X] Clicking "Return to app" in exit dialog dismisses it
+- [X] Exit dialog dismissed via HideModal
 - [X] Load with unsaved changes shows warning dialog
 - [X] Cancel in load warning dialog returns to app
 - [X] Disconnected view renders without crash
