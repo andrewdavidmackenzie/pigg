@@ -243,8 +243,12 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
 fn check_unique(process_name: &str) -> anyhow::Result<(), Option<InstanceInfo>> {
     let my_pid = process::id();
     let sys = System::new_all();
+    #[cfg(target_os = "windows")]
+    let full_name = format!("{process_name}.exe");
+    #[cfg(not(target_os = "windows"))]
+    let full_name = process_name.to_string();
     let instances: Vec<&Process> = sys
-        .processes_by_exact_name(process_name.as_ref())
+        .processes_by_exact_name(full_name.as_ref())
         .filter(|p| p.thread_kind().is_none() && p.pid().as_u32() != my_pid)
         .collect();
     if let Some(process) = instances.first() {

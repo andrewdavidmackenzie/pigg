@@ -90,7 +90,11 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
 /// Kill all instances of a process based on it's name
 pub fn kill_all(process_name: &str) {
     let s = System::new_all();
-    for process in s.processes_by_exact_name(process_name.as_ref()) {
+    #[cfg(target_os = "windows")]
+    let full_name = format!("{process_name}.exe");
+    #[cfg(not(target_os = "windows"))]
+    let full_name = process_name.to_string();
+    for process in s.processes_by_exact_name(full_name.as_ref()) {
         process.kill();
         process.wait();
     }

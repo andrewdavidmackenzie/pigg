@@ -71,14 +71,18 @@ getrandom = { version = "0.4.2", features = ["wasm_js"] }
 iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas"] }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
-[target.'cfg(all(not(target_arch = "wasm32"), any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm")))'.dependencies]
+[target.'cfg(all(not(target_arch = "wasm32"), any(all(target_arch = "aarch64", target_os = "linux"), all(target_arch = "arm", target_os = "linux"))))'.dependencies]
 iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas", "x11", "wayland"] }
 wayland-sys = { version = "0.31.11", features = ["dlopen"] }
 
-# Non-Raspberry Pi - use 'wgpu' renderer in iced
-[target.'cfg(all(not(target_arch = "wasm32"), not(any(all(target_arch = "aarch64", target_os = "linux"), target_arch = "arm"))))'.dependencies]
+# Non-Raspberry Pi, Non-Windows - use 'wgpu' renderer in iced with x11/wayland
+[target.'cfg(all(not(target_arch = "wasm32"), not(target_os = "windows"), not(any(all(target_arch = "aarch64", target_os = "linux"), all(target_arch = "arm", target_os = "linux")))))'.dependencies]
 iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "canvas", "advanced", "x11", "wayland"] }
 wayland-sys = { version = "0.31.11", features = ["dlopen"] }
+
+# Windows - use 'wgpu' renderer in iced without x11/wayland
+[target.'cfg(target_os = "windows")'.dependencies]
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "canvas", "advanced"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
