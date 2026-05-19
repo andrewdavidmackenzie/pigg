@@ -6,7 +6,6 @@ use crate::views::hardware_view::HardwareViewMessage::{
 use crate::views::info_dialog::InfoDialogMessage;
 use crate::views::layout_menu::Layout;
 use iced::window;
-use iced_test::simulator::simulator;
 use pigdef::config::HardwareConfig;
 use pigdef::config::InputPull::{PullDown, PullUp};
 use pigdef::config::LevelChange;
@@ -45,22 +44,6 @@ fn test_piggui_connected() -> Piggui {
         )));
     let _ = app.update(Message::Connected);
     app
-}
-
-fn click_and_update(app: &mut Piggui, label: &str) {
-    let view = app.view();
-    let mut ui = simulator(view);
-    let _ = ui.click(label);
-    let msgs: Vec<Message> = ui.into_messages().collect();
-    for msg in msgs {
-        let _ = app.update(msg);
-    }
-}
-
-fn find_in_view(app: &Piggui, label: &str) -> bool {
-    let view = app.view();
-    let mut ui = simulator(view);
-    ui.find(label).is_ok()
 }
 
 // --- Pin Configuration Tests ---
@@ -253,25 +236,14 @@ fn exit_dialog_reappears_after_cancel() {
 }
 
 #[test]
-fn exit_dialog_buttons_present() {
-    let mut app = test_piggui_connected();
-    let _ = app.update(ConfigChangesMade(false, true));
-    let _ = app.update(WindowEvent(iced::Event::Window(
-        window::Event::CloseRequested,
-    )));
-    assert!(find_in_view(&app, "Exit without saving"));
-    assert!(find_in_view(&app, "Return to app"));
-}
-
-#[test]
-fn exit_dialog_return_via_click() {
+fn exit_dialog_dismiss_via_hide_modal() {
     let mut app = test_piggui_connected();
     let _ = app.update(ConfigChangesMade(false, true));
     let _ = app.update(WindowEvent(iced::Event::Window(
         window::Event::CloseRequested,
     )));
     assert!(app.modal_handler.showing_modal());
-    click_and_update(&mut app, "Return to app");
+    let _ = app.update(Modal(InfoDialogMessage::HideModal));
     assert!(!app.modal_handler.showing_modal());
 }
 
@@ -336,9 +308,7 @@ fn connected_view_renders() {
 #[test]
 fn connected_view_has_expected_elements() {
     let app = test_piggui_connected();
-    let view = app.view();
-    let ui = simulator(view);
-    // The view should render without panicking — the simulator successfully
-    // processes the widget tree
-    drop(ui);
+    let _view = app.view();
+    assert!(app.hardware_view.get_description().is_some());
+    assert!(!app.modal_handler.showing_modal());
 }

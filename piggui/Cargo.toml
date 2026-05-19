@@ -85,7 +85,6 @@ iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgp
 tempfile = "3"
 serial_test = "3.4.0"
 sysinfo = { version = "0.39" }
-iced_test = "0.14.0"
 
 [dev-dependencies] # For tests
 pignet = { path = "../pignet", version = "0.7" }
