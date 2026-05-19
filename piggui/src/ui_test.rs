@@ -281,9 +281,7 @@ fn exit_dialog_return_via_click() {
 fn config_loaded_updates_state() {
     let mut app = test_piggui_connected();
     let mut config = HardwareConfig::default();
-    config
-        .pin_functions
-        .insert(2, Input(Some(PullUp)));
+    config.pin_functions.insert(2, Input(Some(PullUp)));
     let _ = app.update(ConfigLoaded("test.pigg".to_string(), config));
     assert_eq!(app.config_filename, Some("test.pigg".to_string()));
     assert_eq!(
