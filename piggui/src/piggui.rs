@@ -27,7 +27,7 @@ use crate::Message::*;
 use clap::{Arg, ArgMatches};
 use iced::widget::{container, Column};
 use iced::{window, Element, Length, Pixels, Settings, Subscription, Task, Theme};
-#[cfg(all(feature = "iroh", not(target_arch = "wasm32")))]
+#[cfg(feature = "iroh")]
 use iroh::{EndpointId, RelayUrl};
 use pigdef::config::HardwareConfig;
 #[cfg(feature = "usb")]
@@ -44,7 +44,7 @@ use pignet::HardwareConnection::NoConnection;
 use std::collections::HashMap;
 #[cfg(not(target_arch = "wasm32"))]
 use std::process;
-#[cfg(all(any(feature = "iroh", feature = "tcp"), not(target_arch = "wasm32")))]
+#[cfg(any(feature = "iroh", feature = "tcp"))]
 use std::str::FromStr;
 #[cfg(not(target_arch = "wasm32"))]
 use sysinfo::{Process, System};
@@ -206,8 +206,10 @@ impl Piggui {
 
         #[cfg(target_arch = "wasm32")]
         #[allow(unused_variables)]
-        let (requested_connection, local_hardware_option) =
-            (NoConnection, Option::<HardwareConnection>::None);
+        let (requested_connection, local_hardware_option) = {
+            let connection = Self::parse_url_params();
+            (connection, Option::<HardwareConnection>::None)
+        };
 
         #[cfg(feature = "discovery")]
         let discovered_devices = discovery::local_discovery(local_hardware_option);
@@ -613,6 +615,37 @@ impl Piggui {
         }
 
         (connection, local_hardware_opt, tasks)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn parse_url_params() -> HardwareConnection {
+        let search = web_sys::window()
+            .and_then(|w| w.location().search().ok())
+            .unwrap_or_default();
+
+        let params = match web_sys::UrlSearchParams::new_with_str(&search) {
+            Ok(p) => p,
+            Err(_) => return NoConnection,
+        };
+
+        #[cfg(feature = "iroh")]
+        if let Some(endpoint_id_str) = params.get("endpoint_id") {
+            if let Ok(endpoint_id) = EndpointId::from_str(&endpoint_id_str) {
+                let relay_url = params
+                    .get("relay")
+                    .and_then(|r| RelayUrl::from_str(&r).ok());
+                return HardwareConnection::Iroh(endpoint_id, relay_url);
+            }
+        }
+
+        #[cfg(feature = "tcp")]
+        if let Some(ip_str) = params.get("ip") {
+            if let Ok(tcp_target) = parse_ip_string(&ip_str) {
+                return tcp_target;
+            }
+        }
+
+        NoConnection
     }
 }
 
