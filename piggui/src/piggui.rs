@@ -409,23 +409,31 @@ impl Piggui {
        +--------------------------------------------------------------------------------------+
     */
     fn view(&self) -> Element<'_, Message> {
+        let hw_view = container(self.hardware_view.view(self.layout_selector.get()))
+            .max_width(1100)
+            .height(Length::Fill)
+            .width(Length::Fill)
+            .center_x(Length::Fill)
+            .center_y(Length::Fill);
+
         let main_col = Column::new()
-            .push(self.hardware_view.view(self.layout_selector.get()))
+            .push(
+                container(hw_view)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .center_x(Length::Fill)
+                    .center_y(Length::Fill),
+            )
             .push(self.info_row.view(
                 self.unsaved_changes,
                 &self.layout_selector,
                 &self.hardware_view,
                 #[cfg(feature = "discovery")]
                 &self.discovered_devices,
-            ));
+            ))
+            .height(Length::Fill);
 
-        let content = container(main_col)
-            .max_width(1100)
-            .height(Length::Fill)
-            .width(Length::Fill)
-            .align_x(iced::alignment::Horizontal::Center)
-            .center_x(Length::Fill)
-            .center_y(Length::Fill);
+        let content = container(main_col).height(Length::Fill).width(Length::Fill);
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         if self.connect_dialog.show_modal {
