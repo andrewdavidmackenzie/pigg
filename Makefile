@@ -238,8 +238,13 @@ coverage: clean-start
 	@genhtml -o target/coverage --quiet coverage.info
 	@echo "View coverage report using 'open target/coverage/index.html'"
 
+.PHONY: build-web
 build-web:
-	@make -C piggui trunk-build
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk build --release --config piggui/Trunk.toml
+
+.PHONY: web-run
+web-run: build-web
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk serve --release --config piggui/Trunk.toml
 
 docs:
 	bundle exec jekyll build --source site --destination _site

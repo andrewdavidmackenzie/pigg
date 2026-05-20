@@ -54,37 +54,40 @@ serde_json = { version = "1.0.149", default-features = false, features = ["std"]
 
 iroh = { version = "1.0.0-rc.0", default-features = false, features = ["tls-ring"], optional = true }
 mdns-sd = { version = "0.17.1", default-features = false, features = ["async", "reuseport"], optional = true }
-sysinfo = { version = "0.39" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sysinfo = { version = "0.39" }
 rfd = "0.17.2"
 clap = { version = "4.6.1", default-features = false, features = ["std", "help", "error-context"] }
 piggpio = { path = "../piggpio", version = "0.7" }
 
-# wasm32 - Use 'tiny-skia' renderer in iced
+# wasm32 - Use 'tiny-skia' software renderer in iced
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
 getrandom = { version = "0.4.2", features = ["wasm_js"] }
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "fira-sans", "advanced", "canvas"] }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(all(not(target_arch = "wasm32"), any(all(target_arch = "aarch64", target_os = "linux"), all(target_arch = "arm", target_os = "linux"))))'.dependencies]
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "advanced", "canvas", "x11", "wayland"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "fira-sans", "advanced", "canvas", "x11", "wayland"] }
 wayland-sys = { version = "0.31.11", features = ["dlopen"] }
 
 # Non-Raspberry Pi, Non-Windows - use 'wgpu' renderer in iced with x11/wayland
 [target.'cfg(all(not(target_arch = "wasm32"), not(target_os = "windows"), not(any(all(target_arch = "aarch64", target_os = "linux"), all(target_arch = "arm", target_os = "linux")))))'.dependencies]
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "canvas", "advanced", "x11", "wayland"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "fira-sans", "canvas", "advanced", "x11", "wayland"] }
 wayland-sys = { version = "0.31.11", features = ["dlopen"] }
 
 # Windows - use 'wgpu' renderer in iced without x11/wayland
 [target.'cfg(target_os = "windows")'.dependencies]
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "canvas", "advanced"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "fira-sans", "canvas", "advanced"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 serial_test = "3.4.0"
 sysinfo = { version = "0.39" }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"
 
 [dev-dependencies] # For tests
 pignet = { path = "../pignet", version = "0.7" }
@@ -99,5 +102,5 @@ rustdoc-args = ["--cfg", "docsrs"]
 [package.metadata.trunk.build]
 target = "index.html"
 dist = "dist"
-no_default_features = false
+no_default_features = true
 

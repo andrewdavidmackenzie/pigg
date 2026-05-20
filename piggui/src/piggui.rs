@@ -58,6 +58,7 @@ mod local_host;
 mod views;
 mod widgets;
 
+#[cfg(not(target_arch = "wasm32"))]
 const PIGGUI_ID: &str = "piggui";
 const CONNECTION_ERROR: &str = "Error: Connecting";
 #[cfg(feature = "discovery")]
@@ -114,23 +115,27 @@ pub struct Piggui {
 fn main() -> iced::Result {
     #[cfg(target_arch = "wasm32")]
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
     let settings = Settings {
+        #[cfg(not(target_arch = "wasm32"))]
         id: Some(PIGGUI_ID.into()),
         default_text_size: Pixels(14.0),
         ..Default::default()
     };
 
-    iced::application(Piggui::new, Piggui::update, Piggui::view)
+    let app = iced::application(Piggui::new, Piggui::update, Piggui::view)
         .subscription(Piggui::subscription)
         .window_size((500.0, 800.0))
-        .exit_on_close_request(false)
-        .resizable(true)
         .settings(settings)
-        .window_size(LayoutSelector::get_default_window_size())
         .theme(Theme::Dark)
-        .title(Piggui::title)
-        .run()
+        .title(Piggui::title);
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let app = app
+        .window_size(LayoutSelector::get_default_window_size())
+        .exit_on_close_request(false)
+        .resizable(true);
+
+    app.run()
 }
 
 #[cfg(feature = "usb")]
@@ -688,3 +693,6 @@ fn get_matches() -> ArgMatches {
 
 #[cfg(test)]
 mod ui_test;
+
+#[cfg(all(test, target_arch = "wasm32"))]
+mod wasm_test;
