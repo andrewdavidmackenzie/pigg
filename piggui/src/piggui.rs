@@ -420,6 +420,7 @@ impl Piggui {
             ));
 
         let content = container(main_col)
+            .max_width(1100)
             .height(Length::Fill)
             .width(Length::Fill)
             .align_x(iced::alignment::Horizontal::Center)
