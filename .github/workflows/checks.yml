@@ -60,6 +60,12 @@ jobs:
       - name: wasm32 trunk build
         run: make -C piggui trunk-build
 
+      - name: Install wasm-pack
+        run: cargo binstall wasm-pack
+
+      - name: Run wasm tests in headless Chrome
+        run: RUSTFLAGS='--cfg getrandom_backend="wasm_js"' wasm-pack test --headless --chrome piggui --no-default-features --features iroh
+
   clippy:
     runs-on: ubuntu-latest
     steps:
