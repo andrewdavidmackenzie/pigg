@@ -623,26 +623,24 @@ impl Piggui {
             .and_then(|w| w.location().search().ok())
             .unwrap_or_default();
 
-        let params: std::collections::HashMap<String, String> = search
-            .trim_start_matches('?')
-            .split('&')
-            .filter_map(|pair| {
-                let mut parts = pair.splitn(2, '=');
-                Some((parts.next()?.to_string(), parts.next()?.to_string()))
-            })
-            .collect();
+        let params = match web_sys::UrlSearchParams::new_with_str(&search) {
+            Ok(p) => p,
+            Err(_) => return NoConnection,
+        };
 
         #[cfg(feature = "iroh")]
         if let Some(endpoint_id_str) = params.get("endpoint_id") {
-            if let Ok(endpoint_id) = EndpointId::from_str(endpoint_id_str) {
-                let relay_url = params.get("relay").and_then(|r| RelayUrl::from_str(r).ok());
+            if let Ok(endpoint_id) = EndpointId::from_str(&endpoint_id_str) {
+                let relay_url = params
+                    .get("relay")
+                    .and_then(|r| RelayUrl::from_str(&r).ok());
                 return HardwareConnection::Iroh(endpoint_id, relay_url);
             }
         }
 
         #[cfg(feature = "tcp")]
         if let Some(ip_str) = params.get("ip") {
-            if let Ok(tcp_target) = parse_ip_string(ip_str) {
+            if let Ok(tcp_target) = parse_ip_string(&ip_str) {
                 return tcp_target;
             }
         }
