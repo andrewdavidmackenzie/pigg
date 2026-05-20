@@ -1,3 +1,5 @@
+#![cfg(not(target_arch = "wasm32"))]
+
 use crate::support::{kill_all, parse_pigglet};
 use serial_test::serial;
 use std::time::Duration;
