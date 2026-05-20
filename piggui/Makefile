@@ -180,8 +180,8 @@ ssh:
 
 .PHONY: trunk-build
 trunk-build:
-	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk build
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk build --release
 
 .PHONY: web-run
 web-run: trunk-build
-	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk serve
+	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk serve --release

@@ -34,6 +34,7 @@ impl LayoutSelector {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub const fn get_default_window_size() -> Size {
         board_layout_size(40)
     }

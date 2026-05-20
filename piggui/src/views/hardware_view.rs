@@ -361,12 +361,18 @@ impl HardwareView {
 
     /// Draw an empty view when there is no connection to hardware
     pub fn empty_layout_view<'a>() -> Element<'a, HardwareViewMessage> {
-        let col = Column::new()
+        let mut col = Column::new()
             .width(Fill)
             .push(text("Disconnected").size(20))
-            .push(text("You are not currently connected to any device with GPIO hardware to display"))
-            .push(text("You can use the 'device' menu at the bottom of the window to connect to detected devices"))
-            .push(text("If you know the TCP or Iroh connection data, you can use the 'disconnected:' menu and the 'Connect to remote Pi ...' option"))
+            .push(text(
+                "You are not currently connected to any device with GPIO hardware to display",
+            ));
+        #[cfg(feature = "discovery")]
+        {
+            col = col.push(text("You can use the 'device' menu at the bottom of the window to connect to detected devices"));
+        }
+        col = col
+            .push(text("You can use the 'disconnected:' menu and the 'Connect to remote Pi ...' option to connect"))
             .spacing(SPACE_BETWEEN_PIN_ROWS)
             .align_x(Center);
 

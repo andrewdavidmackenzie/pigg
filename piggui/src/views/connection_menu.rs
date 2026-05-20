@@ -1,3 +1,5 @@
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+use crate::views::connect_dialog::ConnectDialogMessage;
 use crate::views::hardware_view::HardwareView;
 use crate::views::info_dialog::InfoDialogMessage::HardwareDetailsModal;
 use crate::views::info_row::{menu_bar_button, menu_button_style};
@@ -13,6 +15,18 @@ pub fn view<'a>(hardware_view: &'a HardwareView) -> Item<'a, Message, Theme, Ren
     let mut menu_items: Vec<Item<'a, Message, _, _>> = vec![];
 
     let connection_string = if hardware_view.get_hardware_connection() == &NoConnection {
+        #[cfg(any(feature = "iroh", feature = "tcp"))]
+        {
+            let connect = Item::new(
+                button("Connect to remote Pi ...")
+                    .on_press(Message::ConnectDialog(
+                        ConnectDialogMessage::ShowConnectDialog,
+                    ))
+                    .width(Length::Fill)
+                    .style(menu_button_style),
+            );
+            menu_items.push(connect);
+        }
         "disconnected".to_string()
     } else if let Some(hardware_description) = hardware_view.get_description() {
         let show_details = Item::new(
