@@ -61,12 +61,12 @@ rfd = "0.17.2"
 clap = { version = "4.6.1", default-features = false, features = ["std", "help", "error-context"] }
 piggpio = { path = "../piggpio", version = "0.7" }
 
-# wasm32 - Use 'tiny-skia' software renderer in iced
+# wasm32 - Use 'wgpu' renderer in iced (WebGL2/WebGPU in browser)
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
 web-sys = { version = "0.3", features = ["Window", "Location", "UrlSearchParams"] }
 getrandom = { version = "0.4.2", features = ["wasm_js"] }
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "tiny-skia", "fira-sans", "advanced", "canvas"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "fira-sans", "advanced", "canvas"] }
 
 # Raspberry Pi - Use 'tiny-skia' renderer in iced
 [target.'cfg(all(not(target_arch = "wasm32"), any(all(target_arch = "aarch64", target_os = "linux"), all(target_arch = "arm", target_os = "linux"))))'.dependencies]
