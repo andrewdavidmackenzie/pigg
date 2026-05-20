@@ -1,3 +1,5 @@
+#![cfg(not(target_arch = "wasm32"))]
+
 use crate::support::kill_all;
 use serial_test::serial;
 use support::{pass, run, wait_for_stdout};

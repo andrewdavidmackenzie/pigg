@@ -312,3 +312,15 @@ fn connected_view_has_expected_elements() {
     assert!(app.hardware_view.get_description().is_some());
     assert!(!app.modal_handler.showing_modal());
 }
+
+#[cfg(any(feature = "iroh", feature = "tcp"))]
+#[test]
+fn connect_dialog_accessible_when_disconnected() {
+    let mut app = test_piggui();
+    assert!(app.hardware_view.get_description().is_none());
+    let _ = app.update(ConnectDialog(
+        crate::views::connect_dialog::ConnectDialogMessage::ShowConnectDialog,
+    ));
+    assert!(app.connect_dialog.show_modal);
+    let _view = app.view();
+}
