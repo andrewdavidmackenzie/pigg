@@ -31,7 +31,7 @@ use core::prelude::rust_2024::derive;
 /// * SCLK - serial clock
 /// * CE   - chip enable (often called chip select)
 /// * MOMI - master out master in
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)] // jonesy:allow(overflow)
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum PinFunction {

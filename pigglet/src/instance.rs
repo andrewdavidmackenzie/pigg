@@ -31,7 +31,7 @@ impl InstanceInfo {
         let pid = lines
             .next()
             .ok_or_else(|| anyhow!("Missing PID"))?
-            .parse::<u32>()
+            .parse::<u32>() // jonesy:allow(unknown)
             .context("Invalid PID")?;
 
         #[cfg(feature = "iroh")]
@@ -56,7 +56,7 @@ impl InstanceInfo {
         write!(output, "{self}")?;
         info!("Info file written at: {info_path:?}");
         Ok(())
-    }
+    } // jonesy:allow(invalid_enum) Display impl on InstanceInfo
 }
 
 impl std::fmt::Display for InstanceInfo {

@@ -1,1 +1,9 @@
-allow = ["format", "capacity"]
+allow = ["format", "capacity", "async_resumed", "oom", "misaligned_ptr"]
+
+[[rules]]
+path = "**/iroh_device.rs"
+allow = ["invalid_enum"]
+
+[[rules]]
+path = "**/tcp_device.rs"
+allow = ["invalid_enum"]

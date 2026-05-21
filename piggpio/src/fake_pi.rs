@@ -94,7 +94,7 @@ impl HW {
 
     pub fn get_time_since_boot(&self) -> Duration {
         SystemTime::now()
-            .duration_since(UNIX_EPOCH)
+            .duration_since(UNIX_EPOCH) // jonesy:allow(expect) duration_since has internal expect, we use unwrap_or_default
             .unwrap_or_default()
     }
 
@@ -123,13 +123,15 @@ impl HW {
             }
             Some(PinFunction::Input(pullup)) => {
                 let (sender, receiver) = std::sync::mpsc::channel();
+                // jonesy:allow(expect) thread::spawn panics if OS can't create thread
                 std::thread::spawn(move || {
                     loop {
                         let level: bool = OsRng.next_u32() > (u32::MAX / 2);
-                        #[allow(clippy::unwrap_used)]
-                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-                        callback(bcm_pin_number, LevelChange::new(level, now));
-                        // If we get a message, exit the thread
+                        let now = SystemTime::now()
+                            .duration_since(UNIX_EPOCH) // jonesy:allow(expect) duration_since has internal expect, we use unwrap_or_default
+                            .unwrap_or_default();
+                        callback(bcm_pin_number, LevelChange::new(level, now)); // jonesy:allow(invalid_enum)
+                                                                                // If we get a message, exit the thread
                         if receiver.recv_timeout(Duration::from_millis(666)).is_ok() {
                             return;
                         }

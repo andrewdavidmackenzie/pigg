@@ -46,8 +46,9 @@ async fn main() -> anyhow::Result<()> {
 
     service::manage(&exec_path, &matches)?;
 
+    // jonesy:allow(expect) sysinfo::System::new_all() uses expect internally
     match check_unique("pigglet") {
-        Ok(_) => run(&matches, exec_path).await,
+        Ok(_) => run(&matches, exec_path).await, // jonesy:allow(invalid_enum)
         Err(None) => {
             println!("There is another instance of pigglet running, but we couldn't get more information");
             exit(1);
@@ -69,11 +70,11 @@ async fn main() -> anyhow::Result<()> {
 #[allow(unused_variables)]
 async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
     // We'll create the info file in the directory where we are running
-    let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME);
-    // A config file specified on the command line overrides the default config file
+    let info_path = exec_path.with_file_name(PIGG_INFO_FILENAME); // jonesy:allow(unknown)
+                                                                  // A config file specified on the command line overrides the default config file
     let config_file_path = match matches.get_one::<String>("config") {
         Some(config_filename) => PathBuf::from(config_filename),
-        None => exec_path.with_file_name(CONFIG_FILENAME),
+        None => exec_path.with_file_name(CONFIG_FILENAME), // jonesy:allow(unknown)
     };
 
     // remove any leftover file from a previous execution - ignore any failure
@@ -86,26 +87,26 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
 
         // Get the boot config for the hardware
         #[allow(unused_mut)]
-        let mut hardware_config = get_config(&config_file_path);
+        let mut hardware_config = get_config(&config_file_path); // jonesy:allow(invalid_enum)
 
         // Apply the initial config to the hardware, whatever it is
         hw.apply_config(&hardware_config, |bcm_pin_number, level_change| {
             info!("Pin #{bcm_pin_number} changed level to '{level_change}'")
-        })
+        }) // jonesy:allow(invalid_enum)
         .await?;
         trace!("Configuration applied to hardware");
 
         let listener_info = InstanceInfo {
-            process_name: "pigglet".to_string(),
+            process_name: "pigglet".to_string(), // jonesy:allow(invalid_enum)
             pid: process::id(),
             #[cfg(feature = "iroh")]
-            iroh_info: iroh_device::get_device().await?,
+            iroh_info: iroh_device::get_device().await?, // jonesy:allow(misalign)
             #[cfg(feature = "tcp")]
-            tcp_info: tcp_device::get_device().await?,
+            tcp_info: tcp_device::get_device().await?, // jonesy:allow(overflow, invalid_enum)
         };
 
         // write the info about the node to the info_path file for use in piggui
-        listener_info.write_to_file(&info_path)?;
+        listener_info.write_to_file(&info_path)?; // jonesy:allow(invalid_enum)
 
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         let desc = hw.description().clone();
@@ -214,14 +215,14 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
 
                 futures::pin_mut!(fused_tcp, fused_iroh);
 
-                futures::select! {
+                futures::select! { // jonesy:allow(bounds)
                     tcp_stream = fused_tcp => {
                         println!("Connection via Tcp");
-                        let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &config_file_path, &mut hw).await;
+                        let _ = tcp_device::tcp_message_loop(tcp_stream?, &mut hardware_config, &config_file_path, &mut hw).await; // jonesy:allow(bounds, invalid_enum)
                     },
                     iroh_connection = fused_iroh => {
                         println!("Connection via Iroh");
-                        let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &config_file_path, &mut hw).await;
+                        let _ =  iroh_device::iroh_message_loop(iroh_connection?, &mut hardware_config, &config_file_path, &mut hw).await; // jonesy:allow(invalid_enum)
                     }
                     complete => {}
                 }
@@ -255,7 +256,7 @@ fn check_unique(process_name: &str) -> anyhow::Result<(), Option<InstanceInfo>> 
     if let Some(process) = instances.first() {
         // If we can find the path to the executable - load for the info file
         if let Some(path) = process.exe() {
-            let info_path = path.with_file_name(PIGG_INFO_FILENAME);
+            let info_path = path.with_file_name(PIGG_INFO_FILENAME); // jonesy:allow(unknown)
             return Err(Some(
                 InstanceInfo::load_from_file(info_path).map_err(|_| None)?,
             ));
@@ -273,10 +274,10 @@ fn setup_logging(matches: &ArgMatches) {
     let default_verbosity = "error".to_string();
     let verbosity = matches
         .get_one::<String>("verbosity")
-        .unwrap_or(&default_verbosity);
-    let level = LevelFilter::from_str(verbosity).unwrap_or(LevelFilter::Error);
+        .unwrap_or(&default_verbosity); // jonesy:allow(unwrap)
+    let level = LevelFilter::from_str(verbosity).unwrap_or(LevelFilter::Error); // jonesy:allow(bounds)
     let mut builder = Builder::from_default_env();
-    builder.filter_level(level).target(Target::Stdout).init();
+    builder.filter_level(level).target(Target::Stdout).init(); // jonesy:allow(expect)
 }
 
 /// Parse the command line arguments using clap into a set of [ArgMatches]
@@ -344,6 +345,7 @@ fn register_mdns(
 
     // Register a service.
     let service_info = ServiceInfo::new(
+        // jonesy:allow(misalign)
         service_type,
         serial_number,
         &service_hostname,

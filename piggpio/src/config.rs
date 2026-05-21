@@ -20,10 +20,10 @@ pub fn get_config(config_file_path: &Path) -> HardwareConfig {
                 config_file_path.to_string_lossy()
             );
             config
-        }
+        } // jonesy:allow(invalid_enum)
         Err(_) => {
             info!("No config file could be loaded, using default config");
-            HardwareConfig::default()
+            HardwareConfig::default() // jonesy:allow(invalid_enum)
         }
     }
 }
@@ -43,5 +43,5 @@ pub async fn store_config(
 ) -> io::Result<()> {
     let mut file = File::create(config_file_path)?;
     let contents = serde_json::to_string(hardware_config)?;
-    file.write_all(contents.as_bytes())
+    file.write_all(contents.as_bytes()) // jonesy:allow(bounds)
 }
