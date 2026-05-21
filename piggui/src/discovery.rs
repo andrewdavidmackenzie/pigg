@@ -203,6 +203,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
         100,
         move |mut gui_sender: Sender<DiscoveryEvent>| async move {
             let Ok(mdns) = ServiceDaemon::new() else {
+                log::error!("Failed to create mDNS service daemon");
                 return;
             };
             match mdns.browse(TCP_MDNS_SERVICE_TYPE) {

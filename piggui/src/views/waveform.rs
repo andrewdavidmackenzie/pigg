@@ -234,8 +234,11 @@ where
                 Direction::Left => start_of_chart_time..last_time,
                 Direction::Right => last_time..start_of_chart_time,
             };
-            if let Ok(mut chart) = chart.build_cartesian_2d(time_axis, self.range()) {
-                let _ = chart.draw_series(LineSeries::new(self.get_data(), self.style));
+            match chart.build_cartesian_2d(time_axis, self.range()) {
+                Ok(mut chart) => {
+                    let _ = chart.draw_series(LineSeries::new(self.get_data(), self.style));
+                }
+                Err(e) => log::error!("Failed to build chart: {e:?}"),
             }
         }
     }
