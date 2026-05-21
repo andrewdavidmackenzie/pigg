@@ -236,7 +236,10 @@ where
             };
             match chart.build_cartesian_2d(time_axis, self.range()) {
                 Ok(mut chart) => {
-                    let _ = chart.draw_series(LineSeries::new(self.get_data(), self.style));
+                    if let Err(e) = chart.draw_series(LineSeries::new(self.get_data(), self.style))
+                    {
+                        log::error!("Failed to draw series: {e:?}");
+                    }
                 }
                 Err(e) => log::error!("Failed to build chart: {e:?}"),
             }
