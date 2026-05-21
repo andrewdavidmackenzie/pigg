@@ -1,3 +1,6 @@
+#![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
+
 #[cfg(feature = "iroh")]
 use iroh::{EndpointId, RelayUrl};
 #[cfg(feature = "usb")]

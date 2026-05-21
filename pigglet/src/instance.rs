@@ -74,6 +74,7 @@ impl std::fmt::Display for InstanceInfo {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod test {
     use crate::InstanceInfo;
     use iroh::{EndpointId, RelayUrl};

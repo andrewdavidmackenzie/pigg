@@ -1,4 +1,5 @@
 #![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
 #![cfg(not(target_arch = "wasm32"))]
 
 use anyhow::anyhow;

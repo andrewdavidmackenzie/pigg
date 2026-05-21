@@ -149,6 +149,7 @@ impl std::fmt::Display for InputPull {
 }
 
 #[cfg(all(test, feature = "std"))]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod test {
     use crate::config::HardwareConfig;
     use crate::config::LevelChange;

@@ -70,7 +70,7 @@ impl PinDescriptionSet {
             .iter()
             .filter(|pin| pin.bcm.is_some())
             .collect::<Vec<&PinDescription>>();
-        pins.sort_by_key(|pin| pin.bcm.expect("Could not get BCM pin number"));
+        pins.sort_by_key(|pin| pin.bcm.unwrap_or(0));
         pins
     }
 }
@@ -227,6 +227,7 @@ impl<'a> PinDescriptionSet<'a> {
     /// Create a new [PinDescriptionSet] from a slice of pins
     pub fn new(pin_slice: &'a [PinDescription]) -> Self {
         Self {
+            #[allow(clippy::unwrap_used)] // heapless Vec<_, 40> fits all Pi pin layouts
             pins: Vec::from_slice(pin_slice).unwrap(),
         }
     }

@@ -88,6 +88,7 @@ impl PinState {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod test {
     use crate::views::pin_state::PinState;
     use pigdef::config::LevelChange;

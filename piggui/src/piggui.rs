@@ -1,4 +1,5 @@
 #![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
 
 use crate::file_helper::{maybe_load_no_picker, pick_and_load, save};
 #[cfg(any(feature = "iroh", feature = "tcp"))]

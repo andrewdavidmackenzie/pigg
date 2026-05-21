@@ -60,9 +60,15 @@ pub async fn connect(
     // override it in a text entry box. Leave blank for the user if it fails to get fetched.
     endpoint.online().await;
 
-    let relay_url = relay
-        .clone()
-        .unwrap_or(endpoint.addr().relay_urls().next().unwrap().clone());
+    let relay_url = match relay.clone() {
+        Some(url) => url,
+        None => endpoint
+            .addr()
+            .relay_urls()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("No relay URL available"))?
+            .clone(),
+    };
     let addr = EndpointAddr::from_parts(*endpoint_id, vec![TransportAddr::Relay(relay_url)]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.

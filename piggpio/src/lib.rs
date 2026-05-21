@@ -1,3 +1,6 @@
+#![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
+
 /// There are two implementations of the `HW` struct.
 ///
 #[cfg(all(
@@ -84,6 +87,7 @@ pub fn get_hardware() -> Option<HW> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod test {
     use pigdef::description::{PinDescription, PinDescriptionSet};
     use pigdef::pin_function::PinFunction;
