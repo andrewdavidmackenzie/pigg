@@ -14,13 +14,13 @@ pub const CONFIG_FILENAME: &str = ".piglet_config.json";
 /// Load the initial [HardwareConfig] from a file
 pub fn get_config(config_file_path: &Path) -> HardwareConfig {
     match load_cfg(config_file_path) {
-        // jonesy:allow(invalid_enum) deserialized config contains enum discriminants
         Ok(config) => {
             trace!(
                 "Config loaded from {}: {config}",
                 config_file_path.to_string_lossy()
             );
             config
+            // jonesy:allow(invalid_enum) deserialized config contains enum discriminants
         }
         Err(_) => {
             info!("No config file could be loaded, using default config");
