@@ -13,7 +13,6 @@ test.describe('Smoke tests', () => {
     await page.goto('/');
     await page.waitForTimeout(3000);
 
-    // Filter out known non-error messages
     const realErrors = errors.filter(
       e => !e.includes('integrity') && !e.includes('favicon')
     );
@@ -37,30 +36,49 @@ test.describe('Smoke tests', () => {
     await page.goto('/');
     await page.waitForTimeout(3000);
 
-    // Take a screenshot of the canvas and verify it's not a single solid color
-    const canvas = page.locator('canvas');
-    const screenshot = await canvas.screenshot();
-    expect(screenshot.length).toBeGreaterThan(1000);
+    // Sample pixels from the canvas to verify non-uniform rendering
+    const hasVariedContent = await page.evaluate(() => {
+      const canvas = document.querySelector('canvas');
+      if (!canvas) return false;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return false;
+      const w = canvas.width;
+      const h = canvas.height;
+      // Sample a few rows of pixels
+      const topRow = ctx.getImageData(0, 10, w, 1).data;
+      const midRow = ctx.getImageData(0, Math.floor(h / 2), w, 1).data;
+      // Check if any pixel differs from the first pixel in each row
+      const firstR = topRow[0], firstG = topRow[1], firstB = topRow[2];
+      for (let i = 4; i < topRow.length; i += 4) {
+        if (topRow[i] !== firstR || topRow[i+1] !== firstG || topRow[i+2] !== firstB) return true;
+      }
+      for (let i = 0; i < midRow.length; i += 4) {
+        if (midRow[i] !== firstR || midRow[i+1] !== firstG || midRow[i+2] !== firstB) return true;
+      }
+      return false;
+    });
+    expect(hasVariedContent).toBe(true);
   });
 });
 
 // --- UI Interaction Tests ---
 
 test.describe('UI interaction tests', () => {
-  test('disconnected view shows text content', async ({ page }) => {
+  test('disconnected view shows interactive canvas', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(3000);
 
-    // The canvas captures all rendering — we can't query text directly.
-    // Instead verify the canvas is interactive (iced is running).
     const canvas = page.locator('canvas');
     await expect(canvas).toBeVisible();
 
-    // Verify canvas has focus/tabindex (iced sets this)
+    // Verify canvas has tabindex (iced sets this for keyboard focus)
     const tabindex = await canvas.getAttribute('tabindex');
     expect(tabindex).toBe('0');
   });
 
+  // Note: iced renders everything to a canvas, so we cannot query widget state
+  // or verify text content directly. We verify that keyboard input is processed
+  // without errors, which confirms the iced event loop is running.
   test('keyboard input is accepted by canvas', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(3000);
@@ -68,7 +86,6 @@ test.describe('UI interaction tests', () => {
     const canvas = page.locator('canvas');
     await canvas.click();
 
-    // Type some characters — iced should process them without errors
     const errors: string[] = [];
     page.on('console', msg => {
       if (msg.type() === 'error') errors.push(msg.text());
@@ -93,18 +110,15 @@ test.describe('Connectivity tests', () => {
   let endpointId: string;
 
   test.beforeAll(async () => {
-    // Kill any existing pigglet
     try { execSync('pkill -f "target/debug/pigglet"', { stdio: 'ignore' }); } catch {}
     await new Promise(r => setTimeout(r, 1000));
 
-    // Build pigglet
     execSync('cargo build -p pigglet', {
       cwd: '../..',
       stdio: 'inherit',
       timeout: 120_000,
     });
 
-    // Start pigglet and capture endpoint_id
     pigglet = spawn('cargo', ['run', '-p', 'pigglet', '--bin', 'pigglet'], {
       cwd: '../..',
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -142,14 +156,24 @@ test.describe('Connectivity tests', () => {
   });
 
   test('auto-connect via URL parameter', async ({ page }) => {
-    // Load with endpoint_id parameter to auto-connect
+    // Listen for pigglet to confirm the connection
+    const connectedPromise = new Promise<boolean>((resolve) => {
+      const timeout = setTimeout(() => resolve(false), 45_000);
+      pigglet.stdout!.on('data', (data: Buffer) => {
+        if (data.toString().includes('Connection via Iroh')) {
+          clearTimeout(timeout);
+          resolve(true);
+        }
+      });
+    });
+
     await page.goto(`/?endpoint_id=${endpointId}`);
 
-    // Wait for connection — pigglet prints "Connected" when a client connects
-    // Give it time for iroh relay connection
-    await page.waitForTimeout(30_000);
+    // Wait for pigglet to confirm connection
+    const connected = await connectedPromise;
+    expect(connected).toBe(true);
 
-    // Verify canvas is still rendering (no crash)
+    // Verify canvas is still rendering after connection
     const canvas = page.locator('canvas');
     await expect(canvas).toBeVisible();
 
