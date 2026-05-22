@@ -7,3 +7,7 @@ allow = ["invalid_enum"]
 [[rules]]
 path = "**/tcp_device.rs"
 allow = ["invalid_enum"]
+
+[[rules]]
+path = "**/piggpio/src/config.rs"
+allow = ["invalid_enum"]
