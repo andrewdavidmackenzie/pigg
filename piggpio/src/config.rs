@@ -19,13 +19,13 @@ pub fn get_config(config_file_path: &Path) -> HardwareConfig {
                 "Config loaded from {}: {config}",
                 config_file_path.to_string_lossy()
             );
-            // jonesy:allow(invalid_enum) deserialized config contains enum discriminants
             config
+            // jonesy:allow(invalid_enum) deserialized config contains enum discriminants
         }
         Err(_) => {
             info!("No config file could be loaded, using default config");
-            // jonesy:allow(invalid_enum) default config constructs enum variants
             HardwareConfig::default()
+            // jonesy:allow(invalid_enum) default config constructs enum variants
         }
     }
 }

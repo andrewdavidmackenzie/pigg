@@ -87,17 +87,20 @@ where
     let response = porky.control_in(control_in, CONTROL_IN_TIMEOUT).await;
     let data = response?;
     let length = data.len();
+    // jonesy:allow(bounds) length is data.len(), always valid
     Ok(postcard::from_bytes(&data[0..length])?)
 }
 
 /// Request [HardwareDescription] from compatible device over USB [ControlIn]
 async fn get_hardware_description(porky: &Interface) -> Result<HardwareDescription, Error> {
+    // jonesy:allow(bounds) propagates from receive_control_in
     receive_control_in(porky, GET_HARDWARE_DESCRIPTION).await
 }
 
 #[cfg(feature = "discovery")]
 /// Request [HardwareDetails] from compatible porky device over USB [ControlIn]
 pub async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, Error> {
+    // jonesy:allow(bounds) propagates from receive_control_in
     match receive_control_in(porky, GET_HARDWARE_DETAILS).await {
         Ok(hwd) => Ok(hwd),
         Err(e) => {
@@ -110,6 +113,7 @@ pub async fn get_hardware_details(porky: &Interface) -> Result<HardwareDetails, 
 #[cfg(feature = "discovery")]
 /// Request [WiFiDetails] from compatible porky device over USB [ControlIn]
 pub async fn get_wifi_details(porky: &Interface) -> Result<WiFiDetails, Error> {
+    // jonesy:allow(bounds) propagates from receive_control_in
     match receive_control_in(porky, GET_WIFI_DETAILS).await {
         Ok(wifi) => Ok(wifi),
         Err(e) => {
@@ -184,9 +188,11 @@ where
     // Ideally create this once on initialization, so maybe lift it out of a loop,
     // or keep it in a field of `porky`. It's not too expensive to create every time if
     // necessary, but only one instance can exist at a time for a given endpoint address.
+    // jonesy:allow(unwrap) nusb endpoint creation
     let mut endpoint = porky.interface.endpoint::<Interrupt, In>(0x81)?;
 
     loop {
+        // jonesy:allow(div_zero, expect, invalid_enum) nusb/postcard deserialization internals
         endpoint.submit(Buffer::new(1024));
         let completion = endpoint.next_complete().await;
         if completion.status.is_ok() {

@@ -34,8 +34,10 @@ pub async fn send_config_message(
     // serialize the message
     let content = postcard::to_allocvec(&config_change_message)?;
     // send it to the remotely connected hardware
+    // jonesy:allow(bounds) postcard serialization bounds check
     config_sender.write_all(&content).await?;
     // close and flush the stream to ensure the message is sent
+    // jonesy:allow(bounds) iroh stream finish
     config_sender.finish()?;
     Ok(())
 }
