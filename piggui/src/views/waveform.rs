@@ -234,10 +234,15 @@ where
                 Direction::Left => start_of_chart_time..last_time,
                 Direction::Right => last_time..start_of_chart_time,
             };
-            let mut chart = chart
-                .build_cartesian_2d(time_axis, self.range())
-                .expect("failed to build chart");
-            let _ = chart.draw_series(LineSeries::new(self.get_data(), self.style));
+            match chart.build_cartesian_2d(time_axis, self.range()) {
+                Ok(mut chart) => {
+                    if let Err(e) = chart.draw_series(LineSeries::new(self.get_data(), self.style))
+                    {
+                        log::error!("Failed to draw series: {e:?}");
+                    }
+                }
+                Err(e) => log::error!("Failed to build chart: {e:?}"),
+            }
         }
     }
 
@@ -253,6 +258,7 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod test {
     use std::ops::Sub;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};

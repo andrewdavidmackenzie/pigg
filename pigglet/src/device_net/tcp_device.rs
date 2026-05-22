@@ -70,7 +70,7 @@ pub async fn get_device() -> anyhow::Result<TcpDevice> {
             });
         }
         tokio::time::sleep(Duration::from_secs(10)).await;
-        retry_count += 1;
+        retry_count += 1; // jonesy:allow(overflow)
     }
 
     Err(anyhow!("Could not get IP address"))
@@ -110,7 +110,7 @@ pub async fn tcp_message_loop(
             bail!("End of message stream");
         }
 
-        if let Ok(config_message) = postcard::from_bytes(&payload[0..length]) {
+        if let Ok(config_message) = postcard::from_bytes(payload.get(0..length).unwrap_or(&[])) {
             if apply_config_change(hardware, config_message, hardware_config, stream.clone())
                 .await
                 .is_ok()
@@ -202,7 +202,7 @@ async fn send_current_input_state(
     writer: TcpStream,
     hardware: &HW,
 ) -> anyhow::Result<()> {
-    let now = hardware.get_time_since_boot();
+    let now = hardware.get_time_since_boot(); // jonesy:allow(expect)
 
     // Send initial levels
     if let PinFunction::Input(_pullup) = pin_function {

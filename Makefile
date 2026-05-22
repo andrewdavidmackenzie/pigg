@@ -238,6 +238,10 @@ coverage: clean-start
 	@genhtml -o target/coverage --quiet coverage.info
 	@echo "View coverage report using 'open target/coverage/index.html'"
 
+.PHONY: jonesy
+jonesy:
+	cd pigglet && jonesy --bin pigglet --config ../jonesy.toml
+
 .PHONY: build-web
 build-web:
 	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk build --release --config piggui/Trunk.toml

@@ -202,7 +202,15 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
     stream::channel(
         100,
         move |mut gui_sender: Sender<DiscoveryEvent>| async move {
-            let mdns = ServiceDaemon::new().expect("Failed to create daemon");
+            let Ok(mdns) = ServiceDaemon::new() else {
+                log::error!("Failed to create mDNS service daemon");
+                let _ = gui_sender
+                    .send(DiscoveryEvent::Error(
+                        "Failed to create mDNS service daemon".into(),
+                    ))
+                    .await;
+                return;
+            };
             match mdns.browse(TCP_MDNS_SERVICE_TYPE) {
                 Ok(receiver) => {
                     while let Ok(event) = receiver.recv_async().await {

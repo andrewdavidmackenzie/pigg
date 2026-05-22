@@ -29,7 +29,7 @@ use std::time::Duration;
 /// [HardwareConfig] captures the current configuration of programmable GPIO pins
 #[cfg_attr(feature = "std", derive(Debug))]
 #[cfg_attr(all(debug_assertions, feature = "std"), derive(PartialEq))]
-#[derive(Clone, Serialize, Deserialize, Default)]
+#[derive(Clone, Serialize, Deserialize, Default)] // jonesy:allow(overflow)
 pub struct HardwareConfig {
     #[cfg(feature = "std")]
     pub pin_functions: HashMap<BCMPinNumber, PinFunction>,
@@ -130,7 +130,7 @@ impl std::fmt::Display for LevelChange {
 }
 
 /// An input can be configured to have an optional pull-up or pull-down or neither
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)] // jonesy:allow(overflow)
 pub enum InputPull {
     PullUp,
     PullDown,
@@ -149,6 +149,7 @@ impl std::fmt::Display for InputPull {
 }
 
 #[cfg(all(test, feature = "std"))]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod test {
     use crate::config::HardwareConfig;
     use crate::config::LevelChange;

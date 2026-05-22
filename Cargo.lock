@@ -4297,6 +4297,7 @@ dependencies = [
  "tokio",
  "wasm-bindgen-test",
  "wayland-sys",
+ "web-sys",
  "webbrowser",
 ]
 

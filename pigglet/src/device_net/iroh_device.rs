@@ -49,11 +49,11 @@ pub async fn get_device() -> anyhow::Result<IrohDevice> {
     let secret_key = SecretKey::generate();
 
     #[allow(unused_mut)]
-    let mut builder = Endpoint::builder(presets::N0)
+    let mut builder = Endpoint::builder(presets::N0) // jonesy:allow(unknown)
         .secret_key(secret_key)
-        .alpns(vec![PIGGLET_ALPN.to_vec()]);
+        .alpns(vec![PIGGLET_ALPN.to_vec()]); // jonesy:allow(misalign)
 
-    let endpoint = builder.bind().await?;
+    let endpoint = builder.bind().await?; // jonesy:allow(expect, assert, bounds)
 
     let endpoint_id = endpoint.id();
     println!("endpoint_id: {endpoint_id}"); // Don't remove - required by integration tests
@@ -80,6 +80,7 @@ pub async fn accept_connection(
     hardware_config: HardwareConfig,
 ) -> anyhow::Result<Connection> {
     debug!("Waiting for connection");
+    // jonesy:allow(assert)
     if let Some(connecting) = endpoint.accept().await {
         let connection = connecting.await?;
         let endpoint_id = connection.remote_id();
@@ -87,8 +88,8 @@ pub async fn accept_connection(
         trace!("Sending hardware description");
         let mut gui_sender = connection.open_uni().await?;
         let message = postcard::to_allocvec(&(&desc, hardware_config))?;
-        gui_sender.write_all(&message).await?;
-        gui_sender.finish()?;
+        gui_sender.write_all(&message).await?; // jonesy:allow(bounds)
+        gui_sender.finish()?; // jonesy:allow(bounds)
         Ok(connection)
     } else {
         bail!("Could not connect to iroh")
@@ -209,7 +210,7 @@ async fn send_current_input_level(
     connection: Connection,
     hardware: &HW,
 ) -> anyhow::Result<()> {
-    let now = hardware.get_time_since_boot();
+    let now = hardware.get_time_since_boot(); // jonesy:allow(expect)
 
     // Send initial levels
     if let PinFunction::Input(_pullup) = pin_function {
@@ -245,7 +246,7 @@ fn send_input_level_sync(
 /// Send a message to the GUI using `connection` [Connection]
 async fn send(connection: Connection, message: &[u8]) -> anyhow::Result<()> {
     let mut gui_sender = connection.open_uni().await?;
-    gui_sender.write_all(message).await?;
-    gui_sender.finish()?;
+    gui_sender.write_all(message).await?; // jonesy:allow(bounds)
+    gui_sender.finish()?; // jonesy:allow(bounds)
     Ok(())
 }

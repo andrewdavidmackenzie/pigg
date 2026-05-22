@@ -16,6 +16,7 @@ pub(crate) fn manage(exec_path: &Path, matches: &ArgMatches) -> anyhow::Result<(
     let service_name: ServiceLabel = SERVICE_NAME.parse()?;
 
     if matches.get_flag("uninstall") {
+        // jonesy:allow(assert)
         uninstall_service(&service_name)?;
         exit(0);
     }
@@ -41,7 +42,7 @@ fn get_service_manager() -> Result<Box<dyn ServiceManager>, io::Error> {
 fn install_service(service_name: &ServiceLabel, exec_path: &Path) -> Result<(), io::Error> {
     let manager = get_service_manager()?;
     // Run from the dir where exec is for now, so it should find the config file in the ancestor's path
-    let exec_dir = exec_path
+    let exec_dir = exec_path // jonesy:allow(bounds)
         .parent()
         .ok_or(io::Error::new(
             io::ErrorKind::NotFound,
@@ -92,6 +93,7 @@ fn uninstall_service(service_name: &ServiceLabel) -> Result<(), io::Error> {
     })?;
 
     println!("service '{service_name}' stopped. Waiting for 10s before uninstalling");
+    // jonesy:allow(assert)
     std::thread::sleep(Duration::from_secs(10));
 
     // Uninstall our service using the underlying service management platform
