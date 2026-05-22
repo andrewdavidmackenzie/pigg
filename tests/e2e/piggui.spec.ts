@@ -32,32 +32,18 @@ test.describe('Smoke tests', () => {
     expect(box!.height).toBeGreaterThan(0);
   });
 
-  test('canvas renders non-uniform content', async ({ page }) => {
+  test('canvas renders content', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(3000);
 
-    // Sample pixels from the canvas to verify non-uniform rendering
-    const hasVariedContent = await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      if (!canvas) return false;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) return false;
-      const w = canvas.width;
-      const h = canvas.height;
-      // Sample a few rows of pixels
-      const topRow = ctx.getImageData(0, 10, w, 1).data;
-      const midRow = ctx.getImageData(0, Math.floor(h / 2), w, 1).data;
-      // Check if any pixel differs from the first pixel in each row
-      const firstR = topRow[0], firstG = topRow[1], firstB = topRow[2];
-      for (let i = 4; i < topRow.length; i += 4) {
-        if (topRow[i] !== firstR || topRow[i+1] !== firstG || topRow[i+2] !== firstB) return true;
-      }
-      for (let i = 0; i < midRow.length; i += 4) {
-        if (midRow[i] !== firstR || midRow[i+1] !== firstG || midRow[i+2] !== firstB) return true;
-      }
-      return false;
-    });
-    expect(hasVariedContent).toBe(true);
+    // wgpu uses WebGL/WebGPU context so we can't use getContext('2d') to
+    // sample pixels. Instead take a screenshot and verify it has substantial
+    // content (a solid color compresses to a very small PNG).
+    const canvas = page.locator('canvas');
+    const screenshot = await canvas.screenshot();
+    // A rendered UI with text and menu bar produces a much larger PNG than
+    // a solid color canvas (which compresses to ~1-2KB)
+    expect(screenshot.length).toBeGreaterThan(5000);
   });
 });
 
@@ -109,7 +95,10 @@ test.describe('Connectivity tests', () => {
   let pigglet: ChildProcess;
   let endpointId: string;
 
+  // Increase beforeAll timeout for cargo build on CI
   test.beforeAll(async () => {
+    test.setTimeout(180_000);
+
     try { execSync('pkill -f "target/debug/pigglet"', { stdio: 'ignore' }); } catch {}
     await new Promise(r => setTimeout(r, 1000));
 
@@ -156,9 +145,11 @@ test.describe('Connectivity tests', () => {
   });
 
   test('auto-connect via URL parameter', async ({ page }) => {
+    test.setTimeout(90_000);
+
     // Listen for pigglet to confirm the connection
     const connectedPromise = new Promise<boolean>((resolve) => {
-      const timeout = setTimeout(() => resolve(false), 45_000);
+      const timeout = setTimeout(() => resolve(false), 60_000);
       pigglet.stdout!.on('data', (data: Buffer) => {
         if (data.toString().includes('Connection via Iroh')) {
           clearTimeout(timeout);
