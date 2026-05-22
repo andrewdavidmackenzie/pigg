@@ -326,6 +326,7 @@ impl HardwareView {
         let inner: Element<HardwareViewMessage> =
             if let Some(hw_description) = &self.hardware_description {
                 let pin_layout = match layout {
+                    // jonesy:allow(bounds) propagates from board_pin_layout_view, see https://github.com/andrewdavidmackenzie/jonesy/issues/248
                     Layout::Board => self.board_pin_layout_view(&hw_description.pins),
                     Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
                     Layout::Compact => self.compact_layout_view(&hw_description.pins),
