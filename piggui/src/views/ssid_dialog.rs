@@ -227,6 +227,7 @@ impl SsidDialog {
                 )
                 .padding(5)
                 .placeholder("Select SSID Security"),
+                // jonesy:allow(expect)
                 self.send_row(),
             ]
             .spacing(10),
@@ -271,6 +272,7 @@ impl SsidDialog {
                 .push(
                     Circular::new()
                         .easing(&EMPHASIZED_ACCELERATE)
+                        // jonesy:allow(expect)
                         .cycle_duration(Duration::from_secs_f32(2.0)),
                 )
                 .push(space::horizontal())

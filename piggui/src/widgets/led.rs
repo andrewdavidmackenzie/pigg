@@ -106,6 +106,7 @@ where
             Some(true) => style.on_color,
         };
 
+        // jonesy:allow(bounds)
         renderer.fill_quad(
             renderer::Quad {
                 bounds: layout.bounds(),

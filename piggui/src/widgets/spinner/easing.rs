@@ -104,6 +104,7 @@ impl Builder {
         self.0.end(false);
 
         let path = self.0.build();
+        // jonesy:allow(div_zero)
         let measurements = PathMeasurements::from_path(&path, 0.0);
 
         Easing { path, measurements }

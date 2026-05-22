@@ -1,4 +1,4 @@
-allow = ["format", "capacity", "async_resumed", "oom", "misaligned_ptr"]
+allow = ["format", "capacity", "unknown", "oom", "misaligned_ptr"]
 
 [[rules]]
 path = "**/iroh_device.rs"

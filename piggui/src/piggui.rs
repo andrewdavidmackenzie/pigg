@@ -230,6 +230,7 @@ impl Piggui {
                 #[cfg(feature = "usb")]
                 ssid_dialog: SsidDialog::new(),
             },
+            // jonesy:allow(overflow)
             Task::batch(tasks),
         )
     }

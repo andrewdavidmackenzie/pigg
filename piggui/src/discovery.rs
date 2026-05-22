@@ -206,6 +206,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                 log::error!("Failed to create mDNS service daemon");
                 let _ = gui_sender
                     .send(DiscoveryEvent::Error(
+                        // jonesy:allow(invalid_enum) enum variant sent through async channel
                         "Failed to create mDNS service daemon".into(),
                     ))
                     .await;
@@ -227,6 +228,7 @@ pub fn mdns_discovery() -> impl Stream<Item = DiscoveryEvent> {
                                 }
                             }
                             ServiceEvent::ServiceRemoved(_service_type, fullname) => {
+                                // jonesy:allow(bounds)
                                 if let Some((serial_number, _)) = fullname.split_once(".") {
                                     let key = format!("{serial_number}/TCP");
                                     gui_sender

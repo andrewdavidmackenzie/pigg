@@ -15,16 +15,13 @@ pub fn about() -> String {
     format!(
         "{bin_name} {version}\n\
         Copyright (C) 2024 The {pkg_name} Developers \n\
-        License {license}: <https://www.gnu.org/licenses/{license_lower}.html>\n\
+        License {license}: <https://www.gnu.org/licenses/mpl-2.0.html>\n\
         This is free software: you are free to change and redistribute it.\n\
-        There is NO WARRANTY, to the extent permitted by law.\n\
-        \n\
-        Written by the {pkg_name} Contributors",
+        There is NO WARRANTY, to the extent permitted by law.\n",
         bin_name = BIN_NAME,
         pkg_name = PKG_NAME,
         version = VERSION,
         license = LICENSE,
-        license_lower = LICENSE.to_lowercase(),
     )
 }
 

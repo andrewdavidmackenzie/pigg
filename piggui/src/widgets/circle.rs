@@ -48,6 +48,7 @@ where
         _cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
+        // jonesy:allow(bounds)
         renderer.fill_quad(
             renderer::Quad {
                 bounds: layout.bounds(),

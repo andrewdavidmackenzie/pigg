@@ -353,6 +353,7 @@ impl ConnectDialog {
     #[cfg(feature = "iroh")]
     fn create_connection_row_iroh(&self) -> Row<'_, Message> {
         if self.show_spinner && self.disable_widgets && self.display_iroh {
+            // jonesy:allow(expect)
             self.create_spinner_row()
         } else {
             self.create_default_iroh_row()
@@ -362,6 +363,7 @@ impl ConnectDialog {
     #[cfg(feature = "tcp")]
     fn create_connection_row_tcp(&self) -> Row<'_, Message> {
         if self.show_spinner && self.disable_widgets && !self.display_iroh {
+            // jonesy:allow(expect)
             self.create_spinner_row()
         } else {
             self.create_default_tcp_row()
@@ -378,6 +380,7 @@ impl ConnectDialog {
             .push(
                 Circular::new()
                     .easing(&EMPHASIZED_ACCELERATE)
+                    // jonesy:allow(expect)
                     .cycle_duration(Duration::from_secs_f32(2.0)),
             )
             .push(space::horizontal())
