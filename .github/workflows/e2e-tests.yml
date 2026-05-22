@@ -1,0 +1,45 @@
+name: E2E Browser Tests
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install cargo binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install trunk
+        run: cargo binstall trunk
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libwayland-client0
+
+      - name: Build wasm
+        run: make -C piggui trunk-build
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install chromium
+
+      - name: Run E2E tests
+        working-directory: tests/e2e
+        run: npx playwright test --reporter=list

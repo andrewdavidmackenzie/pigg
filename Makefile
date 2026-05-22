@@ -242,6 +242,10 @@ coverage: clean-start
 jonesy:
 	cd pigglet && jonesy --bin pigglet --config ../jonesy.toml
 
+.PHONY: e2e
+e2e: build-web
+	cd tests/e2e && npm ci && npx playwright test --reporter=list
+
 .PHONY: build-web
 build-web:
 	RUSTFLAGS='--cfg getrandom_backend="wasm_js"' trunk build --release --config piggui/Trunk.toml
