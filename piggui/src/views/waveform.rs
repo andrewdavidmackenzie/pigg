@@ -116,10 +116,13 @@ where
     pub fn date_time(&mut self, duration: Duration) -> Result<DateTime<Utc>, &'static str> {
         match self.offset {
             None => {
+                // jonesy:allow(expect, unwrap)
                 let dt = Utc::now();
+                // jonesy:allow(panic) chrono DateTime subtraction can panic on overflow
                 self.offset = Some(dt - Self::duration_to_dt(duration)?);
                 Ok(dt)
             }
+            // jonesy:allow(expect) chrono DateTime + Duration panics on overflow
             Some(offset) => Ok(Self::duration_to_dt(duration)? + offset),
         }
     }
@@ -128,6 +131,7 @@ where
     /// Timestamps that are Durations, usually time since system start/reboot, will be converted
     /// to a DateTime<Utc> that is start of epoc + time since start/reboot
     fn duration_to_dt(d: Duration) -> Result<DateTime<Utc>, &'static str> {
+        // jonesy:allow(div_zero, overflow)
         DateTime::from_timestamp(d.as_secs() as i64, d.subsec_nanos())
             .ok_or("Could not create DateTime from duration")
     }
@@ -135,6 +139,7 @@ where
     /// Trim samples outside the timespan of the chart, except the most recent one
     fn trim_data(&mut self) {
         if !self.samples.is_empty() {
+            // jonesy:allow(expect, unwrap)
             let limit = Utc::now() - self.timespan;
             let mut last_out_of_window_sample = None;
             self.samples.retain(|sample| {
@@ -177,6 +182,7 @@ where
                         // (first) most recently added value. Insert a value at the current time,
                         // with the same value, to stretch the line out to the right-hand side
                         // of the graph
+                        // jonesy:allow(expect, unwrap)
                         graph_data.push((Utc::now(), sample.value.clone().into()));
                     }
                     graph_data.push((sample.time, sample.value.clone().into()));
@@ -227,20 +233,25 @@ where
 
     fn build_chart<DB: DrawingBackend>(&self, _state: &Self::State, mut chart: ChartBuilder<DB>) {
         if !self.samples.is_empty() {
+            // jonesy:allow(expect, unwrap)
             let last_time = Utc::now();
             let start_of_chart_time =
+                // jonesy:allow(expect, panic)
                 last_time - chrono::Duration::seconds(self.timespan.as_secs() as i64);
             let time_axis = match *self.direction.borrow() {
                 Direction::Left => start_of_chart_time..last_time,
                 Direction::Right => last_time..start_of_chart_time,
             };
+            // jonesy:allow(bounds, overflow, unwrap)
             match chart.build_cartesian_2d(time_axis, self.range()) {
                 Ok(mut chart) => {
+                    // jonesy:allow(invalid_enum)
                     if let Err(e) = chart.draw_series(LineSeries::new(self.get_data(), self.style))
                     {
                         log::error!("Failed to draw series: {e:?}");
                     }
                 }
+                // jonesy:allow(invalid_enum)
                 Err(e) => log::error!("Failed to build chart: {e:?}"),
             }
         }

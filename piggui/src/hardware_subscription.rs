@@ -282,6 +282,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
 
                             #[cfg(feature = "tcp")]
                             Tcp(ip, port) => {
+                                // jonesy:allow(bounds) bounds check inside pignet::tcp_host deserialization
                                 match tcp_host::connect(ip, port).await {
                                     Ok((hardware_description, hardware_config, stream)) => {
                                         // Send the stream back to the GUI
@@ -323,6 +324,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                         if let Some(config_change) = subscriber_receiver.next().await {
                             match &config_change {
                                 NewConnection(new_target) => {
+                                    // jonesy:allow(unknown) phantom report, see https://github.com/andrewdavidmackenzie/jonesy/issues/249
                                     if let Err(e) = local_host::disconnect(connection).await {
                                         report_error(
                                             &mut gui_sender_clone,
@@ -339,6 +341,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
                                         config_change,
                                         gui_sender_clone.clone(),
                                     )
+                                    // jonesy:allow(invalid_enum)
                                     .await
                                     {
                                         report_error(
@@ -386,6 +389,7 @@ pub fn subscribe() -> impl Stream<Item = SubscriptionEvent> {
 
                             // receive an input level change from remote hardware
                             remote_event = fused_wait_for_remote_message => {
+                                // jonesy:allow(invalid_enum) deserialized enum from USB device
                                 info!("Remote Hw event Message received via USB: {remote_event:?}");
                                 match remote_event {
                                      Ok(IOLevelChanged(bcm, level_change)) => {

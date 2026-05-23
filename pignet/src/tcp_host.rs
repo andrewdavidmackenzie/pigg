@@ -20,6 +20,7 @@ pub async fn wait_for_remote_message(
         io::Error::new(io::ErrorKind::BrokenPipe, "Connection closed")
     );
 
+    // jonesy:allow(bounds) length bounded by buffer size from stream.read
     Ok(postcard::from_bytes(&payload[0..length])?)
 }
 
@@ -44,6 +45,7 @@ pub async fn connect(
     // This array needs to be big enough for HardwareDescription
     let mut payload = vec![0u8; 1024];
     let length = stream.read(&mut payload).await?;
+    // jonesy:allow(bounds) length bounded by buffer size from stream.read
     let (hw_description, hw_config) = postcard::from_bytes(&payload[0..length])?;
     Ok((hw_description, hw_config, stream))
 }

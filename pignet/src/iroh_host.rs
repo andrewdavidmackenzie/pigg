@@ -34,8 +34,10 @@ pub async fn send_config_message(
     // serialize the message
     let content = postcard::to_allocvec(&config_change_message)?;
     // send it to the remotely connected hardware
+    // jonesy:allow(bounds) postcard serialization bounds check
     config_sender.write_all(&content).await?;
     // close and flush the stream to ensure the message is sent
+    // jonesy:allow(bounds) iroh stream finish
     config_sender.finish()?;
     Ok(())
 }
@@ -54,6 +56,7 @@ pub async fn connect(
         .secret_key(secret_key)
         .alpns(vec![PIGGLET_ALPN.to_vec()])
         .bind()
+        // jonesy:allow(assert, expect, invalid_enum)
         .await?;
 
     // Find my closest relay - maybe set this as a default in the UI but allow used to
@@ -72,6 +75,7 @@ pub async fn connect(
     let addr = EndpointAddr::from_parts(*endpoint_id, vec![TransportAddr::Relay(relay_url)]);
 
     // Attempt to connect, over the given ALPN, returns a Quinn connection.
+    // jonesy:allow(assert, expect, invalid_enum)
     let connection = endpoint.connect(addr, PIGGLET_ALPN).await?;
 
     // create a uni receiver to receive the hardware description on

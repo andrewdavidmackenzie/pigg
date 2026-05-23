@@ -239,8 +239,8 @@ coverage: clean-start
 	@echo "View coverage report using 'open target/coverage/index.html'"
 
 .PHONY: jonesy
-jonesy:
-	cd pigglet && jonesy --bin pigglet --config ../jonesy.toml
+jonesy: build
+	jonesy --config jonesy.toml
 
 .PHONY: e2e
 e2e: build-web

@@ -74,6 +74,7 @@ where
 
     /// Sets the cycle duration of this [`Circular`].
     pub fn cycle_duration(mut self, duration: Duration) -> Self {
+        // jonesy:allow(expect) Duration::div has internal expect for div-by-zero, impossible with constant 2
         self.cycle_duration = duration / 2;
         self
     }
@@ -162,7 +163,9 @@ impl Animation {
         rotation_duration: Duration,
         now: &Instant,
     ) -> Self {
+        // jonesy:allow(expect) Instant::duration_since has internal expect, start is always in the past
         let elapsed = now.duration_since(self.start());
+        // jonesy:allow(expect) Instant::sub has internal expect, last is always in the past
         let additional_rotation = ((*now - self.last()).as_secs_f32()
             / rotation_duration.as_secs_f32()
             * u32::MAX as f32) as u32;
@@ -249,6 +252,7 @@ where
     ) {
         use advanced::Renderer as _;
 
+        // jonesy:allow(expect)
         let state = tree.state.downcast_ref::<State>();
         let bounds = layout.bounds();
         let custom_style = <Theme as StyleSheet>::appearance(theme, &self.style);
@@ -300,6 +304,7 @@ where
         renderer.with_translation(Vector::new(bounds.x, bounds.y), |renderer| {
             use iced::advanced::graphics::geometry::Renderer as _;
 
+            // jonesy:allow(bounds)
             renderer.draw_geometry(geometry);
         });
     }
@@ -323,13 +328,14 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
+        // jonesy:allow(expect)
         let state = tree.state.downcast_mut::<State>();
 
         if let Event::Window(window::Event::RedrawRequested(now)) = event {
-            state.animation =
-                state
-                    .animation
-                    .timed_transition(self.cycle_duration, self.rotation_duration, now);
+            state.animation = state
+                .animation
+                // jonesy:allow(expect)
+                .timed_transition(self.cycle_duration, self.rotation_duration, now);
 
             state.cache.clear();
             shell.request_redraw();

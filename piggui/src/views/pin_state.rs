@@ -36,6 +36,7 @@ impl TryFrom<LevelChange> for Sample<PinLevel> {
     type Error = &'static str;
 
     fn try_from(level_change: LevelChange) -> Result<Self, Self::Error> {
+        // jonesy:allow(div_zero, overflow)
         let time = DateTime::from_timestamp(
             level_change.timestamp.as_secs() as i64,
             level_change.timestamp.subsec_nanos(),
@@ -77,6 +78,7 @@ impl PinState {
     pub fn set_level(&mut self, level_change: LevelChange) {
         self.current_level = Some(level_change.new_level);
 
+        // jonesy:allow(panic) chrono DateTime arithmetic can panic on overflow inside date_time
         if let Ok(dt) = self.chart.date_time(level_change.timestamp) {
             let result: Result<Sample<PinLevel>, _> = level_change.try_into();
             if let Ok(mut sample) = result {

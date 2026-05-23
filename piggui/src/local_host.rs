@@ -47,6 +47,7 @@ async fn send_current_input_state(
     gui_sender_clone: Sender<SubscriptionEvent>,
     connection: &LocalConnection,
 ) -> Result<(), Error> {
+    // jonesy:allow(expect) get_time_since_boot uses duration_since which has internal expect
     let now = connection.hw.get_time_since_boot();
 
     // Send initial levels
@@ -59,6 +60,7 @@ async fn send_current_input_state(
                 initial_level,
                 now,
             )
+            // jonesy:allow(invalid_enum)
             .await;
         }
     }
@@ -77,6 +79,7 @@ async fn send_input_level_async(
     let level_change = LevelChange::new(level, timestamp);
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = InputChange(bcm, level_change);
+    // jonesy:allow(invalid_enum) enum variant sent through async channel
     gui_sender_clone.try_send(hardware_event)?;
     Ok(())
 }
@@ -90,6 +93,7 @@ fn send_input_level(
 ) -> Result<(), Error> {
     trace!("Pin #{bcm} Input level change: {level_change:?}");
     let hardware_event = InputChange(bcm, level_change);
+    // jonesy:allow(invalid_enum) enum variant sent through async channel
     gui_sender_clone.try_send(hardware_event)?;
     Ok(())
 }
@@ -106,6 +110,7 @@ pub async fn apply_config_change(
             let gui_sender_clone = gui_sender.clone();
             local
                 .hw
+                // jonesy:allow(invalid_enum) callback sends enum through channel via send_input_level
                 .apply_config(config, move |bcm_pin_number, level_change| {
                     let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
                 })
@@ -119,9 +124,11 @@ pub async fn apply_config_change(
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for local hardware pin #{bcm}: {pin_function:?}");
+            // jonesy:allow(invalid_enum) enum cloned for async channel send
             let gui_sender_clone = gui_sender.clone();
             local
                 .hw
+                // jonesy:allow(invalid_enum) callback sends enum through channel via send_input_level
                 .apply_pin_config(*bcm, pin_function, move |bcm_pin_number, level_change| {
                     let _ = send_input_level(gui_sender.clone(), bcm_pin_number, level_change);
                 })
@@ -141,6 +148,7 @@ pub async fn apply_config_change(
         }
         IOLevelChanged(bcm, level_change) => {
             trace!("Local hardware pin #{bcm} output level changed: {level_change:?}");
+            // jonesy:allow(invalid_enum) piggpio hardware call with enum discriminant
             local.hw.set_output_level(*bcm, level_change.new_level)?;
         }
         HardwareConfigMessage::GetConfig => {}
@@ -157,6 +165,7 @@ pub async fn apply_config_change(
 pub async fn connect() -> Result<(HardwareDescription, HardwareConfig, LocalConnection), Error> {
     let hw = get_hardware().ok_or(anyhow!("Could not connect to local hardware"))?;
     let config_file_path = current_exe()?.with_file_name(CONFIG_FILENAME);
+    // jonesy:allow(invalid_enum) config deserialization reads enum discriminants
     let hardware_config = get_config(&config_file_path);
     let mut description = hw.description().clone();
     description.details.app_name = env!("CARGO_PKG_NAME").to_string();

@@ -104,6 +104,7 @@ impl InfoDialog {
 
             InfoDialogMessage::LoadFile => {
                 self.modal_type = ModalType::None;
+                // jonesy:allow(overflow) iced Task::batch has internal overflow
                 Task::batch(vec![pick_and_load()])
             }
 

@@ -82,7 +82,7 @@ pub(crate) fn compact_layout_size(num_configured_pins: usize) -> Size {
         height += SPACE_BETWEEN_PIN_ROWS + PIN_BUTTON_DIAMETER
     }
 
-    let num_unconfigured_pins = 26 - num_configured_pins;
+    let num_unconfigured_pins = 26usize.saturating_sub(num_configured_pins);
 
     Size {
         width: HARDWARE_VIEW_PADDING
@@ -224,6 +224,7 @@ impl HardwareView {
     /// Save the new config in the view, update pin states and apply it to the connected hardware
     pub fn new_config(&mut self, new_config: HardwareConfig) {
         self.hardware_config = new_config;
+        // jonesy:allow(expect) propagates through SystemTime::now and chrono::Utc::now internal expects
         self.set_pin_states_after_load();
         self.update_hw_config();
     }
@@ -239,6 +240,7 @@ impl HardwareView {
             // For output pins, if there is an initial state set, then set that in the pin state
             // so the toggler will be drawn correctly on the first draw
             if let Output(Some(level)) = pin_function {
+                // jonesy:allow(expect) SystemTime::now has internal expect
                 if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
                     self.pin_states
                         .entry(*bcm_pin_number)
@@ -275,6 +277,7 @@ impl HardwareView {
                 SubscriptionEvent::Connected(hw_desc, hw_config) => {
                     self.hardware_description = Some(hw_desc);
                     self.hardware_config = hw_config;
+                    // jonesy:allow(expect) propagates through SystemTime::now and chrono::Utc::now internal expects
                     self.set_pin_states_after_load();
                     self.update_hw_config();
                     return Task::perform(empty(), |_| Message::Connected);
@@ -323,6 +326,7 @@ impl HardwareView {
         let inner: Element<HardwareViewMessage> =
             if let Some(hw_description) = &self.hardware_description {
                 let pin_layout = match layout {
+                    // jonesy:allow(bounds) propagates from board_pin_layout_view, see https://github.com/andrewdavidmackenzie/jonesy/issues/248
                     Layout::Board => self.board_pin_layout_view(&hw_description.pins),
                     Layout::Logical => self.bcm_pin_layout_view(&hw_description.pins),
                     Layout::Compact => self.compact_layout_view(&hw_description.pins),
@@ -478,24 +482,26 @@ impl HardwareView {
         let mut column = Column::new().width(Length::Shrink).height(Length::Shrink);
 
         // Draw all pins, those with and without [BCMPinNumber]
-        for pair in pin_descriptions.pins().chunks(2) {
+        // Pi GPIO headers always have an even number of pins (40)
+        // jonesy:allow(div_zero, bounds) chunks_exact guarantees 2-element slices
+        for pair in pin_descriptions.pins().chunks_exact(2) {
+            let (left, right) = (&pair[0], &pair[1]);
             let left_row = self.create_pin_view_side(
-                &pair[0],
-                pair[0]
-                    .bcm
+                left,
+                left.bcm
                     .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
                 End,
-                pair[0].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
+                left.bcm.and_then(|bcm| self.pin_states.get(&bcm)),
                 false,
             );
 
             let right_row = self.create_pin_view_side(
-                &pair[1],
-                pair[1]
+                right,
+                right
                     .bcm
                     .and_then(|bcm| self.hardware_config.pin_functions.get(&bcm)),
                 Start,
-                pair[1].bcm.and_then(|bcm| self.pin_states.get(&bcm)),
+                right.bcm.and_then(|bcm| self.pin_states.get(&bcm)),
                 false,
             );
 
@@ -525,6 +531,7 @@ impl HardwareView {
     ) -> Row<'a, HardwareViewMessage> {
         let pin_widget = if let Some(state) = pin_state {
             // Create a widget used either to visualize an input or control an output
+            // jonesy:allow(expect) propagates through SystemTime::now internal expect in get_pin_widget
             get_pin_widget(pin_description.bcm, pin_function, state, alignment)
         } else {
             space::horizontal().width(PIN_WIDGET_ROW_WIDTH).into()
@@ -686,6 +693,7 @@ fn get_pin_widget<'a>(
             )
             .on_toggle(move |b| {
                 if let Some(bcm) = bcm_pin_number {
+                    // jonesy:allow(expect) SystemTime::now has internal expect
                     if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) {
                         ChangeOutputLevel(bcm, LevelChange::new(b, now))
                     } else {
@@ -703,6 +711,7 @@ fn get_pin_widget<'a>(
                     .gap(4.0)
                     .style(|_| TOOLTIP_STYLE);
 
+            // jonesy:allow(expect) SystemTime::now has internal expect
             let toggle_level_message = if let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH)
             {
                 if let Some(bcm) = bcm_pin_number {
@@ -755,6 +764,7 @@ fn pin_button(pin_description: &PinDescription) -> Button<'_, HardwareViewMessag
     .padding(0.0)
     .width(PIN_BUTTON_DIAMETER)
     .height(PIN_BUTTON_DIAMETER)
+    // jonesy:allow(unknown) phantom report, see https://github.com/andrewdavidmackenzie/jonesy/issues/249
     .style(move |_, status| {
         get_pin_style(
             status,

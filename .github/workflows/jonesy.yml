@@ -15,11 +15,16 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build project (debug mode for DWARF info)
-        run: cargo build -p pigglet
+        run: cargo build
 
       - name: Run jonesy analysis
         id: jonesy
         uses: andrewdavidmackenzie/jonesy@v1
+        with:
+          # TODO: set to true once https://github.com/andrewdavidmackenzie/jonesy/issues/253 is fixed
+          # See https://github.com/andrewdavidmackenzie/pigg/issues/1263
+          fail-on-panic: false
+          extra-args: '--config jonesy.toml'
 
       - name: Check panic count
         run: echo "Found ${{ steps.jonesy.outputs.panic-count }} panic points"
