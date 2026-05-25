@@ -21,9 +21,7 @@ jobs:
         id: jonesy
         uses: andrewdavidmackenzie/jonesy@v1
         with:
-          # TODO: set to true once https://github.com/andrewdavidmackenzie/jonesy/issues/253 is fixed
-          # See https://github.com/andrewdavidmackenzie/pigg/issues/1263
-          fail-on-panic: false
+          fail-on-panic: true
           extra-args: '--config jonesy.toml'
 
       - name: Check panic count
