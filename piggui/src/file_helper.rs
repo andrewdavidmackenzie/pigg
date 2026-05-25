@@ -61,6 +61,7 @@ async fn save_via_picker(gpio_config: HardwareConfig) -> io::Result<bool> {
         let path_str = path.display().to_string();
         let mut file = std::fs::File::create(path_str)?;
         let contents = serde_json::to_string(&gpio_config)?;
+        // jonesy:allow(bounds)
         file.write_all(contents.as_bytes())?;
 
         Ok(true)

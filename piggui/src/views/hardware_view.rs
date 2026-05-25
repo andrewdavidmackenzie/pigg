@@ -483,9 +483,9 @@ impl HardwareView {
 
         // Draw all pins, those with and without [BCMPinNumber]
         // Pi GPIO headers always have an even number of pins (40)
-        // jonesy:allow(div_zero, bounds) chunks_exact guarantees 2-element slices
+        // jonesy:allow(div_zero) chunks_exact guarantees 2-element slices
         for pair in pin_descriptions.pins().chunks_exact(2) {
-            let (left, right) = (&pair[0], &pair[1]);
+            let (left, right) = (&pair[0], &pair[1]); // jonesy:allow(bounds)
             let left_row = self.create_pin_view_side(
                 left,
                 left.bcm
