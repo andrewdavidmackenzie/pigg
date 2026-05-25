@@ -172,6 +172,7 @@ where
                 // iterate through the Samples front-back in the vecdeque, which is
                 // from the most recent sample to the oldest sample
                 // Add points to force the shape to be a Square wave
+                // jonesy:allow(bounds)
                 for sample in &self.samples {
                     if let Some(previous) = &previous_sample {
                         if previous.value != sample.value {
@@ -192,6 +193,7 @@ where
             }
             Verbatim(_, _) => self
                 .samples
+                // jonesy:allow(bounds)
                 .iter()
                 .map(|sample| (sample.time, sample.value.clone().into()))
                 .collect(),
@@ -245,7 +247,7 @@ where
             // jonesy:allow(bounds, overflow, unwrap)
             match chart.build_cartesian_2d(time_axis, self.range()) {
                 Ok(mut chart) => {
-                    // jonesy:allow(invalid_enum)
+                    // jonesy:allow(invalid_enum, bounds)
                     if let Err(e) = chart.draw_series(LineSeries::new(self.get_data(), self.style))
                     {
                         log::error!("Failed to draw series: {e:?}");
