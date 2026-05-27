@@ -52,7 +52,7 @@ webbrowser = { version = "1.2", default-features = false }
 iced_aw = { version = "0.14", default-features = false, features = ["menu"] }
 serde_json = { version = "1.0.150", default-features = false, features = ["std"] }
 
-iroh = { version = "1.0.0-rc.0", default-features = false, features = ["tls-ring"], optional = true }
+iroh = { version = "1.0.0-rc.1", default-features = false, features = ["tls-ring"], optional = true }
 mdns-sd = { version = "0.17.1", default-features = false, features = ["async", "reuseport"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
