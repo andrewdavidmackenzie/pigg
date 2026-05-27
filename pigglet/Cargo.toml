@@ -46,7 +46,7 @@ service-manager = { version = "0.11.0", default-features = false }
 clap = { version = "4.6.1", default-features = false, features = ["std", "help", "error-context"] }
 serde_json = { version = "1.0.150", default-features = false, features = ["std"] }
 
-iroh = { version = "1.0.0-rc.0", default-features = false, features = ["tls-ring"], optional = true }
+iroh = { version = "1.0.0-rc.1", default-features = false, features = ["tls-ring"], optional = true }
 portpicker = { version = "0.1.1", default-features = false, optional = true }
 local-ip-address = { version = "0.6.13", default-features = false, optional = true }
 mdns-sd = { version = "0.17.2", default-features = false, features = ["reuseport"], optional = true }
