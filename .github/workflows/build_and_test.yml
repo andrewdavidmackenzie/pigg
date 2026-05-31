@@ -43,7 +43,7 @@ jobs:
         if: runner.os != 'Windows'
         uses: hrishikesh-kadam/setup-lcov@v1
         with:
-          ref: HEAD
+          ref: v2.4
 
       - name: build and test - non-Linux
         if: runner.os != 'Linux'
