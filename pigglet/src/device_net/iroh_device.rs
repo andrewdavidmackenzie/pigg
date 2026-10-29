@@ -118,6 +118,7 @@ pub async fn iroh_message_loop(
                 hardware,
                 config_message,
                 hardware_config,
+                config_file_path,
                 connection.clone(),
             )
             .await
@@ -137,6 +138,7 @@ async fn apply_config_change(
     hardware: &mut HW,
     config_change: HardwareConfigMessage,
     hardware_config: &mut HardwareConfig,
+    config_file_path: &Path,
     connection: Connection,
 ) -> anyhow::Result<()> {
     match config_change {
@@ -149,8 +151,10 @@ async fn apply_config_change(
                 })
                 .await?;
 
-            // Keep the cache aligned with the applied backend even if reporting initial levels fails.
+            // Keep the in-memory and on-disk config aligned with the applied backend even if
+            // reporting initial levels fails and the connection must be re-established.
             *hardware_config = config.clone();
+            store_config(hardware_config, config_file_path).await?;
             send_current_input_levels(cc, &config, hardware).await?;
         }
         NewPinConfig(bcm, pin_function) => {
