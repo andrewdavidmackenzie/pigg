@@ -149,9 +149,9 @@ async fn apply_config_change(
                 })
                 .await?;
 
+            // Keep the cache aligned with the applied backend even if reporting initial levels fails.
+            *hardware_config = config.clone();
             send_current_input_levels(cc, &config, hardware).await?;
-            // replace the entire config with the new one
-            *hardware_config = config;
         }
         NewPinConfig(bcm, pin_function) => {
             info!("New pin config for pin #{bcm}: {pin_function:?}");
