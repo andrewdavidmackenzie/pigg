@@ -184,6 +184,7 @@ impl Default for HW {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::HW;
     use pigdef::config::HardwareConfig;
@@ -197,11 +198,14 @@ mod tests {
             .pin_functions
             .insert(17, PinFunction::Output(Some(true)));
 
-        hardware.apply_config(&initial, |_, _| {}).await.unwrap();
+        hardware
+            .apply_config(&initial, |_, _| {})
+            .await
+            .expect("Failed to apply initial config with pin 17 as output");
         hardware
             .apply_config(&HardwareConfig::default(), |_, _| {})
             .await
-            .unwrap();
+            .expect("Failed to apply empty replacement config");
 
         assert!(hardware.set_output_level(17, false).is_err());
     }
