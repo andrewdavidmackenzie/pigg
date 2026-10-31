@@ -4234,6 +4234,7 @@ dependencies = [
  "rand_core 0.6.4",
  "rppal",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

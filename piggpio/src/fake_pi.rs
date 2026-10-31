@@ -46,9 +46,23 @@ impl HW {
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        // Config only has pins that are configured
+        // Determine which previously-configured pins are omitted from the new config.
+        let removed_pins: Vec<_> = self
+            .configured_pins
+            .keys()
+            .filter(|bcm_pin_number| !config.pin_functions.contains_key(bcm_pin_number))
+            .copied()
+            .collect();
+
+        // Apply the new config first so a failure leaves the old pins intact.
         for (bcm_pin_number, pin_function) in &config.pin_functions {
             self.apply_pin_config(*bcm_pin_number, &Some(*pin_function), callback.clone())
+                .await?;
+        }
+
+        // Only release omitted pins after the replacement config succeeded.
+        for bcm_pin_number in removed_pins {
+            self.apply_pin_config(bcm_pin_number, &None, callback.clone())
                 .await?;
         }
 
@@ -169,5 +183,33 @@ impl HW {
 impl Default for HW {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
+mod tests {
+    use super::HW;
+    use pigdef::config::HardwareConfig;
+    use pigdef::pin_function::PinFunction;
+
+    #[tokio::test]
+    async fn applying_replacement_config_releases_omitted_output_pins() {
+        let mut hardware = HW::new();
+        let mut initial = HardwareConfig::default();
+        initial
+            .pin_functions
+            .insert(17, PinFunction::Output(Some(true)));
+
+        hardware
+            .apply_config(&initial, |_, _| {})
+            .await
+            .expect("Failed to apply initial config with pin 17 as output");
+        hardware
+            .apply_config(&HardwareConfig::default(), |_, _| {})
+            .await
+            .expect("Failed to apply empty replacement config");
+
+        assert!(hardware.set_output_level(17, false).is_err());
     }
 }

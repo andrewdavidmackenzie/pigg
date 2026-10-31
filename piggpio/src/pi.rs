@@ -50,9 +50,23 @@ impl HW {
     where
         C: FnMut(BCMPinNumber, LevelChange) + Send + Sync + Clone + 'static,
     {
-        // Config only has pins that are configured
+        // Determine which previously-configured pins are omitted from the new config.
+        let removed_pins: Vec<_> = self
+            .configured_pins
+            .keys()
+            .filter(|bcm_pin_number| !config.pin_functions.contains_key(bcm_pin_number))
+            .copied()
+            .collect();
+
+        // Apply the new config first so a failure leaves the old pins intact.
         for (bcm_pin_number, pin_function) in &config.pin_functions {
             self.apply_pin_config(*bcm_pin_number, &Some(*pin_function), callback.clone())
+                .await?;
+        }
+
+        // Only release omitted pins after the replacement config succeeded.
+        for bcm_pin_number in removed_pins {
+            self.apply_pin_config(bcm_pin_number, &None, callback.clone())
                 .await?;
         }
 
