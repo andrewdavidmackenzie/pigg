@@ -3680,19 +3680,23 @@ dependencies = [
 
 [[package]]
 name = "nusb"
-version = "0.2.4"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "215a49c10e8cff30a0da93b258b21846c4e9242f7683748cfa8474fdc2e4d22b"
+checksum = "1de8b6d15f559f50760dad6c1b56fde4041f99dc96a08e55c2b41f44c7417ad9"
 dependencies = [
  "core-foundation 0.10.1",
  "core-foundation-sys",
  "futures-core",
  "io-kit-sys",
+ "js-sys",
  "linux-raw-sys 0.12.1",
  "log",
  "once_cell",
  "rustix 1.1.4",
  "slab",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "windows-sys 0.61.2",
 ]
 
