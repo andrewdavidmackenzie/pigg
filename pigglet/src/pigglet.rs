@@ -46,7 +46,6 @@ async fn main() -> anyhow::Result<()> {
 
     service::manage(&exec_path, &matches)?;
 
-    // jonesy:allow(expect) sysinfo::System::new_all() uses expect internally
     match check_unique("pigglet") {
         Ok(_) => run(&matches, exec_path).await, // jonesy:allow(invalid_enum)
         Err(None) => {
@@ -244,7 +243,9 @@ async fn run(matches: &ArgMatches, exec_path: PathBuf) -> anyhow::Result<()> {
 #[allow(clippy::result_large_err)]
 fn check_unique(process_name: &str) -> anyhow::Result<(), Option<InstanceInfo>> {
     let my_pid = process::id();
-    let sys = System::new_all();
+    let Ok(sys) = System::new_all() else {
+        return Ok(());
+    };
     #[cfg(target_os = "windows")]
     let full_name = format!("{process_name}.exe");
     #[cfg(not(target_os = "windows"))]

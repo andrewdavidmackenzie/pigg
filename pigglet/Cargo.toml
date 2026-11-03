@@ -60,7 +60,7 @@ serial_test = "3.5.0"
 [dev-dependencies]
 # For tests
 pignet = { path = "../pignet", version = "0.7", features = ["iroh", "tcp", "discovery", "usb"] }
-sysinfo = { version = "0.40" }
+sysinfo = { version = "0.40", default-features = false, features = ["system"] }
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true

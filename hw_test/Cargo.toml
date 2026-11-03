@@ -33,7 +33,7 @@ async-std = "1.13.2"
 serial_test = "3.5.0"
 anyhow = "1.0.102"
 mdns-sd = { version = "0.17.2", default-features = false, features = ["async", "reuseport"] }
-sysinfo = { version = "0.40" } # used in support.rs via path
+sysinfo = { version = "0.40", default-features = false, features = ["system"] } # used in support.rs via path
 chrono = "0.4.45"
 
 [package.metadata.cargo-all-features]
