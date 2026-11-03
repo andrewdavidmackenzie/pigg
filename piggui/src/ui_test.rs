@@ -391,7 +391,7 @@ mod simulator_tests {
     }
 
     #[test]
-    fn simulator_exit_dialog_exit_without_saving() {
+    fn simulator_exit_dialog_emits_exit_app() {
         let mut app = test_piggui_connected();
         let _ = app.update(ConfigChangesMade(false, true));
         let _ = app.update(WindowEvent(iced::Event::Window(
@@ -412,7 +412,7 @@ mod simulator_tests {
     }
 
     #[test]
-    fn simulator_load_dialog_continue_button() {
+    fn simulator_load_dialog_continue_emits_load_file_and_dismisses_modal() {
         let mut app = test_piggui_connected();
         let _ = app.update(ConfigChangesMade(false, true));
         let _ = app.update(Load);
@@ -425,6 +425,8 @@ mod simulator_tests {
             .any(|message| matches!(message, Modal(InfoDialogMessage::LoadFile))));
         apply(&mut app, messages);
         assert!(!app.modal_handler.showing_modal());
+        // `apply` discards the returned task, and the simulator cannot inspect
+        // it, so this does not verify that `pick_and_load()` started.
     }
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -470,6 +472,7 @@ fn discovery_subscriptions_follow_startup_config() {
     #[cfg(any(feature = "usb", feature = "tcp"))]
     {
         let (enabled, _) = Piggui::with_startup(StartupConfig::new(NoConnection));
-        assert!(!enabled.discovery_subscriptions().is_empty());
+        let expected = usize::from(cfg!(feature = "usb")) + usize::from(cfg!(feature = "tcp"));
+        assert_eq!(enabled.discovery_subscriptions().len(), expected);
     }
 }
