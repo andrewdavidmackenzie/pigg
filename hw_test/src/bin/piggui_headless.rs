@@ -88,13 +88,24 @@ fn run_until_terminal(app: &HeadlessApp, timeout: Duration) -> Status {
     }
 }
 
-/// Drive the emulator until its event queue is empty.
+/// Maximum number of events processed by a single `pump` call.
+///
+/// A misbehaving connection can keep producing events indefinitely, so a
+/// bounded drain is required for the timeout and `ever_connected` checks in the
+/// caller to get a chance to run. Remaining events stay queued for the next
+/// call.
+const MAX_EVENTS_PER_PUMP: usize = 256;
+
+/// Drive the emulator until its event queue is empty or the per-call bound is reached.
 fn pump(
     emulator: &mut Emulator<HeadlessApp>,
     app: &HeadlessApp,
     receiver: &mut mpsc::Receiver<emulator::Event<HeadlessApp>>,
 ) {
-    while let Ok(event) = receiver.try_recv() {
+    for _ in 0..MAX_EVENTS_PER_PUMP {
+        let Ok(event) = receiver.try_recv() else {
+            return;
+        };
         match event {
             emulator::Event::Action(action) => emulator.perform(app, action),
             emulator::Event::Ready | emulator::Event::Failed(_) => {}
@@ -205,6 +216,9 @@ fn parse_args(args: &[String]) -> Result<(StartupConfig, Duration), String> {
 
     #[cfg(feature = "iroh")]
     if let Some(endpoint_id) = endpoint_id {
+        if !matches!(connection, HardwareConnection::NoConnection) {
+            return Err("'--endpoint-id' cannot be combined with '--usb' or '--ip'".to_string());
+        }
         connection = HardwareConnection::Iroh(endpoint_id, relay);
     } else if relay.is_some() {
         return Err("'--relay' requires '--endpoint-id'".to_string());

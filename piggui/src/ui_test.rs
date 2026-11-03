@@ -404,6 +404,11 @@ mod simulator_tests {
         assert!(messages
             .iter()
             .any(|message| matches!(message, Modal(InfoDialogMessage::ExitApp))));
+
+        // Apply the message so the `ExitApp` handler runs. The window-closing
+        // task it returns is discarded: `iced_test`'s simulator has no window,
+        // so window closure itself is not covered here.
+        apply(&mut app, messages);
     }
 
     #[test]
@@ -418,6 +423,8 @@ mod simulator_tests {
         assert!(messages
             .iter()
             .any(|message| matches!(message, Modal(InfoDialogMessage::LoadFile))));
+        apply(&mut app, messages);
+        assert!(!app.modal_handler.showing_modal());
     }
 
     #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -449,5 +456,20 @@ mod simulator_tests {
         apply(&mut app, messages);
 
         assert_view_contains(&app, "Connect To Remote Pi Using Tcp");
+    }
+}
+
+// --- Startup configuration tests ---
+
+#[cfg(feature = "discovery")]
+#[test]
+fn discovery_subscriptions_follow_startup_config() {
+    let (disabled, _) = Piggui::with_startup(StartupConfig::new(NoConnection).without_discovery());
+    assert!(disabled.discovery_subscriptions().is_empty());
+
+    #[cfg(any(feature = "usb", feature = "tcp"))]
+    {
+        let (enabled, _) = Piggui::with_startup(StartupConfig::new(NoConnection));
+        assert!(!enabled.discovery_subscriptions().is_empty());
     }
 }

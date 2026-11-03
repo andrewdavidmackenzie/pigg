@@ -38,3 +38,7 @@ chrono = "0.4.45"
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
+
+[package.metadata.dist]
+# Test-only package, never distribute its helper binary.
+dist = false

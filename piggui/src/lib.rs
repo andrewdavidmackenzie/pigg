@@ -576,15 +576,8 @@ impl Piggui {
             self.hardware_view.subscription().map(Hardware),
         ];
 
-        #[cfg(all(feature = "discovery", feature = "usb"))]
-        if self.discovery_enabled {
-            subscriptions.push(Subscription::run(discovery::usb_discovery).map(Discovery));
-        }
-
-        #[cfg(all(feature = "discovery", feature = "tcp"))]
-        if self.discovery_enabled {
-            subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
-        }
+        #[cfg(feature = "discovery")]
+        subscriptions.extend(self.discovery_subscriptions());
 
         // Handle Keyboard events for ConnectDialog
         #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -594,6 +587,25 @@ impl Piggui {
         subscriptions.push(self.ssid_dialog.subscription().map(SsidDialog));
 
         Subscription::batch(subscriptions)
+    }
+
+    /// Subscriptions used to discover devices, empty when discovery is disabled.
+    #[cfg(feature = "discovery")]
+    fn discovery_subscriptions(&self) -> Vec<Subscription<Message>> {
+        #[allow(unused_mut)]
+        let mut subscriptions = Vec::new();
+
+        #[cfg(feature = "usb")]
+        if self.discovery_enabled {
+            subscriptions.push(Subscription::run(discovery::usb_discovery).map(Discovery));
+        }
+
+        #[cfg(feature = "tcp")]
+        if self.discovery_enabled {
+            subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
+        }
+
+        subscriptions
     }
 
     #[cfg(feature = "discovery")]
