@@ -1,16 +1,24 @@
-use crate::support::{kill, kill_all, run, wait_for_stdout};
 use chrono::{DateTime, Utc};
+use piggui::headless::Status;
 use serial_test::serial;
 use std::time::Duration;
 
+use crate::headless_child::run_headless;
+use crate::support::kill_all;
+
 /// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
-/// binary using CLIP options
+/// application.
 ///
 #[cfg(feature = "discovery")]
 use crate::discovery::mdns::get_ip_and_port_by_mdns;
 
 #[cfg(feature = "discovery")]
 use crate::discovery::usb::get_ip_and_port_by_usb;
+
+fn connect_by_tcp(ip: std::net::IpAddr, port: u16) -> Status {
+    let args = vec!["--ip".to_string(), format!("{ip}:{port}")];
+    run_headless(&args)
+}
 
 #[tokio::test]
 #[serial]
@@ -21,6 +29,7 @@ async fn usb_discover_and_connect_tcp() {
         start.format("%Y-%m-%d %H:%M:%S")
     );
     kill_all("piggui");
+    kill_all("piggui_headless");
 
     let ip_and_ports = get_ip_and_port_by_usb()
         .await
@@ -30,15 +39,15 @@ async fn usb_discover_and_connect_tcp() {
     assert!(number > 0, "Could not find by USB a device with TCP");
 
     for (_serial, ip, port) in ip_and_ports {
-        let mut piggui = run(
-            "piggui",
-            vec!["--ip".to_string(), format!("{ip}:{port}")],
-            None,
+        let status = tokio::task::spawn_blocking(move || connect_by_tcp(ip, port))
+            .await
+            .expect("Headless app task panicked");
+
+        assert_eq!(
+            status,
+            Status::Connected,
+            "piggui did not connect to USB-discovered device at {ip}:{port}"
         );
-
-        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
-
-        kill(&mut piggui);
     }
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -63,6 +72,7 @@ async fn mdns_discover_and_connect_tcp() {
         start.format("%Y-%m-%d %H:%M:%S")
     );
     kill_all("piggui");
+    kill_all("piggui_headless");
 
     let devices = get_ip_and_port_by_mdns()
         .await
@@ -72,15 +82,15 @@ async fn mdns_discover_and_connect_tcp() {
     assert!(number > 0, "Could not find by mDNS a device with TCP");
 
     for (_serial, (ip, port)) in devices {
-        let mut piggui = run(
-            "piggui",
-            vec!["--ip".to_string(), format!("{ip}:{port}")],
-            None,
+        let status = tokio::task::spawn_blocking(move || connect_by_tcp(ip, port))
+            .await
+            .expect("Headless app task panicked");
+
+        assert_eq!(
+            status,
+            Status::Connected,
+            "piggui did not connect to mDNS-discovered device at {ip}:{port}"
         );
-
-        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
-
-        kill(&mut piggui);
     }
 
     tokio::time::sleep(Duration::from_secs(1)).await;

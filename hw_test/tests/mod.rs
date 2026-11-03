@@ -1,4 +1,5 @@
 mod discovery;
+mod headless_child;
 mod lib_to_devices;
 mod piggui_to_devices;
 

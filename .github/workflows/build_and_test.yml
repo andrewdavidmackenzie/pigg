@@ -49,16 +49,14 @@ jobs:
         if: runner.os != 'Linux'
         run: make build test
 
+      # UI and hardware connection tests run headlessly through `iced_test`, so no
+      # compositor or display server is required on the runner.
       - name: build and test - Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwayland-dev
-          sudo apt-get install weston
-          weston -Bheadless -Sweston &
           make build test
-        env:
-          WAYLAND_DISPLAY: weston
 
       - name: Clean up coverage
         if: runner.os != 'Windows'

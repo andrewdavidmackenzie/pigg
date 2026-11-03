@@ -18,9 +18,13 @@ path-guid = "17155407-8DA8-45BD-8C67-91FE4C7E99AA"
 license = false
 eula = false
 
+[lib]
+name = "piggui"
+path = "src/lib.rs"
+
 [[bin]]
 name = "piggui"
-path = "src/piggui.rs"
+path = "src/main.rs"
 
 [features]
 default = ["iroh", "tcp", "usb", "discovery"]
@@ -74,18 +78,21 @@ iced = { version = "0.14.0", default-features = false, features = ["tokio", "tin
 wayland-sys = { version = "0.31.11", features = ["dlopen"] }
 
 # Non-Raspberry Pi, Non-Windows - use 'wgpu' renderer in iced with x11/wayland
+# 'tiny-skia' is included as a fallback so headless tests can render on CI runners without a GPU
 [target.'cfg(all(not(target_arch = "wasm32"), not(target_os = "windows"), not(any(all(target_arch = "aarch64", target_os = "linux"), all(target_arch = "arm", target_os = "linux")))))'.dependencies]
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "fira-sans", "canvas", "advanced", "x11", "wayland"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "tiny-skia", "fira-sans", "canvas", "advanced", "x11", "wayland"] }
 wayland-sys = { version = "0.31.11", features = ["dlopen"] }
 
 # Windows - use 'wgpu' renderer in iced without x11/wayland
+# 'tiny-skia' is included as a fallback so headless tests can render on CI runners without a GPU
 [target.'cfg(target_os = "windows")'.dependencies]
-iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "fira-sans", "canvas", "advanced"] }
+iced = { version = "0.14.0", default-features = false, features = ["tokio", "wgpu", "tiny-skia", "fira-sans", "canvas", "advanced"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 serial_test = "3.5.0"
 sysinfo = { version = "0.39" }
+iced_test = "0.14"
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3"

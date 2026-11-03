@@ -54,6 +54,7 @@ use sysinfo::{Process, System};
 mod discovery;
 pub mod file_helper;
 mod hardware_subscription;
+pub mod headless;
 #[cfg(not(target_arch = "wasm32"))]
 mod local_host;
 mod views;
@@ -105,6 +106,8 @@ pub struct Piggui {
     info_row: InfoRow,
     modal_handler: InfoDialog,
     hardware_view: HardwareView,
+    #[cfg(feature = "discovery")]
+    discovery_enabled: bool,
     #[cfg(any(feature = "iroh", feature = "tcp"))]
     connect_dialog: ConnectDialog,
     #[cfg(feature = "discovery")]
@@ -113,7 +116,10 @@ pub struct Piggui {
     ssid_dialog: SsidDialog,
 }
 
-fn main() -> iced::Result {
+/// Run the Piggui GUI application.
+///
+/// This parses the command line for native targets and opens the host UI window.
+pub fn run() -> iced::Result {
     #[cfg(target_arch = "wasm32")]
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     let settings = Settings {
@@ -123,12 +129,32 @@ fn main() -> iced::Result {
         ..Default::default()
     };
 
-    let app = iced::application(Piggui::new, Piggui::update, Piggui::view)
-        .subscription(Piggui::subscription)
-        .window_size((500.0, 800.0))
-        .settings(settings)
-        .theme(Theme::Dark)
-        .title(Piggui::title);
+    // Parse arguments before the iced runtime starts so that `--help` and `--version`
+    // can exit without requiring a display server or UI window.
+    #[cfg(not(target_arch = "wasm32"))]
+    let matches = get_matches();
+
+    let app = iced::application(
+        move || {
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                let (startup, tasks) = Piggui::startup_from_args(&matches);
+                Piggui::boot(startup, tasks)
+            }
+
+            #[cfg(target_arch = "wasm32")]
+            {
+                Piggui::boot(Piggui::startup_from_url(), Vec::new())
+            }
+        },
+        Piggui::update,
+        Piggui::view,
+    )
+    .subscription(Piggui::subscription)
+    .window_size((500.0, 800.0))
+    .settings(settings)
+    .theme(Theme::Dark)
+    .title(Piggui::title);
 
     #[cfg(not(target_arch = "wasm32"))]
     let app = app
@@ -137,6 +163,69 @@ fn main() -> iced::Result {
         .resizable(true);
 
     app.run()
+}
+
+/// Configuration used to boot the application.
+///
+/// The GUI binary builds this from its command line arguments, while headless
+/// tests can construct it directly to choose the hardware to connect to.
+#[derive(Debug, Clone)]
+pub struct StartupConfig {
+    /// Optional `.pigg` config file to load at startup.
+    pub config_filename: Option<String>,
+    /// The hardware connection the app should establish.
+    pub hardware_connection: HardwareConnection,
+    /// The local hardware connection, if available for discovery.
+    pub local_hardware_option: Option<HardwareConnection>,
+    /// Whether to start background discovery subscriptions.
+    pub discovery: bool,
+}
+
+impl Default for StartupConfig {
+    fn default() -> Self {
+        Self {
+            config_filename: None,
+            hardware_connection: NoConnection,
+            local_hardware_option: None,
+            discovery: true,
+        }
+    }
+}
+
+impl StartupConfig {
+    /// Create a startup configuration that connects to the given hardware.
+    #[must_use]
+    pub fn new(hardware_connection: HardwareConnection) -> Self {
+        Self {
+            hardware_connection,
+            ..Self::default()
+        }
+    }
+
+    /// Set the `.pigg` config file to load at startup.
+    #[must_use]
+    pub fn config_filename(mut self, config_filename: impl Into<String>) -> Self {
+        self.config_filename = Some(config_filename.into());
+        self
+    }
+
+    /// Set the local hardware connection available for discovery.
+    #[must_use]
+    pub fn local_hardware_option(mut self, local_hardware: HardwareConnection) -> Self {
+        self.local_hardware_option = Some(local_hardware);
+        self
+    }
+
+    /// Disable background discovery subscriptions.
+    ///
+    /// Discovery claims USB interfaces while probing them, which races with a
+    /// startup connection to the same device. Headless test drivers disable it
+    /// so the real connection path can be exercised deterministically.
+    #[must_use]
+    pub fn without_discovery(mut self) -> Self {
+        self.discovery = false;
+        self
+    }
 }
 
 #[cfg(feature = "usb")]
@@ -186,43 +275,56 @@ impl Piggui {
     #[cfg(not(target_arch = "wasm32"))]
     async fn empty() {}
 
-    fn new() -> (Self, Task<Message>) {
-        #[cfg(not(target_arch = "wasm32"))]
-        let matches = get_matches();
-        #[cfg(not(target_arch = "wasm32"))]
-        let config_filename = matches.get_one::<String>("config").map(|s| s.to_string());
-        #[cfg(target_arch = "wasm32")]
-        let config_filename = None;
-
-        // We may request a number of tasks to be done on start
-        #[allow(unused_mut)]
-        let mut tasks = vec![maybe_load_no_picker(config_filename.clone())];
-
-        #[cfg(not(target_arch = "wasm32"))]
-        #[allow(unused_variables)]
-        let (requested_connection, local_hardware_option, connection_tasks) =
-            Self::choose_hardware_connection(&matches);
-        #[cfg(not(target_arch = "wasm32"))]
-        tasks.extend(connection_tasks);
-
-        #[cfg(target_arch = "wasm32")]
-        #[allow(unused_variables)]
-        let (requested_connection, local_hardware_option) = {
-            let connection = Self::parse_url_params();
-            (connection, Option::<HardwareConnection>::None)
+    /// Build the startup configuration and boot tasks from the command line.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn startup_from_args(matches: &ArgMatches) -> (StartupConfig, Vec<Task<Message>>) {
+        let mut startup = StartupConfig {
+            config_filename: matches.get_one::<String>("config").map(|s| s.to_string()),
+            ..StartupConfig::default()
         };
 
+        #[allow(unused_variables)]
+        let (hardware_connection, local_hardware_option, connection_tasks) =
+            Self::choose_hardware_connection(matches);
+        startup.hardware_connection = hardware_connection;
+        startup.local_hardware_option = local_hardware_option;
+
+        (startup, connection_tasks)
+    }
+
+    /// Build the startup configuration from the URL parameters in the browser.
+    #[cfg(target_arch = "wasm32")]
+    fn startup_from_url() -> StartupConfig {
+        StartupConfig {
+            hardware_connection: Self::parse_url_params(),
+            ..StartupConfig::default()
+        }
+    }
+
+    /// Boot the application with the given [StartupConfig].
+    pub(crate) fn with_startup(startup: StartupConfig) -> (Self, Task<Message>) {
+        Self::boot(startup, vec![])
+    }
+
+    fn boot(startup: StartupConfig, mut tasks: Vec<Task<Message>>) -> (Self, Task<Message>) {
+        // We may request a number of tasks to be done on start
+        tasks.insert(0, maybe_load_no_picker(startup.config_filename.clone()));
+
         #[cfg(feature = "discovery")]
-        let discovered_devices = discovery::local_discovery(local_hardware_option);
+        let discovered_devices = discovery::local_discovery(startup.local_hardware_option);
+        #[cfg(not(feature = "discovery"))]
+        let _ = startup.local_hardware_option;
 
         (
             Self {
-                config_filename,
+                config_filename: startup.config_filename,
                 layout_selector: LayoutSelector::new(),
                 unsaved_changes: false,
                 info_row: InfoRow::new(),
                 modal_handler: InfoDialog::new(),
-                hardware_view: HardwareView::new(requested_connection),
+                hardware_view: HardwareView::new(startup.hardware_connection),
+                #[cfg(feature = "discovery")]
+                discovery_enabled: startup.discovery,
                 #[cfg(any(feature = "iroh", feature = "tcp"))]
                 connect_dialog: ConnectDialog::new(),
                 #[cfg(feature = "discovery")]
@@ -475,10 +577,14 @@ impl Piggui {
         ];
 
         #[cfg(all(feature = "discovery", feature = "usb"))]
-        subscriptions.push(Subscription::run(discovery::usb_discovery).map(Discovery));
+        if self.discovery_enabled {
+            subscriptions.push(Subscription::run(discovery::usb_discovery).map(Discovery));
+        }
 
         #[cfg(all(feature = "discovery", feature = "tcp"))]
-        subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
+        if self.discovery_enabled {
+            subscriptions.push(Subscription::run(discovery::mdns_discovery).map(Discovery));
+        }
 
         // Handle Keyboard events for ConnectDialog
         #[cfg(any(feature = "iroh", feature = "tcp"))]
@@ -664,7 +770,7 @@ fn parse_ip_string(ip_str: &str) -> anyhow::Result<HardwareConnection> {
 #[cfg(not(target_arch = "wasm32"))]
 /// Parse the command line arguments using clap
 fn get_matches() -> ArgMatches {
-    let app = clap::Command::new(env!("CARGO_BIN_NAME"))
+    let app = clap::Command::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about("'piggui' - Pi GPIO GUI for interacting with Raspberry Pi GPIO Hardware")
         .arg(

@@ -1,10 +1,12 @@
 use chrono::{DateTime, Utc};
+use piggui::headless::Status;
 /// These tests test connecting to USB-connected porky devices by USB
 ///
 use pignet::usb_host;
 use serial_test::serial;
 
-use crate::support::{kill, kill_all, run, wait_for_stdout};
+use crate::headless_child::run_headless;
+use crate::support::kill_all;
 
 #[tokio::test]
 #[serial]
@@ -15,20 +17,26 @@ async fn usb_discover_and_connect_usb() {
         start.format("%Y-%m-%d %H:%M:%S")
     );
     kill_all("piggui");
+    kill_all("piggui_headless");
 
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
 
     let number = serials.len();
-    assert!(number > 0, "Could not find by USB to connect to by USB");
+    assert!(number > 0, "Could not find any USB device to connect to");
 
     for serial in serials {
-        let mut piggui = run("piggui", vec!["--usb".to_string(), serial], None);
+        let args = vec!["--usb".to_string(), serial.clone()];
+        let status = tokio::task::spawn_blocking(move || run_headless(&args))
+            .await
+            .expect("Headless app task panicked");
 
-        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
-
-        kill(&mut piggui);
+        assert_eq!(
+            status,
+            Status::Connected,
+            "piggui did not connect to USB device {serial}"
+        );
     }
 
     println!("Tested piggui USB connection to {number} USB discovered devices");
@@ -53,21 +61,27 @@ async fn usb_discover_and_connect_partial_usb() {
         start.format("%Y-%m-%d %H:%M:%S")
     );
     kill_all("piggui");
+    kill_all("piggui_headless");
 
     let serials = usb_host::get_serials()
         .await
         .expect("No usb porky attached");
 
     let number = serials.len();
-    assert!(number > 0, "Could not find by USB to connect to by USB");
+    assert!(number > 0, "Could not find any USB device to connect to");
 
     for serial in serials {
         let partial_serial = serial[..serial.len() - 1].to_string();
-        let mut piggui = run("piggui", vec!["--usb".to_string(), partial_serial], None);
+        let args = vec!["--usb".to_string(), partial_serial.clone()];
+        let status = tokio::task::spawn_blocking(move || run_headless(&args))
+            .await
+            .expect("Headless app task panicked");
 
-        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error:"));
-
-        kill(&mut piggui);
+        assert_eq!(
+            status,
+            Status::Connected,
+            "piggui did not connect to USB device with partial serial {partial_serial}"
+        );
     }
 
     println!(
