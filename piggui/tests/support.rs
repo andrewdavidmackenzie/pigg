@@ -89,7 +89,9 @@ pub fn run(binary: &str, options: Vec<String>, config: Option<PathBuf>) -> Child
 #[allow(dead_code)] // for piggui
 /// Kill all instances of a process based on it's name
 pub fn kill_all(process_name: &str) {
-    let s = System::new_all();
+    let Ok(s) = System::new_all() else {
+        return;
+    };
     #[cfg(target_os = "windows")]
     let full_name = format!("{process_name}.exe");
     #[cfg(not(target_os = "windows"))]

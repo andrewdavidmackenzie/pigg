@@ -249,7 +249,9 @@ fn reset_ssid(serial_number: SerialNumber) -> Task<Message> {
 /// Check that there is no pigglet running on the same device
 fn process_running(process_name: &str) -> bool {
     let my_pid = process::id();
-    let sys = System::new_all();
+    let Ok(sys) = System::new_all() else {
+        return false;
+    };
     #[cfg(target_os = "windows")]
     let full_name = format!("{process_name}.exe");
     #[cfg(not(target_os = "windows"))]
