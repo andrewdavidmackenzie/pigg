@@ -22,6 +22,8 @@ fn test_piggui() -> Piggui {
         info_row: InfoRow::new(),
         modal_handler: InfoDialog::new(),
         hardware_view: HardwareView::new(NoConnection),
+        #[cfg(feature = "discovery")]
+        discovery_enabled: false,
         #[cfg(any(feature = "iroh", feature = "tcp"))]
         connect_dialog: ConnectDialog::new(),
         #[cfg(feature = "discovery")]
@@ -37,6 +39,8 @@ fn test_piggui_connected() -> Piggui {
     let hw_config = HardwareConfig::default();
 
     let mut app = test_piggui();
+    app.hardware_view
+        .new_connection(pignet::HardwareConnection::Local);
     let _ = app
         .hardware_view
         .update(SubscriptionMessage(SubscriptionEvent::Connected(
@@ -323,4 +327,152 @@ fn connect_dialog_accessible_when_disconnected() {
     ));
     assert!(app.connect_dialog.show_modal);
     let _view = app.view();
+}
+
+// --- Headless widget interaction tests using iced_test ---
+
+#[cfg(not(target_arch = "wasm32"))]
+mod simulator_tests {
+    use super::*;
+    use iced_test::simulator;
+
+    /// Simulate a sequence of clicks against the current view and return the messages they produced.
+    fn click_all(app: &Piggui, targets: &[&str]) -> Vec<Message> {
+        let mut ui = simulator(app.view());
+        for target in targets {
+            ui.click(*target)
+                .unwrap_or_else(|error| panic!("Could not click {target:?}: {error}"));
+        }
+        ui.into_messages().collect()
+    }
+
+    fn apply(app: &mut Piggui, messages: Vec<Message>) {
+        for message in messages {
+            let _ = app.update(message);
+        }
+    }
+
+    fn assert_view_contains(app: &Piggui, expected: &str) {
+        let mut ui = simulator(app.view());
+        assert!(
+            ui.find(expected).is_ok(),
+            "Expected the view to contain {expected:?}"
+        );
+    }
+
+    #[test]
+    fn simulator_layout_menu_changes_layout() {
+        let mut app = test_piggui_connected();
+        assert_eq!(app.layout_selector.get(), Layout::Board);
+
+        let messages = click_all(&app, &["layout: board", "BCP Pin Layout"]);
+        assert!(messages
+            .iter()
+            .any(|message| matches!(message, LayoutChanged(Layout::Logical))));
+        apply(&mut app, messages);
+
+        assert_eq!(app.layout_selector.get(), Layout::Logical);
+        assert_view_contains(&app, "layout: bcp");
+    }
+
+    #[test]
+    fn simulator_exit_dialog_return_button() {
+        let mut app = test_piggui_connected();
+        let _ = app.update(ConfigChangesMade(false, true));
+        let _ = app.update(WindowEvent(iced::Event::Window(
+            window::Event::CloseRequested,
+        )));
+        assert!(app.modal_handler.showing_modal());
+
+        let messages = click_all(&app, &["Return to app"]);
+        apply(&mut app, messages);
+
+        assert!(!app.modal_handler.showing_modal());
+    }
+
+    #[test]
+    fn simulator_exit_dialog_emits_exit_app() {
+        let mut app = test_piggui_connected();
+        let _ = app.update(ConfigChangesMade(false, true));
+        let _ = app.update(WindowEvent(iced::Event::Window(
+            window::Event::CloseRequested,
+        )));
+        assert!(app.modal_handler.showing_modal());
+
+        let messages = click_all(&app, &["Exit without saving"]);
+
+        assert!(messages
+            .iter()
+            .any(|message| matches!(message, Modal(InfoDialogMessage::ExitApp))));
+
+        // Apply the message so the `ExitApp` handler runs. The window-closing
+        // task it returns is discarded: `iced_test`'s simulator has no window,
+        // so window closure itself is not covered here.
+        apply(&mut app, messages);
+    }
+
+    #[test]
+    fn simulator_load_dialog_continue_emits_load_file_and_dismisses_modal() {
+        let mut app = test_piggui_connected();
+        let _ = app.update(ConfigChangesMade(false, true));
+        let _ = app.update(Load);
+        assert!(app.modal_handler.showing_modal());
+
+        let messages = click_all(&app, &["Continue and load a new config"]);
+
+        assert!(messages
+            .iter()
+            .any(|message| matches!(message, Modal(InfoDialogMessage::LoadFile))));
+        apply(&mut app, messages);
+        assert!(!app.modal_handler.showing_modal());
+        // `apply` discards the returned task, and the simulator cannot inspect
+        // it, so this does not verify that `pick_and_load()` started.
+    }
+
+    #[cfg(any(feature = "iroh", feature = "tcp"))]
+    #[test]
+    fn simulator_opens_connect_dialog() {
+        let mut app = test_piggui();
+        assert!(!app.connect_dialog.show_modal);
+
+        let messages = click_all(&app, &["disconnected", "Connect to remote Pi ..."]);
+        apply(&mut app, messages);
+
+        assert!(app.connect_dialog.show_modal);
+        #[cfg(feature = "iroh")]
+        assert_view_contains(&app, "Connect To Remote Pi Using Iroh");
+        #[cfg(all(not(feature = "iroh"), feature = "tcp"))]
+        assert_view_contains(&app, "Connect To Remote Pi Using Tcp");
+    }
+
+    #[cfg(all(feature = "iroh", feature = "tcp"))]
+    #[test]
+    fn simulator_connect_dialog_switches_to_tcp_tab() {
+        let mut app = test_piggui();
+        let _ = app.update(ConnectDialog(
+            crate::views::connect_dialog::ConnectDialogMessage::ShowConnectDialog,
+        ));
+        assert_view_contains(&app, "Connect To Remote Pi Using Iroh");
+
+        let messages = click_all(&app, &["Connect using TCP"]);
+        apply(&mut app, messages);
+
+        assert_view_contains(&app, "Connect To Remote Pi Using Tcp");
+    }
+}
+
+// --- Startup configuration tests ---
+
+#[cfg(feature = "discovery")]
+#[test]
+fn discovery_subscriptions_follow_startup_config() {
+    let (disabled, _) = Piggui::with_startup(StartupConfig::new(NoConnection).without_discovery());
+    assert!(disabled.discovery_subscriptions().is_empty());
+
+    #[cfg(any(feature = "usb", feature = "tcp"))]
+    {
+        let (enabled, _) = Piggui::with_startup(StartupConfig::new(NoConnection));
+        let expected = usize::from(cfg!(feature = "usb")) + usize::from(cfg!(feature = "tcp"));
+        assert_eq!(enabled.discovery_subscriptions().len(), expected);
+    }
 }

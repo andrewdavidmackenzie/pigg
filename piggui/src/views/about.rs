@@ -5,7 +5,7 @@ use iced::{Renderer, Theme};
 use iced_aw::menu::Item;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const BIN_NAME: &str = env!("CARGO_BIN_NAME");
+const BIN_NAME: &str = env!("CARGO_PKG_NAME");
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const LICENSE: &str = env!("CARGO_PKG_LICENSE");
 pub const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");

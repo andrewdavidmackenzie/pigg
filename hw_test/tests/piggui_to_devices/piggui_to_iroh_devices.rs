@@ -1,10 +1,12 @@
-use crate::support::{kill, kill_all, run, wait_for_stdout};
 use chrono::{DateTime, Utc};
+use piggui::headless::Status;
 use serial_test::serial;
 use std::time::Duration;
 
-/// These tests test connecting to USB-connected porky devices by USB and TCP, from the piggui
-/// binary using CLIP options
+use crate::headless_child::run_headless;
+use crate::support::kill_all;
+
+/// These tests test connecting to devices by Iroh, from the piggui application.
 ///
 use crate::discovery::mdns::get_iroh_by_mdns;
 
@@ -23,6 +25,7 @@ async fn mdns_discover_and_connect_iroh() {
         start.format("%Y-%m-%d %H:%M:%S")
     );
     kill_all("piggui");
+    kill_all("piggui_headless");
 
     let devices = get_iroh_by_mdns(1)
         .await
@@ -33,16 +36,21 @@ async fn mdns_discover_and_connect_iroh() {
     println!("Found {number} devices to connect to by mDNS");
 
     for (node, relay) in devices.values() {
-        let mut args = vec!["--endpoint_id".to_string(), node.to_string()];
-        if let Some(relay_url) = relay {
+        let mut args = vec!["--endpoint-id".to_string(), node.to_string()];
+        if let Some(relay) = relay {
             args.push("--relay".to_string());
-            args.push(relay_url.to_string());
+            args.push(relay.to_string());
         }
-        let mut piggui = run("piggui", args, None);
 
-        wait_for_stdout(&mut piggui, "Connected to hardware", Some("Error: "));
+        let status = tokio::task::spawn_blocking(move || run_headless(&args))
+            .await
+            .expect("Headless app task panicked");
 
-        kill(&mut piggui);
+        assert_eq!(
+            status,
+            Status::Connected,
+            "piggui did not connect to Iroh device {node:?}"
+        );
     }
 
     // Wait the iroh timeout period so the server disconnects and other tests can connect

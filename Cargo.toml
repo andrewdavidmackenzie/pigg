@@ -15,7 +15,7 @@ homepage = "https://mackenzie-serres.net/pigg/"
 readme = "README.md"
 exclude = [".cargo", ".git", ".github", ".idea", "configs/", "tests/", ".gitignore", "codecov.yml",
     "Makefile", "dist-workspace.toml", "FUNDING.json"]
-rust-version = "1.80"
+rust-version = "1.88"
 
 [profile.release]
 opt-level = "s"
