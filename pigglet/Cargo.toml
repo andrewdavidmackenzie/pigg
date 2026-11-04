@@ -55,7 +55,7 @@ mdns-sd = { version = "0.17.2", default-features = false, features = ["reuseport
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
-serial_test = "3.5.0"
+serial_test = "4.0.1"
 
 [dev-dependencies]
 # For tests
