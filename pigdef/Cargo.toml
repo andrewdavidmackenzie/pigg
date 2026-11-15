@@ -30,6 +30,11 @@ embassy-time = { version = "0.5.1", default-features = false, features = ["defmt
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = "3"
 
+# heapless and embassy-time are used only in no_std builds (#[cfg(not(feature = "std"))]),
+# but appear unused when --all-features enables both std and the default optional deps
+[lints.cargo]
+unused_dependencies = "allow"
+
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
 always_include_features = ["std"]

@@ -7,7 +7,6 @@ rust-version = "1.88"
 license = "Apache-2.0"
 documentation = "https://github.com/andrewdavidmackenzie/pigg/README.md"
 repository = "https://github.com/andrewdavidmackenzie/pigg/"
-homepage = "https://github.com/andrewdavidmackenzie/pigg/"
 
 [features]
 default = ["usb", "tcp", "discovery", "iroh"]
@@ -27,7 +26,7 @@ name = "piggui_headless"
 path = "src/bin/piggui_headless.rs"
 
 [dev-dependencies]
-pigdef = { path = "../pigdef", version = "0.7" }
+pigdef = { path = "../pigdef", version = "0.7", default-features = false, features = ["std"] }
 tokio = { version = "1.52", default-features = false, features = ["time", "rt", "rt-multi-thread", "macros"] }
 async-std = "1.13.2"
 serial_test = "4.0.1"
